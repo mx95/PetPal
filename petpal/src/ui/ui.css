@@ -1,0 +1,181 @@
+.pp-shell {
+  min-height: 100vh;
+  background: radial-gradient(1200px 600px at 30% 20%, #f4fbff 0%, #ffffff 55%, #f8f7ff 100%);
+  color: #101828;
+}
+
+.pp-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px;
+  border-bottom: 1px solid rgba(16, 24, 40, 0.08);
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(10px);
+  position: sticky;
+  top: 0;
+}
+
+.pp-brand {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.pp-navlinks {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.pp-link {
+  text-decoration: none;
+  color: #344054;
+  font-weight: 600;
+  padding: 8px 10px;
+  border-radius: 10px;
+}
+
+.pp-link:hover {
+  background: rgba(16, 24, 40, 0.06);
+}
+
+.pp-main {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 28px 20px 60px;
+}
+
+.pp-card {
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(16, 24, 40, 0.08);
+  border-radius: 16px;
+  box-shadow: 0 8px 30px rgba(16, 24, 40, 0.06);
+}
+
+.pp-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 16px;
+}
+
+.pp-col-6 {
+  grid-column: span 6;
+}
+
+.pp-col-12 {
+  grid-column: span 12;
+}
+
+@media (max-width: 900px) {
+  .pp-col-6 {
+    grid-column: span 12;
+  }
+}
+
+.pp-h1 {
+  font-size: 34px;
+  line-height: 1.1;
+  letter-spacing: -0.04em;
+  margin: 0 0 8px;
+}
+
+.pp-subtle {
+  color: #475467;
+  margin: 0;
+}
+
+.pp-sectionTitle {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin: 0 0 10px;
+}
+
+.pp-pad {
+  padding: 18px;
+}
+
+.pp-form {
+  display: grid;
+  gap: 10px;
+}
+
+.pp-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #475467;
+}
+
+.pp-input {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(16, 24, 40, 0.14);
+  outline: none;
+  font-size: 14px;
+  background: #fff;
+}
+
+.pp-input:focus {
+  border-color: rgba(91, 55, 255, 0.5);
+  box-shadow: 0 0 0 4px rgba(91, 55, 255, 0.12);
+}
+
+.pp-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.pp-btn {
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(16, 24, 40, 0.14);
+  background: #fff;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.pp-btnPrimary {
+  border-color: rgba(91, 55, 255, 0.2);
+  background: linear-gradient(135deg, #5b37ff 0%, #2f80ff 100%);
+  color: #fff;
+}
+
+.pp-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.pp-error {
+  color: #b42318;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.pp-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(16, 24, 40, 0.1);
+  background: rgba(255, 255, 255, 0.75);
+  font-size: 12px;
+  font-weight: 800;
+  color: #344054;
+}
+
+.pp-leaflet-wrap {
+  height: 300px;
+  width: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(16, 24, 40, 0.1);
+}
+
+.pp-leaflet-wrap .leaflet-container {
+  height: 100%;
+  width: 100%;
+  font-family: inherit;
+  z-index: 0;
+}
+
