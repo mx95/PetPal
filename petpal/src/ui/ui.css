@@ -785,3 +785,64 @@
   height: 16px;
 }
 
+/* Leaderboard */
+.pp-lbSegment {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.pp-lbSegment__btn {
+  border: 1px solid rgba(16, 24, 40, 0.12);
+  background: rgba(255, 255, 255, 0.9);
+  color: #344054;
+  font-weight: 700;
+  padding: 8px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.pp-lbSegment__btn--on {
+  border-color: rgba(91, 55, 255, 0.4);
+  background: rgba(91, 55, 255, 0.1);
+  color: #1d1a33;
+}
+
+.pp-lbTableWrap {
+  overflow-x: auto;
+  border-radius: 12px;
+  border: 1px solid rgba(16, 24, 40, 0.08);
+}
+
+.pp-lbTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 15px;
+}
+
+.pp-lbTable th,
+.pp-lbTable td {
+  text-align: left;
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(16, 24, 40, 0.06);
+}
+
+.pp-lbTable th {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #667085;
+  font-weight: 700;
+}
+
+.pp-lbTable__num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.pp-lbTable__row--me {
+  background: rgba(91, 55, 255, 0.08);
+  font-weight: 700;
+}
+

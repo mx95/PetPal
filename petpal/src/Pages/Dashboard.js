@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useId, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
 import { useGame } from '../game/GameContext';
 import { usePets } from '../pets/PetsContext';
+import { walkStreakDays } from '../walk/walkStats';
 
 function km(n) {
   return `${n.toFixed(1)} km`;
@@ -31,10 +32,20 @@ export default function Dashboard() {
     petProgressPercent,
     trackingAchievementDefs,
     walkAchievementDefs,
+    walkLog,
+    walkTotals,
+    addWalkKm,
   } = useGame();
 
-  const weeklyDistanceKm = 7.4;
-  const streakDays = 5;
+  const walkFieldId = useId();
+  const [walkInput, setWalkInput] = useState('');
+
+  const streakDays = walkStreakDays(walkLog);
+  const onLogWalk = (e) => {
+    e.preventDefault();
+    const n = parseFloat(String(walkInput).replace(',', '.'));
+    if (addWalkKm(n)) setWalkInput('');
+  };
 
   return (
     <div className="pp-grid">
@@ -53,6 +64,9 @@ export default function Dashboard() {
             <div className="pp-row" style={{ gap: 10, flexWrap: 'wrap' }}>
               <Link className="pp-btn pp-btnPrimary" to="/pets" style={{ textDecoration: 'none' }}>
                 My pets
+              </Link>
+              <Link className="pp-btn" to="/leaderboard" style={{ textDecoration: 'none' }}>
+                Leaderboard
               </Link>
               <Link className="pp-btn" to="/tracking" style={{ textDecoration: 'none' }}>
                 Live tracker
@@ -120,16 +134,43 @@ export default function Dashboard() {
 
       <div className="pp-col-6">
         <div className="pp-card pp-pad">
-          <h2 className="pp-sectionTitle">This week</h2>
+          <h2 className="pp-sectionTitle">Walks &amp; distance</h2>
           <p className="pp-subtle" style={{ marginBottom: 12 }}>
-            Walk stats are placeholders; they can roll up per-pet when walks are logged.
+            Log how far you walked with your pet (total for the day). Used for the weekly view and the optional public
+            leaderboard.
           </p>
+          <form onSubmit={onLogWalk} className="pp-row" style={{ gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
+            <label htmlFor={walkFieldId} className="pp-subtle" style={{ fontWeight: 700 }}>
+              Add to today (km)
+            </label>
+            <input
+              id={walkFieldId}
+              className="pp-input"
+              type="text"
+              inputMode="decimal"
+              placeholder="0.0"
+              value={walkInput}
+              onChange={(e) => setWalkInput(e.target.value)}
+              style={{ maxWidth: 120 }}
+            />
+            <button type="submit" className="pp-btn pp-btnPrimary">
+              Log
+            </button>
+          </form>
           <div className="pp-row" style={{ gap: 14, flexWrap: 'wrap' }}>
-            <div className="pp-card pp-pad" style={{ flex: '1 1 220px' }}>
-              <div className="pp-label">Distance</div>
-              <div style={{ fontSize: 24, fontWeight: 900, marginTop: 6 }}>{km(weeklyDistanceKm)}</div>
+            <div className="pp-card pp-pad" style={{ flex: '1 1 200px' }}>
+              <div className="pp-label">Today</div>
+              <div style={{ fontSize: 24, fontWeight: 900, marginTop: 6 }}>{km(walkTotals.day)}</div>
             </div>
-            <div className="pp-card pp-pad" style={{ flex: '1 1 220px' }}>
+            <div className="pp-card pp-pad" style={{ flex: '1 1 200px' }}>
+              <div className="pp-label">This week</div>
+              <div style={{ fontSize: 24, fontWeight: 900, marginTop: 6 }}>{km(walkTotals.week)}</div>
+            </div>
+            <div className="pp-card pp-pad" style={{ flex: '1 1 200px' }}>
+              <div className="pp-label">This year</div>
+              <div style={{ fontSize: 24, fontWeight: 900, marginTop: 6 }}>{km(walkTotals.year)}</div>
+            </div>
+            <div className="pp-card pp-pad" style={{ flex: '1 1 200px' }}>
               <div className="pp-label">Streak</div>
               <div style={{ fontSize: 24, fontWeight: 900, marginTop: 6 }}>{streakDays} days</div>
             </div>

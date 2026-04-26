@@ -1,6 +1,7 @@
 import { getApp, getApps, initializeApp } from 'firebase/app';
 import { getAnalytics, isSupported } from 'firebase/analytics';
 import { getAuth } from 'firebase/auth';
+import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
   apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
@@ -18,6 +19,19 @@ const firebaseConfig = {
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
 export const auth = getAuth(app);
+
+/** Firestore (leaderboard + opt-in). Requires REACT_APP_FIREBASE_PROJECT_ID. */
+let db;
+export function getDb() {
+  if (!db) {
+    db = getFirestore(app);
+  }
+  return db;
+}
+
+export function isFirebaseConfigured() {
+  return Boolean(process.env.REACT_APP_FIREBASE_PROJECT_ID);
+}
 
 /** Google Analytics (web only; optional) */
 let analyticsPromise;

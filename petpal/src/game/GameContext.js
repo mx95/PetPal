@@ -12,6 +12,7 @@ import {
   xpToNextLevel,
 } from './ownerGame';
 import { loadGameState, saveGameState } from './gameStorage';
+import { localDayKey, walkTotalsFromLog } from '../walk/walkStats';
 
 const GameContext = createContext(null);
 
@@ -20,6 +21,7 @@ function defaultState() {
     ownerXp: 0,
     daily: { day: dayKey(), done: [] },
     perPet: {},
+    walkLog: {},
   };
 }
 
@@ -36,10 +38,12 @@ function normalizeState(raw) {
       daily = { day: today, done: [] };
     }
   }
+  const walkLog = raw.walkLog && typeof raw.walkLog === 'object' ? { ...raw.walkLog } : {};
   return {
     ownerXp: Math.max(0, Number(raw.ownerXp) || 0),
     daily,
     perPet: raw.perPet && typeof raw.perPet === 'object' ? raw.perPet : {},
+    walkLog,
   };
 }
 
@@ -103,6 +107,23 @@ export function GameProvider({ children }) {
     [persist]
   );
 
+  const addWalkKm = useCallback(
+    (km) => {
+      const n = Math.max(0, Number(km) || 0);
+      if (n <= 0) return false;
+      persist((prev) => {
+        const k = localDayKey();
+        const cur = (prev.walkLog && prev.walkLog[k]) || 0;
+        const nextLog = { ...(prev.walkLog || {}), [k]: Math.round((cur + n) * 100) / 100 };
+        return { ...prev, walkLog: nextLog };
+      });
+      return true;
+    },
+    [persist]
+  );
+
+  const walkTotals = useMemo(() => walkTotalsFromLog(state.walkLog), [state.walkLog]);
+
   const level = xpToLevel(state.ownerXp);
   const levelXp = xpInCurrentLevel(state.ownerXp);
   const nextMax = xpToNextLevel(state.ownerXp);
@@ -126,10 +147,13 @@ export function GameProvider({ children }) {
       perPet: state.perPet,
       petProgressPercent: (petId, track, key) => petProgressPercent(state.perPet[petId], track, key),
       setPetTrackProgress,
+      walkLog: state.walkLog,
+      walkTotals,
+      addWalkKm,
       trackingAchievementDefs: trackingAchievementDefs(),
       walkAchievementDefs: walkAchievementDefs(),
     }),
-    [state, level, levelXp, nextMax, completeDaily, dailyDoneSet, setPetTrackProgress]
+    [state, level, levelXp, nextMax, completeDaily, dailyDoneSet, setPetTrackProgress, walkTotals, addWalkKm]
   );
 
   // Ensure per-pet object exists for listed pets (UI only)

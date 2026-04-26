@@ -3,6 +3,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from './auth/AuthProvider';
 import { PetsProvider } from './pets/PetsContext';
 import { GameProvider } from './game/GameContext';
+import { PublicWalkProvider } from './leaderboard/PublicWalkContext';
 import { CommunityProvider } from './social/CommunityContext';
 
 jest.mock('./tracking/PositionMap', () => {
@@ -26,9 +27,11 @@ test('renders app name', () => {
       <AuthProvider>
         <PetsProvider>
           <GameProvider>
-            <CommunityProvider>
-              <App />
-            </CommunityProvider>
+            <PublicWalkProvider>
+              <CommunityProvider>
+                <App />
+              </CommunityProvider>
+            </PublicWalkProvider>
           </GameProvider>
         </PetsProvider>
       </AuthProvider>
