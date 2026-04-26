@@ -122,7 +122,10 @@ export default function Dashboard() {
               <div className="pp-card pp-pad">
                 <div style={{ fontWeight: 900 }}>Nearby</div>
                 <div className="pp-subtle" style={{ marginTop: 4 }}>
-                  Pet hotels, pet stores, vets, and pet-friendly places near you.
+                  Pet shops, hotels, vets, parks, and more on a map.{' '}
+                  <Link className="pp-link" to="/nearby" style={{ display: 'inline', padding: 0 }}>
+                    Open nearby →
+                  </Link>
                 </div>
               </div>
             </div>

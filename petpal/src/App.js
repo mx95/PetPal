@@ -5,6 +5,7 @@ import { useAuth } from './auth/AuthProvider';
 import Community from './Pages/Community';
 import Dashboard from './Pages/Dashboard';
 import Login from './Pages/Login';
+import Nearby from './Pages/Nearby';
 import Register from './Pages/Register';
 import './ui/ui.css';
 
@@ -25,6 +26,11 @@ function TopNav() {
         {user ? (
           <Link className="pp-link" to="/community">
             Community
+          </Link>
+        ) : null}
+        {user ? (
+          <Link className="pp-link" to="/nearby">
+            Nearby
           </Link>
         ) : null}
         {user ? (
@@ -69,6 +75,14 @@ function App() {
             element={
               <RequireAuth>
                 <Community />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/nearby"
+            element={
+              <RequireAuth>
+                <Nearby />
               </RequireAuth>
             }
           />

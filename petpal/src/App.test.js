@@ -8,6 +8,13 @@ jest.mock('./tracking/PositionMap', () => {
   };
 });
 
+jest.mock('@react-google-maps/api', () => ({
+  useJsApiLoader: () => ({ isLoaded: true, loadError: undefined }),
+  GoogleMap: ({ children }) => <div data-testid="google-map">{children}</div>,
+  Marker: () => null,
+  InfoWindow: () => null,
+}));
+
 import App from './App';
 
 test('renders app name', () => {
