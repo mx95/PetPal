@@ -1,8 +1,9 @@
-import React, { useId, useState } from 'react';
+import React, { useId, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
 import { useGame } from '../game/GameContext';
 import { usePets } from '../pets/PetsContext';
+import { MAX_PHOTOS_PER_WALK_SESSION } from '../walk/walkPhotos';
 import { walkStreakDays } from '../walk/walkStats';
 
 function km(n) {
@@ -35,16 +36,62 @@ export default function Dashboard() {
     walkLog,
     walkTotals,
     addWalkKm,
+    latestWalk,
+    addPhotosToLatestWalk,
+    removePhotoFromLatestWalk,
   } = useGame();
 
   const walkFieldId = useId();
+  const walkFilesId = useId();
+  const walkFilesRef = useRef(null);
+  const morePhotosId = useId();
   const [walkInput, setWalkInput] = useState('');
+  const [walkLogBusy, setWalkLogBusy] = useState(false);
+  const [walkPhotoMsg, setWalkPhotoMsg] = useState('');
 
   const streakDays = walkStreakDays(walkLog);
-  const onLogWalk = (e) => {
+  const onLogWalk = async (e) => {
     e.preventDefault();
+    setWalkPhotoMsg('');
     const n = parseFloat(String(walkInput).replace(',', '.'));
-    if (addWalkKm(n)) setWalkInput('');
+    if (Number.isNaN(n) || n <= 0) {
+      setWalkPhotoMsg('Enter a distance greater than 0 to log a walk.');
+      return;
+    }
+    setWalkLogBusy(true);
+    try {
+      const files = walkFilesRef.current?.files;
+      const ok = await addWalkKm(n, files);
+      if (ok) {
+        setWalkInput('');
+        if (walkFilesRef.current) walkFilesRef.current.value = '';
+        setWalkPhotoMsg(files && files.length ? 'Walk logged with photos.' : 'Walk logged.');
+      }
+    } finally {
+      setWalkLogBusy(false);
+    }
+  };
+
+  const onAddMorePhotos = async (e) => {
+    const { files } = e.target;
+    setWalkPhotoMsg('');
+    if (!files || !files.length) return;
+    setWalkLogBusy(true);
+    try {
+      const r = await addPhotosToLatestWalk(files);
+      if (r.ok) {
+        setWalkPhotoMsg(r.added ? `Added ${r.added} photo(s).` : '');
+      } else if (r.reason === 'max_photos') {
+        setWalkPhotoMsg(`You can have up to ${MAX_PHOTOS_PER_WALK_SESSION} photos on this walk.`);
+      } else if (r.reason === 'no_session') {
+        setWalkPhotoMsg('Log a walk with distance first, then you can add photos to it.');
+      } else {
+        setWalkPhotoMsg('Could not add photos. Try a smaller image or fewer files.');
+      }
+    } finally {
+      setWalkLogBusy(false);
+      e.target.value = '';
+    }
   };
 
   return (
@@ -160,26 +207,118 @@ export default function Dashboard() {
           <h2 className="pp-sectionTitle">Walks &amp; distance</h2>
           <p className="pp-subtle" style={{ marginBottom: 12 }}>
             Log how far you walked with your pet (total for the day). Used for the weekly view and the optional public
-            leaderboard.
+            leaderboard. You can attach photos to your <strong>latest</strong> log — stored on this device for now.
           </p>
-          <form onSubmit={onLogWalk} className="pp-row" style={{ gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
-            <label htmlFor={walkFieldId} className="pp-subtle" style={{ fontWeight: 700 }}>
-              Add to today (km)
-            </label>
-            <input
-              id={walkFieldId}
-              className="pp-input"
-              type="text"
-              inputMode="decimal"
-              placeholder="0.0"
-              value={walkInput}
-              onChange={(e) => setWalkInput(e.target.value)}
-              style={{ maxWidth: 120 }}
-            />
-            <button type="submit" className="pp-btn pp-btnPrimary">
-              Log
-            </button>
+          <form onSubmit={onLogWalk} className="pp-form" style={{ marginBottom: 14 }}>
+            <div className="pp-row" style={{ gap: 8, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+              <div>
+                <label htmlFor={walkFieldId} className="pp-label">
+                  Add to today (km)
+                </label>
+                <input
+                  id={walkFieldId}
+                  className="pp-input"
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="0.0"
+                  value={walkInput}
+                  onChange={(e) => setWalkInput(e.target.value)}
+                  style={{ maxWidth: 120 }}
+                />
+              </div>
+              <div style={{ flex: '1 1 220px' }}>
+                <label htmlFor={walkFilesId} className="pp-label">
+                  Photos (optional)
+                </label>
+                <input
+                  id={walkFilesId}
+                  ref={walkFilesRef}
+                  className="pp-input"
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  style={{ fontSize: 14 }}
+                />
+                <p className="pp-subtle" style={{ fontSize: 12, marginTop: 4, marginBottom: 0 }}>
+                  Up to 8 per batch, resized to save space. Same walk can be extended below.
+                </p>
+              </div>
+              <button type="submit" className="pp-btn pp-btnPrimary" disabled={walkLogBusy}>
+                {walkLogBusy ? 'Saving…' : 'Log walk'}
+              </button>
+            </div>
+            {walkPhotoMsg ? (
+              <p
+                className="pp-subtle"
+                style={{
+                  marginTop: 10,
+                  color: walkPhotoMsg.startsWith('Added') || walkPhotoMsg.startsWith('Walk logged') ? '#027a48' : '#b42318',
+                  fontSize: 13,
+                }}
+              >
+                {walkPhotoMsg}
+              </p>
+            ) : null}
           </form>
+
+          {latestWalk ? (
+            <div
+              className="pp-card pp-pad"
+              style={{
+                marginBottom: 14,
+                borderColor: 'rgba(18, 183, 106, 0.35)',
+                background: 'rgba(236, 253, 243, 0.5)',
+              }}
+            >
+              <h3 className="pp-sectionTitle" style={{ fontSize: 16, marginTop: 0 }}>
+                Latest walk
+              </h3>
+              <p className="pp-subtle" style={{ marginBottom: 8 }}>
+                <strong>{km(latestWalk.km)}</strong> ·{' '}
+                {new Date(latestWalk.createdAt).toLocaleString(undefined, {
+                  dateStyle: 'medium',
+                  timeStyle: 'short',
+                })}
+              </p>
+              {latestWalk.photos && latestWalk.photos.length > 0 ? (
+                <div className="pp-walkPhotoGrid">
+                  {latestWalk.photos.map((src, i) => (
+                    <div key={`${latestWalk.id}-p${i}`} className="pp-walkPhotoTile">
+                      <img src={src} alt="" className="pp-walkPhotoTile__img" />
+                      <button
+                        type="button"
+                        className="pp-walkPhotoTile__remove"
+                        onClick={() => removePhotoFromLatestWalk(i)}
+                        aria-label="Remove photo"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="pp-subtle" style={{ fontSize: 14 }}>No photos on this log yet.</p>
+              )}
+              <p className="pp-subtle" style={{ fontSize: 12, marginTop: 8, marginBottom: 6 }}>
+                Photos: {latestWalk.photos?.length || 0} / {MAX_PHOTOS_PER_WALK_SESSION}
+              </p>
+              <div className="pp-row" style={{ gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                <label className="pp-btn" htmlFor={morePhotosId} style={{ margin: 0, cursor: 'pointer' }}>
+                  Add more photos
+                </label>
+                <input
+                  id={morePhotosId}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="pp-visuallyHidden"
+                  onChange={onAddMorePhotos}
+                  disabled={walkLogBusy}
+                />
+              </div>
+            </div>
+          ) : null}
+
           <div className="pp-row" style={{ gap: 14, flexWrap: 'wrap' }}>
             <div className="pp-card pp-pad" style={{ flex: '1 1 200px' }}>
               <div className="pp-label">Today</div>

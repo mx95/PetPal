@@ -12,6 +12,11 @@ export default function CookiePolicy() {
           session storage, pixels) for the same purposes. Together we refer to them as “<strong>cookies</strong>”
           in this policy.
         </p>
+        <p>
+          On first visit, a banner may ask you to allow optional analytics. Your choice is stored in your browser
+          (local key <code>petpal_cookie_consent_v1</code>) as “essential only” or “accept analytics”, until you
+          clear site data.
+        </p>
       </section>
 
       <section>

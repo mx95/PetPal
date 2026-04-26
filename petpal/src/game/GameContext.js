@@ -13,8 +13,14 @@ import {
 } from './ownerGame';
 import { loadGameState, saveGameState } from './gameStorage';
 import { localDayKey, walkTotalsFromLog } from '../walk/walkStats';
+import { filesToResizedDataUrls, MAX_PHOTOS_PER_WALK_SESSION } from '../walk/walkPhotos';
 
 const GameContext = createContext(null);
+
+function newWalkSessionId() {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) return `ws_${crypto.randomUUID()}`;
+  return `ws_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+}
 
 function defaultState() {
   return {
@@ -22,7 +28,23 @@ function defaultState() {
     daily: { day: dayKey(), done: [] },
     perPet: {},
     walkLog: {},
+    walkSessions: [],
   };
+}
+
+function normalizeWalkSessions(raw) {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((s) => {
+      if (!s || typeof s !== 'object') return null;
+      const id = s.id != null ? String(s.id) : newWalkSessionId();
+      const dayKey = s.dayKey != null ? String(s.dayKey) : '';
+      const km = Math.max(0, Number(s.km) || 0);
+      const createdAt = s.createdAt != null ? String(s.createdAt) : new Date().toISOString();
+      const photos = Array.isArray(s.photos) ? s.photos.filter((p) => typeof p === 'string' && p.startsWith('data:')) : [];
+      return { id, dayKey, km, createdAt, photos: photos.slice(0, MAX_PHOTOS_PER_WALK_SESSION) };
+    })
+    .filter(Boolean);
 }
 
 function normalizeState(raw) {
@@ -39,11 +61,13 @@ function normalizeState(raw) {
     }
   }
   const walkLog = raw.walkLog && typeof raw.walkLog === 'object' ? { ...raw.walkLog } : {};
+  const walkSessions = normalizeWalkSessions(raw.walkSessions);
   return {
     ownerXp: Math.max(0, Number(raw.ownerXp) || 0),
     daily,
     perPet: raw.perPet && typeof raw.perPet === 'object' ? raw.perPet : {},
     walkLog,
+    walkSessions,
   };
 }
 
@@ -114,21 +138,95 @@ export function GameProvider({ children }) {
   );
 
   const addWalkKm = useCallback(
-    (km) => {
+    async (km, fileList) => {
       const n = Math.max(0, Number(km) || 0);
       if (n <= 0) return false;
+      let photoUrls = [];
+      if (fileList && fileList.length) {
+        photoUrls = await filesToResizedDataUrls(Array.from(fileList));
+        photoUrls = photoUrls.slice(0, MAX_PHOTOS_PER_WALK_SESSION);
+      }
       persist((prev) => {
         const k = localDayKey();
         const cur = (prev.walkLog && prev.walkLog[k]) || 0;
         const nextLog = { ...(prev.walkLog || {}), [k]: Math.round((cur + n) * 100) / 100 };
-        return { ...prev, walkLog: nextLog };
+        const sessions = Array.isArray(prev.walkSessions) ? [...prev.walkSessions] : [];
+        const session = {
+          id: newWalkSessionId(),
+          dayKey: k,
+          km: Math.round(n * 100) / 100,
+          createdAt: new Date().toISOString(),
+          photos: photoUrls,
+        };
+        sessions.push(session);
+        return { ...prev, walkLog: nextLog, walkSessions: sessions };
       });
       return true;
     },
     [persist]
   );
 
+  const addPhotosToLatestWalk = useCallback(
+    async (fileList) => {
+      if (!fileList || !fileList.length) return { ok: false, reason: 'no_files' };
+      const newUrls = await filesToResizedDataUrls(Array.from(fileList));
+      if (!newUrls.length) return { ok: false, reason: 'no_images' };
+      let out = { ok: false, reason: 'no_session' };
+      persist((prev) => {
+        const rawSessions = Array.isArray(prev.walkSessions) ? [...prev.walkSessions] : [];
+        if (rawSessions.length === 0) {
+          out = { ok: false, reason: 'no_session' };
+          return prev;
+        }
+        const sorted = [...rawSessions].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        const latest = sorted[0];
+        const idx = rawSessions.findIndex((s) => s.id === latest.id);
+        if (idx < 0) {
+          out = { ok: false, reason: 'no_session' };
+          return prev;
+        }
+        const existing = rawSessions[idx].photos || [];
+        const cap = Math.max(0, MAX_PHOTOS_PER_WALK_SESSION - existing.length);
+        const add = newUrls.slice(0, cap);
+        if (add.length === 0) {
+          out = { ok: false, reason: 'max_photos' };
+          return prev;
+        }
+        rawSessions[idx] = { ...rawSessions[idx], photos: [...existing, ...add] };
+        out = { ok: true, added: add.length };
+        return { ...prev, walkSessions: rawSessions };
+      });
+      return out;
+    },
+    [persist]
+  );
+
+  const removePhotoFromLatestWalk = useCallback(
+    (photoIndex) => {
+      persist((prev) => {
+        const rawSessions = Array.isArray(prev.walkSessions) ? [...prev.walkSessions] : [];
+        if (rawSessions.length === 0) return prev;
+        const sorted = [...rawSessions].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        const latest = sorted[0];
+        const idx = rawSessions.findIndex((s) => s.id === latest.id);
+        if (idx < 0) return prev;
+        const photos = [...(rawSessions[idx].photos || [])];
+        if (photoIndex < 0 || photoIndex >= photos.length) return prev;
+        photos.splice(photoIndex, 1);
+        rawSessions[idx] = { ...rawSessions[idx], photos };
+        return { ...prev, walkSessions: rawSessions };
+      });
+    },
+    [persist]
+  );
+
   const walkTotals = useMemo(() => walkTotalsFromLog(state.walkLog), [state.walkLog]);
+
+  const latestWalk = useMemo(() => {
+    const s = state.walkSessions;
+    if (!Array.isArray(s) || s.length === 0) return null;
+    return [...s].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0];
+  }, [state.walkSessions]);
 
   const level = xpToLevel(state.ownerXp);
   const levelXp = xpInCurrentLevel(state.ownerXp);
@@ -154,12 +252,29 @@ export function GameProvider({ children }) {
       petProgressPercent: (petId, track, key) => petProgressPercent(state.perPet[petId], track, key),
       setPetTrackProgress,
       walkLog: state.walkLog,
+      walkSessions: state.walkSessions,
       walkTotals,
+      latestWalk,
       addWalkKm,
+      addPhotosToLatestWalk,
+      removePhotoFromLatestWalk,
       trackingAchievementDefs: trackingAchievementDefs(),
       walkAchievementDefs: walkAchievementDefs(),
     }),
-    [state, level, levelXp, nextMax, completeDaily, dailyDoneSet, setPetTrackProgress, walkTotals, addWalkKm]
+    [
+      state,
+      level,
+      levelXp,
+      nextMax,
+      completeDaily,
+      dailyDoneSet,
+      setPetTrackProgress,
+      walkTotals,
+      latestWalk,
+      addWalkKm,
+      addPhotosToLatestWalk,
+      removePhotoFromLatestWalk,
+    ]
   );
 
   // Ensure per-pet object exists for listed pets (UI only)

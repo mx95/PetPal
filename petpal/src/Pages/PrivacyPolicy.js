@@ -44,13 +44,16 @@ export default function PrivacyPolicy() {
           </li>
           <li>
             <strong>Pet and activity data you enter:</strong> pet names, categories, optional device/tracker
-            identifiers you associate with a pet, walk distances or logs you record, in-app game/progress data stored
-            on your device or your account, and content you post in community features.
+            identifiers you associate with a pet, walk distances or logs you record, optional photos you attach to a
+            walk log (stored in your browser as part of your local game data until you use any future cloud feature),
+            in-app game/progress data stored on your device or your account, and content you post in community features.
           </li>
           <li>
             <strong>Technical and usage data:</strong> IP address, device/browser type, approximate location derived
             from IP if available, timestamps, and diagnostic or security logs, including via hosting and service
-            providers.
+            providers. <strong>Google Analytics</strong> (if you choose “Accept analytics” in the cookie banner) may
+            process usage in aggregate; if you choose “Essential only”, we do not load the Analytics module for your
+            session on supported browsers.
           </li>
           <li>
             <strong>Maps / places:</strong> if you use location-based features, we may process queries (e.g. map centre

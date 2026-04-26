@@ -33,13 +33,36 @@ export function isFirebaseConfigured() {
   return Boolean(process.env.REACT_APP_FIREBASE_PROJECT_ID);
 }
 
-/** Google Analytics (web only; optional) */
-let analyticsPromise;
+/** Set when `REACT_APP_FIREBASE_MEASUREMENT_ID` is present. */
+export function isFirebaseAnalyticsConfigured() {
+  return Boolean(process.env.REACT_APP_FIREBASE_MEASUREMENT_ID);
+}
+
+/**
+ * Google Analytics (web) — only load after the user consents in CookieConsent (non-essential).
+ * Call `enableFirebaseAnalytics()` from there; do not import getAnalytics on first paint.
+ */
+let analyticsInstance = null;
+let analyticsInitPromise = null;
+
+export function enableFirebaseAnalytics() {
+  if (!isFirebaseAnalyticsConfigured()) return Promise.resolve(null);
+  if (analyticsInstance) return Promise.resolve(analyticsInstance);
+  if (analyticsInitPromise) return analyticsInitPromise;
+  analyticsInitPromise = isSupported().then((ok) => {
+    if (!ok) {
+      return null;
+    }
+    if (!analyticsInstance) {
+      analyticsInstance = getAnalytics(app);
+    }
+    return analyticsInstance;
+  });
+  return analyticsInitPromise;
+}
+
+/** Returns the Analytics instance, or `null` if not consented/initialized yet. */
 export function getFirebaseAnalytics() {
-  if (!process.env.REACT_APP_FIREBASE_MEASUREMENT_ID) return Promise.resolve(null);
-  if (!analyticsPromise) {
-    analyticsPromise = isSupported().then((ok) => (ok ? getAnalytics(app) : null));
-  }
-  return analyticsPromise;
+  return Promise.resolve(analyticsInstance);
 }
 

@@ -54,7 +54,7 @@ function buildMockWalkLog() {
 function mergeGameState(uid, samplePetIds) {
   let raw = loadGameState(uid);
   if (!raw || typeof raw !== 'object') {
-    raw = { ownerXp: 0, daily: { day: dayKey(), done: [] }, perPet: {}, walkLog: {} };
+    raw = { ownerXp: 0, daily: { day: dayKey(), done: [] }, perPet: {}, walkLog: {}, walkSessions: [] };
   }
   const today = dayKey();
   const walkLog = { ...(raw.walkLog && typeof raw.walkLog === 'object' ? raw.walkLog : {}), ...buildMockWalkLog() };
@@ -72,6 +72,7 @@ function mergeGameState(uid, samplePetIds) {
     daily: { day: today, done },
     perPet,
     walkLog,
+    walkSessions: Array.isArray(raw.walkSessions) ? raw.walkSessions : [],
   });
 }
 

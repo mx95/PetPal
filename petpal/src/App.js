@@ -3,6 +3,7 @@ import { Link, Navigate, Route, Routes } from 'react-router-dom';
 import { RequireAuth } from './auth/RequireAuth';
 import { useAuth } from './auth/AuthProvider';
 import { AppFooter } from './components/AppFooter';
+import { CookieConsent } from './components/CookieConsent';
 import Community from './Pages/Community';
 import CookiePolicy from './Pages/CookiePolicy';
 import Dashboard from './Pages/Dashboard';
@@ -141,6 +142,7 @@ function App() {
         </Routes>
       </div>
       <AppFooter />
+      <CookieConsent />
     </div>
   );
 }
