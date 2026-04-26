@@ -6,6 +6,9 @@ import { ErrorBoundary } from './ErrorBoundary';
 import reportWebVitals from './reportWebVitals';
 import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from './auth/AuthProvider';
+import { PetsProvider } from './pets/PetsContext';
+import { GameProvider } from './game/GameContext';
+import { CommunityProvider } from './social/CommunityContext';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
@@ -13,7 +16,13 @@ root.render(
     <ErrorBoundary>
       <BrowserRouter>
         <AuthProvider>
-          <App />
+          <PetsProvider>
+            <GameProvider>
+              <CommunityProvider>
+                <App />
+              </CommunityProvider>
+            </GameProvider>
+          </PetsProvider>
         </AuthProvider>
       </BrowserRouter>
     </ErrorBoundary>

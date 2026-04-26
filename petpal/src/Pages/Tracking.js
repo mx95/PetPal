@@ -1,9 +1,8 @@
-import React, { useCallback, useId, useState } from 'react';
+import React, { useCallback, useEffect, useId, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import PositionMap from '../tracking/PositionMap';
+import { usePets } from '../pets/PetsContext';
 import { getLatestPosition, getTrackingDataSource, mapsLink } from '../tracking/traccarClient';
-
-const STORAGE_KEY = 'petpal_traccar_device_id';
 
 function formatTime(iso) {
   if (!iso) return '—';
@@ -16,16 +15,38 @@ function formatTime(iso) {
 
 export default function Tracking() {
   const fieldId = useId();
+  const { pets, getCategory, updatePet } = usePets();
   const dataSource = getTrackingDataSource();
   const dataSourceLabel = {
     bff: 'Backend (BFF)',
     traccar: 'Traccar API',
     mock: 'Mock (add REACT_APP_TRACKING_BFF_URL or REACT_APP_TRACCAR_BASE_URL)',
   }[dataSource];
-  const [deviceId, setDeviceId] = useState(() => localStorage.getItem(STORAGE_KEY) || '');
+
+  const [selectedPetId, setSelectedPetId] = useState('');
+  const [deviceId, setDeviceId] = useState('');
   const [position, setPosition] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  const selectedPet = useMemo(() => pets.find((p) => p.id === selectedPetId), [pets, selectedPetId]);
+
+  useEffect(() => {
+    if (pets.length === 0) {
+      setSelectedPetId('');
+      return;
+    }
+    setSelectedPetId((cur) => (cur && pets.some((p) => p.id === cur) ? cur : pets[0].id));
+  }, [pets]);
+
+  useEffect(() => {
+    if (!selectedPetId) {
+      setDeviceId('');
+      return;
+    }
+    const p = pets.find((x) => x.id === selectedPetId);
+    setDeviceId(p?.trackingDeviceId || '');
+  }, [selectedPetId, pets]);
 
   const refresh = useCallback(async () => {
     setError('');
@@ -43,8 +64,31 @@ export default function Tracking() {
 
   function saveIdAndLoad(e) {
     e?.preventDefault();
-    localStorage.setItem(STORAGE_KEY, deviceId.trim());
+    if (selectedPetId) {
+      updatePet(selectedPetId, { trackingDeviceId: deviceId.trim() || null });
+    }
     void refresh();
+  }
+
+  if (pets.length === 0) {
+    return (
+      <div className="pp-grid">
+        <div className="pp-col-12">
+          <div className="pp-card pp-pad">
+            <div className="pp-badge">GPS tracker (Traccar)</div>
+            <h1 className="pp-h1" style={{ marginTop: 10 }}>
+              Add a pet first
+            </h1>
+            <p className="pp-subtle" style={{ marginBottom: 16 }}>
+              Register at least one pet, then link a Traccar device id to the pet you want to track.
+            </p>
+            <Link className="pp-btn pp-btnPrimary" to="/pets" style={{ textDecoration: 'none', display: 'inline-block' }}>
+              My pets
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -57,10 +101,8 @@ export default function Tracking() {
               Live position
             </h1>
             <p className="pp-subtle" style={{ marginTop: 6, maxWidth: 720 }}>
-              Connect any cellular GPS device supported by Traccar. Prefer a small <strong>backend</strong>{' '}
-              (<code style={{ fontSize: 12 }}>REACT_APP_TRACKING_BFF_URL</code>) that proxies Traccar so you
-              avoid CORS and keep secrets server-side. Otherwise the app can call Traccar directly when CORS
-              allows, or use a <strong>mock</strong> point for UI development.
+              Pick which pet this device belongs to, then load the latest fix. Pets can exist without a
+              device — link one here when you&apos;re ready.
             </p>
           </div>
           <Link className="pp-link" to="/dashboard">
@@ -71,11 +113,27 @@ export default function Tracking() {
 
       <div className="pp-col-6">
         <div className="pp-card pp-pad">
-          <h2 className="pp-sectionTitle">Device</h2>
+          <h2 className="pp-sectionTitle">Pet &amp; device</h2>
           <p className="pp-subtle" style={{ marginBottom: 12, fontSize: 14 }}>
-            Use the device id from your Traccar web UI (or whatever your BFF maps to). Data source:{' '}
-            <strong>{dataSourceLabel}</strong>
+            Data source: <strong>{dataSourceLabel}</strong>
           </p>
+          <div className="pp-form" style={{ marginBottom: 12 }}>
+            <div>
+              <div className="pp-label">Pet using this tracker</div>
+              <select
+                className="pp-input"
+                value={selectedPetId}
+                onChange={(e) => setSelectedPetId(e.target.value)}
+              >
+                {pets.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {getCategory(p).emoji} {p.name}
+                    {p.trackingDeviceId ? ` (device #${p.trackingDeviceId})` : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
           <form className="pp-form" onSubmit={saveIdAndLoad}>
             <div>
               <label className="pp-label" htmlFor={fieldId}>
@@ -91,11 +149,20 @@ export default function Tracking() {
                 autoComplete="off"
               />
             </div>
+            {selectedPet ? (
+              <p className="pp-subtle" style={{ fontSize: 13, margin: 0 }}>
+                Saving writes this id to <strong>{selectedPet.name}</strong> so the map matches the right
+                pet.
+              </p>
+            ) : null}
             {error ? <div className="pp-error">{error}</div> : null}
             <div className="pp-row" style={{ justifyContent: 'space-between' }}>
               <button className="pp-btn pp-btnPrimary" type="submit" disabled={loading || !deviceId.trim()}>
-                {loading ? 'Refreshing…' : 'Load / refresh'}
+                {loading ? 'Refreshing…' : 'Save & load / refresh'}
               </button>
+              <Link className="pp-link" to="/pets">
+                Manage pets
+              </Link>
             </div>
           </form>
         </div>

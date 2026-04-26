@@ -598,3 +598,190 @@
   color: #101828;
 }
 
+/* —— Pets / game / community extras —— */
+.pp-levelBar {
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(16, 24, 40, 0.08);
+  overflow: hidden;
+}
+
+.pp-levelBar__fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #5b37ff, #2f80ff);
+  transition: width 0.25s ease;
+}
+
+.pp-missionGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.pp-mission {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(16, 24, 40, 0.1);
+  background: rgba(255, 255, 255, 0.65);
+}
+
+.pp-mission--done {
+  opacity: 0.75;
+  border-color: rgba(18, 183, 106, 0.35);
+}
+
+.pp-mission__label {
+  font-weight: 800;
+  font-size: 14px;
+}
+
+.pp-mission__xp {
+  font-size: 12px;
+  color: #5b37ff;
+  font-weight: 800;
+  margin-top: 2px;
+}
+
+.pp-mission__tag {
+  font-size: 12px;
+  font-weight: 800;
+  color: #12b76a;
+}
+
+.pp-microBar {
+  width: 72px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(16, 24, 40, 0.1);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.pp-microBar__fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #5b37ff, #2f80ff);
+}
+
+.pp-petAchGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+@media (max-width: 800px) {
+  .pp-petAchGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.pp-achLine {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(16, 24, 40, 0.06);
+}
+
+.pp-achLine:last-child {
+  border-bottom: 0;
+}
+
+.pp-petList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.pp-petList__item {
+  border: 1px solid rgba(16, 24, 40, 0.08);
+  border-radius: 14px;
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.pp-petList__row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pp-petList__emoji {
+  font-size: 28px;
+}
+
+.pp-petList__name {
+  font-weight: 900;
+  font-size: 16px;
+}
+
+.pp-petList__meta {
+  font-size: 13px;
+  color: #667085;
+  margin-top: 2px;
+}
+
+.pp-packList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.pp-packList__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(16, 24, 40, 0.06);
+}
+
+.pp-packList__row:last-child {
+  border-bottom: 0;
+}
+
+.pp-packList__emoji {
+  font-size: 22px;
+}
+
+.pp-packList__name {
+  font-weight: 800;
+}
+
+.pp-packList__sub {
+  font-size: 12px;
+  color: #667085;
+}
+
+.pp-community-pickPets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pp-community-petChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(16, 24, 40, 0.12);
+  background: rgba(255, 255, 255, 0.75);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.pp-community-petChip input {
+  width: 16px;
+  height: 16px;
+}
+

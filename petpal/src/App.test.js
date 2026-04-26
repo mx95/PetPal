@@ -1,6 +1,9 @@
 import { render, screen } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from './auth/AuthProvider';
+import { PetsProvider } from './pets/PetsContext';
+import { GameProvider } from './game/GameContext';
+import { CommunityProvider } from './social/CommunityContext';
 
 jest.mock('./tracking/PositionMap', () => {
   return function MockPositionMap() {
@@ -21,7 +24,13 @@ test('renders app name', () => {
   render(
     <BrowserRouter>
       <AuthProvider>
-        <App />
+        <PetsProvider>
+          <GameProvider>
+            <CommunityProvider>
+              <App />
+            </CommunityProvider>
+          </GameProvider>
+        </PetsProvider>
       </AuthProvider>
     </BrowserRouter>
   );

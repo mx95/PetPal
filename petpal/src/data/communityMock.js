@@ -1,6 +1,6 @@
 /**
- * Demo feed until Firestore (or your API) backs Community.
- * Pet-first posts: pet name + human + walk/context tags.
+ * Demo feed — structure matches `userPosts` from CommunityContext.
+ * `petNames` can be one or many; header shows owner + "with" pets.
  */
 
 export const storyRingUsers = [
@@ -14,37 +14,37 @@ export const communityPosts = [
   {
     id: 'p1',
     author: 'Alex M.',
-    petName: 'Luna',
-    petEmoji: '🐕',
+    petNames: ['Luna'],
     timeLabel: '2h',
-    caption: 'Sunrise loop at the park — Luna found three new sniff spots. 🌳',
+    caption: 'found three new sniff spots on our sunrise loop. 🌳',
     tags: ['walk', 'morning'],
     likes: 24,
     comments: 3,
     imageTint: 'linear-gradient(135deg, #ffe8f0 0%, #e8f4ff 100%)',
+    petEmoji: '🐕',
   },
   {
     id: 'p2',
     author: 'Jordan K.',
-    petName: 'Milo',
-    petEmoji: '🐶',
+    petNames: ['Milo', 'Kiwi'],
     timeLabel: '5h',
-    caption: 'Rainy day = shorter route, same tail wags. Umbrella game strong.',
+    caption: 'Rainy day = shorter route, same tail wags. Both wore me out.',
     tags: ['walk', 'rain'],
     likes: 18,
     comments: 5,
     imageTint: 'linear-gradient(135deg, #e8f0ff 0%, #f3e8ff 100%)',
+    petEmoji: '🐶',
   },
   {
     id: 'p3',
     author: 'Sam R.',
-    petName: 'Nala',
-    petEmoji: '🦮',
+    petNames: ['Nala'],
     timeLabel: '1d',
-    caption: 'First time at the new trail — marked it pet-friendly for the pack.',
+    caption: 'First time on the new trail — marked it pet-friendly for the pack.',
     tags: ['explore', 'trail'],
     likes: 41,
     comments: 12,
     imageTint: 'linear-gradient(135deg, #ecfdf3 0%, #fff7ed 100%)',
+    petEmoji: '🦮',
   },
 ];

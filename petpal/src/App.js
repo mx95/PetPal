@@ -5,6 +5,7 @@ import { useAuth } from './auth/AuthProvider';
 import Community from './Pages/Community';
 import Dashboard from './Pages/Dashboard';
 import Login from './Pages/Login';
+import MyPets from './Pages/MyPets';
 import Nearby from './Pages/Nearby';
 import Register from './Pages/Register';
 import './ui/ui.css';
@@ -21,6 +22,11 @@ function TopNav() {
         {user ? (
           <Link className="pp-link" to="/dashboard">
             Dashboard
+          </Link>
+        ) : null}
+        {user ? (
+          <Link className="pp-link" to="/pets">
+            Pets
           </Link>
         ) : null}
         {user ? (
@@ -67,6 +73,14 @@ function App() {
             element={
               <RequireAuth>
                 <Dashboard />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/pets"
+            element={
+              <RequireAuth>
+                <MyPets />
               </RequireAuth>
             }
           />
