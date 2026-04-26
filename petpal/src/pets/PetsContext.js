@@ -4,7 +4,7 @@ import { clearLegacyTraccarDeviceId, loadPetsJson, readLegacyTraccarDeviceId, sa
 import { getPetCategory } from './petCategories';
 
 /**
- * @typedef {{ id: string, name: string, categoryId: string, trackingDeviceId: string | null, createdAt: string }} Pet
+ * @typedef {{ id: string, name: string, categoryId: string, trackingDeviceId: string | null, createdAt: string, photoDataUrl?: string }} Pet
  */
 
 const PetsContext = createContext(null);
@@ -59,7 +59,7 @@ export function PetsProvider({ children }) {
   }, [uid]);
 
   const addPet = useCallback(
-    ({ name, categoryId, trackingDeviceId = null }) => {
+    ({ name, categoryId, trackingDeviceId = null, photoDataUrl = undefined }) => {
       const n = (name || '').trim();
       if (!n) return;
       const pet = {
@@ -68,6 +68,7 @@ export function PetsProvider({ children }) {
         categoryId: categoryId || 'dog',
         trackingDeviceId: trackingDeviceId && String(trackingDeviceId).trim() ? String(trackingDeviceId).trim() : null,
         createdAt: new Date().toISOString(),
+        ...(typeof photoDataUrl === 'string' && photoDataUrl.startsWith('data:') ? { photoDataUrl } : {}),
       };
       persist([...pets, pet]);
     },
@@ -77,21 +78,28 @@ export function PetsProvider({ children }) {
   const updatePet = useCallback(
     (id, patch) => {
       persist(
-        pets.map((p) =>
-          p.id === id
-            ? {
-                ...p,
-                ...patch,
-                name: patch.name != null ? String(patch.name).trim() : p.name,
-                trackingDeviceId:
-                  patch.trackingDeviceId === undefined
-                    ? p.trackingDeviceId
-                    : patch.trackingDeviceId
-                      ? String(patch.trackingDeviceId).trim()
-                      : null,
-              }
-            : p
-        )
+        pets.map((p) => {
+          if (p.id !== id) return p;
+          const next = {
+            ...p,
+            ...patch,
+            name: patch.name != null ? String(patch.name).trim() : p.name,
+            trackingDeviceId:
+              patch.trackingDeviceId === undefined
+                ? p.trackingDeviceId
+                : patch.trackingDeviceId
+                  ? String(patch.trackingDeviceId).trim()
+                  : null,
+          };
+          if (Object.prototype.hasOwnProperty.call(patch, 'photoDataUrl')) {
+            if (patch.photoDataUrl == null || patch.photoDataUrl === '') {
+              delete next.photoDataUrl;
+            } else if (typeof patch.photoDataUrl === 'string' && patch.photoDataUrl.startsWith('data:')) {
+              next.photoDataUrl = patch.photoDataUrl;
+            }
+          }
+          return next;
+        })
       );
     },
     [pets, persist]

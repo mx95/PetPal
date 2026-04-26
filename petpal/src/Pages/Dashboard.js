@@ -2,6 +2,7 @@ import React, { useId, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
 import { useGame } from '../game/GameContext';
+import PetAvatar from '../components/PetAvatar';
 import { usePets } from '../pets/PetsContext';
 import { MAX_PHOTOS_PER_WALK_SESSION } from '../walk/walkPhotos';
 import { walkStreakDays } from '../walk/walkStats';
@@ -354,7 +355,7 @@ export default function Dashboard() {
             <ul className="pp-packList">
               {pets.map((p) => (
                 <li key={p.id} className="pp-packList__row">
-                  <span className="pp-packList__emoji">{getCategory(p).emoji}</span>
+                  <PetAvatar pet={p} size={36} />
                   <div>
                     <div className="pp-packList__name">{p.name}</div>
                     <div className="pp-packList__sub">{getCategory(p).label}</div>
@@ -370,8 +371,11 @@ export default function Dashboard() {
         ? pets.map((p) => (
             <div className="pp-col-12" key={p.id}>
               <div className="pp-card pp-pad">
-                <h2 className="pp-sectionTitle">
-                  {getCategory(p).emoji} {p.name} — achievements
+                <h2 className="pp-sectionTitle" style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                  <PetAvatar pet={p} size={40} />
+                  <span>
+                    {p.name} — achievements
+                  </span>
                 </h2>
                 <p className="pp-subtle" style={{ marginBottom: 12 }}>
                   Separate tracks: live GPS vs everyday walks. Progress fills as you use PetPal.

@@ -6,6 +6,7 @@ import {
   NEARBY_CATEGORIES,
   NEARBY_SEARCH_RADIUS_M,
 } from '../config/nearbyPlaceCategories';
+import { GOOGLE_MAPS_LOADER_ID } from '../config/googleMapsLoaderId';
 
 const mapContainerStyle = { width: '100%', height: 420, borderRadius: 16 };
 const DEFAULT_CENTER = { lat: 35.173, lng: 33.364 };
@@ -45,7 +46,7 @@ function loadErrorView(err) {
 
 function NearbyMap({ apiKey }) {
   const { isLoaded, loadError } = useJsApiLoader({
-    id: 'petpal-maps',
+    id: GOOGLE_MAPS_LOADER_ID,
     googleMapsApiKey: apiKey,
     libraries: ['places'],
   });

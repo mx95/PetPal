@@ -4,9 +4,11 @@ import { useAuth } from '../auth/AuthProvider';
 import { useCompany } from '../company/CompanyContext';
 import { useGame } from '../game/GameContext';
 import { usePets } from '../pets/PetsContext';
+import PetAvatar from '../components/PetAvatar';
 import { useCommunity } from '../social/CommunityContext';
 import { WalkPostEmbed } from '../social/walkPostEmbed';
 import { communityPosts, storyRingUsers } from '../data/communityMock';
+import { fileToSmallVideoDataUrl, MAX_COMMUNITY_VIDEO_BYTES } from '../social/communityVideo';
 import { filesToResizedDataUrls } from '../walk/walkPhotos';
 
 function postKey(post) {
@@ -22,6 +24,9 @@ function PostCard({ post }) {
   const emoji = post.petEmoji || '🐾';
   const bylinePets = names.length ? `with ${names.join(', ')}` : null;
   const isCompany = post.authorKind === 'company';
+  const hasImages = post.imageUrls && post.imageUrls.length > 0;
+  const hasVideo = Boolean(post.videoUrl);
+  const hasWalk = Boolean(post.walkEmbed);
 
   return (
     <article
@@ -75,34 +80,46 @@ function PostCard({ post }) {
         </div>
       </header>
 
-      {post.imageUrls && post.imageUrls.length > 0 ? (
-        <>
-          <div
-            className={`pp-post__media pp-post__media--photos ${post.imageUrls.length > 1 ? 'pp-post__media--multi' : ''}`}
-            role="img"
-            aria-label={names[0] ? `Photos with ${names[0]}` : 'Post photos'}
-          >
-            {post.imageUrls.length === 1 ? (
-              <img src={post.imageUrls[0]} alt="" className="pp-post__img" />
-            ) : (
-              <div className="pp-post__imgGrid">
-                {post.imageUrls.map((src, i) => (
-                  <img key={i} src={src} alt="" className="pp-post__imgCell" />
-                ))}
-              </div>
-            )}
-          </div>
-          {post.walkEmbed ? (
-            <div className="pp-post__walkBlock">
-              <WalkPostEmbed walkEmbed={post.walkEmbed} compact />
+      {hasImages ? (
+        <div
+          className={`pp-post__media pp-post__media--photos ${post.imageUrls.length > 1 ? 'pp-post__media--multi' : ''}`}
+          role="img"
+          aria-label={names[0] ? `Photos with ${names[0]}` : 'Post photos'}
+        >
+          {post.imageUrls.length === 1 ? (
+            <img src={post.imageUrls[0]} alt="" className="pp-post__img" />
+          ) : (
+            <div className="pp-post__imgGrid">
+              {post.imageUrls.map((src, i) => (
+                <img key={i} src={src} alt="" className="pp-post__imgCell" />
+              ))}
             </div>
-          ) : null}
-        </>
-      ) : post.walkEmbed ? (
+          )}
+        </div>
+      ) : null}
+      {hasVideo ? (
+        <div className="pp-post__media pp-post__media--photos pp-post__media--video" style={{ width: '100%' }}>
+          <video
+            src={post.videoUrl}
+            className="pp-post__video"
+            controls
+            playsInline
+            preload="metadata"
+            aria-label={names[0] ? `Video with ${names[0]}` : 'Post video'}
+          />
+        </div>
+      ) : null}
+      {hasWalk && (hasImages || hasVideo) ? (
+        <div className="pp-post__walkBlock">
+          <WalkPostEmbed walkEmbed={post.walkEmbed} compact />
+        </div>
+      ) : null}
+      {hasWalk && !hasImages && !hasVideo ? (
         <div className="pp-post__media pp-post__media--walkOnly" role="img" aria-label="Latest walk">
           <WalkPostEmbed walkEmbed={post.walkEmbed} />
         </div>
-      ) : (
+      ) : null}
+      {!hasImages && !hasVideo && !hasWalk ? (
         <div
           className="pp-post__media"
           style={{ background: post.imageTint }}
@@ -113,7 +130,7 @@ function PostCard({ post }) {
             {isCompany ? '🏢' : '🐾'}
           </span>
         </div>
-      )}
+      ) : null}
 
       <div className="pp-post__actions">
         <button type="button" className="pp-post__action">
@@ -162,9 +179,12 @@ export default function Community() {
   const [walkStyle, setWalkStyle] = useState('map');
   const [walkForPetId, setWalkForPetId] = useState('');
   const postPhotoInputId = useId();
+  const postVideoInputId = useId();
   const postPhotoRef = useRef(null);
+  const postVideoRef = useRef(null);
   const [postPhotoBusy, setPostPhotoBusy] = useState(false);
   const [postFilesCount, setPostFilesCount] = useState(0);
+  const [postHasVideo, setPostHasVideo] = useState(false);
 
   const taggedIds = useMemo(
     () => Object.entries(picked).filter(([, on]) => on).map(([id]) => id),
@@ -176,7 +196,9 @@ export default function Community() {
       setIncludeWalk(false);
     }
     setPostFilesCount(0);
+    setPostHasVideo(false);
     if (postPhotoRef.current) postPhotoRef.current.value = '';
+    if (postVideoRef.current) postVideoRef.current.value = '';
   }, [postKind]);
 
   useEffect(() => {
@@ -205,13 +227,24 @@ export default function Community() {
       .map(([id]) => id);
     if (!businessMode && !ids.length) return;
     const text = caption.trim();
+    const videoFile = postVideoRef.current?.files?.[0];
     const files = postPhotoRef.current?.files;
     let imageUrls;
-    if (files && files.length) {
+    let videoDataUrl;
+    if (videoFile || (files && files.length)) {
       setPostPhotoBusy(true);
       try {
-        const arr = Array.from(files).slice(0, 4);
-        imageUrls = await filesToResizedDataUrls(arr);
+        if (videoFile) {
+          videoDataUrl = await fileToSmallVideoDataUrl(videoFile);
+        }
+        if (files && files.length) {
+          const maxPh = videoDataUrl ? 3 : 4;
+          const arr = Array.from(files).slice(0, maxPh);
+          imageUrls = await filesToResizedDataUrls(arr);
+        }
+      } catch (err) {
+        window.alert(err?.message || 'Could not add your media. Try a smaller file.');
+        return;
       } finally {
         setPostPhotoBusy(false);
       }
@@ -226,7 +259,7 @@ export default function Community() {
             petName: walkPet?.name,
           }
         : undefined;
-    if (!text && (!imageUrls || imageUrls.length === 0) && !walkEmbed) return;
+    if (!text && (!imageUrls || imageUrls.length === 0) && !videoDataUrl && !walkEmbed) return;
     if (businessMode) {
       addUserPost(
         caption,
@@ -240,10 +273,11 @@ export default function Community() {
           lng: companyProfile.lng,
           boosted: boostBusinessPost,
           boostPaymentPending: boostBusinessPost,
-        }
+        },
+        videoDataUrl
       );
     } else {
-      addUserPost(caption, ids, imageUrls, walkEmbed, undefined);
+      addUserPost(caption, ids, imageUrls, walkEmbed, undefined, videoDataUrl);
     }
     setCaption('');
     setPicked({});
@@ -251,18 +285,26 @@ export default function Community() {
     setWalkStyle('map');
     setWalkForPetId('');
     setPostFilesCount(0);
+    setPostHasVideo(false);
     setBoostBusinessPost(false);
     if (postPhotoRef.current) postPhotoRef.current.value = '';
+    if (postVideoRef.current) postVideoRef.current.value = '';
   }
 
   const hasPick = Object.values(picked).some(Boolean);
   const businessReady = isApprovedCompany && postKind === 'business' && companyProfile;
-  const businessCanShare = Boolean(businessReady && (Boolean(caption.trim()) || postFilesCount > 0));
+  const businessCanShare = Boolean(
+    businessReady && (Boolean(caption.trim()) || postFilesCount > 0 || postHasVideo)
+  );
   const petCanShare =
     hasPick &&
-    (Boolean(caption.trim()) || postFilesCount > 0 || (includeWalk && latestWalk && Number(latestWalk.km) > 0));
+    (Boolean(caption.trim()) ||
+      postFilesCount > 0 ||
+      postHasVideo ||
+      (includeWalk && latestWalk && Number(latestWalk.km) > 0));
   const canShare =
     businessCanShare || ((!isApprovedCompany || postKind === 'pets') && petCanShare);
+  const maxVideoLabelMb = (MAX_COMMUNITY_VIDEO_BYTES / (1024 * 1024)).toFixed(1);
 
   return (
     <div className="pp-grid">
@@ -274,7 +316,8 @@ export default function Community() {
               Sniff &amp; Share
             </h1>
             <p className="pp-subtle" style={{ marginTop: 6, maxWidth: 560 }}>
-              Post as <strong>{displayName}</strong>, tag pet(s), add photos, and optionally attach a walk card.
+              Post as <strong>{displayName}</strong>, tag pet(s), add photos or a short video, and optionally attach a
+              walk card.
               {isApprovedCompany ? (
                 <>
                   {' '}
@@ -363,6 +406,18 @@ export default function Community() {
                   />
                 </div>
                 <div>
+                  <div className="pp-label">Short video (optional, one clip, max ~{maxVideoLabelMb} MB)</div>
+                  <input
+                    id={postVideoInputId}
+                    ref={postVideoRef}
+                    className="pp-input"
+                    type="file"
+                    accept="video/*"
+                    onChange={() => setPostHasVideo(!!postVideoRef.current?.files?.[0])}
+                    style={{ fontSize: 14 }}
+                  />
+                </div>
+                <div>
                   <label className="pp-community-walkInclude">
                     <input
                       type="checkbox"
@@ -395,7 +450,7 @@ export default function Community() {
                   />
                 </div>
                 <div>
-                  <div className="pp-label">Photos (optional, up to 4)</div>
+                  <div className="pp-label">Photos (optional, up to 4, or 3 if you add a video)</div>
                   <input
                     id={postPhotoInputId}
                     ref={postPhotoRef}
@@ -409,8 +464,20 @@ export default function Community() {
                   <p className="pp-subtle" style={{ fontSize: 12, marginTop: 4, marginBottom: 0 }}>
                     {postFilesCount > 0
                       ? `${postFilesCount} image(s) selected — will be resized for storage.`
-                      : 'Add a caption, photos, or include your latest walk below.'}
+                      : 'Add a caption, photos, a short video, or include your latest walk below.'}
                   </p>
+                </div>
+                <div>
+                  <div className="pp-label">Short video (optional, one clip, max ~{maxVideoLabelMb} MB)</div>
+                  <input
+                    id={postVideoInputId}
+                    ref={postVideoRef}
+                    className="pp-input"
+                    type="file"
+                    accept="video/*"
+                    onChange={() => setPostHasVideo(!!postVideoRef.current?.files?.[0])}
+                    style={{ fontSize: 14 }}
+                  />
                 </div>
                 {pets.length > 0 ? (
                   <div>
@@ -423,8 +490,9 @@ export default function Community() {
                             checked={!!picked[p.id]}
                             onChange={() => togglePet(p.id)}
                           />
-                          <span>
-                            {getCategory(p).emoji} {p.name}
+                          <span className="pp-community-petChip__inner">
+                            <PetAvatar pet={p} size={28} className="pp-community-petChip__avatar" />
+                            {p.name}
                           </span>
                         </label>
                       ))}
@@ -545,7 +613,11 @@ export default function Community() {
               style={{ '--ring': '#5b37ff' }}
             >
               <span className="pp-story-ring__inner" aria-hidden>
-                {getCategory(p).emoji}
+                {p.photoDataUrl ? (
+                  <img src={p.photoDataUrl} alt="" className="pp-story-ring__photo" width={40} height={40} />
+                ) : (
+                  getCategory(p).emoji
+                )}
               </span>
               <span className="pp-story-ring__label">{p.name}</span>
             </button>

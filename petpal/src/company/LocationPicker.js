@@ -1,5 +1,5 @@
 import L from 'leaflet';
-import React, { useCallback, useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from 'react-leaflet';
 
 import icon2x from 'leaflet/dist/images/marker-icon-2x.png';
@@ -50,6 +50,14 @@ function FlyToSearchResult({ lat, lng, recenterSignal }) {
  * @param {{ lat: number, lng: number, onChange: (lat: number, lng: number) => void, disabled?: boolean, recenterSignal?: number }} props
  */
 export default function LocationPicker({ lat, lng, onChange, disabled, recenterSignal = 0 }) {
+  const [mapReady, setMapReady] = useState(false);
+  useEffect(() => {
+    setMapReady(true);
+  }, []);
+
+  const safeLat = Number.isFinite(Number(lat)) ? Number(lat) : defaultMapCenter.lat;
+  const safeLng = Number.isFinite(Number(lng)) ? Number(lng) : defaultMapCenter.lng;
+
   const onMarkerDrag = useCallback(
     (e) => {
       const p = e.target.getLatLng();
@@ -63,24 +71,31 @@ export default function LocationPicker({ lat, lng, onChange, disabled, recenterS
       <p className="pp-subtle" style={{ fontSize: 12, marginBottom: 8 }}>
         Search for your business, then fine-tune by dragging the pin or clicking the map.
       </p>
-      <MapContainer
-        center={[lat, lng]}
-        zoom={15}
-        scrollWheelZoom={!disabled}
-        style={{ height: 320, width: '100%' }}
-      >
-        <FlyToSearchResult lat={lat} lng={lng} recenterSignal={recenterSignal} />
-        <ClickToPlace onPick={onChange} disabled={!!disabled} />
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+      {!mapReady ? (
+        <div
+          style={{ height: 320, width: '100%', background: 'rgba(0, 0, 0, 0.04)', borderRadius: 12 }}
+          aria-hidden
         />
-        <Marker
-          position={[lat, lng]}
-          draggable={!disabled}
-          eventHandlers={{ dragend: onMarkerDrag }}
-        />
-      </MapContainer>
+      ) : (
+        <MapContainer
+          center={[safeLat, safeLng]}
+          zoom={15}
+          scrollWheelZoom={!disabled}
+          style={{ height: 320, width: '100%' }}
+        >
+          <FlyToSearchResult lat={safeLat} lng={safeLng} recenterSignal={recenterSignal} />
+          <ClickToPlace onPick={onChange} disabled={!!disabled} />
+          <TileLayer
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
+          <Marker
+            position={[safeLat, safeLng]}
+            draggable={!disabled}
+            eventHandlers={{ dragend: onMarkerDrag }}
+          />
+        </MapContainer>
+      )}
     </div>
   );
 }

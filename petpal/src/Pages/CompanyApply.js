@@ -4,7 +4,7 @@ import { useAuth } from '../auth/AuthProvider';
 import { useCompany } from '../company/CompanyContext';
 import { saveCompanyApplication } from '../company/companyFirestore';
 import LocationPicker, { defaultMapCenter } from '../company/LocationPicker';
-import { searchOsmPlaces } from '../company/placeSearch';
+import CompanyPlaceSearchField from '../company/CompanyPlaceSearchField';
 
 function mapsLink(lat, lng) {
   return `https://www.google.com/maps?q=${encodeURIComponent(`${lat},${lng}`)}`;
@@ -12,20 +12,18 @@ function mapsLink(lat, lng) {
 
 export default function CompanyApply() {
   const { user } = useAuth();
-  const { state } = useLocation();
+  const { state: locationState } = useLocation();
   const { profile, profileLoading, isApprovedCompany, isPendingCompany, isRejectedCompany, firebaseReady } = useCompany();
 
-  const [businessName, setBusinessName] = useState(() => (state && state.businessName) || '');
+  const [businessName, setBusinessName] = useState(
+    () => (locationState && typeof locationState === 'object' && locationState.businessName) || ''
+  );
   const [addressLine, setAddressLine] = useState('');
   const [publicEmail, setPublicEmail] = useState(() => (user && user.email) || '');
   const [lat, setLat] = useState(defaultMapCenter.lat);
   const [lng, setLng] = useState(defaultMapCenter.lng);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
-  const [mapSearch, setMapSearch] = useState('');
-  const [mapResults, setMapResults] = useState([]);
-  const [mapSearchBusy, setMapSearchBusy] = useState(false);
-  const [mapSearchErr, setMapSearchErr] = useState('');
   const [recenterSignal, setRecenterSignal] = useState(0);
 
   const setPos = useCallback((nextLat, nextLng) => {
@@ -33,42 +31,13 @@ export default function CompanyApply() {
     setLng(nextLng);
   }, []);
 
-  const runMapSearch = useCallback(async () => {
-    setMapSearchErr('');
-    const t = mapSearch.trim();
-    if (t.length < 2) {
-      setMapSearchErr('Type at least 2 characters.');
-      return;
-    }
-    setMapSearchBusy(true);
-    try {
-      const rows = await searchOsmPlaces(t);
-      setMapResults(rows);
-      if (rows.length === 0) {
-        setMapSearchErr('No results. Try a shorter name, add a city, or place the pin manually.');
-      }
-    } catch (e) {
-      setMapSearchErr(e?.message || 'Search failed. Try again or set the pin manually.');
-      setMapResults([]);
-    } finally {
-      setMapSearchBusy(false);
-    }
-  }, [mapSearch]);
-
-  const selectMapResult = useCallback(
-    (p) => {
-      setPos(p.lat, p.lng);
+  const onPlacePicked = useCallback(
+    (nextLat, nextLng) => {
+      setPos(nextLat, nextLng);
       setRecenterSignal((n) => n + 1);
-      setMapResults([]);
-      setMapSearchErr('');
     },
     [setPos]
   );
-
-  const fillSearchFromForm = useCallback(() => {
-    const s = [businessName, addressLine].filter(Boolean).join(' ').trim();
-    if (s) setMapSearch(s);
-  }, [businessName, addressLine]);
 
   useEffect(() => {
     if (!navigator?.geolocation) return;
@@ -84,8 +53,12 @@ export default function CompanyApply() {
     if (profile && profile.addressLine) setAddressLine(profile.addressLine);
     if (profile && profile.publicEmail) setPublicEmail(profile.publicEmail);
     if (profile && profile.lat != null && profile.lng != null) {
-      setLat(profile.lat);
-      setLng(profile.lng);
+      const plat = Number(profile.lat);
+      const plng = Number(profile.lng);
+      if (Number.isFinite(plat) && Number.isFinite(plng)) {
+        setLat(plat);
+        setLng(plng);
+      }
     }
   }, [profile]);
 
@@ -217,7 +190,7 @@ export default function CompanyApply() {
             </h1>
             <p className="pp-subtle" style={{ marginTop: 6, maxWidth: 560 }}>
               Place your real-world location. An admin must approve your listing before you can run paid boosted posts
-              in Community. OpenStreetMap is used here so no Google Maps key is required for this step.
+              in Community. With a Google Maps key we search with Google Places; otherwise search uses OpenStreetMap.
             </p>
             {isRejectedCompany && profile?.rejectionNote ? (
               <p className="pp-error" style={{ marginTop: 10 }}>
@@ -230,9 +203,9 @@ export default function CompanyApply() {
           </Link>
         </div>
 
-        <div className="pp-card pp-pad" style={{ marginTop: 18 }}>
+        <div className="pp-card pp-pad pp-companyApplyCard" style={{ marginTop: 18 }}>
           <h2 className="pp-sectionTitle">Business details &amp; pin</h2>
-          <form className="pp-form" onSubmit={onSubmit} style={{ gap: 12 }}>
+          <form className="pp-form pp-companyApplyForm" onSubmit={onSubmit} style={{ gap: 12 }}>
             <div>
               <div className="pp-label">Business or venue name</div>
               <input
@@ -264,52 +237,13 @@ export default function CompanyApply() {
                 placeholder="hello@example.com"
               />
             </div>
-            <div>
+            <div className="pp-companyMapSection">
               <div className="pp-label">Find your business on the map</div>
-              <p className="pp-subtle" style={{ fontSize: 12, marginBottom: 8 }}>
-                Search by name, street, or area (OpenStreetMap data via Photon; not every business is listed). Then adjust
-                the pin on the map if needed.
-              </p>
-              <div className="pp-companyMapSearch">
-                <div className="pp-companyMapSearch__row">
-                  <input
-                    className="pp-input"
-                    value={mapSearch}
-                    onChange={(e) => setMapSearch(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        runMapSearch();
-                      }
-                    }}
-                    placeholder="e.g. Pet shop, Makarios Limassol…"
-                    aria-label="Search for your business on the map"
-                  />
-                  <button type="button" className="pp-btn" disabled={mapSearchBusy} onClick={runMapSearch}>
-                    {mapSearchBusy ? '…' : 'Search'}
-                  </button>
-                </div>
-                <button type="button" className="pp-link" style={{ display: 'inline', padding: '4px 0', fontSize: 13 }} onClick={fillSearchFromForm}>
-                  Fill search from name and address above
-                </button>
-                {mapSearchErr ? (
-                  <p className="pp-error" style={{ marginTop: 8, marginBottom: 0 }}>
-                    {mapSearchErr}
-                  </p>
-                ) : null}
-                {mapResults.length > 0 ? (
-                  <ul className="pp-companyMapSearch__results" role="listbox" aria-label="Map search results">
-                    {mapResults.map((p, i) => (
-                      <li key={`${p.lat}-${p.lng}-${i}`}>
-                        <button type="button" className="pp-companyMapSearch__resultBtn" onClick={() => selectMapResult(p)}>
-                          <span className="pp-companyMapSearch__resultLabel">{p.label}</span>
-                          {p.type ? <span className="pp-companyMapSearch__resultType">{p.type}</span> : null}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                ) : null}
-              </div>
+              <CompanyPlaceSearchField
+                onPicked={onPlacePicked}
+                businessName={businessName}
+                addressLine={addressLine}
+              />
               <div className="pp-label" style={{ marginTop: 14 }}>Pin position</div>
               <LocationPicker lat={lat} lng={lng} onChange={setPos} recenterSignal={recenterSignal} />
               <p className="pp-subtle" style={{ fontSize: 12, marginTop: 6, marginBottom: 0 }}>

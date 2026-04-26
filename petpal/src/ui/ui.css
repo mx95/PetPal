@@ -168,32 +168,142 @@
   color: #344054;
 }
 
+.pp-badge--premium {
+  border-color: rgba(180, 120, 32, 0.45);
+  background: linear-gradient(135deg, #fff9eb 0%, #fff 100%);
+  color: #7a5209;
+}
+
+.pp-btnPremium {
+  border: 1px solid rgba(180, 120, 32, 0.45);
+  background: linear-gradient(180deg, #fff3d4 0%, #ffe6a8 100%);
+  color: #5c3d06;
+  font-weight: 800;
+  border-radius: 12px;
+  padding: 10px 18px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.pp-btnPremium:hover {
+  filter: brightness(1.02);
+}
+
+.pp-lostPetPremiumCta {
+  background: linear-gradient(180deg, rgba(255, 250, 235, 0.9) 0%, rgba(255, 255, 255, 0.95) 100%);
+}
+
+.pp-navlink--premium {
+  font-weight: 800;
+  color: #8a5a0f;
+}
+
+/* Business apply: keep search + list inside the card (no horizontal overflow) */
+.pp-companyApplyCard {
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.pp-companyApplyForm {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.pp-companyMapSection {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
 .pp-companyMapSearch {
   margin-bottom: 4px;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.pp-companyMapSearch__hint {
+  font-size: 12px;
+  line-height: 1.45;
+  margin: 0 0 8px;
+  max-width: 100%;
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
 }
 
 .pp-companyMapSearch__row {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: row;
+  flex-wrap: nowrap;
   gap: 8px;
-  align-items: center;
+  align-items: stretch;
   margin-bottom: 6px;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
 }
 
-.pp-companyMapSearch__row .pp-input {
-  flex: 1;
-  min-width: 200px;
+.pp-companyMapSearch__input {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  width: 1%;
+  box-sizing: border-box;
+}
+
+.pp-companyMapSearch__btn {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.pp-companyMapSearch__fill {
+  display: inline-block;
+  max-width: 100%;
+  padding: 4px 0;
+  font-size: 13px;
+  line-height: 1.4;
+  margin-bottom: 4px;
+  text-align: left;
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
+}
+
+.pp-companyMapSearch__err {
+  margin: 6px 0 0;
+  font-size: 13px;
+  line-height: 1.4;
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 520px) {
+  .pp-companyMapSearch__row {
+    flex-direction: column;
+    flex-wrap: wrap;
+  }
+
+  .pp-companyMapSearch__input {
+    width: 100%;
+  }
+
+  .pp-companyMapSearch__btn {
+    width: 100%;
+  }
 }
 
 .pp-companyMapSearch__results {
   list-style: none;
   margin: 10px 0 0;
   padding: 0;
-  max-height: 220px;
+  max-height: 240px;
   overflow: auto;
+  -webkit-overflow-scrolling: touch;
   border: 1px solid rgba(16, 24, 40, 0.1);
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.95);
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .pp-companyMapSearch__resultBtn {
@@ -202,6 +312,8 @@
   align-items: flex-start;
   gap: 2px;
   width: 100%;
+  min-width: 0;
+  max-width: 100%;
   text-align: left;
   border: 0;
   border-bottom: 1px solid rgba(16, 24, 40, 0.06);
@@ -210,6 +322,7 @@
   cursor: pointer;
   font: inherit;
   color: #101828;
+  box-sizing: border-box;
 }
 
 .pp-companyMapSearch__resultBtn:last-child {
@@ -224,14 +337,21 @@
   font-weight: 600;
   font-size: 14px;
   line-height: 1.35;
+  max-width: 100%;
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
 }
 
 .pp-companyMapSearch__resultType {
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.35;
   color: #667085;
+  text-transform: none;
+  letter-spacing: 0;
+  max-width: 100%;
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
 }
 
 .pp-companyMap {
@@ -308,6 +428,18 @@
   background: linear-gradient(135deg, #5b37ff 0%, #2f80ff 100%);
   color: #fff;
   border-color: rgba(255, 255, 255, 0.9);
+  padding: 0;
+  overflow: hidden;
+  font-size: 28px;
+}
+
+.pp-story-ring__photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  border: 0;
+  border-radius: 50%;
 }
 
 .pp-story-ring__label {
@@ -401,6 +533,24 @@
   padding: 0;
   border-top: 1px solid rgba(16, 24, 40, 0.06);
   border-bottom: 1px solid rgba(16, 24, 40, 0.06);
+}
+
+.pp-post__media--video {
+  max-height: none;
+  aspect-ratio: auto;
+  background: #0f1419;
+  padding: 0;
+  border-top: 1px solid rgba(16, 24, 40, 0.06);
+  border-bottom: 1px solid rgba(16, 24, 40, 0.06);
+}
+
+.pp-post__video {
+  display: block;
+  width: 100%;
+  max-height: 420px;
+  vertical-align: middle;
+  object-fit: contain;
+  background: #000;
 }
 
 .pp-post__img {
@@ -1021,6 +1171,29 @@
   margin-top: 2px;
 }
 
+.pp-petAvatar {
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 1px solid rgba(16, 24, 40, 0.1);
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.pp-petAvatar--placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  border: 1px solid rgba(16, 24, 40, 0.1);
+}
+
+.pp-petAvatar--lg {
+  width: 96px;
+  height: 96px;
+  min-width: 96px;
+  min-height: 96px;
+}
+
 .pp-packList {
   list-style: none;
   margin: 0;
@@ -1069,6 +1242,16 @@
   cursor: pointer;
   font-size: 14px;
   font-weight: 600;
+}
+
+.pp-community-petChip__inner {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pp-community-petChip__avatar {
+  flex-shrink: 0;
 }
 
 .pp-community-petChip input {

@@ -10,6 +10,7 @@ import Dashboard from './Pages/Dashboard';
 import Leaderboard from './Pages/Leaderboard';
 import Login from './Pages/Login';
 import PrivacyPolicy from './Pages/PrivacyPolicy';
+import LostPetAlerts from './Pages/LostPetAlerts';
 import MyPets from './Pages/MyPets';
 import Nearby from './Pages/Nearby';
 import Register from './Pages/Register';
@@ -37,6 +38,11 @@ function TopNav() {
         {user ? (
           <Link className="pp-link" to="/pets">
             Pets
+          </Link>
+        ) : null}
+        {user ? (
+          <Link className="pp-link pp-navlink--premium" to="/lost-pet">
+            Lost pet
           </Link>
         ) : null}
         {user ? (
@@ -125,6 +131,14 @@ function App() {
             element={
               <RequireAuth>
                 <MyPets />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/lost-pet"
+            element={
+              <RequireAuth>
+                <LostPetAlerts />
               </RequireAuth>
             }
           />

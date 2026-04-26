@@ -5,6 +5,7 @@ import { CompanyProvider } from './company/CompanyContext';
 import { PetsProvider } from './pets/PetsContext';
 import { GameProvider } from './game/GameContext';
 import { PublicWalkProvider } from './leaderboard/PublicWalkContext';
+import { LostPetProvider } from './lostPet/LostPetContext';
 import { CommunityProvider } from './social/CommunityContext';
 
 jest.mock('./tracking/PositionMap', () => {
@@ -36,13 +37,15 @@ test('renders app name', () => {
       <AuthProvider>
         <CompanyProvider>
           <PetsProvider>
-            <GameProvider>
-              <PublicWalkProvider>
-                <CommunityProvider>
-                  <App />
-                </CommunityProvider>
-              </PublicWalkProvider>
-            </GameProvider>
+            <LostPetProvider>
+              <GameProvider>
+                <PublicWalkProvider>
+                  <CommunityProvider>
+                    <App />
+                  </CommunityProvider>
+                </PublicWalkProvider>
+              </GameProvider>
+            </LostPetProvider>
           </PetsProvider>
         </CompanyProvider>
       </AuthProvider>

@@ -1,6 +1,7 @@
 /**
  * Demo feed — structure matches `userPosts` from CommunityContext.
  * `petNames` can be one or many; header shows owner + "with" pets.
+ * Real user posts may also include `imageUrls`, `videoUrl`, `walkEmbed`, company fields, etc.
  */
 
 export const storyRingUsers = [

@@ -7,6 +7,7 @@ import reportWebVitals from './reportWebVitals';
 import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from './auth/AuthProvider';
 import { CompanyProvider } from './company/CompanyContext';
+import { LostPetProvider } from './lostPet/LostPetContext';
 import { PetsProvider } from './pets/PetsContext';
 import { GameProvider } from './game/GameContext';
 // eslint-disable-next-line no-unused-vars -- used in JSX; CRA can mis-report in CI
@@ -21,13 +22,15 @@ root.render(
         <AuthProvider>
           <CompanyProvider>
             <PetsProvider>
-              <GameProvider>
-                <PublicWalkProvider>
-                  <CommunityProvider>
-                    <App />
-                  </CommunityProvider>
-                </PublicWalkProvider>
-              </GameProvider>
+              <LostPetProvider>
+                <GameProvider>
+                  <PublicWalkProvider>
+                    <CommunityProvider>
+                      <App />
+                    </CommunityProvider>
+                  </PublicWalkProvider>
+                </GameProvider>
+              </LostPetProvider>
             </PetsProvider>
           </CompanyProvider>
         </AuthProvider>
