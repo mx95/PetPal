@@ -51,15 +51,21 @@ function NearbyMap({ apiKey }) {
   });
 
   const [map, setMap] = useState(null);
-  /** Center used only for search + map “home”; not updated when picking a list row (avoids re-searching). */
+  /** Center for “Search near me” and initial map; not when picking a list row. */
   const [searchCenter, setSearchCenter] = useState(DEFAULT_CENTER);
   const [locationNote, setLocationNote] = useState(null);
   const [selectedCategoryId, setSelectedCategoryId] = useState(NEARBY_CATEGORIES[0].id);
+  /** 'radius' = around you; 'bounds' = current map window (pan/zoom out, then search). */
+  const [searchScope, setSearchScope] = useState('radius');
   const [places, setPlaces] = useState([]);
   const [searchStatus, setSearchStatus] = useState('idle');
   const [activePlace, setActivePlace] = useState(null);
 
   const selectedCategory = useMemo(() => getCategoryById(selectedCategoryId), [selectedCategoryId]);
+  const mapCenter = useMemo(
+    () => ({ lat: searchCenter.lat, lng: searchCenter.lng }),
+    [searchCenter.lat, searchCenter.lng]
+  );
 
   useEffect(() => {
     if (!navigator.geolocation) {
@@ -80,52 +86,73 @@ function NearbyMap({ apiKey }) {
     );
   }, []);
 
-  const runNearbySearch = useCallback(() => {
-    if (!map || !isLoaded || !window.google?.maps?.places) return;
-    setActivePlace(null);
-    setSearchStatus('loading');
-    setPlaces([]);
+  const runPlacesSearch = useCallback(
+    (mode) => {
+      if (!map || !isLoaded || !window.google?.maps?.places) return;
+      const scope = mode || searchScope;
+      setActivePlace(null);
+      setSearchStatus('loading');
+      setPlaces([]);
 
-    const service = new window.google.maps.places.PlacesService(map);
-    const loc = new window.google.maps.LatLng(searchCenter.lat, searchCenter.lng);
-    const cat = getCategoryById(selectedCategoryId);
+      const service = new window.google.maps.places.PlacesService(map);
+      const cat = getCategoryById(selectedCategoryId);
 
-    const request = {
-      location: loc,
-      radius: NEARBY_SEARCH_RADIUS_M,
-    };
-    if (cat.type) request.type = cat.type;
-    if (cat.keyword) request.keyword = cat.keyword;
-    if (!cat.type && !cat.keyword) request.keyword = 'pet';
+      const request = {};
+      if (cat.type) request.type = cat.type;
+      if (cat.keyword) request.keyword = cat.keyword;
+      if (!cat.type && !cat.keyword) request.keyword = 'pet';
 
-    service.nearbySearch(request, (results, status) => {
-      if (status === window.google.maps.places.PlacesServiceStatus.OK && results) {
-        setPlaces(results.slice(0, 20));
-        setSearchStatus('ok');
-        if (results[0]) {
-          const b = new window.google.maps.LatLngBounds();
-          results.forEach((p) => p.geometry?.location && b.extend(p.geometry.location));
-          if (!b.isEmpty()) {
-            try {
-              map.fitBounds(b, 48);
-            } catch {
-              // ignore
-            }
-          }
+      if (scope === 'bounds') {
+        const bounds = map.getBounds();
+        if (!bounds) {
+          setSearchStatus('error');
+          return;
         }
-        return;
+        request.bounds = bounds;
+      } else {
+        const loc = new window.google.maps.LatLng(searchCenter.lat, searchCenter.lng);
+        request.location = loc;
+        request.radius = NEARBY_SEARCH_RADIUS_M;
       }
-      if (status === window.google.maps.places.PlacesServiceStatus.ZERO_RESULTS) {
-        setSearchStatus('empty');
-        return;
-      }
-      setSearchStatus('error');
-    });
-  }, [map, isLoaded, searchCenter, selectedCategoryId]);
+
+      service.nearbySearch(request, (results, status) => {
+        if (status === window.google.maps.places.PlacesServiceStatus.OK && results) {
+          setPlaces(results.slice(0, 20));
+          setSearchStatus('ok');
+          return;
+        }
+        if (status === window.google.maps.places.PlacesServiceStatus.ZERO_RESULTS) {
+          setSearchStatus('empty');
+          return;
+        }
+        if (status === window.google.maps.places.PlacesServiceStatus.INVALID_REQUEST) {
+          setSearchStatus('invalid_area');
+          return;
+        }
+        setSearchStatus('error');
+      });
+    },
+    [map, isLoaded, searchCenter, selectedCategoryId, searchScope]
+  );
 
   useEffect(() => {
-    if (isLoaded && map) runNearbySearch();
-  }, [isLoaded, map, selectedCategoryId, searchCenter.lat, searchCenter.lng, runNearbySearch]);
+    if (isLoaded && map) runPlacesSearch();
+    // Re-run when category/location refines “near me”; not when only searchScope changes (buttons call runPlacesSearch directly).
+  }, [isLoaded, map, selectedCategoryId, searchCenter.lat, searchCenter.lng, runPlacesSearch]);
+
+  function onSearchThisArea() {
+    setSearchScope('bounds');
+    runPlacesSearch('bounds');
+  }
+
+  function onSearchNearMe() {
+    setSearchScope('radius');
+    if (map && window.google?.maps) {
+      map.panTo(new window.google.maps.LatLng(searchCenter.lat, searchCenter.lng));
+      map.setZoom(14);
+    }
+    runPlacesSearch('radius');
+  }
 
   if (loadError) {
     return loadErrorView(loadError);
@@ -143,8 +170,9 @@ function NearbyMap({ apiKey }) {
             Pet-friendly places
           </h1>
           <p className="pp-subtle" style={{ marginTop: 6, maxWidth: 640 }}>
-            Choose a category, then explore markers on the map. Data from Google Places (radius{' '}
-            {NEARBY_SEARCH_RADIUS_M / 1000} km).
+            Choose a category, then use <strong>Search this area</strong> after you pan or zoom the map
+            to load results for the whole view — or <strong>Search near me</strong> for a {NEARBY_SEARCH_RADIUS_M / 1000}{' '}
+            km search around you.
           </p>
         </div>
         <Link className="pp-link" to="/dashboard">
@@ -183,13 +211,31 @@ function NearbyMap({ apiKey }) {
       </div>
       <p className="pp-nearby-hint" style={{ marginTop: 10 }}>
         Selected: <strong>{selectedCategory.label}</strong>
+        {searchScope === 'bounds' ? (
+          <span> · Searching the visible map</span>
+        ) : (
+          <span> · Near you ({NEARBY_SEARCH_RADIUS_M / 1000} km)</span>
+        )}
       </p>
 
       <div className="pp-nearby-body">
         <div className="pp-nearby-mapWrap">
+          <div className="pp-nearby-mapActions">
+            <button type="button" className="pp-nearby-cta pp-nearby-cta--primary" onClick={onSearchThisArea}>
+              Search this area
+            </button>
+            <button
+              type="button"
+              className="pp-nearby-cta"
+              onClick={onSearchNearMe}
+              title="5 km around your location"
+            >
+              Search near me
+            </button>
+          </div>
           <GoogleMap
             mapContainerStyle={mapContainerStyle}
-            center={searchCenter}
+            center={mapCenter}
             zoom={14}
             onLoad={setMap}
             options={mapOptions}
@@ -239,6 +285,11 @@ function NearbyMap({ apiKey }) {
           <h3 className="pp-nearby-listTitle">Results</h3>
           {searchStatus === 'loading' ? <p className="pp-subtle">Searching…</p> : null}
           {searchStatus === 'empty' ? <p className="pp-subtle">No results for this category here.</p> : null}
+          {searchStatus === 'invalid_area' ? (
+            <p className="pp-error" style={{ marginBottom: 8 }}>
+              Area too large for this search. Zoom in, then use &quot;Search this area&quot; again.
+            </p>
+          ) : null}
           {searchStatus === 'error' ? (
             <p className="pp-error">Search failed. Check Places API and quotas.</p>
           ) : null}
