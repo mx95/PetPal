@@ -6,5 +6,31 @@ service cloud.firestore {
       allow read: if true;
       allow create, update, delete: if request.auth != null && request.auth.uid == userId;
     }
+
+    // Admin list: one document per admin UID (Firebase console, or scripts/add-admin.cjs + Admin SDK).
+    match /admins/{adminId} {
+      allow read: if request.auth != null && request.auth.uid == adminId;
+      allow write: if false;
+    }
+
+    // Business / venue applications: user-owned; site owner approves in app (admin doc in /admins).
+    function isAdmin() {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    match /companies/{userId} {
+      allow read: if request.auth != null
+        && (request.auth.uid == userId || isAdmin());
+      allow create: if request.auth != null && request.auth.uid == userId
+        && request.resource.data.accountType == 'company'
+        && request.resource.data.status == 'pending';
+      // Owner may resubmit after rejection, or edit while still pending. Admins can set status / reviews.
+      allow update: if isAdmin()
+        || (request.auth != null && request.auth.uid == userId
+            && request.resource.data.status == 'pending'
+            && (resource.data.status == 'pending' || resource.data.status == 'rejected'));
+      allow delete: if false;
+    }
   }
 }

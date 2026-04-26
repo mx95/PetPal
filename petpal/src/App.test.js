@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from './auth/AuthProvider';
+import { CompanyProvider } from './company/CompanyContext';
 import { PetsProvider } from './pets/PetsContext';
 import { GameProvider } from './game/GameContext';
 import { PublicWalkProvider } from './leaderboard/PublicWalkContext';
@@ -19,21 +20,31 @@ jest.mock('@react-google-maps/api', () => ({
   InfoWindow: () => null,
 }));
 
+jest.mock('./company/LocationPicker', () => ({
+  __esModule: true,
+  default: function MockLocationPicker() {
+    return <div data-testid="location-picker" />;
+  },
+  defaultMapCenter: { lat: 35.17, lng: 33.36 },
+}));
+
 import App from './App';
 
 test('renders app name', () => {
   render(
     <BrowserRouter>
       <AuthProvider>
-        <PetsProvider>
-          <GameProvider>
-            <PublicWalkProvider>
-              <CommunityProvider>
-                <App />
-              </CommunityProvider>
-            </PublicWalkProvider>
-          </GameProvider>
-        </PetsProvider>
+        <CompanyProvider>
+          <PetsProvider>
+            <GameProvider>
+              <PublicWalkProvider>
+                <CommunityProvider>
+                  <App />
+                </CommunityProvider>
+              </PublicWalkProvider>
+            </GameProvider>
+          </PetsProvider>
+        </CompanyProvider>
       </AuthProvider>
     </BrowserRouter>
   );

@@ -19,6 +19,8 @@ export default function Register() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [accountType, setAccountType] = useState(/** @type {'individual' | 'company'} */ ('individual'));
+  const [businessName, setBusinessName] = useState('');
 
   async function onSubmit(e) {
     e.preventDefault();
@@ -27,11 +29,19 @@ export default function Register() {
       setError('Please accept the Terms of service and Privacy policy to continue.');
       return;
     }
+    if (accountType === 'company' && !businessName.trim()) {
+      setError('Enter a business or venue name, or choose Individual account.');
+      return;
+    }
     setSubmitting(true);
     try {
       const cred = await createUserWithEmailAndPassword(auth, email.trim(), password);
-      const name = displayName.trim();
+      const name = accountType === 'company' ? businessName.trim() : displayName.trim();
       if (name) await updateProfile(cred.user, { displayName: name });
+      if (accountType === 'company') {
+        navigate('/company/apply', { replace: true, state: { businessName: businessName.trim() } });
+        return;
+      }
       navigate('/dashboard', { replace: true });
     } catch (err) {
       setError(humanFirebaseError(err));
@@ -54,15 +64,54 @@ export default function Register() {
 
           <form className="pp-form" onSubmit={onSubmit}>
             <div>
-              <div className="pp-label">Name (optional)</div>
-              <input
-                className="pp-input"
-                autoComplete="name"
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                placeholder="Sotiris"
-              />
+              <div className="pp-label">Account type</div>
+              <div className="pp-community-walkStyle" style={{ marginTop: 6 }} role="group" aria-label="Account type">
+                <label>
+                  <input
+                    type="radio"
+                    name="accountType"
+                    checked={accountType === 'individual'}
+                    onChange={() => setAccountType('individual')}
+                  />
+                  Pet owner
+                </label>
+                <label>
+                  <input
+                    type="radio"
+                    name="accountType"
+                    checked={accountType === 'company'}
+                    onChange={() => setAccountType('company')}
+                  />
+                  Business / venue (map listing + review)
+                </label>
+              </div>
+              <p className="pp-subtle" style={{ fontSize: 12, marginTop: 6, marginBottom: 0 }}>
+                Businesses set a real map pin; an admin must approve you before you can run paid boosted community posts.
+              </p>
             </div>
+            {accountType === 'individual' ? (
+              <div>
+                <div className="pp-label">Name (optional)</div>
+                <input
+                  className="pp-input"
+                  autoComplete="name"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  placeholder="Sotiris"
+                />
+              </div>
+            ) : (
+              <div>
+                <div className="pp-label">Business or venue name</div>
+                <input
+                  className="pp-input"
+                  autoComplete="organization"
+                  value={businessName}
+                  onChange={(e) => setBusinessName(e.target.value)}
+                  placeholder="e.g. Riverside Dog Daycare"
+                />
+              </div>
+            )}
             <div>
               <div className="pp-label">Email</div>
               <input

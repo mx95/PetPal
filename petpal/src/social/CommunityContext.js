@@ -28,14 +28,22 @@ export function CommunityProvider({ children }) {
   /**
    * @param {string} caption
    * @param {string[]} petIds
-   * @param {string[]|undefined} imageDataUrls - optional resized data URLs (e.g. from `filesToResizedDataUrls`)
+   * @param {string[]|undefined} imageDataUrls
    * @param {{ style: 'map'|'bar', km: number, createdAt: string, petName?: string } | null | undefined} walkEmbed
+   * @param {{ postAs: 'company', businessName: string, lat: number, lng: number, boosted?: boolean, boostPaymentPending?: boolean } | undefined} companyOpts
    */
   const addUserPost = useCallback(
-    (caption, petIds, imageDataUrls, walkEmbed) => {
+    (caption, petIds, imageDataUrls, walkEmbed, companyOpts) => {
       const text = (caption || '').trim();
       const images = Array.isArray(imageDataUrls) ? imageDataUrls.filter((s) => typeof s === 'string' && s.startsWith('data:')).slice(0, 4) : [];
-      if (!petIds.length) return;
+      const isCompany = Boolean(
+        companyOpts &&
+          companyOpts.postAs === 'company' &&
+          String(companyOpts.businessName || '').trim().length > 0 &&
+          Number.isFinite(Number(companyOpts.lat)) &&
+          Number.isFinite(Number(companyOpts.lng))
+      );
+      if (!isCompany && !petIds.length) return;
       const we =
         walkEmbed &&
         typeof walkEmbed === 'object' &&
@@ -49,32 +57,42 @@ export function CommunityProvider({ children }) {
             }
           : undefined;
       if (!text && images.length === 0 && !we) return;
-      const names = petIds
-        .map((id) => pets.find((p) => p.id === id))
-        .filter(Boolean)
-        .map((p) => p.name);
-      if (!names.length) return;
-      const author = user?.displayName || user?.email?.split('@')[0] || 'You';
+      let names = [];
+      if (!isCompany) {
+        names = petIds
+          .map((id) => pets.find((p) => p.id === id))
+          .filter(Boolean)
+          .map((p) => p.name);
+        if (!names.length) return;
+      }
+      const author = isCompany
+        ? String(companyOpts.businessName).trim()
+        : user?.displayName || user?.email?.split('@')[0] || 'You';
       const tints = [
         'linear-gradient(135deg, #ffe8f0 0%, #e8f4ff 100%)',
         'linear-gradient(135deg, #e8f0ff 0%, #f3e8ff 100%)',
         'linear-gradient(135deg, #ecfdf3 0%, #fff7ed 100%)',
       ];
-      const first = pets.find((p) => p.id === petIds[0]);
+      const first = !isCompany ? pets.find((p) => p.id === petIds[0]) : null;
+      const boosted = Boolean(isCompany && companyOpts.boosted);
       const post = {
         id: newPostId(),
         isUser: true,
         author,
+        authorKind: isCompany ? 'company' : 'pet_owner',
         petNames: names,
-        petIds,
-        petEmoji: categoryEmoji(first?.categoryId) || '🐾',
+        petIds: isCompany ? [] : petIds,
+        petEmoji: isCompany ? '🏢' : categoryEmoji(first?.categoryId) || '🐾',
         timeLabel: 'now',
         caption: text,
         imageUrls: images.length > 0 ? images : undefined,
         walkEmbed: we,
-        tags: ['sniffshare'],
+        tags: isCompany ? ['sniffshare', 'business'] : ['sniffshare'],
         likes: 0,
         comments: 0,
+        companyLocation: isCompany ? { lat: companyOpts.lat, lng: companyOpts.lng } : undefined,
+        boosted,
+        boostPaymentPending: boosted ? Boolean(companyOpts.boostPaymentPending) : false,
         imageTint: images.length > 0 || we ? undefined : tints[Math.floor(Math.random() * tints.length)],
       };
       setUserPosts((prev) => {

@@ -6,6 +6,7 @@ import { ErrorBoundary } from './ErrorBoundary';
 import reportWebVitals from './reportWebVitals';
 import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from './auth/AuthProvider';
+import { CompanyProvider } from './company/CompanyContext';
 import { PetsProvider } from './pets/PetsContext';
 import { GameProvider } from './game/GameContext';
 // eslint-disable-next-line no-unused-vars -- used in JSX; CRA can mis-report in CI
@@ -18,15 +19,17 @@ root.render(
     <ErrorBoundary>
       <BrowserRouter>
         <AuthProvider>
-          <PetsProvider>
-            <GameProvider>
-              <PublicWalkProvider>
-                <CommunityProvider>
-                  <App />
-                </CommunityProvider>
-              </PublicWalkProvider>
-            </GameProvider>
-          </PetsProvider>
+          <CompanyProvider>
+            <PetsProvider>
+              <GameProvider>
+                <PublicWalkProvider>
+                  <CommunityProvider>
+                    <App />
+                  </CommunityProvider>
+                </PublicWalkProvider>
+              </GameProvider>
+            </PetsProvider>
+          </CompanyProvider>
         </AuthProvider>
       </BrowserRouter>
     </ErrorBoundary>

@@ -8,7 +8,7 @@ import {
 } from '../config/nearbyPlaceCategories';
 
 const mapContainerStyle = { width: '100%', height: 420, borderRadius: 16 };
-const DEFAULT_CENTER = { lat: 51.5074, lng: -0.1278 };
+const DEFAULT_CENTER = { lat: 35.173, lng: 33.364 };
 const mapOptions = { disableDefaultUI: false, streetViewControl: false, mapTypeControl: false };
 
 function noKeyView() {

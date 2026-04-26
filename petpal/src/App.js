@@ -15,11 +15,15 @@ import Nearby from './Pages/Nearby';
 import Register from './Pages/Register';
 import TermsOfService from './Pages/TermsOfService';
 import './ui/ui.css';
+import { useCompany } from './company/CompanyContext';
+import CompanyApply from './Pages/CompanyApply';
+import AdminCompanyQueue from './Pages/AdminCompanyQueue';
 
 const Tracking = lazy(() => import('./Pages/Tracking'));
 
 function TopNav() {
   const { user } = useAuth();
+  const { isAdmin } = useCompany();
 
   return (
     <div className="pp-nav">
@@ -55,6 +59,16 @@ function TopNav() {
             Tracker
           </Link>
         ) : null}
+        {user ? (
+          <Link className="pp-link" to="/company/apply">
+            Business
+          </Link>
+        ) : null}
+        {user && isAdmin ? (
+          <Link className="pp-link" to="/admin/company-approvals">
+            Admin
+          </Link>
+        ) : null}
         {!user ? (
           <Link className="pp-link" to="/login">
             Login
@@ -79,6 +93,22 @@ function App() {
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route
+            path="/company/apply"
+            element={
+              <RequireAuth>
+                <CompanyApply />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/admin/company-approvals"
+            element={
+              <RequireAuth>
+                <AdminCompanyQueue />
+              </RequireAuth>
+            }
+          />
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<TermsOfService />} />
           <Route path="/cookies" element={<CookiePolicy />} />
