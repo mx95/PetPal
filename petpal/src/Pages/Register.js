@@ -18,10 +18,15 @@ export default function Register() {
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   async function onSubmit(e) {
     e.preventDefault();
     setError('');
+    if (!acceptedTerms) {
+      setError('Please accept the Terms of service and Privacy policy to continue.');
+      return;
+    }
     setSubmitting(true);
     try {
       const cred = await createUserWithEmailAndPassword(auth, email.trim(), password);
@@ -82,8 +87,28 @@ export default function Register() {
 
             {error ? <div className="pp-error">{error}</div> : null}
 
+            <label className="pp-legalCheck">
+              <input
+                type="checkbox"
+                checked={acceptedTerms}
+                onChange={(e) => setAcceptedTerms(e.target.checked)}
+                aria-describedby="register-legal-desc"
+              />
+              <span id="register-legal-desc">
+                I have read and agree to the{' '}
+                <Link to="/terms" className="pp-link" style={{ display: 'inline', padding: 0 }} target="_blank" rel="noopener noreferrer">
+                  Terms of service
+                </Link>{' '}
+                and{' '}
+                <Link to="/privacy" className="pp-link" style={{ display: 'inline', padding: 0 }} target="_blank" rel="noopener noreferrer">
+                  Privacy policy
+                </Link>
+                .
+              </span>
+            </label>
+
             <div className="pp-row" style={{ justifyContent: 'space-between' }}>
-              <button className="pp-btn pp-btnPrimary" disabled={submitting}>
+              <button className="pp-btn pp-btnPrimary" disabled={submitting || !acceptedTerms}>
                 {submitting ? 'Creating…' : 'Create account'}
               </button>
               <Link className="pp-link" to="/login">

@@ -1,9 +1,17 @@
 /** Daily micro-missions: small XP, once per day per mission (client-only until backend). */
 
+/** @type {Array<{ id: string, label: string, xp: number, minWalkKmToday?: number, description?: string }>} */
 export const DAILY_MISSIONS = [
   { id: 'check_in', label: 'Daily check-in', xp: 4 },
   { id: 'hydration', label: 'Water bowl refresh', xp: 5 },
   { id: 'mini_walk', label: '10-minute stroll', xp: 8 },
+  {
+    id: 'walk_5km',
+    label: '5 km walk',
+    xp: 22,
+    minWalkKmToday: 5,
+    description: 'Log at least 5 km walked today (total of what you add in “Add to today”).',
+  },
   { id: 'treat', label: 'Training / treat moment', xp: 4 },
   { id: 'play', label: 'Play or cuddle time', xp: 4 },
 ];

@@ -76,6 +76,7 @@ export function GameProvider({ children }) {
     (missionId) => {
       const m = DAILY_MISSIONS.find((x) => x.id === missionId);
       if (!m) return false;
+      let applied = false;
       persist((prev) => {
         const d = { ...prev.daily };
         const today = dayKey();
@@ -84,13 +85,18 @@ export function GameProvider({ children }) {
           d.done = [];
         }
         if (d.done.includes(missionId)) return prev;
+        if (m.minWalkKmToday != null) {
+          const dayKm = walkTotalsFromLog(prev.walkLog || {}).day;
+          if (dayKm < m.minWalkKmToday) return prev;
+        }
+        applied = true;
         return {
           ...prev,
           ownerXp: prev.ownerXp + m.xp,
           daily: { day: today, done: [...d.done, missionId] },
         };
       });
-      return true;
+      return applied;
     },
     [persist]
   );

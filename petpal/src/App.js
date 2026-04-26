@@ -2,13 +2,17 @@ import React, { Suspense, lazy } from 'react';
 import { Link, Navigate, Route, Routes } from 'react-router-dom';
 import { RequireAuth } from './auth/RequireAuth';
 import { useAuth } from './auth/AuthProvider';
+import { AppFooter } from './components/AppFooter';
 import Community from './Pages/Community';
+import CookiePolicy from './Pages/CookiePolicy';
 import Dashboard from './Pages/Dashboard';
 import Leaderboard from './Pages/Leaderboard';
 import Login from './Pages/Login';
+import PrivacyPolicy from './Pages/PrivacyPolicy';
 import MyPets from './Pages/MyPets';
 import Nearby from './Pages/Nearby';
 import Register from './Pages/Register';
+import TermsOfService from './Pages/TermsOfService';
 import './ui/ui.css';
 
 const Tracking = lazy(() => import('./Pages/Tracking'));
@@ -74,6 +78,9 @@ function App() {
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/terms" element={<TermsOfService />} />
+          <Route path="/cookies" element={<CookiePolicy />} />
           <Route
             path="/dashboard"
             element={
@@ -133,6 +140,7 @@ function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>
+      <AppFooter />
     </div>
   );
 }

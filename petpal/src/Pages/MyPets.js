@@ -1,11 +1,15 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../auth/AuthProvider';
+import { applyMockAccountSeed, hasLoadedMockBundle } from '../data/mockAccountSeed';
 import { PET_CATEGORIES } from '../pets/petCategories';
 import { usePets } from '../pets/PetsContext';
 
 export default function MyPets() {
+  const { user } = useAuth();
   const { pets, addPet, updatePet, removePet, getCategory } = usePets();
   const [name, setName] = useState('');
+  const [mockMsg, setMockMsg] = useState('');
   const [categoryId, setCategoryId] = useState('dog');
   const [editingId, setEditingId] = useState(null);
   const [editName, setEditName] = useState('');
@@ -56,6 +60,50 @@ export default function MyPets() {
           <Link className="pp-link" to="/dashboard">
             ← Dashboard
           </Link>
+        </div>
+      </div>
+
+      <div className="pp-col-12">
+        <div className="pp-card pp-pad" style={{ borderColor: 'rgba(91, 55, 255, 0.2)' }}>
+          <h2 className="pp-sectionTitle">Try sample data</h2>
+          <p className="pp-subtle" style={{ marginBottom: 10, maxWidth: 720 }}>
+            Load <strong>Bailey</strong> and <strong>Miso</strong>, demo walks/XP, and two community posts. This saves to{' '}
+            <strong>this browser</strong> only (it does not create rows in the Firebase Data tab by itself).
+          </p>
+          {!user ? (
+            <p className="pp-subtle" style={{ color: '#b42318' }}>Sign in to use sample data.</p>
+          ) : (
+            <>
+              {mockMsg ? <p className="pp-subtle" style={{ marginBottom: 10 }}>{mockMsg}</p> : null}
+              {user?.uid && hasLoadedMockBundle(user.uid) ? (
+                <p className="pp-subtle" style={{ fontSize: 12, marginBottom: 8 }}>
+                  Sample bundle was applied before. Use again if you removed Bailey/Miso and want them back.
+                </p>
+              ) : null}
+              <button
+                type="button"
+                className="pp-btn pp-btnPrimary"
+                onClick={() => {
+                  setMockMsg('');
+                  if (!user?.uid) return;
+                  const r = applyMockAccountSeed(user.uid, user);
+                  if (r.error === 'storage') {
+                    setMockMsg(
+                      'Could not save in this browser (storage blocked or full). Allow site data for localhost and try again.'
+                    );
+                    return;
+                  }
+                  if (r.alreadyHadBundle) {
+                    setMockMsg('Sample pets and posts are already loaded. Check Dashboard, Community, and the pet list on this page.');
+                    return;
+                  }
+                  window.location.reload();
+                }}
+              >
+                Load sample pets &amp; mock data
+              </button>
+            </>
+          )}
         </div>
       </div>
 

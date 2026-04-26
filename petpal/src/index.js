@@ -8,6 +8,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from './auth/AuthProvider';
 import { PetsProvider } from './pets/PetsContext';
 import { GameProvider } from './game/GameContext';
+// eslint-disable-next-line no-unused-vars -- used in JSX; CRA can mis-report in CI
 import { PublicWalkProvider } from './leaderboard/PublicWalkContext';
 import { CommunityProvider } from './social/CommunityContext';
 

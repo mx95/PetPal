@@ -112,14 +112,37 @@ export default function Dashboard() {
           <div className="pp-missionGrid">
             {DAILY_MISSIONS.map((m) => {
               const done = isDailyDone(m.id);
+              const needKm = m.minWalkKmToday;
+              const dayKm = walkTotals.day;
+              const walkMet = needKm == null || dayKm >= needKm;
               return (
                 <div key={m.id} className={`pp-mission ${done ? 'pp-mission--done' : ''}`}>
                   <div>
                     <div className="pp-mission__label">{m.label}</div>
                     <div className="pp-mission__xp">+{m.xp} XP</div>
+                    {m.description ? <div className="pp-mission__hint" style={{ marginTop: 6 }}>{m.description}</div> : null}
+                    {needKm != null && !done ? (
+                      <div className="pp-mission__hint" style={{ marginTop: 6, fontWeight: 700, color: '#101828' }}>
+                        Today: {dayKm.toFixed(1)} / {needKm} km
+                        {!walkMet ? (
+                          <span className="pp-subtle" style={{ fontWeight: 600, display: 'block', marginTop: 4 }}>
+                            Log distance in the card below — amounts add up for the day.
+                          </span>
+                        ) : null}
+                      </div>
+                    ) : null}
                   </div>
                   {done ? (
                     <span className="pp-mission__tag">Done</span>
+                  ) : needKm != null ? (
+                    <button
+                      type="button"
+                      className="pp-btn pp-btnPrimary"
+                      disabled={!walkMet}
+                      onClick={() => completeDaily(m.id)}
+                    >
+                      {walkMet ? 'Claim reward' : 'Need 5 km'}
+                    </button>
                   ) : (
                     <button type="button" className="pp-btn pp-btnPrimary" onClick={() => completeDaily(m.id)}>
                       Got it
