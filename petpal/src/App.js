@@ -1,12 +1,13 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { Link, Navigate, Route, Routes } from 'react-router-dom';
 import { RequireAuth } from './auth/RequireAuth';
 import { useAuth } from './auth/AuthProvider';
 import Dashboard from './Pages/Dashboard';
 import Login from './Pages/Login';
 import Register from './Pages/Register';
-import Tracking from './Pages/Tracking';
 import './ui/ui.css';
+
+const Tracking = lazy(() => import('./Pages/Tracking'));
 
 function TopNav() {
   const { user } = useAuth();
@@ -61,7 +62,15 @@ function App() {
             path="/tracking"
             element={
               <RequireAuth>
-                <Tracking />
+                <Suspense
+                  fallback={
+                    <div className="pp-pad" style={{ padding: 24 }}>
+                      Loading tracker…
+                    </div>
+                  }
+                >
+                  <Tracking />
+                </Suspense>
               </RequireAuth>
             }
           />
