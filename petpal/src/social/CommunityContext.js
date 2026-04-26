@@ -28,11 +28,27 @@ export function CommunityProvider({ children }) {
   /**
    * @param {string} caption
    * @param {string[]} petIds
+   * @param {string[]|undefined} imageDataUrls - optional resized data URLs (e.g. from `filesToResizedDataUrls`)
+   * @param {{ style: 'map'|'bar', km: number, createdAt: string, petName?: string } | null | undefined} walkEmbed
    */
   const addUserPost = useCallback(
-    (caption, petIds) => {
+    (caption, petIds, imageDataUrls, walkEmbed) => {
       const text = (caption || '').trim();
-      if (!text || !petIds.length) return;
+      const images = Array.isArray(imageDataUrls) ? imageDataUrls.filter((s) => typeof s === 'string' && s.startsWith('data:')).slice(0, 4) : [];
+      if (!petIds.length) return;
+      const we =
+        walkEmbed &&
+        typeof walkEmbed === 'object' &&
+        (walkEmbed.style === 'map' || walkEmbed.style === 'bar') &&
+        Number(walkEmbed.km) > 0
+          ? {
+              style: walkEmbed.style,
+              km: Math.round(Number(walkEmbed.km) * 100) / 100,
+              createdAt: String(walkEmbed.createdAt || new Date().toISOString()),
+              petName: walkEmbed.petName ? String(walkEmbed.petName).trim() : undefined,
+            }
+          : undefined;
+      if (!text && images.length === 0 && !we) return;
       const names = petIds
         .map((id) => pets.find((p) => p.id === id))
         .filter(Boolean)
@@ -54,10 +70,12 @@ export function CommunityProvider({ children }) {
         petEmoji: categoryEmoji(first?.categoryId) || '🐾',
         timeLabel: 'now',
         caption: text,
+        imageUrls: images.length > 0 ? images : undefined,
+        walkEmbed: we,
         tags: ['sniffshare'],
         likes: 0,
         comments: 0,
-        imageTint: tints[Math.floor(Math.random() * tints.length)],
+        imageTint: images.length > 0 || we ? undefined : tints[Math.floor(Math.random() * tints.length)],
       };
       setUserPosts((prev) => {
         const next = [post, ...prev];

@@ -1,9 +1,12 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
+import { useGame } from '../game/GameContext';
 import { usePets } from '../pets/PetsContext';
 import { useCommunity } from '../social/CommunityContext';
+import { WalkPostEmbed } from '../social/walkPostEmbed';
 import { communityPosts, storyRingUsers } from '../data/communityMock';
+import { filesToResizedDataUrls } from '../walk/walkPhotos';
 
 function postKey(post) {
   return post.id;
@@ -34,16 +37,45 @@ function PostCard({ post }) {
         </div>
       </header>
 
-      <div
-        className="pp-post__media"
-        style={{ background: post.imageTint }}
-        role="img"
-        aria-label={names[0] ? `Photo for ${names[0]}` : 'Post'}
-      >
-        <span className="pp-post__mediaIcon" aria-hidden>
-          🐾
-        </span>
-      </div>
+      {post.imageUrls && post.imageUrls.length > 0 ? (
+        <>
+          <div
+            className={`pp-post__media pp-post__media--photos ${post.imageUrls.length > 1 ? 'pp-post__media--multi' : ''}`}
+            role="img"
+            aria-label={names[0] ? `Photos with ${names[0]}` : 'Post photos'}
+          >
+            {post.imageUrls.length === 1 ? (
+              <img src={post.imageUrls[0]} alt="" className="pp-post__img" />
+            ) : (
+              <div className="pp-post__imgGrid">
+                {post.imageUrls.map((src, i) => (
+                  <img key={i} src={src} alt="" className="pp-post__imgCell" />
+                ))}
+              </div>
+            )}
+          </div>
+          {post.walkEmbed ? (
+            <div className="pp-post__walkBlock">
+              <WalkPostEmbed walkEmbed={post.walkEmbed} compact />
+            </div>
+          ) : null}
+        </>
+      ) : post.walkEmbed ? (
+        <div className="pp-post__media pp-post__media--walkOnly" role="img" aria-label="Latest walk">
+          <WalkPostEmbed walkEmbed={post.walkEmbed} />
+        </div>
+      ) : (
+        <div
+          className="pp-post__media"
+          style={{ background: post.imageTint }}
+          role="img"
+          aria-label={names[0] ? `Photo for ${names[0]}` : 'Post'}
+        >
+          <span className="pp-post__mediaIcon" aria-hidden>
+            🐾
+          </span>
+        </div>
+      )}
 
       <div className="pp-post__actions">
         <button type="button" className="pp-post__action">
@@ -57,9 +89,11 @@ function PostCard({ post }) {
         </button>
       </div>
 
-      <p className="pp-post__caption">
-        {post.caption}
-      </p>
+      {post.caption ? (
+        <p className="pp-post__caption">
+          {post.caption}
+        </p>
+      ) : null}
       {post.tags?.length ? (
         <div className="pp-post__tags">
           {post.tags.map((t) => (
@@ -79,9 +113,29 @@ function PostCard({ post }) {
 export default function Community() {
   const { user } = useAuth();
   const { pets, getCategory } = usePets();
+  const { latestWalk } = useGame();
   const { userPosts, addUserPost } = useCommunity();
   const [caption, setCaption] = useState('');
   const [picked, setPicked] = useState(() => ({}));
+  const [includeWalk, setIncludeWalk] = useState(false);
+  const [walkStyle, setWalkStyle] = useState('map');
+  const [walkForPetId, setWalkForPetId] = useState('');
+  const postPhotoInputId = useId();
+  const postPhotoRef = useRef(null);
+  const [postPhotoBusy, setPostPhotoBusy] = useState(false);
+  const [postFilesCount, setPostFilesCount] = useState(0);
+
+  const taggedIds = useMemo(
+    () => Object.entries(picked).filter(([, on]) => on).map(([id]) => id),
+    [picked]
+  );
+
+  useEffect(() => {
+    if (!includeWalk || !taggedIds.length) return;
+    if (!walkForPetId || !taggedIds.includes(walkForPetId)) {
+      setWalkForPetId(taggedIds[0]);
+    }
+  }, [includeWalk, taggedIds, walkForPetId]);
 
   const feed = useMemo(() => {
     const mock = communityPosts.map((m) => ({ ...m, isUser: false }));
@@ -94,18 +148,49 @@ export default function Community() {
     setPicked((p) => ({ ...p, [id]: !p[id] }));
   }
 
-  function submitPost(e) {
+  async function submitPost(e) {
     e.preventDefault();
     const ids = Object.entries(picked)
       .filter(([, on]) => on)
       .map(([id]) => id);
-    if (!caption.trim() || !ids.length) return;
-    addUserPost(caption, ids);
+    if (!ids.length) return;
+    const text = caption.trim();
+    const files = postPhotoRef.current?.files;
+    let imageUrls;
+    if (files && files.length) {
+      setPostPhotoBusy(true);
+      try {
+        const arr = Array.from(files).slice(0, 4);
+        imageUrls = await filesToResizedDataUrls(arr);
+      } finally {
+        setPostPhotoBusy(false);
+      }
+    }
+    const walkPet = pets.find((p) => p.id === walkForPetId);
+    const walkEmbed =
+      includeWalk && latestWalk && Number(latestWalk.km) > 0
+        ? {
+            style: walkStyle === 'bar' ? 'bar' : 'map',
+            km: latestWalk.km,
+            createdAt: latestWalk.createdAt,
+            petName: walkPet?.name,
+          }
+        : undefined;
+    if (!text && (!imageUrls || imageUrls.length === 0) && !walkEmbed) return;
+    addUserPost(caption, ids, imageUrls, walkEmbed);
     setCaption('');
     setPicked({});
+    setIncludeWalk(false);
+    setWalkStyle('map');
+    setWalkForPetId('');
+    setPostFilesCount(0);
+    if (postPhotoRef.current) postPhotoRef.current.value = '';
   }
 
   const hasPick = Object.values(picked).some(Boolean);
+  const canShare =
+    hasPick &&
+    (Boolean(caption.trim()) || postFilesCount > 0 || (includeWalk && latestWalk && Number(latestWalk.km) > 0));
 
   return (
     <div className="pp-grid">
@@ -117,8 +202,9 @@ export default function Community() {
               Sniff &amp; Share
             </h1>
             <p className="pp-subtle" style={{ marginTop: 6, maxWidth: 520 }}>
-              Post as <strong>{displayName}</strong> and pick which pet(s) show on the line — one or
-              more. (Posts stored on this device for now; Firestore can sync later.)
+              Post as <strong>{displayName}</strong>, tag pet(s), add up to four photos, and optionally attach your
+              latest logged walk as a map graphic or distance bar. You need a caption, photo(s), or a walk card. (Stored
+              on this device for now; Firestore can sync later.)
             </p>
           </div>
           <Link className="pp-link" to="/dashboard">
@@ -143,6 +229,24 @@ export default function Community() {
                 />
               </div>
               <div>
+                <div className="pp-label">Photos (optional, up to 4)</div>
+                <input
+                  id={postPhotoInputId}
+                  ref={postPhotoRef}
+                  className="pp-input"
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={() => setPostFilesCount(postPhotoRef.current?.files?.length || 0)}
+                  style={{ fontSize: 14 }}
+                />
+                <p className="pp-subtle" style={{ fontSize: 12, marginTop: 4, marginBottom: 0 }}>
+                  {postFilesCount > 0
+                    ? `${postFilesCount} image(s) selected — will be resized for storage.`
+                    : 'Add a caption, photos, or include your latest walk below.'}
+                </p>
+              </div>
+              <div>
                 <div className="pp-label">Tag pet(s) on this post</div>
                 <div className="pp-community-pickPets" role="group" aria-label="Pets in post">
                   {pets.map((p) => (
@@ -160,8 +264,85 @@ export default function Community() {
                 </div>
               </div>
               <div>
-                <button type="submit" className="pp-btn pp-btnPrimary" disabled={!caption.trim() || !hasPick}>
-                  Share to feed
+                <div className="pp-label">Latest walk (optional)</div>
+                <label className="pp-community-walkInclude">
+                  <input
+                    type="checkbox"
+                    checked={includeWalk}
+                    disabled={!latestWalk || Number(latestWalk.km) <= 0}
+                    onChange={(e) => {
+                      const on = e.target.checked;
+                      setIncludeWalk(on);
+                      if (on && taggedIds.length) setWalkForPetId(taggedIds[0]);
+                    }}
+                  />
+                  <span>Include latest logged walk</span>
+                </label>
+                {!latestWalk || Number(latestWalk.km) <= 0 ? (
+                  <p className="pp-subtle" style={{ fontSize: 12, marginTop: 6, marginBottom: 0 }}>
+                    Log a walk on the Dashboard first to attach it here.
+                  </p>
+                ) : (
+                  <div className="pp-community-walkOpts" style={{ marginTop: 10 }}>
+                    <div className="pp-label" style={{ fontSize: 12, marginBottom: 6 }}>
+                      Show as
+                    </div>
+                    <div className="pp-community-walkStyle" role="group" aria-label="Walk display style">
+                      <label>
+                        <input
+                          type="radio"
+                          name="walkStyle"
+                          checked={walkStyle === 'map'}
+                          disabled={!includeWalk}
+                          onChange={() => setWalkStyle('map')}
+                        />
+                        Map-style route
+                      </label>
+                      <label>
+                        <input
+                          type="radio"
+                          name="walkStyle"
+                          checked={walkStyle === 'bar'}
+                          disabled={!includeWalk}
+                          onChange={() => setWalkStyle('bar')}
+                        />
+                        Distance bar
+                      </label>
+                    </div>
+                    {includeWalk && taggedIds.length > 0 ? (
+                      <div style={{ marginTop: 10 }}>
+                        <label className="pp-label" style={{ fontSize: 12 }} htmlFor="walk-for-pet">
+                          Label walk for
+                        </label>
+                        <select
+                          id="walk-for-pet"
+                          className="pp-input"
+                          style={{ marginTop: 4, maxWidth: 280, fontSize: 14 }}
+                          value={walkForPetId}
+                          onChange={(e) => setWalkForPetId(e.target.value)}
+                        >
+                          {taggedIds.map((id) => {
+                            const p = pets.find((x) => x.id === id);
+                            if (!p) return null;
+                            return (
+                              <option key={id} value={id}>
+                                {getCategory(p).emoji} {p.name}
+                              </option>
+                            );
+                          })}
+                        </select>
+                      </div>
+                    ) : includeWalk ? (
+                      <p className="pp-subtle" style={{ fontSize: 12, marginTop: 8, marginBottom: 0 }}>
+                        Tag at least one pet to label the walk card.
+                      </p>
+                    ) : null}
+                  </div>
+                )}
+              </div>
+              <div>
+                <button type="submit" className="pp-btn pp-btnPrimary" disabled={!canShare || postPhotoBusy}>
+                  {postPhotoBusy ? 'Processing…' : 'Share to feed'}
                 </button>
               </div>
             </form>
