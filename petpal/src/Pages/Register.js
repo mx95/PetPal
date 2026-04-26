@@ -2,16 +2,18 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { auth } from '../firebase';
+import { useI18n } from '../i18n/I18nContext';
 
-function humanFirebaseError(err) {
+function humanFirebaseError(err, t) {
   const code = err?.code || '';
-  if (code === 'auth/email-already-in-use') return 'That email is already registered.';
-  if (code === 'auth/invalid-email') return 'Please enter a valid email address.';
-  if (code === 'auth/weak-password') return 'Password must be at least 6 characters.';
-  return err?.message || 'Registration failed. Please try again.';
+  if (code === 'auth/email-already-in-use') return t('auth.errors.emailInUse');
+  if (code === 'auth/invalid-email') return t('auth.errors.invalidEmail');
+  if (code === 'auth/weak-password') return t('auth.errors.weakPassword');
+  return err?.message || t('auth.errors.registerGeneric');
 }
 
 export default function Register() {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
@@ -26,11 +28,11 @@ export default function Register() {
     e.preventDefault();
     setError('');
     if (!acceptedTerms) {
-      setError('Please accept the Terms of service and Privacy policy to continue.');
+      setError(t('register.termsError'));
       return;
     }
     if (accountType === 'company' && !businessName.trim()) {
-      setError('Enter a business or venue name, or choose Individual account.');
+      setError(t('register.businessNameError'));
       return;
     }
     setSubmitting(true);
@@ -44,7 +46,7 @@ export default function Register() {
       }
       navigate('/dashboard', { replace: true });
     } catch (err) {
-      setError(humanFirebaseError(err));
+      setError(humanFirebaseError(err, t));
     } finally {
       setSubmitting(false);
     }
@@ -56,16 +58,16 @@ export default function Register() {
         <div className="pp-card pp-pad" style={{ maxWidth: 520, margin: '0 auto' }}>
           <div className="pp-badge">PetPal</div>
           <h1 className="pp-h1" style={{ marginTop: 10 }}>
-            Create your account
+            {t('register.title')}
           </h1>
           <p className="pp-subtle" style={{ marginBottom: 14 }}>
-            Start tracking walks and achievements in minutes.
+            {t('register.subtitle')}
           </p>
 
           <form className="pp-form" onSubmit={onSubmit}>
             <div>
-              <div className="pp-label">Account type</div>
-              <div className="pp-community-walkStyle" style={{ marginTop: 6 }} role="group" aria-label="Account type">
+              <div className="pp-label">{t('register.accountType')}</div>
+              <div className="pp-community-walkStyle" style={{ marginTop: 6 }} role="group" aria-label={t('register.accountType')}>
                 <label>
                   <input
                     type="radio"
@@ -73,7 +75,7 @@ export default function Register() {
                     checked={accountType === 'individual'}
                     onChange={() => setAccountType('individual')}
                   />
-                  Pet owner
+                  {t('register.accountOwner')}
                 </label>
                 <label>
                   <input
@@ -82,16 +84,16 @@ export default function Register() {
                     checked={accountType === 'company'}
                     onChange={() => setAccountType('company')}
                   />
-                  Business / venue (map listing + review)
+                  {t('register.accountBusiness')}
                 </label>
               </div>
               <p className="pp-subtle" style={{ fontSize: 12, marginTop: 6, marginBottom: 0 }}>
-                Businesses set a real map pin; an admin must approve you before you can run paid boosted community posts.
+                {t('register.businessHint')}
               </p>
             </div>
             {accountType === 'individual' ? (
               <div>
-                <div className="pp-label">Name (optional)</div>
+                <div className="pp-label">{t('register.nameOptional')}</div>
                 <input
                   className="pp-input"
                   autoComplete="name"
@@ -102,7 +104,7 @@ export default function Register() {
               </div>
             ) : (
               <div>
-                <div className="pp-label">Business or venue name</div>
+                <div className="pp-label">{t('register.businessName')}</div>
                 <input
                   className="pp-input"
                   autoComplete="organization"
@@ -113,7 +115,7 @@ export default function Register() {
               </div>
             )}
             <div>
-              <div className="pp-label">Email</div>
+              <div className="pp-label">{t('register.email')}</div>
               <input
                 className="pp-input"
                 autoComplete="email"
@@ -123,14 +125,14 @@ export default function Register() {
               />
             </div>
             <div>
-              <div className="pp-label">Password</div>
+              <div className="pp-label">{t('register.password')}</div>
               <input
                 className="pp-input"
                 type="password"
                 autoComplete="new-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="At least 6 characters"
+                placeholder={t('register.passwordPh')}
               />
             </div>
 
@@ -144,13 +146,13 @@ export default function Register() {
                 aria-describedby="register-legal-desc"
               />
               <span id="register-legal-desc">
-                I have read and agree to the{' '}
+                {t('register.readTerms')}{' '}
                 <Link to="/terms" className="pp-link" style={{ display: 'inline', padding: 0 }} target="_blank" rel="noopener noreferrer">
-                  Terms of service
+                  {t('register.terms')}
                 </Link>{' '}
-                and{' '}
+                {t('register.and')}{' '}
                 <Link to="/privacy" className="pp-link" style={{ display: 'inline', padding: 0 }} target="_blank" rel="noopener noreferrer">
-                  Privacy policy
+                  {t('register.privacy')}
                 </Link>
                 .
               </span>
@@ -158,10 +160,10 @@ export default function Register() {
 
             <div className="pp-row" style={{ justifyContent: 'space-between' }}>
               <button className="pp-btn pp-btnPrimary" disabled={submitting || !acceptedTerms}>
-                {submitting ? 'Creating…' : 'Create account'}
+                {submitting ? t('register.creating') : t('register.createAccount')}
               </button>
               <Link className="pp-link" to="/login">
-                Back to login
+                {t('register.backToLogin')}
               </Link>
             </div>
           </form>

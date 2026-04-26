@@ -19,72 +19,87 @@ import './ui/ui.css';
 import { useCompany } from './company/CompanyContext';
 import CompanyApply from './Pages/CompanyApply';
 import AdminCompanyQueue from './Pages/AdminCompanyQueue';
+import { LanguageSwitcher } from './i18n/LanguageSwitcher';
+import { useI18n } from './i18n/I18nContext';
 
 const Tracking = lazy(() => import('./Pages/Tracking'));
+
+function TrackingRouteFallback() {
+  const { t } = useI18n();
+  return (
+    <div className="pp-pad" style={{ padding: 24 }}>
+      {t('app.loadingTracker')}
+    </div>
+  );
+}
 
 function TopNav() {
   const { user } = useAuth();
   const { isAdmin } = useCompany();
+  const { t } = useI18n();
 
   return (
     <div className="pp-nav">
       <div className="pp-brand">PetPal</div>
-      <div className="pp-navlinks">
-        {user ? (
-          <Link className="pp-link" to="/dashboard">
-            Dashboard
-          </Link>
-        ) : null}
-        {user ? (
-          <Link className="pp-link" to="/pets">
-            Pets
-          </Link>
-        ) : null}
-        {user ? (
-          <Link className="pp-link pp-navlink--premium" to="/lost-pet">
-            Lost pet
-          </Link>
-        ) : null}
-        {user ? (
-          <Link className="pp-link" to="/community">
-            Community
-          </Link>
-        ) : null}
-        {user ? (
-          <Link className="pp-link" to="/leaderboard">
-            Leaderboard
-          </Link>
-        ) : null}
-        {user ? (
-          <Link className="pp-link" to="/nearby">
-            Nearby
-          </Link>
-        ) : null}
-        {user ? (
-          <Link className="pp-link" to="/tracking">
-            Tracker
-          </Link>
-        ) : null}
-        {user ? (
-          <Link className="pp-link" to="/company/apply">
-            Business
-          </Link>
-        ) : null}
-        {user && isAdmin ? (
-          <Link className="pp-link" to="/admin/company-approvals">
-            Admin
-          </Link>
-        ) : null}
-        {!user ? (
-          <Link className="pp-link" to="/login">
-            Login
-          </Link>
-        ) : null}
-        {!user ? (
-          <Link className="pp-link" to="/register">
-            Register
-          </Link>
-        ) : null}
+      <div className="pp-navRight">
+        <div className="pp-navlinks">
+          {user ? (
+            <Link className="pp-link" to="/dashboard">
+              {t('nav.dashboard')}
+            </Link>
+          ) : null}
+          {user ? (
+            <Link className="pp-link" to="/pets">
+              {t('nav.pets')}
+            </Link>
+          ) : null}
+          {user ? (
+            <Link className="pp-link pp-navlink--premium" to="/lost-pet">
+              {t('nav.lostPet')}
+            </Link>
+          ) : null}
+          {user ? (
+            <Link className="pp-link" to="/community">
+              {t('nav.community')}
+            </Link>
+          ) : null}
+          {user ? (
+            <Link className="pp-link" to="/leaderboard">
+              {t('nav.leaderboard')}
+            </Link>
+          ) : null}
+          {user ? (
+            <Link className="pp-link" to="/nearby">
+              {t('nav.nearby')}
+            </Link>
+          ) : null}
+          {user ? (
+            <Link className="pp-link" to="/tracking">
+              {t('nav.tracking')}
+            </Link>
+          ) : null}
+          {user ? (
+            <Link className="pp-link" to="/company/apply">
+              {t('nav.business')}
+            </Link>
+          ) : null}
+          {user && isAdmin ? (
+            <Link className="pp-link" to="/admin/company-approvals">
+              {t('nav.admin')}
+            </Link>
+          ) : null}
+          {!user ? (
+            <Link className="pp-link" to="/login">
+              {t('nav.login')}
+            </Link>
+          ) : null}
+          {!user ? (
+            <Link className="pp-link" to="/register">
+              {t('nav.register')}
+            </Link>
+          ) : null}
+        </div>
+        <LanguageSwitcher />
       </div>
     </div>
   );
@@ -170,13 +185,7 @@ function App() {
             path="/tracking"
             element={
               <RequireAuth>
-                <Suspense
-                  fallback={
-                    <div className="pp-pad" style={{ padding: 24 }}>
-                      Loading tracker…
-                    </div>
-                  }
-                >
+                <Suspense fallback={<TrackingRouteFallback />}>
                   <Tracking />
                 </Suspense>
               </RequireAuth>

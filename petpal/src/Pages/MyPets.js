@@ -11,12 +11,18 @@ export default function MyPets() {
   const { user } = useAuth();
   const { pets, addPet, updatePet, removePet, getCategory } = usePets();
   const [name, setName] = useState('');
+  const [colorScheme, setColorScheme] = useState('');
+  const [description, setDescription] = useState('');
+  const [age, setAge] = useState('');
   const [mockMsg, setMockMsg] = useState('');
   const [categoryId, setCategoryId] = useState('dog');
   const [editingId, setEditingId] = useState(null);
   const [editName, setEditName] = useState('');
   const [editCategoryId, setEditCategoryId] = useState('dog');
   const [editDevice, setEditDevice] = useState('');
+  const [editColorScheme, setEditColorScheme] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editAge, setEditAge] = useState('');
   const [addPhotoBusy, setAddPhotoBusy] = useState(false);
   const [editPhotoBusy, setEditPhotoBusy] = useState(false);
   const addPhotoInputId = useId();
@@ -40,8 +46,18 @@ export default function MyPets() {
         setAddPhotoBusy(false);
       }
     }
-    addPet({ name: name.trim(), categoryId, photoDataUrl });
+    addPet({
+      name: name.trim(),
+      categoryId,
+      photoDataUrl,
+      colorScheme,
+      description,
+      age,
+    });
     setName('');
+    setColorScheme('');
+    setDescription('');
+    setAge('');
     setCategoryId('dog');
     if (addPhotoRef.current) addPhotoRef.current.value = '';
   }
@@ -51,6 +67,9 @@ export default function MyPets() {
     setEditName(p.name);
     setEditCategoryId(p.categoryId);
     setEditDevice(p.trackingDeviceId || '');
+    setEditColorScheme(p.colorScheme || '');
+    setEditDescription(p.description || '');
+    setEditAge(p.age || '');
     if (editPhotoRef.current) editPhotoRef.current.value = '';
   }
 
@@ -74,6 +93,9 @@ export default function MyPets() {
       name: editName,
       categoryId: editCategoryId,
       trackingDeviceId: editDevice.trim() || null,
+      colorScheme: editColorScheme,
+      description: editDescription,
+      age: editAge,
       ...(photoPatch ? { photoDataUrl: photoPatch } : {}),
     });
     setEditingId(null);
@@ -90,10 +112,10 @@ export default function MyPets() {
               My pets
             </h1>
             <p className="pp-subtle" style={{ marginTop: 6, maxWidth: 560 }}>
-              Add every pet with a type and an optional <strong>profile photo</strong>. Only one pet can use a given
-              GPS device id on the tracker screen — pets without a device can still earn walk achievements and appear
-              in community posts. Premium <Link to="/lost-pet">lost pet alerts</Link> use your photo and details to help
-              people reach you fast.
+              Add each pet with type, optional <strong>colours / coat</strong>, <strong>age</strong>, and a short{' '}
+              <strong>description</strong>, plus an optional <strong>profile photo</strong>. One GPS device id per pet on
+              the tracker. Premium <Link to="/lost-pet">lost pet alerts</Link> use your photo and details for faster
+              contact.
             </p>
           </div>
           <Link className="pp-link" to="/dashboard">
@@ -175,6 +197,39 @@ export default function MyPets() {
               </select>
             </div>
             <div>
+              <div className="pp-label">Colour / pattern (optional)</div>
+              <input
+                className="pp-input"
+                value={colorScheme}
+                onChange={(e) => setColorScheme(e.target.value)}
+                maxLength={120}
+                placeholder="e.g. Black and tan, grey tabby"
+                autoComplete="off"
+              />
+            </div>
+            <div>
+              <div className="pp-label">Age (optional)</div>
+              <input
+                className="pp-input"
+                value={age}
+                onChange={(e) => setAge(e.target.value)}
+                maxLength={80}
+                placeholder="e.g. 3 years, 8 months, senior"
+                autoComplete="off"
+              />
+            </div>
+            <div>
+              <div className="pp-label">Description (optional)</div>
+              <textarea
+                className="pp-input"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                maxLength={2000}
+                style={{ minHeight: 72, resize: 'vertical' }}
+                placeholder="Personality, habits, medical notes to remember at a glance…"
+              />
+            </div>
+            <div>
               <div className="pp-label">Profile photo (optional)</div>
               <input
                 id={addPhotoInputId}
@@ -229,6 +284,37 @@ export default function MyPets() {
                             ))}
                           </select>
                         </div>
+                      </div>
+                      <div>
+                        <div className="pp-label">Colour / pattern (optional)</div>
+                        <input
+                          className="pp-input"
+                          value={editColorScheme}
+                          onChange={(e) => setEditColorScheme(e.target.value)}
+                          maxLength={120}
+                          placeholder="e.g. Black and tan"
+                        />
+                      </div>
+                      <div>
+                        <div className="pp-label">Age (optional)</div>
+                        <input
+                          className="pp-input"
+                          value={editAge}
+                          onChange={(e) => setEditAge(e.target.value)}
+                          maxLength={80}
+                          placeholder="e.g. 2 years"
+                        />
+                      </div>
+                      <div>
+                        <div className="pp-label">Description (optional)</div>
+                        <textarea
+                          className="pp-input"
+                          value={editDescription}
+                          onChange={(e) => setEditDescription(e.target.value)}
+                          maxLength={2000}
+                          style={{ minHeight: 72, resize: 'vertical' }}
+                          placeholder="Short notes"
+                        />
                       </div>
                       <div>
                         <div className="pp-label">Traccar device id (optional)</div>
@@ -306,6 +392,15 @@ export default function MyPets() {
                               <> · No tracker linked</>
                             )}
                           </div>
+                          {(p.age || p.colorScheme) && (
+                            <div className="pp-petList__tags">
+                              {p.age ? <span className="pp-petTag">Age: {p.age}</span> : null}
+                              {p.colorScheme ? <span className="pp-petTag">Look: {p.colorScheme}</span> : null}
+                            </div>
+                          )}
+                          {p.description ? (
+                            <p className="pp-petList__desc">{p.description}</p>
+                          ) : null}
                         </div>
                       </div>
                       <div className="pp-row" style={{ marginTop: 10, gap: 8 }}>

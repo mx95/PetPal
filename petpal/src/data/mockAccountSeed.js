@@ -29,6 +29,9 @@ function buildMockPets() {
       categoryId: 'dog',
       trackingDeviceId: 'mock-device-1001',
       createdAt: now,
+      colorScheme: 'Golden and white',
+      age: '4 years',
+      description: 'Friendly retriever mix — loves tennis balls and muddy puddles.',
     },
     {
       id: MOCK_PET_IDS.miso,
@@ -36,6 +39,9 @@ function buildMockPets() {
       categoryId: 'cat',
       trackingDeviceId: null,
       createdAt: now,
+      colorScheme: 'Grey tabby',
+      age: '2 years',
+      description: 'Indoor cat; favourite spot is the sunny windowsill.',
     },
   ];
 }

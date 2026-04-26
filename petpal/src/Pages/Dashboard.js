@@ -358,7 +358,12 @@ export default function Dashboard() {
                   <PetAvatar pet={p} size={36} />
                   <div>
                     <div className="pp-packList__name">{p.name}</div>
-                    <div className="pp-packList__sub">{getCategory(p).label}</div>
+                    <div className="pp-packList__sub">
+                      {getCategory(p).label}
+                      {p.age || p.colorScheme
+                        ? ` · ${[p.age, p.colorScheme].filter(Boolean).join(' · ')}`
+                        : ''}
+                    </div>
                   </div>
                 </li>
               ))}

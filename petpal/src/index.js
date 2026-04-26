@@ -5,6 +5,7 @@ import App from './App';
 import { ErrorBoundary } from './ErrorBoundary';
 import reportWebVitals from './reportWebVitals';
 import { BrowserRouter } from 'react-router-dom';
+import { I18nProvider } from './i18n/I18nContext';
 import { AuthProvider } from './auth/AuthProvider';
 import { CompanyProvider } from './company/CompanyContext';
 import { LostPetProvider } from './lostPet/LostPetContext';
@@ -19,6 +20,7 @@ root.render(
   <React.StrictMode>
     <ErrorBoundary>
       <BrowserRouter>
+        <I18nProvider>
         <AuthProvider>
           <CompanyProvider>
             <PetsProvider>
@@ -34,6 +36,7 @@ root.render(
             </PetsProvider>
           </CompanyProvider>
         </AuthProvider>
+        </I18nProvider>
       </BrowserRouter>
     </ErrorBoundary>
   </React.StrictMode>
