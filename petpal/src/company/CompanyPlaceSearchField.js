@@ -1,7 +1,8 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { useJsApiLoader } from '@react-google-maps/api';
 import { defaultMapCenter } from './locationDefaults';
 import { searchOsmPlaces } from './placeSearch';
+import FillFromAboveButton from './FillFromAboveButton';
 
 const mapsLib = ['places'];
 /** Must match `../config/googleMapsLoaderId` and the id used in Nearby — one script load for the whole app. */
@@ -147,6 +148,10 @@ function GooglePlaceSearch({ apiKey, onPicked, businessName, addressLine }) {
     [isLoaded, onPicked]
   );
 
+  const canFill = useMemo(
+    () => Boolean([businessName, addressLine].filter(Boolean).join(' ').trim()),
+    [businessName, addressLine]
+  );
   const fill = useCallback(() => {
     const s = [businessName, addressLine].filter(Boolean).join(' ').trim();
     if (s) setQ(s);
@@ -177,13 +182,13 @@ function GooglePlaceSearch({ apiKey, onPicked, businessName, addressLine }) {
           placeholder="Business name, street, or city in Cyprus"
           aria-label="Search for your business"
         />
-        <button type="button" className="pp-btn pp-companyMapSearch__btn" disabled={busy} onClick={run}>
-          {busy ? '…' : 'Search'}
-        </button>
+        <div className="pp-companyMapSearch__actions">
+          <button type="button" className="pp-btn pp-companyMapSearch__btn" disabled={busy} onClick={run}>
+            {busy ? '…' : 'Search'}
+          </button>
+          <FillFromAboveButton onClick={fill} disabled={!canFill} />
+        </div>
       </div>
-      <button type="button" className="pp-link pp-companyMapSearch__fill" onClick={fill}>
-        Fill from name and address above
-      </button>
       {err ? <p className="pp-error pp-companyMapSearch__err">{err}</p> : null}
       {rows.length > 0 ? (
         <ul className="pp-companyMapSearch__results" role="listbox" aria-label="Search results">
@@ -239,6 +244,10 @@ function OsmPlaceSearch({ onPicked, businessName, addressLine }) {
     }
   }, [q]);
 
+  const canFill = useMemo(
+    () => Boolean([businessName, addressLine].filter(Boolean).join(' ').trim()),
+    [businessName, addressLine]
+  );
   const fill = useCallback(() => {
     const s = [businessName, addressLine].filter(Boolean).join(' ').trim();
     if (s) setQ(s);
@@ -258,13 +267,13 @@ function OsmPlaceSearch({ onPicked, businessName, addressLine }) {
           placeholder="e.g. Pet shop, Makarios, Limassol…"
           aria-label="Search for your business on the map"
         />
-        <button type="button" className="pp-btn pp-companyMapSearch__btn" disabled={busy} onClick={run}>
-          {busy ? '…' : 'Search'}
-        </button>
+        <div className="pp-companyMapSearch__actions">
+          <button type="button" className="pp-btn pp-companyMapSearch__btn" disabled={busy} onClick={run}>
+            {busy ? '…' : 'Search'}
+          </button>
+          <FillFromAboveButton onClick={fill} disabled={!canFill} />
+        </div>
       </div>
-      <button type="button" className="pp-link pp-companyMapSearch__fill" onClick={fill}>
-        Fill from name and address above
-      </button>
       {err ? <p className="pp-error pp-companyMapSearch__err">{err}</p> : null}
       {rows.length > 0 ? (
         <ul className="pp-companyMapSearch__results" role="listbox" aria-label="Map search results">

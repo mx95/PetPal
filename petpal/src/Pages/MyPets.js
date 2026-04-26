@@ -25,6 +25,7 @@ export default function MyPets() {
   const [editAge, setEditAge] = useState('');
   const [addPhotoBusy, setAddPhotoBusy] = useState(false);
   const [editPhotoBusy, setEditPhotoBusy] = useState(false);
+  const [addPetExpanded, setAddPetExpanded] = useState(false);
   const addPhotoInputId = useId();
   const editPhotoInputId = useId();
   const addPhotoRef = useRef(null);
@@ -60,6 +61,7 @@ export default function MyPets() {
     setAge('');
     setCategoryId('dog');
     if (addPhotoRef.current) addPhotoRef.current.value = '';
+    setAddPetExpanded(false);
   }
 
   function startEdit(p) {
@@ -170,83 +172,114 @@ export default function MyPets() {
 
       <div className="pp-col-6">
         <div className="pp-card pp-pad">
-          <h2 className="pp-sectionTitle">Add a pet</h2>
-          <form className="pp-form" onSubmit={submitAdd}>
-            <div>
-              <div className="pp-label">Name</div>
-              <input
-                className="pp-input"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="e.g. Luna"
-                autoComplete="off"
-              />
-            </div>
-            <div>
-              <div className="pp-label">Category</div>
-              <select
-                className="pp-input"
-                value={categoryId}
-                onChange={(e) => setCategoryId(e.target.value)}
-              >
-                {PET_CATEGORIES.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.emoji} {c.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <div className="pp-label">Colour / pattern (optional)</div>
-              <input
-                className="pp-input"
-                value={colorScheme}
-                onChange={(e) => setColorScheme(e.target.value)}
-                maxLength={120}
-                placeholder="e.g. Black and tan, grey tabby"
-                autoComplete="off"
-              />
-            </div>
-            <div>
-              <div className="pp-label">Age (optional)</div>
-              <input
-                className="pp-input"
-                value={age}
-                onChange={(e) => setAge(e.target.value)}
-                maxLength={80}
-                placeholder="e.g. 3 years, 8 months, senior"
-                autoComplete="off"
-              />
-            </div>
-            <div>
-              <div className="pp-label">Description (optional)</div>
-              <textarea
-                className="pp-input"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                maxLength={2000}
-                style={{ minHeight: 72, resize: 'vertical' }}
-                placeholder="Personality, habits, medical notes to remember at a glance…"
-              />
-            </div>
-            <div>
-              <div className="pp-label">Profile photo (optional)</div>
-              <input
-                id={addPhotoInputId}
-                ref={addPhotoRef}
-                type="file"
-                accept="image/*"
-                className="pp-input"
-                style={{ fontSize: 14 }}
-              />
-              <p className="pp-subtle" style={{ fontSize: 12, marginTop: 4, marginBottom: 0 }}>
-                Resized to save space. Square pictures look best in the list and in Community.
+          <button
+            type="button"
+            className="pp-expandTrigger"
+            aria-expanded={addPetExpanded}
+            onClick={() => setAddPetExpanded((o) => !o)}
+            id="add-pet-expand"
+          >
+            <span className="pp-expandTrigger__icon" aria-hidden>
+              {addPetExpanded ? '−' : '+'}
+            </span>
+            <span className="pp-expandTrigger__text">
+              <span className="pp-expandTrigger__title">Add a pet</span>
+              <span className="pp-expandTrigger__desc">
+                {addPetExpanded
+                  ? 'Fill in the form below. You can collapse this section anytime.'
+                  : 'Tap to add a new profile: name, type, photo, and optional details for Community and lost-pet tools.'}
+              </span>
+            </span>
+            <span className={`pp-expandTrigger__chev ${addPetExpanded ? 'is-open' : ''}`} aria-hidden>
+              ▼
+            </span>
+          </button>
+          {addPetExpanded ? (
+            <div className="pp-expandPanel" role="region" aria-labelledby="add-pet-expand">
+              <p className="pp-subtle pp-expandIntro">
+                Add each pet with type, optional <strong>colours / coat</strong>, <strong>age</strong>, and a short{' '}
+                <strong>description</strong>, plus an optional <strong>profile photo</strong>. One GPS device id per pet
+                appears when you edit the pet below. <Link to="/lost-pet">Lost pet alerts</Link> can use this photo and
+                text.
               </p>
+              <form className="pp-form" onSubmit={submitAdd}>
+                <div>
+                  <div className="pp-label">Name</div>
+                  <input
+                    className="pp-input"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="e.g. Luna"
+                    autoComplete="off"
+                  />
+                </div>
+                <div>
+                  <div className="pp-label">Category</div>
+                  <select
+                    className="pp-input"
+                    value={categoryId}
+                    onChange={(e) => setCategoryId(e.target.value)}
+                  >
+                    {PET_CATEGORIES.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.emoji} {c.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <div className="pp-label">Colour / pattern (optional)</div>
+                  <input
+                    className="pp-input"
+                    value={colorScheme}
+                    onChange={(e) => setColorScheme(e.target.value)}
+                    maxLength={120}
+                    placeholder="e.g. Black and tan, grey tabby"
+                    autoComplete="off"
+                  />
+                </div>
+                <div>
+                  <div className="pp-label">Age (optional)</div>
+                  <input
+                    className="pp-input"
+                    value={age}
+                    onChange={(e) => setAge(e.target.value)}
+                    maxLength={80}
+                    placeholder="e.g. 3 years, 8 months, senior"
+                    autoComplete="off"
+                  />
+                </div>
+                <div>
+                  <div className="pp-label">Description (optional)</div>
+                  <textarea
+                    className="pp-input"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    maxLength={2000}
+                    style={{ minHeight: 72, resize: 'vertical' }}
+                    placeholder="Personality, habits, medical notes to remember at a glance…"
+                  />
+                </div>
+                <div>
+                  <div className="pp-label">Profile photo (optional)</div>
+                  <input
+                    id={addPhotoInputId}
+                    ref={addPhotoRef}
+                    type="file"
+                    accept="image/*"
+                    className="pp-input"
+                    style={{ fontSize: 14 }}
+                  />
+                  <p className="pp-subtle" style={{ fontSize: 12, marginTop: 4, marginBottom: 0 }}>
+                    Resized to save space. Square pictures look best in the list and in Community.
+                  </p>
+                </div>
+                <button type="submit" className="pp-btn pp-btnPrimary" disabled={!name.trim() || addPhotoBusy}>
+                  {addPhotoBusy ? 'Processing…' : 'Add pet'}
+                </button>
+              </form>
             </div>
-            <button type="submit" className="pp-btn pp-btnPrimary" disabled={!name.trim() || addPhotoBusy}>
-              {addPhotoBusy ? 'Processing…' : 'Add pet'}
-            </button>
-          </form>
+          ) : null}
         </div>
       </div>
 

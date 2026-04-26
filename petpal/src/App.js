@@ -1,5 +1,5 @@
 import React, { Suspense, lazy } from 'react';
-import { Link, Navigate, Route, Routes } from 'react-router-dom';
+import { Link, NavLink, Navigate, Route, Routes } from 'react-router-dom';
 import { RequireAuth } from './auth/RequireAuth';
 import { useAuth } from './auth/AuthProvider';
 import { AppFooter } from './components/AppFooter';
@@ -24,6 +24,10 @@ import { useI18n } from './i18n/I18nContext';
 
 const Tracking = lazy(() => import('./Pages/Tracking'));
 
+function navItemClassName(...extra) {
+  return ({ isActive }) => ['pp-link', ...extra, isActive ? 'pp-link--active' : ''].filter(Boolean).join(' ');
+}
+
 function TrackingRouteFallback() {
   const { t } = useI18n();
   return (
@@ -44,59 +48,59 @@ function TopNav() {
       <div className="pp-navRight">
         <div className="pp-navlinks">
           {user ? (
-            <Link className="pp-link" to="/dashboard">
+            <NavLink className={navItemClassName()} to="/dashboard" end>
               {t('nav.dashboard')}
-            </Link>
+            </NavLink>
           ) : null}
           {user ? (
-            <Link className="pp-link" to="/pets">
+            <NavLink className={navItemClassName()} to="/pets">
               {t('nav.pets')}
-            </Link>
+            </NavLink>
           ) : null}
           {user ? (
-            <Link className="pp-link pp-navlink--premium" to="/lost-pet">
+            <NavLink className={navItemClassName('pp-navlink--premium')} to="/lost-pet">
               {t('nav.lostPet')}
-            </Link>
+            </NavLink>
           ) : null}
           {user ? (
-            <Link className="pp-link" to="/community">
+            <NavLink className={navItemClassName()} to="/community">
               {t('nav.community')}
-            </Link>
+            </NavLink>
           ) : null}
           {user ? (
-            <Link className="pp-link" to="/leaderboard">
+            <NavLink className={navItemClassName()} to="/leaderboard">
               {t('nav.leaderboard')}
-            </Link>
+            </NavLink>
           ) : null}
           {user ? (
-            <Link className="pp-link" to="/nearby">
+            <NavLink className={navItemClassName()} to="/nearby">
               {t('nav.nearby')}
-            </Link>
+            </NavLink>
           ) : null}
           {user ? (
-            <Link className="pp-link" to="/tracking">
+            <NavLink className={navItemClassName()} to="/tracking">
               {t('nav.tracking')}
-            </Link>
+            </NavLink>
           ) : null}
           {user ? (
-            <Link className="pp-link" to="/company/apply">
+            <NavLink className={navItemClassName()} to="/company/apply">
               {t('nav.business')}
-            </Link>
+            </NavLink>
           ) : null}
           {user && isAdmin ? (
-            <Link className="pp-link" to="/admin/company-approvals">
+            <NavLink className={navItemClassName()} to="/admin/company-approvals">
               {t('nav.admin')}
-            </Link>
+            </NavLink>
           ) : null}
           {!user ? (
-            <Link className="pp-link" to="/login">
+            <NavLink className={navItemClassName()} to="/login">
               {t('nav.login')}
-            </Link>
+            </NavLink>
           ) : null}
           {!user ? (
-            <Link className="pp-link" to="/register">
+            <NavLink className={navItemClassName()} to="/register">
               {t('nav.register')}
-            </Link>
+            </NavLink>
           ) : null}
         </div>
         <LanguageSwitcher />

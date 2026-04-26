@@ -28,6 +28,7 @@ export default function LostPetAlerts() {
   const [contactPhone, setContactPhone] = useState('');
   const [formError, setFormError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [createAlertExpanded, setCreateAlertExpanded] = useState(false);
   const petSelectId = useId();
 
   const hasPets = pets.length > 0;
@@ -64,6 +65,7 @@ export default function LostPetAlerts() {
       setLastSeenLng('');
       setReward('');
       setContactPhone('');
+      setCreateAlertExpanded(false);
     } finally {
       setSubmitting(false);
     }
@@ -126,106 +128,137 @@ export default function LostPetAlerts() {
       {premiumUnlocked && hasPets ? (
         <div className="pp-col-12">
           <div className="pp-card pp-pad" style={{ maxWidth: 720 }}>
-            <h2 className="pp-sectionTitle">Create alert</h2>
-            <form className="pp-form" onSubmit={onSubmit} style={{ gap: 12 }}>
-              <div>
-                <div className="pp-label" id={`${petSelectId}-label`}>
-                  Pet
-                </div>
-                <select
-                  id={petSelectId}
-                  className="pp-input"
-                  aria-labelledby={`${petSelectId}-label`}
-                  value={petId}
-                  onChange={(e) => setPetId(e.target.value)}
-                >
-                  <option value="">Select…</option>
-                  {sortedPets.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {getCategory(p).emoji} {p.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <div className="pp-label">Description (what helps people recognize your pet?)</div>
-                <textarea
-                  className="pp-input"
-                  style={{ minHeight: 100, resize: 'vertical' }}
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  required
-                  maxLength={2000}
-                  placeholder="Breed, size, collar, behaviour…"
-                />
-              </div>
-              <div>
-                <div className="pp-label">Last place / time seen</div>
-                <textarea
-                  className="pp-input"
-                  style={{ minHeight: 72, resize: 'vertical' }}
-                  value={lastSeenText}
-                  onChange={(e) => setLastSeenText(e.target.value)}
-                  required
-                  maxLength={1000}
-                  placeholder="e.g. This morning, near the north gate of the park on …"
-                />
-              </div>
-              <div className="pp-row" style={{ flexWrap: 'wrap', gap: 12, alignItems: 'flex-end' }}>
-                <div style={{ flex: '1 1 140px' }}>
-                  <div className="pp-label">Latitude (optional, maps link)</div>
-                  <input
-                    className="pp-input"
-                    value={lastSeenLat}
-                    onChange={(e) => setLastSeenLat(e.target.value)}
-                    placeholder="e.g. 35.173"
-                    inputMode="decimal"
-                    autoComplete="off"
-                  />
-                </div>
-                <div style={{ flex: '1 1 140px' }}>
-                  <div className="pp-label">Longitude (optional)</div>
-                  <input
-                    className="pp-input"
-                    value={lastSeenLng}
-                    onChange={(e) => setLastSeenLng(e.target.value)}
-                    placeholder="e.g. 33.364"
-                    inputMode="decimal"
-                    autoComplete="off"
-                  />
-                </div>
-              </div>
-              <div>
-                <div className="pp-label">Reward (optional)</div>
-                <input
-                  className="pp-input"
-                  value={reward}
-                  onChange={(e) => setReward(e.target.value)}
-                  maxLength={200}
-                  placeholder="e.g. €50 thank-you for safe return"
-                />
-              </div>
-              <div>
-                <div className="pp-label">Contact phone (optional — public on this device)</div>
-                <input
-                  className="pp-input"
-                  type="tel"
-                  value={contactPhone}
-                  onChange={(e) => setContactPhone(e.target.value)}
-                  maxLength={40}
-                  placeholder="+357 …"
-                />
-                <p className="pp-subtle" style={{ fontSize: 12, marginTop: 4, marginBottom: 0 }}>
-                  Only add a number you are comfortable sharing. Shown on your alert for quick calls.
+            <button
+              type="button"
+              className="pp-expandTrigger"
+              aria-expanded={createAlertExpanded}
+              onClick={() => setCreateAlertExpanded((o) => !o)}
+              id="create-alert-expand"
+            >
+              <span className="pp-expandTrigger__icon" aria-hidden>
+                {createAlertExpanded ? '−' : '+'}
+              </span>
+              <span className="pp-expandTrigger__text">
+                <span className="pp-expandTrigger__title">Create alert</span>
+                <span className="pp-expandTrigger__desc">
+                  {createAlertExpanded
+                    ? 'Fill in the form below. Tap the header to collapse.'
+                    : 'Open to start a lost-pet alert: pick a pet, describe them, where they were last seen, and optional map pin, reward, and phone.'}
+                </span>
+              </span>
+              <span className={`pp-expandTrigger__chev ${createAlertExpanded ? 'is-open' : ''}`} aria-hidden>
+                ▼
+              </span>
+            </button>
+            {createAlertExpanded ? (
+              <div className="pp-expandPanel" role="region" aria-labelledby="create-alert-expand">
+                <p className="pp-subtle pp-expandIntro">
+                  Urgent, structured help to get your pet home: a clear <strong>description</strong> and <strong>last
+                  seen</strong> details (required), plus optional <strong>coordinates</strong> for a map link,{' '}
+                  <strong>reward</strong>, and <strong>phone</strong> for one-tap contact on this device. Your pet’s photo
+                  comes from <Link to="/pets">My pets</Link> if you added one.
                 </p>
+                <form className="pp-form" onSubmit={onSubmit} style={{ gap: 12 }}>
+                  <div>
+                    <div className="pp-label" id={`${petSelectId}-label`}>
+                      Pet
+                    </div>
+                    <select
+                      id={petSelectId}
+                      className="pp-input"
+                      aria-labelledby={`${petSelectId}-label`}
+                      value={petId}
+                      onChange={(e) => setPetId(e.target.value)}
+                    >
+                      <option value="">Select…</option>
+                      {sortedPets.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {getCategory(p).emoji} {p.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <div className="pp-label">Description (what helps people recognize your pet?)</div>
+                    <textarea
+                      className="pp-input"
+                      style={{ minHeight: 100, resize: 'vertical' }}
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      required
+                      maxLength={2000}
+                      placeholder="Breed, size, collar, behaviour…"
+                    />
+                  </div>
+                  <div>
+                    <div className="pp-label">Last place / time seen</div>
+                    <textarea
+                      className="pp-input"
+                      style={{ minHeight: 72, resize: 'vertical' }}
+                      value={lastSeenText}
+                      onChange={(e) => setLastSeenText(e.target.value)}
+                      required
+                      maxLength={1000}
+                      placeholder="e.g. This morning, near the north gate of the park on …"
+                    />
+                  </div>
+                  <div className="pp-row" style={{ flexWrap: 'wrap', gap: 12, alignItems: 'flex-end' }}>
+                    <div style={{ flex: '1 1 140px' }}>
+                      <div className="pp-label">Latitude (optional, maps link)</div>
+                      <input
+                        className="pp-input"
+                        value={lastSeenLat}
+                        onChange={(e) => setLastSeenLat(e.target.value)}
+                        placeholder="e.g. 35.173"
+                        inputMode="decimal"
+                        autoComplete="off"
+                      />
+                    </div>
+                    <div style={{ flex: '1 1 140px' }}>
+                      <div className="pp-label">Longitude (optional)</div>
+                      <input
+                        className="pp-input"
+                        value={lastSeenLng}
+                        onChange={(e) => setLastSeenLng(e.target.value)}
+                        placeholder="e.g. 33.364"
+                        inputMode="decimal"
+                        autoComplete="off"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <div className="pp-label">Reward (optional)</div>
+                    <input
+                      className="pp-input"
+                      value={reward}
+                      onChange={(e) => setReward(e.target.value)}
+                      maxLength={200}
+                      placeholder="e.g. €50 thank-you for safe return"
+                    />
+                  </div>
+                  <div>
+                    <div className="pp-label">Contact phone (optional — public on this device)</div>
+                    <input
+                      className="pp-input"
+                      type="tel"
+                      value={contactPhone}
+                      onChange={(e) => setContactPhone(e.target.value)}
+                      maxLength={40}
+                      placeholder="+357 …"
+                    />
+                    <p className="pp-subtle" style={{ fontSize: 12, marginTop: 4, marginBottom: 0 }}>
+                      Only add a number you are comfortable sharing. Shown on your alert for quick calls.
+                    </p>
+                  </div>
+                  {formError ? <div className="pp-error">{formError}</div> : null}
+                  <div>
+                    <button type="submit" className="pp-btn pp-btnPrimary" disabled={submitting || !petId}>
+                      {submitting ? 'Saving…' : 'Publish alert'}
+                    </button>
+                  </div>
+                </form>
               </div>
-              {formError ? <div className="pp-error">{formError}</div> : null}
-              <div>
-                <button type="submit" className="pp-btn pp-btnPrimary" disabled={submitting || !petId}>
-                  {submitting ? 'Saving…' : 'Publish alert'}
-                </button>
-              </div>
-            </form>
+            ) : null}
           </div>
         </div>
       ) : null}

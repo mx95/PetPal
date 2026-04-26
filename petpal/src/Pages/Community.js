@@ -185,6 +185,7 @@ export default function Community() {
   const [postPhotoBusy, setPostPhotoBusy] = useState(false);
   const [postFilesCount, setPostFilesCount] = useState(0);
   const [postHasVideo, setPostHasVideo] = useState(false);
+  const [newPostExpanded, setNewPostExpanded] = useState(false);
 
   const taggedIds = useMemo(
     () => Object.entries(picked).filter(([, on]) => on).map(([id]) => id),
@@ -289,6 +290,7 @@ export default function Community() {
     setBoostBusinessPost(false);
     if (postPhotoRef.current) postPhotoRef.current.value = '';
     if (postVideoRef.current) postVideoRef.current.value = '';
+    setNewPostExpanded(false);
   }
 
   const hasPick = Object.values(picked).some(Boolean);
@@ -338,7 +340,35 @@ export default function Community() {
       {pets.length > 0 || isApprovedCompany ? (
         <div className="pp-col-12">
           <div className="pp-card pp-pad">
-            <h2 className="pp-sectionTitle">New post</h2>
+            <button
+              type="button"
+              className="pp-expandTrigger"
+              aria-expanded={newPostExpanded}
+              onClick={() => setNewPostExpanded((o) => !o)}
+              id="new-post-expand"
+            >
+              <span className="pp-expandTrigger__icon" aria-hidden>
+                {newPostExpanded ? '−' : '+'}
+              </span>
+              <span className="pp-expandTrigger__text">
+                <span className="pp-expandTrigger__title">New post</span>
+                <span className="pp-expandTrigger__desc">
+                  {newPostExpanded
+                    ? 'Compose your update below. Tap the header to collapse.'
+                    : 'Open to add a caption, photos or video, tag pets, and optionally attach your latest walk card.'}
+                </span>
+              </span>
+              <span className={`pp-expandTrigger__chev ${newPostExpanded ? 'is-open' : ''}`} aria-hidden>
+                ▼
+              </span>
+            </button>
+            {newPostExpanded ? (
+              <div className="pp-expandPanel" role="region" aria-labelledby="new-post-expand">
+                <p className="pp-subtle pp-expandIntro">
+                  Post as <strong>{displayName}</strong> — tag one or more pets, add media, and optionally include your
+                  latest logged walk. Approved businesses can switch to a business post with map pin and optional boost
+                  request.
+                </p>
             {isApprovedCompany && companyProfile ? (
               <div style={{ marginBottom: 12 }}>
                 <div className="pp-label" style={{ marginBottom: 6 }}>
@@ -585,6 +615,8 @@ export default function Community() {
                 </div>
               </form>
             )}
+              </div>
+            ) : null}
           </div>
         </div>
       ) : (
