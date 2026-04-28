@@ -1,5 +1,5 @@
 import React, { Suspense, lazy } from 'react';
-import { Link, NavLink, Navigate, Route, Routes } from 'react-router-dom';
+import { NavLink, Navigate, Route, Routes } from 'react-router-dom';
 import { RequireAuth } from './auth/RequireAuth';
 import { useAuth } from './auth/AuthProvider';
 import { AppFooter } from './components/AppFooter';
@@ -11,10 +11,12 @@ import Leaderboard from './Pages/Leaderboard';
 import Login from './Pages/Login';
 import PrivacyPolicy from './Pages/PrivacyPolicy';
 import LostPetAlerts from './Pages/LostPetAlerts';
+import StrayAdoption from './Pages/StrayAdoption';
 import MyPets from './Pages/MyPets';
 import Nearby from './Pages/Nearby';
 import Register from './Pages/Register';
 import TermsOfService from './Pages/TermsOfService';
+import Documentation from './Pages/Documentation';
 import './ui/ui.css';
 import { useCompany } from './company/CompanyContext';
 import CompanyApply from './Pages/CompanyApply';
@@ -63,6 +65,11 @@ function TopNav() {
             </NavLink>
           ) : null}
           {user ? (
+            <NavLink className={navItemClassName()} to="/stray-adoption">
+              {t('nav.strayAdoption')}
+            </NavLink>
+          ) : null}
+          {user ? (
             <NavLink className={navItemClassName()} to="/community">
               {t('nav.community')}
             </NavLink>
@@ -92,6 +99,9 @@ function TopNav() {
               {t('nav.admin')}
             </NavLink>
           ) : null}
+          <NavLink className={navItemClassName()} to="/docs">
+            {t('nav.docs')}
+          </NavLink>
           {!user ? (
             <NavLink className={navItemClassName()} to="/login">
               {t('nav.login')}
@@ -137,6 +147,7 @@ function App() {
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<TermsOfService />} />
           <Route path="/cookies" element={<CookiePolicy />} />
+          <Route path="/docs" element={<Documentation />} />
           <Route
             path="/dashboard"
             element={
@@ -158,6 +169,14 @@ function App() {
             element={
               <RequireAuth>
                 <LostPetAlerts />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/stray-adoption"
+            element={
+              <RequireAuth>
+                <StrayAdoption />
               </RequireAuth>
             }
           />

@@ -1747,6 +1747,56 @@ select.pp-input:focus {
   margin: 0 auto;
 }
 
+/* In-app documentation (/docs) */
+.pp-docsPage .pp-docsToc {
+  margin-bottom: 24px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(16, 24, 40, 0.08);
+  background: rgba(91, 55, 255, 0.06);
+}
+
+.pp-docsToc__title {
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #475467;
+  margin-bottom: 8px;
+}
+
+.pp-docsToc__list {
+  margin: 0;
+  padding-left: 1.15rem;
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.pp-docsPre {
+  margin: 10px 0 14px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #0f172a;
+  color: #e2e8f0;
+  font-size: 12px;
+  line-height: 1.45;
+  overflow-x: auto;
+  border: 1px solid rgba(16, 24, 40, 0.15);
+}
+
+.pp-docsCode {
+  font-size: 13px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: rgba(16, 24, 40, 0.06);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New',
+    monospace;
+}
+
+.pp-docsPage .pp-legalBody section[id] {
+  scroll-margin-top: 72px;
+}
+
 .pp-legalDisclaimer {
   font-size: 13px;
   color: #667085;

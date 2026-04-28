@@ -1,6 +1,7 @@
 import React, { useId, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
+import { useI18n } from '../i18n/I18nContext';
 import { useGame } from '../game/GameContext';
 import PetAvatar from '../components/PetAvatar';
 import { usePets } from '../pets/PetsContext';
@@ -21,6 +22,7 @@ function ProgressMicro({ value01 }) {
 }
 
 export default function Dashboard() {
+  const { t } = useI18n();
   const { user, signOut } = useAuth();
   const { pets, getCategory } = usePets();
   const {
@@ -118,6 +120,9 @@ export default function Dashboard() {
               </Link>
               <Link className="pp-btn" to="/tracking" style={{ textDecoration: 'none' }}>
                 Live tracker
+              </Link>
+              <Link className="pp-btn" to="/stray-adoption" style={{ textDecoration: 'none' }}>
+                {t('nav.strayAdoption')}
               </Link>
               <button className="pp-btn" onClick={signOut}>
                 Log out
