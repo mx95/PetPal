@@ -469,7 +469,7 @@ select.pp-input:focus {
   background: linear-gradient(180deg, rgba(255, 250, 235, 0.9) 0%, rgba(255, 255, 255, 0.95) 100%);
 }
 
-/* Lost pet: gold accent when not selected; same purple active pill as other nav tabs when on /lost-pet */
+/* Lost pet Premium tab: gold accent when not selected; purple active pill matches other nav entries under /premium */
 .pp-link.pp-navlink--premium:not(.pp-link--active) {
   font-weight: 800;
   color: #8a5a0f;
@@ -2024,5 +2024,123 @@ select.pp-input:focus {
 
 .pp-cookieBanner .pp-btnPrimary:hover {
   background: #4a2ee0;
+}
+
+/* —— Home overview + nav profile —— */
+.pp-navBrandColumn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.pp-navProfileRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: #475467;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 2px 0;
+  border-radius: 8px;
+  line-height: 1.2;
+}
+
+.pp-navProfileRow:hover {
+  color: #5b37ff;
+}
+
+.pp-navProfileCircle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #e4e7ec 0%, #d0d5dd 100%);
+  border: 1px solid rgba(16, 24, 40, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #98a2b3;
+  flex-shrink: 0;
+}
+
+.pp-navProfileLabel {
+  white-space: nowrap;
+}
+
+.pp-homeGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.pp-homeTile {
+  border: 1px solid rgba(16, 24, 40, 0.1);
+  border-radius: 12px;
+  padding: 14px 10px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: inherit;
+  background: rgba(255, 255, 255, 0.72);
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.12s ease;
+  min-height: 120px;
+  justify-content: flex-start;
+}
+
+.pp-homeTile:hover {
+  border-color: rgba(91, 55, 255, 0.28);
+  box-shadow: 0 6px 20px rgba(16, 24, 40, 0.08);
+  transform: translateY(-1px);
+}
+
+.pp-homeTile--locked {
+  opacity: 0.82;
+}
+
+.pp-homeTile__iconWrap {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #f2f4f7 0%, #e4e7ec 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #667085;
+}
+
+.pp-homeTile__iconSvg {
+  display: block;
+}
+
+.pp-homeTile__title {
+  font-weight: 700;
+  font-size: 13px;
+  line-height: 1.25;
+  color: #101828;
+}
+
+.pp-homeTile__hint {
+  font-size: 11px;
+  color: #98a2b3;
+  line-height: 1.2;
+}
+
+.pp-profileLinkRow {
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.pp-profileLinkRow:hover {
+  border-color: rgba(91, 55, 255, 0.25) !important;
+  box-shadow: 0 4px 16px rgba(16, 24, 40, 0.06);
 }
 

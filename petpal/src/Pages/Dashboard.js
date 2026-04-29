@@ -121,8 +121,8 @@ export default function Dashboard() {
               <Link className="pp-btn" to="/tracking" style={{ textDecoration: 'none' }}>
                 Live tracker
               </Link>
-              <Link className="pp-btn" to="/stray-adoption" style={{ textDecoration: 'none' }}>
-                {t('nav.strayAdoption')}
+              <Link className="pp-btn" to="/premium/lost" style={{ textDecoration: 'none' }}>
+                {t('nav.premium')}
               </Link>
               <button className="pp-btn" onClick={signOut}>
                 Log out

@@ -116,7 +116,7 @@ export default function MyPets() {
             <p className="pp-subtle" style={{ marginTop: 6, maxWidth: 560 }}>
               Add each pet with type, optional <strong>colours / coat</strong>, <strong>age</strong>, and a short{' '}
               <strong>description</strong>, plus an optional <strong>profile photo</strong>. One GPS device id per pet on
-              the tracker. Premium <Link to="/lost-pet">lost pet alerts</Link> use your photo and details for faster
+              the tracker. Premium <Link to="/premium/lost">lost pet alerts</Link> use your photo and details for faster
               contact.
             </p>
           </div>
@@ -187,7 +187,7 @@ export default function MyPets() {
               <span className="pp-expandTrigger__desc">
                 {addPetExpanded
                   ? 'Fill in the form below. You can collapse this section anytime.'
-                  : 'Tap to add a new profile: name, type, photo, and optional details for Community and lost-pet tools.'}
+                  : 'Tap to add a new profile: name, type, photo, and optional details for Community and Premium tools.'}
               </span>
             </span>
             <span className={`pp-expandTrigger__chev ${addPetExpanded ? 'is-open' : ''}`} aria-hidden>
@@ -199,7 +199,7 @@ export default function MyPets() {
               <p className="pp-subtle pp-expandIntro">
                 Add each pet with type, optional <strong>colours / coat</strong>, <strong>age</strong>, and a short{' '}
                 <strong>description</strong>, plus an optional <strong>profile photo</strong>. One GPS device id per pet
-                appears when you edit the pet below. <Link to="/lost-pet">Lost pet alerts</Link> can use this photo and
+                appears when you edit the pet below. <Link to="/premium/lost">Lost pet alerts</Link> can use this photo and
                 text.
               </p>
               <form className="pp-form" onSubmit={submitAdd}>
