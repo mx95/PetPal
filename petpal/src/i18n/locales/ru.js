@@ -19,7 +19,8 @@ export default {
   home: {
     badge: 'Обзор',
     title: 'Добро пожаловать в PetPal',
-    subtitle: 'Плитки для всех функций — нажмите серую иконку, чтобы открыть раздел.',
+    subtitle:
+      'Нажмите серую иконку, чтобы открыть раздел. Premium вынесен ниже со всеми его инструментами.',
     signInToOpen: 'Нужен вход',
     tileDashboard: 'Главная',
     tileProfile: 'Профиль',
@@ -32,6 +33,11 @@ export default {
     tileBusiness: 'Бизнес',
     tileDocs: 'Справка',
     tileAdmin: 'Админ',
+    premiumCardLostHint:
+      'Срочные объявления и оповещения, если животное пропало',
+    premiumCardStrayHint:
+      'Объявления о пристройстве — синхронизация в облаке при настроенном Firebase',
+    premiumCardBreedingHint: 'Поиск партнёров или объявление вязки по породе',
   },
   profile: {
     badge: 'Аккаунт',

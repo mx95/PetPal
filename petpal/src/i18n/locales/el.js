@@ -20,7 +20,7 @@ export default {
     badge: 'Επισκόπηση',
     title: 'Καλώς ήρθατε στο PetPal',
     subtitle:
-      'Πλακίδια για κάθε δυνατότητα — πατήστε το γκρι εικονίδιο για να ανοίξετε την ενότητα.',
+      'Πατήστε ένα γκρι εικονίδιο για κάθε ενότητα. Το Premium έχει ξεχωριστό τμήμα με τα εργαλεία του κάτω.',
     signInToOpen: 'Απαιτείται σύνδεση',
     tileDashboard: 'Αρχική',
     tileProfile: 'Προφίλ',
@@ -33,6 +33,10 @@ export default {
     tileBusiness: 'Επιχείρηση',
     tileDocs: 'Οδηγίες',
     tileAdmin: 'Διαχειριστής',
+    premiumCardLostHint:
+      'Επείγοντα μηνύματα και ειδοποιήσεις όταν λείπει ένα κατοικίδιο',
+    premiumCardStrayHint: 'Καταχωρίσεις αδέσποτων προς υιοθεσία — συγχρονισμός cloud με Firebase',
+    premiumCardBreedingHint: 'Αναζήτηση ή καταχώριση συνεργών εκτροφής ανά ράτσα',
   },
   profile: {
     badge: 'Λογαριασμός',

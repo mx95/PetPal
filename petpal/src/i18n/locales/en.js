@@ -20,7 +20,7 @@ export default {
     badge: 'Overview',
     title: 'Welcome to PetPal',
     subtitle:
-      'Demonstration tiles for everything in the app — tap a grey icon to open that area.',
+      'Tap a grey icon to open each area below. Premium has its own section with every paid tool.',
     signInToOpen: 'Sign in required',
     tileDashboard: 'Dashboard',
     tileProfile: 'Profile',
@@ -33,6 +33,9 @@ export default {
     tileBusiness: 'Business',
     tileDocs: 'Docs',
     tileAdmin: 'Admin',
+    premiumCardLostHint: 'Urgent notices and alerts when a pet is missing',
+    premiumCardStrayHint: 'Listings for strays needing adoption — cloud sync when Firebase is on',
+    premiumCardBreedingHint: 'Search or list mating partners responsibly by breed',
   },
   profile: {
     badge: 'Account',

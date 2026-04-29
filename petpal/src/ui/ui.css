@@ -2105,6 +2105,41 @@ select.pp-input:focus {
   opacity: 0.82;
 }
 
+.pp-homeTile--premium {
+  position: relative;
+  min-height: auto;
+  border-color: rgba(180, 120, 32, 0.42);
+  background: linear-gradient(165deg, rgba(255, 247, 230, 0.92) 0%, rgba(255, 255, 255, 0.82) 55%, rgba(255, 255, 255, 0.72) 100%);
+}
+
+.pp-homeTile--premium:hover {
+  border-color: rgba(180, 120, 32, 0.55);
+  box-shadow:
+    0 6px 20px rgba(16, 24, 40, 0.08),
+    0 0 0 1px rgba(180, 120, 32, 0.12);
+}
+
+.pp-homeTile--premium.pp-homeTile--locked {
+  opacity: 0.9;
+}
+
+.pp-homeTile__premiumRibbon {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 3px 7px;
+  border-radius: 999px;
+  border: 1px solid rgba(180, 120, 32, 0.45);
+  background: linear-gradient(135deg, #fff9eb 0%, #ffecc7 100%);
+  color: #7a5209;
+  line-height: 1;
+  pointer-events: none;
+}
+
 .pp-homeTile__iconWrap {
   width: 48px;
   height: 48px;
@@ -2114,6 +2149,12 @@ select.pp-input:focus {
   align-items: center;
   justify-content: center;
   color: #667085;
+}
+
+.pp-homeTile__iconWrap--premium {
+  border: 1px solid rgba(180, 120, 32, 0.38);
+  background: linear-gradient(180deg, #fff7e6 0%, #ffe7b8 55%, #ffd68a 100%);
+  color: #8a5a0f;
 }
 
 .pp-homeTile__iconSvg {
@@ -2142,5 +2183,56 @@ select.pp-input:focus {
 .pp-profileLinkRow:hover {
   border-color: rgba(91, 55, 255, 0.25) !important;
   box-shadow: 0 4px 16px rgba(16, 24, 40, 0.06);
+}
+
+/* Home: Premium subsection */
+.pp-homePremiumSection {
+  margin-top: 28px;
+  padding: 18px 16px 20px;
+  border-radius: 14px;
+  border: 1px solid rgba(180, 120, 32, 0.38);
+  background: linear-gradient(165deg, rgba(255, 247, 230, 0.55) 0%, rgba(255, 255, 255, 0.5) 100%);
+  box-shadow: 0 2px 12px rgba(122, 82, 9, 0.06);
+}
+
+.pp-homePremiumSection__head {
+  margin-bottom: 14px;
+}
+
+.pp-homePremiumSection__titles {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 10px 12px;
+  margin-bottom: 8px;
+}
+
+.pp-homePremiumSection__h2 {
+  margin: 0;
+  font-size: clamp(17px, 2.5vw, 20px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #5c3d06;
+}
+
+.pp-homePremiumSection__intro {
+  margin: 0 !important;
+  max-width: 720px !important;
+}
+
+.pp-homeGrid--premiumSub {
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+}
+
+.pp-homeTile .pp-homeTile__hint--premiumCard {
+  display: block;
+  font-size: 11px;
+  line-height: 1.35;
+  color: #878f9b;
+  max-width: 100%;
+}
+
+.pp-homeTile--premium .pp-homeTile__title + .pp-homeTile__hint--premiumCard {
+  margin-top: -2px;
 }
 

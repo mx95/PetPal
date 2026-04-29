@@ -28,6 +28,22 @@ Then run:
 
 Open `http://localhost:3000`.
 
+## Native apps (Android & iOS — Capacitor)
+
+The web UI is wrapped with [Capacitor](https://capacitorjs.com/) so the same production bundle can ship in the Google Play Store and App Store.
+
+- **Config:** `petpal/capacitor.config.json` — `appId` is `io.petpal.app` (change this before a public release). `webDir` is `build`.
+- **`homepage`:** `package.json` sets `"homepage": "."` so JS/CSS load correctly inside the native WebView. Keep it for mobile builds; use a subpath only if you maintain a separate web deploy config.
+
+**Typical workflow**
+
+1. `npm run build` — Create React App output in `build/`.
+2. `npm run cap:sync` (or `npm run build:mobile` to do both) — copies assets into `android/` and `ios/`.
+3. **Android:** Install [Android Studio](https://developer.android.com/studio), a JDK (e.g. 17), and ensure `JAVA_HOME` is set. Run `npm run cap:open:android`, then build or run on a device/emulator from Android Studio.
+4. **iOS (macOS):** Install Xcode and CocoaPods. From `petpal/ios/App` run `pod install` if pods are not installed yet. Open `petpal/ios/App/App.xcworkspace` in Xcode (or `npm run cap:open:ios`), then run on a simulator or archive for TestFlight/App Store.
+
+Add **Firebase** `google-services.json` (Android) and `GoogleService-Info.plist` (iOS) when you use native Firebase features; configure **OAuth redirect URLs** and **App Links / Universal Links** if you use third-party sign-in.
+
 ## GPS tracking (Traccar — “many cheap devices”)
 
 PetPal is wired for **[Traccar](https://www.traccar.org/)** on the default REST endpoint: `GET /api/positions?deviceId=…`  
