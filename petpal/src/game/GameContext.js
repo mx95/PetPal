@@ -3,7 +3,10 @@ import { useAuth } from '../auth/AuthProvider';
 import { usePets } from '../pets/PetsContext';
 import {
   DAILY_MISSIONS,
+  computeLifetimeAchievements,
   dayKey,
+  lifetimeAchievementDefs,
+  lifetimeStatsFromState,
   petProgressPercent,
   trackingAchievementDefs,
   walkAchievementDefs,
@@ -26,6 +29,7 @@ function defaultState() {
   return {
     ownerXp: 0,
     daily: { day: dayKey(), done: [] },
+    lifetimeDailyDone: 0,
     perPet: {},
     walkLog: {},
     walkSessions: [],
@@ -65,6 +69,7 @@ function normalizeState(raw) {
   return {
     ownerXp: Math.max(0, Number(raw.ownerXp) || 0),
     daily,
+    lifetimeDailyDone: Math.max(0, Number(raw.lifetimeDailyDone) || 0),
     perPet: raw.perPet && typeof raw.perPet === 'object' ? raw.perPet : {},
     walkLog,
     walkSessions,
@@ -118,6 +123,7 @@ export function GameProvider({ children }) {
           ...prev,
           ownerXp: prev.ownerXp + m.xp,
           daily: { day: today, done: [...d.done, missionId] },
+          lifetimeDailyDone: Math.max(0, Number(prev.lifetimeDailyDone) || 0) + 1,
         };
       });
       return applied;
@@ -238,6 +244,39 @@ export function GameProvider({ children }) {
     return new Set(state.daily.done);
   }, [state.daily]);
 
+  const lifetimeAchievements = useMemo(
+    () =>
+      computeLifetimeAchievements({
+        walkLog: state.walkLog,
+        walkSessions: state.walkSessions,
+        level,
+        petsCount: pets.length,
+        lifetimeDailyDone: state.lifetimeDailyDone,
+      }),
+    [state.walkLog, state.walkSessions, state.lifetimeDailyDone, level, pets.length]
+  );
+
+  const achievementXp = useMemo(
+    () => lifetimeAchievements.reduce((s, a) => s + (a.earned ? a.xp : 0), 0),
+    [lifetimeAchievements]
+  );
+  const achievementCount = useMemo(
+    () => lifetimeAchievements.reduce((c, a) => c + (a.earned ? 1 : 0), 0),
+    [lifetimeAchievements]
+  );
+
+  const lifetimeStats = useMemo(
+    () =>
+      lifetimeStatsFromState({
+        walkLog: state.walkLog,
+        walkSessions: state.walkSessions,
+        level,
+        petsCount: pets.length,
+        lifetimeDailyDone: state.lifetimeDailyDone,
+      }),
+    [state.walkLog, state.walkSessions, state.lifetimeDailyDone, level, pets.length]
+  );
+
   const value = useMemo(
     () => ({
       ownerXp: state.ownerXp,
@@ -248,6 +287,7 @@ export function GameProvider({ children }) {
       DAILY_MISSIONS,
       dailyDone: dailyDoneSet,
       isDailyDone: (id) => dailyDoneSet.has(id),
+      lifetimeDailyDone: state.lifetimeDailyDone,
       perPet: state.perPet,
       petProgressPercent: (petId, track, key) => petProgressPercent(state.perPet[petId], track, key),
       setPetTrackProgress,
@@ -260,6 +300,11 @@ export function GameProvider({ children }) {
       removePhotoFromLatestWalk,
       trackingAchievementDefs: trackingAchievementDefs(),
       walkAchievementDefs: walkAchievementDefs(),
+      lifetimeAchievementDefs: lifetimeAchievementDefs(),
+      lifetimeAchievements,
+      achievementXp,
+      achievementCount,
+      lifetimeStats,
     }),
     [
       state,
@@ -274,6 +319,10 @@ export function GameProvider({ children }) {
       addWalkKm,
       addPhotosToLatestWalk,
       removePhotoFromLatestWalk,
+      lifetimeAchievements,
+      achievementXp,
+      achievementCount,
+      lifetimeStats,
     ]
   );
 

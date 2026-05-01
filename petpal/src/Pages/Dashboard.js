@@ -7,6 +7,7 @@ import PetAvatar from '../components/PetAvatar';
 import { usePets } from '../pets/PetsContext';
 import { MAX_PHOTOS_PER_WALK_SESSION } from '../walk/walkPhotos';
 import { walkStreakDays } from '../walk/walkStats';
+import LifetimeAchievements from '../components/LifetimeAchievements';
 
 function km(n) {
   return `${n.toFixed(1)} km`;
@@ -134,7 +135,7 @@ export default function Dashboard() {
                 {t('home.dashboardHero.petsCta')}
               </Link>
               <button type="button" className="pp-btn pp-btn--ghost pp-btn--lg" onClick={signOut}>
-                {t('community.signOut')}
+                {t('dashboard.signOut')}
               </button>
             </div>
           </div>
@@ -235,6 +236,10 @@ export default function Dashboard() {
             })}
           </div>
         </div>
+      </div>
+
+      <div className="pp-col-12">
+        <LifetimeAchievements />
       </div>
 
       <div className="pp-col-6" id="pp-walk-input-anchor">

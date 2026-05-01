@@ -58,6 +58,20 @@ export default function Leaderboard() {
     return i >= 0 ? i + 1 : null;
   }, [rows, user?.uid]);
 
+  const achievementRows = useMemo(() => {
+    return [...rows]
+      .filter((r) => (Number(r.achievementXp) || 0) > 0 || (Number(r.achievementCount) || 0) > 0)
+      .sort((a, b) => {
+        const ax = Number(a.achievementXp) || 0;
+        const bx = Number(b.achievementXp) || 0;
+        if (bx !== ax) return bx - ax;
+        const ac = Number(a.achievementCount) || 0;
+        const bc = Number(b.achievementCount) || 0;
+        if (bc !== ac) return bc - ac;
+        return (Number(b.level) || 0) - (Number(a.level) || 0);
+      });
+  }, [rows]);
+
   const currentPeriodLabel = useMemo(() => periods.find((p) => p.id === period)?.label || '', [periods, period]);
 
   const onToggle = async (e) => {
@@ -185,6 +199,66 @@ export default function Leaderboard() {
                         <td className="pp-lbTable__num">
                           {formatKm(v)} {t('leaderboardPage.tblKmSuffix')}
                         </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          ) : null}
+        </div>
+      </div>
+
+      <div className="pp-col-12">
+        <div className="pp-card pp-pad pp-lbAch">
+          <div
+            className="pp-row"
+            style={{ justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, alignItems: 'flex-start', marginBottom: 12 }}
+          >
+            <div>
+              <h2 className="pp-sectionTitle" style={{ margin: 0 }}>
+                {t('leaderboardPage.achTitle')}
+              </h2>
+              <p className="pp-subtle" style={{ marginTop: 8, maxWidth: 640 }}>
+                {t('leaderboardPage.achIntroStart')}
+              </p>
+            </div>
+          </div>
+          {!loading && !loadError && achievementRows.length === 0 && isFirestoreEnabled ? (
+            <p className="pp-subtle">{t('leaderboardPage.achEmpty')}</p>
+          ) : null}
+          {achievementRows.length > 0 ? (
+            <div className="pp-lbTableWrap">
+              <table className="pp-lbTable pp-lbTable--ach">
+                <thead>
+                  <tr>
+                    <th>{t('leaderboardPage.tblRank')}</th>
+                    <th>{t('leaderboardPage.tblName')}</th>
+                    <th className="pp-lbTable__num">{t('leaderboardPage.achTblXp')}</th>
+                    <th className="pp-lbTable__num">{t('leaderboardPage.achTblBadges')}</th>
+                    <th className="pp-lbTable__num">{t('leaderboardPage.achTblLevel')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {achievementRows.map((r, i) => {
+                    const isYou = r.id === user?.uid;
+                    const ax = Math.round(Number(r.achievementXp) || 0);
+                    const ac = Math.round(Number(r.achievementCount) || 0);
+                    const at = Math.round(Number(r.achievementTotal) || 0);
+                    const lvl = Math.max(1, Math.round(Number(r.level) || 1));
+                    return (
+                      <tr key={`ach-${r.id}`} className={isYou ? 'pp-lbTable__row--me' : ''}>
+                        <td>{i + 1}</td>
+                        <td>
+                          {r.displayName}
+                          {isYou ? t('leaderboardPage.tblYouBadge') : ''}
+                        </td>
+                        <td className="pp-lbTable__num">{ax}</td>
+                        <td className="pp-lbTable__num">
+                          {ac}
+                          {at > 0 ? ` / ${at}` : ''}
+                        </td>
+                        <td className="pp-lbTable__num">{lvl}</td>
                       </tr>
                     );
                   })}

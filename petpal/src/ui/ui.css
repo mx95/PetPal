@@ -2947,3 +2947,188 @@ select.pp-input:focus {
     scroll-behavior: auto !important;
   }
 }
+
+/* ===== Lifetime achievements ===== */
+.pp-lifetime {
+  background:
+    radial-gradient(900px 380px at 110% -20%, rgba(255, 224, 102, 0.18), transparent 60%),
+    radial-gradient(700px 320px at -10% 120%, rgba(91, 55, 255, 0.12), transparent 60%),
+    #ffffff;
+  border-color: rgba(91, 55, 255, 0.18);
+}
+.pp-lifetime__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+.pp-lifetime__eyebrow {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(91, 55, 255, 0.1);
+  color: #5b37ff;
+  font-weight: 800;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.pp-lifetime__summary {
+  min-width: 260px;
+  flex: 0 1 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(91, 55, 255, 0.08), rgba(255, 196, 71, 0.12));
+  border: 1px solid rgba(91, 55, 255, 0.18);
+}
+.pp-lifetime__summaryStat { display: flex; flex-direction: column; gap: 6px; }
+.pp-lifetime__summaryLabel { font-weight: 800; color: #101828; }
+.pp-lifetime__summaryBar {
+  width: 100%;
+  height: 8px;
+  background: rgba(16, 24, 40, 0.08);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.pp-lifetime__summaryBarFill {
+  height: 100%;
+  background: linear-gradient(90deg, #5b37ff 0%, #ffb84d 100%);
+  border-radius: 999px;
+  transition: width 320ms ease;
+}
+.pp-lifetime__summaryXp { font-size: 18px; font-weight: 900; color: #5b37ff; }
+.pp-lifetime__summaryHint { font-size: 13px; color: #475467; }
+
+.pp-lifetime__groups {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 18px;
+}
+.pp-lifetime__group {
+  border: 1px solid rgba(16, 24, 40, 0.08);
+  border-radius: 14px;
+  padding: 14px;
+  background: #ffffff;
+}
+.pp-lifetime__groupHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.pp-lifetime__groupIcon {
+  font-size: 18px;
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: rgba(16, 24, 40, 0.06);
+}
+.pp-lifetime__groupTitle {
+  font-size: 15px;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+.pp-lifetime__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Tile per achievement with tier accents */
+.pp-achTile {
+  position: relative;
+  border-radius: 12px;
+  padding: 12px 14px 10px;
+  border: 1px solid rgba(16, 24, 40, 0.08);
+  background: #fafafa;
+  transition: transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease;
+}
+.pp-achTile:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(16, 24, 40, 0.06); }
+.pp-achTile__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+.pp-achTile__row--meta { margin-top: 6px; font-size: 12px; color: #475467; }
+.pp-achTile__label { font-weight: 800; color: #101828; }
+.pp-achTile__xp { font-weight: 800; color: #5b37ff; font-size: 13px; }
+.pp-achTile__desc { font-size: 13px; color: #475467; margin-top: 2px; }
+.pp-achTile__bar {
+  margin-top: 8px;
+  width: 100%;
+  height: 6px;
+  background: rgba(16, 24, 40, 0.08);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.pp-achTile__barFill {
+  height: 100%;
+  background: linear-gradient(90deg, #5b37ff, #8b6cff);
+  border-radius: 999px;
+  transition: width 320ms ease;
+}
+.pp-achTile__progress { font-variant-numeric: tabular-nums; font-weight: 700; }
+.pp-achTile__tier { font-weight: 700; }
+.pp-achTile__earnedBadge {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #027a48;
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(2, 122, 72, 0.25);
+}
+.pp-achTile--earned {
+  background: linear-gradient(180deg, #ecfdf3 0%, #ffffff 100%);
+  border-color: rgba(2, 122, 72, 0.35);
+}
+.pp-achTile--earned .pp-achTile__barFill {
+  background: linear-gradient(90deg, #12b76a, #027a48);
+}
+
+/* Tier border accents (subtle, only when earned for stronger feel) */
+.pp-achTile--bronze.pp-achTile--earned { border-color: rgba(180, 83, 9, 0.55); }
+.pp-achTile--silver.pp-achTile--earned { border-color: rgba(102, 112, 133, 0.55); }
+.pp-achTile--gold.pp-achTile--earned { border-color: rgba(217, 161, 0, 0.65); }
+.pp-achTile--platinum.pp-achTile--earned { border-color: rgba(91, 55, 255, 0.55); }
+.pp-achTile--mythic.pp-achTile--earned {
+  border-color: rgba(255, 105, 180, 0.6);
+  background: linear-gradient(135deg, #fff1fb 0%, #f1ebff 100%);
+}
+.pp-achTile--mythic.pp-achTile--earned .pp-achTile__barFill {
+  background: linear-gradient(90deg, #b14bff, #ff6fb0);
+}
+
+@media (max-width: 720px) {
+  .pp-lifetime__head { flex-direction: column; }
+  .pp-lifetime__summary { width: 100%; flex-basis: auto; }
+}
+
+/* ===== Achievement leaderboard variant ===== */
+.pp-lbAch {
+  background:
+    radial-gradient(700px 280px at 100% 0%, rgba(91, 55, 255, 0.08), transparent 60%),
+    #ffffff;
+  border-color: rgba(91, 55, 255, 0.18);
+}
+.pp-lbTable--ach th,
+.pp-lbTable--ach td { white-space: nowrap; }
+
