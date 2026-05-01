@@ -26,6 +26,7 @@ import CompanyApply from './Pages/CompanyApply';
 import AdminCompanyQueue from './Pages/AdminCompanyQueue';
 import { LanguageSwitcher } from './i18n/LanguageSwitcher';
 import { useI18n } from './i18n/I18nContext';
+import ScrollToTop from './components/ScrollToTop';
 
 const Tracking = lazy(() => import('./Pages/Tracking'));
 
@@ -129,6 +130,7 @@ function TopNav() {
 function App() {
   return (
     <div className="pp-shell">
+      <ScrollToTop />
       <TopNav />
       <div className="pp-main">
         <Routes>

@@ -7,6 +7,7 @@ import { useLostPet } from '../lostPet/LostPetContext';
 import { usePets } from '../pets/PetsContext';
 import PetAvatar from '../components/PetAvatar';
 import { PrettySelect } from '../components/PrettySelect';
+import { useToast } from '../components/Toast';
 import { useI18n } from '../i18n/I18nContext';
 import { useCommunity } from '../social/CommunityContext';
 import { lostListingToFeedPost, strayListingToFeedPost } from '../social/communityFeedNormalize';
@@ -207,6 +208,7 @@ function PostCard({ post }) {
  * Pet-first social feed: owner + one or more pets on each post.
  */
 export default function Community() {
+  const { show: showToast } = useToast();
   const { user } = useAuth();
   const { isApprovedCompany, profile: companyProfile } = useCompany();
   const { pets, getCategory } = usePets();
@@ -329,7 +331,7 @@ export default function Community() {
           imageUrls = await filesToResizedDataUrls(arr);
         }
       } catch (err) {
-        window.alert(err?.message || 'Could not add your media. Try a smaller file.');
+        showToast(err?.message || 'Could not add your media. Try a smaller file.', { kind: 'error' });
         return;
       } finally {
         setPostPhotoBusy(false);

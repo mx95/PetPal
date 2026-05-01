@@ -14,6 +14,7 @@ import { GameProvider } from './game/GameContext';
 // eslint-disable-next-line no-unused-vars -- used in JSX; CRA can mis-report in CI
 import { PublicWalkProvider } from './leaderboard/PublicWalkContext';
 import { CommunityProvider } from './social/CommunityContext';
+import { ToastProvider } from './components/Toast';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
@@ -28,7 +29,9 @@ root.render(
                 <GameProvider>
                   <PublicWalkProvider>
                     <CommunityProvider>
-                      <App />
+                      <ToastProvider>
+                        <App />
+                      </ToastProvider>
                     </CommunityProvider>
                   </PublicWalkProvider>
                 </GameProvider>

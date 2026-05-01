@@ -97,39 +97,68 @@ export default function Dashboard() {
     }
   };
 
+  const greetingName = user?.displayName?.trim() || (user?.email ? user.email.split('@')[0] : '');
+  const greeting = greetingName
+    ? t('home.dashboardHero.hello', { name: greetingName })
+    : t('home.dashboardHero.helloFallback');
+  const streakBadge =
+    streakDays >= 2
+      ? t('home.dashboardHero.streakBadge', { n: streakDays })
+      : streakDays === 1
+        ? t('home.dashboardHero.streakBadgeOne')
+        : null;
+
   return (
     <div className="pp-grid">
       <div className="pp-col-12">
-        <div className="pp-card pp-pad">
-          <div className="pp-row" style={{ justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
-            <div>
-              <div className="pp-badge">Signed in</div>
-              <h1 className="pp-h1" style={{ marginTop: 10 }}>
-                Hi{user?.displayName ? `, ${user.displayName}` : ''}!
-              </h1>
-              <p className="pp-subtle" style={{ marginTop: 6 }}>
-                {user?.email}
-              </p>
+        <section className="pp-dashHero" aria-label={greeting}>
+          <div className="pp-dashHero__top">
+            <div className="pp-dashHero__greet">
+              <h1 className="pp-dashHero__title">{greeting}</h1>
+              <p className="pp-dashHero__sub">{t('home.dashboardHero.sub')}</p>
+              {streakBadge ? (
+                <span className="pp-dashHero__streak" aria-label={streakBadge}>
+                  {streakBadge}
+                </span>
+              ) : (
+                <span className="pp-dashHero__streak pp-dashHero__streak--ghost">
+                  {t('home.dashboardHero.streakStartCta')}
+                </span>
+              )}
             </div>
-            <div className="pp-row" style={{ gap: 10, flexWrap: 'wrap' }}>
-              <Link className="pp-btn pp-btnPrimary" to="/pets" style={{ textDecoration: 'none' }}>
-                My pets
+            <div className="pp-dashHero__actions">
+              <a href="#pp-walk-input-anchor" className="pp-btn pp-btnPrimary pp-btn--lg">
+                {t('home.dashboardHero.logWalkCta')}
+              </a>
+              <Link className="pp-btn pp-btn--lg pp-btn--ghost" to="/pets">
+                {t('home.dashboardHero.petsCta')}
               </Link>
-              <Link className="pp-btn" to="/leaderboard" style={{ textDecoration: 'none' }}>
-                Leaderboard
-              </Link>
-              <Link className="pp-btn" to="/tracking" style={{ textDecoration: 'none' }}>
-                Live tracker
-              </Link>
-              <Link className="pp-btn" to="/premium/lost" style={{ textDecoration: 'none' }}>
-                {t('nav.premium')}
-              </Link>
-              <button className="pp-btn" onClick={signOut}>
-                Log out
+              <button type="button" className="pp-btn pp-btn--ghost pp-btn--lg" onClick={signOut}>
+                {t('community.signOut')}
               </button>
             </div>
           </div>
-        </div>
+          <div className="pp-dashHero__stats">
+            <div className="pp-dashHero__stat">
+              <span className="pp-dashHero__statLabel">{t('home.dashboardHero.todayLabel')}</span>
+              <span className="pp-dashHero__statValue">{km(walkTotals.day)}</span>
+            </div>
+            <div className="pp-dashHero__stat">
+              <span className="pp-dashHero__statLabel">{t('home.dashboardHero.levelLabel', { level })}</span>
+              <span className="pp-dashHero__statValue">{ownerXp} XP</span>
+              <div className="pp-dashHero__levelBar" aria-hidden>
+                <div
+                  className="pp-dashHero__levelBarFill"
+                  style={{ width: `${Math.max(2, Math.min(100, (levelXp / Math.max(1, nextMax)) * 100))}%` }}
+                />
+              </div>
+            </div>
+            <div className="pp-dashHero__stat">
+              <span className="pp-dashHero__statLabel">{t('myPets.title')}</span>
+              <span className="pp-dashHero__statValue">{pets.length}</span>
+            </div>
+          </div>
+        </section>
       </div>
 
       <div className="pp-col-12">
@@ -208,7 +237,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="pp-col-6">
+      <div className="pp-col-6" id="pp-walk-input-anchor">
         <div className="pp-card pp-pad">
           <h2 className="pp-sectionTitle">Walks &amp; distance</h2>
           <p className="pp-subtle" style={{ marginBottom: 12 }}>

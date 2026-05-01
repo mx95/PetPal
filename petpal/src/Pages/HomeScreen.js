@@ -242,6 +242,68 @@ export default function HomeScreen() {
 
   return (
     <div className="pp-grid">
+      {!user ? (
+        <div className="pp-col-12">
+          <section className="pp-publicHero" aria-labelledby="public-hero-title">
+            <div className="pp-publicHero__inner">
+              <div className="pp-publicHero__copy">
+                <span className="pp-publicHero__eyebrow">{t('home.publicHero.eyebrow')}</span>
+                <h1 id="public-hero-title" className="pp-publicHero__headline">
+                  {t('home.publicHero.headline')}
+                </h1>
+                <p className="pp-publicHero__sub">{t('home.publicHero.sub')}</p>
+                <div className="pp-publicHero__ctaRow">
+                  <Link className="pp-btn pp-btnPrimary pp-btn--lg" to="/register">
+                    {t('home.publicHero.ctaPrimary')}
+                  </Link>
+                  <Link className="pp-btn pp-btn--lg pp-btn--ghost" to="/login">
+                    {t('home.publicHero.ctaSecondary')}
+                  </Link>
+                </div>
+                <p className="pp-publicHero__trust">{t('home.publicHero.trustLine')}</p>
+              </div>
+              <ul className="pp-publicHero__bullets" aria-label="Highlights">
+                <li>
+                  <span className="pp-publicHero__bulletIcon" aria-hidden>🐾</span>
+                  <div>
+                    <strong>{t('home.publicHero.bullet1Title')}</strong>
+                    <span>{t('home.publicHero.bullet1Desc')}</span>
+                  </div>
+                </li>
+                <li>
+                  <span className="pp-publicHero__bulletIcon" aria-hidden>🚨</span>
+                  <div>
+                    <strong>{t('home.publicHero.bullet2Title')}</strong>
+                    <span>{t('home.publicHero.bullet2Desc')}</span>
+                  </div>
+                </li>
+                <li>
+                  <span className="pp-publicHero__bulletIcon" aria-hidden>📍</span>
+                  <div>
+                    <strong>{t('home.publicHero.bullet3Title')}</strong>
+                    <span>{t('home.publicHero.bullet3Desc')}</span>
+                  </div>
+                </li>
+              </ul>
+            </div>
+            <div className="pp-publicHero__stats" role="list">
+              <div className="pp-publicHero__statCell" role="listitem">
+                <span className="pp-publicHero__statValue">{t('home.publicHero.stat1')}</span>
+                <span className="pp-publicHero__statDesc">{t('home.publicHero.stat1Desc')}</span>
+              </div>
+              <div className="pp-publicHero__statCell" role="listitem">
+                <span className="pp-publicHero__statValue">{t('home.publicHero.stat2')}</span>
+                <span className="pp-publicHero__statDesc">{t('home.publicHero.stat2Desc')}</span>
+              </div>
+              <div className="pp-publicHero__statCell" role="listitem">
+                <span className="pp-publicHero__statValue">{t('home.publicHero.stat3')}</span>
+                <span className="pp-publicHero__statDesc">{t('home.publicHero.stat3Desc')}</span>
+              </div>
+            </div>
+          </section>
+        </div>
+      ) : null}
+
       <div className="pp-col-12">
         <div className="pp-card pp-pad" style={{ maxWidth: 960, margin: '0 auto' }}>
           <div className="pp-badge">{t('home.badge')}</div>
