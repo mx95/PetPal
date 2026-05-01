@@ -92,6 +92,8 @@ export function CommunityProvider({ children }) {
         petIds: isCompany ? [] : petIds,
         petEmoji: isCompany ? '🏢' : categoryEmoji(first?.categoryId) || '🐾',
         timeLabel: 'now',
+        sortAt: Date.now(),
+        feedKind: 'community',
         caption: text,
         imageUrls: images.length > 0 ? images : undefined,
         videoUrl: video,

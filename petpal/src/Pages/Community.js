@@ -3,12 +3,16 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
 import { useCompany } from '../company/CompanyContext';
 import { useGame } from '../game/GameContext';
+import { useLostPet } from '../lostPet/LostPetContext';
 import { usePets } from '../pets/PetsContext';
 import PetAvatar from '../components/PetAvatar';
+import { useI18n } from '../i18n/I18nContext';
 import { useCommunity } from '../social/CommunityContext';
+import { lostListingToFeedPost, strayListingToFeedPost } from '../social/communityFeedNormalize';
 import { WalkPostEmbed } from '../social/walkPostEmbed';
-import { communityPosts, storyRingUsers } from '../data/communityMock';
+import { communityPosts, lostPetDemoFeedPosts, storyRingUsers } from '../data/communityMock';
 import { fileToSmallVideoDataUrl, MAX_COMMUNITY_VIDEO_BYTES } from '../social/communityVideo';
+import { useStrayListings } from '../stray/useStrayListings';
 import { filesToResizedDataUrls } from '../walk/walkPhotos';
 
 function postKey(post) {
@@ -20,6 +24,8 @@ function mapsLink(lat, lng) {
 }
 
 function PostCard({ post }) {
+  const { t } = useI18n();
+  const feedKind = post.feedKind || 'community';
   const names = post.petNames?.length ? post.petNames : post.petName ? [post.petName] : [];
   const emoji = post.petEmoji || '🐾';
   const bylinePets = names.length ? `with ${names.join(', ')}` : null;
@@ -30,8 +36,11 @@ function PostCard({ post }) {
 
   return (
     <article
-      className={`pp-post${post.boosted ? ' pp-post--boosted' : ''}`}
+      className={`pp-post${post.boosted ? ' pp-post--boosted' : ''}${
+        feedKind === 'lostPet' ? ' pp-post--feedLost' : ''
+      }${feedKind === 'stray' ? ' pp-post--feedStray' : ''}`}
       data-user={post.isUser ? 'yes' : undefined}
+      data-feed-kind={feedKind}
     >
       {post.boosted ? (
         <div className="pp-post__boostBadge" role="status">
@@ -80,6 +89,21 @@ function PostCard({ post }) {
         </div>
       </header>
 
+      {feedKind === 'lostPet' || feedKind === 'stray' ? (
+        <div
+          className={`pp-post__feedRibbon pp-post__feedRibbon--${feedKind === 'lostPet' ? 'lost' : 'stray'}`}
+          role="status"
+        >
+          {feedKind === 'lostPet' ? t('community.feedRibbonLost') : t('community.feedRibbonStray')}
+          {feedKind === 'lostPet' && post.isDemoLost ? (
+            <span className="pp-post__feedRibbonBadge"> {t('community.feedBadgeDemo')}</span>
+          ) : null}
+          {feedKind === 'stray' && post.straySampleMarker ? (
+            <span className="pp-post__feedRibbonBadge"> {t('community.feedBadgeDemo')}</span>
+          ) : null}
+        </div>
+      ) : null}
+
       {hasImages ? (
         <div
           className={`pp-post__media pp-post__media--photos ${post.imageUrls.length > 1 ? 'pp-post__media--multi' : ''}`}
@@ -127,7 +151,7 @@ function PostCard({ post }) {
           aria-label={isCompany ? 'Business post' : names[0] ? `Photo for ${names[0]}` : 'Post'}
         >
           <span className="pp-post__mediaIcon" aria-hidden>
-            {isCompany ? '🏢' : '🐾'}
+            {isCompany ? '🏢' : feedKind === 'lostPet' ? '🆘' : feedKind === 'stray' ? '🏡' : '🐾'}
           </span>
         </div>
       ) : null}
@@ -145,19 +169,35 @@ function PostCard({ post }) {
       </div>
 
       {post.caption ? (
-        <p className="pp-post__caption">
+        <p
+          className={`pp-post__caption${
+            feedKind === 'lostPet' || feedKind === 'stray' ? ' pp-post__caption--preLine' : ''
+          }`}
+        >
           {post.caption}
         </p>
       ) : null}
       {post.tags?.length ? (
         <div className="pp-post__tags">
-          {post.tags.map((t) => (
-            <span key={t} className="pp-tag">
-              #{t}
+          {post.tags.map((tg) => (
+            <span key={tg} className="pp-tag">
+              #{tg}
             </span>
           ))}
         </div>
       ) : null}
+
+      {(feedKind === 'lostPet' || feedKind === 'stray') && (
+        <div className="pp-post__premiumFeedLinkWrap">
+          <Link
+            className="pp-link"
+            style={{ padding: 0 }}
+            to={feedKind === 'lostPet' ? '/premium/lost' : '/premium/stray'}
+          >
+            {feedKind === 'lostPet' ? t('community.feedPremiumLinkLost') : t('community.feedPremiumLinkStray')} →
+          </Link>
+        </div>
+      )}
     </article>
   );
 }
@@ -209,12 +249,56 @@ export default function Community() {
     }
   }, [includeWalk, taggedIds, walkForPetId]);
 
-  const feed = useMemo(() => {
-    const mock = communityPosts.map((m) => ({ ...m, isUser: false }));
-    return [...userPosts, ...mock];
-  }, [userPosts]);
-
   const displayName = user?.displayName || user?.email?.split('@')[0] || 'You';
+
+  const { t } = useI18n();
+  const { activeListings } = useLostPet();
+  const { availableFeed: strayFeedRows } = useStrayListings();
+  const [feedFilter, setFeedFilter] = useState(() => 'all');
+
+  const unifiedFeed = useMemo(() => {
+    const communityPieces = [];
+    userPosts.forEach((p) => {
+      communityPieces.push({
+        ...p,
+        feedKind: p.feedKind || 'community',
+        sortAt: typeof p.sortAt === 'number' ? p.sortAt : 0,
+      });
+    });
+    communityPosts.forEach((m) => {
+      communityPieces.push({
+        ...m,
+        isUser: false,
+        feedKind: m.feedKind || 'community',
+        sortAt: typeof m.sortAt === 'number' ? m.sortAt : 0,
+      });
+    });
+
+    let lostMerged = [];
+    const lostPieces = activeListings.map((lo) => lostListingToFeedPost(lo, displayName, t));
+    if (lostPieces.length > 0) lostMerged = lostPieces;
+    else {
+      lostMerged = lostPetDemoFeedPosts.map((d) => ({
+        ...d,
+        isUser: false,
+        feedKind: 'lostPet',
+        sortAt: typeof d.sortAt === 'number' ? d.sortAt : 0,
+        isDemoLost: true,
+        timeLabel: t('community.feedBadgeDemo'),
+      }));
+    }
+
+    const strayPieces = strayFeedRows.map((row) => strayListingToFeedPost(row, t));
+
+    const merged = [...communityPieces, ...lostMerged, ...strayPieces];
+    merged.sort((a, b) => (Number(b.sortAt) || 0) - (Number(a.sortAt) || 0));
+    return merged;
+  }, [userPosts, activeListings, strayFeedRows, displayName, t]);
+
+  const filteredFeed = useMemo(() => {
+    if (feedFilter === 'all') return unifiedFeed;
+    return unifiedFeed.filter((p) => (p.feedKind || 'community') === feedFilter);
+  }, [unifiedFeed, feedFilter]);
 
   function togglePet(id) {
     setPicked((p) => ({ ...p, [id]: !p[id] }));
@@ -670,10 +754,42 @@ export default function Community() {
         </div>
       </div>
 
+      <div className="pp-col-12">
+        <div className="pp-community-feedToolbar pp-card pp-pad" style={{ marginBottom: 12 }}>
+          <div className="pp-label" id="community-feed-filter-label">
+            {t('community.feedFilterLabel')}
+          </div>
+          <p className="pp-subtle pp-community-feedToolbar__hint" style={{ marginTop: 4, marginBottom: 10 }}>
+            {t('community.feedFilterHint')}
+          </p>
+          <div className="pp-community-feedFilter" role="radiogroup" aria-labelledby="community-feed-filter-label">
+            {[
+              { v: 'all', key: 'feedFilterAll' },
+              { v: 'community', key: 'feedFilterCommunity' },
+              { v: 'lostPet', key: 'feedFilterLost' },
+              { v: 'stray', key: 'feedFilterStray' },
+            ].map(({ v, key }) => (
+              <label key={v} className="pp-community-feedFilter__opt">
+                <input
+                  type="radio"
+                  name="communityFeedFilter"
+                  value={v}
+                  checked={feedFilter === v}
+                  onChange={() => setFeedFilter(v)}
+                />
+                <span>{t(`community.${key}`)}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+      </div>
+
       <div className="pp-col-12 pp-community-feed">
-        {feed.map((post) => (
-          <PostCard key={postKey(post)} post={post} />
-        ))}
+        {filteredFeed.length === 0 ? (
+          <p className="pp-subtle">{t('community.feedEmptyFiltered')}</p>
+        ) : (
+          filteredFeed.map((post) => <PostCard key={postKey(post)} post={post} />)
+        )}
       </div>
     </div>
   );

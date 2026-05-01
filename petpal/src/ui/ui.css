@@ -808,6 +808,77 @@ select.pp-input:focus {
   gap: 20px;
 }
 
+.pp-community-feedToolbar__hint {
+  margin: 0;
+  font-size: 13px !important;
+  line-height: 1.45;
+}
+
+.pp-community-feedFilter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  align-items: center;
+}
+
+.pp-community-feedFilter__opt {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #344054;
+  cursor: pointer;
+  user-select: none;
+}
+
+.pp-community-feedFilter__opt input {
+  accent-color: #5b37ff;
+}
+
+.pp-post--feedLost {
+  border-color: rgba(180, 120, 32, 0.35);
+  box-shadow: 0 8px 28px rgba(122, 82, 9, 0.08);
+}
+
+.pp-post--feedStray {
+  border-color: rgba(34, 120, 80, 0.28);
+}
+
+.pp-post__feedRibbon {
+  margin: 0 14px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.pp-post__feedRibbon--lost {
+  background: linear-gradient(90deg, #fff7ea 0%, #fffdfb 100%);
+  color: #7a5209;
+  border: 1px solid rgba(180, 120, 32, 0.35);
+}
+
+.pp-post__feedRibbon--stray {
+  background: linear-gradient(90deg, #ecfdf6 0%, #fafdff 100%);
+  color: #10744a;
+  border: 1px solid rgba(34, 120, 80, 0.24);
+}
+
+.pp-post__feedRibbonBadge {
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.pp-post__premiumFeedLinkWrap {
+  padding: 0 14px 12px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
 .pp-post {
   background: rgba(255, 255, 255, 0.85);
   border: 1px solid rgba(16, 24, 40, 0.08);
@@ -963,6 +1034,10 @@ select.pp-input:focus {
   line-height: 1.5;
   color: #101828;
   font-size: 15px;
+}
+
+.pp-post__caption--preLine {
+  white-space: pre-line;
 }
 
 .pp-post__tags {
