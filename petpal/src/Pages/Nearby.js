@@ -9,7 +9,7 @@ import {
 import { GOOGLE_MAPS_LOADER_ID } from '../config/googleMapsLoaderId';
 import { useI18n } from '../i18n/I18nContext';
 
-const mapContainerStyle = { width: '100%', height: 420, borderRadius: 16 };
+const mapContainerStyle = { width: '100%', height: 'min(62vh, 620px)', minHeight: 280, borderRadius: 18 };
 const DEFAULT_CENTER = { lat: 35.173, lng: 33.364 };
 const mapOptions = { disableDefaultUI: false, streetViewControl: false, mapTypeControl: false };
 
@@ -234,8 +234,9 @@ function NearbyMap({ apiKey }) {
         )}
       </p>
 
-      <div className="pp-nearby-body">
-        <div className="pp-nearby-mapWrap">
+      <div className="pp-nearby-body pp-nearby-body--sheet">
+        <div className="pp-nearby-mapStage">
+          <div className="pp-nearby-mapWrap">
           <div className="pp-nearby-mapActions">
             <button
               type="button"
@@ -308,7 +309,8 @@ function NearbyMap({ apiKey }) {
           </GoogleMap>
         </div>
 
-        <div className="pp-nearby-listPanel">
+        <aside className="pp-nearby-sheet" aria-label={t('nearbyPage.resultsHeading')}>
+          <div className="pp-nearby-sheet__handle" aria-hidden />
           <h3 className="pp-nearby-listTitle">{t('nearbyPage.resultsHeading')}</h3>
           {searchStatus === 'loading' ? <p className="pp-subtle">{t('nearbyPage.searching')}</p> : null}
           {searchStatus === 'empty' ? (
@@ -345,7 +347,8 @@ function NearbyMap({ apiKey }) {
               </li>
             ))}
           </ol>
-        </div>
+        </aside>
+      </div>
       </div>
     </div>
   );

@@ -39,58 +39,67 @@ export default function Login() {
 
   return (
     <div className="pp-grid">
-      <div className="pp-col-6">
-        <div className="pp-card pp-pad">
-          <div className="pp-badge">PetPal</div>
-          <h1 className="pp-h1" style={{ marginTop: 10 }}>
-            {t('login.welcome')}
-          </h1>
-          <p className="pp-subtle">
-            {t('login.subtitle')}
-          </p>
-        </div>
-      </div>
-
-      <div className="pp-col-6">
-        <div className="pp-card pp-pad">
-          <h2 className="pp-sectionTitle">{t('login.formTitle')}</h2>
-          <form className="pp-form" onSubmit={onSubmit}>
+      <div className="pp-col-12">
+        <div className="pp-authPage">
+          <aside className="pp-authPage__welcome">
+            <span className="pp-authPage__welcomeEyebrow">{t('login.welcomeEyebrow')}</span>
             <div>
-              <div className="pp-label">{t('login.email')}</div>
-              <input
-                className="pp-input"
-                autoComplete="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
-              />
+              <h1 className="pp-authPage__welcomeTitle">{t('login.welcome')}</h1>
+              <p className="pp-authPage__welcomeSub" style={{ marginTop: 8 }}>
+                {t('login.subtitle')}
+              </p>
             </div>
-            <div>
-              <div className="pp-label">{t('login.password')}</div>
-              <input
-                className="pp-input"
-                type="password"
-                autoComplete="current-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-              />
-            </div>
+            <ul className="pp-authPage__welcomeList">
+              <li><span aria-hidden>🐾</span><span>{t('login.benefit1')}</span></li>
+              <li><span aria-hidden>🔥</span><span>{t('login.benefit2')}</span></li>
+              <li><span aria-hidden>📍</span><span>{t('login.benefit3')}</span></li>
+            </ul>
+            <p className="pp-subtle" style={{ fontSize: 13, margin: 0 }}>{t('login.trustLine')}</p>
+          </aside>
 
-            {error ? <div className="pp-error">{error}</div> : null}
+          <div className="pp-card pp-pad" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+            <h2 className="pp-sectionTitle" style={{ fontSize: 22 }}>{t('login.formTitle')}</h2>
+            <p className="pp-subtle" style={{ marginBottom: 14, marginTop: -4 }}>
+              {t('login.formSubtitle')}
+            </p>
+            <form className="pp-form" onSubmit={onSubmit}>
+              <div>
+                <div className="pp-label">{t('login.email')}</div>
+                <input
+                  className="pp-input"
+                  autoComplete="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                />
+              </div>
+              <div>
+                <div className="pp-label">{t('login.password')}</div>
+                <input
+                  className="pp-input"
+                  type="password"
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                />
+              </div>
 
-            <div className="pp-row" style={{ justifyContent: 'space-between' }}>
-              <button className="pp-btn pp-btnPrimary" disabled={submitting}>
+              {error ? <div className="pp-error">{error}</div> : null}
+
+              <button className="pp-btn pp-btnPrimary pp-btn--lg" disabled={submitting} style={{ marginTop: 4 }}>
                 {submitting ? t('login.loggingIn') : t('login.logIn')}
               </button>
-              <Link className="pp-link" to="/register">
-                {t('login.createAccount')}
-              </Link>
-            </div>
-          </form>
+              <p className="pp-subtle" style={{ fontSize: 13, marginTop: 6, textAlign: 'center' }}>
+                {t('login.noAccountQ')}{' '}
+                <Link className="pp-link" to="/register" style={{ display: 'inline', padding: 0 }}>
+                  {t('login.createAccount')}
+                </Link>
+              </p>
+            </form>
+          </div>
         </div>
       </div>
     </div>
   );
 }
-

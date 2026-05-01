@@ -6,7 +6,6 @@ import { useGame } from '../game/GameContext';
 import { useLostPet } from '../lostPet/LostPetContext';
 import { usePets } from '../pets/PetsContext';
 import PetAvatar from '../components/PetAvatar';
-import { PrettySelect } from '../components/PrettySelect';
 import { useToast } from '../components/Toast';
 import { useI18n } from '../i18n/I18nContext';
 import { useCommunity } from '../social/CommunityContext';
@@ -25,8 +24,11 @@ function mapsLink(lat, lng) {
   return `https://www.google.com/maps?q=${encodeURIComponent(`${lat},${lng}`)}`;
 }
 
-function PostCard({ post }) {
+function PostCard({ post, taggedPet, authorLetter }) {
   const { t } = useI18n();
+  const [liked, setLiked] = useState(false);
+  const baseLikes = Number(post.likes) || 0;
+  const shownLikes = baseLikes + (liked ? 1 : 0);
   const feedKind = post.feedKind || 'community';
   const names = post.petNames?.length ? post.petNames : post.petName ? [post.petName] : [];
   const emoji = post.petEmoji || '🐾';
@@ -35,10 +37,11 @@ function PostCard({ post }) {
   const hasImages = post.imageUrls && post.imageUrls.length > 0;
   const hasVideo = Boolean(post.videoUrl);
   const hasWalk = Boolean(post.walkEmbed);
+  const humanLetter = (authorLetter || post.author || '?').trim().charAt(0).toUpperCase();
 
   return (
     <article
-      className={`pp-post${post.boosted ? ' pp-post--boosted' : ''}${
+      className={`pp-post pp-post--card${post.boosted ? ' pp-post--boosted' : ''}${
         feedKind === 'lostPet' ? ' pp-post--feedLost' : ''
       }${feedKind === 'stray' ? ' pp-post--feedStray' : ''}`}
       data-user={post.isUser ? 'yes' : undefined}
@@ -49,11 +52,21 @@ function PostCard({ post }) {
           Promoted{post.boostPaymentPending ? ' (payment pending)' : ''}
         </div>
       ) : null}
-      <header className="pp-post__head">
-        <div className="pp-post__avatar" aria-hidden>
-          {emoji}
-        </div>
-        <div className="pp-post__meta">
+      <header className="pp-post__head pp-post__head--card">
+        <div className="pp-post__actorRow">
+          <div className="pp-post__avatarsPair">
+            <div className="pp-post__humanAvatar">{isCompany ? '🏢' : humanLetter}</div>
+            {!isCompany ? (
+              taggedPet ? (
+                <PetAvatar pet={taggedPet} size={40} className="pp-post__petFace pp-post__petFace--feed" />
+              ) : (
+                <div className="pp-post__petAvatarFallback" aria-hidden>
+                  {emoji}
+                </div>
+              )
+            ) : null}
+          </div>
+          <div className="pp-post__meta">
           <div className="pp-post__title">
             <span className="pp-post__human">{post.author}</span>
             {isCompany ? (
@@ -66,7 +79,12 @@ function PostCard({ post }) {
                 <span className="pp-post__dot">·</span>
                 <span className="pp-post__pet">{bylinePets}</span>
               </>
-            ) : null}
+            ) : (
+              <>
+                <span className="pp-post__dot">·</span>
+                <span className="pp-post__pet">{t('community.feedPackMoments')}</span>
+              </>
+            )}
           </div>
           <div className="pp-post__time">
             {post.timeLabel}
@@ -88,6 +106,7 @@ function PostCard({ post }) {
               </>
             )}
           </div>
+        </div>
         </div>
       </header>
 
@@ -158,27 +177,40 @@ function PostCard({ post }) {
         </div>
       ) : null}
 
-      <div className="pp-post__actions">
-        <button type="button" className="pp-post__action">
-          ♥ {post.likes}
-        </button>
-        <button type="button" className="pp-post__action">
-          💬 {post.comments}
-        </button>
-        <button type="button" className="pp-post__action">
-          ↗ Share
-        </button>
-      </div>
-
       {post.caption ? (
         <p
-          className={`pp-post__caption${
+          className={`pp-post__caption pp-post__caption--card${
             feedKind === 'lostPet' || feedKind === 'stray' ? ' pp-post__caption--preLine' : ''
           }`}
         >
-          {post.caption}
+          {feedKind === 'community' ? (
+            <>
+              <span className="pp-post__captionAuthor">{post.author}</span> {post.caption}
+            </>
+          ) : (
+            post.caption
+          )}
         </p>
       ) : null}
+
+      <div className="pp-post__engage">
+        <button
+          type="button"
+          className={`pp-post__action pp-post__action--heart ${liked ? 'pp-post__action--on' : ''}`}
+          onClick={() => setLiked((v) => !v)}
+          aria-pressed={liked}
+          aria-label={t('community.feedLike')}
+        >
+          {liked ? '❤️' : '🤍'} <span>{shownLikes}</span>
+        </button>
+        <button type="button" className="pp-post__action" aria-label={t('community.feedComment')}>
+          💬 <span>{post.comments}</span>
+        </button>
+        <button type="button" className="pp-post__action pp-post__action--share" aria-label={t('community.feedShare')}>
+          ↗
+        </button>
+      </div>
+
       {post.tags?.length ? (
         <div className="pp-post__tags">
           {post.tags.map((tg) => (
@@ -221,43 +253,31 @@ export default function Community() {
   const [includeWalk, setIncludeWalk] = useState(false);
   const [walkStyle, setWalkStyle] = useState('map');
   const [walkForPetId, setWalkForPetId] = useState('');
-  const postPhotoInputId = useId();
-  const postVideoInputId = useId();
-  const postPhotoRef = useRef(null);
-  const postVideoRef = useRef(null);
+  const [feedFilter, setFeedFilter] = useState(() => 'all');
+  const hiddenPhotoInputId = useId();
+  const hiddenVideoInputId = useId();
+  const hiddenPhotoElRef = useRef(null);
+  const hiddenVideoElRef = useRef(null);
+  const composeSheetRef = useRef(null);
+  const composeTextareaRef = useRef(null);
+  const [composerOpen, setComposerOpen] = useState(false);
+  const [moreDetailsOpen, setMoreDetailsOpen] = useState(false);
+  const [stagedPhotos, setStagedPhotos] = useState(/** @type {File[]} */ ([]));
+  const [stagedVideo, setStagedVideo] = useState(/** @type {File|null} */ (null));
+  const [photoPreviewUrls, setPhotoPreviewUrls] = useState(/** @type {string[]} */ ([]));
+  const [videoPreviewUrl, setVideoPreviewUrl] = useState(/** @type {string|null} */ (null));
   const [postPhotoBusy, setPostPhotoBusy] = useState(false);
-  const [postFilesCount, setPostFilesCount] = useState(0);
-  const [postHasVideo, setPostHasVideo] = useState(false);
-  const [newPostExpanded, setNewPostExpanded] = useState(false);
 
   const taggedIds = useMemo(
     () => Object.entries(picked).filter(([, on]) => on).map(([id]) => id),
     [picked]
   );
 
-  useEffect(() => {
-    if (postKind === 'business') {
-      setIncludeWalk(false);
-    }
-    setPostFilesCount(0);
-    setPostHasVideo(false);
-    if (postPhotoRef.current) postPhotoRef.current.value = '';
-    if (postVideoRef.current) postVideoRef.current.value = '';
-  }, [postKind]);
-
-  useEffect(() => {
-    if (!includeWalk || !taggedIds.length) return;
-    if (!walkForPetId || !taggedIds.includes(walkForPetId)) {
-      setWalkForPetId(taggedIds[0]);
-    }
-  }, [includeWalk, taggedIds, walkForPetId]);
-
   const displayName = user?.displayName || user?.email?.split('@')[0] || 'You';
 
   const { t } = useI18n();
   const { activeListings } = useLostPet();
   const { availableFeed: strayFeedRows } = useStrayListings();
-  const [feedFilter, setFeedFilter] = useState(() => 'all');
 
   const unifiedFeed = useMemo(() => {
     const communityPieces = [];
@@ -303,6 +323,63 @@ export default function Community() {
     return unifiedFeed.filter((p) => (p.feedKind || 'community') === feedFilter);
   }, [unifiedFeed, feedFilter]);
 
+  useEffect(() => {
+    if (postKind === 'business') {
+      setIncludeWalk(false);
+    }
+    setStagedPhotos([]);
+    setStagedVideo(null);
+  }, [postKind]);
+
+  useEffect(() => {
+    const urls = stagedPhotos.map((f) => URL.createObjectURL(f));
+    setPhotoPreviewUrls(urls);
+    return () => urls.forEach((u) => URL.revokeObjectURL(u));
+  }, [stagedPhotos]);
+
+  useEffect(() => {
+    if (!stagedVideo) {
+      setVideoPreviewUrl(null);
+      return;
+    }
+    const u = URL.createObjectURL(stagedVideo);
+    setVideoPreviewUrl(u);
+    return () => URL.revokeObjectURL(u);
+  }, [stagedVideo]);
+
+  useEffect(() => {
+    if (!includeWalk) return;
+    const poolIds = taggedIds.length ? taggedIds : pets.map((p) => p.id);
+    if (!poolIds.length) return;
+    if (!walkForPetId || !poolIds.includes(walkForPetId)) {
+      setWalkForPetId(poolIds[0]);
+    }
+  }, [includeWalk, taggedIds, walkForPetId, pets]);
+
+  useEffect(() => {
+    if (!composerOpen) return;
+    const tid = window.setTimeout(() => composeTextareaRef.current?.focus(), 180);
+    return () => window.clearTimeout(tid);
+  }, [composerOpen]);
+
+  useEffect(() => {
+    if (!composerOpen) return;
+    const onKey = (e) => {
+      if (e.key === 'Escape') setComposerOpen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [composerOpen]);
+
+  useEffect(() => {
+    if (!composerOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [composerOpen]);
+
   function togglePet(id) {
     setPicked((p) => ({ ...p, [id]: !p[id] }));
   }
@@ -310,25 +387,22 @@ export default function Community() {
   async function submitPost(e) {
     e.preventDefault();
     const businessMode = isApprovedCompany && postKind === 'business' && companyProfile;
-    const ids = Object.entries(picked)
-      .filter(([, on]) => on)
-      .map(([id]) => id);
-    if (!businessMode && !ids.length) return;
-    const text = caption.trim();
-    const videoFile = postVideoRef.current?.files?.[0];
-    const files = postPhotoRef.current?.files;
+    const ids = taggedIds;
     let imageUrls;
     let videoDataUrl;
-    if (videoFile || (files && files.length)) {
+    const videoFile = stagedVideo;
+
+    const maxImagesCap = videoFile ? 3 : 4;
+    const photosSlice = stagedPhotos.slice(0, maxImagesCap);
+    if (videoFile || photosSlice.length > 0) {
       setPostPhotoBusy(true);
       try {
         if (videoFile) {
           videoDataUrl = await fileToSmallVideoDataUrl(videoFile);
         }
-        if (files && files.length) {
+        if (photosSlice.length) {
           const maxPh = videoDataUrl ? 3 : 4;
-          const arr = Array.from(files).slice(0, maxPh);
-          imageUrls = await filesToResizedDataUrls(arr);
+          imageUrls = await filesToResizedDataUrls(photosSlice.slice(0, maxPh));
         }
       } catch (err) {
         showToast(err?.message || 'Could not add your media. Try a smaller file.', { kind: 'error' });
@@ -347,6 +421,7 @@ export default function Community() {
             petName: walkPet?.name,
           }
         : undefined;
+    const text = caption.trim();
     if (!text && (!imageUrls || imageUrls.length === 0) && !videoDataUrl && !walkEmbed) return;
     if (businessMode) {
       addUserPost(
@@ -372,28 +447,49 @@ export default function Community() {
     setIncludeWalk(false);
     setWalkStyle('map');
     setWalkForPetId('');
-    setPostFilesCount(0);
-    setPostHasVideo(false);
+    setStagedPhotos([]);
+    setStagedVideo(null);
     setBoostBusinessPost(false);
-    if (postPhotoRef.current) postPhotoRef.current.value = '';
-    if (postVideoRef.current) postVideoRef.current.value = '';
-    setNewPostExpanded(false);
+    setMoreDetailsOpen(false);
+    setComposerOpen(false);
   }
 
-  const hasPick = Object.values(picked).some(Boolean);
   const businessReady = isApprovedCompany && postKind === 'business' && companyProfile;
-  const businessCanShare = Boolean(
-    businessReady && (Boolean(caption.trim()) || postFilesCount > 0 || postHasVideo)
-  );
-  const petCanShare =
-    hasPick &&
-    (Boolean(caption.trim()) ||
-      postFilesCount > 0 ||
-      postHasVideo ||
-      (includeWalk && latestWalk && Number(latestWalk.km) > 0));
+  const petBodyReady =
+    Boolean(caption.trim()) || stagedPhotos.length > 0 || Boolean(stagedVideo) || !!(includeWalk && latestWalk && Number(latestWalk.km) > 0);
+  const businessBodyReady =
+    Boolean(caption.trim()) || stagedPhotos.length > 0 || Boolean(stagedVideo);
+  const businessCanShare = Boolean(businessReady && businessBodyReady);
+  const petCanShare = postKind === 'pets' && petBodyReady;
   const canShare =
-    businessCanShare || ((!isApprovedCompany || postKind === 'pets') && petCanShare);
+    (isApprovedCompany && postKind === 'business' && businessCanShare) || petCanShare;
+  const teaserPetName = pets[0]?.name || '';
   const maxVideoLabelMb = (MAX_COMMUNITY_VIDEO_BYTES / (1024 * 1024)).toFixed(1);
+
+  function onHiddenPhotoPick(e) {
+    const fs = e.target.files;
+    if (fs?.length) {
+      const add = Array.from(fs).filter((f) => f.type.startsWith('image/'));
+      const cap = stagedVideo ? 3 : 4;
+      setStagedPhotos((prev) => [...prev, ...add].slice(0, cap));
+      setComposerOpen(true);
+    }
+    e.target.value = '';
+  }
+
+  function onHiddenVideoPick(e) {
+    const f = e.target.files?.[0];
+    if (f) {
+      setStagedVideo(f);
+      setStagedPhotos((prev) => prev.slice(0, 3));
+      setComposerOpen(true);
+    }
+    e.target.value = '';
+  }
+
+  function removeStagedPhotoAt(index) {
+    setStagedPhotos((prev) => prev.filter((_, j) => j !== index));
+  }
 
   return (
     <div className="pp-grid">
@@ -419,291 +515,335 @@ export default function Community() {
             </p>
           </div>
           <Link className="pp-link" to="/dashboard">
-            ← Dashboard
+            {t('common.backDashboard')}
           </Link>
         </div>
       </div>
 
       {pets.length > 0 || isApprovedCompany ? (
-        <div className="pp-col-12">
-          <div className="pp-card pp-pad">
-            <button
-              type="button"
-              className="pp-expandTrigger"
-              aria-expanded={newPostExpanded}
-              onClick={() => setNewPostExpanded((o) => !o)}
-              id="new-post-expand"
-            >
-              <span className="pp-expandTrigger__icon" aria-hidden>
-                {newPostExpanded ? '−' : '+'}
-              </span>
-              <span className="pp-expandTrigger__text">
-                <span className="pp-expandTrigger__title">New post</span>
-                <span className="pp-expandTrigger__desc">
-                  {newPostExpanded
-                    ? 'Compose your update below. Tap the header to collapse.'
-                    : 'Open to add a caption, photos or video, tag pets, and optionally attach your latest walk card.'}
-                </span>
-              </span>
-              <span className={`pp-expandTrigger__chev ${newPostExpanded ? 'is-open' : ''}`} aria-hidden>
-                ▼
-              </span>
-            </button>
-            {newPostExpanded ? (
-              <div className="pp-expandPanel" role="region" aria-labelledby="new-post-expand">
-                <p className="pp-subtle pp-expandIntro">
-                  Post as <strong>{displayName}</strong> — tag one or more pets, add media, and optionally include your
-                  latest logged walk. Approved businesses can switch to a business post with map pin and optional boost
-                  request.
-                </p>
+        <div className="pp-col-12 pp-createPost">
+          <input
+            id={hiddenPhotoInputId}
+            ref={hiddenPhotoElRef}
+            type="file"
+            accept="image/*"
+            multiple
+            className="pp-visuallyHidden"
+            onChange={onHiddenPhotoPick}
+          />
+          <input
+            id={hiddenVideoInputId}
+            ref={hiddenVideoElRef}
+            type="file"
+            accept="video/*"
+            className="pp-visuallyHidden"
+            onChange={onHiddenVideoPick}
+          />
+
+          <div className="pp-composeTeaser">
             {isApprovedCompany && companyProfile ? (
-              <div style={{ marginBottom: 12 }}>
-                <div className="pp-label" style={{ marginBottom: 6 }}>
-                  Post as
-                </div>
-                <div className="pp-community-walkStyle" role="group" aria-label="Post type">
-                  <label>
-                    <input
-                      type="radio"
-                      name="postKind"
-                      checked={postKind === 'pets'}
-                      onChange={() => setPostKind('pets')}
-                    />
-                    Pet moment
-                  </label>
-                  <label>
-                    <input
-                      type="radio"
-                      name="postKind"
-                      checked={postKind === 'business'}
-                      onChange={() => setPostKind('business')}
-                    />
-                    Business
-                  </label>
-                </div>
-                {postKind === 'business' ? (
-                  <p className="pp-subtle" style={{ fontSize: 12, marginTop: 8, marginBottom: 0 }}>
-                    Map pin: <strong>{companyProfile.businessName}</strong> (verified in{' '}
-                    <Link to="/company/apply" className="pp-link" style={{ display: 'inline', padding: 0 }}>
-                      business settings
-                    </Link>
-                    ).
-                  </p>
-                ) : null}
+              <div className="pp-composeTeaser__mode" role="tablist" aria-label={t('community.postAs')}>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={postKind === 'pets'}
+                  className={`pp-composeModePill ${postKind === 'pets' ? 'pp-composeModePill--on' : ''}`}
+                  onClick={() => setPostKind('pets')}
+                >
+                  {t('community.moment')}
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={postKind === 'business'}
+                  className={`pp-composeModePill ${postKind === 'business' ? 'pp-composeModePill--on' : ''}`}
+                  onClick={() => setPostKind('business')}
+                >
+                  {t('community.business')}
+                </button>
               </div>
             ) : null}
+
             {isApprovedCompany && postKind === 'pets' && !pets.length ? (
-              <p className="pp-subtle" style={{ marginBottom: 12 }}>
-                Add pets under <Link to="/pets">My pets</Link> to use pet moment posts, or switch to a business post.
-              </p>
-            ) : null}
-            {postKind === 'business' && isApprovedCompany ? (
-              <form className="pp-form" onSubmit={submitPost} style={{ gap: 12 }}>
-                <div>
-                  <div className="pp-label">What&apos;s the update?</div>
-                  <textarea
-                    className="pp-input"
-                    style={{ minHeight: 88, resize: 'vertical' }}
-                    value={caption}
-                    onChange={(e) => setCaption(e.target.value)}
-                    placeholder="e.g. This weekend: microchipping clinic, first hour free for members…"
-                  />
-                </div>
-                <div>
-                  <div className="pp-label">Photos (optional, up to 4)</div>
-                  <input
-                    id={postPhotoInputId}
-                    ref={postPhotoRef}
-                    className="pp-input"
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    onChange={() => setPostFilesCount(postPhotoRef.current?.files?.length || 0)}
-                    style={{ fontSize: 14 }}
-                  />
-                </div>
-                <div>
-                  <div className="pp-label">Short video (optional, one clip, max ~{maxVideoLabelMb} MB)</div>
-                  <input
-                    id={postVideoInputId}
-                    ref={postVideoRef}
-                    className="pp-input"
-                    type="file"
-                    accept="video/*"
-                    onChange={() => setPostHasVideo(!!postVideoRef.current?.files?.[0])}
-                    style={{ fontSize: 14 }}
-                  />
-                </div>
-                <div>
-                  <label className="pp-community-walkInclude">
-                    <input
-                      type="checkbox"
-                      checked={boostBusinessPost}
-                      onChange={(e) => setBoostBusinessPost(e.target.checked)}
-                    />
-                    <span>Paid boost (request)</span>
-                  </label>
-                  <p className="pp-subtle" style={{ fontSize: 12, marginTop: 4, marginBottom: 0 }}>
-                    Highlights this post in the feed. In-app payment can be connected later; we mark the post as promoted
-                    and &quot;payment pending&quot; until you confirm with the business.
-                  </p>
-                </div>
-                <div>
-                  <button type="submit" className="pp-btn pp-btnPrimary" disabled={!canShare || postPhotoBusy}>
-                    {postPhotoBusy ? 'Processing…' : 'Share to feed'}
+              <p className="pp-subtle pp-composeTeaser__hint">{t('community.noPetsHint')}</p>
+            ) : (
+              <div className="pp-composeTeaser__card">
+                <div className="pp-composeTeaser__row">
+                  <span className="pp-composeTeaser__avatar" aria-hidden>
+                    {displayName.trim().charAt(0).toUpperCase()}
+                  </span>
+                  <button type="button" className="pp-composeTeaser__fakeInput" onClick={() => setComposerOpen(true)}>
+                    {postKind === 'business'
+                      ? t('community.composerBusinessTeaser')
+                      : teaserPetName
+                        ? t('community.composerPlaceholder', { name: teaserPetName })
+                        : t('community.composerPlaceholderNeutral')}
                   </button>
                 </div>
-              </form>
-            ) : (
-              <form className="pp-form" onSubmit={submitPost} style={{ gap: 12 }}>
-                <div>
-                  <div className="pp-label">What&apos;s the moment?</div>
+                <div className="pp-composeTeaser__tools">
+                  <button
+                    type="button"
+                    className="pp-composeToolBtn"
+                    aria-label={t('community.composerAddPhoto')}
+                    onClick={() => hiddenPhotoElRef.current?.click()}
+                  >
+                    📷
+                  </button>
+                  <button
+                    type="button"
+                    className="pp-composeToolBtn"
+                    aria-label={t('community.composerAddVideo')}
+                    onClick={() => hiddenVideoElRef.current?.click()}
+                  >
+                    🎥
+                  </button>
+                  {postKind === 'pets' && pets.length > 0 ? (
+                    <button
+                      type="button"
+                      className="pp-composeToolBtn"
+                      aria-label={t('community.composerTagPet')}
+                      onClick={() => setComposerOpen(true)}
+                    >
+                      🐾
+                    </button>
+                  ) : null}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {composerOpen ? (
+            <div
+              className="pp-composeOverlay"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="pp-compose-title"
+              onClick={(e) => {
+                if (e.target === e.currentTarget) setComposerOpen(false);
+              }}
+            >
+              <div ref={composeSheetRef} className="pp-composeSheet" onClick={(e) => e.stopPropagation()}>
+                <div className="pp-composeSheet__topBar">
+                  <h2 id="pp-compose-title" className="pp-composeSheet__title">
+                    {t('community.composerTitle')}
+                  </h2>
+                  <button
+                    type="button"
+                    className="pp-composeSheet__close"
+                    onClick={() => setComposerOpen(false)}
+                    aria-label={t('community.composerCloseAria')}
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <form className="pp-composeForm" onSubmit={submitPost}>
+                  {isApprovedCompany && companyProfile ? (
+                    <div className="pp-composeSheet__mode" role="group" aria-label={t('community.postAs')}>
+                      <button
+                        type="button"
+                        className={`pp-composeModePill ${postKind === 'pets' ? 'pp-composeModePill--on' : ''}`}
+                        onClick={() => setPostKind('pets')}
+                      >
+                        {t('community.moment')}
+                      </button>
+                      <button
+                        type="button"
+                        className={`pp-composeModePill ${postKind === 'business' ? 'pp-composeModePill--on' : ''}`}
+                        onClick={() => setPostKind('business')}
+                      >
+                        {t('community.business')}
+                      </button>
+                    </div>
+                  ) : null}
+
+                  {postKind === 'business' && companyProfile ? (
+                    <p className="pp-subtle pp-composePinLine">
+                      {t('community.mapPin')} <strong>{companyProfile.businessName}</strong> ·{' '}
+                      <Link to="/company/apply" className="pp-link" style={{ display: 'inline', padding: 0 }}>
+                        {t('community.businessSettings')}
+                      </Link>
+                    </p>
+                  ) : null}
+
+                  <label className="pp-visuallyHidden" htmlFor="pp-compose-textarea">
+                    {t('community.newPost')}
+                  </label>
                   <textarea
-                    className="pp-input"
-                    style={{ minHeight: 88, resize: 'vertical' }}
+                    id="pp-compose-textarea"
+                    ref={composeTextareaRef}
+                    className="pp-composeTextarea"
+                    rows={4}
                     value={caption}
                     onChange={(e) => setCaption(e.target.value)}
-                    placeholder="e.g. Best sniff session at the new park…"
+                    placeholder={
+                      postKind === 'business'
+                        ? t('community.composerBusinessPlaceholder')
+                        : teaserPetName
+                          ? t('community.composerPlaceholder', { name: teaserPetName })
+                          : t('community.composerPlaceholderNeutral')
+                    }
                   />
-                </div>
-                <div>
-                  <div className="pp-label">Photos (optional, up to 4, or 3 if you add a video)</div>
-                  <input
-                    id={postPhotoInputId}
-                    ref={postPhotoRef}
-                    className="pp-input"
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    onChange={() => setPostFilesCount(postPhotoRef.current?.files?.length || 0)}
-                    style={{ fontSize: 14 }}
-                  />
-                  <p className="pp-subtle" style={{ fontSize: 12, marginTop: 4, marginBottom: 0 }}>
-                    {postFilesCount > 0
-                      ? `${postFilesCount} image(s) selected — will be resized for storage.`
-                      : 'Add a caption, photos, a short video, or include your latest walk below.'}
-                  </p>
-                </div>
-                <div>
-                  <div className="pp-label">Short video (optional, one clip, max ~{maxVideoLabelMb} MB)</div>
-                  <input
-                    id={postVideoInputId}
-                    ref={postVideoRef}
-                    className="pp-input"
-                    type="file"
-                    accept="video/*"
-                    onChange={() => setPostHasVideo(!!postVideoRef.current?.files?.[0])}
-                    style={{ fontSize: 14 }}
-                  />
-                </div>
-                {pets.length > 0 ? (
-                  <div>
-                    <div className="pp-label">Tag pet(s) on this post</div>
-                    <div className="pp-community-pickPets" role="group" aria-label="Pets in post">
-                      {pets.map((p) => (
-                        <label key={p.id} className="pp-community-petChip">
+
+                  {(photoPreviewUrls.length > 0 || videoPreviewUrl) && (
+                    <div className="pp-composePreviews">
+                      {photoPreviewUrls.map((url, i) => (
+                        <div key={`${url}-${i}`} className="pp-composePreviewTile">
+                          <img src={url} alt="" className="pp-composePreviewImg" />
+                          <button
+                            type="button"
+                            className="pp-composePreviewRemove"
+                            onClick={() => removeStagedPhotoAt(i)}
+                            aria-label={t('community.composerRemovePhoto')}
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                      {videoPreviewUrl ? (
+                        <div className="pp-composePreviewTile pp-composePreviewTile--video">
+                          <video src={videoPreviewUrl} className="pp-composePreviewVideo" controls muted playsInline />
+                          <button
+                            type="button"
+                            className="pp-composePreviewRemove"
+                            onClick={() => setStagedVideo(null)}
+                            aria-label={t('community.composerRemoveVideo')}
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ) : null}
+                    </div>
+                  )}
+
+                  <div className="pp-composeMediaRow">
+                    <button type="button" className="pp-composeMediaBtn" onClick={() => hiddenPhotoElRef.current?.click()}>
+                      📷 {t('community.composerPhotoLabel')}
+                    </button>
+                    <button type="button" className="pp-composeMediaBtn" onClick={() => hiddenVideoElRef.current?.click()}>
+                      🎥 {t('community.composerVideoLabel')}
+                    </button>
+                  </div>
+
+                  {postKind === 'pets' && pets.length > 0 ? (
+                    <div className="pp-composeChipsBlock">
+                      <div className="pp-composeChipsLabel">{t('community.composerTagLabel')}</div>
+                      <div className="pp-composeChips" role="group" aria-label={t('community.composerTagLabel')}>
+                        {pets.map((p) => (
+                          <button
+                            key={p.id}
+                            type="button"
+                            className={`pp-composePetChip ${picked[p.id] ? 'pp-composePetChip--on' : ''}`}
+                            aria-pressed={!!picked[p.id]}
+                            onClick={() => togglePet(p.id)}
+                          >
+                            <PetAvatar pet={p} size={32} className="pp-composePetChip__av" />
+                            <span>{p.name}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
+
+                  <button
+                    type="button"
+                    className="pp-composeMoreToggle"
+                    aria-expanded={moreDetailsOpen}
+                    onClick={() => setMoreDetailsOpen((v) => !v)}
+                  >
+                    {t('community.composerMoreDetails')}
+                    <span className="pp-composeMoreToggle__chev">{moreDetailsOpen ? '▴' : '▾'}</span>
+                  </button>
+
+                  {moreDetailsOpen ? (
+                    <div className="pp-composeDetails">
+                      {postKind === 'business' && isApprovedCompany ? (
+                        <label className="pp-composeBoost">
                           <input
                             type="checkbox"
-                            checked={!!picked[p.id]}
-                            onChange={() => togglePet(p.id)}
+                            checked={boostBusinessPost}
+                            onChange={(e) => setBoostBusinessPost(e.target.checked)}
                           />
-                          <span className="pp-community-petChip__inner">
-                            <PetAvatar pet={p} size={28} className="pp-community-petChip__avatar" />
-                            {p.name}
-                          </span>
+                          <span>{t('community.composerBoostLabel')}</span>
                         </label>
-                      ))}
+                      ) : null}
+
+                      {postKind === 'pets' && pets.length > 0 ? (
+                        <div className="pp-composeWalkBlock">
+                          <label className="pp-composeWalkRow">
+                            <input
+                              type="checkbox"
+                              checked={includeWalk}
+                              disabled={!latestWalk || Number(latestWalk.km) <= 0}
+                              onChange={(e) => setIncludeWalk(e.target.checked)}
+                            />
+                            <span>{t('community.walkOptional')}</span>
+                          </label>
+                          {!latestWalk || Number(latestWalk.km) <= 0 ? (
+                            <p className="pp-subtle pp-composeWalkHint">{t('community.noWalkYet')}</p>
+                          ) : (
+                            <>
+                              <div className="pp-composeWalkStyles" role="radiogroup">
+                                <button
+                                  type="button"
+                                  className={`pp-composeWalkStyleBtn ${walkStyle === 'map' ? 'pp-composeWalkStyleBtn--on' : ''}`}
+                                  onClick={() => setWalkStyle('map')}
+                                >
+                                  {t('community.walkStyleMap')}
+                                </button>
+                                <button
+                                  type="button"
+                                  className={`pp-composeWalkStyleBtn ${walkStyle === 'bar' ? 'pp-composeWalkStyleBtn--on' : ''}`}
+                                  onClick={() => setWalkStyle('bar')}
+                                >
+                                  {t('community.walkStyleBar')}
+                                </button>
+                              </div>
+                              {includeWalk ? (
+                                <div className="pp-composeWalkFor">
+                                  <span className="pp-composeWalkForLabel">{t('community.walkLabelFor')}</span>
+                                  <div className="pp-composeWalkChips">
+                                    {(taggedIds.length ? taggedIds : pets.map((p) => p.id)).map((id) => {
+                                      const p = pets.find((x) => x.id === id);
+                                      if (!p) return null;
+                                      return (
+                                        <button
+                                          key={id}
+                                          type="button"
+                                          className={`pp-composeWalkChip ${walkForPetId === id ? 'pp-composeWalkChip--on' : ''}`}
+                                          onClick={() => setWalkForPetId(id)}
+                                        >
+                                          {getCategory(p).emoji} {p.name}
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              ) : null}
+                            </>
+                          )}
+                        </div>
+                      ) : null}
                     </div>
+                  ) : null}
+
+                  <p className="pp-subtle pp-composeVideoCap" style={{ fontSize: 12, marginBottom: 0 }}>
+                    {t('community.composerVideoHint', { mb: maxVideoLabelMb })}
+                  </p>
+
+                  <div className="pp-composeFooter">
+                    <button
+                      type="submit"
+                      className="pp-btn pp-btnPrimary pp-composeShareBtn"
+                      disabled={!canShare || postPhotoBusy}
+                    >
+                      {postPhotoBusy ? t('community.composerPosting') : t('community.shareCta')}
+                    </button>
                   </div>
-                ) : null}
-                {pets.length > 0 ? (
-                  <div>
-                    <div className="pp-label">Latest walk (optional)</div>
-                    <label className="pp-community-walkInclude">
-                      <input
-                        type="checkbox"
-                        checked={includeWalk}
-                        disabled={!latestWalk || Number(latestWalk.km) <= 0}
-                        onChange={(e) => {
-                          const on = e.target.checked;
-                          setIncludeWalk(on);
-                          if (on && taggedIds.length) setWalkForPetId(taggedIds[0]);
-                        }}
-                      />
-                      <span>Include latest logged walk</span>
-                    </label>
-                    {!latestWalk || Number(latestWalk.km) <= 0 ? (
-                      <p className="pp-subtle" style={{ fontSize: 12, marginTop: 6, marginBottom: 0 }}>
-                        Log a walk on the Dashboard first to attach it here.
-                      </p>
-                    ) : (
-                      <div className="pp-community-walkOpts" style={{ marginTop: 10 }}>
-                        <div className="pp-label" style={{ fontSize: 12, marginBottom: 6 }}>
-                          Show as
-                        </div>
-                        <div className="pp-community-walkStyle" role="group" aria-label="Walk display style">
-                          <label>
-                            <input
-                              type="radio"
-                              name="walkStyle"
-                              checked={walkStyle === 'map'}
-                              disabled={!includeWalk}
-                              onChange={() => setWalkStyle('map')}
-                            />
-                            Map-style route
-                          </label>
-                          <label>
-                            <input
-                              type="radio"
-                              name="walkStyle"
-                              checked={walkStyle === 'bar'}
-                              disabled={!includeWalk}
-                              onChange={() => setWalkStyle('bar')}
-                            />
-                            Distance bar
-                          </label>
-                        </div>
-                        {includeWalk && taggedIds.length > 0 ? (
-                          <div style={{ marginTop: 10 }}>
-                            <label className="pp-label" style={{ fontSize: 12 }} htmlFor="walk-for-pet">
-                              Label walk for
-                            </label>
-                            <PrettySelect
-                              id="walk-for-pet"
-                              style={{ marginTop: 4, maxWidth: 280, fontSize: 14 }}
-                              value={walkForPetId}
-                              onChange={(e) => setWalkForPetId(e.target.value)}
-                            >
-                              {taggedIds.map((id) => {
-                                const p = pets.find((x) => x.id === id);
-                                if (!p) return null;
-                                return (
-                                  <option key={id} value={id}>
-                                    {getCategory(p).emoji} {p.name}
-                                  </option>
-                                );
-                              })}
-                            </PrettySelect>
-                          </div>
-                        ) : includeWalk ? (
-                          <p className="pp-subtle" style={{ fontSize: 12, marginTop: 8, marginBottom: 0 }}>
-                            Tag at least one pet to label the walk card.
-                          </p>
-                        ) : null}
-                      </div>
-                    )}
-                  </div>
-                ) : null}
-                <div>
-                  <button type="submit" className="pp-btn pp-btnPrimary" disabled={!canShare || postPhotoBusy}>
-                    {postPhotoBusy ? 'Processing…' : 'Share to feed'}
-                  </button>
-                </div>
-              </form>
-            )}
+                </form>
               </div>
-            ) : null}
-          </div>
+            </div>
+          ) : null}
         </div>
       ) : (
         <div className="pp-col-12">
@@ -790,7 +930,18 @@ export default function Community() {
         {filteredFeed.length === 0 ? (
           <p className="pp-subtle">{t('community.feedEmptyFiltered')}</p>
         ) : (
-          filteredFeed.map((post) => <PostCard key={postKey(post)} post={post} />)
+          filteredFeed.map((post) => {
+            const pid = post.petIds?.[0];
+            const tagged = pid ? pets.find((p) => p.id === pid) : null;
+            return (
+              <PostCard
+                key={postKey(post)}
+                post={post}
+                taggedPet={tagged}
+                authorLetter={post.isUser ? displayName.trim().charAt(0).toUpperCase() : undefined}
+              />
+            );
+          })
         )}
       </div>
     </div>

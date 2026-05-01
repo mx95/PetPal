@@ -51,7 +51,6 @@ export function CommunityProvider({ children }) {
           Number.isFinite(Number(companyOpts.lat)) &&
           Number.isFinite(Number(companyOpts.lng))
       );
-      if (!isCompany && !petIds.length) return;
       const we =
         walkEmbed &&
         typeof walkEmbed === 'object' &&
@@ -65,13 +64,15 @@ export function CommunityProvider({ children }) {
             }
           : undefined;
       if (!text && images.length === 0 && !we && !video) return;
+
+      /** Pet posts may omit pet IDs (untagged moment); when IDs are passed they must resolve. */
       let names = [];
       if (!isCompany) {
-        names = petIds
-          .map((id) => pets.find((p) => p.id === id))
-          .filter(Boolean)
-          .map((p) => p.name);
-        if (!names.length) return;
+        if (petIds.length) {
+          const resolved = petIds.map((id) => pets.find((p) => p.id === id)).filter(Boolean);
+          if (resolved.length !== petIds.length) return;
+          names = resolved.map((p) => p.name);
+        }
       }
       const author = isCompany
         ? String(companyOpts.businessName).trim()

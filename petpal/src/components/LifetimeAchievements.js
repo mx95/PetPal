@@ -41,8 +41,9 @@ function describe(t, a) {
   return t(key, { n: a.target, s: a.target === 1 ? '' : 's' });
 }
 
-export default function LifetimeAchievements() {
+export default function LifetimeAchievements({ variant = 'full' }) {
   const { t } = useI18n();
+  const hub = variant === 'hub';
   const { lifetimeAchievements, achievementXp, achievementCount, lifetimeAchievementDefs } = useGame();
 
   const total = Array.isArray(lifetimeAchievementDefs) ? lifetimeAchievementDefs.length : 0;
@@ -66,15 +67,15 @@ export default function LifetimeAchievements() {
   }, [lifetimeAchievements]);
 
   return (
-    <section className="pp-card pp-pad pp-lifetime" aria-labelledby="pp-lifetimeTitle">
-      <div className="pp-lifetime__head">
+    <section className={`pp-card pp-pad pp-lifetime${hub ? ' pp-lifetime--hub' : ''}`} aria-labelledby="pp-lifetimeTitle">
+      <div className={`pp-lifetime__head${hub ? ' pp-lifetime__head--hub' : ''}`}>
         <div>
           <span className="pp-lifetime__eyebrow">{t('lifetime.badge')}</span>
           <h2 id="pp-lifetimeTitle" className="pp-sectionTitle" style={{ marginTop: 6 }}>
             {t('lifetime.title')}
           </h2>
           <p className="pp-subtle" style={{ marginTop: 6, maxWidth: 640 }}>
-            {t('lifetime.subtitle')}
+            {hub ? t('activityHub.badgesLead') : t('lifetime.subtitle')}
           </p>
         </div>
         <div className="pp-lifetime__summary" role="status" aria-live="polite">
@@ -96,14 +97,14 @@ export default function LifetimeAchievements() {
         </div>
       </div>
 
-      <div className="pp-lifetime__groups">
+      <div className={`pp-lifetime__groups${hub ? ' pp-lifetime__groups--hub' : ''}`}>
         {groups.map((g) => (
           <div key={g.kind} className={`pp-lifetime__group pp-lifetime__group--${g.kind}`}>
             <div className="pp-lifetime__groupHead">
               <span className="pp-lifetime__groupIcon" aria-hidden>{KIND_ICON[g.kind] || '✨'}</span>
               <h3 className="pp-lifetime__groupTitle">{t(`lifetime.cat.${g.kind}`)}</h3>
             </div>
-            <ul className="pp-lifetime__list">
+            <ul className={`pp-lifetime__list${hub ? ' pp-lifetime__list--hub' : ''}`}>
               {g.items.map((a) => {
                 const pct = Math.round((a.progress || 0) * 100);
                 const label = t(`lifetime.ach.${a.id}.label`);

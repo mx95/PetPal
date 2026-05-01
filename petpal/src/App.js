@@ -21,12 +21,14 @@ import TermsOfService from './Pages/TermsOfService';
 import Documentation from './Pages/Documentation';
 import HomeScreen from './Pages/HomeScreen';
 import Profile from './Pages/Profile';
+import UserAvatar from './components/UserAvatar';
 import './ui/ui.css';
 import CompanyApply from './Pages/CompanyApply';
 import AdminCompanyQueue from './Pages/AdminCompanyQueue';
 import { LanguageSwitcher } from './i18n/LanguageSwitcher';
 import { useI18n } from './i18n/I18nContext';
 import ScrollToTop from './components/ScrollToTop';
+import BottomNav from './components/BottomNav';
 
 const Tracking = lazy(() => import('./Pages/Tracking'));
 
@@ -54,12 +56,7 @@ function TopNav() {
         <div className="pp-brand">PetPal</div>
         {user ? (
           <Link className="pp-navProfileRow" to="/profile">
-            <span className="pp-navProfileCircle" aria-hidden>
-              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="18" height="18">
-                <circle cx="12" cy="9.5" r="4.2" stroke="currentColor" strokeWidth="1.6" />
-                <path d="M6 20c1.2-3.8 13.8-3.8 15 0" stroke="currentColor" strokeWidth="1.55" strokeLinecap="round" />
-              </svg>
-            </span>
+            <UserAvatar user={user} size={32} className="pp-navProfileAvatar" />
             <span className="pp-navProfileLabel">{t('nav.profile')}</span>
           </Link>
         ) : null}
@@ -235,6 +232,7 @@ function App() {
       </div>
       <AppFooter />
       <CookieConsent />
+      <BottomNav />
     </div>
   );
 }

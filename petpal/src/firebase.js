@@ -2,6 +2,7 @@ import { getApp, getApps, initializeApp } from 'firebase/app';
 import { getAnalytics, isSupported } from 'firebase/analytics';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
+import { getStorage } from 'firebase/storage';
 
 const firebaseConfig = {
   apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
@@ -31,6 +32,26 @@ export function getDb() {
 
 export function isFirebaseConfigured() {
   return Boolean(process.env.REACT_APP_FIREBASE_PROJECT_ID);
+}
+
+/** Storage bucket from env (typically `projectId.appspot.com`). */
+export function isFirebaseStorageConfigured() {
+  return Boolean(process.env.REACT_APP_FIREBASE_STORAGE_BUCKET);
+}
+
+let storageInstance = null;
+
+/** @returns {import('firebase/storage').FirebaseStorage | null} */
+export function getFirebaseStorage() {
+  if (!isFirebaseStorageConfigured()) return null;
+  if (!storageInstance) {
+    try {
+      storageInstance = getStorage(app);
+    } catch {
+      return null;
+    }
+  }
+  return storageInstance;
 }
 
 /** Set when `REACT_APP_FIREBASE_MEASUREMENT_ID` is present. */
