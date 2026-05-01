@@ -1,6 +1,7 @@
 import React, { useCallback, useId, useMemo, useState } from 'react';
 import { Link, useOutletContext } from 'react-router-dom';
 import PetAvatar from '../components/PetAvatar';
+import { PrettySelect } from '../components/PrettySelect';
 import { useAuth } from '../auth/AuthProvider';
 import { useI18n } from '../i18n/I18nContext';
 import { PET_CATEGORIES } from '../pets/petCategories';
@@ -195,13 +196,13 @@ export default function StrayAdoption() {
               <label className="pp-label" htmlFor={petSelectId}>
                 {t('strayAdoption.fieldSpecies')}
               </label>
-              <select id={petSelectId} className="pp-input" value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
+              <PrettySelect id={petSelectId} value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
                 {PET_CATEGORIES.map((c) => (
                   <option key={c.id} value={c.id}>
-                    {c.emoji} {c.label}
+                    {c.emoji} {t(`categories.${c.id}`)}
                   </option>
                 ))}
-              </select>
+              </PrettySelect>
 
               <label className="pp-label" style={{ marginTop: 12 }}>
                 {t('strayAdoption.fieldNickname')}
@@ -311,14 +312,23 @@ export default function StrayAdoption() {
             <p className="pp-subtle">{t('strayAdoption.empty')}</p>
           ) : (
             <ul className="pp-lostPetList" style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 16 }}>
-              {filteredFeed.map((row) => (
+              {filteredFeed.map((row) => {
+                const listingTitle = row.nickname.trim() ? row.nickname : t('strayAdoption.unnamedListing');
+                return (
                 <li key={row.id} className="pp-card pp-pad" style={{ margin: 0 }}>
                   <div className="pp-row" style={{ gap: 14, alignItems: 'flex-start' }}>
-                    <PetAvatar pet={{ categoryId: row.categoryId, photoDataUrl: row.photoDataUrl || undefined, name: row.nickname }} size={56} />
+                    <PetAvatar
+                      pet={{
+                        categoryId: row.categoryId,
+                        photoDataUrl: row.photoDataUrl || undefined,
+                        name: listingTitle,
+                      }}
+                      size={56}
+                    />
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div className="pp-row" style={{ justifyContent: 'space-between', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
                         <span className="pp-row" style={{ gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-                          <strong>{row.nickname}</strong>
+                          <strong>{listingTitle}</strong>
                           {isSampleStrayListing(row.id) ? (
                             <span className="pp-badge" style={{ fontSize: 11, fontWeight: 600 }}>
                               {t('strayAdoption.sampleBadge')}
@@ -388,7 +398,8 @@ export default function StrayAdoption() {
                     </div>
                   </div>
                 </li>
-              ))}
+              );
+              })}
             </ul>
           )}
         </div>
@@ -401,7 +412,7 @@ export default function StrayAdoption() {
             <ul className="pp-subtle" style={{ margin: 0, paddingLeft: 18 }}>
               {mine.map((row) => (
                 <li key={row.id} style={{ marginBottom: 10 }}>
-                  <strong>{row.nickname}</strong> —{' '}
+                  <strong>{row.nickname.trim() ? row.nickname : t('strayAdoption.unnamedListing')}</strong> —{' '}
                   {row.status === 'available'
                     ? t('strayAdoption.stAvailable')
                     : row.status === 'adopted'

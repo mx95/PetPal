@@ -6,6 +6,7 @@ import { PET_CATEGORIES } from '../pets/petCategories';
 import { usePets } from '../pets/PetsContext';
 import { filesToResizedDataUrls } from '../walk/walkPhotos';
 import PetAvatar from '../components/PetAvatar';
+import { PrettySelect } from '../components/PrettySelect';
 import { useI18n } from '../i18n/I18nContext';
 
 export default function MyPets() {
@@ -206,8 +207,7 @@ export default function MyPets() {
                 </div>
                 <div>
                   <div className="pp-label">{t('myPets.category')}</div>
-                  <select
-                    className="pp-input"
+                  <PrettySelect
                     value={categoryId}
                     onChange={(e) => setCategoryId(e.target.value)}
                   >
@@ -216,7 +216,7 @@ export default function MyPets() {
                         {c.emoji} {t(`categories.${c.id}`)}
                       </option>
                     ))}
-                  </select>
+                  </PrettySelect>
                 </div>
                 <div>
                   <div className="pp-label">{t('myPets.color')}</div>
@@ -296,17 +296,13 @@ export default function MyPets() {
                         </div>
                         <div style={{ flex: '1 1 160px' }}>
                           <div className="pp-label">{t('myPets.category')}</div>
-                          <select
-                            className="pp-input"
-                            value={editCategoryId}
-                            onChange={(e) => setEditCategoryId(e.target.value)}
-                          >
+                          <PrettySelect value={editCategoryId} onChange={(e) => setEditCategoryId(e.target.value)}>
                             {PET_CATEGORIES.map((c) => (
                               <option key={c.id} value={c.id}>
                                 {c.emoji} {t(`categories.${c.id}`)}
                               </option>
                             ))}
-                          </select>
+                          </PrettySelect>
                         </div>
                       </div>
                       <div>

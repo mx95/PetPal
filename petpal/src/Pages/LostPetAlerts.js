@@ -1,6 +1,7 @@
 import React, { useId, useMemo, useState } from 'react';
 import { Link, useOutletContext } from 'react-router-dom';
 import PetAvatar from '../components/PetAvatar';
+import { PrettySelect } from '../components/PrettySelect';
 import { useLostPet } from '../lostPet/LostPetContext';
 import { usePets } from '../pets/PetsContext';
 
@@ -168,9 +169,8 @@ export default function LostPetAlerts() {
                     <div className="pp-label" id={`${petSelectId}-label`}>
                       Pet
                     </div>
-                    <select
+                    <PrettySelect
                       id={petSelectId}
-                      className="pp-input"
                       aria-labelledby={`${petSelectId}-label`}
                       value={petId}
                       onChange={(e) => setPetId(e.target.value)}
@@ -181,7 +181,7 @@ export default function LostPetAlerts() {
                           {getCategory(p).emoji} {p.name}
                         </option>
                       ))}
-                    </select>
+                    </PrettySelect>
                   </div>
                   <div>
                     <div className="pp-label">Description (what helps people recognize your pet?)</div>

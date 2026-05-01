@@ -6,6 +6,7 @@ import { useGame } from '../game/GameContext';
 import { useLostPet } from '../lostPet/LostPetContext';
 import { usePets } from '../pets/PetsContext';
 import PetAvatar from '../components/PetAvatar';
+import { PrettySelect } from '../components/PrettySelect';
 import { useI18n } from '../i18n/I18nContext';
 import { useCommunity } from '../social/CommunityContext';
 import { lostListingToFeedPost, strayListingToFeedPost } from '../social/communityFeedNormalize';
@@ -665,9 +666,8 @@ export default function Community() {
                             <label className="pp-label" style={{ fontSize: 12 }} htmlFor="walk-for-pet">
                               Label walk for
                             </label>
-                            <select
+                            <PrettySelect
                               id="walk-for-pet"
-                              className="pp-input"
                               style={{ marginTop: 4, maxWidth: 280, fontSize: 14 }}
                               value={walkForPetId}
                               onChange={(e) => setWalkForPetId(e.target.value)}
@@ -681,7 +681,7 @@ export default function Community() {
                                   </option>
                                 );
                               })}
-                            </select>
+                            </PrettySelect>
                           </div>
                         ) : includeWalk ? (
                           <p className="pp-subtle" style={{ fontSize: 12, marginTop: 8, marginBottom: 0 }}>

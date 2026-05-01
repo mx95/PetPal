@@ -123,8 +123,9 @@ const ICONS_PREMIUM = {
   ),
 };
 
-function HomeTileLink({ iconChildren, iconPremium, title, hint, locked, lockedHint, lockedAria, openAria, to }) {
+function HomeTileLink({ iconChildren, iconPremium, accentKey, title, hint, locked, lockedHint, lockedAria, openAria, to }) {
   const cls = ['pp-homeTile', 'pp-homeTile--premium'];
+  if (accentKey) cls.push(`pp-homeTile--accent-${accentKey}`);
   if (locked) cls.push('pp-homeTile--locked');
 
   const body = (
@@ -211,7 +212,7 @@ export default function HomeScreen() {
 
   const renderStandardTile = ({ iconKey, title, to, auth: authReq }) => {
     const locked = Boolean(authReq) && !user;
-    const cls = ['pp-homeTile'];
+    const cls = ['pp-homeTile', `pp-homeTile--accent-${iconKey}`];
     if (locked) cls.push('pp-homeTile--locked');
 
     const body = (
@@ -275,6 +276,7 @@ export default function HomeScreen() {
                     key={to}
                     iconChildren={ICONS_PREMIUM[iconKey]}
                     iconPremium
+                    accentKey={iconKey}
                     title={title}
                     hint={hint}
                     locked={locked}

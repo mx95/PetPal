@@ -54,35 +54,19 @@ function NearbyMap({ apiKey }) {
 
   const [map, setMap] = useState(null);
   const [searchCenter, setSearchCenter] = useState(DEFAULT_CENTER);
-  const [locationNote, setLocationNote] = useState(null);
+  const [locationNote, setLocationNote] = useState(() => ({ kind: 'default' }));
   const [selectedCategoryId, setSelectedCategoryId] = useState(NEARBY_CATEGORIES[0].id);
   const [searchScope, setSearchScope] = useState('radius');
   const [places, setPlaces] = useState([]);
   const [searchStatus, setSearchStatus] = useState('idle');
   const [activePlace, setActivePlace] = useState(null);
+  const [locFetching, setLocFetching] = useState(false);
 
   const selectedCategory = useMemo(() => getCategoryById(selectedCategoryId, t), [selectedCategoryId, t]);
   const mapCenter = useMemo(
     () => ({ lat: searchCenter.lat, lng: searchCenter.lng }),
     [searchCenter.lat, searchCenter.lng]
   );
-
-  useEffect(() => {
-    if (!navigator.geolocation) {
-      setLocationNote(t('nearbyPage.locUnavailable'));
-      return;
-    }
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setSearchCenter({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-        setLocationNote(null);
-      },
-      () => {
-        setLocationNote(t('nearbyPage.locDenied'));
-      },
-      { enableHighAccuracy: true, maximumAge: 60_000, timeout: 12_000 }
-    );
-  }, [t]);
 
   const runPlacesSearch = useCallback(
     (mode) => {
@@ -137,6 +121,33 @@ function NearbyMap({ apiKey }) {
     if (isLoaded && map) runPlacesSearch();
   }, [isLoaded, map, selectedCategoryId, searchCenter.lat, searchCenter.lng, runPlacesSearch]);
 
+  function onUseMyLocation() {
+    setLocationNote({ kind: 'none' });
+    if (!navigator.geolocation) {
+      setLocationNote({ kind: 'text', message: t('nearbyPage.locUnavailable') });
+      return;
+    }
+    setLocFetching(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const next = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        setSearchCenter(next);
+        setLocFetching(false);
+        setLocationNote({ kind: 'none' });
+        if (map && window.google?.maps) {
+          map.panTo(new window.google.maps.LatLng(next.lat, next.lng));
+          map.setZoom(14);
+        }
+        setSearchScope('radius');
+      },
+      () => {
+        setLocFetching(false);
+        setLocationNote({ kind: 'text', message: t('nearbyPage.locDenied') });
+      },
+      { enableHighAccuracy: true, maximumAge: 0, timeout: 15_000 }
+    );
+  }
+
   function onSearchThisArea() {
     setSearchScope('bounds');
     runPlacesSearch('bounds');
@@ -179,9 +190,14 @@ function NearbyMap({ apiKey }) {
         </Link>
       </div>
 
-      {locationNote ? (
+      {locationNote?.kind === 'default' ? (
         <p className="pp-subtle" style={{ marginTop: 12, marginBottom: 0, fontSize: 14 }}>
-          {locationNote}
+          {t('nearbyPage.locDefaultHint')}
+        </p>
+      ) : null}
+      {locationNote?.kind === 'text' ? (
+        <p className="pp-subtle" style={{ marginTop: 12, marginBottom: 0, fontSize: 14 }}>
+          {locationNote.message}
         </p>
       ) : null}
 
@@ -221,6 +237,14 @@ function NearbyMap({ apiKey }) {
       <div className="pp-nearby-body">
         <div className="pp-nearby-mapWrap">
           <div className="pp-nearby-mapActions">
+            <button
+              type="button"
+              className="pp-nearby-cta pp-nearby-cta--location"
+              onClick={onUseMyLocation}
+              disabled={locFetching}
+            >
+              {locFetching ? t('nearbyPage.locFetching') : t('nearbyPage.useMyLocation')}
+            </button>
             <button type="button" className="pp-nearby-cta pp-nearby-cta--primary" onClick={onSearchThisArea}>
               {t('nearbyPage.searchThisArea')}
             </button>

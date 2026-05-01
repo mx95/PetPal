@@ -1,6 +1,7 @@
 import React, { useCallback, useId, useMemo, useState } from 'react';
 import { Link, useOutletContext } from 'react-router-dom';
 import PetAvatar from '../components/PetAvatar';
+import { PrettySelect } from '../components/PrettySelect';
 import { useAuth } from '../auth/AuthProvider';
 import { useI18n } from '../i18n/I18nContext';
 import { usePets } from '../pets/PetsContext';
@@ -203,19 +204,14 @@ export default function BreedMatching() {
                   <label className="pp-label" htmlFor={petLinkId}>
                     {t('breeding.fieldLinkPet')}
                   </label>
-                  <select
-                    id={petLinkId}
-                    className="pp-input"
-                    value={linkedPetId}
-                    onChange={(e) => pickPet(e.target.value)}
-                  >
+                  <PrettySelect id={petLinkId} value={linkedPetId} onChange={(e) => pickPet(e.target.value)}>
                     <option value="">{t('breeding.linkPetNone')}</option>
                     {dogPets.map((p) => (
                       <option key={p.id} value={p.id}>
                         {p.name}
                       </option>
                     ))}
-                  </select>
+                  </PrettySelect>
                 </>
               ) : null}
 
@@ -305,11 +301,11 @@ export default function BreedMatching() {
               value={searchQ}
               onChange={(e) => setSearchQ(e.target.value)}
             />
-            <select className="pp-input" style={{ maxWidth: 160 }} value={genderFilter} onChange={(e) => setGenderFilter(e.target.value)}>
+            <PrettySelect style={{ maxWidth: 160 }} value={genderFilter} onChange={(e) => setGenderFilter(e.target.value)}>
               <option value="all">{t('breeding.filterAll')}</option>
               <option value="male">{t('breeding.filterMale')}</option>
               <option value="female">{t('breeding.filterFemale')}</option>
-            </select>
+            </PrettySelect>
           </div>
 
           {filteredFeed.length === 0 && !loading ? (

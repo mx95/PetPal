@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useId, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useI18n } from '../i18n/I18nContext';
+import { PrettySelect } from '../components/PrettySelect';
 import PositionMap from '../tracking/PositionMap';
 import { usePets } from '../pets/PetsContext';
 import { getLatestPosition, getTrackingDataSource, mapsLink } from '../tracking/traccarClient';
@@ -123,7 +124,7 @@ export default function Tracking() {
           <div className="pp-form" style={{ marginBottom: 12 }}>
             <div>
               <div className="pp-label">{t('trackingPage.petSelectLabel')}</div>
-              <select className="pp-input" value={selectedPetId} onChange={(e) => setSelectedPetId(e.target.value)}>
+              <PrettySelect value={selectedPetId} onChange={(e) => setSelectedPetId(e.target.value)}>
                 {pets.map((p) => (
                   <option key={p.id} value={p.id}>
                     {getCategory(p).emoji} {p.name}
@@ -132,7 +133,7 @@ export default function Tracking() {
                       : ''}
                   </option>
                 ))}
-              </select>
+              </PrettySelect>
             </div>
           </div>
           <form className="pp-form" onSubmit={saveIdAndLoad}>

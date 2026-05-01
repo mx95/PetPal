@@ -299,6 +299,10 @@ export default {
     reviewsCount: '{n} reviews',
     locUnavailable: 'Location unavailable — showing a default area. You can still browse categories.',
     locDenied: 'Location permission denied — using a default map center. Enable location for results near you.',
+    useMyLocation: 'Use my location',
+    locFetching: 'Getting location…',
+    locDefaultHint:
+      'The map starts on a sample area. Tap “Use my location” to centre searches on your position (browser will ask for permission).',
     cats: {
       pet_store: { label: 'Pet shop', desc: 'Pet stores & supplies' },
       veterinary_care: { label: 'Vet', desc: 'Veterinary clinics' },
@@ -419,7 +423,8 @@ export default {
     reportHint:
       'Include how to reach you (phone required). Optional photo: keep files small. Coordinates help others open the exact spot on a map.',
     fieldSpecies: 'Species',
-    fieldNickname: 'Short name or label',
+    fieldNickname: 'Short name or label (optional)',
+    unnamedListing: 'No name given',
     fieldDesc: 'Description (temperament, markings, collar, health notes)',
     fieldFoundWhere: 'Where you found them',
     fieldFoundWhen: 'When (free text)',
@@ -432,7 +437,7 @@ export default {
     submit: 'Publish listing',
     submitting: 'Publishing…',
     errPhotoBig: 'Image is too large for this form. Try a smaller photo.',
-    errRequired: 'Fill in name, description, where found, and phone.',
+    errRequired: 'Fill in description, where found, and phone.',
     errGeneric: 'Could not publish. Check your connection and try again.',
     errNoBackend: 'Cloud database is not configured; listings cannot be saved.',
     errManage: 'Could not update listing.',
