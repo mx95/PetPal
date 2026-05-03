@@ -10,7 +10,15 @@ const PublicWalkContext = createContext(null);
 export function PublicWalkProvider({ children }) {
   const { user } = useAuth();
   const uid = user?.uid ?? null;
-  const { walkTotals, walkLog } = useGame();
+  const {
+    walkTotals,
+    walkLog,
+    level,
+    achievementXp,
+    achievementCount,
+    lifetimeAchievementDefs: lifeDefs,
+    lifetimeStats,
+  } = useGame();
   const [shareOnLeaderboard, setShareState] = useState(false);
   const [shareLoaded, setShareLoaded] = useState(false);
   const [lastSyncError, setLastSyncError] = useState(null);
@@ -53,6 +61,11 @@ export function PublicWalkProvider({ children }) {
           user,
           shareWalkDistance: next,
           walkTotals,
+          level,
+          achievementXp,
+          achievementCount,
+          achievementTotal: Array.isArray(lifeDefs) ? lifeDefs.length : 0,
+          lifetimeKm: lifetimeStats?.km || 0,
         });
       } catch (e) {
         setShareState(previous);
@@ -60,7 +73,7 @@ export function PublicWalkProvider({ children }) {
         throw e;
       }
     },
-    [user, walkTotals, shareOnLeaderboard]
+    [user, walkTotals, shareOnLeaderboard, level, achievementXp, achievementCount, lifeDefs, lifetimeStats]
   );
 
   const debouncRef = useRef(null);
@@ -73,6 +86,11 @@ export function PublicWalkProvider({ children }) {
         user,
         shareWalkDistance: true,
         walkTotals,
+        level,
+        achievementXp,
+        achievementCount,
+        achievementTotal: Array.isArray(lifeDefs) ? lifeDefs.length : 0,
+        lifetimeKm: lifetimeStats?.km || 0,
       })
         .then(() => setLastSyncError(null))
         .catch((e) => setLastSyncError(e?.message || 'Sync failed'));
@@ -80,7 +98,7 @@ export function PublicWalkProvider({ children }) {
     return () => {
       if (debouncRef.current) clearTimeout(debouncRef.current);
     };
-  }, [uid, user, shareOnLeaderboard, walkLog, walkTotals]);
+  }, [uid, user, shareOnLeaderboard, walkLog, walkTotals, level, achievementXp, achievementCount, lifeDefs, lifetimeStats]);
 
   const value = useMemo(
     () => ({

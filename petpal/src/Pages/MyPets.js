@@ -6,8 +6,11 @@ import { PET_CATEGORIES } from '../pets/petCategories';
 import { usePets } from '../pets/PetsContext';
 import { filesToResizedDataUrls } from '../walk/walkPhotos';
 import PetAvatar from '../components/PetAvatar';
+import { PrettySelect } from '../components/PrettySelect';
+import { useI18n } from '../i18n/I18nContext';
 
 export default function MyPets() {
+  const { t } = useI18n();
   const { user } = useAuth();
   const { pets, addPet, updatePet, removePet, getCategory } = usePets();
   const [name, setName] = useState('');
@@ -109,38 +112,36 @@ export default function MyPets() {
       <div className="pp-col-12">
         <div className="pp-row" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
-            <div className="pp-badge">Pets</div>
+            <div className="pp-badge">{t('myPets.badge')}</div>
             <h1 className="pp-h1" style={{ marginTop: 10 }}>
-              My pets
+              {t('myPets.title')}
             </h1>
             <p className="pp-subtle" style={{ marginTop: 6, maxWidth: 560 }}>
-              Add each pet with type, optional <strong>colours / coat</strong>, <strong>age</strong>, and a short{' '}
-              <strong>description</strong>, plus an optional <strong>profile photo</strong>. One GPS device id per pet on
-              the tracker. Premium <Link to="/lost-pet">lost pet alerts</Link> use your photo and details for faster
-              contact.
+              {t('myPets.intro')}
             </p>
           </div>
           <Link className="pp-link" to="/dashboard">
-            ← Dashboard
+            {t('common.backDashboard')}
           </Link>
         </div>
       </div>
 
       <div className="pp-col-12">
         <div className="pp-card pp-pad" style={{ borderColor: 'rgba(91, 55, 255, 0.2)' }}>
-          <h2 className="pp-sectionTitle">Try sample data</h2>
+          <h2 className="pp-sectionTitle">{t('myPets.sampleTitle')}</h2>
           <p className="pp-subtle" style={{ marginBottom: 10, maxWidth: 720 }}>
-            Load <strong>Bailey</strong> and <strong>Miso</strong>, demo walks/XP, and two community posts. This saves to{' '}
-            <strong>this browser</strong> only (it does not create rows in the Firebase Data tab by itself).
+            {t('myPets.sampleText')}
           </p>
           {!user ? (
-            <p className="pp-subtle" style={{ color: '#b42318' }}>Sign in to use sample data.</p>
+            <p className="pp-subtle" style={{ color: '#b42318' }}>
+              {t('myPets.sampleSignIn')}
+            </p>
           ) : (
             <>
               {mockMsg ? <p className="pp-subtle" style={{ marginBottom: 10 }}>{mockMsg}</p> : null}
               {user?.uid && hasLoadedMockBundle(user.uid) ? (
                 <p className="pp-subtle" style={{ fontSize: 12, marginBottom: 8 }}>
-                  Sample bundle was applied before. Use again if you removed Bailey/Miso and want them back.
+                  {t('myPets.sampleLoaded')}
                 </p>
               ) : null}
               <button
@@ -151,19 +152,17 @@ export default function MyPets() {
                   if (!user?.uid) return;
                   const r = applyMockAccountSeed(user.uid, user);
                   if (r.error === 'storage') {
-                    setMockMsg(
-                      'Could not save in this browser (storage blocked or full). Allow site data for localhost and try again.'
-                    );
+                    setMockMsg(t('myPets.sampleStorageErr'));
                     return;
                   }
                   if (r.alreadyHadBundle) {
-                    setMockMsg('Sample pets and posts are already loaded. Check Dashboard, Community, and the pet list on this page.');
+                    setMockMsg(t('myPets.sampleDone'));
                     return;
                   }
                   window.location.reload();
                 }}
               >
-                Load sample pets &amp; mock data
+                {t('myPets.sampleBtn')}
               </button>
             </>
           )}
@@ -183,11 +182,9 @@ export default function MyPets() {
               {addPetExpanded ? '−' : '+'}
             </span>
             <span className="pp-expandTrigger__text">
-              <span className="pp-expandTrigger__title">Add a pet</span>
+              <span className="pp-expandTrigger__title">{t('myPets.addTitle')}</span>
               <span className="pp-expandTrigger__desc">
-                {addPetExpanded
-                  ? 'Fill in the form below. You can collapse this section anytime.'
-                  : 'Tap to add a new profile: name, type, photo, and optional details for Community and lost-pet tools.'}
+                {addPetExpanded ? t('myPets.addExpandExpanded') : t('myPets.addExpandCollapsed')}
               </span>
             </span>
             <span className={`pp-expandTrigger__chev ${addPetExpanded ? 'is-open' : ''}`} aria-hidden>
@@ -196,72 +193,66 @@ export default function MyPets() {
           </button>
           {addPetExpanded ? (
             <div className="pp-expandPanel" role="region" aria-labelledby="add-pet-expand">
-              <p className="pp-subtle pp-expandIntro">
-                Add each pet with type, optional <strong>colours / coat</strong>, <strong>age</strong>, and a short{' '}
-                <strong>description</strong>, plus an optional <strong>profile photo</strong>. One GPS device id per pet
-                appears when you edit the pet below. <Link to="/lost-pet">Lost pet alerts</Link> can use this photo and
-                text.
-              </p>
+              <p className="pp-subtle pp-expandIntro">{t('myPets.introExpandPanel')}</p>
               <form className="pp-form" onSubmit={submitAdd}>
                 <div>
-                  <div className="pp-label">Name</div>
+                  <div className="pp-label">{t('myPets.name')}</div>
                   <input
                     className="pp-input"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="e.g. Luna"
+                    placeholder={t('myPets.namePh')}
                     autoComplete="off"
                   />
                 </div>
                 <div>
-                  <div className="pp-label">Category</div>
-                  <select
-                    className="pp-input"
+                  <div className="pp-label">{t('myPets.category')}</div>
+                  <PrettySelect
                     value={categoryId}
                     onChange={(e) => setCategoryId(e.target.value)}
                   >
                     {PET_CATEGORIES.map((c) => (
                       <option key={c.id} value={c.id}>
-                        {c.emoji} {c.label}
+                        {c.emoji} {t(`categories.${c.id}`)}
                       </option>
                     ))}
-                  </select>
+                  </PrettySelect>
                 </div>
                 <div>
-                  <div className="pp-label">Colour / pattern (optional)</div>
+                  <div className="pp-label">{t('myPets.color')}</div>
                   <input
                     className="pp-input"
                     value={colorScheme}
                     onChange={(e) => setColorScheme(e.target.value)}
                     maxLength={120}
-                    placeholder="e.g. Black and tan, grey tabby"
+                    placeholder={t('myPets.colorPh')}
                     autoComplete="off"
                   />
                 </div>
                 <div>
-                  <div className="pp-label">Age (optional)</div>
+                  <div className="pp-label">{t('myPets.age')}</div>
                   <input
                     className="pp-input"
                     value={age}
                     onChange={(e) => setAge(e.target.value)}
                     maxLength={80}
-                    placeholder="e.g. 3 years, 8 months, senior"
+                    placeholder={t('myPets.agePh')}
                     autoComplete="off"
                   />
                 </div>
                 <div>
-                  <div className="pp-label">Description (optional)</div>
+                  <div className="pp-label">{t('myPets.description')}</div>
                   <textarea
                     className="pp-input"
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     maxLength={2000}
                     style={{ minHeight: 72, resize: 'vertical' }}
-                    placeholder="Personality, habits, medical notes to remember at a glance…"
+                    placeholder={t('myPets.descPh')}
                   />
                 </div>
                 <div>
-                  <div className="pp-label">Profile photo (optional)</div>
+                  <div className="pp-label">{t('myPets.photo')}</div>
                   <input
                     id={addPhotoInputId}
                     ref={addPhotoRef}
@@ -271,11 +262,11 @@ export default function MyPets() {
                     style={{ fontSize: 14 }}
                   />
                   <p className="pp-subtle" style={{ fontSize: 12, marginTop: 4, marginBottom: 0 }}>
-                    Resized to save space. Square pictures look best in the list and in Community.
+                    {t('myPets.photoHint')}
                   </p>
                 </div>
                 <button type="submit" className="pp-btn pp-btnPrimary" disabled={!name.trim() || addPhotoBusy}>
-                  {addPhotoBusy ? 'Processing…' : 'Add pet'}
+                  {addPhotoBusy ? t('myPets.processing') : t('myPets.addPet')}
                 </button>
               </form>
             </div>
@@ -285,9 +276,9 @@ export default function MyPets() {
 
       <div className="pp-col-6">
         <div className="pp-card pp-pad">
-          <h2 className="pp-sectionTitle">Your pack ({pets.length})</h2>
+          <h2 className="pp-sectionTitle">{t('myPets.yourPackCount', { count: pets.length })}</h2>
           {pets.length === 0 ? (
-            <p className="pp-subtle">No pets yet — add one on the left.</p>
+            <p className="pp-subtle">{t('myPets.noPets')}</p>
           ) : (
             <ul className="pp-petList">
               {pets.map((p) => (
@@ -296,7 +287,7 @@ export default function MyPets() {
                     <form className="pp-form" onSubmit={saveEdit}>
                       <div className="pp-row" style={{ alignItems: 'flex-end', flexWrap: 'wrap' }}>
                         <div style={{ flex: '1 1 140px' }}>
-                          <div className="pp-label">Name</div>
+                          <div className="pp-label">{t('myPets.name')}</div>
                           <input
                             className="pp-input"
                             value={editName}
@@ -304,63 +295,59 @@ export default function MyPets() {
                           />
                         </div>
                         <div style={{ flex: '1 1 160px' }}>
-                          <div className="pp-label">Category</div>
-                          <select
-                            className="pp-input"
-                            value={editCategoryId}
-                            onChange={(e) => setEditCategoryId(e.target.value)}
-                          >
+                          <div className="pp-label">{t('myPets.category')}</div>
+                          <PrettySelect value={editCategoryId} onChange={(e) => setEditCategoryId(e.target.value)}>
                             {PET_CATEGORIES.map((c) => (
                               <option key={c.id} value={c.id}>
-                                {c.emoji} {c.label}
+                                {c.emoji} {t(`categories.${c.id}`)}
                               </option>
                             ))}
-                          </select>
+                          </PrettySelect>
                         </div>
                       </div>
                       <div>
-                        <div className="pp-label">Colour / pattern (optional)</div>
+                        <div className="pp-label">{t('myPets.color')}</div>
                         <input
                           className="pp-input"
                           value={editColorScheme}
                           onChange={(e) => setEditColorScheme(e.target.value)}
                           maxLength={120}
-                          placeholder="e.g. Black and tan"
+                          placeholder={t('myPets.colorPh')}
                         />
                       </div>
                       <div>
-                        <div className="pp-label">Age (optional)</div>
+                        <div className="pp-label">{t('myPets.age')}</div>
                         <input
                           className="pp-input"
                           value={editAge}
                           onChange={(e) => setEditAge(e.target.value)}
                           maxLength={80}
-                          placeholder="e.g. 2 years"
+                          placeholder={t('myPets.agePh')}
                         />
                       </div>
                       <div>
-                        <div className="pp-label">Description (optional)</div>
+                        <div className="pp-label">{t('myPets.description')}</div>
                         <textarea
                           className="pp-input"
                           value={editDescription}
                           onChange={(e) => setEditDescription(e.target.value)}
                           maxLength={2000}
                           style={{ minHeight: 72, resize: 'vertical' }}
-                          placeholder="Short notes"
+                          placeholder={t('myPets.shortNotes')}
                         />
                       </div>
                       <div>
-                        <div className="pp-label">Traccar device id (optional)</div>
+                        <div className="pp-label">{t('myPets.traccar')}</div>
                         <input
                           className="pp-input"
                           value={editDevice}
                           onChange={(e) => setEditDevice(e.target.value)}
-                          placeholder="Link a device for live map"
+                          placeholder={t('myPets.traccarPh')}
                           inputMode="numeric"
                         />
                       </div>
                       <div>
-                        <div className="pp-label">Profile photo</div>
+                        <div className="pp-label">{t('myPets.profilePhoto')}</div>
                         <div className="pp-row" style={{ alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
                           {p.photoDataUrl ? (
                             <img
@@ -396,7 +383,7 @@ export default function MyPets() {
                                   updatePet(editingId, { photoDataUrl: null });
                                 }}
                               >
-                                Remove current photo
+                                {t('myPets.removePhoto')}
                               </button>
                             ) : null}
                           </div>
@@ -404,10 +391,10 @@ export default function MyPets() {
                       </div>
                       <div className="pp-row" style={{ gap: 8 }}>
                         <button type="submit" className="pp-btn pp-btnPrimary" disabled={editPhotoBusy}>
-                          {editPhotoBusy ? 'Processing…' : 'Save'}
+                          {editPhotoBusy ? t('myPets.processing') : t('common.save')}
                         </button>
                         <button type="button" className="pp-btn" onClick={() => setEditingId(null)}>
-                          Cancel
+                          {t('common.cancel')}
                         </button>
                       </div>
                     </form>
@@ -418,17 +405,32 @@ export default function MyPets() {
                         <div>
                           <div className="pp-petList__name">{p.name}</div>
                           <div className="pp-petList__meta">
-                            {getCategory(p).label}
+                            {t(`categories.${getCategory(p).id}`)}
                             {p.trackingDeviceId ? (
-                              <> · Device #{p.trackingDeviceId}</>
+                              <>
+                                {' '}
+                                · {t('myPets.listDevice')}
+                                {p.trackingDeviceId}
+                              </>
                             ) : (
-                              <> · No tracker linked</>
+                              <>
+                                {' '}
+                                · {t('myPets.noTracker')}
+                              </>
                             )}
                           </div>
                           {(p.age || p.colorScheme) && (
                             <div className="pp-petList__tags">
-                              {p.age ? <span className="pp-petTag">Age: {p.age}</span> : null}
-                              {p.colorScheme ? <span className="pp-petTag">Look: {p.colorScheme}</span> : null}
+                              {p.age ? (
+                                <span className="pp-petTag">
+                                  {t('myPets.tagAge')} {p.age}
+                                </span>
+                              ) : null}
+                              {p.colorScheme ? (
+                                <span className="pp-petTag">
+                                  {t('myPets.tagLook')} {p.colorScheme}
+                                </span>
+                              ) : null}
                             </div>
                           )}
                           {p.description ? (
@@ -438,16 +440,16 @@ export default function MyPets() {
                       </div>
                       <div className="pp-row" style={{ marginTop: 10, gap: 8 }}>
                         <button type="button" className="pp-btn" onClick={() => startEdit(p)}>
-                          Edit
+                          {t('myPets.edit')}
                         </button>
                         <button
                           type="button"
                           className="pp-btn"
                           onClick={() => {
-                            if (window.confirm(`Remove ${p.name} from PetPal?`)) removePet(p.id);
+                            if (window.confirm(t('myPets.removeConfirm', { name: p.name }))) removePet(p.id);
                           }}
                         >
-                          Remove
+                          {t('myPets.remove')}
                         </button>
                       </div>
                     </>

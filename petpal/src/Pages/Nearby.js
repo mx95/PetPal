@@ -7,44 +7,45 @@ import {
   NEARBY_SEARCH_RADIUS_M,
 } from '../config/nearbyPlaceCategories';
 import { GOOGLE_MAPS_LOADER_ID } from '../config/googleMapsLoaderId';
+import { useI18n } from '../i18n/I18nContext';
 
-const mapContainerStyle = { width: '100%', height: 420, borderRadius: 16 };
+const mapContainerStyle = { width: '100%', height: 'min(62vh, 620px)', minHeight: 280, borderRadius: 18 };
 const DEFAULT_CENTER = { lat: 35.173, lng: 33.364 };
 const mapOptions = { disableDefaultUI: false, streetViewControl: false, mapTypeControl: false };
 
-function noKeyView() {
+function NoKeyView() {
+  const { t } = useI18n();
   return (
     <div className="pp-grid">
       <div className="pp-col-12">
-        <div className="pp-badge">Nearby</div>
+        <div className="pp-badge">{t('nearbyPage.badge')}</div>
         <h1 className="pp-h1" style={{ marginTop: 10 }}>
-          Map &amp; places
+          {t('nearbyPage.noKeyTitle')}
         </h1>
         <p className="pp-subtle" style={{ maxWidth: 560 }}>
-          Add a <strong>Google Maps</strong> browser key to <code>petpal/.env.local</code> as{' '}
-          <code style={{ fontSize: 13 }}>REACT_APP_GOOGLE_MAPS_API_KEY=…</code> and enable{' '}
-          <strong>Maps JavaScript API</strong> and <strong>Places API</strong> for your project, then
-          restart <code style={{ fontSize: 13 }}>yarn start</code>.
+          {t('nearbyPage.noKeyBrief')}
         </p>
       </div>
     </div>
   );
 }
 
-function loadErrorView(err) {
+function LoadErrorView({ err }) {
+  const { t } = useI18n();
   return (
     <div className="pp-card pp-pad" style={{ borderColor: 'rgba(180, 35, 24, 0.35)' }}>
       <p className="pp-error" style={{ margin: 0 }}>
-        Google Maps could not load: {err?.message || String(err)}
+        {t('nearbyPage.loadFailTitle')} {err?.message || String(err)}
       </p>
       <p className="pp-subtle" style={{ marginTop: 10, marginBottom: 0 }}>
-        Check the API key, billing, and that Maps JavaScript API + Places API are enabled.
+        {t('nearbyPage.loadFailHint')}
       </p>
     </div>
   );
 }
 
 function NearbyMap({ apiKey }) {
+  const { t } = useI18n();
   const { isLoaded, loadError } = useJsApiLoader({
     id: GOOGLE_MAPS_LOADER_ID,
     googleMapsApiKey: apiKey,
@@ -52,40 +53,20 @@ function NearbyMap({ apiKey }) {
   });
 
   const [map, setMap] = useState(null);
-  /** Center for “Search near me” and initial map; not when picking a list row. */
   const [searchCenter, setSearchCenter] = useState(DEFAULT_CENTER);
-  const [locationNote, setLocationNote] = useState(null);
+  const [locationNote, setLocationNote] = useState(() => ({ kind: 'default' }));
   const [selectedCategoryId, setSelectedCategoryId] = useState(NEARBY_CATEGORIES[0].id);
-  /** 'radius' = around you; 'bounds' = current map window (pan/zoom out, then search). */
   const [searchScope, setSearchScope] = useState('radius');
   const [places, setPlaces] = useState([]);
   const [searchStatus, setSearchStatus] = useState('idle');
   const [activePlace, setActivePlace] = useState(null);
+  const [locFetching, setLocFetching] = useState(false);
 
-  const selectedCategory = useMemo(() => getCategoryById(selectedCategoryId), [selectedCategoryId]);
+  const selectedCategory = useMemo(() => getCategoryById(selectedCategoryId, t), [selectedCategoryId, t]);
   const mapCenter = useMemo(
     () => ({ lat: searchCenter.lat, lng: searchCenter.lng }),
     [searchCenter.lat, searchCenter.lng]
   );
-
-  useEffect(() => {
-    if (!navigator.geolocation) {
-      setLocationNote('Location unavailable — showing a default area. You can still browse categories.');
-      return;
-    }
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setSearchCenter({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-        setLocationNote(null);
-      },
-      () => {
-        setLocationNote(
-          'Location permission denied — using a default map center. Enable location for results near you.'
-        );
-      },
-      { enableHighAccuracy: true, maximumAge: 60_000, timeout: 12_000 }
-    );
-  }, []);
 
   const runPlacesSearch = useCallback(
     (mode) => {
@@ -96,7 +77,7 @@ function NearbyMap({ apiKey }) {
       setPlaces([]);
 
       const service = new window.google.maps.places.PlacesService(map);
-      const cat = getCategoryById(selectedCategoryId);
+      const cat = NEARBY_CATEGORIES.find((c) => c.id === selectedCategoryId) || NEARBY_CATEGORIES[0];
 
       const request = {};
       if (cat.type) request.type = cat.type;
@@ -138,8 +119,34 @@ function NearbyMap({ apiKey }) {
 
   useEffect(() => {
     if (isLoaded && map) runPlacesSearch();
-    // Re-run when category/location refines “near me”; not when only searchScope changes (buttons call runPlacesSearch directly).
   }, [isLoaded, map, selectedCategoryId, searchCenter.lat, searchCenter.lng, runPlacesSearch]);
+
+  function onUseMyLocation() {
+    setLocationNote({ kind: 'none' });
+    if (!navigator.geolocation) {
+      setLocationNote({ kind: 'text', message: t('nearbyPage.locUnavailable') });
+      return;
+    }
+    setLocFetching(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const next = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        setSearchCenter(next);
+        setLocFetching(false);
+        setLocationNote({ kind: 'none' });
+        if (map && window.google?.maps) {
+          map.panTo(new window.google.maps.LatLng(next.lat, next.lng));
+          map.setZoom(14);
+        }
+        setSearchScope('radius');
+      },
+      () => {
+        setLocFetching(false);
+        setLocationNote({ kind: 'text', message: t('nearbyPage.locDenied') });
+      },
+      { enableHighAccuracy: true, maximumAge: 0, timeout: 15_000 }
+    );
+  }
 
   function onSearchThisArea() {
     setSearchScope('bounds');
@@ -155,44 +162,52 @@ function NearbyMap({ apiKey }) {
     runPlacesSearch('radius');
   }
 
+  const radiusKm = NEARBY_SEARCH_RADIUS_M / 1000;
+
   if (loadError) {
-    return loadErrorView(loadError);
+    return <LoadErrorView err={loadError} />;
   }
   if (!isLoaded) {
-    return <p className="pp-subtle">Loading map…</p>;
+    return <p className="pp-subtle">{t('nearbyPage.loadingMap')}</p>;
   }
 
   return (
     <div className="pp-nearby-page">
       <div className="pp-row" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
-          <div className="pp-badge">Nearby</div>
+          <div className="pp-badge">{t('nearbyPage.badge')}</div>
           <h1 className="pp-h1" style={{ marginTop: 10 }}>
-            Pet-friendly places
+            {t('nearbyPage.title')}
           </h1>
           <p className="pp-subtle" style={{ marginTop: 6, maxWidth: 640 }}>
-            Choose a category, then use <strong>Search this area</strong> after you pan or zoom the map
-            to load results for the whole view — or <strong>Search near me</strong> for a {NEARBY_SEARCH_RADIUS_M / 1000}{' '}
-            km search around you.
+            {t('nearbyPage.introLead')} <strong>{t('nearbyPage.introSearchArea')}</strong>{' '}
+            {t('nearbyPage.introMid')} <strong>{t('nearbyPage.introSearchNear')}</strong>{' '}
+            {t('nearbyPage.introTrail', { radiusKm })}
           </p>
         </div>
         <Link className="pp-link" to="/dashboard">
-          ← Dashboard
+          {t('common.backDashboard')}
         </Link>
       </div>
 
-      {locationNote ? (
+      {locationNote?.kind === 'default' ? (
         <p className="pp-subtle" style={{ marginTop: 12, marginBottom: 0, fontSize: 14 }}>
-          {locationNote}
+          {t('nearbyPage.locDefaultHint')}
+        </p>
+      ) : null}
+      {locationNote?.kind === 'text' ? (
+        <p className="pp-subtle" style={{ marginTop: 12, marginBottom: 0, fontSize: 14 }}>
+          {locationNote.message}
         </p>
       ) : null}
 
       <h2 className="pp-sectionTitle" style={{ marginTop: 22 }}>
-        What are you looking for?
+        {t('nearbyPage.whatLooking')}
       </h2>
-      <div className="pp-nearby-grid" role="group" aria-label="Place type">
+      <div className="pp-nearby-grid" role="group" aria-label={t('nearbyPage.ariaCategories')}>
         {NEARBY_CATEGORIES.map((c) => {
           const active = c.id === selectedCategoryId;
+          const loc = getCategoryById(c.id, t);
           return (
             <button
               key={c.id}
@@ -204,34 +219,43 @@ function NearbyMap({ apiKey }) {
               <span className="pp-nearby-tile__icon" aria-hidden>
                 {c.icon}
               </span>
-              <span className="pp-nearby-tile__label">{c.label}</span>
-              <span className="pp-nearby-tile__desc">{c.description}</span>
+              <span className="pp-nearby-tile__label">{loc.label}</span>
+              <span className="pp-nearby-tile__desc">{loc.description}</span>
             </button>
           );
         })}
       </div>
       <p className="pp-nearby-hint" style={{ marginTop: 10 }}>
-        Selected: <strong>{selectedCategory.label}</strong>
+        {t('nearbyPage.selected')} <strong>{selectedCategory.label}</strong>
         {searchScope === 'bounds' ? (
-          <span> · Searching the visible map</span>
+          <span>{t('nearbyPage.searchingVisibleMap')}</span>
         ) : (
-          <span> · Near you ({NEARBY_SEARCH_RADIUS_M / 1000} km)</span>
+          <span>{t('nearbyPage.nearYouKm', { km: radiusKm })}</span>
         )}
       </p>
 
-      <div className="pp-nearby-body">
-        <div className="pp-nearby-mapWrap">
+      <div className="pp-nearby-body pp-nearby-body--sheet">
+        <div className="pp-nearby-mapStage">
+          <div className="pp-nearby-mapWrap">
           <div className="pp-nearby-mapActions">
+            <button
+              type="button"
+              className="pp-nearby-cta pp-nearby-cta--location"
+              onClick={onUseMyLocation}
+              disabled={locFetching}
+            >
+              {locFetching ? t('nearbyPage.locFetching') : t('nearbyPage.useMyLocation')}
+            </button>
             <button type="button" className="pp-nearby-cta pp-nearby-cta--primary" onClick={onSearchThisArea}>
-              Search this area
+              {t('nearbyPage.searchThisArea')}
             </button>
             <button
               type="button"
               className="pp-nearby-cta"
               onClick={onSearchNearMe}
-              title="5 km around your location"
+              title={t('nearbyPage.searchNearHint')}
             >
-              Search near me
+              {t('nearbyPage.searchNearMe')}
             </button>
           </div>
           <GoogleMap
@@ -262,7 +286,10 @@ function NearbyMap({ apiKey }) {
                   {activePlace.vicinity ? <div>{activePlace.vicinity}</div> : null}
                   {activePlace.rating != null ? (
                     <div style={{ marginTop: 6, fontSize: 12 }}>
-                      ★ {activePlace.rating.toFixed(1)} ({activePlace.user_ratings_total || 0} reviews)
+                      {t('leaderboardPage.starRatingLine', {
+                        rating: activePlace.rating.toFixed(1),
+                        reviews: activePlace.user_ratings_total || 0,
+                      })}
                     </div>
                   ) : null}
                   <a
@@ -274,7 +301,7 @@ function NearbyMap({ apiKey }) {
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    Open in Google Maps ↗
+                    {t('nearbyPage.infoOpenMaps')}
                   </a>
                 </div>
               </InfoWindow>
@@ -282,19 +309,24 @@ function NearbyMap({ apiKey }) {
           </GoogleMap>
         </div>
 
-        <div className="pp-nearby-listPanel">
-          <h3 className="pp-nearby-listTitle">Results</h3>
-          {searchStatus === 'loading' ? <p className="pp-subtle">Searching…</p> : null}
-          {searchStatus === 'empty' ? <p className="pp-subtle">No results for this category here.</p> : null}
+        <aside className="pp-nearby-sheet" aria-label={t('nearbyPage.resultsHeading')}>
+          <div className="pp-nearby-sheet__handle" aria-hidden />
+          <h3 className="pp-nearby-listTitle">{t('nearbyPage.resultsHeading')}</h3>
+          {searchStatus === 'loading' ? <p className="pp-subtle">{t('nearbyPage.searching')}</p> : null}
+          {searchStatus === 'empty' ? (
+            <p className="pp-subtle">{t('nearbyPage.noResultsCat')}</p>
+          ) : null}
           {searchStatus === 'invalid_area' ? (
             <p className="pp-error" style={{ marginBottom: 8 }}>
-              Area too large for this search. Zoom in, then use &quot;Search this area&quot; again.
+              {t('nearbyPage.areaTooLarge')}
             </p>
           ) : null}
           {searchStatus === 'error' ? (
-            <p className="pp-error">Search failed. Check Places API and quotas.</p>
+            <p className="pp-error">{t('nearbyPage.searchFailedPlaces')}</p>
           ) : null}
-          {searchStatus === 'ok' && !places.length ? <p className="pp-subtle">No markers to show.</p> : null}
+          {searchStatus === 'ok' && !places.length ? (
+            <p className="pp-subtle">{t('nearbyPage.noMarkers')}</p>
+          ) : null}
           <ol className="pp-nearby-list">
             {places.map((p) => (
               <li key={p.place_id}>
@@ -315,7 +347,8 @@ function NearbyMap({ apiKey }) {
               </li>
             ))}
           </ol>
-        </div>
+        </aside>
+      </div>
       </div>
     </div>
   );
@@ -324,7 +357,7 @@ function NearbyMap({ apiKey }) {
 export default function Nearby() {
   const apiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
   if (!apiKey) {
-    return noKeyView();
+    return <NoKeyView />;
   }
   return <NearbyMap apiKey={apiKey} />;
 }

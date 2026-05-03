@@ -1,0 +1,14 @@
+rules_version = '2';
+// Deploy with: firebase deploy --only storage
+// Requires Blaze plan for Storage, or use local-only profile photos in the app (no rules needed).
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /profilePhotos/{userId}/avatar.jpg {
+      allow read: if true;
+      allow write: if request.auth != null
+        && request.auth.uid == userId
+        && request.resource.size < 600 * 1024
+        && request.resource.contentType.matches('image/.*');
+    }
+  }
+}

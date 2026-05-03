@@ -1,26 +1,29 @@
 import React, { useCallback, useEffect, useId, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useI18n } from '../i18n/I18nContext';
+import PetAvatar from '../components/PetAvatar';
 import PositionMap from '../tracking/PositionMap';
 import { usePets } from '../pets/PetsContext';
 import { getLatestPosition, getTrackingDataSource, mapsLink } from '../tracking/traccarClient';
 
-function formatTime(iso) {
+function formatTime(iso, lang) {
   if (!iso) return '—';
   try {
-    return new Date(iso).toLocaleString();
+    return new Date(iso).toLocaleString(lang === 'el' ? 'el' : lang === 'ru' ? 'ru' : undefined);
   } catch {
     return String(iso);
   }
 }
 
 export default function Tracking() {
+  const { t, language } = useI18n();
   const fieldId = useId();
-  const { pets, getCategory, updatePet } = usePets();
+  const { pets, updatePet } = usePets();
   const dataSource = getTrackingDataSource();
   const dataSourceLabel = {
-    bff: 'Backend (BFF)',
-    traccar: 'Traccar API',
-    mock: 'Mock (add REACT_APP_TRACKING_BFF_URL or REACT_APP_TRACCAR_BASE_URL)',
+    bff: t('trackingPage.dsBff'),
+    traccar: t('trackingPage.dsTraccar'),
+    mock: t('trackingPage.dsMock'),
   }[dataSource];
 
   const [selectedPetId, setSelectedPetId] = useState('');
@@ -56,11 +59,11 @@ export default function Tracking() {
       setPosition(p);
     } catch (e) {
       setPosition(null);
-      setError(e?.message || 'Could not load position.');
+      setError(e?.message || t('trackingPage.errLoadPosition'));
     } finally {
       setLoading(false);
     }
-  }, [deviceId]);
+  }, [deviceId, t]);
 
   function saveIdAndLoad(e) {
     e?.preventDefault();
@@ -74,16 +77,18 @@ export default function Tracking() {
     return (
       <div className="pp-grid">
         <div className="pp-col-12">
-          <div className="pp-card pp-pad">
-            <div className="pp-badge">GPS tracker (Traccar)</div>
+          <div className="pp-card pp-pad" style={{ textAlign: 'center', padding: 28 }}>
+            <div style={{ fontSize: 44 }} aria-hidden>
+              🐾
+            </div>
             <h1 className="pp-h1" style={{ marginTop: 10 }}>
-              Add a pet first
+              {t('trackingPage.emptyTitle')}
             </h1>
-            <p className="pp-subtle" style={{ marginBottom: 16 }}>
-              Register at least one pet, then link a Traccar device id to the pet you want to track.
+            <p className="pp-subtle" style={{ marginBottom: 16, maxWidth: 480, marginLeft: 'auto', marginRight: 'auto' }}>
+              {t('trackingPage.emptyBody')}
             </p>
-            <Link className="pp-btn pp-btnPrimary" to="/pets" style={{ textDecoration: 'none', display: 'inline-block' }}>
-              My pets
+            <Link className="pp-btn pp-btnPrimary pp-btn--lg" to="/pets" style={{ textDecoration: 'none', display: 'inline-block' }}>
+              {t('trackingPage.myPetsCta')}
             </Link>
           </div>
         </div>
@@ -91,142 +96,161 @@ export default function Tracking() {
     );
   }
 
+  const langForDate = language === 'el' ? 'el' : language === 'ru' ? 'ru' : 'en';
+
+  const lastSeenLabel = position?.deviceTime ? formatTime(position.deviceTime, langForDate) : null;
+  const signalLive = position != null;
+
   return (
-    <div className="pp-grid">
-      <div className="pp-col-12">
-        <div className="pp-row" style={{ justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
-          <div>
-            <div className="pp-badge">GPS tracker (Traccar)</div>
-            <h1 className="pp-h1" style={{ marginTop: 10 }}>
-              Live position
-            </h1>
-            <p className="pp-subtle" style={{ marginTop: 6, maxWidth: 720 }}>
-              Pick which pet this device belongs to, then load the latest fix. Pets can exist without a
-              device — link one here when you&apos;re ready.
-            </p>
-          </div>
-          <Link className="pp-link" to="/dashboard">
-            ← Dashboard
-          </Link>
+    <div className="pp-feed pp-tracker-page">
+      <header className="pp-pageHeader">
+        <div className="pp-pageHeader__copy">
+          <span className="pp-publicHero__eyebrow" style={{ display: 'inline-block', width: 'fit-content' }}>
+            {t('trackingPage.badgeTraccar')}
+          </span>
+          <h1 className="pp-pageHeader__title">
+            {selectedPet ? t('trackingPage.titleWithPet', { name: selectedPet.name }) : t('trackingPage.title')}
+          </h1>
+          <p className="pp-pageHeader__sub">{t('trackingPage.intro')}</p>
         </div>
-      </div>
+        <Link className="pp-pageHeader__back" to="/dashboard">
+          {t('common.backDashboard')}
+        </Link>
+      </header>
 
-      <div className="pp-col-6">
-        <div className="pp-card pp-pad">
-          <h2 className="pp-sectionTitle">Pet &amp; device</h2>
-          <p className="pp-subtle" style={{ marginBottom: 12, fontSize: 14 }}>
-            Data source: <strong>{dataSourceLabel}</strong>
-          </p>
-          <div className="pp-form" style={{ marginBottom: 12 }}>
-            <div>
-              <div className="pp-label">Pet using this tracker</div>
-              <select
-                className="pp-input"
-                value={selectedPetId}
-                onChange={(e) => setSelectedPetId(e.target.value)}
-              >
-                {pets.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {getCategory(p).emoji} {p.name}
-                    {p.trackingDeviceId ? ` (device #${p.trackingDeviceId})` : ''}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-          <form className="pp-form" onSubmit={saveIdAndLoad}>
-            <div>
-              <label className="pp-label" htmlFor={fieldId}>
-                Traccar device ID
-              </label>
-              <input
-                id={fieldId}
-                className="pp-input"
-                value={deviceId}
-                onChange={(e) => setDeviceId(e.target.value)}
-                placeholder="e.g. 1"
-                inputMode="numeric"
-                autoComplete="off"
-              />
-            </div>
-            {selectedPet ? (
-              <p className="pp-subtle" style={{ fontSize: 13, margin: 0 }}>
-                Saving writes this id to <strong>{selectedPet.name}</strong> so the map matches the right
-                pet.
+      <section className="pp-trackPetStrip" aria-label={t('trackingPage.petSelectLabel')}>
+        <div className="pp-trackPetScroll">
+          {pets.map((p) => (
+            <button
+              key={p.id}
+              type="button"
+              className={`pp-trackPetCard ${selectedPetId === p.id ? 'pp-trackPetCard--on' : ''}`}
+              onClick={() => setSelectedPetId(p.id)}
+            >
+              <PetAvatar pet={p} size={44} />
+              <span className="pp-trackPetCard__name">{p.name}</span>
+              <span className="pp-trackPetCard__chip">
+                {p.trackingDeviceId ? t('trackingPage.deviceChip', { id: p.trackingDeviceId }) : t('trackingPage.noDeviceChip')}
+              </span>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      {selectedPet ? (
+        <section className="pp-card pp-pad pp-trackTop" aria-label={selectedPet.name}>
+          <div className="pp-trackTop__main">
+            <PetAvatar pet={selectedPet} size={56} />
+            <div className="pp-trackTop__meta">
+              <h2 className="pp-trackTop__title">{selectedPet.name}</h2>
+              <div className="pp-trackTop__statusRow">
+                <span className={`pp-trackPill ${signalLive ? 'pp-trackPill--live' : ''}`}>
+                  {signalLive ? t('trackingPage.signalLive') : t('trackingPage.signalQuiet')}
+                </span>
+                <span className="pp-subtle pp-trackTop__muted">
+                  📡 {dataSourceLabel}
+                </span>
+              </div>
+              <p className="pp-subtle pp-trackTop__sub">
+                {signalLive && lastSeenLabel
+                  ? t('trackingPage.heroLastSeen', { when: lastSeenLabel })
+                  : selectedPet.trackingDeviceId
+                    ? t('trackingPage.heroNoFix')
+                    : t('trackingPage.heroNoDevice')}
               </p>
-            ) : null}
-            {error ? <div className="pp-error">{error}</div> : null}
-            <div className="pp-row" style={{ justifyContent: 'space-between' }}>
-              <button className="pp-btn pp-btnPrimary" type="submit" disabled={loading || !deviceId.trim()}>
-                {loading ? 'Refreshing…' : 'Save & load / refresh'}
-              </button>
-              <Link className="pp-link" to="/pets">
-                Manage pets
-              </Link>
             </div>
-          </form>
-        </div>
-      </div>
+          </div>
+          <div className="pp-trackTop__fabs">
+            <button
+              type="button"
+              className="pp-trackFab pp-trackFab--prim"
+              disabled={loading || !deviceId.trim()}
+              onClick={() => void refresh()}
+            >
+              {loading ? t('trackingPage.btnRefresh') : t('trackingPage.btnLocate')}
+            </button>
+            <button type="button" className="pp-trackFab" disabled={loading || !deviceId.trim()} onClick={() => void refresh()}>
+              {t('trackingPage.quickRefresh')}
+            </button>
+            <Link className="pp-trackFab pp-trackFab--link" to="/pets">
+              {t('trackingPage.managePets')}
+            </Link>
+          </div>
+        </section>
+      ) : null}
 
-      <div className="pp-col-6">
-        <div className="pp-card pp-pad">
-          <h2 className="pp-sectionTitle">Last fix</h2>
-          {!position && !error ? (
-            <p className="pp-subtle">Enter a device id and load to see coordinates.</p>
-          ) : null}
-          {position ? (
-            <div className="pp-form" style={{ gap: 8 }}>
-              <div>
-                <div className="pp-label">Latitude / longitude</div>
-                <div style={{ fontWeight: 800, fontSize: 16 }}>
-                  {position.lat.toFixed(5)}, {position.lng.toFixed(5)}
-                </div>
-              </div>
-              {position.speed != null ? (
-                <div>
-                  <div className="pp-label">Speed (from device)</div>
-                  <div style={{ fontWeight: 800 }}>{Number(position.speed).toFixed(1)} m/s</div>
-                </div>
-              ) : null}
-              <div>
-                <div className="pp-label">Device time</div>
-                <div>{formatTime(position.deviceTime)}</div>
-              </div>
-              {position.address ? (
-                <div>
-                  <div className="pp-label">Address (if any)</div>
-                  <div>{position.address}</div>
-                </div>
-              ) : null}
-              <div>
-                <div className="pp-label">Source</div>
-                <div style={{ textTransform: 'capitalize' }}>{position.source}</div>
-              </div>
+      <section className="pp-card pp-pad pp-trackMapShell">
+        {position ? (
+          <>
+            <div className="pp-trackMapHead">
+              <h2 className="pp-sectionTitle" style={{ margin: 0 }}>
+                {t('trackingPage.sectionMap')}
+              </h2>
               <a
-                className="pp-link"
+                className="pp-btn pp-btn--ghost"
                 href={mapsLink(position.lat, position.lng)}
                 target="_blank"
                 rel="noopener noreferrer"
-                style={{ fontWeight: 800 }}
+                style={{ textDecoration: 'none' }}
               >
-                Open in Google Maps ↗
+                {t('trackingPage.openGoogleMaps')}
               </a>
             </div>
-          ) : null}
-        </div>
-      </div>
-
-      {position ? (
-        <div className="pp-col-12">
-          <div className="pp-card pp-pad">
-            <h2 className="pp-sectionTitle">Map</h2>
-            <p className="pp-subtle" style={{ marginBottom: 12, fontSize: 14 }}>
-              Tiles: OpenStreetMap (attribution in-map).
+            <p className="pp-subtle pp-trackMapHint">{t('trackingPage.mapTilesHint')}</p>
+            <div className="pp-trackMapFrame">
+              <PositionMap lat={position.lat} lng={position.lng} />
+            </div>
+            <div className="pp-trackMapMeta">
+              <span>
+                {t('trackingPage.lblLatLng')}: {position.lat.toFixed(5)}, {position.lng.toFixed(5)}
+              </span>
+              {position.speed != null ? (
+                <span>
+                  {t('trackingPage.lblSpeed')}: {Number(position.speed).toFixed(1)} {t('trackingPage.speedUnitMs')}
+                </span>
+              ) : null}
+              <span>
+                {t('trackingPage.lblDeviceTime')}: {formatTime(position.deviceTime, langForDate)}
+              </span>
+            </div>
+          </>
+        ) : (
+          <div className="pp-trackMapEmpty">
+            <p className="pp-subtle" style={{ margin: 0 }}>
+              {error || t('trackingPage.mapPlaceholder')}
             </p>
-            <PositionMap lat={position.lat} lng={position.lng} />
           </div>
-        </div>
-      ) : null}
+        )}
+      </section>
+
+      <section className="pp-card pp-pad pp-trackDeviceCard">
+        <h2 className="pp-sectionTitle">{t('trackingPage.sectionPetDevice')}</h2>
+        <form className="pp-form pp-trackDeviceForm" onSubmit={saveIdAndLoad}>
+          <div>
+            <label className="pp-label" htmlFor={fieldId}>
+              {t('trackingPage.deviceIdLabel')}
+            </label>
+            <input
+              id={fieldId}
+              className="pp-input"
+              value={deviceId}
+              onChange={(e) => setDeviceId(e.target.value)}
+              placeholder={t('trackingPage.deviceIdPh')}
+              inputMode="numeric"
+              autoComplete="off"
+            />
+          </div>
+          {selectedPet ? (
+            <p className="pp-subtle" style={{ fontSize: 13, margin: 0 }}>
+              {t('trackingPage.persistHintSaving', { name: selectedPet.name })}
+            </p>
+          ) : null}
+          {!position && error ? <div className="pp-error">{error}</div> : null}
+          <button className="pp-btn pp-btnPrimary" type="submit" disabled={loading || !deviceId.trim()}>
+            {loading ? t('trackingPage.btnRefresh') : t('trackingPage.btnSaveLoad')}
+          </button>
+        </form>
+      </section>
     </div>
   );
 }

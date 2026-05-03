@@ -55,35 +55,51 @@ export default function Register() {
   return (
     <div className="pp-grid">
       <div className="pp-col-12">
-        <div className="pp-card pp-pad" style={{ maxWidth: 520, margin: '0 auto' }}>
-          <div className="pp-badge">PetPal</div>
-          <h1 className="pp-h1" style={{ marginTop: 10 }}>
-            {t('register.title')}
-          </h1>
-          <p className="pp-subtle" style={{ marginBottom: 14 }}>
-            {t('register.subtitle')}
-          </p>
+        <div className="pp-authPage">
+          <aside className="pp-authPage__welcome">
+            <span className="pp-authPage__welcomeEyebrow">{t('register.welcomeEyebrow')}</span>
+            <div>
+              <h1 className="pp-authPage__welcomeTitle">{t('register.title')}</h1>
+              <p className="pp-authPage__welcomeSub" style={{ marginTop: 8 }}>
+                {t('register.subtitle')}
+              </p>
+            </div>
+            <ul className="pp-authPage__welcomeList">
+              <li><span aria-hidden>🐶</span><span>{t('register.benefit1')}</span></li>
+              <li><span aria-hidden>🏅</span><span>{t('register.benefit2')}</span></li>
+              <li><span aria-hidden>🚨</span><span>{t('register.benefit3')}</span></li>
+            </ul>
+            <p className="pp-subtle" style={{ fontSize: 13, margin: 0 }}>{t('register.trustLine')}</p>
+          </aside>
+
+          <div className="pp-card pp-pad" style={{ display: 'flex', flexDirection: 'column' }}>
+            <h2 className="pp-sectionTitle" style={{ fontSize: 22 }}>{t('register.formTitle')}</h2>
+            <p className="pp-subtle" style={{ marginBottom: 14, marginTop: -4 }}>
+              {t('register.formSubtitle')}
+            </p>
 
           <form className="pp-form" onSubmit={onSubmit}>
             <div>
               <div className="pp-label">{t('register.accountType')}</div>
-              <div className="pp-community-walkStyle" style={{ marginTop: 6 }} role="group" aria-label={t('register.accountType')}>
-                <label>
+              <div className="pp-radioChipRow" role="group" aria-label={t('register.accountType')}>
+                <label className={`pp-radioChip ${accountType === 'individual' ? 'pp-radioChip--on' : ''}`}>
                   <input
                     type="radio"
                     name="accountType"
                     checked={accountType === 'individual'}
                     onChange={() => setAccountType('individual')}
                   />
+                  <span aria-hidden>🐾</span>
                   {t('register.accountOwner')}
                 </label>
-                <label>
+                <label className={`pp-radioChip ${accountType === 'company' ? 'pp-radioChip--on' : ''}`}>
                   <input
                     type="radio"
                     name="accountType"
                     checked={accountType === 'company'}
                     onChange={() => setAccountType('company')}
                   />
+                  <span aria-hidden>🏪</span>
                   {t('register.accountBusiness')}
                 </label>
               </div>
@@ -158,15 +174,17 @@ export default function Register() {
               </span>
             </label>
 
-            <div className="pp-row" style={{ justifyContent: 'space-between' }}>
-              <button className="pp-btn pp-btnPrimary" disabled={submitting || !acceptedTerms}>
-                {submitting ? t('register.creating') : t('register.createAccount')}
-              </button>
-              <Link className="pp-link" to="/login">
+            <button className="pp-btn pp-btnPrimary pp-btn--lg" disabled={submitting || !acceptedTerms} style={{ marginTop: 4 }}>
+              {submitting ? t('register.creating') : t('register.createAccount')}
+            </button>
+            <p className="pp-subtle" style={{ fontSize: 13, marginTop: 6, textAlign: 'center' }}>
+              {t('register.haveAccountQ')}{' '}
+              <Link className="pp-link" to="/login" style={{ display: 'inline', padding: 0 }}>
                 {t('register.backToLogin')}
               </Link>
-            </div>
+            </p>
           </form>
+          </div>
         </div>
       </div>
     </div>

@@ -14,6 +14,8 @@ export const storyRingUsers = [
 export const communityPosts = [
   {
     id: 'p1',
+    feedKind: 'community',
+    sortAt: 1745688000000,
     author: 'Alex M.',
     petNames: ['Luna'],
     timeLabel: '2h',
@@ -26,6 +28,8 @@ export const communityPosts = [
   },
   {
     id: 'p2',
+    feedKind: 'community',
+    sortAt: 1745673600000,
     author: 'Jordan K.',
     petNames: ['Milo', 'Kiwi'],
     timeLabel: '5h',
@@ -38,6 +42,8 @@ export const communityPosts = [
   },
   {
     id: 'p3',
+    feedKind: 'community',
+    sortAt: 1745520000000,
     author: 'Sam R.',
     petNames: ['Nala'],
     timeLabel: '1d',
@@ -47,5 +53,24 @@ export const communityPosts = [
     comments: 12,
     imageTint: 'linear-gradient(135deg, #ecfdf3 0%, #fff7ed 100%)',
     petEmoji: '🦮',
+  },
+];
+
+/** When there are no active lost listings, one demo card so the Lost filter is not empty */
+export const lostPetDemoFeedPosts = [
+  {
+    id: 'lostfeed_demo_mochi',
+    feedKind: 'lostPet',
+    sortAt: 1745660000000,
+    author: 'Taylor P.',
+    petNames: ['Mochi'],
+    petEmoji: '🐩',
+    timeLabel: 'demo',
+    caption:
+      'Small cream poodle mix, slipped harness near weekend market.\n\nLast seen: main square by the fountains, midday foot traffic.',
+    tags: ['lost', 'premium'],
+    likes: 31,
+    comments: 4,
+    imageTint: 'linear-gradient(135deg, #fff4e8 0%, #fde8dc 100%)',
   },
 ];

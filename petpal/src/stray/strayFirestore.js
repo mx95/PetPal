@@ -86,7 +86,7 @@ export async function createStrayListing(params) {
     return { ok: false, reason: 'photo_too_large' };
   }
 
-  if (!nickname || !description || !foundWhere || !contactPhone) {
+  if (!description || !foundWhere || !contactPhone) {
     return { ok: false, reason: 'required' };
   }
 

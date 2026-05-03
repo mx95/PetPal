@@ -34,7 +34,8 @@ export default function Documentation() {
     { href: '#docs-nearby', key: 'docs.toc7' },
     { href: '#docs-tracking', key: 'docs.toc8' },
     { href: '#docs-stray', key: 'docs.toc9' },
-    { href: '#docs-language', key: 'docs.toc10' },
+    { href: '#docs-breeding', key: 'docs.toc10' },
+    { href: '#docs-language', key: 'docs.toc11' },
   ];
 
   return (
@@ -111,6 +112,11 @@ export default function Documentation() {
             <section id="docs-stray">
               <h2>{t('docs.u10Title')}</h2>
               <ParaBlock textKey="docs.u10Body" />
+            </section>
+
+            <section id="docs-breeding">
+              <h2>{t('docs.u11Title')}</h2>
+              <ParaBlock textKey="docs.u11Body" />
             </section>
 
             <section id="docs-language">

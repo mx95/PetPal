@@ -1,6 +1,7 @@
 import React, { useId, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useOutletContext } from 'react-router-dom';
 import PetAvatar from '../components/PetAvatar';
+import { PrettySelect } from '../components/PrettySelect';
 import { useLostPet } from '../lostPet/LostPetContext';
 import { usePets } from '../pets/PetsContext';
 
@@ -17,6 +18,9 @@ function formatWhen(iso) {
 }
 
 export default function LostPetAlerts() {
+  const outletCtx = useOutletContext();
+  const embedded = outletCtx?.embedded === true;
+
   const { pets, getCategory } = usePets();
   const { premiumUnlocked, setPremium, activeListings, publishAlert, resolveAlert } = useLostPet();
   const [petId, setPetId] = useState('');
@@ -73,28 +77,30 @@ export default function LostPetAlerts() {
 
   return (
     <div className="pp-grid">
-      <div className="pp-col-12">
-        <div className="pp-row" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <div>
-            <div className="pp-badge pp-badge--premium">Premium</div>
-            <h1 className="pp-h1" style={{ marginTop: 10 }}>
-              Lost pet alerts
-            </h1>
-            <p className="pp-subtle" style={{ marginTop: 6, maxWidth: 640 }}>
-              Urgent, structured posts to help get your pet home: last known area, how to contact you, and an optional
-              reward. Data stays on <strong>this device</strong> for now; cloud sync and wider sharing can be added
-              later. Add profile photos to pets in{' '}
-              <Link className="pp-link" to="/pets" style={{ display: 'inline', padding: 0 }}>
-                My pets
-              </Link>
-              .
-            </p>
+      {!embedded ? (
+        <div className="pp-col-12">
+          <div className="pp-row" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div>
+              <div className="pp-badge pp-badge--premium">Premium</div>
+              <h1 className="pp-h1" style={{ marginTop: 10 }}>
+                Lost pet alerts
+              </h1>
+              <p className="pp-subtle" style={{ marginTop: 6, maxWidth: 640 }}>
+                Urgent, structured posts to help get your pet home: last known area, how to contact you, and an optional
+                reward. Data stays on <strong>this device</strong> for now; cloud sync and wider sharing can be added
+                later. Add profile photos to pets in{' '}
+                <Link className="pp-link" to="/pets" style={{ display: 'inline', padding: 0 }}>
+                  My pets
+                </Link>
+                .
+              </p>
+            </div>
+            <Link className="pp-link" to="/dashboard">
+              ← Dashboard
+            </Link>
           </div>
-          <Link className="pp-link" to="/dashboard">
-            ← Dashboard
-          </Link>
         </div>
-      </div>
+      ) : null}
 
       <div className="pp-col-12">
         <div className="pp-card pp-pad pp-lostPetPremiumCta" style={{ borderColor: 'rgba(180, 120, 32, 0.35)' }}>
@@ -163,9 +169,8 @@ export default function LostPetAlerts() {
                     <div className="pp-label" id={`${petSelectId}-label`}>
                       Pet
                     </div>
-                    <select
+                    <PrettySelect
                       id={petSelectId}
-                      className="pp-input"
                       aria-labelledby={`${petSelectId}-label`}
                       value={petId}
                       onChange={(e) => setPetId(e.target.value)}
@@ -176,7 +181,7 @@ export default function LostPetAlerts() {
                           {getCategory(p).emoji} {p.name}
                         </option>
                       ))}
-                    </select>
+                    </PrettySelect>
                   </div>
                   <div>
                     <div className="pp-label">Description (what helps people recognize your pet?)</div>
