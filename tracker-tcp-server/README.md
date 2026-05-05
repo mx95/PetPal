@@ -17,14 +17,46 @@ npm start
 
 ## HTTP API
 
-- `GET /devices` — list latest data for all devices
-- `GET /devices/:imei` — latest data for one device
-- `GET /position?deviceId=IMEI` — last lat/lng for PetPal / maps (404 if no fix yet)
-- `POST /commands/queue` — body `{"imei":"…","command":"…"}` — queue a **0x21** text command (see Xexun API: `ip=…`, `tk=…`, `tz=…`, etc.)
-- `POST /commands/ip-transfer` — body `{"imei":"…","host":"your.public.ip.or.dns","port":5001}` — queues `ip=host:port` (**server switch**)
-- `GET /commands/pending/:imei` — commands waiting to be sent
+**Discovery:** `GET /` returns JSON listing every route.
 
-Queued commands are sent **once per device uplink** (message type `0x20`): after your ACK, the server transmits **one** pending `0x21` frame on the same TCP connection.
+**Device data**
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| GET | `/devices` | All devices last seen |
+| GET | `/devices/:imei` | One device snapshot |
+| GET | `/position?deviceId=IMEI` | Latest lat/lng (PetPal / maps; 404 if no GPS fix) |
+
+**Xexun 0x21 commands** (mapped from the vendor PDF). All are **queued** and sent **one per uplink** after ACK on `0x20`.
+
+| Method | Path | Body (JSON) | Command text sent |
+|--------|------|---------------|-------------------|
+| POST | `/commands/queue` | `{ imei, command }` | Any raw string (`ip=…`, combined `#` commands, etc.) |
+| POST | `/commands/ip-transfer` | `{ imei, host, port? }` | `ip=host:port` |
+| POST | `/commands/ip/query` | `{ imei }` | `ip=?` |
+| POST | `/commands/apn` | `{ imei, apn }` | `APN=name` |
+| POST | `/commands/tracking` | `{ imei, tk }` **or** `{ imei, p1..p7 }` | `tk=…` |
+| POST | `/commands/tracking/query` | `{ imei }` | `tk=?` |
+| POST | `/commands/power-off` | `{ imei }` | `of=1` |
+| POST | `/commands/restart` | `{ imei }` | `rt=1` |
+| POST | `/commands/message` | `{ imei, text }` | `mg=…` |
+| POST | `/commands/timezone` | `{ imei, tz }` | `tz=N` |
+| POST | `/commands/timezone/query` | `{ imei }` | `tz=?` |
+| POST | `/commands/ble` | `{ imei, bssid_list }` **or** `{ imei, clear: true }` **or** `{ imei, query: true }` | `ble=…` / `ble={}` / `ble=?` |
+| POST | `/commands/wifi` | Same shape as `ble` | `wifi=…` / `wifi={}` / `wifi=?` |
+| GET | `/commands/pending/:imei` | — | Lists queued strings |
+
+**CORS** allows `GET`, `POST`, `OPTIONS` for browser clients.
+
+### If you see `Cannot POST /commands/…`
+
+The Node process is an **older build** without these routes. On the server:
+
+```bash
+cd ~/PetPal && git pull && cd tracker-tcp-server && npm install && pm2 restart all
+```
+
+(use your actual PM2 process name instead of `all` if needed).
 
 ## Server switch (`ip=`) — Xexun API
 
