@@ -42,6 +42,23 @@ function pickLatest(positions) {
   return positions.reduce((a, b) => (timeValue(b) > timeValue(a) ? b : a));
 }
 
+function normalizeXexunLatestDevice(json) {
+  // tracker-tcp-server shape: { gps: {lat,lng,timestamp,speedKmh? }, deviceStatus: {...}, receivedAt, ... }
+  if (!json) return null;
+  const gps = json.gps || {};
+  const lat = gps.lat != null ? Number(gps.lat) : Number.NaN;
+  const lng = gps.lng != null ? Number(gps.lng) : Number.NaN;
+  if (Number.isNaN(lat) || Number.isNaN(lng)) return null;
+  return {
+    lat,
+    lng,
+    speed: gps.speedKmh != null ? Number(gps.speedKmh) : null,
+    address: null,
+    deviceTime: gps.timestamp || null,
+    serverTime: json.receivedAt || null,
+  };
+}
+
 exports.tracking = functions
   .region('europe-west1')
   .https.onRequest((req, res) => {
@@ -74,6 +91,27 @@ exports.tracking = functions
           return;
         }
 
+        // Option A: Xexun TCP server (deviceId == IMEI)
+        const xexunBase = getEnv('XEXUN_HTTP_BASE_URL');
+        if (xexunBase) {
+          const base = xexunBase.replace(/\/$/, '');
+          const url = `${base}/devices/${encodeURIComponent(deviceId)}`;
+          const r = await fetch(url, { method: 'GET', headers: { Accept: 'application/json' } });
+          if (!r.ok) {
+            res.status(502).json({ error: 'xexun_server_error', status: r.status });
+            return;
+          }
+          const data = await r.json();
+          const normalized = normalizeXexunLatestDevice(data);
+          if (!normalized) {
+            res.status(404).json({ error: 'no_position' });
+            return;
+          }
+          res.status(200).json(normalized);
+          return;
+        }
+
+        // Option B: Traccar
         const baseUrl = mustGetEnv('TRACCAR_BASE_URL').replace(/\/$/, '');
         const url = `${baseUrl}/api/positions?deviceId=${encodeURIComponent(deviceId)}`;
 
