@@ -265,6 +265,8 @@ export default {
       emailInUse: 'Το email είναι ήδη καταχωρημένο.',
       weakPassword: 'Ο κωδικός πρέπει να έχει τουλάχιστον 6 χαρακτήρες.',
       registerGeneric: 'Η εγγραφή απέτυχε. Προσπαθήστε ξανά.',
+      firebaseNotConfigured:
+        'Το Firebase δεν είναι ρυθμισμένο. Προσθέστε όλα τα REACT_APP_FIREBASE_* από την κονσόλα Firebase στο .env.local και επανεκκινήστε τον dev server.',
     },
   },
   login: {
@@ -358,8 +360,8 @@ export default {
     sampleDone: 'Ήδη φορτωμένο. Δείτε το Dashboard και την κοινότητα.',
     yourPack: 'Η παρέα σας',
     noPets: 'Δεν υπάρχουν ακόμα — προσθέστε αριστερά.',
-    traccar: 'Traccar id συσκευής (προαιρ.)',
-    traccarPh: 'Σύνδεση συσκευής',
+    traccar: 'Αναγνωριστικό συσκευής ή IMEI (προαιρ.)',
+    traccarPh: 'Traccar ή IMEI για χάρτη',
     profilePhoto: 'Φωτογραφία',
     removePhoto: 'Αφαίρεση φωτογραφίας',
     save: 'Αποθήκευση',

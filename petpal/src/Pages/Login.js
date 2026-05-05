@@ -26,6 +26,10 @@ export default function Login() {
   async function onSubmit(e) {
     e.preventDefault();
     setError('');
+    if (!auth) {
+      setError(t('auth.errors.firebaseNotConfigured'));
+      return;
+    }
     setSubmitting(true);
     try {
       await signInWithEmailAndPassword(auth, email.trim(), password);

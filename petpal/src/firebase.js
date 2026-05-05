@@ -4,26 +4,51 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
+function trimEnv(value) {
+  return typeof value === 'string' ? value.trim() : value;
+}
+
 const firebaseConfig = {
-  apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
-  authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.REACT_APP_FIREBASE_APP_ID,
-  ...(process.env.REACT_APP_FIREBASE_MEASUREMENT_ID
-    ? { measurementId: process.env.REACT_APP_FIREBASE_MEASUREMENT_ID }
+  apiKey: trimEnv(process.env.REACT_APP_FIREBASE_API_KEY),
+  authDomain: trimEnv(process.env.REACT_APP_FIREBASE_AUTH_DOMAIN),
+  projectId: trimEnv(process.env.REACT_APP_FIREBASE_PROJECT_ID),
+  storageBucket: trimEnv(process.env.REACT_APP_FIREBASE_STORAGE_BUCKET),
+  messagingSenderId: trimEnv(process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID),
+  appId: trimEnv(process.env.REACT_APP_FIREBASE_APP_ID),
+  ...(trimEnv(process.env.REACT_APP_FIREBASE_MEASUREMENT_ID)
+    ? { measurementId: trimEnv(process.env.REACT_APP_FIREBASE_MEASUREMENT_ID) }
     : {}),
 };
 
-// Reuse the default app after HMR; a second initializeApp() throws and blanks the app.
-const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+function isFirebaseWebConfigComplete(cfg) {
+  return Boolean(
+    cfg.apiKey &&
+      cfg.authDomain &&
+      cfg.projectId &&
+      cfg.storageBucket &&
+      cfg.messagingSenderId &&
+      cfg.appId
+  );
+}
 
-export const auth = getAuth(app);
+const firebaseReady = isFirebaseWebConfigComplete(firebaseConfig);
 
-/** Firestore (leaderboard + opt-in). Requires REACT_APP_FIREBASE_PROJECT_ID. */
+/** @type {import('firebase/app').FirebaseApp | null} */
+let app = null;
+if (firebaseReady) {
+  // Reuse the default app after HMR; a second initializeApp() throws and blanks the app.
+  app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+}
+
+/** @type {import('firebase/auth').Auth | null} */
+export const auth = app ? getAuth(app) : null;
+
+/** Firestore (leaderboard + opt-in). Requires full web config (see isFirebaseConfigured). */
 let db;
 export function getDb() {
+  if (!firebaseReady || !app) {
+    throw new Error('Firebase is not configured');
+  }
   if (!db) {
     db = getFirestore(app);
   }
@@ -31,7 +56,7 @@ export function getDb() {
 }
 
 export function isFirebaseConfigured() {
-  return Boolean(process.env.REACT_APP_FIREBASE_PROJECT_ID);
+  return firebaseReady;
 }
 
 /** Storage bucket from env (typically `projectId.appspot.com`). */
@@ -43,6 +68,7 @@ let storageInstance = null;
 
 /** @returns {import('firebase/storage').FirebaseStorage | null} */
 export function getFirebaseStorage() {
+  if (!firebaseReady || !app) return null;
   if (!isFirebaseStorageConfigured()) return null;
   if (!storageInstance) {
     try {
@@ -67,6 +93,7 @@ let analyticsInstance = null;
 let analyticsInitPromise = null;
 
 export function enableFirebaseAnalytics() {
+  if (!firebaseReady || !app) return Promise.resolve(null);
   if (!isFirebaseAnalyticsConfigured()) return Promise.resolve(null);
   if (analyticsInstance) return Promise.resolve(analyticsInstance);
   if (analyticsInitPromise) return analyticsInitPromise;

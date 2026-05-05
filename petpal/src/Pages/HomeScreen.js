@@ -302,7 +302,7 @@ function LoggedInFeed() {
             <h2 className="pp-feed__addPetTitle">{t('home.feed.noPetTitle')}</h2>
             <p className="pp-feed__addPetSub">{t('home.feed.noPetSub')}</p>
           </div>
-          <Link className="pp-btn pp-btnPrimary pp-btn--lg" to="/pets">
+          <Link className="pp-btn pp-btnPrimary pp-btn--lg" to="/pets#add-pet">
             {t('home.feed.noPetCta')}
           </Link>
         </section>

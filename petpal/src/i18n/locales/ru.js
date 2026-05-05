@@ -266,6 +266,8 @@ export default {
       emailInUse: 'Этот email уже зарегистрирован.',
       weakPassword: 'Пароль не менее 6 символов.',
       registerGeneric: 'Регистрация не удалась. Повторите.',
+      firebaseNotConfigured:
+        'Firebase не настроен. Добавьте все REACT_APP_FIREBASE_* из консоли Firebase в .env.local и перезапустите dev-сервер.',
     },
   },
   login: {
@@ -359,8 +361,8 @@ export default {
     sampleDone: 'Уже загружено. См. Главная и Сообщество.',
     yourPack: 'Ваша стая',
     noPets: 'Пока пусто — добавьте слева.',
-    traccar: 'ID Traccar (необяз.)',
-    traccarPh: 'Связать устройство',
+    traccar: 'ID устройства или IMEI (необяз.)',
+    traccarPh: 'Traccar или IMEI для карты',
     profilePhoto: 'Фото',
     removePhoto: 'Убрать фото',
     save: 'Сохранить',

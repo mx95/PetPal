@@ -264,6 +264,8 @@ export default {
       emailInUse: 'That email is already registered.',
       weakPassword: 'Password must be at least 6 characters.',
       registerGeneric: 'Registration failed. Please try again.',
+      firebaseNotConfigured:
+        'Firebase is not configured. Add all REACT_APP_FIREBASE_* keys from the Firebase console to .env.local and restart the dev server.',
     },
   },
   login: {
@@ -357,8 +359,8 @@ export default {
     sampleDone: 'Sample pets and posts are already loaded. Check Dashboard, Community, and the pet list on this page.',
     yourPack: 'Your pack',
     noPets: 'No pets yet — add one on the left.',
-    traccar: 'Traccar device id (optional)',
-    traccarPh: 'Link a device for live map',
+    traccar: 'Device ID or IMEI (optional)',
+    traccarPh: 'Traccar id or collar IMEI for live map',
     profilePhoto: 'Profile photo',
     removePhoto: 'Remove current photo',
     save: 'Save',

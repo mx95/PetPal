@@ -9,6 +9,11 @@ export function AuthProvider({ children }) {
   const [initializing, setInitializing] = useState(true);
 
   useEffect(() => {
+    if (!auth) {
+      setUser(null);
+      setInitializing(false);
+      return undefined;
+    }
     const unsubscribe = onAuthStateChanged(auth, (nextUser) => {
       setUser(nextUser);
       setInitializing(false);
@@ -20,7 +25,7 @@ export function AuthProvider({ children }) {
     () => ({
       user,
       initializing,
-      signOut: () => signOut(auth),
+      signOut: () => (auth ? signOut(auth) : Promise.resolve()),
     }),
     [user, initializing]
   );

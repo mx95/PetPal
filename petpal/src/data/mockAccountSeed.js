@@ -9,6 +9,9 @@ export const MOCK_PET_IDS = {
   miso: 'pet_sample_miso',
 };
 
+/** Demo tracker id for live ingest (Xexun IMEI == deviceId in HTTP API). */
+export const SAMPLE_DEMO_TRACKER_IMEI = '869469088344608';
+
 const MOCK_FLAG = 'petpal_mock_bundle_v1';
 
 export function hasLoadedMockBundle(uid) {
@@ -27,7 +30,7 @@ function buildMockPets() {
       id: MOCK_PET_IDS.bailey,
       name: 'Bailey',
       categoryId: 'dog',
-      trackingDeviceId: 'mock-device-1001',
+      trackingDeviceId: SAMPLE_DEMO_TRACKER_IMEI,
       createdAt: now,
       colorScheme: 'Golden and white',
       age: '4 years',
@@ -119,6 +122,15 @@ function buildMockFeedPosts(author, bailey, miso) {
   ];
 }
 
+/** When true, Dashboard can auto-apply the demo pack for empty accounts (local dev by default). */
+export function shouldAutoApplyDemoPack() {
+  if (process.env.REACT_APP_AUTO_LOAD_SAMPLE === '0') return false;
+  return (
+    process.env.REACT_APP_AUTO_LOAD_SAMPLE === '1' ||
+    process.env.NODE_ENV === 'development'
+  );
+}
+
 /**
  * Adds two sample pets (if missing) and merges walk / game / feed demo data. Caller should reload the app.
  * @returns {{ addedPets: number, feedPosts: number, alreadyHadBundle: boolean, error?: 'storage' }}
@@ -143,6 +155,11 @@ export function applyMockAccountSeed(uid, user) {
     if (!byId.has(p.id)) {
       byId.set(p.id, p);
       added += 1;
+    } else if (p.id === MOCK_PET_IDS.bailey) {
+      const cur = byId.get(p.id);
+      if (cur && cur.trackingDeviceId !== p.trackingDeviceId) {
+        byId.set(p.id, { ...cur, trackingDeviceId: p.trackingDeviceId });
+      }
     }
   }
   const merged = Array.from(byId.values());

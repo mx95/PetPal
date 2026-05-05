@@ -35,6 +35,10 @@ export default function Register() {
       setError(t('register.businessNameError'));
       return;
     }
+    if (!auth) {
+      setError(t('auth.errors.firebaseNotConfigured'));
+      return;
+    }
     setSubmitting(true);
     try {
       const cred = await createUserWithEmailAndPassword(auth, email.trim(), password);

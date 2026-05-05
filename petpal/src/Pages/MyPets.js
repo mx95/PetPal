@@ -1,5 +1,5 @@
-import React, { useId, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect, useId, useRef, useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
 import { applyMockAccountSeed, hasLoadedMockBundle } from '../data/mockAccountSeed';
 import { PET_CATEGORIES } from '../pets/petCategories';
@@ -11,9 +11,11 @@ import { useI18n } from '../i18n/I18nContext';
 
 export default function MyPets() {
   const { t } = useI18n();
+  const location = useLocation();
   const { user } = useAuth();
   const { pets, addPet, updatePet, removePet, getCategory } = usePets();
   const [name, setName] = useState('');
+  const [addDeviceId, setAddDeviceId] = useState('');
   const [colorScheme, setColorScheme] = useState('');
   const [description, setDescription] = useState('');
   const [age, setAge] = useState('');
@@ -34,6 +36,15 @@ export default function MyPets() {
   const addPhotoRef = useRef(null);
   const editPhotoRef = useRef(null);
 
+  useEffect(() => {
+    if (location.hash !== '#add-pet') return;
+    setAddPetExpanded(true);
+    const tmr = window.setTimeout(() => {
+      document.getElementById('add-pet-expand')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 80);
+    return () => window.clearTimeout(tmr);
+  }, [location.hash]);
+
   async function submitAdd(e) {
     e.preventDefault();
     if (!name.trim()) return;
@@ -53,12 +64,14 @@ export default function MyPets() {
     addPet({
       name: name.trim(),
       categoryId,
+      trackingDeviceId: addDeviceId.trim() || null,
       photoDataUrl,
       colorScheme,
       description,
       age,
     });
     setName('');
+    setAddDeviceId('');
     setColorScheme('');
     setDescription('');
     setAge('');
@@ -217,6 +230,17 @@ export default function MyPets() {
                       </option>
                     ))}
                   </PrettySelect>
+                </div>
+                <div>
+                  <div className="pp-label">{t('myPets.traccar')}</div>
+                  <input
+                    className="pp-input"
+                    value={addDeviceId}
+                    onChange={(e) => setAddDeviceId(e.target.value)}
+                    placeholder={t('myPets.traccarPh')}
+                    autoComplete="off"
+                    inputMode="numeric"
+                  />
                 </div>
                 <div>
                   <div className="pp-label">{t('myPets.color')}</div>

@@ -87,7 +87,7 @@ export default function Tracking() {
             <p className="pp-subtle" style={{ marginBottom: 16, maxWidth: 480, marginLeft: 'auto', marginRight: 'auto' }}>
               {t('trackingPage.emptyBody')}
             </p>
-            <Link className="pp-btn pp-btnPrimary pp-btn--lg" to="/pets" style={{ textDecoration: 'none', display: 'inline-block' }}>
+            <Link className="pp-btn pp-btnPrimary pp-btn--lg" to="/pets#add-pet" style={{ textDecoration: 'none', display: 'inline-block' }}>
               {t('trackingPage.myPetsCta')}
             </Link>
           </div>
