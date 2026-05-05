@@ -314,6 +314,49 @@ function parseXexunPacket(packet) {
   return parsed;
 }
 
+function encodeImeiBcd(imeiStr) {
+  const digits = String(imeiStr).replace(/\D/g, "").slice(0, 15);
+  const padded = digits.padStart(16, "0");
+  const buf = Buffer.alloc(8);
+  for (let i = 0; i < 8; i++) {
+    const hi = parseInt(padded[i * 2], 10);
+    const lo = parseInt(padded[i * 2 + 1], 10);
+    buf[i] = ((hi & 0x0f) << 4) | (lo & 0x0f);
+  }
+  return buf;
+}
+
+/**
+ * Server → terminal command (message type 0x21). Per Xexun API doc:
+ * command text is ASCII, must end with 0x00 before CRC.
+ * CRC-16/CCITT-FALSE over `length` bytes starting at protocol version (byte offset 3).
+ */
+function buildServerCommand021({ version = 0x03, sequence = 1, imei, commandAscii }) {
+  const imei8 = Buffer.isBuffer(imei) ? imei : encodeImeiBcd(imei);
+  const body = Buffer.concat([Buffer.from(String(commandAscii), "ascii"), Buffer.from([0x00])]);
+  const headerBytes = 1 + 1 + 1 + 8;
+  const length = headerBytes + body.length;
+
+  const buf = Buffer.alloc(1 + 2 + length + 2 + 1);
+  let o = 0;
+  buf.writeUInt8(0xfc, o++);
+  buf.writeUInt16BE(length & 0xffff, o);
+  o += 2;
+  buf.writeUInt8(version, o++);
+  buf.writeUInt8(0x21, o++);
+  buf.writeUInt8(sequence & 0xff, o++);
+  imei8.copy(buf, o);
+  o += 8;
+  body.copy(buf, o);
+  o += body.length;
+
+  const crcVal = crc16ccittFalse(buf.subarray(3, 3 + length));
+  u16be(crcVal).copy(buf, o);
+  o += 2;
+  buf.writeUInt8(0xcf, o++);
+  return buf;
+}
+
 function buildAck({ version = 0x03, messageId, sequence, imei8, fixedReply }) {
   // ACK format based on your screenshots:
   // FC <len:2> <ver:1> <msgId:1> <seq:1> <imei8> <fixedReply:n> <crc:2> CF
@@ -346,6 +389,8 @@ function buildAck({ version = 0x03, messageId, sequence, imei8, fixedReply }) {
 module.exports = {
   parseXexunPacket,
   buildAck,
+  buildServerCommand021,
+  encodeImeiBcd,
   decodeImeiFromBcd,
   toHex,
   isValidCrc,

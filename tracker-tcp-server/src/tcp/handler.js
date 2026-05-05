@@ -1,5 +1,11 @@
 const net = require("net");
-const { parseXexunPacket, buildAck, toHex, isValidCrc } = require("../protocol/xexun");
+const {
+  parseXexunPacket,
+  buildAck,
+  buildServerCommand021,
+  toHex,
+  isValidCrc
+} = require("../protocol/xexun");
 
 function extractFramesFromStream(buffer) {
   // Stream-safe framing for FC...CF.
@@ -34,6 +40,21 @@ function extractFramesFromStream(buffer) {
   }
 
   return { frames, rest: Buffer.alloc(0) };
+}
+
+function sendNextQueuedCommand(socket, imei, store) {
+  const cmd = store.dequeueCommand(imei);
+  if (!cmd) return;
+  try {
+    const seq = store.nextSequence(imei);
+    const frame = buildServerCommand021({ imei, commandAscii: cmd, sequence: seq });
+    socket.write(frame);
+    console.log(`[TCP] 0x21 → ${imei}: ${cmd}`);
+    console.log("[TCP] CMD HEX:", toHex(frame));
+  } catch (e) {
+    console.log("[TCP] 0x21 send failed:", e?.message || String(e));
+    store.enqueueCommand(imei, cmd, { atFront: true });
+  }
 }
 
 function createTcpServer({ port, store }) {
@@ -91,6 +112,7 @@ function createTcpServer({ port, store }) {
         }
 
         store.upsert(parsed.imei, parsed);
+        store.bindSocket(parsed.imei, socket);
 
         // ACK (CRITICAL)
         try {
@@ -128,13 +150,21 @@ function createTcpServer({ port, store }) {
           });
           socket.write(ack);
           console.log("[TCP] ACK HEX:", toHex(ack));
+
+          // After successful uplink (0x20), push one queued server command (0x21), per Xexun API.
+          if (parsed.messageId === 0x20) {
+            sendNextQueuedCommand(socket, parsed.imei, store);
+          }
         } catch (e) {
           console.log("[TCP] Failed to send ACK:", e?.message || String(e));
         }
       }
     });
 
-    socket.on("close", () => console.log("[TCP] connection closed"));
+    socket.on("close", () => {
+      store.releaseSocket(socket);
+      console.log("[TCP] connection closed");
+    });
     socket.on("error", (err) => console.log("[TCP] socket error:", err.message));
   });
 
