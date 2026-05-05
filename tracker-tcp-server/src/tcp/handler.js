@@ -80,7 +80,11 @@ function createTcpServer({ port, store }) {
         };
         console.log("[TCP] PARSED:", JSON.stringify(logObj));
 
-        if (parsed.messageId !== 0x20 && parsed.messageId !== 0x6a) {
+        if (
+          parsed.messageId !== 0x20 &&
+          parsed.messageId !== 0x21 &&
+          parsed.messageId !== 0x6a
+        ) {
           console.log(
             `[TCP] Warning: unknown messageId=0x${parsed.messageId.toString(16)} (ACKing anyway)`
           );
@@ -99,8 +103,19 @@ function createTcpServer({ port, store }) {
             }
           } else if (parsed.messageId === 0x21) {
             const p = parsed._payload;
-            if (Buffer.isBuffer(p) && p.length > 0) {
-              const trimmed = p[p.length - 1] === 0x00 ? p.subarray(0, p.length - 1) : p;
+            let body = null;
+            if (Buffer.isBuffer(p) && p.length >= 2 && p.readUInt8(0) === 0x74) {
+              const l = p.readUInt8(1);
+              const end = 2 + l;
+              if (end <= p.length) body = p.subarray(2, end);
+            }
+            if (!body && Buffer.isBuffer(p) && p.length > 0) body = p;
+
+            if (Buffer.isBuffer(body) && body.length > 0) {
+              const trimmed =
+                body[body.length - 1] === 0x00
+                  ? body.subarray(0, body.length - 1)
+                  : body;
               fixedReply = Buffer.concat([trimmed, Buffer.from(",10", "ascii")]);
             }
           }

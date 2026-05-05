@@ -19,47 +19,128 @@ function decodeImeiFromBcd(imei8) {
 const { crc16ccittFalse, u16be } = require("./crc16x25");
 
 function parseDeviceStatusBlock(block) {
-  // Heuristic parser based on the packet breakdown you shared:
-  // 6A <len=0x18>:
-  // battery(1) networkDuration(2) charging(1) steps(2) reserved(...) batteryTime(4) deviceState(1) [etc]
-  //
-  // This is intentionally defensive: it returns whatever it can.
+  // Observed layout in your live packets (type 0x6A, len 0x18):
+  // battery(1)
+  // networkDuration(2) BE
+  // signal(1)            ("Communication Signal")
+  // trackingSeq(1)
+  // movement(1)
+  // charging(1)
+  // steps(2) BE
+  // reserved(7)
+  // batteryTime(4) BE unix seconds
+  // trailing state bytes (often 4x 0x00)
   const out = {};
   if (!Buffer.isBuffer(block)) return out;
 
   if (block.length >= 1) out.battery = block.readUInt8(0);
   if (block.length >= 3) out.networkDuration = block.readUInt16BE(1);
-  if (block.length >= 4) out.chargingStatus = block.readUInt8(3);
-  if (block.length >= 6) out.steps = block.readUInt16BE(4);
+  if (block.length >= 4) out.signal = block.readUInt8(3);
+  if (block.length >= 5) out.trackingSeq = block.readUInt8(4);
+  if (block.length >= 6) out.movement = block.readUInt8(5);
+  if (block.length >= 7) out.chargingStatus = block.readUInt8(6);
+  if (block.length >= 9) out.steps = block.readUInt16BE(7);
 
-  // Try to find a plausible UNIX timestamp (seconds) inside the block.
-  // In your screenshots it looked like 0x69FA2C81 which is a valid epoch seconds range.
-  for (let i = 0; i + 4 <= block.length; i++) {
-    const v = block.readUInt32BE(i);
+  if (block.length >= 20) {
+    const v = block.readUInt32BE(16);
     if (v >= 1500000000 && v <= 2200000000) {
-      out.timestamp = new Date(v * 1000).toISOString();
       out.timestampRaw = v;
-      out.timestampBytes = block.subarray(i, i + 4);
-      break;
+      out.timestamp = new Date(v * 1000).toISOString();
+      out.timestampBytes = block.subarray(16, 20);
     }
   }
 
-  // Often the last byte is a small device state flag.
-  if (block.length >= 1) out.deviceState = block.readUInt8(block.length - 1);
+  if (block.length > 20) out.deviceStateTail = toHex(block.subarray(20));
   return out;
 }
 
-function findTypedBlock(payload, typeByte) {
-  // Payload contains one or more blocks:
-  // <type:1> <len:1> <data:len> ...
-  for (let i = 0; i + 2 <= payload.length; i++) {
-    if (payload.readUInt8(i) !== typeByte) continue;
-    const len = payload.readUInt8(i + 1);
-    const start = i + 2;
-    const end = start + len;
-    if (end <= payload.length) return payload.subarray(start, end);
+const KNOWN_TYPES = new Set([
+  0x64, // GPS
+  0x67, // LBS / cell positioning (often includes doubles in other packets)
+  0x6a, // device status
+  0x6c, // wrapper segment (may contain nested TLV)
+  0x6e // version / module info
+]);
+
+function tryParseTlvAt(payload, i) {
+  if (i + 2 > payload.length) return null;
+  const type = payload.readUInt8(i);
+  if (!KNOWN_TYPES.has(type)) return null;
+  const len = payload.readUInt8(i + 1);
+  const start = i + 2;
+  const end = start + len;
+  if (end > payload.length) return null;
+  return { type, len, data: payload.subarray(start, end), offset: i, end };
+}
+
+function parseLooseTlvChain(payload) {
+  // Walk TLV frames from left-to-right. If the next byte isn't a known type,
+  // advance one byte to resync (handles nested garbage between real frames).
+  const blocks = [];
+  let i = 0;
+  while (i < payload.length) {
+    const hit = tryParseTlvAt(payload, i);
+    if (!hit) {
+      i += 1;
+      continue;
+    }
+    blocks.push(hit);
+    i = hit.end;
   }
-  return null;
+  return blocks;
+}
+
+function parseStrictTlvChain(payload) {
+  const blocks = [];
+  let i = 0;
+  while (i < payload.length) {
+    const hit = tryParseTlvAt(payload, i);
+    if (!hit) return { blocks, rest: payload.subarray(i) };
+    blocks.push(hit);
+    i = hit.end;
+  }
+  return { blocks, rest: Buffer.alloc(0) };
+}
+
+function flattenBlocks(payload, depth = 0, acc = []) {
+  const { blocks, rest } = parseStrictTlvChain(payload);
+  const top = blocks;
+
+  for (const b of top) {
+    acc.push({ ...b, depth });
+    if (b.type === 0x6c && b.data && b.data.length) {
+      // Nested sections often don't start with a known root type; scan for embedded frames.
+      extractEmbeddedTlvBlocks(b.data, depth + 1, acc);
+    }
+  }
+
+  // Some frames embed extra TLV-ish chunks after the strict chain; scan the tail loosely.
+  if (rest.length) {
+    const tailBlocks = parseLooseTlvChain(rest);
+    for (const b of tailBlocks) {
+      acc.push({ ...b, depth });
+      if (b.type === 0x6c && b.data && b.data.length) extractEmbeddedTlvBlocks(b.data, depth + 1, acc);
+    }
+  }
+  return acc;
+}
+
+function extractEmbeddedTlvBlocks(buf, depth, acc) {
+  // Scan for TLV frames embedded inside a wrapper segment.
+  const hits = [];
+  for (let i = 0; i + 2 < buf.length; i++) {
+    const hit = tryParseTlvAt(buf, i);
+    if (!hit) continue;
+    // Prefer location-bearing types in embedded scans
+    if (hit.type === 0x64 || hit.type === 0x67) hits.push(hit);
+  }
+  hits.sort((a, b) => a.offset - b.offset);
+  let lastEnd = -1;
+  for (const hit of hits) {
+    if (hit.offset < lastEnd) continue;
+    acc.push({ ...hit, depth });
+    lastEnd = hit.end;
+  }
 }
 
 function parseGpsBlock(block) {
@@ -119,12 +200,6 @@ function parseGpsBlock(block) {
   return out;
 }
 
-function extractTypedValue(payload, typeByte) {
-  const b = findTypedBlock(payload, typeByte);
-  if (!b || b.length === 0) return null;
-  return b.readUInt8(0);
-}
-
 function isValidCrc(packet) {
   // Per your verified samples, CRC is CRC-16/CCITT-FALSE computed over exactly `length`
   // bytes starting at Protocol Version (offset 3). CRC is stored big-endian.
@@ -152,43 +227,68 @@ function parseXexunPacket(packet) {
   // FC [len:2] [ver:1] [msgId:1] [seq:1] [imei:8 BCD] [payload...] [crc:2] CF
   if (!Buffer.isBuffer(packet) || packet.length < 1) return null;
   if (packet.readUInt8(0) !== 0xfc) return null;
-  if (packet.readUInt8(packet.length - 1) !== 0xcf) return null;
 
   if (packet.length < 1 + 2 + 1 + 1 + 1 + 8 + 2 + 1) return null;
 
   const length = packet.readUInt16BE(1); // bytes 2–3 in your docs
-  const version = packet.readUInt8(3);
-  const messageId = packet.readUInt8(4);
-  const sequence = packet.readUInt8(5);
-  const imei8 = packet.subarray(6, 14);
+  const total = length + 6;
+  if (packet.length < total) return null;
+  const frame = packet.subarray(0, total);
+  if (frame.readUInt8(total - 1) !== 0xcf) return null;
+
+  const version = frame.readUInt8(3);
+  const messageId = frame.readUInt8(4);
+  const sequence = frame.readUInt8(5);
+  const imei8 = frame.subarray(6, 14);
   const imei = decodeImeiFromBcd(imei8);
 
-  const total = length + 6;
   const crcOffset = 3 + length;
-  const crc = packet.subarray(crcOffset, crcOffset + 2);
+  const crc = frame.subarray(crcOffset, crcOffset + 2);
 
   // Payload is the remainder of the `length` bytes after fixed header within that window.
-  const payloadLen = Math.max(0, length - (1 + 1 + 1 + 8)); // ver + msgId + seq + imei
+  // `length` counts bytes starting at Protocol Version (offset 3) through the last payload byte
+  // before CRC. That region includes: ver(1) + msgId(1) + seq(1) + imei(8) + payload(...)
   const payloadStart = 14;
-  const payloadEnd = payloadStart + payloadLen;
-  const payload = packet.subarray(payloadStart, payloadEnd);
+  const payloadEnd = crcOffset;
+  const payload = frame.subarray(payloadStart, payloadEnd);
 
-  // Xexun devices often use a container messageId (e.g. 0x20) with typed blocks.
-  // Some models also put status directly under a dedicated messageId; support both.
-  const deviceStatusBlock =
-    messageId === 0x6a ? payload : findTypedBlock(payload, 0x6a);
-  const gpsBlock = findTypedBlock(payload, 0x64);
-  const gps = gpsBlock ? parseGpsBlock(gpsBlock) : null;
+  const blocks = flattenBlocks(payload);
 
-  const signal =
-    // Some packets carry signal as a separate typed block (seen as "Communication Signal").
-    extractTypedValue(payload, 0x12) ??
-    extractTypedValue(payload, 0x14) ??
-    (deviceStatusBlock && deviceStatusBlock.length >= 8
-      ? deviceStatusBlock.readUInt8(7)
-      : null);
+  let deviceStatusBlock = null;
+  let gpsBlock = null;
+  let lbsBlock = null;
+  for (const b of blocks) {
+    if (b.type === 0x6a) deviceStatusBlock = b.data;
+    if (b.type === 0x64) gpsBlock = b.data; // last wins
+    if (b.type === 0x67) lbsBlock = b.data; // last wins
+  }
+  if (!lbsBlock) {
+    const idx = payload.indexOf(0x67);
+    if (idx !== -1 && idx + 1 < payload.length) {
+      const l = payload.readUInt8(idx + 1);
+      const end = idx + 2 + l;
+      if (end <= payload.length) lbsBlock = payload.subarray(idx + 2, end);
+    }
+  }
+  if (messageId === 0x6a && !deviceStatusBlock) deviceStatusBlock = payload;
 
-  const crcCheck = isValidCrc(packet.subarray(0, total));
+  const gpsParsed = gpsBlock ? parseGpsBlock(gpsBlock) : null;
+  const lbsParsed = lbsBlock ? parseGpsBlock(lbsBlock) : null;
+  const gps =
+    gpsParsed && gpsParsed.lat != null && gpsParsed.lng != null
+      ? gpsParsed
+      : lbsParsed && lbsParsed.lat != null && lbsParsed.lng != null
+        ? { ...lbsParsed, source: "lbs" }
+        : gpsParsed && Object.keys(gpsParsed).length
+          ? { ...gpsParsed, source: "gps-partial" }
+          : lbsParsed && Object.keys(lbsParsed).length
+            ? { ...lbsParsed, source: "lbs-partial" }
+            : null;
+
+  const deviceStatus = deviceStatusBlock ? parseDeviceStatusBlock(deviceStatusBlock) : null;
+  const signal = deviceStatus?.signal ?? null;
+
+  const crcCheck = isValidCrc(frame);
 
   const parsed = {
     header: "FC",
@@ -200,12 +300,14 @@ function parseXexunPacket(packet) {
     crc: toHex(crc),
     crcOk: crcCheck.ok,
     crcSpec: { algo: "CRC-16/CCITT-FALSE", endian: "be", coverage: "ver..(len bytes)" },
-    rawHex: toHex(packet),
+    rawHex: toHex(frame),
     receivedAt: new Date().toISOString(),
-    deviceStatus: deviceStatusBlock ? parseDeviceStatusBlock(deviceStatusBlock) : null,
+    deviceStatus,
     gpsRaw: gpsBlock ? toHex(gpsBlock) : null,
+    lbsRaw: lbsBlock ? toHex(lbsBlock) : null,
     gps,
     signal,
+    blocks: blocks.map((b) => ({ type: b.type, len: b.len, depth: b.depth })),
     _payload: payload
   };
 
