@@ -12,6 +12,16 @@ function getEnv(name) {
   return v && String(v).trim() ? String(v).trim() : null;
 }
 
+function getConfig(path, fallback = null) {
+  try {
+    const cfg = functions.config && functions.config();
+    if (!cfg) return fallback;
+    return path.split('.').reduce((o, k) => (o && o[k] != null ? o[k] : null), cfg) ?? fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 function b64(s) {
   return Buffer.from(s, 'utf8').toString('base64');
 }
@@ -92,7 +102,7 @@ exports.tracking = functions
         }
 
         // Option A: Xexun TCP server (deviceId == IMEI)
-        const xexunBase = getEnv('XEXUN_HTTP_BASE_URL');
+        const xexunBase = getEnv('XEXUN_HTTP_BASE_URL') || getConfig('xexun.http_base_url');
         if (xexunBase) {
           const base = xexunBase.replace(/\/$/, '');
           const url = `${base}/devices/${encodeURIComponent(deviceId)}`;
