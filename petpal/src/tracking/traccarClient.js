@@ -19,10 +19,18 @@ function traccarBase() {
   return String(raw).replace(/\/$/, '');
 }
 
-/** @returns {'bff' | 'traccar' | 'mock'} */
+function xexunBase() {
+  const raw = process.env.REACT_APP_XEXUN_HTTP_BASE_URL;
+  if (raw == null || raw === '') return null;
+  if (raw === 'same') return '';
+  return String(raw).replace(/\/$/, '');
+}
+
+/** @returns {'bff' | 'traccar' | 'xexun' | 'mock'} */
 export function getTrackingDataSource() {
   if (bffBase() != null) return 'bff';
   if (traccarBase() !== null) return 'traccar';
+  if (xexunBase() !== null) return 'xexun';
   return 'mock';
 }
 
@@ -95,6 +103,32 @@ function normalizeBffPosition(json) {
   };
 }
 
+function normalizeXexunPosition(json) {
+  if (!json) return null;
+  const lat =
+    json.lat != null
+      ? Number(json.lat)
+      : json.latitude != null
+        ? Number(json.latitude)
+        : Number.NaN;
+  const lng =
+    json.lng != null
+      ? Number(json.lng)
+      : json.longitude != null
+        ? Number(json.longitude)
+        : Number.NaN;
+  if (Number.isNaN(lat) || Number.isNaN(lng)) return null;
+  return {
+    lat,
+    lng,
+    speed: json.speed != null ? Number(json.speed) : null,
+    address: json.address || null,
+    deviceTime: json.deviceTime || null,
+    serverTime: json.serverTime || null,
+    source: 'xexun',
+  };
+}
+
 async function fetchBffPosition(deviceId) {
   const base = bffBase();
   const path = `/position?deviceId=${encodeURIComponent(deviceId)}`;
@@ -116,6 +150,31 @@ async function fetchBffPosition(deviceId) {
   const normalized = normalizeBffPosition(data);
   if (!normalized) {
     throw new Error('BFF response did not include usable lat/lng.');
+  }
+  return normalized;
+}
+
+async function fetchXexunPosition(deviceId) {
+  const base = xexunBase();
+  const path = `/position?deviceId=${encodeURIComponent(deviceId)}`;
+  const url = base === '' ? path : `${base}${path}`;
+
+  const res = await fetch(url, {
+    method: 'GET',
+    headers: { Accept: 'application/json' },
+    credentials: 'omit',
+  });
+
+  if (!res.ok) {
+    const err = new Error(`Xexun HTTP API returned ${res.status}`);
+    err.status = res.status;
+    throw err;
+  }
+
+  const data = await res.json();
+  const normalized = normalizeXexunPosition(data);
+  if (!normalized) {
+    throw new Error('No GPS fix yet for this IMEI (lat/lng missing).');
   }
   return normalized;
 }
@@ -152,6 +211,10 @@ export async function getLatestPosition(deviceId) {
 
   if (bffBase() != null) {
     return fetchBffPosition(id);
+  }
+
+  if (xexunBase() != null) {
+    return fetchXexunPosition(id);
   }
 
   const base = traccarBase();
