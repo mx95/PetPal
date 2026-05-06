@@ -62,9 +62,11 @@ export default function BottomNav() {
       end={item.end}
       className={({ isActive }) => `pp-bottomNav__item ${isActive ? 'pp-bottomNav__item--on' : ''}`}
       aria-label={t(item.labelKey)}
+      title={t(item.labelKey)}
     >
       <span className="pp-bottomNav__icon">{ICONS[item.key]}</span>
       <span className="pp-bottomNav__label">{t(item.labelKey)}</span>
+      <span className="pp-bottomNav__activeDot" aria-hidden />
     </NavLink>
   );
 
@@ -78,8 +80,10 @@ export default function BottomNav() {
           to="/dashboard#pp-walk-input-anchor"
           className="pp-bottomNav__fab"
           aria-label={t('bottomNav.fab')}
+          title={t('bottomNav.fab')}
         >
           <span className="pp-bottomNav__fabIcon" aria-hidden>＋</span>
+          <span className="pp-bottomNav__fabPulse" aria-hidden />
         </Link>
         {right.map((it) => (
           <Item key={it.key} item={it} />

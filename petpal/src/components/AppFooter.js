@@ -1,11 +1,9 @@
 import React, { useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { clearCookieConsent } from '../cookies/cookieConsentStorage';
 
 export function AppFooter() {
   const reopenCookieSettings = useCallback(() => {
-    clearCookieConsent();
-    window.location.reload();
+    window.dispatchEvent(new CustomEvent('petpal:open-cookie-settings'));
   }, []);
 
   return (
@@ -22,7 +20,7 @@ export function AppFooter() {
           <Link className="pp-footer__link" to="/cookies">
             Cookies
           </Link>
-          <button type="button" className="pp-footer__link" onClick={reopenCookieSettings} style={{ border: 'none', background: 'none', cursor: 'pointer', font: 'inherit' }}>
+          <button type="button" className="pp-footer__link pp-footer__linkBtn" onClick={reopenCookieSettings}>
             Cookie settings
           </button>
         </nav>

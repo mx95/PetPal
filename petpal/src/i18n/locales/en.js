@@ -718,7 +718,7 @@ const en = {
   cookie: {
     titleStorage: 'Cookies and storage',
     bodyNoGA:
-      'PetPal uses essential browser storage and session data so you can sign in and use the app. We do not load Google Analytics in this build. See the',
+      'We use cookies and similar technologies to enhance your experience. Consenting allows this, while not consenting may impact certain site features and functions.',
     titlePrivacy: 'We value your privacy',
     bodyGA:
       'We use essential cookies and storage for login and the app. With your permission we also use Google Analytics to understand how the app is used in aggregate. See our',
