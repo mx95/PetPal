@@ -35,6 +35,12 @@ export default function Tracking() {
 
   const selectedPet = useMemo(() => pets.find((p) => p.id === selectedPetId), [pets, selectedPetId]);
 
+  /** Typed IMEI wins; otherwise use value saved on the pet (avoids empty requests if the field was cleared). */
+  const effectiveDeviceId = useMemo(
+    () => (deviceId.trim() || selectedPet?.trackingDeviceId?.trim() || ''),
+    [deviceId, selectedPet?.trackingDeviceId]
+  );
+
   useEffect(() => {
     if (pets.length === 0) {
       setSelectedPetId('');
@@ -56,7 +62,7 @@ export default function Tracking() {
     setError('');
     setLoading(true);
     try {
-      const p = await getLatestPosition(deviceId);
+      const p = await getLatestPosition(effectiveDeviceId);
       setPosition(p);
     } catch (e) {
       setPosition(null);
@@ -64,7 +70,7 @@ export default function Tracking() {
     } finally {
       setLoading(false);
     }
-  }, [deviceId, t]);
+  }, [effectiveDeviceId, t]);
 
   function saveIdAndLoad(e) {
     e?.preventDefault();
@@ -165,12 +171,12 @@ export default function Tracking() {
             <button
               type="button"
               className="pp-trackFab pp-trackFab--prim"
-              disabled={loading || !deviceId.trim()}
+              disabled={loading || !effectiveDeviceId}
               onClick={() => void refresh()}
             >
               {loading ? t('trackingPage.btnRefresh') : t('trackingPage.btnLocate')}
             </button>
-            <button type="button" className="pp-trackFab" disabled={loading || !deviceId.trim()} onClick={() => void refresh()}>
+            <button type="button" className="pp-trackFab" disabled={loading || !effectiveDeviceId} onClick={() => void refresh()}>
               {t('trackingPage.quickRefresh')}
             </button>
             <Link className="pp-trackFab pp-trackFab--link" to="/pets">
@@ -247,7 +253,7 @@ export default function Tracking() {
             </p>
           ) : null}
           {!position && error ? <div className="pp-error">{error}</div> : null}
-          <button className="pp-btn pp-btnPrimary" type="submit" disabled={loading || !deviceId.trim()}>
+          <button className="pp-btn pp-btnPrimary" type="submit" disabled={loading || !effectiveDeviceId}>
             {loading ? t('trackingPage.btnRefresh') : t('trackingPage.btnSaveLoad')}
           </button>
         </form>

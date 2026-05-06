@@ -152,6 +152,11 @@ async function fetchBffPosition(deviceId) {
 
   if (!res.ok) {
     const code = data?.error;
+    if (res.status === 400 && (code === 'missing_deviceId' || code === 'missing_imei')) {
+      throw new Error(
+        'Missing device ID — enter the IMEI in the Tracking field or save it on My pets.'
+      );
+    }
     if (res.status === 404 && code === 'no_position') {
       throw new Error(
         'No GPS coordinates on server yet. Wait for the device to send a location fix, or check TCP parsing.'
@@ -191,6 +196,11 @@ async function fetchXexunPosition(deviceId) {
 
   if (!res.ok) {
     const code = data?.error;
+    if (res.status === 400 && (code === 'missing_deviceId' || code === 'missing_imei')) {
+      throw new Error(
+        'Missing IMEI — type the 15-digit IMEI above or set it under My pets so Locate can call the tracker API.'
+      );
+    }
     if (res.status === 404 && code === 'no_position') {
       throw new Error(
         'No GPS fix stored yet (HTTP 404 no_position). Wait for coordinates from the device, or confirm the tracker TCP feed includes GPS/LBS parsing.'
@@ -244,7 +254,12 @@ function mockPosition(deviceId) {
 export async function getLatestPosition(deviceId) {
   const id = String(deviceId || '').trim();
   if (!id) {
-    throw new Error('Set a device ID (from your Traccar server).');
+    const xexun = process.env.REACT_APP_XEXUN_HTTP_BASE_URL;
+    throw new Error(
+      xexun
+        ? 'No IMEI to query — enter the collar IMEI in the field above or link it on My pets.'
+        : 'Set a device ID (from your Traccar server).'
+    );
   }
 
   if (bffBase() != null) {
