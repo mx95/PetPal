@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+const path = require("path");
 
 const { createMemoryStore } = require("./store/memory");
 const { createTcpServer } = require("./tcp/handler");
@@ -19,12 +20,10 @@ app.use(express.json({ limit: "64kb" }));
 function corsOrigin() {
   const raw = process.env.HTTP_CORS_ORIGIN;
   if (!raw || String(raw).trim() === "" || String(raw).trim() === "*") return true;
-  const list = String(raw)
+  return String(raw)
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean);
-  if (list.length === 0) return true;
-  return list;
 }
 
 app.use(
@@ -35,12 +34,24 @@ app.use(
   })
 );
 
+//
+// ✅ 1. API ROUTES FIRST
+//
 app.use("/api/tracker", createTrackerRoutes(store));
 app.use("/api/app", createAppRoutes());
 
+//
+// ✅ 2. STATIC FILES
+//
+app.use(express.static('/root/PetPal/petpal/build'));
+
+//
+// ✅ 3. SAFE FALLBACK (NO "*")
+// 
+app.use((req, res) => {
+  res.sendFile(path.resolve('/root/PetPal/petpal/build/index.html'));
+});
+
 app.listen(HTTP_PORT, () => {
   console.log(`HTTP API listening on port ${HTTP_PORT}`);
-  console.log(`- GET  http://localhost:${HTTP_PORT}/api/app/position?deviceId=…`);
-  console.log(`- GET  http://localhost:${HTTP_PORT}/api/app/devices`);
-  console.log(`- POST http://localhost:${HTTP_PORT}/api/tracker/commands/ip-transfer …`);
 });
