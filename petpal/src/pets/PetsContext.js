@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../auth/AuthProvider';
-import { clearLegacyTraccarDeviceId, loadPetsJson, readLegacyTraccarDeviceId, savePetsJson } from './petsStorage';
+import { clearLegacyDeviceId, loadPetsJson, readLegacyDeviceId, savePetsJson } from './petsStorage';
 import { getPetCategory } from './petCategories';
 
 /**
@@ -58,7 +58,7 @@ export function PetsProvider({ children }) {
       let list = JSON.parse(raw);
       if (!Array.isArray(list)) list = [];
       if (list.length === 0) {
-        const legacy = readLegacyTraccarDeviceId();
+        const legacy = readLegacyDeviceId();
         if (legacy && legacy.trim()) {
           list = [
             {
@@ -70,7 +70,7 @@ export function PetsProvider({ children }) {
             },
           ];
           savePetsJson(uid, JSON.stringify(list));
-          clearLegacyTraccarDeviceId();
+          clearLegacyDeviceId();
         }
       }
       setPets(list);

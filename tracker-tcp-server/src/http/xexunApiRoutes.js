@@ -39,6 +39,7 @@ function registerXexunHttpApi(app, store) {
         { method: "GET", path: "/", description: "This discovery JSON" },
         { method: "GET", path: "/devices", description: "All devices last seen" },
         { method: "GET", path: "/devices/:imei", description: "One device snapshot" },
+        { method: "GET", path: "/devices/:imei/status", description: "Status-only snapshot" },
         { method: "GET", path: "/position", query: "deviceId or imei", description: "Latest lat/lng for maps" },
         { method: "POST", path: "/commands/queue", body: "{ imei, command }", description: "Raw 0x21 text (any vendor command)" },
         { method: "POST", path: "/commands/ip-transfer", body: "{ imei, host, port? }", description: "ip=host:port server switch" },

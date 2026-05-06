@@ -19,17 +19,11 @@ function decodeImeiFromBcd(imei8) {
 const { crc16ccittFalse, u16be } = require("./crc16x25");
 
 function parseDeviceStatusBlock(block) {
-  // Observed layout in your live packets (type 0x6A, len 0x18):
-  // battery(1)
-  // networkDuration(2) BE
-  // signal(1)            ("Communication Signal")
-  // trackingSeq(1)
-  // movement(1)
-  // charging(1)
-  // steps(2) BE
-  // reserved(7)
-  // batteryTime(4) BE unix seconds
-  // trailing state bytes (often 4x 0x00)
+  // Per Xexun spec (0x6A status body), the first fields are:
+  // battery(U8), networkDuration(U16), signal(U8), trackingSeq(U8),
+  // movement(U8 0/1), charging(U8), steps(U16).
+  //
+  // Some models extend the block with extra fields; we keep parsing defensively.
   const out = {};
   if (!Buffer.isBuffer(block)) return out;
 
@@ -37,20 +31,26 @@ function parseDeviceStatusBlock(block) {
   if (block.length >= 3) out.networkDuration = block.readUInt16BE(1);
   if (block.length >= 4) out.signal = block.readUInt8(3);
   if (block.length >= 5) out.trackingSeq = block.readUInt8(4);
-  if (block.length >= 6) out.movement = block.readUInt8(5);
+  if (block.length >= 6) {
+    const mv = block.readUInt8(5);
+    // Spec says motion state is 0/1. Treat other values as "unknown".
+    out.movement = mv === 0 || mv === 1 ? mv : null;
+  }
   if (block.length >= 7) out.chargingStatus = block.readUInt8(6);
   if (block.length >= 9) out.steps = block.readUInt16BE(7);
 
-  if (block.length >= 20) {
-    const v = block.readUInt32BE(16);
+  // Some firmwares include a unix timestamp elsewhere in the status block.
+  // Find the first plausible epoch seconds (BE u32).
+  for (let i = 0; i + 4 <= block.length; i++) {
+    const v = block.readUInt32BE(i);
     if (v >= 1500000000 && v <= 2200000000) {
       out.timestampRaw = v;
       out.timestamp = new Date(v * 1000).toISOString();
-      out.timestampBytes = block.subarray(16, 20);
+      out.timestampBytes = block.subarray(i, i + 4);
+      if (i + 4 < block.length) out.deviceStateTail = toHex(block.subarray(i + 4));
+      break;
     }
   }
-
-  if (block.length > 20) out.deviceStateTail = toHex(block.subarray(20));
   return out;
 }
 
@@ -188,6 +188,14 @@ function parseGpsBlock(block) {
     out._offset = best.offset;
   }
 
+  // If we found lat/lng doubles, try to interpret nearby bytes as per spec
+  // (altitude float, ephemeris u8, satellites u8).
+  if (best && block.length >= best.offset + 22) {
+    const satellitesOffset = best.offset + 21; // lat(8) + lon(8) + altitude(4) + ephemeris(1)
+    const s = block.readUInt8(satellitesOffset);
+    if (s !== 0xff) out.satellites = s;
+  }
+
   // Try to find a small speed value (km/h) as uint16 near the end
   for (let i = Math.max(0, block.length - 10); i + 2 <= block.length; i++) {
     const s = block.readUInt16BE(i);
@@ -198,6 +206,27 @@ function parseGpsBlock(block) {
   }
 
   return out;
+}
+
+function isAllFF(buf) {
+  if (!Buffer.isBuffer(buf) || buf.length === 0) return false;
+  for (const b of buf) if (b !== 0xff) return false;
+  return true;
+}
+
+function detectGpsValidity({ gpsBlock, gpsParsed }) {
+  if (!Buffer.isBuffer(gpsBlock) || gpsBlock.length < 20) {
+    return { gpsValid: gpsParsed?.lat != null && gpsParsed?.lng != null, reason: "no_block" };
+  }
+
+  // Common layout: [ts:4][lat:8][lng:8] ... where invalid doubles are FF-filled.
+  const latlng = gpsBlock.subarray(4, 20);
+  if (latlng.length === 16 && isAllFF(latlng)) {
+    return { gpsValid: false, reason: "latlng_all_ff" };
+  }
+
+  const ok = gpsParsed && gpsParsed.lat != null && gpsParsed.lng != null;
+  return { gpsValid: Boolean(ok), reason: ok ? "parsed" : "unparsed" };
 }
 
 function isValidCrc(packet) {
@@ -274,16 +303,28 @@ function parseXexunPacket(packet) {
 
   const gpsParsed = gpsBlock ? parseGpsBlock(gpsBlock) : null;
   const lbsParsed = lbsBlock ? parseGpsBlock(lbsBlock) : null;
-  const gps =
-    gpsParsed && gpsParsed.lat != null && gpsParsed.lng != null
-      ? gpsParsed
-      : lbsParsed && lbsParsed.lat != null && lbsParsed.lng != null
-        ? { ...lbsParsed, source: "lbs" }
-        : gpsParsed && Object.keys(gpsParsed).length
-          ? { ...gpsParsed, source: "gps-partial" }
-          : lbsParsed && Object.keys(lbsParsed).length
-            ? { ...lbsParsed, source: "lbs-partial" }
-            : null;
+  const { gpsValid } = detectGpsValidity({ gpsBlock, gpsParsed });
+
+  let gps = null;
+  let source = null;
+  let accuracy = null;
+  if (gpsValid && gpsParsed && gpsParsed.lat != null && gpsParsed.lng != null) {
+    gps = { ...gpsParsed, source: "gps" };
+    source = "gps";
+    accuracy = "gps";
+  } else if (lbsParsed && lbsParsed.lat != null && lbsParsed.lng != null) {
+    gps = { ...lbsParsed, source: "lbs" };
+    source = "lbs";
+    accuracy = "lbs";
+  } else if (gpsParsed && Object.keys(gpsParsed).length) {
+    gps = { ...gpsParsed, source: "gps" };
+    source = "gps";
+    accuracy = "gps";
+  } else if (lbsParsed && Object.keys(lbsParsed).length) {
+    gps = { ...lbsParsed, source: "lbs" };
+    source = "lbs";
+    accuracy = "lbs";
+  }
 
   const deviceStatus = deviceStatusBlock ? parseDeviceStatusBlock(deviceStatusBlock) : null;
   const signal = deviceStatus?.signal ?? null;
@@ -306,6 +347,10 @@ function parseXexunPacket(packet) {
     gpsRaw: gpsBlock ? toHex(gpsBlock) : null,
     lbsRaw: lbsBlock ? toHex(lbsBlock) : null,
     gps,
+    gpsValid,
+    source,
+    accuracy,
+    satellites: gps?.satellites ?? null,
     signal,
     blocks: blocks.map((b) => ({ type: b.type, len: b.len, depth: b.depth })),
     _payload: payload

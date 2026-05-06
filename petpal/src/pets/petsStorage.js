@@ -1,4 +1,4 @@
-const LEGACY_DEVICE_KEY = 'petpal_traccar_device_id';
+const LEGACY_DEVICE_KEY = 'petpal_device_id';
 
 export function loadPetsJson(uid) {
   if (!uid) return '[]';
@@ -18,7 +18,7 @@ export function savePetsJson(uid, jsonString) {
   }
 }
 
-export function readLegacyTraccarDeviceId() {
+export function readLegacyDeviceId() {
   try {
     return localStorage.getItem(LEGACY_DEVICE_KEY);
   } catch {
@@ -26,7 +26,7 @@ export function readLegacyTraccarDeviceId() {
   }
 }
 
-export function clearLegacyTraccarDeviceId() {
+export function clearLegacyDeviceId() {
   try {
     localStorage.removeItem(LEGACY_DEVICE_KEY);
   } catch {

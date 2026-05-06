@@ -153,6 +153,9 @@ function createTcpServer({ port, store }) {
 
           // After successful uplink (0x20), push one queued server command (0x21), per Xexun API.
           if (parsed.messageId === 0x20) {
+            if (parsed.gpsValid === false && parsed.source === "lbs") {
+              console.log("[TCP] GPS invalid → using LBS fallback");
+            }
             sendNextQueuedCommand(socket, parsed.imei, store);
           }
         } catch (e) {

@@ -1,8 +1,10 @@
 /**
- * Traccar-shaped position API. Works with self-hosted Traccar or stays in mock mode.
- * Optional: proxy Traccar through your own **BFF** (Firebase Cloud Function, small Node service)
- * to avoid CORS and keep credentials off the client.
- * @see https://www.traccar.org/ Traccar REST: GET /api/positions?deviceId=…
+ * PetPal vendor-shaped position API.
+ *
+ * Supports:
+ * - Optional PetPal BFF proxy (recommended for production)
+ * - Direct Xexun tracker HTTP API (`tracker-tcp-server`)
+ * - Optional third-party vendor API that speaks a common GPS-platform REST shape
  */
 
 function bffBase() {
@@ -12,8 +14,8 @@ function bffBase() {
   return String(raw).replace(/\/$/, '');
 }
 
-function traccarBase() {
-  const raw = process.env.REACT_APP_TRACCAR_BASE_URL;
+function vendorBase() {
+  const raw = process.env.REACT_APP_PETPAL_VENDOR_BASE_URL;
   if (raw == null || raw === '') return null;
   if (raw === 'same') return '';
   return String(raw).replace(/\/$/, '');
@@ -26,21 +28,17 @@ function xexunBase() {
   return String(raw).replace(/\/$/, '');
 }
 
-/** @returns {'bff' | 'traccar' | 'xexun' | 'mock'} */
+/** @returns {'bff' | 'petpal' | 'xexun' | 'mock'} */
 export function getTrackingDataSource() {
   if (bffBase() != null) return 'bff';
-  if (traccarBase() !== null) return 'traccar';
+  if (vendorBase() !== null) return 'petpal';
   if (xexunBase() !== null) return 'xexun';
   return 'mock';
 }
 
-export function isTraccarMode() {
-  return traccarBase() !== null;
-}
-
 function authHeaders() {
-  const user = process.env.REACT_APP_TRACCAR_USER;
-  const pass = process.env.REACT_APP_TRACCAR_PASS;
+  const user = process.env.REACT_APP_PETPAL_VENDOR_USER;
+  const pass = process.env.REACT_APP_PETPAL_VENDOR_PASS;
   if (!user) return {};
   return {
     Authorization: `Basic ${btoa(`${user}:${pass || ''}`)}`,
@@ -48,7 +46,7 @@ function authHeaders() {
 }
 
 function timeValue(p) {
-  const t = p.serverTime || p.deviceTime || p.fixTime;
+  const t = p.serverTime || p.deviceTime || p.fixTime || p.lastUpdate;
   if (!t) return 0;
   return new Date(t).getTime();
 }
@@ -58,16 +56,19 @@ function pickLatest(positions) {
   return positions.reduce((a, b) => (timeValue(b) > timeValue(a) ? b : a));
 }
 
-export function normalizeTraccarPosition(p) {
+export function normalizeVendorPosition(p) {
   if (!p) return null;
+  const lat = typeof p.latitude === 'number' ? p.latitude : Number(p.latitude ?? p.lat);
+  const lng = typeof p.longitude === 'number' ? p.longitude : Number(p.longitude ?? p.lng);
+  if (Number.isNaN(lat) || Number.isNaN(lng)) return null;
   return {
-    lat: typeof p.latitude === 'number' ? p.latitude : Number(p.latitude),
-    lng: typeof p.longitude === 'number' ? p.longitude : Number(p.longitude),
+    lat,
+    lng,
     speed: p.speed != null ? Number(p.speed) : null,
     address: p.address || null,
     deviceTime: p.deviceTime || null,
-    serverTime: p.serverTime || null,
-    source: 'traccar',
+    serverTime: p.serverTime || p.lastUpdate || null,
+    source: 'petpal',
   };
 }
 
@@ -98,7 +99,7 @@ function normalizeBffPosition(json) {
     speed: json.speed != null ? Number(json.speed) : null,
     address: json.address || null,
     deviceTime: json.deviceTime || null,
-    serverTime: json.serverTime || null,
+    serverTime: json.serverTime || json.lastUpdate || null,
     source: 'bff',
   };
 }
@@ -124,8 +125,8 @@ function normalizeXexunPosition(json) {
     speed: json.speed != null ? Number(json.speed) : null,
     address: json.address || null,
     deviceTime: json.deviceTime || null,
-    serverTime: json.serverTime || null,
-    source: 'xexun',
+    serverTime: json.serverTime || json.lastUpdate || null,
+    source: json.source || 'xexun',
   };
 }
 
@@ -153,31 +154,21 @@ async function fetchBffPosition(deviceId) {
   if (!res.ok) {
     const code = data?.error;
     if (res.status === 400 && (code === 'missing_deviceId' || code === 'missing_imei')) {
-      throw new Error(
-        'Missing device ID — enter the IMEI in the Tracking field or save it on My pets.'
-      );
+      throw new Error('Missing device ID — enter the IMEI in the field or save it on My pets.');
     }
     if (res.status === 404 && code === 'no_position') {
-      throw new Error(
-        'No GPS coordinates on server yet. Wait for the device to send a location fix, or check TCP parsing.'
-      );
+      throw new Error('No GPS coordinates on server yet. Wait for the device to send a location fix.');
     }
     if (res.status === 404 && code === 'not_found') {
-      throw new Error(
-        'This device ID has not checked in yet — verify IMEI and that the tracker connects to your ingest.'
-      );
+      throw new Error('This device ID has not checked in yet — verify it and that the tracker connects to your ingest.');
     }
-    const err = new Error(
-      code ? `Backend (BFF) ${res.status} (${code})` : `Backend (BFF) returned ${res.status}`
-    );
+    const err = new Error(code ? `Backend (BFF) ${res.status} (${code})` : `Backend (BFF) returned ${res.status}`);
     err.status = res.status;
     throw err;
   }
 
   const normalized = normalizeBffPosition(data);
-  if (!normalized) {
-    throw new Error('BFF response did not include usable lat/lng.');
-  }
+  if (!normalized) throw new Error('BFF response did not include usable lat/lng.');
   return normalized;
 }
 
@@ -197,38 +188,51 @@ async function fetchXexunPosition(deviceId) {
   if (!res.ok) {
     const code = data?.error;
     if (res.status === 400 && (code === 'missing_deviceId' || code === 'missing_imei')) {
-      throw new Error(
-        'Missing IMEI — type the 15-digit IMEI above or set it under My pets so Locate can call the tracker API.'
-      );
+      throw new Error('Missing IMEI — type the 15-digit IMEI above or set it under My pets.');
     }
     if (res.status === 404 && code === 'no_position') {
-      throw new Error(
-        'No GPS fix stored yet (HTTP 404 no_position). Wait for coordinates from the device, or confirm the tracker TCP feed includes GPS/LBS parsing.'
-      );
+      throw new Error('No GPS fix stored yet. Wait for coordinates from the device.');
     }
     if (res.status === 404 && code === 'not_found') {
-      throw new Error(
-        'IMEI not seen on tracker server yet (HTTP 404 not_found). Check the ID matches the device and that it connects to your TCP port.'
-      );
+      throw new Error('IMEI not seen on tracker server yet. Check the ID matches the device and that it connects to your TCP port.');
     }
-    const err = new Error(
-      code
-        ? `Tracker HTTP API ${res.status} (${code})`
-        : `Tracker HTTP API returned ${res.status}`
-    );
+    const err = new Error(code ? `Tracker HTTP API ${res.status} (${code})` : `Tracker HTTP API returned ${res.status}`);
     err.status = res.status;
     throw err;
   }
 
   const normalized = normalizeXexunPosition(data);
-  if (!normalized) {
-    throw new Error('Tracker response had no usable lat/lng (empty or invalid JSON).');
+  if (!normalized) throw new Error('Tracker response had no usable lat/lng (empty or invalid JSON).');
+  return normalized;
+}
+
+async function fetchVendorPosition(deviceId) {
+  const base = vendorBase();
+  const path = `/api/positions?deviceId=${encodeURIComponent(deviceId)}`;
+  const url = base === '' ? path : `${base}${path}`;
+
+  const res = await fetch(url, {
+    method: 'GET',
+    headers: { Accept: 'application/json', ...authHeaders() },
+    credentials: 'include',
+  });
+
+  if (!res.ok) {
+    const err = new Error(`Vendor returned ${res.status}`);
+    err.status = res.status;
+    throw err;
+  }
+
+  const data = await res.json();
+  const latest = pickLatest(data);
+  const normalized = normalizeVendorPosition(latest);
+  if (!normalized || Number.isNaN(normalized.lat) || Number.isNaN(normalized.lng)) {
+    throw new Error('No position for this device id yet, or API shape changed.');
   }
   return normalized;
 }
 
 let mockSeed = { lat: 37.9755, lng: 23.7348 };
-
 function mockPosition(deviceId) {
   const drift = 0.0004;
   mockSeed = {
@@ -239,7 +243,7 @@ function mockPosition(deviceId) {
     lat: mockSeed.lat,
     lng: mockSeed.lng,
     speed: 0.6 + Math.random() * 0.4,
-    address: 'Mock (no Traccar URL configured)',
+    address: 'Mock (no vendor URL configured)',
     deviceTime: new Date().toISOString(),
     serverTime: new Date().toISOString(),
     source: 'mock',
@@ -248,7 +252,7 @@ function mockPosition(deviceId) {
 }
 
 /**
- * @param {string|number} deviceId Traccar device id
+ * @param {string|number} deviceId device id or IMEI
  * @returns {Promise<{ lat: number, lng: number, speed: number|null, address: string|null, deviceTime: string|null, serverTime: string|null, source: string }>}
  */
 export async function getLatestPosition(deviceId) {
@@ -258,47 +262,17 @@ export async function getLatestPosition(deviceId) {
     throw new Error(
       xexun
         ? 'No IMEI to query — enter the collar IMEI in the field above or link it on My pets.'
-        : 'Set a device ID (from your Traccar server).'
+        : 'Set a device ID.'
     );
   }
 
-  if (bffBase() != null) {
-    return fetchBffPosition(id);
-  }
-
-  if (xexunBase() != null) {
-    return fetchXexunPosition(id);
-  }
-
-  const base = traccarBase();
-  if (base == null) {
-    return mockPosition(id);
-  }
-
-  const path = `/api/positions?deviceId=${encodeURIComponent(id)}`;
-  const url = base === '' ? path : `${base}${path}`;
-
-  const res = await fetch(url, {
-    method: 'GET',
-    headers: { Accept: 'application/json', ...authHeaders() },
-    credentials: 'include',
-  });
-
-  if (!res.ok) {
-    const err = new Error(`Traccar returned ${res.status}`);
-    err.status = res.status;
-    throw err;
-  }
-
-  const data = await res.json();
-  const latest = pickLatest(data);
-  const normalized = normalizeTraccarPosition(latest);
-  if (!normalized || Number.isNaN(normalized.lat) || Number.isNaN(normalized.lng)) {
-    throw new Error('No position for this device id yet, or API shape changed.');
-  }
-  return normalized;
+  if (bffBase() != null) return fetchBffPosition(id);
+  if (xexunBase() != null) return fetchXexunPosition(id);
+  if (vendorBase() != null) return fetchVendorPosition(id);
+  return mockPosition(id);
 }
 
 export function mapsLink(lat, lng) {
   return `https://www.google.com/maps?q=${encodeURIComponent(`${lat},${lng}`)}`;
 }
+

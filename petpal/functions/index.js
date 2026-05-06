@@ -26,7 +26,7 @@ function b64(s) {
   return Buffer.from(s, 'utf8').toString('base64');
 }
 
-function normalizeTraccarPosition(p) {
+function normalizeVendorPosition(p) {
   if (!p) return null;
   const lat = p.latitude != null ? Number(p.latitude) : Number.NaN;
   const lng = p.longitude != null ? Number(p.longitude) : Number.NaN;
@@ -121,24 +121,24 @@ exports.tracking = functions
           return;
         }
 
-        // Option B: Traccar
-        const baseUrl = mustGetEnv('TRACCAR_BASE_URL').replace(/\/$/, '');
+        // Option B: vendor REST (common GPS-platform REST shape)
+        const baseUrl = mustGetEnv('PETPAL_VENDOR_BASE_URL').replace(/\/$/, '');
         const url = `${baseUrl}/api/positions?deviceId=${encodeURIComponent(deviceId)}`;
 
-        const user = getEnv('TRACCAR_USER');
-        const pass = getEnv('TRACCAR_PASS') || '';
+        const user = getEnv('PETPAL_VENDOR_USER');
+        const pass = getEnv('PETPAL_VENDOR_PASS') || '';
         const headers = { Accept: 'application/json' };
         if (user) headers.Authorization = `Basic ${b64(`${user}:${pass}`)}`;
 
         const r = await fetch(url, { method: 'GET', headers });
         if (!r.ok) {
-          res.status(502).json({ error: 'traccar_error', status: r.status });
+          res.status(502).json({ error: 'vendor_error', status: r.status });
           return;
         }
 
         const data = await r.json();
         const latest = pickLatest(data);
-        const normalized = normalizeTraccarPosition(latest);
+        const normalized = normalizeVendorPosition(latest);
         if (!normalized) {
           res.status(404).json({ error: 'no_position' });
           return;

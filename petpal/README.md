@@ -44,29 +44,29 @@ The web UI is wrapped with [Capacitor](https://capacitorjs.com/) so the same pro
 
 Add **Firebase** `google-services.json` (Android) and `GoogleService-Info.plist` (iOS) when you use native Firebase features; configure **OAuth redirect URLs** and **App Links / Universal Links** if you use third-party sign-in.
 
-## GPS tracking (Traccar — “many cheap devices”)
+## GPS tracking (PetPal vendor)
 
-PetPal is wired for **[Traccar](https://www.traccar.org/)** on the default REST endpoint: `GET /api/positions?deviceId=…`  
-If you do **not** set the env vars below, the **Tracker** screen uses a **mock** point so you can build the rest of the app without hardware.
+PetPal can load live positions from:
 
-Add to `petpal/.env.local` when your Traccar server is available:
+- **Xexun ingest** (`tracker-tcp-server`) via `REACT_APP_XEXUN_HTTP_BASE_URL`
+- An optional **PetPal vendor REST** endpoint (common GPS-platform REST shape) via `REACT_APP_PETPAL_VENDOR_BASE_URL`
+
+If you do **not** set any tracking env vars, the **Tracker** screen uses a **mock** point so you can build the rest of the app without hardware.
+
+Add to `petpal/.env.local` when your vendor server is available:
 
 | Variable | Purpose |
 | --- | --- |
-| `REACT_APP_TRACCAR_BASE_URL` | Full URL, e.g. `https://traccar.example.com`, **or** `same` to call `/api/...` on the same origin (use with a dev proxy). |
-| `REACT_APP_TRACCAR_USER` / `REACT_APP_TRACCAR_PASS` | Optional **HTTP Basic** auth if you front Traccar with a username and password. |
-
-**CORS / browser access:** the React app in the browser must be allowed to call your Traccar host. Common approaches: run Traccar behind the same domain as the app, enable CORS on your reverse proxy, or use Create React App’s `package.json` [`proxy`](https://create-react-app.dev/docs/proxying-api-requests-in-development/) in development so `/api` goes to your local Traccar port.
-
-**Flow:** add any cellular GPS hardware Traccar supports, note the **device id** in the Traccar UI, then open the in-app **Tracker** page and paste that id.
+| `REACT_APP_PETPAL_VENDOR_BASE_URL` | Full URL, e.g. `https://vendor.example.com`, **or** `same` to call `/api/...` on the same origin (use with a dev proxy). |
+| `REACT_APP_PETPAL_VENDOR_USER` / `REACT_APP_PETPAL_VENDOR_PASS` | Optional **HTTP Basic** auth if your vendor endpoint requires it. |
 
 The **Tracker** page also shows a **map** (Leaflet + OpenStreetMap) after a position loads.
 
-## Optional: backend for Traccar (BFF)
+## Optional: tracking backend (BFF)
 
 For production, prefer a small backend (e.g. **Firebase Cloud Functions**, Cloud Run, or a tiny Node server) that:
 
-- holds Traccar **credentials** and any API keys
+- holds vendor **credentials** and any API keys
 - returns a normalized JSON position to the app (no CORS pain)
 
 Set:
@@ -79,9 +79,9 @@ Set:
 **Expected response** (JSON), either:
 
 - `{ "lat": number, "lng": number, "speed"?: number, "address"?: string, "deviceTime"?: string, "serverTime"?: string }`, or
-- Traccar-style `latitude` / `longitude` fields (also accepted).
+- Vendor-style `latitude` / `longitude` fields (also accepted).
 
-`REACT_APP_TRACKING_BFF_URL` **takes priority** over direct Traccar and over mock data.
+`REACT_APP_TRACKING_BFF_URL` **takes priority** over direct vendor calls and over mock data.
 
 ### Firebase Cloud Functions BFF (included)
 
@@ -103,13 +103,13 @@ This repo includes a minimal Cloud Function at `petpal/functions/index.js`:
 
 Set function env (choose one approach):
 
-- **Option A (quick)**: `firebase functions:config:set traccar.base_url=\"https://traccar.example.com\" traccar.user=\"...\" traccar.pass=\"...\" petpal.token=\"...\"`
+- **Option A (quick)**: `firebase functions:config:set vendor.base_url=\"https://vendor.example.com\" vendor.user=\"...\" vendor.pass=\"...\" petpal.token=\"...\"`
 - **Option B (recommended)**: use Google Cloud Secret Manager and load via runtime env
 
 This function reads these runtime env vars:
 
-- `TRACCAR_BASE_URL` (**required**)
-- `TRACCAR_USER` / `TRACCAR_PASS` (optional)
+- `PETPAL_VENDOR_BASE_URL` (**required**)
+- `PETPAL_VENDOR_USER` / `PETPAL_VENDOR_PASS` (optional)
 - `PETPAL_BFF_TOKEN` (optional)
 
 Then in `petpal/.env.local` set:

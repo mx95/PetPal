@@ -74,26 +74,47 @@ app.get("/devices/:imei", (req, res) => {
   res.json(d);
 });
 
+app.get("/devices/:imei/status", (req, res) => {
+  const d = store.get(req.params.imei);
+  if (!d) return res.status(404).json({ error: "not_found" });
+  res.json({
+    battery: d.battery ?? null,
+    signal: d.signal ?? null,
+    moving: d.moving ?? null,
+    charging: d.charging ?? null,
+    steps: d.steps ?? null,
+    lastUpdate: d.lastUpdate ?? null
+  });
+});
+
 app.get("/position", (req, res) => {
   const imei = String(req.query.deviceId || req.query.imei || "").trim();
   if (!imei) return res.status(400).json({ error: "missing_deviceId" });
   const d = store.get(imei);
   if (!d) return res.status(404).json({ error: "not_found" });
 
-  const gps = d.gps || {};
-  const lat = gps.lat != null ? Number(gps.lat) : Number.NaN;
-  const lng = gps.lng != null ? Number(gps.lng) : Number.NaN;
+  const loc = d.location || d.gps || {};
+  const lat = loc.lat != null ? Number(loc.lat) : Number.NaN;
+  const lng = loc.lng != null ? Number(loc.lng) : Number.NaN;
   if (Number.isNaN(lat) || Number.isNaN(lng)) {
     return res.status(404).json({ error: "no_position" });
   }
 
   res.json({
+    imei,
     lat,
     lng,
-    speed: gps.speedKmh != null ? Number(gps.speedKmh) : null,
-    address: null,
-    deviceTime: gps.timestamp || null,
-    serverTime: d.receivedAt || null
+    source: d.source ?? null,
+    gpsValid: d.gpsValid === true,
+    battery: d.battery ?? null,
+    signal: d.signal ?? null,
+    steps: d.steps ?? null,
+    moving: d.moving ?? null,
+    charging: d.charging ?? null,
+    speed: d.speed != null ? Number(d.speed) : null,
+    lastUpdate: d.lastUpdate ?? null,
+    accuracy: d.accuracy ?? (d.source ?? null),
+    satellites: d.satellites ?? null
   });
 });
 

@@ -4,7 +4,7 @@ import { useI18n } from '../i18n/I18nContext';
 import PetAvatar from '../components/PetAvatar';
 import PositionMap from '../tracking/PositionMap';
 import { usePets } from '../pets/PetsContext';
-import { getLatestPosition, getTrackingDataSource, mapsLink } from '../tracking/traccarClient';
+import { getLatestPosition, getTrackingDataSource, mapsLink } from '../tracking/petpalVendorClient';
 
 function formatTime(iso, lang) {
   if (!iso) return '—';
@@ -22,7 +22,7 @@ export default function Tracking() {
   const dataSource = getTrackingDataSource();
   const dataSourceLabel = {
     bff: t('trackingPage.dsBff'),
-    traccar: t('trackingPage.dsTraccar'),
+    petpal: t('trackingPage.dsPetpal'),
     xexun: t('trackingPage.dsXexun'),
     mock: t('trackingPage.dsMock'),
   }[dataSource];
@@ -113,7 +113,7 @@ export default function Tracking() {
       <header className="pp-pageHeader">
         <div className="pp-pageHeader__copy">
           <span className="pp-publicHero__eyebrow" style={{ display: 'inline-block', width: 'fit-content' }}>
-            {t('trackingPage.badgeTraccar')}
+            {t('trackingPage.badgePetpal')}
           </span>
           <h1 className="pp-pageHeader__title">
             {selectedPet ? t('trackingPage.titleWithPet', { name: selectedPet.name }) : t('trackingPage.title')}

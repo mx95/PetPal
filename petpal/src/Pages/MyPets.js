@@ -232,12 +232,12 @@ export default function MyPets() {
                   </PrettySelect>
                 </div>
                 <div>
-                  <div className="pp-label">{t('myPets.traccar')}</div>
+                  <div className="pp-label">{t('myPets.deviceId')}</div>
                   <input
                     className="pp-input"
                     value={addDeviceId}
                     onChange={(e) => setAddDeviceId(e.target.value)}
-                    placeholder={t('myPets.traccarPh')}
+                    placeholder={t('myPets.deviceIdPh')}
                     autoComplete="off"
                     inputMode="numeric"
                   />
@@ -361,12 +361,12 @@ export default function MyPets() {
                         />
                       </div>
                       <div>
-                        <div className="pp-label">{t('myPets.traccar')}</div>
+                        <div className="pp-label">{t('myPets.deviceId')}</div>
                         <input
                           className="pp-input"
                           value={editDevice}
                           onChange={(e) => setEditDevice(e.target.value)}
-                          placeholder={t('myPets.traccarPh')}
+                          placeholder={t('myPets.deviceIdPh')}
                           inputMode="numeric"
                         />
                       </div>
