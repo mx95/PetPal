@@ -461,6 +461,7 @@ export default {
     dataSource: 'Data source:',
     dsBff: 'Backend (BFF)',
     dsTraccar: 'Traccar API',
+    dsXexun: 'Tracker HTTP (Xexun ingest)',
     dsMock: 'Mock (set REACT_APP_TRACKING_BFF_URL or REACT_APP_TRACCAR_BASE_URL)',
     petSelectLabel: 'Pet using this tracker',
     deviceIdLabel: 'Traccar device ID',

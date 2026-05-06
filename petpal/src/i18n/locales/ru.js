@@ -462,6 +462,7 @@ export default {
     dataSource: 'Источник:',
     dsBff: 'Бэкенд (BFF)',
     dsTraccar: 'API Traccar',
+    dsXexun: 'HTTP трекер (Xexun ingest)',
     dsMock: 'Тестовый режим (укажите REACT_APP_TRACKING_BFF_URL или REACT_APP_TRACCAR_BASE_URL)',
     petSelectLabel: 'Питомец для этого трекера',
     deviceIdLabel: 'ID устройства Traccar',

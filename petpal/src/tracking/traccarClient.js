@@ -129,6 +129,14 @@ function normalizeXexunPosition(json) {
   };
 }
 
+async function readJsonSafe(res) {
+  try {
+    return await res.json();
+  } catch {
+    return {};
+  }
+}
+
 async function fetchBffPosition(deviceId) {
   const base = bffBase();
   const path = `/position?deviceId=${encodeURIComponent(deviceId)}`;
@@ -140,13 +148,27 @@ async function fetchBffPosition(deviceId) {
     credentials: 'include',
   });
 
+  const data = await readJsonSafe(res);
+
   if (!res.ok) {
-    const err = new Error(`Backend (BFF) returned ${res.status}`);
+    const code = data?.error;
+    if (res.status === 404 && code === 'no_position') {
+      throw new Error(
+        'No GPS coordinates on server yet. Wait for the device to send a location fix, or check TCP parsing.'
+      );
+    }
+    if (res.status === 404 && code === 'not_found') {
+      throw new Error(
+        'This device ID has not checked in yet — verify IMEI and that the tracker connects to your ingest.'
+      );
+    }
+    const err = new Error(
+      code ? `Backend (BFF) ${res.status} (${code})` : `Backend (BFF) returned ${res.status}`
+    );
     err.status = res.status;
     throw err;
   }
 
-  const data = await res.json();
   const normalized = normalizeBffPosition(data);
   if (!normalized) {
     throw new Error('BFF response did not include usable lat/lng.');
@@ -165,16 +187,32 @@ async function fetchXexunPosition(deviceId) {
     credentials: 'omit',
   });
 
+  const data = await readJsonSafe(res);
+
   if (!res.ok) {
-    const err = new Error(`Xexun HTTP API returned ${res.status}`);
+    const code = data?.error;
+    if (res.status === 404 && code === 'no_position') {
+      throw new Error(
+        'No GPS fix stored yet (HTTP 404 no_position). Wait for coordinates from the device, or confirm the tracker TCP feed includes GPS/LBS parsing.'
+      );
+    }
+    if (res.status === 404 && code === 'not_found') {
+      throw new Error(
+        'IMEI not seen on tracker server yet (HTTP 404 not_found). Check the ID matches the device and that it connects to your TCP port.'
+      );
+    }
+    const err = new Error(
+      code
+        ? `Tracker HTTP API ${res.status} (${code})`
+        : `Tracker HTTP API returned ${res.status}`
+    );
     err.status = res.status;
     throw err;
   }
 
-  const data = await res.json();
   const normalized = normalizeXexunPosition(data);
   if (!normalized) {
-    throw new Error('No GPS fix yet for this IMEI (lat/lng missing).');
+    throw new Error('Tracker response had no usable lat/lng (empty or invalid JSON).');
   }
   return normalized;
 }

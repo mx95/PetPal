@@ -461,6 +461,7 @@ export default {
     dataSource: 'Πηγή δεδομένων:',
     dsBff: 'Backend (BFF)',
     dsTraccar: 'API Traccar',
+    dsXexun: 'HTTP tracker (Xexun ingest)',
     dsMock: 'Mock (ορίστε REACT_APP_TRACKING_BFF_URL ή REACT_APP_TRACCAR_BASE_URL)',
     petSelectLabel: 'Κατοικίδιο για αυτόν τον ιχνηλάτη',
     deviceIdLabel: 'Αναγνωριστικό συσκευής Traccar',

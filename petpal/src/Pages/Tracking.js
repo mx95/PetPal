@@ -23,6 +23,7 @@ export default function Tracking() {
   const dataSourceLabel = {
     bff: t('trackingPage.dsBff'),
     traccar: t('trackingPage.dsTraccar'),
+    xexun: t('trackingPage.dsXexun'),
     mock: t('trackingPage.dsMock'),
   }[dataSource];
 

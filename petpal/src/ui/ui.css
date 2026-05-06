@@ -4887,6 +4887,7 @@ select.pp-input:focus {
 }
 
 .pp-trackMapFrame .pp-leaflet-wrap,
+.pp-trackMapFrame .pp-leaflet-wrap > div,
 .pp-trackMapFrame .leaflet-container {
   min-height: min(52vh, 440px);
 }
