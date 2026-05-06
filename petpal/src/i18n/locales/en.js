@@ -2,7 +2,7 @@ const en = {
   i18n: { language: 'Language' },
   nav: {
     home: 'Home',
-    profile: 'Profile',
+    profile: 'My Profile',
     dashboard: 'Activity',
     pets: 'Pets',
     premium: 'Premium',
@@ -14,6 +14,7 @@ const en = {
     admin: 'Admin',
     login: 'Log in',
     register: 'Register',
+    logout: 'Log out',
     docs: 'Docs',
   },
   home: {

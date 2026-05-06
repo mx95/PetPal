@@ -8,6 +8,12 @@ const LANGUAGE_LABEL = {
   ru: 'Russian',
 };
 
+const LANGUAGE_SHORT = {
+  en: 'EN',
+  el: 'EL',
+  ru: 'RU',
+};
+
 /**
  * Dropdown language selector (EN / EL / RU).
  *
@@ -57,14 +63,14 @@ export function LanguageSwitcher({ className = '' }) {
         <button
           id="pp-language-select"
           type="button"
-          className="pp-langSelect"
+          className="pp-langSelect pp-langSelect--minimal"
           onClick={() => setOpen((prev) => !prev)}
           aria-label={t('languageSwitcher.ariaSelect')}
           aria-haspopup="listbox"
           aria-expanded={open}
           title={t('languageSwitcher.selectHint')}
         >
-          <span>{LANGUAGE_LABEL[language] || language.toUpperCase()}</span>
+          <span className="pp-langSelect__code">{LANGUAGE_SHORT[language] || language.toUpperCase()}</span>
         </button>
 
         {open && (

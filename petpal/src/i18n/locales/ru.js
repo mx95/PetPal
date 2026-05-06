@@ -2,7 +2,7 @@ const ru = {
   i18n: { language: 'Язык' },
   nav: {
     home: 'Обзор',
-    profile: 'Профиль',
+    profile: 'Мой профиль',
     dashboard: 'Активность',
     pets: 'Питомцы',
     premium: 'Premium',
@@ -14,6 +14,7 @@ const ru = {
     admin: 'Админ',
     login: 'Вход',
     register: 'Регистрация',
+    logout: 'Выйти',
     docs: 'Документация',
   },
   home: {

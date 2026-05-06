@@ -45,6 +45,13 @@
   justify-content: flex-end;
 }
 
+.pp-navUtility {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
 .pp-navlinks {
   display: flex;
   gap: 4px 6px;
@@ -116,14 +123,37 @@
   text-align: left;
 }
 
+.pp-langSelect--minimal {
+  min-width: 88px;
+  padding: 8px 30px 8px 34px;
+  border: none;
+  background-color: transparent;
+  box-shadow: none;
+  font-weight: 800;
+}
+
+.pp-langSelect--minimal:hover {
+  background-color: rgba(91, 55, 255, 0.08);
+  border-radius: 999px;
+}
+
+.pp-langSelect--minimal:focus-visible {
+  border-radius: 999px;
+}
+
+.pp-langSelect__code {
+  letter-spacing: 0.04em;
+}
+
 .pp-langMenu {
   list-style: none;
   margin: 6px 0 0;
   padding: 6px;
   position: absolute;
   top: calc(100% + 2px);
-  left: 0;
   right: 0;
+  left: auto;
+  min-width: 170px;
   border-radius: 12px;
   border: 1px solid rgba(16, 24, 40, 0.12);
   background: #fff;
@@ -283,6 +313,7 @@
   color: #3520a8;
   font-weight: 800;
   box-shadow: inset 0 0 0 1.5px rgba(91, 55, 255, 0.35);
+  position: relative;
 }
 
 .pp-link--active:hover {
@@ -2326,6 +2357,7 @@ select.pp-input:focus {
   flex-direction: column;
   align-items: center;
   gap: 4px;
+  padding-left: 15px;
   text-decoration: none;
   color: inherit;
 }
@@ -2342,16 +2374,69 @@ select.pp-input:focus {
   align-items: center;
   gap: 8px;
   text-decoration: none;
+  background: rgba(16, 24, 40, 0.04);
+  border: 1px solid rgba(16, 24, 40, 0.08);
   color: #475467;
   font-size: 13px;
   font-weight: 600;
-  padding: 2px 0;
-  border-radius: 8px;
+  padding: 6px 10px;
+  border-radius: 999px;
   line-height: 1.2;
 }
 
 .pp-navProfileRow:hover {
+  background: rgba(91, 55, 255, 0.08);
+  border-color: rgba(91, 55, 255, 0.24);
   color: #5b37ff;
+}
+
+.pp-navLogoutBtn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid rgba(16, 24, 40, 0.12);
+  background: #fff;
+  color: #344054;
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.pp-navLogoutBtn:hover {
+  background: rgba(180, 35, 24, 0.08);
+  border-color: rgba(180, 35, 24, 0.35);
+  color: #b42318;
+}
+
+.pp-navTooltip {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  transform: translateX(-50%) translateY(4px);
+  background: #101828;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  padding: 6px 8px;
+  border-radius: 8px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition:
+    opacity 0.14s ease,
+    transform 0.14s ease;
+  z-index: 60;
+}
+
+.pp-navLogoutBtn:hover .pp-navTooltip,
+.pp-navLogoutBtn:focus-visible .pp-navTooltip,
+.pp-navLogoutBtn:active .pp-navTooltip {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
 }
 
 .pp-navProfileCircle {
@@ -2369,6 +2454,71 @@ select.pp-input:focus {
 
 .pp-navProfileLabel {
   white-space: nowrap;
+}
+
+.pp-navAccount {
+  position: relative;
+}
+
+.pp-navAccountBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(16, 24, 40, 0.08);
+  background: rgba(16, 24, 40, 0.04);
+  color: #344054;
+  border-radius: 999px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.pp-navAccountBtn:hover {
+  border-color: rgba(91, 55, 255, 0.24);
+  background: rgba(91, 55, 255, 0.08);
+}
+
+.pp-navAccountChev {
+  font-size: 12px;
+  color: #667085;
+}
+
+.pp-navAccountMenu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 180px;
+  padding: 6px;
+  border-radius: 12px;
+  border: 1px solid rgba(16, 24, 40, 0.12);
+  background: #fff;
+  box-shadow: 0 14px 30px rgba(16, 24, 40, 0.16);
+  z-index: 70;
+}
+
+.pp-navAccountItem {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: #344054;
+  border-radius: 8px;
+  padding: 9px 10px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.pp-navAccountItem:hover {
+  background: rgba(91, 55, 255, 0.08);
+  color: #2f1c95;
+}
+
+.pp-navAccountItem--logout:hover {
+  background: rgba(180, 35, 24, 0.08);
+  color: #b42318;
 }
 
 .pp-homeGrid {
@@ -3740,6 +3890,7 @@ select.pp-input:focus {
   .pp-bottomNav { display: block; }
   .pp-shell { padding-bottom: calc(96px + env(safe-area-inset-bottom)); }
   .pp-nav .pp-navlinks { display: none; }
+  .pp-nav--auth .pp-navUtility .pp-langSwitcher { display: none; }
   .pp-nav { padding-top: 12px; padding-bottom: 12px; }
   .pp-feed { gap: 18px; padding-bottom: 24px; }
   .pp-petCard {

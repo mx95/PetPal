@@ -1,5 +1,5 @@
-import React, { Suspense, lazy } from 'react';
-import { Link, NavLink, Navigate, Route, Routes, useMatch } from 'react-router-dom';
+import React, { Suspense, lazy, useEffect, useRef, useState } from 'react';
+import { Link, NavLink, Navigate, Route, Routes, useMatch, useNavigate } from 'react-router-dom';
 import { RequireAuth } from './auth/RequireAuth';
 import { useAuth } from './auth/AuthProvider';
 import { AppFooter } from './components/AppFooter';
@@ -46,23 +46,51 @@ function TrackingRouteFallback() {
 }
 
 function TopNav() {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const { t } = useI18n();
   const premiumPathMatch = useMatch('/premium/*');
+  const navigate = useNavigate();
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const accountMenuRef = useRef(null);
+
+  useEffect(() => {
+    if (!accountMenuOpen) return undefined;
+
+    const handleClickOutside = (event) => {
+      if (!accountMenuRef.current) return;
+      if (!accountMenuRef.current.contains(event.target)) {
+        setAccountMenuOpen(false);
+      }
+    };
+
+    const handleEscape = (event) => {
+      if (event.key === 'Escape') {
+        setAccountMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleEscape);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [accountMenuOpen]);
+
+  const handleSignOut = async () => {
+    setAccountMenuOpen(false);
+    await signOut();
+    navigate('/', { replace: true });
+  };
 
   return (
-    <div className="pp-nav">
+    <div className={`pp-nav ${user ? 'pp-nav--auth' : ''}`}>
       <div className="pp-navBrandColumn">
         <Link className="pp-brandLink" to="/" aria-label={t('nav.home')}>
           <div className="pp-brand">PetPal</div>
           <img className="pp-brandLogo" src={`${process.env.PUBLIC_URL}/favicon.png`} alt="PetPal logo" />
         </Link>
-        {user ? (
-          <Link className="pp-navProfileRow" to="/profile">
-            <UserAvatar user={user} size={32} className="pp-navProfileAvatar" />
-            <span className="pp-navProfileLabel">{t('nav.profile')}</span>
-          </Link>
-        ) : null}
       </div>
       <div className="pp-navRight">
         <div className="pp-navlinks">
@@ -118,7 +146,43 @@ function TopNav() {
             </NavLink>
           ) : null}
         </div>
-        <LanguageSwitcher />
+        <div className="pp-navUtility">
+          <LanguageSwitcher />
+          {user ? (
+            <div className="pp-navAccount" ref={accountMenuRef}>
+              <button
+                type="button"
+                className="pp-navAccountBtn"
+                onClick={() => setAccountMenuOpen((prev) => !prev)}
+                aria-haspopup="menu"
+                aria-expanded={accountMenuOpen}
+              >
+                <UserAvatar user={user} size={30} className="pp-navProfileAvatar" />
+                <span className="pp-navProfileLabel">{t('nav.profile')}</span>
+                <span className="pp-navAccountChev" aria-hidden>
+                  ▾
+                </span>
+              </button>
+
+              {accountMenuOpen ? (
+                <div className="pp-navAccountMenu" role="menu" aria-label={t('nav.profile')}>
+                  <Link className="pp-navAccountItem" to="/profile" role="menuitem" onClick={() => setAccountMenuOpen(false)}>
+                    <span aria-hidden>👤</span>
+                    <span>{t('nav.profile')}</span>
+                  </Link>
+                  <button type="button" className="pp-navAccountItem pp-navAccountItem--logout" role="menuitem" onClick={handleSignOut}>
+                    <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M4 3H14V21H4V3Z" stroke="currentColor" strokeWidth="1.8" />
+                      <path d="M10 12H21" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                      <path d="M17 8L21 12L17 16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    <span>{t('nav.logout')}</span>
+                  </button>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
       </div>
     </div>
   );

@@ -2,7 +2,7 @@ const el = {
   i18n: { language: 'Γλώσσα' },
   nav: {
     home: 'Επισκόπηση',
-    profile: 'Προφίλ',
+    profile: 'Το προφίλ μου',
     dashboard: 'Δραστηριότητα',
     pets: 'Κατοικίδια',
     premium: 'Premium',
@@ -14,6 +14,7 @@ const el = {
     admin: 'Διαχειριστής',
     login: 'Σύνδεση',
     register: 'Εγγραφή',
+    logout: 'Αποσύνδεση',
     docs: 'Οδηγίες',
   },
   home: {
