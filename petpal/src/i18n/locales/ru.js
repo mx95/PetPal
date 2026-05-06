@@ -387,6 +387,14 @@ const ru = {
     noPets: 'Пока пусто — добавьте слева.',
     deviceId: 'ID устройства или IMEI (необяз.)',
     deviceIdPh: 'ID устройства или IMEI для карты',
+    scanQr: 'Сканировать QR',
+    scanQrClose: 'Закрыть',
+    scanQrHint:
+      'Разрешите камеру и наведите на QR с IMEI на трекере (нужны HTTPS или localhost).',
+    scanQrErrorCamera:
+      'Не удалось включить камеру. Разрешите доступ, откройте сайт по HTTPS или введите IMEI вручную.',
+    scanQrErrorNoImei: 'В этом QR не найден 15-значный IMEI.',
+    scanQrSuccess: 'IMEI подставлен из QR.',
     profilePhoto: 'Фото',
     removePhoto: 'Убрать фото',
     save: 'Сохранить',

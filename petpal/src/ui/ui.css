@@ -6321,6 +6321,31 @@ select.pp-input:focus {
   transform: scale(1.015);
 }
 
+.pp-imeiQrOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: rgba(15, 23, 42, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.pp-imeiQrPanel {
+  width: 100%;
+  max-width: 420px;
+}
+
+.pp-imeiQrViewport {
+  width: 100%;
+  min-height: 240px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #0f172a;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .pp-composeOverlay,
   .pp-composeSheet,

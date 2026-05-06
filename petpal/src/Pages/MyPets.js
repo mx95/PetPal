@@ -1,4 +1,4 @@
-import React, { useEffect, useId, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
 import { applyMockAccountSeed, hasLoadedMockBundle } from '../data/mockAccountSeed';
@@ -8,9 +8,12 @@ import { filesToResizedDataUrls } from '../walk/walkPhotos';
 import PetAvatar from '../components/PetAvatar';
 import { PrettySelect } from '../components/PrettySelect';
 import { useI18n } from '../i18n/I18nContext';
+import { useToast } from '../components/Toast';
+import ImeiQrScannerButton from '../components/ImeiQrScannerButton';
 
 export default function MyPets() {
   const { t } = useI18n();
+  const { show } = useToast();
   const location = useLocation();
   const { user } = useAuth();
   const { pets, addPet, updatePet, removePet, getCategory } = usePets();
@@ -44,6 +47,22 @@ export default function MyPets() {
     }, 80);
     return () => window.clearTimeout(tmr);
   }, [location.hash]);
+
+  const onScanImeiAdd = useCallback(
+    (imei) => {
+      setAddDeviceId(imei);
+      show(t('myPets.scanQrSuccess'), { kind: 'success' });
+    },
+    [show, t]
+  );
+
+  const onScanImeiEdit = useCallback(
+    (imei) => {
+      setEditDevice(imei);
+      show(t('myPets.scanQrSuccess'), { kind: 'success' });
+    },
+    [show, t]
+  );
 
   async function submitAdd(e) {
     e.preventDefault();
@@ -233,14 +252,18 @@ export default function MyPets() {
                 </div>
                 <div>
                   <div className="pp-label">{t('myPets.deviceId')}</div>
-                  <input
-                    className="pp-input"
-                    value={addDeviceId}
-                    onChange={(e) => setAddDeviceId(e.target.value)}
-                    placeholder={t('myPets.deviceIdPh')}
-                    autoComplete="off"
-                    inputMode="numeric"
-                  />
+                  <div className="pp-row" style={{ alignItems: 'stretch', gap: 8, flexWrap: 'wrap' }}>
+                    <input
+                      className="pp-input"
+                      style={{ flex: '1 1 160px', minWidth: 0 }}
+                      value={addDeviceId}
+                      onChange={(e) => setAddDeviceId(e.target.value)}
+                      placeholder={t('myPets.deviceIdPh')}
+                      autoComplete="off"
+                      inputMode="numeric"
+                    />
+                    <ImeiQrScannerButton onImei={onScanImeiAdd} disabled={addPhotoBusy} />
+                  </div>
                 </div>
                 <div>
                   <div className="pp-label">{t('myPets.color')}</div>
@@ -362,13 +385,17 @@ export default function MyPets() {
                       </div>
                       <div>
                         <div className="pp-label">{t('myPets.deviceId')}</div>
-                        <input
-                          className="pp-input"
-                          value={editDevice}
-                          onChange={(e) => setEditDevice(e.target.value)}
-                          placeholder={t('myPets.deviceIdPh')}
-                          inputMode="numeric"
-                        />
+                        <div className="pp-row" style={{ alignItems: 'stretch', gap: 8, flexWrap: 'wrap' }}>
+                          <input
+                            className="pp-input"
+                            style={{ flex: '1 1 160px', minWidth: 0 }}
+                            value={editDevice}
+                            onChange={(e) => setEditDevice(e.target.value)}
+                            placeholder={t('myPets.deviceIdPh')}
+                            inputMode="numeric"
+                          />
+                          <ImeiQrScannerButton onImei={onScanImeiEdit} disabled={editPhotoBusy} />
+                        </div>
                       </div>
                       <div>
                         <div className="pp-label">{t('myPets.profilePhoto')}</div>

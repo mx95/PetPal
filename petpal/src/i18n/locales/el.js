@@ -386,6 +386,14 @@ const el = {
     noPets: 'Δεν υπάρχουν ακόμα — προσθέστε αριστερά.',
     deviceId: 'Αναγνωριστικό συσκευής ή IMEI (προαιρ.)',
     deviceIdPh: 'ID συσκευής ή IMEI για χάρτη',
+    scanQr: 'Σάρωση QR',
+    scanQrClose: 'Κλείσιμο',
+    scanQrHint:
+      'Επιτρέψτε την κάμερα και στρέψτε στο QR IMEI του tracker (απαιτείται HTTPS ή localhost).',
+    scanQrErrorCamera:
+      'Δεν ξεκίνησε η κάμερα. Επιτρέψτε δικαιώματα, χρησιμοποιήστε HTTPS ή πληκτρολογήστε το IMEI.',
+    scanQrErrorNoImei: 'Δεν βρέθηκε 15ψήφιο IMEI σε αυτό το QR.',
+    scanQrSuccess: 'Το IMEI συμπληρώθηκε από το QR.',
     profilePhoto: 'Φωτογραφία',
     removePhoto: 'Αφαίρεση φωτογραφίας',
     save: 'Αποθήκευση',
