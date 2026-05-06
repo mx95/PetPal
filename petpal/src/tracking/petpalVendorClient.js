@@ -119,14 +119,33 @@ function normalizeXexunPosition(json) {
         ? Number(json.longitude)
         : Number.NaN;
   if (Number.isNaN(lat) || Number.isNaN(lng)) return null;
+  const deviceTime = json.deviceTimeUtc || json.deviceTime || null;
+  const serverTime = json.lastUpdateServer || json.serverTime || json.lastUpdate || null;
   return {
     lat,
     lng,
     speed: json.speed != null ? Number(json.speed) : null,
     address: json.address || null,
-    deviceTime: json.deviceTime || null,
-    serverTime: json.serverTime || json.lastUpdate || null,
+    deviceTime,
+    serverTime,
     source: json.source || 'xexun',
+    accuracy: json.accuracy || null,
+    warningApproximate: Boolean(json.warningApproximate),
+    isStale: json.isStale ?? null,
+    secondsAgo: json.secondsAgo ?? null,
+    deviceTimeLocal: json.deviceTimeLocal || null,
+    freshness: json.freshness || null,
+    statusText: json.statusText || null,
+    accuracyText: json.accuracyText || null,
+    movementText: json.movementText || null,
+    battery: json.battery ?? null,
+    batteryStatus: json.batteryStatus ?? null,
+    signal: json.signal ?? null,
+    signalStatus: json.signalStatus ?? null,
+    isCharging: json.isCharging ?? null,
+    steps: json.steps ?? null,
+    isMoving: json.isMoving ?? null,
+    warningStale: json.warningStale ?? null,
   };
 }
 

@@ -20,12 +20,7 @@ export default function Tracking() {
   const fieldId = useId();
   const { pets, updatePet } = usePets();
   const dataSource = getTrackingDataSource();
-  const dataSourceLabel = {
-    bff: t('trackingPage.dsBff'),
-    petpal: t('trackingPage.dsPetpal'),
-    xexun: t('trackingPage.dsXexun'),
-    mock: t('trackingPage.dsMock'),
-  }[dataSource];
+  void dataSource;
 
   const [selectedPetId, setSelectedPetId] = useState('');
   const [deviceId, setDeviceId] = useState('');
@@ -72,6 +67,16 @@ export default function Tracking() {
     }
   }, [effectiveDeviceId, t]);
 
+  // Auto-refresh while a device id is set.
+  useEffect(() => {
+    if (!effectiveDeviceId) return;
+    const ms = 12_000;
+    const id = window.setInterval(() => {
+      void refresh();
+    }, ms);
+    return () => window.clearInterval(id);
+  }, [effectiveDeviceId, refresh]);
+
   function saveIdAndLoad(e) {
     e?.preventDefault();
     if (selectedPetId) {
@@ -105,8 +110,20 @@ export default function Tracking() {
 
   const langForDate = language === 'el' ? 'el' : language === 'ru' ? 'ru' : 'en';
 
-  const lastSeenLabel = position?.deviceTime ? formatTime(position.deviceTime, langForDate) : null;
   const signalLive = position != null;
+  const approx = position?.warningApproximate || position?.accuracy === 'low' || position?.source === 'lbs';
+  const accuracyLabel = approx ? t('trackingPage.accuracyApprox') : t('trackingPage.accuracyHigh');
+  const secondsAgo =
+    typeof position?.secondsAgo === 'number' && Number.isFinite(position.secondsAgo) ? position.secondsAgo : null;
+  const lastUpdateLabel =
+    secondsAgo != null ? t('trackingPage.lastUpdateSeconds', { seconds: secondsAgo }) : t('trackingPage.lastUpdateUnknown');
+  const deviceTimeLabel = position?.deviceTimeLocal
+    ? position.deviceTimeLocal
+    : position?.deviceTime
+      ? formatTime(position.deviceTime, langForDate)
+      : '—';
+  const freshness = position?.freshness || null;
+  const freshnessDot = freshness === 'live' ? '🟢' : freshness === 'recent' ? '🟡' : freshness === 'stale' ? '🔴' : '⚪';
 
   return (
     <div className="pp-feed pp-tracker-page">
@@ -145,44 +162,77 @@ export default function Tracking() {
       </section>
 
       {selectedPet ? (
-        <section className="pp-card pp-pad pp-trackTop" aria-label={selectedPet.name}>
-          <div className="pp-trackTop__main">
-            <PetAvatar pet={selectedPet} size={56} />
-            <div className="pp-trackTop__meta">
-              <h2 className="pp-trackTop__title">{selectedPet.name}</h2>
-              <div className="pp-trackTop__statusRow">
-                <span className={`pp-trackPill ${signalLive ? 'pp-trackPill--live' : ''}`}>
-                  {signalLive ? t('trackingPage.signalLive') : t('trackingPage.signalQuiet')}
-                </span>
-                <span className="pp-subtle pp-trackTop__muted">
-                  📡 {dataSourceLabel}
-                </span>
+        <section className="pp-card pp-pad" aria-label={selectedPet.name}>
+          <div className="pp-row" style={{ justifyContent: 'space-between', alignItems: 'flex-start', gap: 14, flexWrap: 'wrap' }}>
+            <div className="pp-row" style={{ alignItems: 'center', gap: 12 }}>
+              <PetAvatar pet={selectedPet} size={56} />
+              <div>
+                <h2 className="pp-sectionTitle" style={{ margin: 0 }}>
+                  {selectedPet.name}
+                </h2>
+                <p className="pp-subtle" style={{ marginTop: 4, marginBottom: 0 }}>
+                  {freshnessDot} {position?.statusText || (signalLive ? t('trackingPage.signalLive') : t('trackingPage.signalQuiet'))} · {lastUpdateLabel}
+                </p>
+                {signalLive ? (
+                  <p className="pp-subtle" style={{ marginTop: 6, marginBottom: 0 }}>
+                    {approx ? t('trackingPage.gpsWeak') : t('trackingPage.gpsOk')} · {t('trackingPage.accuracyLabel', { value: accuracyLabel })}
+                    {position?.warningStale ? ` · ${t('trackingPage.warnOffline')}` : ''}
+                  </p>
+                ) : null}
               </div>
-              <p className="pp-subtle pp-trackTop__sub">
-                {signalLive && lastSeenLabel
-                  ? t('trackingPage.heroLastSeen', { when: lastSeenLabel })
-                  : selectedPet.trackingDeviceId
-                    ? t('trackingPage.heroNoFix')
-                    : t('trackingPage.heroNoDevice')}
-              </p>
+            </div>
+
+            <div className="pp-row" style={{ gap: 8, flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                className="pp-btn pp-btnPrimary"
+                disabled={loading || !effectiveDeviceId}
+                onClick={() => void refresh()}
+              >
+                {loading ? t('trackingPage.btnRefresh') : t('trackingPage.btnLocate')}
+              </button>
+              <button type="button" className="pp-btn" disabled={loading || !effectiveDeviceId} onClick={() => void refresh()}>
+                {t('trackingPage.quickRefresh')}
+              </button>
+              <Link className="pp-btn pp-btn--ghost" to="/pets" style={{ textDecoration: 'none' }}>
+                {t('trackingPage.managePets')}
+              </Link>
             </div>
           </div>
-          <div className="pp-trackTop__fabs">
-            <button
-              type="button"
-              className="pp-trackFab pp-trackFab--prim"
-              disabled={loading || !effectiveDeviceId}
-              onClick={() => void refresh()}
-            >
-              {loading ? t('trackingPage.btnRefresh') : t('trackingPage.btnLocate')}
-            </button>
-            <button type="button" className="pp-trackFab" disabled={loading || !effectiveDeviceId} onClick={() => void refresh()}>
-              {t('trackingPage.quickRefresh')}
-            </button>
-            <Link className="pp-trackFab pp-trackFab--link" to="/pets">
-              {t('trackingPage.managePets')}
-            </Link>
-          </div>
+
+          {position ? (
+            <div className="pp-row" style={{ marginTop: 14, gap: 12, flexWrap: 'wrap' }}>
+              <div className="pp-card pp-pad" style={{ flex: '1 1 220px' }}>
+                <div className="pp-label">{t('trackingPage.cardLocation')}</div>
+                <div style={{ marginTop: 6 }}>
+                  <span className="pp-badge">{approx ? t('trackingPage.badgeApprox') : 'GPS'}</span>
+                </div>
+                <p className="pp-subtle" style={{ marginTop: 8, marginBottom: 0 }}>
+                  {position.accuracyText || t(approx ? 'trackingPage.accuracyApprox' : 'trackingPage.accuracyHigh')}
+                </p>
+              </div>
+
+              <div className="pp-card pp-pad" style={{ flex: '1 1 220px' }}>
+                <div className="pp-label">{t('trackingPage.cardHealth')}</div>
+                <p className="pp-subtle" style={{ marginTop: 8, marginBottom: 0 }}>
+                  {t('trackingPage.healthBattery')}: {position.battery != null ? `${position.battery}% (${position.batteryStatus || '—'})` : '—'}
+                </p>
+                <p className="pp-subtle" style={{ marginTop: 6, marginBottom: 0 }}>
+                  {t('trackingPage.healthSignal')}: {position.signal != null ? `${position.signal} (${position.signalStatus || '—'})` : '—'}
+                </p>
+              </div>
+
+              <div className="pp-card pp-pad" style={{ flex: '1 1 220px' }}>
+                <div className="pp-label">{t('trackingPage.cardActivity')}</div>
+                <p className="pp-subtle" style={{ marginTop: 8, marginBottom: 0 }}>
+                  {t('trackingPage.activitySteps')}: {position.steps ?? '—'}
+                </p>
+                <p className="pp-subtle" style={{ marginTop: 6, marginBottom: 0 }}>
+                  {position.movementText || (position.isMoving ? t('trackingPage.moving') : t('trackingPage.notMoving'))}
+                </p>
+              </div>
+            </div>
+          ) : null}
         </section>
       ) : null}
 
@@ -217,7 +267,7 @@ export default function Tracking() {
                 </span>
               ) : null}
               <span>
-                {t('trackingPage.lblDeviceTime')}: {formatTime(position.deviceTime, langForDate)}
+                {t('trackingPage.lblDeviceTime')}: {deviceTimeLabel}
               </span>
             </div>
           </>

@@ -91,9 +91,19 @@ function createTcpServer({ port, store }) {
         const logObj = {
           imei: parsed.imei,
           messageId: parsed.messageId,
+          source: parsed.source ?? null,
+          gpsValid: parsed.gpsValid ?? null,
           battery: deviceStatus.battery ?? null,
           signal: parsed.signal ?? null,
           timestamp: deviceStatus.timestamp ?? (parsed.gps?.timestamp ?? null),
+          secondsAgo:
+            (() => {
+              const ts = deviceStatus.timestamp ?? parsed.gps?.timestamp ?? null;
+              if (!ts) return null;
+              const ms = Date.parse(ts);
+              if (!Number.isFinite(ms)) return null;
+              return Math.max(0, Math.round((Date.now() - ms) / 1000));
+            })(),
           steps: deviceStatus.steps ?? null,
           lat: parsed.gps?.lat ?? null,
           lng: parsed.gps?.lng ?? null,

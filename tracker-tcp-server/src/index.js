@@ -100,21 +100,87 @@ app.get("/position", (req, res) => {
     return res.status(404).json({ error: "no_position" });
   }
 
+  const deviceTimeUtc = d.gps?.timestamp || null;
+  const deviceTimeLocal = deviceTimeUtc ? new Date(deviceTimeUtc).toLocaleString() : null;
+
+  const nowMs = Date.now();
+  const baseTs = deviceTimeUtc ? Date.parse(deviceTimeUtc) : d.lastUpdate ? Date.parse(d.lastUpdate) : NaN;
+  const secondsAgo = Number.isFinite(baseTs) ? Math.max(0, Math.round((nowMs - baseTs) / 1000)) : null;
+  const isStale = secondsAgo != null ? secondsAgo > 120 : null;
+
+  const source = d.source ?? null;
+  const isApproximate = source === "lbs";
+  const battery = d.battery ?? null;
+  const signal = d.signal ?? null;
+
+  const batteryStatus =
+    typeof battery === "number" && Number.isFinite(battery)
+      ? battery > 70
+        ? "good"
+        : battery > 30
+          ? "medium"
+          : "low"
+      : null;
+  const signalStatus =
+    typeof signal === "number" && Number.isFinite(signal)
+      ? signal > 12
+        ? "strong"
+        : signal > 6
+          ? "medium"
+          : "weak"
+      : null;
+
+  const freshness =
+    typeof secondsAgo === "number"
+      ? secondsAgo < 60
+        ? "live"
+        : secondsAgo < 300
+          ? "recent"
+          : "stale"
+      : null;
+
+  const statusText =
+    freshness === "live" ? "Live tracking" : freshness === "recent" ? "Updated recently" : "Last seen a while ago";
+  const accuracyText = source === "gps" ? "Precise GPS location" : "Approximate location";
+  const movementText = d.moving ? "Moving" : "Not moving";
+
   res.json({
+    // Normalized device summary
     imei,
     lat,
     lng,
-    source: d.source ?? null,
-    gpsValid: d.gpsValid === true,
-    battery: d.battery ?? null,
-    signal: d.signal ?? null,
+    source,
+    accuracy: source === "gps" ? "high" : "low",
+
+    battery,
+    batteryStatus,
+    signal,
+    signalStatus,
+    isCharging: d.charging === true,
     steps: d.steps ?? null,
-    moving: d.moving ?? null,
-    charging: d.charging ?? null,
+    isMoving: d.moving === true,
+
+    lastUpdate: deviceTimeUtc,
+    secondsAgo,
+    freshness,
+
+    // Messages (frontend should not interpret protocol fields)
+    statusText,
+    accuracyText,
+    movementText,
+
+    // Warnings
+    warningApproximate: isApproximate,
+    warningStale: freshness === "stale",
+
+    // Extra diagnostics (still normalized)
+    gpsValid: d.gpsValid === true,
+    satellites: d.satellites ?? null,
     speed: d.speed != null ? Number(d.speed) : null,
-    lastUpdate: d.lastUpdate ?? null,
-    accuracy: d.accuracy ?? (d.source ?? null),
-    satellites: d.satellites ?? null
+    lastUpdateServer: d.lastUpdate ?? null,
+    deviceTimeUtc,
+    deviceTimeLocal,
+    isStale
   });
 });
 
