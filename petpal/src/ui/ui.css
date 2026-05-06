@@ -75,6 +75,112 @@
   flex-shrink: 0;
 }
 
+.pp-langSelectWrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.pp-langSelectWrap__flag {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 16px;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.pp-langSelect {
+  min-height: 40px;
+  min-width: 132px;
+  width: 100%;
+  padding: 8px 36px 8px 36px;
+  border-radius: 12px;
+  border: 1px solid rgba(16, 24, 40, 0.14);
+  background-color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  color: #101828;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%23667085' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 16px;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.1s ease;
+  text-align: left;
+}
+
+.pp-langMenu {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 6px;
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 0;
+  right: 0;
+  border-radius: 12px;
+  border: 1px solid rgba(16, 24, 40, 0.12);
+  background: #fff;
+  box-shadow: 0 14px 32px rgba(16, 24, 40, 0.16);
+  z-index: 40;
+}
+
+.pp-langMenu__item {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: 9px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #101828;
+  cursor: pointer;
+  text-align: left;
+}
+
+.pp-langMenu__item:hover {
+  background: rgba(91, 55, 255, 0.08);
+}
+
+.pp-langMenu__item.is-active {
+  background: rgba(91, 55, 255, 0.12);
+  color: #2f1c95;
+}
+
+.pp-langMenu__flag {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.pp-langSelect:hover {
+  border-color: rgba(91, 55, 255, 0.4);
+}
+
+.pp-langSelect:focus {
+  outline: none;
+}
+
+.pp-langSelect:focus-visible {
+  border-color: rgba(91, 55, 255, 0.52);
+  box-shadow: 0 0 0 3px rgba(91, 55, 255, 0.24);
+}
+
+@media (max-width: 520px) {
+  .pp-langSelect {
+    min-width: 118px;
+    font-size: 13px;
+  }
+}
+
 .pp-langSwitcher--cycle {
   /* no outer “pill” — single circle is the control */
   padding: 0;
@@ -2193,6 +2299,22 @@ select.pp-input:focus {
   align-items: flex-start;
   gap: 6px;
   flex-shrink: 0;
+}
+
+.pp-brandLink {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.pp-brandLogo {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+  border-radius: 6px;
 }
 
 .pp-navProfileRow {

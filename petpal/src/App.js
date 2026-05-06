@@ -53,7 +53,10 @@ function TopNav() {
   return (
     <div className="pp-nav">
       <div className="pp-navBrandColumn">
-        <div className="pp-brand">PetPal</div>
+        <Link className="pp-brandLink" to="/" aria-label={t('nav.home')}>
+          <div className="pp-brand">PetPal</div>
+          <img className="pp-brandLogo" src={`${process.env.PUBLIC_URL}/favicon.png`} alt="PetPal logo" />
+        </Link>
         {user ? (
           <Link className="pp-navProfileRow" to="/profile">
             <UserAvatar user={user} size={32} className="pp-navProfileAvatar" />
@@ -63,9 +66,6 @@ function TopNav() {
       </div>
       <div className="pp-navRight">
         <div className="pp-navlinks">
-          <NavLink className={navItemClassName()} to="/" end>
-            {t('nav.home')}
-          </NavLink>
           {user ? (
             <NavLink className={navItemClassName()} to="/dashboard" end>
               {t('nav.dashboard')}

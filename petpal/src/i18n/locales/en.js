@@ -970,10 +970,12 @@ const en = {
       'Premium → Breeding lists dogs available for responsible mating (studs or dams). Search by breed wording and filter by sex; contact other owners by phone or email on their card. Your own listings pause or mark matched when arrangements are settled. Always follow veterinary and Animal-related law in your area.',
     u9Title: 'Language, cookies & policies',
     u9Body:
-      'Tap the flag circle in the header to cycle English → Greek → Russian. Your choice is saved in this browser.\n\nFor cookie choices and legal text, use the links below. Some features remind you that data stays on this device until cloud sync is enabled—read each screen carefully.',
+      'Use the language dropdown in the header to pick English, Greek, or Russian. Your choice is saved in this browser.\n\nFor cookie choices and legal text, use the links below. Some features remind you that data stays on this device until cloud sync is enabled—read each screen carefully.',
   },
   languageSwitcher: {
     label: 'Language',
+    ariaSelect: 'Select language',
+    selectHint: 'Choose your language',
     ariaCycle: 'Language: {current}. Press to switch to {next}.',
     switchHint: 'Next: {next}',
     lang: {
