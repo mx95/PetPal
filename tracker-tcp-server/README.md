@@ -15,60 +15,40 @@ npm start
 - TCP: `5001` (override with `TCP_PORT`) — **trackers must connect here**
 - HTTP: `5002` (override with `HTTP_PORT`)
 
-### Optional: seed a sample device (demo / PetPal without TCP)
+## HTTP API (production structure)
 
-There is **no registration HTTP API**: devices appear when the collar connects over TCP. For demos or UI checks, you can **preload one IMEI** at process startup:
+This service exposes **two API groups**:
 
-| Env var | Example | Purpose |
-|---------|---------|---------|
-| `SEED_DEVICE_IMEI` | `869469088344608` | IMEI shown in PetPal |
-| `SEED_DEVICE_LAT` | `34.985` | Latitude |
-| `SEED_DEVICE_LNG` | `33.845` | Longitude |
+- **App API** (frontend-safe): `GET /api/app/*`
+  - Used by **PetPal web UI** only
+  - Reads from **SQLite** so devices persist across restarts
+- **Tracker API** (protocol/commands): `POST /api/tracker/commands/*`
+  - Used for **device configuration** only (queues Xexun 0x21 commands)
+  - Commands are sent **one per uplink** after ACK on `0x20`
 
-All three must be set; otherwise seeding is skipped. After a real TCP uplink for that IMEI, live data replaces/merges as usual.
+### App API (frontend-safe)
 
-**PM2 example**
+- **List devices**: `GET /api/app/devices`
+- **Get one device**: `GET /api/app/devices/:imei`
+- **Latest position**: `GET /api/app/position?deviceId=IMEI`
+- **History (last 100)**: `GET /api/app/history?deviceId=IMEI`
 
-```bash
-SEED_DEVICE_IMEI=869469088344608 SEED_DEVICE_LAT=34.985 SEED_DEVICE_LNG=33.845 pm2 restart tracker --update-env
-```
+### Tracker API (device commands)
 
-(or put the same variables in your `ecosystem.config.js` `env` block)
+All command endpoints live under:
 
-## HTTP API
+- `POST /api/tracker/commands/*`
+- `GET /api/tracker/commands/pending/:imei`
 
-**Discovery:** `GET /` returns JSON listing every route.
+Examples:
 
-**Device data**
-
-| Method | Path | Purpose |
-|--------|------|---------|
-| GET | `/devices` | All devices last seen |
-| GET | `/devices/:imei` | One device snapshot |
-| GET | `/position?deviceId=IMEI` | Latest lat/lng (PetPal / maps; 404 if no GPS fix) |
-
-**Xexun 0x21 commands** (mapped from the vendor PDF). All are **queued** and sent **one per uplink** after ACK on `0x20`.
-
-| Method | Path | Body (JSON) | Command text sent |
-|--------|------|---------------|-------------------|
-| POST | `/commands/queue` | `{ imei, command }` | Any raw string (`ip=…`, combined `#` commands, etc.) |
-| POST | `/commands/ip-transfer` | `{ imei, host, port? }` | `ip=host:port` |
-| POST | `/commands/ip/query` | `{ imei }` | `ip=?` |
-| POST | `/commands/apn` | `{ imei, apn }` | `APN=name` |
-| POST | `/commands/tracking` | `{ imei, tk }` **or** `{ imei, p1..p7 }` | `tk=…` |
-| POST | `/commands/tracking/query` | `{ imei }` | `tk=?` |
-| POST | `/commands/power-off` | `{ imei }` | `of=1` |
-| POST | `/commands/restart` | `{ imei }` | `rt=1` |
-| POST | `/commands/message` | `{ imei, text }` | `mg=…` |
-| POST | `/commands/timezone` | `{ imei, tz }` | `tz=N` |
-| POST | `/commands/timezone/query` | `{ imei }` | `tz=?` |
-| POST | `/commands/ble` | `{ imei, bssid_list }` **or** `{ imei, clear: true }` **or** `{ imei, query: true }` | `ble=…` / `ble={}` / `ble=?` |
-| POST | `/commands/wifi` | Same shape as `ble` | `wifi=…` / `wifi={}` / `wifi=?` |
-| GET | `/commands/pending/:imei` | — | Lists queued strings |
+- **Server switch**: `POST /api/tracker/commands/ip-transfer` body `{ imei, host, port? }`
+- **Queue raw command**: `POST /api/tracker/commands/queue` body `{ imei, command }`
+  - e.g. `ip=116.203.209.68:5001`, `tk=...`, `APN=internet`
 
 **CORS** allows `GET`, `POST`, `OPTIONS` for browser clients.
 
-### If you see `Cannot POST /commands/…`
+### If you see `Cannot POST /api/tracker/commands/…`
 
 The Node process is an **older build** without these routes. On the server:
 
@@ -85,7 +65,7 @@ The vendor protocol defines **IP transfer** as plain command text, e.g.:
 - `ip=p.xexun.com:8899` (factory / platform default in the PDF)
 - `ip=116.203.209.68:5001` — point the collar at **your** TCP listener
 
-Use `POST /commands/ip-transfer` with your Hetzner public IPv4 and the same `TCP_PORT` you expose on the firewall.
+Use `POST /api/tracker/commands/ip-transfer` with your Hetzner public IPv4 and the same `TCP_PORT` you expose on the firewall.
 
 ### Important
 

@@ -54,7 +54,7 @@ export default function Profile() {
     { key: 'pets', to: '/pets', icon: ICONS.pets, accent: 'pets' },
     { key: 'business', to: '/company/apply', icon: ICONS.business, accent: 'business' },
     { key: 'docs', to: '/docs', icon: ICONS.docs, accent: 'docs' },
-    ...(isAdmin ? [{ key: 'admin', to: '/admin/company-approvals', icon: ICONS.admin, accent: 'admin' }] : []),
+    ...(isAdmin ? [{ key: 'admin', to: '/admin', icon: ICONS.admin, accent: 'admin' }] : []),
   ];
 
   async function onPickPhoto(e) {

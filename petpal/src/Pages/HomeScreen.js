@@ -233,7 +233,7 @@ function LoggedInFeed() {
     { iconKey: 'dashboard', titleKey: 'home.tileDashboard', to: '/dashboard' },
     { iconKey: 'business', titleKey: 'home.tileBusiness', to: '/company/apply' },
     { iconKey: 'docs', titleKey: 'home.tileDocs', to: '/docs' },
-    ...(isAdmin ? [{ iconKey: 'admin', titleKey: 'home.tileAdmin', to: '/admin/company-approvals' }] : []),
+    ...(isAdmin ? [{ iconKey: 'admin', titleKey: 'home.tileAdmin', to: '/admin' }] : []),
   ];
 
   return (

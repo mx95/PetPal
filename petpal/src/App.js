@@ -25,6 +25,8 @@ import UserAvatar from './components/UserAvatar';
 import './ui/ui.css';
 import CompanyApply from './Pages/CompanyApply';
 import AdminCompanyQueue from './Pages/AdminCompanyQueue';
+import AdminHub from './Pages/AdminHub';
+import AdminTrackerSetup from './Pages/AdminTrackerSetup';
 import { LanguageSwitcher } from './i18n/LanguageSwitcher';
 import { useI18n } from './i18n/I18nContext';
 import ScrollToTop from './components/ScrollToTop';
@@ -89,7 +91,7 @@ function TopNav() {
       <div className="pp-navBrandColumn">
         <Link className="pp-brandLink" to="/" aria-label={t('nav.home')}>
           <div className="pp-brand">PetPal</div>
-          <img className="pp-brandLogo" src={`${process.env.PUBLIC_URL}/favicon.png`} alt="PetPal logo" />
+          <img className="pp-brandLogo" src={`${process.env.PUBLIC_URL}/logo192.png`} alt="PetPal logo" />
         </Link>
       </div>
       <div className="pp-navRight">
@@ -207,10 +209,26 @@ function App() {
             }
           />
           <Route
+            path="/admin"
+            element={
+              <RequireAuth>
+                <AdminHub />
+              </RequireAuth>
+            }
+          />
+          <Route
             path="/admin/company-approvals"
             element={
               <RequireAuth>
                 <AdminCompanyQueue />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/admin/tracker"
+            element={
+              <RequireAuth>
+                <AdminTrackerSetup />
               </RequireAuth>
             }
           />

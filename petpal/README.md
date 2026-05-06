@@ -48,7 +48,7 @@ Add **Firebase** `google-services.json` (Android) and `GoogleService-Info.plist`
 
 PetPal can load live positions from:
 
-- **Xexun ingest** (`tracker-tcp-server`) via `REACT_APP_XEXUN_HTTP_BASE_URL`
+- **Xexun ingest** (`tracker-tcp-server`) via `REACT_APP_XEXUN_HTTP_BASE_URL` (the web app calls `/api/app/*`)
 - An optional **PetPal vendor REST** endpoint (common GPS-platform REST shape) via `REACT_APP_PETPAL_VENDOR_BASE_URL`
 
 If you do **not** set any tracking env vars, the **Tracker** screen uses a **mock** point so you can build the rest of the app without hardware.
@@ -61,6 +61,26 @@ Add to `petpal/.env.local` when your vendor server is available:
 | `REACT_APP_PETPAL_VENDOR_USER` / `REACT_APP_PETPAL_VENDOR_PASS` | Optional **HTTP Basic** auth if your vendor endpoint requires it. |
 
 The **Tracker** page also shows a **map** (Leaflet + OpenStreetMap) after a position loads.
+
+## Tracker backend API use cases
+
+The tracker backend (`tracker-tcp-server`) exposes two API groups. Keep them separate:
+
+- **App API (frontend-safe)**: `/api/app/*`
+  - **Use this in the PetPal UI**
+  - Backed by **SQLite**, so devices and history persist across restarts
+  - Typical calls:
+    - `GET /api/app/position?deviceId=<imei>` (map pin + summary)
+    - `GET /api/app/devices` (admin list)
+    - `GET /api/app/history?deviceId=<imei>` (recent trail)
+
+- **Tracker API (device commands)**: `/api/tracker/commands/*`
+  - **Use this only for configuring the collar**
+  - Commands are queued and delivered on the next TCP uplink
+  - Typical calls:
+    - `POST /api/tracker/commands/ip-transfer` (server switch)
+    - `POST /api/tracker/commands/tracking` (upload schedule)
+    - `GET /api/tracker/commands/pending/<imei>` (debug queue)
 
 ## Optional: tracking backend (BFF)
 
@@ -111,6 +131,35 @@ This function reads these runtime env vars:
 - `PETPAL_VENDOR_BASE_URL` (**required**)
 - `PETPAL_VENDOR_USER` / `PETPAL_VENDOR_PASS` (optional)
 - `PETPAL_BFF_TOKEN` (optional)
+
+## Deployment (Hetzner / Ubuntu)
+
+Typical flow after you commit locally:
+
+- SSH to the server
+- Pull latest code
+- Rebuild the PetPal frontend (updates `petpal/build/`)
+- Restart the `tracker` PM2 process (serves `/api/*` and the PetPal SPA)
+
+Commands:
+
+```bash
+cd ~/PetPal
+git pull
+
+cd ~/PetPal/petpal
+npm ci
+npm run build
+
+cd ~/PetPal/tracker-tcp-server
+npm ci
+pm2 restart tracker
+```
+
+Notes:
+
+- If you changed only frontend files, you can usually skip `npm ci` in `tracker-tcp-server`.
+- If you changed only backend files, you can skip `npm ci` + `npm run build` in `petpal`.
 
 Then in `petpal/.env.local` set:
 

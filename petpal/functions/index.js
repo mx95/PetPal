@@ -52,20 +52,24 @@ function pickLatest(positions) {
   return positions.reduce((a, b) => (timeValue(b) > timeValue(a) ? b : a));
 }
 
-function normalizeXexunLatestDevice(json) {
-  // tracker-tcp-server shape: { gps: {lat,lng,timestamp,speedKmh? }, deviceStatus: {...}, receivedAt, ... }
+function normalizeXexunAppPosition(json) {
+  // tracker-tcp-server app API shape: /api/app/position
+  // { lat, lng, battery, signal, source, accuracy, lastUpdate, secondsAgo, isOnline }
   if (!json) return null;
-  const gps = json.gps || {};
-  const lat = gps.lat != null ? Number(gps.lat) : Number.NaN;
-  const lng = gps.lng != null ? Number(gps.lng) : Number.NaN;
+  const lat = json.lat != null ? Number(json.lat) : Number.NaN;
+  const lng = json.lng != null ? Number(json.lng) : Number.NaN;
   if (Number.isNaN(lat) || Number.isNaN(lng)) return null;
   return {
     lat,
     lng,
-    speed: gps.speedKmh != null ? Number(gps.speedKmh) : null,
+    speed: null,
     address: null,
-    deviceTime: gps.timestamp || null,
-    serverTime: json.receivedAt || null,
+    deviceTime: json.lastUpdate || null,
+    serverTime: json.lastUpdate || null,
+    source: json.source || null,
+    accuracy: json.accuracy || null,
+    secondsAgo: json.secondsAgo ?? null,
+    isOnline: json.isOnline ?? null,
   };
 }
 
@@ -105,14 +109,14 @@ exports.tracking = functions
         const xexunBase = getEnv('XEXUN_HTTP_BASE_URL') || getConfig('xexun.http_base_url');
         if (xexunBase) {
           const base = xexunBase.replace(/\/$/, '');
-          const url = `${base}/devices/${encodeURIComponent(deviceId)}`;
+          const url = `${base}/api/app/position?deviceId=${encodeURIComponent(deviceId)}`;
           const r = await fetch(url, { method: 'GET', headers: { Accept: 'application/json' } });
           if (!r.ok) {
             res.status(502).json({ error: 'xexun_server_error', status: r.status });
             return;
           }
           const data = await r.json();
-          const normalized = normalizeXexunLatestDevice(data);
+          const normalized = normalizeXexunAppPosition(data);
           if (!normalized) {
             res.status(404).json({ error: 'no_position' });
             return;
