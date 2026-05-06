@@ -6,6 +6,67 @@ const {
   toHex,
   isValidCrc
 } = require("../protocol/xexun");
+const db = require("../db");
+
+function isFiniteNum(n) {
+  return typeof n === "number" && Number.isFinite(n);
+}
+
+function persistParsedToSqlite(parsed) {
+  try {
+    const imei = String(parsed?.imei || "").trim();
+    if (!imei) return;
+
+    const ds = parsed.deviceStatus || {};
+    const lat = parsed.gps?.lat;
+    const lng = parsed.gps?.lng;
+    const battery = ds.battery ?? null;
+    const signal = ds.signal ?? parsed.signal ?? null;
+    const source = parsed.source || parsed.gps?.source || "lbs";
+    const timestamp = parsed.gps?.timestamp || ds.timestamp || new Date().toISOString();
+
+    if (isFiniteNum(lat) && isFiniteNum(lng)) {
+      db.run(
+        `
+          INSERT INTO positions (imei, lat, lng, source, battery, signal, timestamp)
+          VALUES (?, ?, ?, ?, ?, ?, ?)
+        `,
+        [imei, lat, lng, source, battery, signal, timestamp]
+      );
+
+      db.run(
+        `
+          INSERT INTO devices (imei, last_lat, last_lng, battery, signal, source, last_update)
+          VALUES (?, ?, ?, ?, ?, ?, ?)
+          ON CONFLICT(imei) DO UPDATE SET
+            last_lat=excluded.last_lat,
+            last_lng=excluded.last_lng,
+            battery=excluded.battery,
+            signal=excluded.signal,
+            source=excluded.source,
+            last_update=excluded.last_update
+        `,
+        [imei, lat, lng, battery, signal, source, timestamp]
+      );
+    } else {
+      // Still update device heartbeat even if location missing.
+      db.run(
+        `
+          INSERT INTO devices (imei, battery, signal, source, last_update)
+          VALUES (?, ?, ?, ?, ?)
+          ON CONFLICT(imei) DO UPDATE SET
+            battery=excluded.battery,
+            signal=excluded.signal,
+            source=excluded.source,
+            last_update=excluded.last_update
+        `,
+        [imei, battery, signal, source, timestamp]
+      );
+    }
+  } catch {
+    // best-effort persistence (avoid breaking TCP loop)
+  }
+}
 
 function extractFramesFromStream(buffer) {
   // Stream-safe framing for FC...CF.
@@ -121,7 +182,7 @@ function createTcpServer({ port, store }) {
           );
         }
 
-        store.upsert(parsed.imei, parsed);
+        persistParsedToSqlite(parsed);
         store.bindSocket(parsed.imei, socket);
 
         // ACK (CRITICAL)

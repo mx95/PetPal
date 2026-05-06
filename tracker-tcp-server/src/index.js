@@ -3,40 +3,13 @@ const cors = require("cors");
 
 const { createMemoryStore } = require("./store/memory");
 const { createTcpServer } = require("./tcp/handler");
-const { registerXexunHttpApi } = require("./http/xexunApiRoutes");
+const { createTrackerRoutes } = require("./routes/trackerRoutes");
+const { createAppRoutes } = require("./routes/appRoutes");
 
 const TCP_PORT = Number(process.env.TCP_PORT || 5001);
 const HTTP_PORT = Number(process.env.HTTP_PORT || 5002);
 
 const store = createMemoryStore();
-
-/** Optional demo/fixture: preload one IMEI so GET /devices and /position work before TCP connects. */
-function seedSampleDeviceFromEnv() {
-  const imei = String(process.env.SEED_DEVICE_IMEI || "").trim();
-  if (!imei) return;
-  const lat = Number(process.env.SEED_DEVICE_LAT);
-  const lng = Number(process.env.SEED_DEVICE_LNG);
-  if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
-    console.warn(
-      "[seed] SEED_DEVICE_IMEI is set but SEED_DEVICE_LAT and SEED_DEVICE_LNG must be valid numbers"
-    );
-    return;
-  }
-  store.upsert(imei, {
-    imei,
-    receivedAt: new Date().toISOString(),
-    gps: {
-      lat,
-      lng,
-      speedKmh: null,
-      timestamp: new Date().toISOString(),
-    },
-    seededFromEnv: true,
-  });
-  console.log(`[seed] Preloaded ${imei} at ${lat}, ${lng} (set SEED_DEVICE_* in env)`);
-}
-
-seedSampleDeviceFromEnv();
 
 createTcpServer({ port: TCP_PORT, store });
 
@@ -62,131 +35,12 @@ app.use(
   })
 );
 
-registerXexunHttpApi(app, store);
-
-app.get("/devices", (req, res) => {
-  res.json(store.list());
-});
-
-app.get("/devices/:imei", (req, res) => {
-  const d = store.get(req.params.imei);
-  if (!d) return res.status(404).json({ error: "not_found" });
-  res.json(d);
-});
-
-app.get("/devices/:imei/status", (req, res) => {
-  const d = store.get(req.params.imei);
-  if (!d) return res.status(404).json({ error: "not_found" });
-  res.json({
-    battery: d.battery ?? null,
-    signal: d.signal ?? null,
-    moving: d.moving ?? null,
-    charging: d.charging ?? null,
-    steps: d.steps ?? null,
-    lastUpdate: d.lastUpdate ?? null
-  });
-});
-
-app.get("/position", (req, res) => {
-  const imei = String(req.query.deviceId || req.query.imei || "").trim();
-  if (!imei) return res.status(400).json({ error: "missing_deviceId" });
-  const d = store.get(imei);
-  if (!d) return res.status(404).json({ error: "not_found" });
-
-  const loc = d.location || d.gps || {};
-  const lat = loc.lat != null ? Number(loc.lat) : Number.NaN;
-  const lng = loc.lng != null ? Number(loc.lng) : Number.NaN;
-  if (Number.isNaN(lat) || Number.isNaN(lng)) {
-    return res.status(404).json({ error: "no_position" });
-  }
-
-  const deviceTimeUtc = d.gps?.timestamp || null;
-  const deviceTimeLocal = deviceTimeUtc ? new Date(deviceTimeUtc).toLocaleString() : null;
-
-  const nowMs = Date.now();
-  const baseTs = deviceTimeUtc ? Date.parse(deviceTimeUtc) : d.lastUpdate ? Date.parse(d.lastUpdate) : NaN;
-  const secondsAgo = Number.isFinite(baseTs) ? Math.max(0, Math.round((nowMs - baseTs) / 1000)) : null;
-  const isStale = secondsAgo != null ? secondsAgo > 120 : null;
-
-  const source = d.source ?? null;
-  const isApproximate = source === "lbs";
-  const battery = d.battery ?? null;
-  const signal = d.signal ?? null;
-
-  const batteryStatus =
-    typeof battery === "number" && Number.isFinite(battery)
-      ? battery > 70
-        ? "good"
-        : battery > 30
-          ? "medium"
-          : "low"
-      : null;
-  const signalStatus =
-    typeof signal === "number" && Number.isFinite(signal)
-      ? signal > 12
-        ? "strong"
-        : signal > 6
-          ? "medium"
-          : "weak"
-      : null;
-
-  const freshness =
-    typeof secondsAgo === "number"
-      ? secondsAgo < 60
-        ? "live"
-        : secondsAgo < 300
-          ? "recent"
-          : "stale"
-      : null;
-
-  const statusText =
-    freshness === "live" ? "Live tracking" : freshness === "recent" ? "Updated recently" : "Last seen a while ago";
-  const accuracyText = source === "gps" ? "Precise GPS location" : "Approximate location";
-  const movementText = d.moving ? "Moving" : "Not moving";
-
-  res.json({
-    // Normalized device summary
-    imei,
-    lat,
-    lng,
-    source,
-    accuracy: source === "gps" ? "high" : "low",
-
-    battery,
-    batteryStatus,
-    signal,
-    signalStatus,
-    isCharging: d.charging === true,
-    steps: d.steps ?? null,
-    isMoving: d.moving === true,
-
-    lastUpdate: deviceTimeUtc,
-    secondsAgo,
-    freshness,
-
-    // Messages (frontend should not interpret protocol fields)
-    statusText,
-    accuracyText,
-    movementText,
-
-    // Warnings
-    warningApproximate: isApproximate,
-    warningStale: freshness === "stale",
-
-    // Extra diagnostics (still normalized)
-    gpsValid: d.gpsValid === true,
-    satellites: d.satellites ?? null,
-    speed: d.speed != null ? Number(d.speed) : null,
-    lastUpdateServer: d.lastUpdate ?? null,
-    deviceTimeUtc,
-    deviceTimeLocal,
-    isStale
-  });
-});
+app.use("/api/tracker", createTrackerRoutes(store));
+app.use("/api/app", createAppRoutes());
 
 app.listen(HTTP_PORT, () => {
   console.log(`HTTP API listening on port ${HTTP_PORT}`);
-  console.log(`- GET  http://localhost:${HTTP_PORT}/  (discovery JSON)`);
-  console.log(`- GET  http://localhost:${HTTP_PORT}/devices`);
-  console.log(`- POST http://localhost:${HTTP_PORT}/commands/ip-transfer …`);
+  console.log(`- GET  http://localhost:${HTTP_PORT}/api/app/position?deviceId=…`);
+  console.log(`- GET  http://localhost:${HTTP_PORT}/api/app/devices`);
+  console.log(`- POST http://localhost:${HTTP_PORT}/api/tracker/commands/ip-transfer …`);
 });

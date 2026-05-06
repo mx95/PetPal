@@ -159,7 +159,7 @@ async function readJsonSafe(res) {
 
 async function fetchBffPosition(deviceId) {
   const base = bffBase();
-  const path = `/position?deviceId=${encodeURIComponent(deviceId)}`;
+  const path = `/api/app/position?deviceId=${encodeURIComponent(deviceId)}`;
   const url = base === '' ? path : `${base}${path}`;
 
   const res = await fetch(url, {
@@ -193,7 +193,7 @@ async function fetchBffPosition(deviceId) {
 
 async function fetchXexunPosition(deviceId) {
   const base = xexunBase();
-  const path = `/position?deviceId=${encodeURIComponent(deviceId)}`;
+  const path = `/api/app/position?deviceId=${encodeURIComponent(deviceId)}`;
   const url = base === '' ? path : `${base}${path}`;
 
   const res = await fetch(url, {
