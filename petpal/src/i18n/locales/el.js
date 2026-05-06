@@ -1,4 +1,4 @@
-export default {
+const el = {
   i18n: { language: 'Γλώσσα' },
   nav: {
     home: 'Επισκόπηση',
@@ -500,6 +500,8 @@ export default {
     yarnStart: 'yarn start',
     loadFailTitle: 'Ο χάρτης Google Maps δεν φόρτωσε:',
     loadFailHint: 'Ελέγξτε κλειδί API, χρέωση και τα APIs που απαιτούνται.',
+    mapsApiNotActivated:
+      'ApiNotActivatedMapError — ενεργοποιήστε Maps JavaScript API και Places API για αυτό το κλειδί στο Google Cloud και ενεργό billing.',
     noKeyBrief:
       'Ορίστε REACT_APP_GOOGLE_MAPS_API_KEY στο petpal/.env.local, ενεργοποιήστε Maps JavaScript API και Places API στο Google Cloud και επανεκκινήστε το yarn start.',
     loadingMap: 'Φόρτωση χάρτη…',
@@ -962,3 +964,5 @@ export default {
     },
   },
 };
+
+export default el;

@@ -10,6 +10,34 @@ const HTTP_PORT = Number(process.env.HTTP_PORT || 5002);
 
 const store = createMemoryStore();
 
+/** Optional demo/fixture: preload one IMEI so GET /devices and /position work before TCP connects. */
+function seedSampleDeviceFromEnv() {
+  const imei = String(process.env.SEED_DEVICE_IMEI || "").trim();
+  if (!imei) return;
+  const lat = Number(process.env.SEED_DEVICE_LAT);
+  const lng = Number(process.env.SEED_DEVICE_LNG);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+    console.warn(
+      "[seed] SEED_DEVICE_IMEI is set but SEED_DEVICE_LAT and SEED_DEVICE_LNG must be valid numbers"
+    );
+    return;
+  }
+  store.upsert(imei, {
+    imei,
+    receivedAt: new Date().toISOString(),
+    gps: {
+      lat,
+      lng,
+      speedKmh: null,
+      timestamp: new Date().toISOString(),
+    },
+    seededFromEnv: true,
+  });
+  console.log(`[seed] Preloaded ${imei} at ${lat}, ${lng} (set SEED_DEVICE_* in env)`);
+}
+
+seedSampleDeviceFromEnv();
+
 createTcpServer({ port: TCP_PORT, store });
 
 const app = express();

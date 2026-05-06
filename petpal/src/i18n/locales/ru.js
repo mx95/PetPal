@@ -1,4 +1,4 @@
-export default {
+const ru = {
   i18n: { language: 'Язык' },
   nav: {
     home: 'Обзор',
@@ -501,6 +501,8 @@ export default {
     yarnStart: 'yarn start',
     loadFailTitle: 'Не удалось загрузить Google Maps:',
     loadFailHint: 'Проверьте ключ API, биллинг и включённые API.',
+    mapsApiNotActivated:
+      'ApiNotActivatedMapError — включите Maps JavaScript API и Places API для этого ключа в Google Cloud и активируйте биллинг.',
     noKeyBrief:
       'Укажите REACT_APP_GOOGLE_MAPS_API_KEY в petpal/.env.local, включите Maps JavaScript API и Places API в Google Cloud, затем перезапустите yarn start.',
     loadingMap: 'Загрузка карты…',
@@ -962,3 +964,5 @@ export default {
     },
   },
 };
+
+export default ru;

@@ -1,3 +1,24 @@
+function hasValidGps(gps) {
+  if (!gps || gps.lat == null || gps.lng == null) return false;
+  const lat = Number(gps.lat);
+  const lng = Number(gps.lng);
+  return Number.isFinite(lat) && Number.isFinite(lng);
+}
+
+/**
+ * Each uplink replaces the in-memory record. Status-only packets often omit GPS blocks,
+ * which would clear coordinates for GET /position unless we keep the last fix.
+ */
+function mergeDeviceRecord(prev, incoming) {
+  if (!prev) return incoming;
+  const merged = { ...incoming };
+  if (!hasValidGps(incoming.gps) && hasValidGps(prev.gps)) {
+    merged.gps = prev.gps;
+    if (!incoming.gpsRaw && prev.gpsRaw) merged.gpsRaw = prev.gpsRaw;
+  }
+  return merged;
+}
+
 function createMemoryStore() {
   const devices = new Map(); // imei -> latest object
   const commandQueues = new Map(); // imei -> string[]
@@ -7,7 +28,9 @@ function createMemoryStore() {
   return {
     upsert(imei, data) {
       if (!imei) return;
-      devices.set(String(imei), data);
+      const key = String(imei);
+      const prev = devices.get(key);
+      devices.set(key, mergeDeviceRecord(prev, data));
     },
     list() {
       return Array.from(devices.values());

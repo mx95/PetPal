@@ -1,5 +1,5 @@
 import L from 'leaflet';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { GoogleMap, Marker, useJsApiLoader } from '@react-google-maps/api';
 import { MapContainer, Marker as LeafletMarker, Popup, TileLayer, useMap } from 'react-leaflet';
 
@@ -8,6 +8,7 @@ import icon from 'leaflet/dist/images/marker-icon.png';
 import shadow from 'leaflet/dist/images/marker-shadow.png';
 
 import { GOOGLE_MAPS_LOADER_ID } from '../config/googleMapsLoaderId';
+import { subscribeGoogleMapsAuthFailure } from '../config/googleMapsAuthFailure';
 
 import 'leaflet/dist/leaflet.css';
 
@@ -59,15 +60,19 @@ function LeafletPositionMap({ lat, lng }) {
 }
 
 function GooglePositionMap({ lat, lng, apiKey }) {
+  const [authFailed, setAuthFailed] = useState(false);
+  useEffect(() => subscribeGoogleMapsAuthFailure(() => setAuthFailed(true)), []);
+
   const { isLoaded, loadError } = useJsApiLoader({
     id: GOOGLE_MAPS_LOADER_ID,
     googleMapsApiKey: apiKey,
+    /** Same as Nearby — one shared script load per app (Places unused here but required for a single loader id). */
     libraries: ['places'],
   });
 
   const center = { lat, lng };
 
-  if (loadError) {
+  if (authFailed || loadError) {
     return <LeafletPositionMap lat={lat} lng={lng} />;
   }
 

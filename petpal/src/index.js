@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
+import { installGoogleMapsAuthFailureHook } from './config/googleMapsAuthFailure';
 import App from './App';
 import { ErrorBoundary } from './ErrorBoundary';
 import reportWebVitals from './reportWebVitals';
@@ -15,6 +16,8 @@ import { GameProvider } from './game/GameContext';
 import { PublicWalkProvider } from './leaderboard/PublicWalkContext';
 import { CommunityProvider } from './social/CommunityContext';
 import { ToastProvider } from './components/Toast';
+
+installGoogleMapsAuthFailureHook();
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(

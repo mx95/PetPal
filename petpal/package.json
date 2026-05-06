@@ -32,6 +32,7 @@
     "add-admin": "node scripts/add-admin.cjs"
   },
   "devDependencies": {
+    "@babel/plugin-proposal-private-property-in-object": "^7.21.0",
     "@capacitor/cli": "^6.2.0",
     "firebase-admin": "^13.0.0"
   },

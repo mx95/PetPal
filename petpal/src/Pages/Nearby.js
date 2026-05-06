@@ -7,6 +7,7 @@ import {
   NEARBY_SEARCH_RADIUS_M,
 } from '../config/nearbyPlaceCategories';
 import { GOOGLE_MAPS_LOADER_ID } from '../config/googleMapsLoaderId';
+import { subscribeGoogleMapsAuthFailure } from '../config/googleMapsAuthFailure';
 import { useI18n } from '../i18n/I18nContext';
 
 const mapContainerStyle = { width: '100%', height: 'min(62vh, 620px)', minHeight: 280, borderRadius: 18 };
@@ -46,6 +47,9 @@ function LoadErrorView({ err }) {
 
 function NearbyMap({ apiKey }) {
   const { t } = useI18n();
+  const [mapsAuthFailed, setMapsAuthFailed] = useState(false);
+  useEffect(() => subscribeGoogleMapsAuthFailure(() => setMapsAuthFailed(true)), []);
+
   const { isLoaded, loadError } = useJsApiLoader({
     id: GOOGLE_MAPS_LOADER_ID,
     googleMapsApiKey: apiKey,
@@ -164,8 +168,9 @@ function NearbyMap({ apiKey }) {
 
   const radiusKm = NEARBY_SEARCH_RADIUS_M / 1000;
 
-  if (loadError) {
-    return <LoadErrorView err={loadError} />;
+  if (loadError || mapsAuthFailed) {
+    const err = loadError || { message: t('nearbyPage.mapsApiNotActivated') };
+    return <LoadErrorView err={err} />;
   }
   if (!isLoaded) {
     return <p className="pp-subtle">{t('nearbyPage.loadingMap')}</p>;

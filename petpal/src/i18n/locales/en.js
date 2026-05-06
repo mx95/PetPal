@@ -1,4 +1,4 @@
-export default {
+const en = {
   i18n: { language: 'Language' },
   nav: {
     home: 'Home',
@@ -500,6 +500,8 @@ export default {
     yarnStart: 'yarn start',
     loadFailTitle: 'Google Maps could not load:',
     loadFailHint: 'Check the API key, billing, and that Maps JavaScript API + Places API are enabled.',
+    mapsApiNotActivated:
+      'ApiNotActivatedMapError — enable Maps JavaScript API (and Places API) for this browser key in Google Cloud and ensure billing is active.',
     noKeyBrief:
       'Configure REACT_APP_GOOGLE_MAPS_API_KEY in petpal/.env.local, enable Maps JavaScript API and Places API in Google Cloud, then restart yarn start.',
     loadingMap: 'Loading map…',
@@ -964,3 +966,5 @@ export default {
     },
   },
 };
+
+export default en;

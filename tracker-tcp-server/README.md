@@ -15,6 +15,26 @@ npm start
 - TCP: `5001` (override with `TCP_PORT`) — **trackers must connect here**
 - HTTP: `5002` (override with `HTTP_PORT`)
 
+### Optional: seed a sample device (demo / PetPal without TCP)
+
+There is **no registration HTTP API**: devices appear when the collar connects over TCP. For demos or UI checks, you can **preload one IMEI** at process startup:
+
+| Env var | Example | Purpose |
+|---------|---------|---------|
+| `SEED_DEVICE_IMEI` | `869469088344608` | IMEI shown in PetPal |
+| `SEED_DEVICE_LAT` | `34.985` | Latitude |
+| `SEED_DEVICE_LNG` | `33.845` | Longitude |
+
+All three must be set; otherwise seeding is skipped. After a real TCP uplink for that IMEI, live data replaces/merges as usual.
+
+**PM2 example**
+
+```bash
+SEED_DEVICE_IMEI=869469088344608 SEED_DEVICE_LAT=34.985 SEED_DEVICE_LNG=33.845 pm2 restart tracker --update-env
+```
+
+(or put the same variables in your `ecosystem.config.js` `env` block)
+
 ## HTTP API
 
 **Discovery:** `GET /` returns JSON listing every route.
