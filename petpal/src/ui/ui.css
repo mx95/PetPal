@@ -467,9 +467,11 @@
 }
 
 .pp-label {
+  display: block;
   font-size: 12px;
   font-weight: 700;
   color: #475467;
+  margin-bottom: 6px;
 }
 
 .pp-input {
@@ -615,6 +617,24 @@ select.pp-input:focus {
   color: #b42318;
   font-weight: 700;
   font-size: 13px;
+}
+
+.pp-passwordRules {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.pp-passwordRule {
+  color: #667085;
+  font-size: 13px;
+}
+
+.pp-passwordRule.is-valid {
+  color: #12b76a;
+  font-weight: 700;
 }
 
 .pp-badge {
@@ -3977,6 +3997,116 @@ select.pp-input:focus {
   font-size: 14px;
 }
 .pp-authPage__welcomeList li > span:first-child { font-size: 22px; line-height: 1; flex: 0 0 auto; }
+
+.pp-authFormCard {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.pp-authFormTitle {
+  font-size: 22px;
+}
+
+.pp-authFormSubtitle {
+  margin-bottom: 14px;
+  margin-top: -4px;
+}
+
+.pp-authFieldHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.pp-authTextBtn {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: #5b37ff;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.pp-authTextBtn:hover:not(:disabled) {
+  color: #4528d6;
+  text-decoration: underline;
+}
+
+.pp-authTextBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.pp-authRow {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 2px;
+}
+
+.pp-authInfo {
+  color: #027a48;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.pp-authTrust {
+  margin: 6px 0 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: #475467;
+  text-align: center;
+}
+
+.pp-authSwitchHint {
+  font-size: 13px;
+  margin-top: 6px;
+  text-align: center;
+}
+
+.pp-authPasswordWrap {
+  position: relative;
+}
+
+.pp-input--withRightIcon {
+  padding-right: 44px;
+}
+
+.pp-authIconBtn {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 28px;
+  height: 28px;
+  border: 0;
+  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border-radius: 8px;
+  font-size: 15px;
+  line-height: 1;
+}
+
+.pp-authIconBtn:hover {
+  background: rgba(91, 55, 255, 0.08);
+}
+
+.pp-authIconBtn:focus-visible {
+  outline: 2px solid rgba(91, 55, 255, 0.45);
+  outline-offset: 1px;
+}
+
+.pp-link--inline {
+  display: inline;
+  padding: 0;
+}
+
 @media (max-width: 720px) {
   .pp-authPage { grid-template-columns: 1fr; }
 }
