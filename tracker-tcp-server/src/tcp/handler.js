@@ -135,9 +135,15 @@ function createTcpServer({ port, store }) {
           const imei8 = frame.subarray(6, 14);
           let fixedReply = null;
           if (parsed.messageId === 0x20) {
-            const tsBytes = parsed.deviceStatus?.timestampBytes;
-            if (tsBytes && tsBytes.length === 4) {
-              fixedReply = Buffer.concat([Buffer.from([0x00]), Buffer.from(tsBytes)]);
+            const mode = String(process.env.ACK_FIXED_REPLY_MODE || "battery_time").toLowerCase();
+            if (mode === "short") {
+              fixedReply = Buffer.from([0x00]);
+            } else {
+              const tsBytes = parsed.batteryTimeBytes || parsed.deviceStatus?.timestampBytes;
+              // Many platforms expect [0x00][epochSeconds:4] for 0x20 ACKs.
+              if (tsBytes && tsBytes.length === 4) {
+                fixedReply = Buffer.concat([Buffer.from([0x00]), Buffer.from(tsBytes)]);
+              }
             }
           } else if (parsed.messageId === 0x21) {
             const p = parsed._payload;

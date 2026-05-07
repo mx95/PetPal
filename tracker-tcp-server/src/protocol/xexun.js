@@ -288,6 +288,21 @@ function parseXexunPacket(packet) {
   const payloadEnd = crcOffset;
   const payload = frame.subarray(payloadStart, payloadEnd);
 
+  // Some simulators (and firmwares) expect the platform ACK "fixed reply mark"
+  // for 0x20 uploads to include the 4-byte "battery time" found in a 0x66 block:
+  // [0x66][len][epochSeconds:4]...
+  let batteryTimeBytes = null;
+  let batteryTime = null;
+  const idx66 = payload.indexOf(0x66);
+  if (idx66 !== -1 && idx66 + 2 + 4 <= payload.length) {
+    const l = payload.readUInt8(idx66 + 1);
+    if (l >= 4 && idx66 + 2 + l <= payload.length) {
+      batteryTimeBytes = payload.subarray(idx66 + 2, idx66 + 6);
+      const v = batteryTimeBytes.readUInt32BE(0);
+      if (v >= 1500000000 && v <= 2200000000) batteryTime = new Date(v * 1000).toISOString();
+    }
+  }
+
   const blocks = flattenBlocks(payload);
 
   let deviceStatusBlock = null;
@@ -351,6 +366,8 @@ function parseXexunPacket(packet) {
     rawHex: toHex(frame),
     receivedAt: new Date().toISOString(),
     deviceStatus,
+    batteryTime,
+    batteryTimeBytes,
     gpsRaw: gpsBlock ? toHex(gpsBlock) : null,
     lbsRaw: lbsBlock ? toHex(lbsBlock) : null,
     gps,
