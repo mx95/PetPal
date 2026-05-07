@@ -289,17 +289,25 @@ function parseXexunPacket(packet) {
   const payload = frame.subarray(payloadStart, payloadEnd);
 
   // Some simulators (and firmwares) expect the platform ACK "fixed reply mark"
-  // for 0x20 uploads to include the 4-byte "battery time" found in a 0x66 block:
+  // for 0x20 uploads to include the 4-byte "battery time" found in a 0x66 TLV block:
   // [0x66][len][epochSeconds:4]...
+  //
+  // WARNING: 0x66 is also ASCII 'f', and payloads can include ASCII blobs.
+  // Only treat it as a battery-time block if the next 4 bytes decode to a plausible epoch seconds.
   let batteryTimeBytes = null;
   let batteryTime = null;
-  const idx66 = payload.indexOf(0x66);
-  if (idx66 !== -1 && idx66 + 2 + 4 <= payload.length) {
-    const l = payload.readUInt8(idx66 + 1);
-    if (l >= 4 && idx66 + 2 + l <= payload.length) {
-      batteryTimeBytes = payload.subarray(idx66 + 2, idx66 + 6);
-      const v = batteryTimeBytes.readUInt32BE(0);
-      if (v >= 1500000000 && v <= 2200000000) batteryTime = new Date(v * 1000).toISOString();
+  for (let i = 0; i + 2 + 4 <= payload.length; i++) {
+    if (payload.readUInt8(i) !== 0x66) continue;
+    const l = payload.readUInt8(i + 1);
+    if (l < 4) continue;
+    const end = i + 2 + l;
+    if (end > payload.length) continue;
+    const candidate = payload.subarray(i + 2, i + 6);
+    const v = candidate.readUInt32BE(0);
+    if (v >= 1500000000 && v <= 2200000000) {
+      batteryTimeBytes = candidate;
+      batteryTime = new Date(v * 1000).toISOString();
+      break;
     }
   }
 
