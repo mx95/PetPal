@@ -39,17 +39,24 @@ function parseDeviceStatusBlock(block) {
   if (block.length >= 7) out.chargingStatus = block.readUInt8(6);
   if (block.length >= 9) out.steps = block.readUInt16BE(7);
 
-  // Some firmwares include a unix timestamp elsewhere in the status block.
-  // Find the first plausible epoch seconds (BE u32).
+  // Some firmwares embed multiple epoch seconds in the status block.
+  // For ACK fixed-reply, platforms often expect the "battery time" field, which should be near "now".
+  // So: collect all plausible epochs and choose the one closest to current time.
+  const candidates = [];
   for (let i = 0; i + 4 <= block.length; i++) {
     const v = block.readUInt32BE(i);
     if (v >= 1500000000 && v <= 2200000000) {
-      out.timestampRaw = v;
-      out.timestamp = new Date(v * 1000).toISOString();
-      out.timestampBytes = block.subarray(i, i + 4);
-      if (i + 4 < block.length) out.deviceStateTail = toHex(block.subarray(i + 4));
-      break;
+      candidates.push({ v, i });
     }
+  }
+  if (candidates.length) {
+    const nowSec = Math.floor(Date.now() / 1000);
+    candidates.sort((a, b) => Math.abs(a.v - nowSec) - Math.abs(b.v - nowSec));
+    const best = candidates[0];
+    out.timestampRaw = best.v;
+    out.timestamp = new Date(best.v * 1000).toISOString();
+    out.timestampBytes = block.subarray(best.i, best.i + 4);
+    if (best.i + 4 < block.length) out.deviceStateTail = toHex(block.subarray(best.i + 4));
   }
   return out;
 }
