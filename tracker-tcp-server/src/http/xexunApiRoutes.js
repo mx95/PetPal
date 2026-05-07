@@ -39,12 +39,12 @@ function respondQueued(store, imei, command, res, extra = {}) {
  */
 function registerXexunHttpApi(app, store) {
   /** Discovery — lists every HTTP route this service exposes */
-  app.get("/", (_req, res) => {
+  app.get("/api", (_req, res) => {
     res.json({
       service: "tracker-tcp-server",
       docs: "Xexun binary protocol command text → queued 0x21 frames",
       endpoints: [
-        { method: "GET", path: "/", description: "This discovery JSON" },
+        { method: "GET", path: "/api", description: "This discovery JSON" },
         { method: "GET", path: "/devices", description: "All devices last seen" },
         { method: "GET", path: "/devices/:imei", description: "One device snapshot" },
         { method: "GET", path: "/devices/:imei/status", description: "Status-only snapshot" },

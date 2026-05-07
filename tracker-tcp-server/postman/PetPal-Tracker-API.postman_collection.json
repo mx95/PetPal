@@ -20,14 +20,14 @@
       "name": "HTTP API (frontend-safe)",
       "item": [
         {
-          "name": "GET / (discovery)",
+          "name": "GET /api (discovery)",
           "request": {
             "method": "GET",
             "header": [{ "key": "Accept", "value": "application/json" }],
             "url": {
-              "raw": "{{baseUrl}}/",
+              "raw": "{{baseUrl}}/api",
               "host": ["{{baseUrl}}"],
-              "path": [""]
+              "path": ["api"]
             }
           }
         },

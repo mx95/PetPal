@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+const fs = require("fs");
 const path = require("path");
 
 const { createMemoryStore } = require("./store/memory");
@@ -224,13 +225,24 @@ app.get("/position", (req, res) => {
 //
 // ✅ 2. STATIC FILES
 //
-app.use(express.static('/root/PetPal/petpal/build'));
+const WEB_BUILD_DIR =
+  process.env.WEB_BUILD_DIR || path.resolve(__dirname, "..", "..", "petpal", "build");
+
+if (fs.existsSync(WEB_BUILD_DIR)) {
+  app.use(express.static(WEB_BUILD_DIR));
+} else {
+  console.warn(`[web] build dir not found, skipping static: ${WEB_BUILD_DIR}`);
+}
 
 //
 // ✅ 3. SAFE FALLBACK (NO "*")
 // 
 app.use((req, res) => {
-  res.sendFile(path.resolve('/root/PetPal/petpal/build/index.html'));
+  const indexHtml = path.join(WEB_BUILD_DIR, "index.html");
+  if (fs.existsSync(indexHtml)) {
+    return res.sendFile(indexHtml);
+  }
+  return res.status(404).json({ error: "not_found" });
 });
 
 app.listen(HTTP_PORT, () => {
