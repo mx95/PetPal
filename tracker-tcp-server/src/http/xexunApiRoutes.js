@@ -14,11 +14,19 @@ function respondQueued(store, imei, command, res, extra = {}) {
   if (!command || typeof command !== "string") {
     return res.status(400).json({ error: "missing_command" });
   }
+
+  const requestedBy = res?.locals?.requestUser ?? null;
+  const queued =
+    typeof store.recordCommandQueued === "function"
+      ? store.recordCommandQueued({ imei, command, requestedBy })
+      : null;
+
   store.enqueueCommand(imei, command);
   return res.json({
     ok: true,
     imei,
     command,
+    commandId: queued?.id ?? null,
     pending: store.pendingCommands(imei),
     note: "Sent on next TCP uplink (0x20) after ACK.",
     ...extra

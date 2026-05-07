@@ -51,6 +51,9 @@ function sendNextQueuedCommand(socket, imei, store) {
     socket.write(frame);
     console.log(`[TCP] 0x21 → ${imei}: ${cmd}`);
     console.log("[TCP] CMD HEX:", toHex(frame));
+    if (typeof store.markCommandSent === "function") {
+      store.markCommandSent({ imei, command: cmd });
+    }
   } catch (e) {
     console.log("[TCP] 0x21 send failed:", e?.message || String(e));
     store.enqueueCommand(imei, cmd, { atFront: true });
@@ -123,6 +126,9 @@ function createTcpServer({ port, store }) {
 
         store.upsert(parsed.imei, parsed);
         store.bindSocket(parsed.imei, socket);
+        if (parsed.messageId === 0x21 && typeof store.markLatestCommandAcked === "function") {
+          store.markLatestCommandAcked({ imei: parsed.imei });
+        }
 
         // ACK (CRITICAL)
         try {

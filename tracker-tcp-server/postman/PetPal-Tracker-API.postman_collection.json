@@ -1,7 +1,7 @@
 {
   "info": {
     "_postman_id": "f2d7a7a6-8d18-4a3b-9b6f-6f6a0d2b4a31",
-    "name": "PetPal Tracker API (SQLite backend)",
+    "name": "PetPal Tracker API",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -17,54 +17,65 @@
   ],
   "item": [
     {
-      "name": "App API (frontend-safe) — /api/app",
+      "name": "HTTP API (frontend-safe)",
       "item": [
         {
-          "name": "GET /api/app/devices",
+          "name": "GET / (discovery)",
           "request": {
             "method": "GET",
             "header": [{ "key": "Accept", "value": "application/json" }],
             "url": {
-              "raw": "{{baseUrl}}/api/app/devices",
+              "raw": "{{baseUrl}}/",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "app", "devices"]
+              "path": [""]
             }
           }
         },
         {
-          "name": "GET /api/app/devices/:imei",
+          "name": "GET /devices",
           "request": {
             "method": "GET",
             "header": [{ "key": "Accept", "value": "application/json" }],
             "url": {
-              "raw": "{{baseUrl}}/api/app/devices/{{imei}}",
+              "raw": "{{baseUrl}}/devices",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "app", "devices", "{{imei}}"]
+              "path": ["devices"]
             }
           }
         },
         {
-          "name": "GET /api/app/position?deviceId=IMEI",
+          "name": "GET /devices/:imei",
           "request": {
             "method": "GET",
             "header": [{ "key": "Accept", "value": "application/json" }],
             "url": {
-              "raw": "{{baseUrl}}/api/app/position?deviceId={{imei}}",
+              "raw": "{{baseUrl}}/devices/{{imei}}",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "app", "position"],
-              "query": [{ "key": "deviceId", "value": "{{imei}}" }]
+              "path": ["devices", "{{imei}}"]
             }
           }
         },
         {
-          "name": "GET /api/app/history?deviceId=IMEI (last 100)",
+          "name": "GET /devices/:imei/status",
           "request": {
             "method": "GET",
             "header": [{ "key": "Accept", "value": "application/json" }],
             "url": {
-              "raw": "{{baseUrl}}/api/app/history?deviceId={{imei}}",
+              "raw": "{{baseUrl}}/devices/{{imei}}/status",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "app", "history"],
+              "path": ["devices", "{{imei}}", "status"]
+            }
+          }
+        },
+        {
+          "name": "GET /position?deviceId=IMEI",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/position?deviceId={{imei}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["position"],
               "query": [{ "key": "deviceId", "value": "{{imei}}" }]
             }
           }
@@ -72,22 +83,22 @@
       ]
     },
     {
-      "name": "Tracker API (device commands) — /api/tracker/commands",
+      "name": "Commands API (device commands) — /commands",
       "item": [
         {
-          "name": "GET /api/tracker/commands/pending/:imei",
+          "name": "GET /commands/pending/:imei",
           "request": {
             "method": "GET",
             "header": [{ "key": "Accept", "value": "application/json" }],
             "url": {
-              "raw": "{{baseUrl}}/api/tracker/commands/pending/{{imei}}",
+              "raw": "{{baseUrl}}/commands/pending/{{imei}}",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "tracker", "commands", "pending", "{{imei}}"]
+              "path": ["commands", "pending", "{{imei}}"]
             }
           }
         },
         {
-          "name": "POST /api/tracker/commands/queue (raw command)",
+          "name": "POST /commands/queue (raw command)",
           "request": {
             "method": "POST",
             "header": [
@@ -99,14 +110,14 @@
               "raw": "{\n  \"imei\": \"{{imei}}\",\n  \"command\": \"ip={{deviceHostOrDomain}}:{{tcpPort}}\"\n}\n"
             },
             "url": {
-              "raw": "{{baseUrl}}/api/tracker/commands/queue",
+              "raw": "{{baseUrl}}/commands/queue",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "tracker", "commands", "queue"]
+              "path": ["commands", "queue"]
             }
           }
         },
         {
-          "name": "POST /api/tracker/commands/ip-transfer (server switch)",
+          "name": "POST /commands/ip-transfer (server switch)",
           "request": {
             "method": "POST",
             "header": [
@@ -118,14 +129,14 @@
               "raw": "{\n  \"imei\": \"{{imei}}\",\n  \"host\": \"{{deviceHostOrDomain}}\",\n  \"port\": {{tcpPort}}\n}\n"
             },
             "url": {
-              "raw": "{{baseUrl}}/api/tracker/commands/ip-transfer",
+              "raw": "{{baseUrl}}/commands/ip-transfer",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "tracker", "commands", "ip-transfer"]
+              "path": ["commands", "ip-transfer"]
             }
           }
         },
         {
-          "name": "POST /api/tracker/commands/ip/query",
+          "name": "POST /commands/ip/query",
           "request": {
             "method": "POST",
             "header": [
@@ -134,14 +145,14 @@
             ],
             "body": { "mode": "raw", "raw": "{\n  \"imei\": \"{{imei}}\"\n}\n" },
             "url": {
-              "raw": "{{baseUrl}}/api/tracker/commands/ip/query",
+              "raw": "{{baseUrl}}/commands/ip/query",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "tracker", "commands", "ip", "query"]
+              "path": ["commands", "ip", "query"]
             }
           }
         },
         {
-          "name": "POST /api/tracker/commands/apn",
+          "name": "POST /commands/apn",
           "request": {
             "method": "POST",
             "header": [
@@ -150,14 +161,14 @@
             ],
             "body": { "mode": "raw", "raw": "{\n  \"imei\": \"{{imei}}\",\n  \"apn\": \"{{apn}}\"\n}\n" },
             "url": {
-              "raw": "{{baseUrl}}/api/tracker/commands/apn",
+              "raw": "{{baseUrl}}/commands/apn",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "tracker", "commands", "apn"]
+              "path": ["commands", "apn"]
             }
           }
         },
         {
-          "name": "POST /api/tracker/commands/tracking (by tk string)",
+          "name": "POST /commands/tracking (by tk string)",
           "request": {
             "method": "POST",
             "header": [
@@ -166,14 +177,14 @@
             ],
             "body": { "mode": "raw", "raw": "{\n  \"imei\": \"{{imei}}\",\n  \"tk\": \"2,60,2,300,1,1,20\"\n}\n" },
             "url": {
-              "raw": "{{baseUrl}}/api/tracker/commands/tracking",
+              "raw": "{{baseUrl}}/commands/tracking",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "tracker", "commands", "tracking"]
+              "path": ["commands", "tracking"]
             }
           }
         },
         {
-          "name": "POST /api/tracker/commands/tracking/query",
+          "name": "POST /commands/tracking/query",
           "request": {
             "method": "POST",
             "header": [
@@ -182,14 +193,14 @@
             ],
             "body": { "mode": "raw", "raw": "{\n  \"imei\": \"{{imei}}\"\n}\n" },
             "url": {
-              "raw": "{{baseUrl}}/api/tracker/commands/tracking/query",
+              "raw": "{{baseUrl}}/commands/tracking/query",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "tracker", "commands", "tracking", "query"]
+              "path": ["commands", "tracking", "query"]
             }
           }
         },
         {
-          "name": "POST /api/tracker/commands/power-off",
+          "name": "POST /commands/power-off",
           "request": {
             "method": "POST",
             "header": [
@@ -198,14 +209,14 @@
             ],
             "body": { "mode": "raw", "raw": "{\n  \"imei\": \"{{imei}}\"\n}\n" },
             "url": {
-              "raw": "{{baseUrl}}/api/tracker/commands/power-off",
+              "raw": "{{baseUrl}}/commands/power-off",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "tracker", "commands", "power-off"]
+              "path": ["commands", "power-off"]
             }
           }
         },
         {
-          "name": "POST /api/tracker/commands/restart",
+          "name": "POST /commands/restart",
           "request": {
             "method": "POST",
             "header": [
@@ -214,14 +225,14 @@
             ],
             "body": { "mode": "raw", "raw": "{\n  \"imei\": \"{{imei}}\"\n}\n" },
             "url": {
-              "raw": "{{baseUrl}}/api/tracker/commands/restart",
+              "raw": "{{baseUrl}}/commands/restart",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "tracker", "commands", "restart"]
+              "path": ["commands", "restart"]
             }
           }
         },
         {
-          "name": "POST /api/tracker/commands/message",
+          "name": "POST /commands/message",
           "request": {
             "method": "POST",
             "header": [
@@ -233,14 +244,14 @@
               "raw": "{\n  \"imei\": \"{{imei}}\",\n  \"text\": \"{{messageText}}\"\n}\n"
             },
             "url": {
-              "raw": "{{baseUrl}}/api/tracker/commands/message",
+              "raw": "{{baseUrl}}/commands/message",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "tracker", "commands", "message"]
+              "path": ["commands", "message"]
             }
           }
         },
         {
-          "name": "POST /api/tracker/commands/timezone",
+          "name": "POST /commands/timezone",
           "request": {
             "method": "POST",
             "header": [
@@ -249,14 +260,14 @@
             ],
             "body": { "mode": "raw", "raw": "{\n  \"imei\": \"{{imei}}\",\n  \"tz\": \"{{tz}}\"\n}\n" },
             "url": {
-              "raw": "{{baseUrl}}/api/tracker/commands/timezone",
+              "raw": "{{baseUrl}}/commands/timezone",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "tracker", "commands", "timezone"]
+              "path": ["commands", "timezone"]
             }
           }
         },
         {
-          "name": "POST /api/tracker/commands/timezone/query",
+          "name": "POST /commands/timezone/query",
           "request": {
             "method": "POST",
             "header": [
@@ -265,14 +276,14 @@
             ],
             "body": { "mode": "raw", "raw": "{\n  \"imei\": \"{{imei}}\"\n}\n" },
             "url": {
-              "raw": "{{baseUrl}}/api/tracker/commands/timezone/query",
+              "raw": "{{baseUrl}}/commands/timezone/query",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "tracker", "commands", "timezone", "query"]
+              "path": ["commands", "timezone", "query"]
             }
           }
         },
         {
-          "name": "POST /api/tracker/commands/ble (clear)",
+          "name": "POST /commands/ble (clear)",
           "request": {
             "method": "POST",
             "header": [
@@ -281,14 +292,14 @@
             ],
             "body": { "mode": "raw", "raw": "{\n  \"imei\": \"{{imei}}\",\n  \"clear\": true\n}\n" },
             "url": {
-              "raw": "{{baseUrl}}/api/tracker/commands/ble",
+              "raw": "{{baseUrl}}/commands/ble",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "tracker", "commands", "ble"]
+              "path": ["commands", "ble"]
             }
           }
         },
         {
-          "name": "POST /api/tracker/commands/wifi (clear)",
+          "name": "POST /commands/wifi (clear)",
           "request": {
             "method": "POST",
             "header": [
@@ -297,9 +308,9 @@
             ],
             "body": { "mode": "raw", "raw": "{\n  \"imei\": \"{{imei}}\",\n  \"clear\": true\n}\n" },
             "url": {
-              "raw": "{{baseUrl}}/api/tracker/commands/wifi",
+              "raw": "{{baseUrl}}/commands/wifi",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "tracker", "commands", "wifi"]
+              "path": ["commands", "wifi"]
             }
           }
         }

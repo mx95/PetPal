@@ -3,13 +3,20 @@ const cors = require("cors");
 const path = require("path");
 
 const { createMemoryStore } = require("./store/memory");
+const { createSqliteStore } = require("./store/sqliteStore");
 const { createTcpServer } = require("./tcp/handler");
 const { registerXexunHttpApi } = require("./http/xexunApiRoutes");
 
 const TCP_PORT = Number(process.env.TCP_PORT || 5001);
 const HTTP_PORT = Number(process.env.HTTP_PORT || 5002);
 
-const store = createMemoryStore();
+const SQLITE_PATH = process.env.SQLITE_PATH || "./data/petpal.sqlite";
+const PERSIST_TO_SQLITE = String(process.env.PERSIST_TO_SQLITE || "1") !== "0";
+
+const store = PERSIST_TO_SQLITE ? createSqliteStore({ dbPath: SQLITE_PATH }) : createMemoryStore();
+if (PERSIST_TO_SQLITE) {
+  console.log(`[db] SQLite enabled at ${store.sqlitePath}`);
+}
 
 /** Optional demo/fixture: preload one IMEI so GET /devices and /position work before TCP connects. */
 function seedSampleDeviceFromEnv() {
@@ -43,6 +50,37 @@ createTcpServer({ port: TCP_PORT, store });
 
 const app = express();
 app.use(express.json({ limit: "64kb" }));
+
+function safeJsonStringify(value) {
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return null;
+  }
+}
+
+// Request audit (http_requests)
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.locals.requestUser = req.header("x-user") || req.header("x-user-id") || null;
+
+  res.on("finish", () => {
+    if (typeof store.recordHttpRequest !== "function") return;
+    store.recordHttpRequest({
+      ts: new Date().toISOString(),
+      method: req.method,
+      path: req.path,
+      queryJson: safeJsonStringify(req.query),
+      bodyJson: safeJsonStringify(req.body),
+      ip: req.ip || req.socket?.remoteAddress || null,
+      userAgent: req.header("user-agent") || null,
+      statusCode: res.statusCode,
+      latencyMs: Date.now() - start
+    });
+  });
+
+  next();
+});
 
 function corsOrigin() {
   const raw = process.env.HTTP_CORS_ORIGIN;

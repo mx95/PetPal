@@ -92,9 +92,9 @@ exports.tracking = functions
           return;
         }
 
-        // Only one endpoint for now: /tracking/position?deviceId=…
+        // Accept both the Cloud Function route and the tracker HTTP API route.
         const path = (req.path || '').replace(/\/+$/, '');
-        if (path !== '' && path !== '/position') {
+        if (path !== '' && path !== '/position' && path !== '/api/app/position') {
           res.status(404).json({ error: 'not_found' });
           return;
         }
