@@ -1,14 +1,12 @@
 import React, { useEffect, useId, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
-import { applyMockAccountSeed, shouldAutoApplyDemoPack } from '../data/mockAccountSeed';
 import { useI18n } from '../i18n/I18nContext';
 import { useGame } from '../game/GameContext';
 import PetAvatar from '../components/PetAvatar';
 import PetCard from '../components/PetCard';
 import HubLeaderboardPeek from '../components/HubLeaderboardPeek';
 import { usePets } from '../pets/PetsContext';
-import { loadPetsJson } from '../pets/petsStorage';
 import { MAX_PHOTOS_PER_WALK_SESSION } from '../walk/walkPhotos';
 import { walkStreakDays } from '../walk/walkStats';
 import LifetimeAchievements from '../components/LifetimeAchievements';
@@ -121,29 +119,6 @@ export default function Dashboard() {
 
   const greetingName =
     user?.displayName?.trim() || (user?.email ? user.email.split('@')[0] : '') || '';
-
-  useEffect(() => {
-    if (!shouldAutoApplyDemoPack() || !user?.uid) return;
-    let existing = [];
-    try {
-      existing = JSON.parse(loadPetsJson(user.uid));
-    } catch {
-      existing = [];
-    }
-    if (!Array.isArray(existing) || existing.length > 0) return;
-    const flagKey = `petpal_auto_demo_pack_v3_${user.uid}`;
-    try {
-      if (localStorage.getItem(flagKey) === '1') return;
-      const r = applyMockAccountSeed(user.uid, user);
-      if (r.error === 'storage') return;
-      localStorage.setItem(flagKey, '1');
-      if (r.addedPets > 0 || r.feedPosts > 0) {
-        window.location.reload();
-      }
-    } catch {
-      // ignore
-    }
-  }, [user]);
 
   return (
     <div className="pp-feed pp-activityHub">

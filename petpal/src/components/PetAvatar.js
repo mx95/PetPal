@@ -2,15 +2,16 @@ import React from 'react';
 import { usePets } from '../pets/PetsContext';
 
 /**
- * @param {{ pet: { categoryId: string, photoDataUrl?: string, name?: string }, size?: number, className?: string }} props
+ * @param {{ pet: { categoryId: string, photoDataUrl?: string, photoUrl?: string, name?: string }, size?: number, className?: string }} props
  */
 export default function PetAvatar({ pet, size = 48, className = '' }) {
   const { getCategory } = usePets();
   const c = getCategory(pet);
-  if (pet.photoDataUrl) {
+  const src = pet.photoUrl || pet.photoDataUrl;
+  if (src) {
     return (
       <img
-        src={pet.photoDataUrl}
+        src={src}
         alt=""
         width={size}
         height={size}

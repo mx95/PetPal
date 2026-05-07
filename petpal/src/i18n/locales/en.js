@@ -359,7 +359,7 @@ const en = {
     title: 'My pets',
     badge: 'Pets',
     intro:
-      'Add each pet with type, optional colours, coat, age, and a short description, plus an optional profile photo. One GPS device id per pet on the tracker. Premium lost pet alerts use your photo and details for faster contact.',
+      'Here you can view all pets registered on the PetPal platform under your profile. You can search, edit, add, import, and export records. Premium lost pet alerts use your photo and details for faster contact.',
     addTitle: 'Add a pet',
     name: 'Name',
     category: 'Category',

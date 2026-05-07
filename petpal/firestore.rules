@@ -54,6 +54,11 @@ service cloud.firestore {
         && request.resource.data.email == resource.data.email;
 
       allow delete: if false;
+
+      // Pets: private per-user collection.
+      match /pets/{petId} {
+        allow read, create, update, delete: if request.auth != null && request.auth.uid == userId;
+      }
     }
 
     // Unique account/username reservation for race-safe signup.
