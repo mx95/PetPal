@@ -2,6 +2,7 @@ const net = require("net");
 const {
   parseXexunPacket,
   buildAck,
+  buildAckFrame,
   buildServerCommand021,
   toHex,
   isValidCrc
@@ -134,18 +135,7 @@ function createTcpServer({ port, store }) {
         try {
           const imei8 = frame.subarray(6, 14);
           let fixedReply = null;
-          if (parsed.messageId === 0x20) {
-            const mode = String(process.env.ACK_FIXED_REPLY_MODE || "battery_time").toLowerCase();
-            if (mode === "short") {
-              fixedReply = Buffer.from([0x00]);
-            } else {
-              const tsBytes = parsed.batteryTimeBytes || parsed.deviceStatus?.timestampBytes;
-              // Many platforms expect [0x00][epochSeconds:4] for 0x20 ACKs.
-              if (tsBytes && tsBytes.length === 4) {
-                fixedReply = Buffer.concat([Buffer.from([0x00]), Buffer.from(tsBytes)]);
-              }
-            }
-          } else if (parsed.messageId === 0x21) {
+          if (parsed.messageId === 0x21) {
             const p = parsed._payload;
             let body = null;
             if (Buffer.isBuffer(p) && p.length >= 2 && p.readUInt8(0) === 0x74) {
@@ -163,15 +153,21 @@ function createTcpServer({ port, store }) {
               fixedReply = Buffer.concat([trimmed, Buffer.from(",10", "ascii")]);
             }
           }
-          const ack = buildAck({
-            version: parsed.version,
-            messageId: parsed.messageId,
-            sequence: parsed.sequence,
-            imei8,
-            fixedReply
-          });
-          socket.write(ack);
-          console.log("[TCP] ACK HEX:", toHex(ack));
+          if (parsed.messageId === 0x20) {
+            const ackHex = buildAck({ sequence: parsed.sequence, imei: imei8 });
+            socket.write(Buffer.from(ackHex, "hex"));
+            console.log("[TCP] ACK HEX (FINAL CORRECT):", ackHex);
+          } else {
+            const ack = buildAckFrame({
+              version: parsed.version,
+              messageId: parsed.messageId,
+              sequence: parsed.sequence,
+              imei8,
+              fixedReply
+            });
+            socket.write(ack);
+            console.log("[TCP] ACK HEX:", toHex(ack));
+          }
 
           // After successful uplink (0x20), push one queued server command (0x21), per Xexun API.
           if (parsed.messageId === 0x20) {

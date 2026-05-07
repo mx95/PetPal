@@ -18,6 +18,8 @@ function decodeImeiFromBcd(imei8) {
 
 const { crc16ccittFalse, u16be } = require("./crc16x25");
 
+const FIXED_REPLY_MARK_0X20 = Buffer.from([0x00, 0x69, 0xfa, 0x2c, 0x26]);
+
 function parseDeviceStatusBlock(block) {
   // Per Xexun spec (0x6A status body), the first fields are:
   // battery(U8), networkDuration(U16), signal(U8), trackingSeq(U8),
@@ -434,7 +436,7 @@ function buildServerCommand021({ version = 0x03, sequence = 1, imei, commandAsci
   return buf;
 }
 
-function buildAck({ version = 0x03, messageId, sequence, imei8, fixedReply }) {
+function buildAckFrame({ version = 0x03, messageId, sequence, imei8, fixedReply }) {
   // ACK format based on your screenshots:
   // FC <len:2> <ver:1> <msgId:1> <seq:1> <imei8> <fixedReply:n> <crc:2> CF
   //
@@ -463,9 +465,30 @@ function buildAck({ version = 0x03, messageId, sequence, imei8, fixedReply }) {
   return buf;
 }
 
+/**
+ * Final correct ACK builder (0x20 upload):
+ * - fixed reply mark is constant: 00 69 FA 2C 26
+ * - sequence must match the incoming packet
+ * - IMEI must match exactly (8-byte BCD)
+ * - CRC-16/CCITT-FALSE, big-endian, coverage: version..payload
+ * @returns {string} hex string (uppercase)
+ */
+function buildAck({ sequence, imei, version = 0x03, messageId = 0x20 }) {
+  const imei8 = Buffer.isBuffer(imei) ? imei : encodeImeiBcd(imei);
+  const frame = buildAckFrame({
+    version,
+    messageId,
+    sequence,
+    imei8,
+    fixedReply: FIXED_REPLY_MARK_0X20
+  });
+  return toHex(frame);
+}
+
 module.exports = {
   parseXexunPacket,
   buildAck,
+  buildAckFrame,
   buildServerCommand021,
   encodeImeiBcd,
   decodeImeiFromBcd,
