@@ -55,9 +55,10 @@ service cloud.firestore {
 
       allow delete: if false;
 
-      // Pets: private per-user collection.
+      // Pets: public read for NFC/public pet profile pages; owner-only writes.
       match /pets/{petId} {
-        allow read, create, update, delete: if request.auth != null && request.auth.uid == userId;
+        allow read: if true;
+        allow create, update, delete: if request.auth != null && request.auth.uid == userId;
       }
     }
 
@@ -67,6 +68,13 @@ service cloud.firestore {
       allow create, update: if request.auth != null
         && request.resource.data.uid == request.auth.uid;
       allow delete: if false;
+    }
+
+    // Public profile docs used by NFC/QR pages (sanitized fields only).
+    match /publicPets/{publicId} {
+      allow read: if true;
+      allow create: if request.auth != null && request.resource.data.ownerUid == request.auth.uid;
+      allow update, delete: if request.auth != null && resource.data.ownerUid == request.auth.uid;
     }
 
     // Stray / found pets available for adoption — visible to signed-in users; only reporter edits their doc.

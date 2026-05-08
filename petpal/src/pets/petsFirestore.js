@@ -3,16 +3,66 @@ import {
   collection,
   deleteDoc,
   doc,
+  getDoc,
   onSnapshot,
   orderBy,
   query,
   serverTimestamp,
+  setDoc,
   updateDoc,
 } from 'firebase/firestore';
 import { getDb, isFirebaseConfigured } from '../firebase';
 
 function petsCol(uid) {
   return collection(getDb(), 'users', uid, 'pets');
+}
+
+function publicPetsCol() {
+  return collection(getDb(), 'publicPets');
+}
+
+function buildPublicPetPayload(uid, petId, x) {
+  const friendlyArr = Array.isArray(x?.friendlyWith) ? x.friendlyWith.map((v) => String(v || '')) : [];
+  return {
+    ownerUid: uid,
+    petId,
+    name: String(x?.name || ''),
+    breed: typeof x?.breed === 'string' ? x.breed : '',
+    gender: typeof x?.gender === 'string' ? x.gender : 'male',
+    dateOfBirth: typeof x?.dateOfBirth === 'string' ? x.dateOfBirth : '',
+    colorScheme: typeof x?.colorScheme === 'string' ? x.colorScheme : '',
+    microchipNo: typeof x?.microchipNo === 'string' ? x.microchipNo : '',
+    identifyingMarks: typeof x?.identifyingMarks === 'string' ? x.identifyingMarks : '',
+    medicalNotes: typeof x?.medicalNotes === 'string' ? x.medicalNotes : '',
+    veterinarian: typeof x?.veterinarian === 'string' ? x.veterinarian : '',
+    photoUrl: typeof x?.photoUrl === 'string' ? x.photoUrl : '',
+    ownerName: typeof x?.ownerName === 'string' ? x.ownerName : '',
+    ownerPhone: typeof x?.ownerPhone === 'string' ? x.ownerPhone : '',
+    ownerEmail: typeof x?.ownerEmail === 'string' ? x.ownerEmail : '',
+    ownerLocation: typeof x?.ownerLocation === 'string' ? x.ownerLocation : '',
+    ownerMapsQuery: typeof x?.ownerMapsQuery === 'string' ? x.ownerMapsQuery : '',
+    vetName: typeof x?.vetName === 'string' ? x.vetName : '',
+    vetPhone: typeof x?.vetPhone === 'string' ? x.vetPhone : '',
+    vetEmail: typeof x?.vetEmail === 'string' ? x.vetEmail : '',
+    vetLocation: typeof x?.vetLocation === 'string' ? x.vetLocation : '',
+    vetMapsQuery: typeof x?.vetMapsQuery === 'string' ? x.vetMapsQuery : '',
+    owner: {
+      name: typeof x?.ownerName === 'string' ? x.ownerName : '',
+      phone1: typeof x?.ownerPhone === 'string' ? x.ownerPhone : '',
+      email: typeof x?.ownerEmail === 'string' ? x.ownerEmail : '',
+      location: typeof x?.ownerLocation === 'string' ? x.ownerLocation : '',
+      mapsQuery: typeof x?.ownerMapsQuery === 'string' ? x.ownerMapsQuery : '',
+    },
+    vet: {
+      name: typeof x?.vetName === 'string' ? x.vetName : '',
+      phone1: typeof x?.vetPhone === 'string' ? x.vetPhone : '',
+      email: typeof x?.vetEmail === 'string' ? x.vetEmail : '',
+      location: typeof x?.vetLocation === 'string' ? x.vetLocation : '',
+      mapsQuery: typeof x?.vetMapsQuery === 'string' ? x.vetMapsQuery : '',
+    },
+    friendlyWith: friendlyArr,
+    updatedAt: serverTimestamp(),
+  };
 }
 
 function tsToIso(v) {
@@ -61,6 +111,7 @@ export function subscribePets(uid, onNext, onError) {
           ...(typeof x.linkedTracker === 'boolean'
             ? { linkedTracker: x.linkedTracker }
             : { linkedTracker: Boolean(x.trackingDeviceId) }),
+          ...(typeof x.publicProfileId === 'string' ? { publicProfileId: x.publicProfileId } : {}),
         };
       });
       onNext(rows);
@@ -73,23 +124,51 @@ export function subscribePets(uid, onNext, onError) {
 
 export async function createPet(uid, pet) {
   if (!isFirebaseConfigured() || !uid) return;
+  const publicRef = doc(publicPetsCol());
   const refDoc = await addDoc(petsCol(uid), {
     ...pet,
+    publicProfileId: publicRef.id,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   });
+
+  await setDoc(publicRef, buildPublicPetPayload(uid, refDoc.id, pet));
   return refDoc.id;
 }
 
 export async function patchPet(uid, petId, patch) {
   if (!isFirebaseConfigured() || !uid || !petId) return;
-  await updateDoc(doc(getDb(), 'users', uid, 'pets', petId), {
+  const petRef = doc(getDb(), 'users', uid, 'pets', petId);
+  await updateDoc(petRef, {
     ...patch,
     updatedAt: serverTimestamp(),
   });
+
+  const snap = await getDoc(petRef);
+  if (snap.exists()) {
+    const current = snap.data() || {};
+    let publicId = typeof current.publicProfileId === 'string' && current.publicProfileId.trim() ? current.publicProfileId : '';
+    if (!publicId) {
+      publicId = doc(publicPetsCol()).id;
+      await updateDoc(petRef, {
+        publicProfileId: publicId,
+        updatedAt: serverTimestamp(),
+      });
+    }
+
+    await setDoc(doc(getDb(), 'publicPets', publicId), buildPublicPetPayload(uid, petId, current), { merge: true });
+  }
 }
 
 export async function deletePet(uid, petId) {
   if (!isFirebaseConfigured() || !uid || !petId) return;
-  await deleteDoc(doc(getDb(), 'users', uid, 'pets', petId));
+  const petRef = doc(getDb(), 'users', uid, 'pets', petId);
+  const snap = await getDoc(petRef);
+  await deleteDoc(petRef);
+  if (snap.exists()) {
+    const publicId = snap.data()?.publicProfileId;
+    if (typeof publicId === 'string' && publicId.trim()) {
+      await deleteDoc(doc(getDb(), 'publicPets', publicId));
+    }
+  }
 }

@@ -20,6 +20,7 @@ import Register from './Pages/Register';
 import TermsOfService from './Pages/TermsOfService';
 import Documentation from './Pages/Documentation';
 import HomeScreen from './Pages/HomeScreen';
+import PublicPetProfile from './Pages/PublicPetProfile';
 import Profile from './Pages/Profile';
 import UserAvatar from './components/UserAvatar';
 import './ui/ui.css';
@@ -172,6 +173,10 @@ function TopNav() {
                     <span aria-hidden>👤</span>
                     <span>{t('nav.profile')}</span>
                   </Link>
+                  <Link className="pp-navAccountItem" to="/pets" role="menuitem" onClick={() => setAccountMenuOpen(false)}>
+                    <span aria-hidden>🐾</span>
+                    <span>{t('nav.myPets')}</span>
+                  </Link>
                   <button type="button" className="pp-navAccountItem pp-navAccountItem--logout" role="menuitem" onClick={handleSignOut}>
                     <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                       <path d="M4 3H14V21H4V3Z" stroke="currentColor" strokeWidth="1.8" />
@@ -198,6 +203,8 @@ function App() {
       <div className="pp-main">
         <Routes>
           <Route path="/" element={<HomeScreen />} />
+          <Route path="/pet/:id" element={<PublicPetProfile />} />
+          <Route path="/pet" element={<PublicPetProfile />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route

@@ -402,10 +402,22 @@ export default function MyPets() {
                 e.target.value = '';
               }}
             />
-            <button type="button" className="pp-btn" title="Import CSV" aria-label="Import CSV" onClick={() => importRef.current?.click()}>
+            <button
+              type="button"
+              className="pp-btn pp-tooltipBtn"
+              data-tooltip={t('myPets.importCsv')}
+              aria-label={t('myPets.importCsv')}
+              onClick={() => importRef.current?.click()}
+            >
               <IconUpload />
             </button>
-            <button type="button" className="pp-btn" title="Export CSV" aria-label="Export CSV" onClick={exportCsv}>
+            <button
+              type="button"
+              className="pp-btn pp-tooltipBtn"
+              data-tooltip={t('myPets.exportCsv')}
+              aria-label={t('myPets.exportCsv')}
+              onClick={exportCsv}
+            >
               <IconDownload />
             </button>
           </div>
@@ -645,28 +657,30 @@ export default function MyPets() {
                         <div className="pp-petActions" style={{ marginLeft: 12 }}>
                           <button
                             type="button"
-                            className="pp-btn pp-iconBtn pp-iconBtn--outline"
-                            onClick={() => setFullscreenPhotoUrl(p.photoUrl || p.photoDataUrl || '')}
-                            aria-label="View image"
-                            title="View photo"
-                            disabled={!p.photoUrl && !p.photoDataUrl}
+                            className="pp-btn pp-iconBtn pp-iconBtn--outline pp-tooltipBtn"
+                            data-tooltip={t('myPets.viewPublicProfile')}
+                            onClick={() => {
+                              const publicId = p.publicProfileId || p.id;
+                              window.location.href = `/pet/${encodeURIComponent(publicId)}`;
+                            }}
+                            aria-label={t('myPets.viewPublicProfile')}
                           >
                             <IconEye />
                           </button>
                           <button
                             type="button"
-                            className="pp-btn pp-iconBtn pp-iconBtn--outline"
+                            className="pp-btn pp-iconBtn pp-iconBtn--outline pp-tooltipBtn"
+                            data-tooltip={t('myPets.edit')}
                             onClick={() => startEdit(p)}
                             aria-label={t('myPets.edit')}
-                            title="Edit pet"
                           >
                             <IconPencil />
                           </button>
                           <button
                             type="button"
-                            className="pp-btn pp-iconBtn pp-iconBtn--outline pp-iconBtn--danger"
+                            className="pp-btn pp-iconBtn pp-iconBtn--outline pp-iconBtn--danger pp-tooltipBtn"
+                            data-tooltip={t('myPets.remove')}
                             aria-label={t('myPets.remove')}
-                            title="Remove pet"
                             onClick={async () => {
                               if (!window.confirm(t('myPets.removeConfirm', { name: p.name }))) return;
                               await deletePetPhoto({ photoStoragePath: p.photoStoragePath, photoUrl: p.photoUrl });

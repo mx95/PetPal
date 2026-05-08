@@ -1866,6 +1866,7 @@ select.pp-input:focus {
   gap: 8px;
   min-height: 38px;
   padding: 0 10px;
+  border: 1px solid rgba(16, 24, 40, 0.14);
   border-radius: 12px;
   background: #fff;
   color: #667085;
@@ -1919,6 +1920,57 @@ select.pp-input:focus {
   background: rgba(220, 38, 38, 0.1);
   border-color: rgba(220, 38, 38, 0.35);
   color: #b91c1c;
+}
+
+/* Frontend-rendered tooltips (not native OS title tooltips) */
+.pp-tooltipBtn {
+  position: relative;
+}
+
+.pp-tooltipBtn::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  transform: translateX(-50%) translateY(4px);
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: rgba(16, 24, 40, 0.94);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 120ms ease, transform 120ms ease, visibility 120ms ease;
+  z-index: 40;
+}
+
+.pp-tooltipBtn::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 2px);
+  transform: translateX(-50%) translateY(4px);
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 6px solid rgba(16, 24, 40, 0.94);
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 120ms ease, transform 120ms ease, visibility 120ms ease;
+  z-index: 40;
+}
+
+.pp-tooltipBtn:hover::after,
+.pp-tooltipBtn:hover::before,
+.pp-tooltipBtn:focus-visible::after,
+.pp-tooltipBtn:focus-visible::before {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
 }
 
 /* MyPets: Add Pet centered popup */
@@ -3683,6 +3735,100 @@ select.pp-input:focus {
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+.pp-publicPet {
+  min-height: 100vh;
+  background: #f8fafc;
+}
+
+.pp-publicPet__top {
+  display: flex;
+  justify-content: flex-end;
+  padding: 10px 12px 0;
+}
+
+.pp-publicPet__wrap {
+  max-width: 440px;
+  margin: 0 auto;
+  padding: 8px 12px 28px;
+}
+
+.pp-publicPet__state { text-align: center; color: #667085; }
+.pp-publicPet__state--error { color: #b42318; }
+
+.pp-publicPet__hero,
+.pp-publicPet__card {
+  background: #fff;
+  border: 1px solid rgba(16,24,40,0.08);
+  border-radius: 16px;
+  padding: 14px;
+  margin-bottom: 12px;
+}
+
+.pp-publicPet__hero { text-align: center; }
+.pp-publicPet__photo {
+  width: 108px;
+  height: 108px;
+  object-fit: cover;
+  border-radius: 999px;
+  margin: 2px auto 10px;
+  display: block;
+}
+
+.pp-publicPet__kv { margin: 0; }
+.pp-publicPet__kvRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(16,24,40,0.06);
+}
+.pp-publicPet__kvRow:last-child { border-bottom: 0; }
+.pp-publicPet__kvRow dt { color: #667085; }
+.pp-publicPet__kvRow dd { margin: 0; text-align: right; font-weight: 600; }
+
+.pp-publicPet__actions { display: grid; gap: 8px; margin-top: 10px; }
+.pp-publicPet__person { margin: 0; font-weight: 700; }
+.pp-publicPet__meta {
+  margin-top: 10px;
+  border: 1px solid rgba(16,24,40,0.08);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.pp-publicPet__metaRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 10px;
+  border-bottom: 1px solid rgba(16,24,40,0.06);
+  font-size: 13px;
+}
+.pp-publicPet__metaRow:last-child { border-bottom: 0; }
+.pp-publicPet__metaLabel { color: #667085; font-weight: 600; }
+.pp-publicPet__metaValue { color: #101828; font-weight: 700; text-align: right; }
+.pp-publicPet__tips { margin: 0; padding-left: 18px; display: grid; gap: 6px; }
+.pp-publicPet__nfc,
+.pp-publicPet__footer,
+.pp-publicPet__homeLink { text-align: center; color: #667085; }
+.pp-publicPet__footer { font-weight: 700; color: #101828; }
+
+@media (max-width: 420px) {
+  .pp-publicPet__wrap {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .pp-publicPet__hero,
+  .pp-publicPet__card {
+    border-radius: 14px;
+    padding: 12px;
+  }
+
+  .pp-publicPet__photo {
+    width: 96px;
+    height: 96px;
   }
 }
 
