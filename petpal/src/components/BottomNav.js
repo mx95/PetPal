@@ -60,7 +60,11 @@ export default function BottomNav() {
       key={item.key}
       to={item.to}
       end={item.end}
-      className={({ isActive }) => `pp-bottomNav__item ${isActive ? 'pp-bottomNav__item--on' : ''}`}
+      className={({ isActive }) =>
+        `pp-bottomNav__item ${item.key === 'profile' ? 'pp-bottomNav__item--profile' : ''} ${
+          isActive ? 'pp-bottomNav__item--on' : ''
+        }`
+      }
       aria-label={t(item.labelKey)}
       title={t(item.labelKey)}
     >
