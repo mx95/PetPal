@@ -466,41 +466,18 @@ function buildAckFrame({ version = 0x03, messageId, sequence, imei8, fixedReply 
   return buf;
 }
 
-/**
- * Final correct ACK builder (0x20 upload):
- * - fixed reply mark is constant: 00 69 FA 2C 26
- * - sequence must match the incoming packet
- * - IMEI must match exactly (8-byte BCD)
- * - CRC-16/CCITT-FALSE, big-endian, coverage: version..payload
- * @returns {string} hex string (uppercase)
- */
-function buildAck({ sequence, imei, timestampBytes, version = 0x03, messageId = 0x20 }) {
+function buildAck({ sequence, imei, version = 0x03, messageId = 0x20 }) {
   const imei8 = Buffer.isBuffer(imei) ? imei : encodeImeiBcd(imei);
-  const ts = Buffer.from(timestampBytes || []);
-  if (ts.length !== 4) {
-    throw new Error("buildAck requires timestampBytes length=4");
-  }
-  const incomingTs = ts.readUInt32BE(0);
-  const replyTs = (incomingTs + 1) >>> 0;
-  const replyTsBytes = Buffer.alloc(4);
-  replyTsBytes.writeUInt32BE(replyTs, 0);
-  const fixed = Buffer.concat([Buffer.from([0x00]), replyTsBytes]);
+
   const payload = Buffer.concat([
     Buffer.from([version & 0xff, messageId & 0xff, sequence & 0xff]),
-    Buffer.from(imei8),
-    Buffer.from(fixed)
+    imei8,
+    Buffer.from([0x00])
   ]);
 
-  // Debug logs requested: incoming timestamp, computed reply timestamp, final CRC input.
-  console.log("[ACK TS INCOMING]:", toHex(ts));
-  console.log("[ACK TS REPLY (+1)]:", toHex(replyTsBytes));
-  const payloadHex = toHex(payload);
+  const length = payload.length; // must be 0x0C
   const crcVal = crc16ccittFalse(payload);
-  const crcHex = crcVal.toString(16).toUpperCase().padStart(4, "0");
-  console.log("[CRC INPUT HEX]:", payloadHex);
-  console.log("[CRC OUTPUT]:", crcHex);
 
-  const length = payload.length; // should be 0x10
   const frame = Buffer.concat([
     Buffer.from([0xfc, 0x00, length & 0xff]),
     payload,
@@ -508,7 +485,8 @@ function buildAck({ sequence, imei, timestampBytes, version = 0x03, messageId = 
     Buffer.from([0xcf])
   ]);
 
-  return toHex(frame);
+  console.log("[ACK FINAL HEX]:", frame.toString("hex").toUpperCase());
+  return frame;
 }
 
 module.exports = {

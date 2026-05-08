@@ -154,24 +154,8 @@ function createTcpServer({ port, store }) {
             }
           }
           if (parsed.messageId === 0x20) {
-            const gpsTsBytes =
-              parsed.gps?.timestampRaw != null
-                ? (() => {
-                    const b = Buffer.alloc(4);
-                    b.writeUInt32BE(parsed.gps.timestampRaw >>> 0, 0);
-                    return b;
-                  })()
-                : null;
-
-            const tsBytes = parsed.batteryTimeBytes || parsed.deviceStatus?.timestampBytes || gpsTsBytes;
-
-            if (!tsBytes || tsBytes.length !== 4) {
-              throw new Error("Missing timestampBytes for 0x20 ACK");
-            }
-
-            const ackHex = buildAck({ sequence: parsed.sequence, imei: imei8, timestampBytes: tsBytes });
-            socket.write(Buffer.from(ackHex, "hex"));
-            console.log("[TCP] ACK HEX (FINAL CORRECT):", ackHex);
+            const ack = buildAck({ sequence: parsed.sequence, imei: imei8 });
+            socket.write(ack);
           } else {
             const ack = buildAckFrame({
               version: parsed.version,
