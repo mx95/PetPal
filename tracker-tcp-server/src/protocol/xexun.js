@@ -475,13 +475,28 @@ function buildAckFrame({ version = 0x03, messageId, sequence, imei8, fixedReply 
  */
 function buildAck({ sequence, imei, version = 0x03, messageId = 0x20 }) {
   const imei8 = Buffer.isBuffer(imei) ? imei : encodeImeiBcd(imei);
-  const frame = buildAckFrame({
-    version,
-    messageId,
-    sequence,
-    imei8,
-    fixedReply: FIXED_REPLY_MARK_0X20
-  });
+  const fixed = FIXED_REPLY_MARK_0X20;
+  const payload = Buffer.concat([
+    Buffer.from([version & 0xff, messageId & 0xff, sequence & 0xff]),
+    Buffer.from(imei8),
+    Buffer.from(fixed)
+  ]);
+
+  // Debug logs requested: CRC over payload only.
+  const payloadHex = toHex(payload);
+  const crcVal = crc16ccittFalse(payload);
+  const crcHex = crcVal.toString(16).toUpperCase().padStart(4, "0");
+  console.log("[CRC INPUT HEX]:", payloadHex);
+  console.log("[CRC OUTPUT]:", crcHex);
+
+  const length = payload.length; // should be 0x10
+  const frame = Buffer.concat([
+    Buffer.from([0xfc, 0x00, length & 0xff]),
+    payload,
+    u16be(crcVal),
+    Buffer.from([0xcf])
+  ]);
+
   return toHex(frame);
 }
 
