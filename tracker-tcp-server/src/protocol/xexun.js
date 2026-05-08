@@ -18,6 +18,7 @@ function decodeImeiFromBcd(imei8) {
 
 const { crc16ccittFalse, u16be } = require("./crc16x25");
 
+// Kept for backward-compat in other callers, but 0x20 ACK should derive marker from incoming timestamp (+1).
 const FIXED_REPLY_MARK_0X20 = Buffer.from([0x00, 0x69, 0xfa, 0x2c, 0x26]);
 
 function parseDeviceStatusBlock(block) {
@@ -473,16 +474,26 @@ function buildAckFrame({ version = 0x03, messageId, sequence, imei8, fixedReply 
  * - CRC-16/CCITT-FALSE, big-endian, coverage: version..payload
  * @returns {string} hex string (uppercase)
  */
-function buildAck({ sequence, imei, version = 0x03, messageId = 0x20 }) {
+function buildAck({ sequence, imei, timestampBytes, version = 0x03, messageId = 0x20 }) {
   const imei8 = Buffer.isBuffer(imei) ? imei : encodeImeiBcd(imei);
-  const fixed = FIXED_REPLY_MARK_0X20;
+  const ts = Buffer.from(timestampBytes || []);
+  if (ts.length !== 4) {
+    throw new Error("buildAck requires timestampBytes length=4");
+  }
+  const incomingTs = ts.readUInt32BE(0);
+  const replyTs = (incomingTs + 1) >>> 0;
+  const replyTsBytes = Buffer.alloc(4);
+  replyTsBytes.writeUInt32BE(replyTs, 0);
+  const fixed = Buffer.concat([Buffer.from([0x00]), replyTsBytes]);
   const payload = Buffer.concat([
     Buffer.from([version & 0xff, messageId & 0xff, sequence & 0xff]),
     Buffer.from(imei8),
     Buffer.from(fixed)
   ]);
 
-  // Debug logs requested: CRC over payload only.
+  // Debug logs requested: incoming timestamp, computed reply timestamp, final CRC input.
+  console.log("[ACK TS INCOMING]:", toHex(ts));
+  console.log("[ACK TS REPLY (+1)]:", toHex(replyTsBytes));
   const payloadHex = toHex(payload);
   const crcVal = crc16ccittFalse(payload);
   const crcHex = crcVal.toString(16).toUpperCase().padStart(4, "0");
