@@ -493,6 +493,10 @@ function buildAck({ sequence, imei, timestampBytes, version = 0x03, messageId = 
     Buffer.from([0xcf])
   ]);
 
+  console.log("[ACK TS INCOMING]:", ts.toString("hex").toUpperCase());
+  console.log("[ACK TS REPLY (+1)]:", replyTs.toString("hex").toUpperCase());
+  console.log("[CRC INPUT HEX]:", payload.toString("hex").toUpperCase());
+  console.log("[CRC OUTPUT]:", u16be(crcVal).toString("hex").toUpperCase());
   console.log("[ACK FINAL HEX]:", frame.toString("hex").toUpperCase());
   return frame;
 }

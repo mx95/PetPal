@@ -155,7 +155,26 @@ function createTcpServer({ port, store }) {
           }
           if (parsed.messageId === 0x20) {
             const rawPayload = frame.subarray(14, frame.length - 3); // payload only (no CRC+CF)
-            const timestampBytes = rawPayload.subarray(0, 4);
+
+            // Provider-confirmed: use "Successful Tracking Time" from the FIRST GPS block (0x64):
+            // [0x64][len][timestamp:4]...
+            let timestampBytes = null;
+            for (let i = 0; i + 6 <= rawPayload.length; i++) {
+              if (rawPayload.readUInt8(i) !== 0x64) continue;
+              const l = rawPayload.readUInt8(i + 1);
+              if (l < 4) continue;
+              const end = i + 2 + l;
+              if (end > rawPayload.length) continue;
+              timestampBytes = rawPayload.subarray(i + 2, i + 6);
+              break;
+            }
+
+            if (!timestampBytes || timestampBytes.length !== 4) {
+              throw new Error("Missing 0x64 Successful Tracking Time (timestampBytes) for 0x20 ACK");
+            }
+
+            console.log("[ACK TS SOURCE 0x64]:", timestampBytes.toString("hex").toUpperCase());
+
             const ack = buildAck({ sequence: parsed.sequence, imei: imei8, timestampBytes });
             socket.write(ack);
           } else {
