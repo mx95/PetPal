@@ -154,7 +154,9 @@ function createTcpServer({ port, store }) {
             }
           }
           if (parsed.messageId === 0x20) {
-            const ack = buildAck({ sequence: parsed.sequence, imei: imei8 });
+            const rawPayload = frame.subarray(14, frame.length - 3); // payload only (no CRC+CF)
+            const timestampBytes = rawPayload.subarray(0, 4);
+            const ack = buildAck({ sequence: parsed.sequence, imei: imei8, timestampBytes });
             socket.write(ack);
           } else {
             const ack = buildAckFrame({

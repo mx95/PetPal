@@ -466,20 +466,28 @@ function buildAckFrame({ version = 0x03, messageId, sequence, imei8, fixedReply 
   return buf;
 }
 
-function buildAck({ sequence, imei, version = 0x03, messageId = 0x20 }) {
+function buildAck({ sequence, imei, timestampBytes, version = 0x03, messageId = 0x20 }) {
   const imei8 = Buffer.isBuffer(imei) ? imei : encodeImeiBcd(imei);
+  const ts = Buffer.from(timestampBytes || []);
+  if (ts.length !== 4) {
+    throw new Error("buildAck requires timestampBytes length=4");
+  }
+
+  const replyTs = Buffer.alloc(4);
+  replyTs.writeUInt32BE((ts.readUInt32BE(0) + 1) >>> 0, 0);
 
   const payload = Buffer.concat([
     Buffer.from([version & 0xff, messageId & 0xff, sequence & 0xff]),
-    imei8,
-    Buffer.from([0x00])
+    Buffer.from(imei8),
+    Buffer.from([0x00]),
+    replyTs
   ]);
 
-  const length = payload.length; // must be 0x0C
   const crcVal = crc16ccittFalse(payload);
 
+  // Length must be 0x10: ver(1)+msg(1)+seq(1)+imei(8)+00(1)+ts(4)
   const frame = Buffer.concat([
-    Buffer.from([0xfc, 0x00, length & 0xff]),
+    Buffer.from([0xfc, 0x00, 0x10]),
     payload,
     u16be(crcVal),
     Buffer.from([0xcf])
