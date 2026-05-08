@@ -4745,6 +4745,90 @@ select.pp-input:focus {
 .pp-statTile__value { font-size: 22px; font-weight: 900; letter-spacing: -0.02em; color: #101828; }
 .pp-statTile__hint  { font-size: 12px; color: #475467; }
 
+/* Profile stat tiles (2026 refresh) */
+.pp-profileStatTile {
+  position: relative;
+  gap: 8px;
+  padding: 16px 16px 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(91, 55, 255, 0.14);
+  background:
+    radial-gradient(180px 110px at 100% 0%, rgba(91, 55, 255, 0.08), transparent 68%),
+    linear-gradient(180deg, #ffffff 0%, #faf8ff 100%);
+  box-shadow: 0 16px 34px -28px rgba(91, 55, 255, 0.45);
+  transition: transform 0.16s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+}
+
+.pp-profileStatTile:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 22px 42px -30px rgba(91, 55, 255, 0.5);
+  border-color: rgba(91, 55, 255, 0.24);
+}
+
+.pp-profileStatTile__top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pp-profileStatTile__icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  line-height: 1;
+  background: rgba(91, 55, 255, 0.12);
+  color: #3f22c5;
+}
+
+.pp-profileStatTile .pp-statTile__label {
+  letter-spacing: 0.08em;
+  color: #596482;
+}
+
+.pp-profileStatTile .pp-statTile__value {
+  font-size: clamp(25px, 3vw, 30px);
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+}
+
+.pp-profileStatTile .pp-statTile__hint {
+  color: #667085;
+  font-size: 12px;
+}
+
+.pp-profileStatTile--pets .pp-profileStatTile__icon {
+  background: rgba(18, 183, 106, 0.14);
+  color: #067647;
+}
+
+.pp-profileStatTile--km .pp-profileStatTile__icon {
+  background: rgba(11, 95, 191, 0.14);
+  color: #175cd3;
+}
+
+.pp-profileStatTile--walks .pp-profileStatTile__icon {
+  background: rgba(91, 55, 255, 0.12);
+  color: #5b37ff;
+}
+
+.pp-profileStatTile--streak .pp-profileStatTile__icon {
+  background: rgba(245, 127, 23, 0.18);
+  color: #b54708;
+}
+
+@media (max-width: 920px) {
+  .pp-profileStatTile {
+    padding: 14px 14px 13px;
+  }
+  .pp-profileStatTile .pp-statTile__value {
+    font-size: 24px;
+  }
+}
+
 /* Hero card used on Profile, Tracker, Login, etc. */
 .pp-heroCard {
   position: relative;
@@ -5121,6 +5205,79 @@ select.pp-input:focus {
   font-size: 12px;
   margin: 10px 0 0 !important;
   max-width: 520px;
+}
+
+.pp-profileEditorCard {
+  border-radius: 24px;
+  border: 1px solid rgba(91, 55, 255, 0.16);
+  background:
+    radial-gradient(380px 240px at 110% -20%, rgba(91, 55, 255, 0.11), transparent 70%),
+    linear-gradient(180deg, #ffffff 0%, #fdfbff 100%);
+  box-shadow: 0 20px 44px -30px rgba(91, 55, 255, 0.45);
+  padding: 20px;
+}
+
+.pp-profileEditorHead {
+  margin-bottom: 12px;
+}
+
+.pp-profileEditorTitle {
+  margin: 0;
+  font-size: clamp(18px, 2.2vw, 24px);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+
+.pp-profileEditorSub {
+  margin: 6px 0 0;
+  color: #475467;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.pp-profileEditorGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.pp-profileEditorGrid__full {
+  grid-column: 1 / -1;
+}
+
+.pp-profileEditorHint {
+  margin-top: 2px;
+  font-size: 12px;
+}
+
+.pp-profileEditorActions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 2px;
+}
+
+@media (max-width: 760px) {
+  .pp-profileEditorCard {
+    padding: 16px;
+    border-radius: 20px;
+  }
+
+  .pp-profileEditorGrid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .pp-profileEditorGrid__full {
+    grid-column: auto;
+  }
+
+  .pp-profileEditorActions {
+    justify-content: stretch;
+  }
+
+  .pp-profileEditorActions .pp-btn {
+    width: 100%;
+  }
 }
 
 /* —— Nearby: map-first + bottom sheet (results) —— */
