@@ -47,6 +47,13 @@ function extractFramesFromStream(buffer) {
 }
 
 function sendNextQueuedCommand(socket, imei, store) {
+  const enabledRaw = process.env.SEND_021_AFTER_020;
+  const enabled =
+    enabledRaw == null || String(enabledRaw).trim() === ""
+      ? true
+      : String(enabledRaw).trim() !== "0" && String(enabledRaw).trim().toLowerCase() !== "false";
+  if (!enabled) return;
+
   const cmd = store.dequeueCommand(imei);
   if (!cmd) return;
   try {
