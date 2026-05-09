@@ -89,6 +89,14 @@ function openSqlite(dbPath) {
     VALUES (@imei, @lat, @lng, @source, @battery, @signal, @timestamp)
   `);
 
+  const listHistoryByImei = db.prepare(`
+    SELECT lat, lng, source, battery, signal, timestamp
+    FROM positions
+    WHERE imei = ?
+    ORDER BY timestamp DESC, id DESC
+    LIMIT ?
+  `);
+
   const listDevices = db.prepare(`
     SELECT imei, name, last_lat, last_lng, battery, signal, source, last_update
     FROM devices
@@ -139,6 +147,7 @@ function openSqlite(dbPath) {
     db,
     upsertDevice,
     insertPosition,
+    listHistoryByImei,
     listDevices,
     getDevice,
     insertCommandQueued,

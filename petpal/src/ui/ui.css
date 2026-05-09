@@ -1982,6 +1982,7 @@ select.pp-input:focus {
   align-items: center;
   justify-content: center;
   padding: 18px;
+  overscroll-behavior: contain;
 }
 
 .pp-modalBackdrop {
@@ -1996,7 +1997,7 @@ select.pp-input:focus {
 .pp-modalCard {
   position: relative;
   width: min(780px, calc(100vw - 24px));
-  max-height: min(86vh, 860px);
+  max-height: min(86dvh, 860px);
   background: #fff;
   border: 1px solid rgba(16, 24, 40, 0.08);
   border-radius: 20px;
@@ -2020,6 +2021,7 @@ select.pp-input:focus {
   padding: 14px 18px 18px;
   overflow: auto;
   flex: 1 1 auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .pp-modalGrid2 {
@@ -2068,8 +2070,8 @@ select.pp-input:focus {
 
   .pp-modalCard {
     width: 100%;
-    height: min(88vh, 760px);
-    max-height: 88vh;
+    height: min(88dvh, 760px);
+    max-height: 88dvh;
     border-radius: 18px 18px 0 0;
     border-top-left-radius: 18px;
     border-top-right-radius: 18px;
@@ -2081,6 +2083,74 @@ select.pp-input:focus {
 
   .pp-modalGrid2 {
     grid-template-columns: 1fr;
+  }
+}
+
+/* Lock background scroll when a modal is open (mobile-friendly). */
+body.pp-noScroll {
+  overflow: hidden;
+  height: 100%;
+  touch-action: none;
+}
+
+/* Opening screen (auth splash) */
+.pp-opening {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: radial-gradient(circle at top, rgba(91, 55, 255, 0.12), rgba(248, 250, 252, 1) 55%);
+}
+
+.pp-openingCard {
+  width: min(420px, calc(100vw - 40px));
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(16, 24, 40, 0.08);
+  border-radius: 18px;
+  padding: 18px 18px 16px;
+  box-shadow: 0 18px 46px rgba(16, 24, 40, 0.16);
+}
+
+.pp-openingBrand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pp-openingLogo {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  box-shadow: 0 10px 24px rgba(16, 24, 40, 0.12);
+}
+
+.pp-openingTitle {
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  color: #101828;
+}
+
+.pp-openingSubtitle {
+  margin-top: 10px;
+  color: #475467;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.pp-openingSpinner {
+  margin-top: 14px;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  border: 2.5px solid rgba(91, 55, 255, 0.18);
+  border-top-color: rgba(91, 55, 255, 0.9);
+  animation: pp-spin 0.8s linear infinite;
+}
+
+@keyframes pp-spin {
+  to {
+    transform: rotate(360deg);
   }
 }
 

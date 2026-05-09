@@ -32,6 +32,7 @@ import { LanguageSwitcher } from './i18n/LanguageSwitcher';
 import { useI18n } from './i18n/I18nContext';
 import ScrollToTop from './components/ScrollToTop';
 import BottomNav from './components/BottomNav';
+import { OpeningScreen } from './components/OpeningScreen';
 
 const Tracking = lazy(() => import('./Pages/Tracking'));
 
@@ -196,6 +197,11 @@ function TopNav() {
 }
 
 function App() {
+  const { initializing } = useAuth();
+
+  if (initializing) {
+    return <OpeningScreen subtitle="Checking if you’re logged in…" />;
+  }
   return (
     <div className="pp-shell">
       <ScrollToTop />

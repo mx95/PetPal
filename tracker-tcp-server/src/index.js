@@ -109,6 +109,131 @@ app.use(
 
 registerXexunHttpApi(app, store);
 
+// -----------------------------------------------------------------------------
+// App API (frontend-safe) — keep /devices & /position as legacy, but also expose
+// the documented /api/app/* paths used by the PetPal UI.
+// -----------------------------------------------------------------------------
+
+app.get("/api/app/devices", (req, res) => {
+  res.json(store.list());
+});
+
+app.get("/api/app/devices/:imei", (req, res) => {
+  const d = store.get(req.params.imei);
+  if (!d) return res.status(404).json({ error: "not_found" });
+  res.json(d);
+});
+
+app.get("/api/app/position", (req, res) => {
+  // Same output shape as /position (used by PetPal vendor client + Cloud Function).
+  // Duplicate the /position logic here to avoid relying on Express internals.
+  const imei = String(req.query.deviceId || req.query.imei || "").trim();
+  if (!imei) return res.status(400).json({ error: "missing_deviceId" });
+  const d = store.get(imei);
+  if (!d) return res.status(404).json({ error: "not_found" });
+
+  const loc = d.location || d.gps || {};
+  const lat = loc.lat != null ? Number(loc.lat) : Number.NaN;
+  const lng = loc.lng != null ? Number(loc.lng) : Number.NaN;
+  if (Number.isNaN(lat) || Number.isNaN(lng)) {
+    return res.status(404).json({ error: "no_position" });
+  }
+
+  const deviceTimeUtc = d.gps?.timestamp || null;
+  const deviceTimeLocal = deviceTimeUtc ? new Date(deviceTimeUtc).toLocaleString() : null;
+
+  const nowMs = Date.now();
+  const baseTs = deviceTimeUtc ? Date.parse(deviceTimeUtc) : d.lastUpdate ? Date.parse(d.lastUpdate) : NaN;
+  const secondsAgo = Number.isFinite(baseTs) ? Math.max(0, Math.round((nowMs - baseTs) / 1000)) : null;
+  const isStale = secondsAgo != null ? secondsAgo > 120 : null;
+
+  const source = d.source ?? null;
+  const isApproximate = source === "lbs";
+  const battery = d.battery ?? null;
+  const signal = d.signal ?? null;
+
+  const batteryStatus =
+    typeof battery === "number" && Number.isFinite(battery)
+      ? battery > 70
+        ? "good"
+        : battery > 30
+          ? "medium"
+          : "low"
+      : null;
+  const signalStatus =
+    typeof signal === "number" && Number.isFinite(signal)
+      ? signal > 12
+        ? "strong"
+        : signal > 6
+          ? "medium"
+          : "weak"
+      : null;
+
+  const freshness =
+    typeof secondsAgo === "number"
+      ? secondsAgo < 60
+        ? "live"
+        : secondsAgo < 300
+          ? "recent"
+          : "stale"
+      : null;
+
+  const statusText =
+    freshness === "live" ? "Live tracking" : freshness === "recent" ? "Updated recently" : "Last seen a while ago";
+  const accuracyText = source === "gps" ? "Precise GPS location" : "Approximate location";
+  const movementText = d.moving ? "Moving" : "Not moving";
+
+  res.json({
+    // Normalized device summary
+    imei,
+    lat,
+    lng,
+    source,
+    accuracy: source === "gps" ? "high" : "low",
+
+    battery,
+    batteryStatus,
+    signal,
+    signalStatus,
+    isCharging: d.charging === true,
+    steps: d.steps ?? null,
+    isMoving: d.moving === true,
+
+    lastUpdate: deviceTimeUtc,
+    secondsAgo,
+    freshness,
+
+    // Messages (frontend should not interpret protocol fields)
+    statusText,
+    accuracyText,
+    movementText,
+
+    // Warnings
+    warningApproximate: isApproximate,
+    warningStale: freshness === "stale",
+
+    // Extra diagnostics (still normalized)
+    gpsValid: d.gpsValid === true,
+    satellites: d.satellites ?? null,
+    speed: d.speed != null ? Number(d.speed) : null,
+    lastUpdateServer: d.lastUpdate ?? null,
+    deviceTimeUtc,
+    deviceTimeLocal,
+    isStale
+  });
+});
+
+app.get("/api/app/history", (req, res) => {
+  const imei = String(req.query.deviceId || req.query.imei || "").trim();
+  if (!imei) return res.status(400).json({ error: "missing_deviceId" });
+  if (typeof store.history !== "function") {
+    return res.json({ imei, history: [], note: "History available only when SQLite persistence is enabled." });
+  }
+  const limit = Number(req.query.limit ?? 100);
+  const history = store.history(imei, { limit });
+  res.json({ imei, history });
+});
+
 app.get("/devices", (req, res) => {
   res.json(store.list());
 });

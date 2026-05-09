@@ -183,6 +183,14 @@ export default function MyPets() {
   }, [addPetDrawerOpen]);
 
   useEffect(() => {
+    // Prevent iOS/Android "page drag" behind the modal.
+    const cls = 'pp-noScroll';
+    if (addPetDrawerOpen) document.body.classList.add(cls);
+    else document.body.classList.remove(cls);
+    return () => document.body.classList.remove(cls);
+  }, [addPetDrawerOpen]);
+
+  useEffect(() => {
     let cancelled = false;
     async function loadProfile() {
       if (!user?.uid || !isFirebaseConfigured()) {
