@@ -8,35 +8,10 @@ const {
   isValidCrc
 } = require("../protocol/xexun");
 const { logPrefix, formatCyprusTime } = require("../logging/time");
-
-/**
- * ACK fixed-reply timestamp offset (seconds) from data already in the uplink (provider portal matches this).
- * In the 0x6A status body (see vendor layout): byte after network duration = Communication Signal,
- * next byte = Tracking sequence number.
- *
- *   offsetSeconds = trackingSeq - communicationSignal
- *
- * Examples from portal "Data Analysis":
- * - tracking 31, signal 29 → +2 (69 FF 53 A9 → 69 FF 53 AB)
- * - tracking 29, signal 29 → +0
- *
- * If 0x6A is missing/unreadable, fall back to ACK_TS_OFFSET_SECONDS env or 3.
- */
-function ackOffsetSecondsFromStatus(statusRaw) {
-  if (
-    statusRaw &&
-    typeof statusRaw.trackingSeq === "number" &&
-    Number.isFinite(statusRaw.trackingSeq) &&
-    typeof statusRaw.signal === "number" &&
-    Number.isFinite(statusRaw.signal)
-  ) {
-    const d = statusRaw.trackingSeq - statusRaw.signal;
-    return Math.max(0, d);
-  }
-  const raw = process.env.ACK_TS_OFFSET_SECONDS;
-  const n = raw != null && String(raw).trim() !== "" ? Number(raw) : NaN;
-  return Number.isFinite(n) ? Math.max(0, Math.floor(n)) : 3;
-}
+const {
+  extractGpsTrackingDurationByte,
+  ackOffsetSecondsFor020Ack
+} = require("../protocol/portalAckOffset");
 
 function extractStatusFrom020Payload(rawPayload) {
   // rawPayload is the message body payload (after IMEI, before CRC), i.e. TLV chain.
@@ -265,9 +240,17 @@ function createTcpServer({ port, store }) {
             // Important: ACK must echo the exact incoming sequence byte.
             // Use raw frame offset rather than parsed object to avoid any parse/framing ambiguity.
             const incomingSeq = frame.readUInt8(5);
-            const offsetSeconds = ackOffsetSecondsFromStatus(statusRaw);
+            const gpsDurByte = extractGpsTrackingDurationByte(rawPayload);
+            const offsetSeconds = ackOffsetSecondsFor020Ack(statusRaw, rawPayload);
+            const baseD =
+              statusRaw &&
+              typeof statusRaw.trackingSeq === "number" &&
+              typeof statusRaw.signal === "number"
+                ? Math.max(0, statusRaw.trackingSeq - statusRaw.signal)
+                : null;
             console.log(
-              `${logPrefix({ dir: "out", at: new Date() })} ACK offset: trackingSeq(${statusRaw?.trackingSeq ?? "?"}) - signal(${statusRaw?.signal ?? "?"}) = +${offsetSeconds}s`
+              `${logPrefix({ dir: "out", at: new Date() })} ACK offset: base=${baseD ?? "?"}` +
+                `, gps0x64Last=${gpsDurByte ?? "?"} → +${offsetSeconds}s`
             );
             const ack = buildAck({ sequence: incomingSeq, imei: imei8, timestampBytes, offsetSeconds });
             socket.write(ack);
