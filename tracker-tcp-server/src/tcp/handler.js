@@ -9,6 +9,35 @@ const {
 } = require("../protocol/xexun");
 const { logPrefix, formatCyprusTime } = require("../logging/time");
 
+/**
+ * ACK fixed-reply timestamp offset (seconds) from data already in the uplink (provider portal matches this).
+ * In the 0x6A status body (see vendor layout): byte after network duration = Communication Signal,
+ * next byte = Tracking sequence number.
+ *
+ *   offsetSeconds = trackingSeq - communicationSignal
+ *
+ * Examples from portal "Data Analysis":
+ * - tracking 31, signal 29 → +2 (69 FF 53 A9 → 69 FF 53 AB)
+ * - tracking 29, signal 29 → +0
+ *
+ * If 0x6A is missing/unreadable, fall back to ACK_TS_OFFSET_SECONDS env or 3.
+ */
+function ackOffsetSecondsFromStatus(statusRaw) {
+  if (
+    statusRaw &&
+    typeof statusRaw.trackingSeq === "number" &&
+    Number.isFinite(statusRaw.trackingSeq) &&
+    typeof statusRaw.signal === "number" &&
+    Number.isFinite(statusRaw.signal)
+  ) {
+    const d = statusRaw.trackingSeq - statusRaw.signal;
+    return Math.max(0, d);
+  }
+  const raw = process.env.ACK_TS_OFFSET_SECONDS;
+  const n = raw != null && String(raw).trim() !== "" ? Number(raw) : NaN;
+  return Number.isFinite(n) ? Math.max(0, Math.floor(n)) : 3;
+}
+
 function extractStatusFrom020Payload(rawPayload) {
   // rawPayload is the message body payload (after IMEI, before CRC), i.e. TLV chain.
   // Find first 0x6A status block: [0x6A][len][battery][networkDuration:2][signal][trackingSeq]...
@@ -236,22 +265,10 @@ function createTcpServer({ port, store }) {
             // Important: ACK must echo the exact incoming sequence byte.
             // Use raw frame offset rather than parsed object to avoid any parse/framing ambiguity.
             const incomingSeq = frame.readUInt8(5);
-            // Provider portal expects a specific fixed reply mark (00 + epoch) and validates it.
-            // Based on multiple provider examples, the required offset is not constant. Observed mapping:
-            // - trackingSeq <= 18 → +3
-            // - trackingSeq 19..20 → +4
-            // - trackingSeq == 21 → +6
-            // - trackingSeq >= 22 → +0
-            //
-            // This affects only the provider portal test; the device itself typically accepts ACKs regardless.
-            const trackingSeq = statusRaw?.trackingSeq ?? parsed.deviceStatus?.trackingSeq;
-            let offsetSeconds = 3;
-            if (typeof trackingSeq === "number") {
-              if (trackingSeq <= 18) offsetSeconds = 3;
-              else if (trackingSeq <= 20) offsetSeconds = 4;
-              else if (trackingSeq === 21) offsetSeconds = 6;
-              else offsetSeconds = 0;
-            }
+            const offsetSeconds = ackOffsetSecondsFromStatus(statusRaw);
+            console.log(
+              `${logPrefix({ dir: "out", at: new Date() })} ACK offset: trackingSeq(${statusRaw?.trackingSeq ?? "?"}) - signal(${statusRaw?.signal ?? "?"}) = +${offsetSeconds}s`
+            );
             const ack = buildAck({ sequence: incomingSeq, imei: imei8, timestampBytes, offsetSeconds });
             socket.write(ack);
             console.log(`${logPrefix({ dir: "out", at: new Date() })} ACK HEX: ${toHex(ack)}`);
