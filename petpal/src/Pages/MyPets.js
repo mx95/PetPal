@@ -323,6 +323,14 @@ export default function MyPets() {
     e.preventDefault();
     if (!editingId) return;
     const currentPet = pets.find((p) => p.id === editingId);
+    const prevImei = (currentPet?.trackingDeviceId || '').trim();
+    const nextImei = editDevice.trim();
+    if (prevImei && nextImei && nextImei !== prevImei) {
+      if (!window.confirm(t('trackingPage.imeiConfirmChange', { from: prevImei, to: nextImei }))) return;
+    }
+    if (prevImei && !nextImei) {
+      if (!window.confirm(t('trackingPage.imeiConfirmClear'))) return;
+    }
     let photoPatch = undefined;
     const f = editPhotoRef.current?.files;
     if (f && f[0] && user?.uid) {

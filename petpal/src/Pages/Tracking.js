@@ -6,6 +6,8 @@ import PositionMap from '../tracking/PositionMap';
 import { usePets } from '../pets/PetsContext';
 import { getLatestPosition, getTrackingDataSource, mapsLink } from '../tracking/petpalVendorClient';
 
+const LAST_LIVE_PET_KEY = 'petpal_live_selectedPetId';
+
 function formatTime(iso, lang) {
   if (!iso) return '—';
   try {
@@ -13,6 +15,42 @@ function formatTime(iso, lang) {
   } catch {
     return String(iso);
   }
+}
+
+/** Last seen: seconds if ≤120s, otherwise whole minutes */
+function formatLastSeen(secondsAgo, t) {
+  if (secondsAgo == null || !Number.isFinite(secondsAgo)) return t('trackingPage.lastUpdateUnknown');
+  const s = Math.max(0, secondsAgo);
+  if (s > 120) {
+    const minutes = Math.max(1, Math.round(s / 60));
+    return t('trackingPage.lastUpdateMinutes', { minutes });
+  }
+  return t('trackingPage.lastUpdateSeconds', { seconds: Math.round(s) });
+}
+
+function batteryFillStyle(pct) {
+  const n = Math.min(100, Math.max(0, pct));
+  let fill;
+  if (n > 60) fill = 'linear-gradient(90deg,#22c55e,#4ade80)';
+  else if (n > 30) fill = 'linear-gradient(90deg,#eab308,#facc15)';
+  else fill = 'linear-gradient(90deg,#f97316,#ef4444)';
+  return { width: `${n}%`, background: fill };
+}
+
+function accuracyMeterStyle(position) {
+  const approx = position?.warningApproximate || position?.accuracy === 'low' || position?.source === 'lbs';
+  const stale = Boolean(position?.warningStale);
+  const lbs = position?.source === 'lbs';
+  if (stale) {
+    return { width: '24%', background: 'linear-gradient(90deg,#fb923c,#dc2626)' };
+  }
+  if (lbs) {
+    return { width: '38%', background: 'linear-gradient(90deg,#f97316,#ea580c)' };
+  }
+  if (approx) {
+    return { width: '58%', background: 'linear-gradient(90deg,#eab308,#f59e0b)' };
+  }
+  return { width: '96%', background: 'linear-gradient(90deg,#22c55e,#86efac)' };
 }
 
 export default function Tracking() {
@@ -36,13 +74,31 @@ export default function Tracking() {
     [deviceId, selectedPet?.trackingDeviceId]
   );
 
+  const savedDeviceIdTrimmed = useMemo(() => (selectedPet?.trackingDeviceId || '').trim(), [selectedPet?.trackingDeviceId]);
+
+  const imeiDirty = savedDeviceIdTrimmed !== deviceId.trim();
+
   useEffect(() => {
     if (pets.length === 0) {
       setSelectedPetId('');
       return;
     }
-    setSelectedPetId((cur) => (cur && pets.some((p) => p.id === cur) ? cur : pets[0].id));
+    setSelectedPetId((cur) => {
+      try {
+        const saved = localStorage.getItem(LAST_LIVE_PET_KEY);
+        if (saved && pets.some((p) => p.id === saved)) return saved;
+      } catch (_) {}
+      if (cur && pets.some((p) => p.id === cur)) return cur;
+      return pets[0].id;
+    });
   }, [pets]);
+
+  useEffect(() => {
+    if (!selectedPetId) return;
+    try {
+      localStorage.setItem(LAST_LIVE_PET_KEY, selectedPetId);
+    } catch (_) {}
+  }, [selectedPetId]);
 
   useEffect(() => {
     if (!selectedPetId) {
@@ -67,7 +123,11 @@ export default function Tracking() {
     }
   }, [effectiveDeviceId, t]);
 
-  // Auto-refresh while a device id is set.
+  useEffect(() => {
+    if (!effectiveDeviceId.trim()) return;
+    void refresh();
+  }, [effectiveDeviceId, refresh]);
+
   useEffect(() => {
     if (!effectiveDeviceId) return;
     const ms = 12_000;
@@ -79,8 +139,18 @@ export default function Tracking() {
 
   function saveIdAndLoad(e) {
     e?.preventDefault();
+    const next = deviceId.trim();
+    const prev = savedDeviceIdTrimmed;
+
+    if (prev && next && next !== prev) {
+      if (!window.confirm(t('trackingPage.imeiConfirmChange', { from: prev, to: next }))) return;
+    }
+    if (prev && !next) {
+      if (!window.confirm(t('trackingPage.imeiConfirmClear'))) return;
+    }
+
     if (selectedPetId) {
-      updatePet(selectedPetId, { trackingDeviceId: deviceId.trim() || null });
+      updatePet(selectedPetId, { trackingDeviceId: next || null });
     }
     void refresh();
   }
@@ -115,15 +185,19 @@ export default function Tracking() {
   const accuracyLabel = approx ? t('trackingPage.accuracyApprox') : t('trackingPage.accuracyHigh');
   const secondsAgo =
     typeof position?.secondsAgo === 'number' && Number.isFinite(position.secondsAgo) ? position.secondsAgo : null;
-  const lastUpdateLabel =
-    secondsAgo != null ? t('trackingPage.lastUpdateSeconds', { seconds: secondsAgo }) : t('trackingPage.lastUpdateUnknown');
+  const lastUpdateLabel = formatLastSeen(secondsAgo, t);
+
+  const gpsOkVisual = signalLive && !approx && position?.source !== 'lbs' && !position?.warningStale;
+
   const deviceTimeLabel = position?.deviceTimeLocal
     ? position.deviceTimeLocal
     : position?.deviceTime
       ? formatTime(position.deviceTime, langForDate)
       : '—';
-  const freshness = position?.freshness || null;
-  const freshnessDot = freshness === 'live' ? '🟢' : freshness === 'recent' ? '🟡' : freshness === 'stale' ? '🔴' : '⚪';
+
+  const batPct = position?.battery != null ? Math.min(100, Math.max(0, Number(position.battery))) : null;
+
+  const accMeter = position ? accuracyMeterStyle(position) : null;
 
   return (
     <div className="pp-feed pp-tracker-page">
@@ -171,13 +245,24 @@ export default function Tracking() {
                   {selectedPet.name}
                 </h2>
                 <p className="pp-subtle" style={{ marginTop: 4, marginBottom: 0 }}>
-                  {freshnessDot} {position?.statusText || (signalLive ? t('trackingPage.signalLive') : t('trackingPage.signalQuiet'))} · {lastUpdateLabel}
+                  {position?.statusText || (signalLive ? t('trackingPage.signalLive') : t('trackingPage.signalQuiet'))} ·{' '}
+                  {lastUpdateLabel}
                 </p>
                 {signalLive ? (
-                  <p className="pp-subtle" style={{ marginTop: 6, marginBottom: 0 }}>
-                    {approx ? t('trackingPage.gpsWeak') : t('trackingPage.gpsOk')} · {t('trackingPage.accuracyLabel', { value: accuracyLabel })}
-                    {position?.warningStale ? ` · ${t('trackingPage.warnOffline')}` : ''}
-                  </p>
+                  <div style={{ marginTop: 10 }}>
+                    <span className={`pp-trackGpsPill ${gpsOkVisual ? 'pp-trackGpsPill--ok' : 'pp-trackGpsPill--warn'}`}>
+                      {gpsOkVisual ? `✓ ${t('trackingPage.gpsOk')}` : `⚠ ${t('trackingPage.gpsWeak')}`}
+                    </span>
+                    <span className="pp-subtle" style={{ marginLeft: 10, fontSize: 13 }}>
+                      {t('trackingPage.accuracyLabel', { value: accuracyLabel })}
+                      {position?.warningStale ? ` · ${t('trackingPage.warnOffline')}` : ''}
+                    </span>
+                  </div>
+                ) : null}
+                {position && accMeter ? (
+                  <div className="pp-trackAccuracyMeter" role="meter" aria-valuemin={0} aria-valuemax={100} aria-label={t('trackingPage.accuracyMeterLabel')}>
+                    <div className="pp-trackAccuracyMeter__fill" style={{ width: accMeter.width, background: accMeter.background }} />
+                  </div>
                 ) : null}
               </div>
             </div>
@@ -205,7 +290,9 @@ export default function Tracking() {
               <div className="pp-card pp-pad" style={{ flex: '1 1 220px' }}>
                 <div className="pp-label">{t('trackingPage.cardLocation')}</div>
                 <div style={{ marginTop: 6 }}>
-                  <span className="pp-badge">{approx ? t('trackingPage.badgeApprox') : 'GPS'}</span>
+                  <span className={`pp-trackGpsPill ${approx ? 'pp-trackGpsPill--warn' : 'pp-trackGpsPill--ok'}`} style={{ fontSize: 12 }}>
+                    {approx ? t('trackingPage.badgeApprox') : 'GPS'}
+                  </span>
                 </div>
                 <p className="pp-subtle" style={{ marginTop: 8, marginBottom: 0 }}>
                   {position.accuracyText || t(approx ? 'trackingPage.accuracyApprox' : 'trackingPage.accuracyHigh')}
@@ -214,10 +301,19 @@ export default function Tracking() {
 
               <div className="pp-card pp-pad" style={{ flex: '1 1 220px' }}>
                 <div className="pp-label">{t('trackingPage.cardHealth')}</div>
-                <p className="pp-subtle" style={{ marginTop: 8, marginBottom: 0 }}>
-                  {t('trackingPage.healthBattery')}: {position.battery != null ? `${position.battery}% (${position.batteryStatus || '—'})` : '—'}
-                </p>
-                <p className="pp-subtle" style={{ marginTop: 6, marginBottom: 0 }}>
+                {batPct != null ? (
+                  <div className="pp-batteryBar" aria-label={t('trackingPage.batteryPctAria', { pct: batPct })}>
+                    <div className="pp-batteryBar__fill" style={batteryFillStyle(batPct)} />
+                    <div className="pp-batteryBar__label">
+                      {batPct}% · {position.batteryStatus || t('trackingPage.healthBattery')}
+                    </div>
+                  </div>
+                ) : (
+                  <p className="pp-subtle" style={{ marginTop: 8, marginBottom: 0 }}>
+                    {t('trackingPage.healthBattery')}: —
+                  </p>
+                )}
+                <p className="pp-subtle" style={{ marginTop: 10, marginBottom: 0 }}>
                   {t('trackingPage.healthSignal')}: {position.signal != null ? `${position.signal} (${position.signalStatus || '—'})` : '—'}
                 </p>
               </div>
@@ -297,9 +393,15 @@ export default function Tracking() {
               autoComplete="off"
             />
           </div>
+          {imeiDirty && selectedPet ? (
+            <div className="pp-trackImeiWarn" role="status">
+              {t('trackingPage.imeiChangeWarn', { name: selectedPet.name })}
+            </div>
+          ) : null}
           {selectedPet ? (
-            <p className="pp-subtle" style={{ fontSize: 13, margin: 0 }}>
-              {t('trackingPage.persistHintSaving', { name: selectedPet.name })}
+            <p className="pp-subtle pp-trackImeiFoot" style={{ margin: 0 }}>
+              {t('trackingPage.persistHintSaving', { name: selectedPet.name })}{' '}
+              <Link to="/pets">{t('trackingPage.editImeiOnMyPets')}</Link>
             </p>
           ) : null}
           {!position && error ? <div className="pp-error">{error}</div> : null}

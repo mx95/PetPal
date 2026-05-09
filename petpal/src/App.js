@@ -42,11 +42,7 @@ function navItemClassName(...extra) {
 
 function TrackingRouteFallback() {
   const { t } = useI18n();
-  return (
-    <div className="pp-pad" style={{ padding: 24 }}>
-      {t('app.loadingTracker')}
-    </div>
-  );
+  return <OpeningScreen subtitle={t('app.loadingTracker')} />;
 }
 
 function TopNav() {
