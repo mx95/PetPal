@@ -1,14 +1,16 @@
 /**
- * Portal "Correct reply" timestamp offset for 0x20 ACK fixed-reply mark (empirical; not in vendor PDF).
+ * Portal / vendor "Correct reply" timestamp offset for 0x20 ACK fixed-reply mark (empirical).
  *
  * Reads:
- * - 0x6A status: communication signal @ byte index 3, tracking sequence @ byte index 4 (after battery + network duration).
- * - First 0x64 GPS body: last byte = "seconds to tracking" (portal labels).
+ * - First GPS TLV 0x64 body: last byte = "seconds to tracking" when present.
+ * - 0x6A status: communication signal @ index 3, tracking sequence @ index 4 (after battery + network duration).
  *
- * Rules derived from your portal samples:
- * - Usually: offset = trackingSeq - signal (when trackingSeq >= signal).
- * - When trackingSeq < signal: offset = 4 * (signal - trackingSeq) (e.g. 20 / 21 → +4).
- * - When base delta is 6 and GPS tail > 0 and trackingSeq >= 30: use +7 instead of +6 (e.g. 30 / 24 / active GPS interval).
+ * Rules combine earlier PetPal portal tuning with **provider-published golden ACKs**:
+ * - No GPS 0x64 in payload → use ACK_TS_OFFSET_SECONDS or default **+3** (status/battery-only uplinks).
+ * - Provider golden: tracking−signal = 5 and GPS tail byte = **6** → **+0** (fixed reply matches GPS time).
+ * - Xexun samples with comm signal **23**, tracking ≥ **30**, idle GPS interval (tail **0**) → **+2** (not +Δ).
+ * - When tracking < signal: **4 × (signal − tracking)**.
+ * - Else base Δ = tracking − signal; if Δ = 6, GPS tail > 0, tracking ≥ 30 → **+7** (interval bump).
  */
 
 function extractGpsTrackingDurationByte(rawPayload) {
@@ -24,8 +26,26 @@ function extractGpsTrackingDurationByte(rawPayload) {
   return null;
 }
 
+function payloadHasGps064Block(rawPayload) {
+  if (!Buffer.isBuffer(rawPayload)) return false;
+  for (let i = 0; i + 2 <= rawPayload.length; i++) {
+    if (rawPayload.readUInt8(i) !== 0x64) continue;
+    const l = rawPayload.readUInt8(i + 1);
+    const end = i + 2 + l;
+    if (l >= 4 && end <= rawPayload.length) return true;
+  }
+  return false;
+}
+
 function ackOffsetSecondsFor020Ack(statusRaw, rawPayload) {
   const gpsTrackTail = extractGpsTrackingDurationByte(rawPayload);
+  const has064 = payloadHasGps064Block(rawPayload);
+
+  if (!has064) {
+    const raw = process.env.ACK_TS_OFFSET_SECONDS;
+    const n = raw != null && String(raw).trim() !== "" ? Number(raw) : NaN;
+    return Number.isFinite(n) ? Math.max(0, Math.floor(n)) : 3;
+  }
 
   if (
     statusRaw &&
@@ -37,6 +57,16 @@ function ackOffsetSecondsFor020Ack(statusRaw, rawPayload) {
     const t = statusRaw.trackingSeq;
     const s = statusRaw.signal;
 
+    // Provider golden: GPS tracking time echoed unchanged (Successful Tracking Time = fixed reply).
+    if (t >= s && t - s === 5 && gpsTrackTail === 6) {
+      return 0;
+    }
+
+    // Vendor uplinks with strong lock (signal 23), tracking ≥ 30, zero GPS-interval tail → +2 s fixed reply.
+    if (gpsTrackTail === 0 && t >= 30 && s === 23) {
+      return 2;
+    }
+
     let d;
     if (t < s) {
       d = 4 * (s - t);
@@ -44,7 +74,6 @@ function ackOffsetSecondsFor020Ack(statusRaw, rawPayload) {
       d = t - s;
     }
 
-    // seq30-style portal sample: base 6 → needs 7 when GPS reports non-zero tracking interval; do not bump seq21 (+6).
     if (d === 6 && typeof gpsTrackTail === "number" && gpsTrackTail > 0 && t >= 30) {
       return 7;
     }
@@ -59,5 +88,6 @@ function ackOffsetSecondsFor020Ack(statusRaw, rawPayload) {
 
 module.exports = {
   extractGpsTrackingDurationByte,
+  payloadHasGps064Block,
   ackOffsetSecondsFor020Ack
 };

@@ -5,13 +5,26 @@ const {
   buildAckFrame,
   buildServerCommand021,
   toHex,
-  isValidCrc
+  isValidCrc,
+  parseDeviceStatusBlock
 } = require("../protocol/xexun");
 const { logPrefix, formatCyprusTime } = require("../logging/time");
 const {
   extractGpsTrackingDurationByte,
   ackOffsetSecondsFor020Ack
 } = require("../protocol/portalAckOffset");
+
+function extractFirst6aRawBlock(rawPayload) {
+  if (!Buffer.isBuffer(rawPayload) || rawPayload.length < 2) return null;
+  for (let i = 0; i + 2 <= rawPayload.length; i++) {
+    if (rawPayload.readUInt8(i) !== 0x6a) continue;
+    const len = rawPayload.readUInt8(i + 1);
+    const end = i + 2 + len;
+    if (end > rawPayload.length) continue;
+    return rawPayload.subarray(i + 2, end);
+  }
+  return null;
+}
 
 function extractStatusFrom020Payload(rawPayload) {
   // rawPayload is the message body payload (after IMEI, before CRC), i.e. TLV chain.
@@ -39,37 +52,45 @@ function extractStatusFrom020Payload(rawPayload) {
 }
 
 function extractFramesFromStream(buffer) {
-  // Stream-safe framing for FC...CF.
+  // Stream-safe framing for FC…CF.
   // Uses the length field: total frame size is `length + 6`.
+  //
+  // IMPORTANT: Do not truncate at the first 0xCF inside the payload — binary GPS/LBS data can
+  // contain 0xCF; that produced short “ghost” frames where byte 5 looked like a plausible seq
+  // (e.g. 0x26) while the real uplink still had 0x27 at the true header offset.
   const frames = [];
   let buf = buffer;
 
   while (buf.length > 0) {
     const start = buf.indexOf(0xfc);
-    // If there is no header byte in the current buffer, keep it as `rest`
-    // so we don't accidentally drop prefix/partial traffic from providers.
     if (start === -1) return { frames, rest: buf };
     if (start > 0) buf = buf.subarray(start);
 
-    if (buf.length < 4) return { frames, rest: buf }; // need at least FC + len(2) + ver
+    if (buf.length < 4) return { frames, rest: buf };
 
     const len = buf.readUInt16BE(1);
     const total = len + 6;
-    if (buf.length < total) return { frames, rest: buf };
-    if (buf.readUInt8(total - 1) !== 0xcf) {
-      // Fallback: resync by searching end flag
-      const end = buf.indexOf(0xcf, 1);
-      if (end === -1) return { frames, rest: buf };
-      const frame = buf.subarray(0, end + 1);
-      frames.push(frame);
-      buf = buf.subarray(end + 1);
+
+    if (len < 0x08 || len > 0x1000) {
+      buf = buf.subarray(1);
       continue;
     }
 
-    const frame = buf.subarray(0, total);
-    frames.push(frame);
-    buf = buf.subarray(total);
+    if (buf.length < total) return { frames, rest: buf };
 
+    if (buf.readUInt8(total - 1) !== 0xcf) {
+      buf = buf.subarray(1);
+      continue;
+    }
+
+    const candidate = buf.subarray(0, total);
+    if (!isValidCrc(candidate).ok) {
+      buf = buf.subarray(1);
+      continue;
+    }
+
+    frames.push(Buffer.from(candidate));
+    buf = buf.subarray(total);
   }
 
   return { frames, rest: Buffer.alloc(0) };
@@ -214,9 +235,10 @@ function createTcpServer({ port, store }) {
           if (parsed.messageId === 0x20) {
             const rawPayload = rawPayloadFor020; // payload only (no CRC+CF)
 
-            // Provider-confirmed: use "Successful Tracking Time" from the FIRST GPS block (0x64):
-            // [0x64][len][timestamp:4]...
+            // Prefer "Successful Tracking Time" from the FIRST GPS block (0x64): [0x64][len][timestamp:4]...
+            // Status-only uplinks: use plausible epoch from 0x6A (battery time), same as portal parsing.
             let timestampBytes = null;
+            let ackTsSource = null;
             for (let i = 0; i + 6 <= rawPayload.length; i++) {
               if (rawPayload.readUInt8(i) !== 0x64) continue;
               const l = rawPayload.readUInt8(i + 1);
@@ -224,33 +246,49 @@ function createTcpServer({ port, store }) {
               const end = i + 2 + l;
               if (end > rawPayload.length) continue;
               timestampBytes = rawPayload.subarray(i + 2, i + 6);
+              ackTsSource = "0x64";
               break;
             }
 
             if (!timestampBytes || timestampBytes.length !== 4) {
-              throw new Error("Missing 0x64 Successful Tracking Time (timestampBytes) for 0x20 ACK");
+              const block6a = extractFirst6aRawBlock(rawPayload);
+              if (block6a) {
+                const ds = parseDeviceStatusBlock(block6a);
+                if (ds.timestampBytes && ds.timestampBytes.length === 4) {
+                  timestampBytes = ds.timestampBytes;
+                  ackTsSource = "0x6A";
+                }
+              }
+            }
+
+            if (!timestampBytes || timestampBytes.length !== 4) {
+              throw new Error(
+                "Missing timestamp for 0x20 ACK (no 0x64 Successful Tracking Time and no epoch in 0x6A)"
+              );
             }
 
             console.log(
-              `${logPrefix({ dir: "out", at: new Date() })} ACK TS SOURCE 0x64: ${timestampBytes
+              `${logPrefix({ dir: "out", at: new Date() })} ACK TS SOURCE ${ackTsSource}: ${timestampBytes
                 .toString("hex")
                 .toUpperCase()}`
             );
 
-            // Important: ACK must echo the exact incoming sequence byte.
-            // Use raw frame offset rather than parsed object to avoid any parse/framing ambiguity.
+            // Important: ACK must echo the exact incoming sequence byte (same offset as parseXexunPacket).
             const incomingSeq = frame.readUInt8(5);
+            if ((incomingSeq & 0xff) !== (parsed.sequence & 0xff)) {
+              console.log(
+                `${logPrefix({ dir: "out", at: new Date() })} ACK WARN: frame seq 0x${incomingSeq
+                  .toString(16)
+                  .padStart(2, "0")} !== parsed.sequence 0x${parsed.sequence
+                  .toString(16)
+                  .padStart(2, "0")}`
+              );
+            }
             const gpsDurByte = extractGpsTrackingDurationByte(rawPayload);
             const offsetSeconds = ackOffsetSecondsFor020Ack(statusRaw, rawPayload);
-            const baseD =
-              statusRaw &&
-              typeof statusRaw.trackingSeq === "number" &&
-              typeof statusRaw.signal === "number"
-                ? Math.max(0, statusRaw.trackingSeq - statusRaw.signal)
-                : null;
             console.log(
-              `${logPrefix({ dir: "out", at: new Date() })} ACK offset: base=${baseD ?? "?"}` +
-                `, gps0x64Last=${gpsDurByte ?? "?"} → +${offsetSeconds}s`
+              `${logPrefix({ dir: "out", at: new Date() })} ACK offset: trackingSeq=${statusRaw?.trackingSeq ?? "?"}` +
+                ` signal=${statusRaw?.signal ?? "?"} gps0x64Last=${gpsDurByte ?? "?"} → +${offsetSeconds}s`
             );
             const ack = buildAck({ sequence: incomingSeq, imei: imei8, timestampBytes, offsetSeconds });
             socket.write(ack);

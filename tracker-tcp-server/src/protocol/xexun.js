@@ -525,6 +525,7 @@ module.exports = {
   decodeImeiFromBcd,
   toHex,
   isValidCrc,
-  detectCrcSpec: () => ({ algo: "CRC-16/CCITT-FALSE" })
+  detectCrcSpec: () => ({ algo: "CRC-16/CCITT-FALSE" }),
+  parseDeviceStatusBlock
 };
 
