@@ -7,6 +7,7 @@ const { createMemoryStore } = require("./store/memory");
 const { createSqliteStore } = require("./store/sqliteStore");
 const { createTcpServer } = require("./tcp/handler");
 const { registerXexunHttpApi } = require("./http/xexunApiRoutes");
+const { logPrefix } = require("./logging/time");
 
 const TCP_PORT = Number(process.env.TCP_PORT || 5001);
 const HTTP_PORT = Number(process.env.HTTP_PORT || 5002);
@@ -66,6 +67,12 @@ app.use((req, res, next) => {
   res.locals.requestUser = req.header("x-user") || req.header("x-user-id") || null;
 
   res.on("finish", () => {
+    const latencyMs = Date.now() - start;
+    console.log(
+      `${logPrefix({ dir: "http_in", tag: "HTTP" })} ${req.method} ${req.originalUrl || req.path} → ${
+        res.statusCode
+      } (${latencyMs}ms)`
+    );
     if (typeof store.recordHttpRequest !== "function") return;
     store.recordHttpRequest({
       ts: new Date().toISOString(),
@@ -76,7 +83,7 @@ app.use((req, res, next) => {
       ip: req.ip || req.socket?.remoteAddress || null,
       userAgent: req.header("user-agent") || null,
       statusCode: res.statusCode,
-      latencyMs: Date.now() - start
+      latencyMs
     });
   });
 

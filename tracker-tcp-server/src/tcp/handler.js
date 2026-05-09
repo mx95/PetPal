@@ -7,6 +7,7 @@ const {
   toHex,
   isValidCrc
 } = require("../protocol/xexun");
+const { logPrefix, formatCyprusTime } = require("../logging/time");
 
 function extractFramesFromStream(buffer) {
   // Stream-safe framing for FC...CF.
@@ -50,13 +51,13 @@ function sendNextQueuedCommand(socket, imei, store) {
     const seq = store.nextSequence(imei);
     const frame = buildServerCommand021({ imei, commandAscii: cmd, sequence: seq });
     socket.write(frame);
-    console.log(`[TCP] 0x21 → ${imei}: ${cmd}`);
-    console.log("[TCP] CMD HEX:", toHex(frame));
+    console.log(`${logPrefix({ dir: "out" })} 0x21 → ${imei}: ${cmd}`);
+    console.log(`${logPrefix({ dir: "out" })} CMD HEX: ${toHex(frame)}`);
     if (typeof store.markCommandSent === "function") {
       store.markCommandSent({ imei, command: cmd });
     }
   } catch (e) {
-    console.log("[TCP] 0x21 send failed:", e?.message || String(e));
+    console.log(`${logPrefix({ dir: "out" })} 0x21 send failed:`, e?.message || String(e));
     store.enqueueCommand(imei, cmd, { atFront: true });
   }
 }
@@ -66,33 +67,38 @@ function createTcpServer({ port, store }) {
     socket.setKeepAlive(true);
     socket.setNoDelay(true);
 
-    console.log(`[TCP] connection from ${socket.remoteAddress}:${socket.remotePort}`);
+    console.log(
+      `${logPrefix({ dir: "in" })} connection from ${socket.remoteAddress}:${socket.remotePort}`
+    );
 
     let pending = Buffer.alloc(0);
 
     socket.on("data", (data) => {
-      console.log("[TCP] RAW HEX:", toHex(data));
+      console.log(`${logPrefix({ dir: "in" })} RAW HEX: ${toHex(data)}`);
 
       pending = Buffer.concat([pending, data]);
       const { frames, rest } = extractFramesFromStream(pending);
       pending = rest;
 
       for (const frame of frames) {
+        const receivedAt = new Date();
         const crcCheck = isValidCrc(frame);
         if (!crcCheck.ok) {
-          console.log("[TCP] CRC invalid, ignoring frame:", toHex(frame));
+          console.log(`${logPrefix({ dir: "in", at: receivedAt })} CRC invalid, ignoring frame: ${toHex(frame)}`);
           continue;
         }
 
         const parsed = parseXexunPacket(frame);
         if (!parsed) {
-          console.log("[TCP] Unparsed frame:", toHex(frame));
+          console.log(`${logPrefix({ dir: "in", at: receivedAt })} Unparsed frame: ${toHex(frame)}`);
           continue;
         }
 
         // Structured log requested
         const deviceStatus = parsed.deviceStatus || {};
         const logObj = {
+          receivedAtCyprus: formatCyprusTime(receivedAt),
+          receivedAtUtc: receivedAt.toISOString(),
           imei: parsed.imei,
           messageId: parsed.messageId,
           source: parsed.source ?? null,
@@ -113,7 +119,7 @@ function createTcpServer({ port, store }) {
           lng: parsed.gps?.lng ?? null,
           raw: parsed.rawHex
         };
-        console.log("[TCP] PARSED:", JSON.stringify(logObj));
+        console.log(`${logPrefix({ dir: "in", at: receivedAt })} PARSED: ${JSON.stringify(logObj)}`);
 
         if (
           parsed.messageId !== 0x20 &&
@@ -121,7 +127,7 @@ function createTcpServer({ port, store }) {
           parsed.messageId !== 0x6a
         ) {
           console.log(
-            `[TCP] Warning: unknown messageId=0x${parsed.messageId.toString(16)} (ACKing anyway)`
+            `${logPrefix({ dir: "in", at: receivedAt })} Warning: unknown messageId=0x${parsed.messageId.toString(16)} (ACKing anyway)`
           );
         }
 
@@ -173,10 +179,15 @@ function createTcpServer({ port, store }) {
               throw new Error("Missing 0x64 Successful Tracking Time (timestampBytes) for 0x20 ACK");
             }
 
-            console.log("[ACK TS SOURCE 0x64]:", timestampBytes.toString("hex").toUpperCase());
+            console.log(
+              `${logPrefix({ dir: "out", at: new Date() })} ACK TS SOURCE 0x64: ${timestampBytes
+                .toString("hex")
+                .toUpperCase()}`
+            );
 
             const ack = buildAck({ sequence: parsed.sequence, imei: imei8, timestampBytes });
             socket.write(ack);
+            console.log(`${logPrefix({ dir: "out", at: new Date() })} ACK HEX: ${toHex(ack)}`);
           } else {
             const ack = buildAckFrame({
               version: parsed.version,
@@ -186,7 +197,7 @@ function createTcpServer({ port, store }) {
               fixedReply
             });
             socket.write(ack);
-            console.log("[TCP] ACK HEX:", toHex(ack));
+            console.log(`${logPrefix({ dir: "out", at: new Date() })} ACK HEX: ${toHex(ack)}`);
           }
 
           // After successful uplink (0x20), push one queued server command (0x21), per Xexun API.
@@ -197,16 +208,16 @@ function createTcpServer({ port, store }) {
             sendNextQueuedCommand(socket, parsed.imei, store);
           }
         } catch (e) {
-          console.log("[TCP] Failed to send ACK:", e?.message || String(e));
+          console.log(`${logPrefix({ dir: "out" })} Failed to send ACK:`, e?.message || String(e));
         }
       }
     });
 
     socket.on("close", () => {
       store.releaseSocket(socket);
-      console.log("[TCP] connection closed");
+      console.log(`${logPrefix({ dir: "in" })} connection closed`);
     });
-    socket.on("error", (err) => console.log("[TCP] socket error:", err.message));
+    socket.on("error", (err) => console.log(`${logPrefix({ dir: "in" })} socket error:`, err.message));
   });
 
   server.listen(port, () => console.log(`TCP server listening on port ${port}`));

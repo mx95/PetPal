@@ -17,6 +17,7 @@ function decodeImeiFromBcd(imei8) {
 }
 
 const { crc16ccittFalse, u16be } = require("./crc16x25");
+const { logPrefix } = require("../logging/time");
 
 // Kept for backward-compat in other callers, but 0x20 ACK should derive marker from incoming timestamp (+1).
 const FIXED_REPLY_MARK_0X20 = Buffer.from([0x00, 0x69, 0xfa, 0x2c, 0x26]);
@@ -493,11 +494,12 @@ function buildAck({ sequence, imei, timestampBytes, version = 0x03, messageId = 
     Buffer.from([0xcf])
   ]);
 
-  console.log("[ACK TS INCOMING]:", ts.toString("hex").toUpperCase());
-  console.log("[ACK TS REPLY (+1)]:", replyTs.toString("hex").toUpperCase());
-  console.log("[CRC INPUT HEX]:", payload.toString("hex").toUpperCase());
-  console.log("[CRC OUTPUT]:", u16be(crcVal).toString("hex").toUpperCase());
-  console.log("[ACK FINAL HEX]:", frame.toString("hex").toUpperCase());
+  // Keep these for debugging, but label them clearly as server output.
+  console.log(`${logPrefix({ dir: "out" })} ACK TS INCOMING: ${ts.toString("hex").toUpperCase()}`);
+  console.log(`${logPrefix({ dir: "out" })} ACK TS REPLY (+1): ${replyTs.toString("hex").toUpperCase()}`);
+  console.log(`${logPrefix({ dir: "out" })} CRC INPUT HEX: ${payload.toString("hex").toUpperCase()}`);
+  console.log(`${logPrefix({ dir: "out" })} CRC OUTPUT: ${u16be(crcVal).toString("hex").toUpperCase()}`);
+  console.log(`${logPrefix({ dir: "out" })} ACK FINAL HEX: ${frame.toString("hex").toUpperCase()}`);
   return frame;
 }
 
