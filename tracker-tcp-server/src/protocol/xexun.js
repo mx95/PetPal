@@ -474,8 +474,14 @@ function buildAck({ sequence, imei, timestampBytes, version = 0x03, messageId = 
     throw new Error("buildAck requires timestampBytes length=4");
   }
 
+  const offsetRaw = process.env.ACK_TS_OFFSET_SECONDS;
+  const offsetParsed = offsetRaw != null && String(offsetRaw).trim() !== "" ? Number(offsetRaw) : 3;
+  const offsetSec = Number.isFinite(offsetParsed) ? Math.max(0, Math.floor(offsetParsed)) : 3;
+
   const replyTs = Buffer.alloc(4);
-  replyTs.writeUInt32BE((ts.readUInt32BE(0) + 1) >>> 0, 0);
+  // Different provider portals / firmwares expect different offsets (commonly +3 or +4).
+  // Make it configurable to match the provider's "Correct reply" example.
+  replyTs.writeUInt32BE((ts.readUInt32BE(0) + offsetSec) >>> 0, 0);
 
   const payload = Buffer.concat([
     Buffer.from([version & 0xff, messageId & 0xff, sequence & 0xff]),
@@ -496,7 +502,9 @@ function buildAck({ sequence, imei, timestampBytes, version = 0x03, messageId = 
 
   // Keep these for debugging, but label them clearly as server output.
   console.log(`${logPrefix({ dir: "out" })} ACK TS INCOMING: ${ts.toString("hex").toUpperCase()}`);
-  console.log(`${logPrefix({ dir: "out" })} ACK TS REPLY (+1): ${replyTs.toString("hex").toUpperCase()}`);
+  console.log(
+    `${logPrefix({ dir: "out" })} ACK TS REPLY (+${offsetSec}): ${replyTs.toString("hex").toUpperCase()}`
+  );
   console.log(`${logPrefix({ dir: "out" })} CRC INPUT HEX: ${payload.toString("hex").toUpperCase()}`);
   console.log(`${logPrefix({ dir: "out" })} CRC OUTPUT: ${u16be(crcVal).toString("hex").toUpperCase()}`);
   console.log(`${logPrefix({ dir: "out" })} ACK FINAL HEX: ${frame.toString("hex").toUpperCase()}`);
