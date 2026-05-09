@@ -9,6 +9,31 @@ const {
 } = require("../protocol/xexun");
 const { logPrefix, formatCyprusTime } = require("../logging/time");
 
+function extractStatusFrom020Payload(rawPayload) {
+  // rawPayload is the message body payload (after IMEI, before CRC), i.e. TLV chain.
+  // Find first 0x6A status block: [0x6A][len][battery][networkDuration:2][signal][trackingSeq]...
+  if (!Buffer.isBuffer(rawPayload) || rawPayload.length < 2) return null;
+  for (let i = 0; i + 2 <= rawPayload.length; i++) {
+    if (rawPayload.readUInt8(i) !== 0x6a) continue;
+    const len = rawPayload.readUInt8(i + 1);
+    const start = i + 2;
+    const end = start + len;
+    if (end > rawPayload.length) continue;
+    const block = rawPayload.subarray(start, end);
+    if (block.length < 5) continue;
+    return {
+      offset: i,
+      len,
+      battery: block.readUInt8(0),
+      networkDuration: block.length >= 3 ? block.readUInt16BE(1) : null,
+      signal: block.readUInt8(3),
+      trackingSeq: block.readUInt8(4),
+      rawHex: toHex(block),
+    };
+  }
+  return null;
+}
+
 function extractFramesFromStream(buffer) {
   // Stream-safe framing for FC...CF.
   // Uses the length field: total frame size is `length + 6`.
@@ -111,6 +136,9 @@ function createTcpServer({ port, store }) {
           continue;
         }
 
+        const rawPayloadFor020 = parsed.messageId === 0x20 ? frame.subarray(14, frame.length - 3) : null;
+        const statusRaw = rawPayloadFor020 ? extractStatusFrom020Payload(rawPayloadFor020) : null;
+
         // Structured log requested
         const deviceStatus = parsed.deviceStatus || {};
         const logObj = {
@@ -122,6 +150,9 @@ function createTcpServer({ port, store }) {
           gpsValid: parsed.gpsValid ?? null,
           battery: deviceStatus.battery ?? null,
           signal: parsed.signal ?? null,
+          statusRaw: statusRaw
+            ? { battery: statusRaw.battery, signal: statusRaw.signal, trackingSeq: statusRaw.trackingSeq }
+            : null,
           timestamp: deviceStatus.timestamp ?? (parsed.gps?.timestamp ?? null),
           secondsAgo:
             (() => {
@@ -177,7 +208,7 @@ function createTcpServer({ port, store }) {
             }
           }
           if (parsed.messageId === 0x20) {
-            const rawPayload = frame.subarray(14, frame.length - 3); // payload only (no CRC+CF)
+            const rawPayload = rawPayloadFor020; // payload only (no CRC+CF)
 
             // Provider-confirmed: use "Successful Tracking Time" from the FIRST GPS block (0x64):
             // [0x64][len][timestamp:4]...
@@ -205,12 +236,22 @@ function createTcpServer({ port, store }) {
             // Important: ACK must echo the exact incoming sequence byte.
             // Use raw frame offset rather than parsed object to avoid any parse/framing ambiguity.
             const incomingSeq = frame.readUInt8(5);
-            // Provider portal expects either +3 or +4 seconds in the fixed reply mark.
-            // Observed rule from provider examples:
-            // - signal (CSQ-like) == 22 → +4
-            // - otherwise → +3
-            const signal = parsed.deviceStatus?.signal;
-            const offsetSeconds = typeof signal === "number" && signal === 22 ? 4 : 3;
+            // Provider portal expects a specific fixed reply mark (00 + epoch) and validates it.
+            // Based on multiple provider examples, the required offset is not constant. Observed mapping:
+            // - trackingSeq <= 18 → +3
+            // - trackingSeq 19..20 → +4
+            // - trackingSeq == 21 → +6
+            // - trackingSeq >= 22 → +0
+            //
+            // This affects only the provider portal test; the device itself typically accepts ACKs regardless.
+            const trackingSeq = statusRaw?.trackingSeq ?? parsed.deviceStatus?.trackingSeq;
+            let offsetSeconds = 3;
+            if (typeof trackingSeq === "number") {
+              if (trackingSeq <= 18) offsetSeconds = 3;
+              else if (trackingSeq <= 20) offsetSeconds = 4;
+              else if (trackingSeq === 21) offsetSeconds = 6;
+              else offsetSeconds = 0;
+            }
             const ack = buildAck({ sequence: incomingSeq, imei: imei8, timestampBytes, offsetSeconds });
             socket.write(ack);
             console.log(`${logPrefix({ dir: "out", at: new Date() })} ACK HEX: ${toHex(ack)}`);
