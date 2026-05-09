@@ -17,7 +17,9 @@ function extractFramesFromStream(buffer) {
 
   while (buf.length > 0) {
     const start = buf.indexOf(0xfc);
-    if (start === -1) return { frames, rest: Buffer.alloc(0) };
+    // If there is no header byte in the current buffer, keep it as `rest`
+    // so we don't accidentally drop prefix/partial traffic from providers.
+    if (start === -1) return { frames, rest: buf };
     if (start > 0) buf = buf.subarray(start);
 
     if (buf.length < 4) return { frames, rest: buf }; // need at least FC + len(2) + ver
@@ -79,6 +81,14 @@ function createTcpServer({ port, store }) {
       pending = Buffer.concat([pending, data]);
       const { frames, rest } = extractFramesFromStream(pending);
       pending = rest;
+
+      if (frames.length === 0 && pending.length > 0 && pending.indexOf(0xfc) === -1) {
+        // Provider misconfig often sends to the wrong port (e.g. HTTP port 5002) or wraps the payload.
+        // This makes it obvious in logs.
+        console.log(
+          `${logPrefix({ dir: "in" })} Warning: received ${pending.length} bytes with no FC header yet (not an Xexun frame). Check provider port is TCP 5001 and it forwards raw FC…CF.`
+        );
+      }
 
       for (const frame of frames) {
         const receivedAt = new Date();
@@ -185,7 +195,10 @@ function createTcpServer({ port, store }) {
                 .toUpperCase()}`
             );
 
-            const ack = buildAck({ sequence: parsed.sequence, imei: imei8, timestampBytes });
+            // Important: ACK must echo the exact incoming sequence byte.
+            // Use raw frame offset rather than parsed object to avoid any parse/framing ambiguity.
+            const incomingSeq = frame.readUInt8(5);
+            const ack = buildAck({ sequence: incomingSeq, imei: imei8, timestampBytes });
             socket.write(ack);
             console.log(`${logPrefix({ dir: "out", at: new Date() })} ACK HEX: ${toHex(ack)}`);
           } else {
