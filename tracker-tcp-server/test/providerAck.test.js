@@ -129,6 +129,18 @@ test("portalAckOffset — regression matrix (synthetic payloads)", () => {
       want: 2
     },
     {
+      name: "live: signal 29 (0x1D), tail 0 → +2 not tracking−signal",
+      status: { trackingSeq: 32, signal: 29 },
+      gps: 0,
+      want: 2
+    },
+    {
+      name: "live: signal 29, tracking 34 → +2 not +5",
+      status: { trackingSeq: 34, signal: 29 },
+      gps: 0,
+      want: 2
+    },
+    {
       name: "provider S4: Δ5 + GPS tail 6 → +0",
       status: { trackingSeq: 29, signal: 24 },
       gps: 6,

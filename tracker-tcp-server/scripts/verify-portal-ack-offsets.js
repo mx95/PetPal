@@ -40,6 +40,18 @@ const cases = [
     status: { trackingSeq: 35, signal: 23 },
     gps: 0,
     want: 2
+  },
+  {
+    name: "tracking 32 / signal 29 (vendor signal 29 & tail 0) → +2 not +Δ",
+    status: { trackingSeq: 32, signal: 29 },
+    gps: 0,
+    want: 2
+  },
+  {
+    name: "tracking 34 / signal 29 (vendor signal 29 & tail 0) → +2 not +Δ",
+    status: { trackingSeq: 34, signal: 29 },
+    gps: 0,
+    want: 2
   }
 ];
 

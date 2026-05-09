@@ -8,7 +8,7 @@
  * Rules combine earlier PetPal portal tuning with **provider-published golden ACKs**:
  * - No GPS 0x64 in payload → use ACK_TS_OFFSET_SECONDS or default **+3** (status/battery-only uplinks).
  * - Provider golden: tracking−signal = 5 and GPS tail byte = **6** → **+0** (fixed reply matches GPS time).
- * - Xexun samples with comm signal **23**, tracking ≥ **30**, idle GPS interval (tail **0**) → **+2** (not +Δ).
+ * - Same pattern with comm signal **23** or **29** (0x1D), tracking ≥ **30**, idle GPS interval (tail **0**) → **+2** (not +Δ).
  * - When tracking < signal: **4 × (signal − tracking)**.
  * - Else base Δ = tracking − signal; if Δ = 6, GPS tail > 0, tracking ≥ 30 → **+7** (interval bump).
  */
@@ -62,8 +62,8 @@ function ackOffsetSecondsFor020Ack(statusRaw, rawPayload) {
       return 0;
     }
 
-    // Vendor uplinks with strong lock (signal 23), tracking ≥ 30, zero GPS-interval tail → +2 s fixed reply.
-    if (gpsTrackTail === 0 && t >= 30 && s === 23) {
+    // Vendor uplinks: comm signal 23 or 29 (0x1D), tracking ≥ 30, zero GPS-interval tail → +2 s (not +Δ).
+    if (gpsTrackTail === 0 && t >= 30 && (s === 23 || s === 29)) {
       return 2;
     }
 
