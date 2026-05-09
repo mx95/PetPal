@@ -467,7 +467,7 @@ function buildAckFrame({ version = 0x03, messageId, sequence, imei8, fixedReply 
   return buf;
 }
 
-function buildAck({ sequence, imei, timestampBytes, version = 0x03, messageId = 0x20 }) {
+function buildAck({ sequence, imei, timestampBytes, version = 0x03, messageId = 0x20, offsetSeconds }) {
   const imei8 = Buffer.isBuffer(imei) ? imei : encodeImeiBcd(imei);
   const ts = Buffer.from(timestampBytes || []);
   if (ts.length !== 4) {
@@ -476,7 +476,12 @@ function buildAck({ sequence, imei, timestampBytes, version = 0x03, messageId = 
 
   const offsetRaw = process.env.ACK_TS_OFFSET_SECONDS;
   const offsetParsed = offsetRaw != null && String(offsetRaw).trim() !== "" ? Number(offsetRaw) : 3;
-  const offsetSec = Number.isFinite(offsetParsed) ? Math.max(0, Math.floor(offsetParsed)) : 3;
+  const envOffsetSec = Number.isFinite(offsetParsed) ? Math.max(0, Math.floor(offsetParsed)) : 3;
+  const passedOffsetSec =
+    offsetSeconds != null && Number.isFinite(Number(offsetSeconds))
+      ? Math.max(0, Math.floor(Number(offsetSeconds)))
+      : null;
+  const offsetSec = passedOffsetSec ?? envOffsetSec;
 
   const replyTs = Buffer.alloc(4);
   // Different provider portals / firmwares expect different offsets (commonly +3 or +4).

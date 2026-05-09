@@ -205,7 +205,13 @@ function createTcpServer({ port, store }) {
             // Important: ACK must echo the exact incoming sequence byte.
             // Use raw frame offset rather than parsed object to avoid any parse/framing ambiguity.
             const incomingSeq = frame.readUInt8(5);
-            const ack = buildAck({ sequence: incomingSeq, imei: imei8, timestampBytes });
+            // Provider portal expects either +3 or +4 seconds in the fixed reply mark.
+            // Observed rule from provider examples:
+            // - signal (CSQ-like) == 22 → +4
+            // - otherwise → +3
+            const signal = parsed.deviceStatus?.signal;
+            const offsetSeconds = typeof signal === "number" && signal === 22 ? 4 : 3;
+            const ack = buildAck({ sequence: incomingSeq, imei: imei8, timestampBytes, offsetSeconds });
             socket.write(ack);
             console.log(`${logPrefix({ dir: "out", at: new Date() })} ACK HEX: ${toHex(ack)}`);
           } else {
