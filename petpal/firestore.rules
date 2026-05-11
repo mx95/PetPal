@@ -19,6 +19,23 @@ service cloud.firestore {
         && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
     }
 
+    function isCompanyOwner(companyId) {
+      return request.auth != null && request.auth.uid == companyId;
+    }
+
+    function companyDoc(companyId) {
+      return get(/databases/$(database)/documents/companies/$(companyId));
+    }
+
+    function isApprovedCompany(companyId) {
+      return isCompanyOwner(companyId) && companyDoc(companyId).data.status == 'approved';
+    }
+
+    function isPublicBookableCompany(companyId) {
+      return companyDoc(companyId).data.status == 'approved'
+        && companyDoc(companyId).data.bookingEnabled == true;
+    }
+
     match /companies/{userId} {
       allow read: if request.auth != null
         && (request.auth.uid == userId || isAdmin());
@@ -31,6 +48,23 @@ service cloud.firestore {
             && request.resource.data.status == 'pending'
             && (resource.data.status == 'pending' || resource.data.status == 'rejected'));
       allow delete: if false;
+
+      // Provider service catalog (public read if booking-enabled + approved; owner/admin writes).
+      match /services/{serviceId} {
+        allow read: if request.auth != null && isPublicBookableCompany(userId);
+        allow create, update, delete: if isAdmin() || isApprovedCompany(userId);
+      }
+
+      // Slot-based availability (public read if booking-enabled + approved; owner/admin writes).
+      match /availability/{slotId} {
+        allow read: if request.auth != null && isPublicBookableCompany(userId);
+        allow create, update, delete: if isAdmin() || isApprovedCompany(userId);
+      }
+
+      // Provider-managed roster for walk-ins / unregistered dogs (private to provider/admin).
+      match /clientPets/{petId} {
+        allow read, create, update, delete: if isAdmin() || isApprovedCompany(userId);
+      }
     }
 
     // App user profiles keyed by auth uid.
@@ -62,11 +96,51 @@ service cloud.firestore {
       }
     }
 
+    // Bookings: top-level collection so customers and providers can query efficiently.
+    match /bookings/{bookingId} {
+      allow read: if request.auth != null
+        && (resource.data.customerUid == request.auth.uid
+            || resource.data.companyId == request.auth.uid
+            || isAdmin());
+
+      allow create: if request.auth != null
+        && request.resource.data.customerUid == request.auth.uid
+        && request.resource.data.companyId is string
+        && isPublicBookableCompany(request.resource.data.companyId)
+        && request.resource.data.status == 'booked';
+
+      // Customer can cancel their own booking; provider can manage status for their company bookings.
+      allow update: if request.auth != null
+        && (
+          // Provider/admin
+          isAdmin()
+          || (resource.data.companyId == request.auth.uid)
+          // Customer cancel only (keep immutable linkage)
+          || (
+            resource.data.customerUid == request.auth.uid
+            && request.resource.data.customerUid == resource.data.customerUid
+            && request.resource.data.companyId == resource.data.companyId
+            && request.resource.data.slotId == resource.data.slotId
+            && request.resource.data.serviceId == resource.data.serviceId
+            && request.resource.data.status == 'cancelled'
+          )
+        );
+
+      allow delete: if false;
+    }
+
     // Unique account/username reservation for race-safe signup.
     match /accountNames/{nameId} {
       allow read: if request.auth != null;
       allow create, update: if request.auth != null
         && request.resource.data.uid == request.auth.uid;
+      allow delete: if false;
+    }
+
+    // Public provider directory (one doc per approved company). Used for customer browse/search.
+    match /providers/{companyId} {
+      allow read: if request.auth != null;
+      allow create, update: if isAdmin() || isApprovedCompany(companyId);
       allow delete: if false;
     }
 

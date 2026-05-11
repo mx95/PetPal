@@ -17,6 +17,8 @@ const en = {
     register: 'Register',
     logout: 'Log out',
     docs: 'Docs',
+    bookings: 'Bookings',
+    provider: 'Provider',
   },
   home: {
     badge: 'Overview',
@@ -143,6 +145,8 @@ const en = {
     tracking: 'Live',
     community: 'Pack',
     profile: 'Profile',
+    bookings: 'Book',
+    provider: 'Manage',
     fab: 'Start a walk',
   },
   activityHub: {
@@ -226,6 +230,8 @@ const en = {
     action: {
       editProfile: { title: 'Edit profile', desc: 'Update your personal details and contact information.' },
       pets: { title: 'Manage your pets', desc: 'Add new friends, edit details, link trackers.' },
+      bookings: { title: 'Book services', desc: 'Browse providers and manage your appointments.' },
+      provider: { title: 'Provider portal', desc: 'Manage services, availability, and bookings.' },
       business: { title: 'Add your Business', desc: 'Add your business on PetPal map and boost your shop.' },
       docs: { title: 'Read the guides', desc: 'Quick walkthroughs of every PetPal feature.' },
       admin: { title: 'Admin queue', desc: 'Review pending venue applications.' },

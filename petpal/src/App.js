@@ -22,6 +22,10 @@ import Documentation from './Pages/Documentation';
 import HomeScreen from './Pages/HomeScreen';
 import PublicPetProfile from './Pages/PublicPetProfile';
 import Profile from './Pages/Profile';
+import ProviderPortal from './Pages/ProviderPortal';
+import BookingsHub from './Pages/BookingsHub';
+import ProviderProfile from './Pages/ProviderProfile';
+import BookService from './Pages/BookService';
 import UserAvatar from './components/UserAvatar';
 import './ui/ui.css';
 import CompanyApply from './Pages/CompanyApply';
@@ -33,6 +37,7 @@ import { useI18n } from './i18n/I18nContext';
 import ScrollToTop from './components/ScrollToTop';
 import BottomNav from './components/BottomNav';
 import { OpeningScreen } from './components/OpeningScreen';
+import { useCompany } from './company/CompanyContext';
 
 const Tracking = lazy(() => import('./Pages/Tracking'));
 
@@ -47,6 +52,7 @@ function TrackingRouteFallback() {
 
 function TopNav() {
   const { user, signOut } = useAuth();
+  const { isApprovedCompany, profile } = useCompany();
   const { t } = useI18n();
   const premiumPathMatch = useMatch('/premium/*');
   const navigate = useNavigate();
@@ -133,6 +139,16 @@ function TopNav() {
           {user ? (
             <NavLink className={navItemClassName()} to="/tracking">
               {t('nav.tracking')}
+            </NavLink>
+          ) : null}
+          {user ? (
+            <NavLink className={navItemClassName()} to="/bookings">
+              {t('nav.bookings')}
+            </NavLink>
+          ) : null}
+          {user && isApprovedCompany && profile?.bookingEnabled ? (
+            <NavLink className={navItemClassName()} to="/provider">
+              {t('nav.provider')}
             </NavLink>
           ) : null}
           {!user ? (
@@ -260,6 +276,38 @@ function App() {
             element={
               <RequireAuth>
                 <Profile />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/provider"
+            element={
+              <RequireAuth>
+                <ProviderPortal />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/bookings"
+            element={
+              <RequireAuth>
+                <BookingsHub />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/bookings/provider/:providerId"
+            element={
+              <RequireAuth>
+                <ProviderProfile />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/bookings/provider/:providerId/book/:serviceId"
+            element={
+              <RequireAuth>
+                <BookService />
               </RequireAuth>
             }
           />

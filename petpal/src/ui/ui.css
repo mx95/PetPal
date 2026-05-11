@@ -4856,7 +4856,6 @@ body.pp-noScroll {
   .pp-nav--auth .pp-navUtility .pp-langSwitcher { display: none; }
   .pp-nav { padding-top: 12px; padding-bottom: 12px; }
   .pp-feed { gap: 18px; padding-bottom: 24px; }
-  .pp-bottomNav__item--profile { display: none; }
   .pp-petCard {
     grid-template-columns: 1fr;
     grid-template-areas: 'avatar' 'body' 'actions';

@@ -1,6 +1,7 @@
 import {
   collection,
   doc,
+  getDoc,
   getDocs,
   onSnapshot,
   orderBy,
@@ -10,6 +11,7 @@ import {
   updateDoc,
   where,
 } from 'firebase/firestore';
+import { seedProviderListingFromCompany } from '../bookings/providerDirectoryFirestore';
 import { getDb, isFirebaseConfigured } from '../firebase';
 
 const COL = 'companies';
@@ -110,11 +112,21 @@ export async function fetchPendingCompanyApplications() {
  * @param {string} [note]
  */
 export async function adminApproveCompany(userId, note) {
-  await updateDoc(companyDocRef(userId), {
+  const ref = companyDocRef(userId);
+  const snap = await getDoc(ref);
+  const prev = snap.exists() ? snap.data() : null;
+  await updateDoc(ref, {
     status: 'approved',
     reviewedAt: serverTimestamp(),
     reviewNote: note ? String(note).slice(0, 500) : '',
   });
+  if (prev) {
+    try {
+      await seedProviderListingFromCompany(userId, prev);
+    } catch (e) {
+      console.warn('[adminApproveCompany] seedProviderListingFromCompany failed', e);
+    }
+  }
 }
 
 /**

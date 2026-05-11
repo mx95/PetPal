@@ -41,7 +41,7 @@ function ProfileActionCard({ to, icon, title, desc, accent, onClick }) {
 
 export default function Profile() {
   const { user, signOut } = useAuth();
-  const { isAdmin } = useCompany();
+  const { isAdmin, isApprovedCompany, profile } = useCompany();
   const { pets } = usePets();
   const { walkLog, ownerXp, level, achievementCount, lifetimeStats } = useGame();
   const { t } = useI18n();
@@ -222,6 +222,10 @@ export default function Profile() {
 
   const items = [
     { key: 'pets', to: '/pets', icon: ICONS.pets, accent: 'pets' },
+    { key: 'bookings', to: '/bookings', icon: ICONS.docs, accent: 'docs' },
+    ...(isApprovedCompany && profile?.bookingEnabled
+      ? [{ key: 'provider', to: '/provider', icon: ICONS.business, accent: 'business' }]
+      : []),
     { key: 'business', to: '/company/apply', icon: ICONS.business, accent: 'business' },
     { key: 'docs', to: '/docs', icon: ICONS.docs, accent: 'docs' },
     ...(isAdmin ? [{ key: 'admin', to: '/admin', icon: ICONS.admin, accent: 'admin' }] : []),

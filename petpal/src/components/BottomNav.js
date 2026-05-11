@@ -2,6 +2,7 @@ import React from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { useI18n } from '../i18n/I18nContext';
 import { useAuth } from '../auth/AuthProvider';
+import { useCompany } from '../company/CompanyContext';
 
 const ICONS = {
   home: (
@@ -30,28 +31,58 @@ const ICONS = {
       <path d="M3 20c1-3 11-4 12 0M14 20c.6-1.7 5.4-2.5 7-1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
     </svg>
   ),
-  profile: (
+  bookings: (
     <svg viewBox="0 0 24 24" width="22" height="22" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
-      <circle cx="12" cy="9.5" r="4" stroke="currentColor" strokeWidth="1.6" />
-      <path d="M5 21c1-3.5 13-3.5 14 0" stroke="currentColor" strokeWidth="1.55" strokeLinecap="round" />
+      <path
+        d="M7 3v3M17 3v3M4.5 7.5h15"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
+      <path
+        d="M6.5 5.5h11A2.5 2.5 0 0 1 20 8v10.5A2.5 2.5 0 0 1 17.5 21h-11A2.5 2.5 0 0 1 4 18.5V8A2.5 2.5 0 0 1 6.5 5.5Z"
+        stroke="currentColor"
+        strokeWidth="1.6"
+      />
+      <path d="M8 11h3M8 15h6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+    </svg>
+  ),
+  provider: (
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+      <path
+        d="M8 7V6a4 4 0 0 1 8 0v1"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
+      <path
+        d="M6.5 7.5h11A2.5 2.5 0 0 1 20 10v8.5A2.5 2.5 0 0 1 17.5 21h-11A2.5 2.5 0 0 1 4 18.5V10A2.5 2.5 0 0 1 6.5 7.5Z"
+        stroke="currentColor"
+        strokeWidth="1.6"
+      />
+      <path d="M10 12h4M10 15h4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
     </svg>
   ),
 };
 
-const ITEMS = [
+const BASE_ITEMS = [
   { to: '/', end: true, key: 'home', labelKey: 'bottomNav.home' },
   { to: '/pets', key: 'pets', labelKey: 'bottomNav.pets' },
   { to: '/tracking', key: 'tracking', labelKey: 'bottomNav.tracking' },
-  { to: '/community', key: 'community', labelKey: 'bottomNav.community' },
-  { to: '/profile', key: 'profile', labelKey: 'bottomNav.profile' },
 ];
 
 /** Mobile-first sticky bottom navigation with a centered FAB for "Start walk". */
 export default function BottomNav() {
   const { user } = useAuth();
+  const { isApprovedCompany, profile } = useCompany();
   const { t } = useI18n();
   if (!user) return null;
 
+  const last =
+    isApprovedCompany && profile?.bookingEnabled
+      ? { to: '/provider', key: 'provider', labelKey: 'bottomNav.provider' }
+      : { to: '/bookings', key: 'bookings', labelKey: 'bottomNav.bookings' };
+  const ITEMS = [...BASE_ITEMS, last];
   const left = ITEMS.slice(0, 2);
   const right = ITEMS.slice(2);
 
@@ -60,11 +91,7 @@ export default function BottomNav() {
       key={item.key}
       to={item.to}
       end={item.end}
-      className={({ isActive }) =>
-        `pp-bottomNav__item ${item.key === 'profile' ? 'pp-bottomNav__item--profile' : ''} ${
-          isActive ? 'pp-bottomNav__item--on' : ''
-        }`
-      }
+      className={({ isActive }) => `pp-bottomNav__item ${isActive ? 'pp-bottomNav__item--on' : ''}`}
       aria-label={t(item.labelKey)}
       title={t(item.labelKey)}
     >
