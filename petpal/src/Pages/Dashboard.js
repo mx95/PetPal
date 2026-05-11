@@ -1,4 +1,4 @@
-import React, { useEffect, useId, useRef, useState } from 'react';
+import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
 import { useI18n } from '../i18n/I18nContext';
@@ -12,6 +12,9 @@ import { walkStreakDays } from '../walk/walkStats';
 import LifetimeAchievements from '../components/LifetimeAchievements';
 
 const WEEKLY_GOAL_KM = 18;
+const DAILY_MISSIONS_HUB = 3;
+const PACK_HUB_MAX = 4;
+const PET_ACH_HUB = 2;
 
 function km(n) {
   return `${Number(n || 0).toFixed(1)} km`;
@@ -119,6 +122,41 @@ export default function Dashboard() {
 
   const greetingName =
     user?.displayName?.trim() || (user?.email ? user.email.split('@')[0] : '') || '';
+
+  const dailyPrimary = useMemo(() => DAILY_MISSIONS.slice(0, DAILY_MISSIONS_HUB), []);
+  const dailyExtra = useMemo(() => DAILY_MISSIONS.slice(DAILY_MISSIONS_HUB), []);
+
+  const renderMission = (m) => {
+    const done = isDailyDone(m.id);
+    const needKm = m.minWalkKmToday;
+    const dayKm = walkTotals.day;
+    const walkMet = needKm == null || dayKm >= needKm;
+    return (
+      <div key={m.id} className={`pp-hubMission ${done ? 'pp-hubMission--done' : ''}`}>
+        <div className="pp-hubMission__body">
+          <span className="pp-hubMission__label">{m.label}</span>
+          <span className="pp-hubMission__xp">+{m.xp} XP</span>
+          {m.description ? <span className="pp-hubMission__desc">{m.description}</span> : null}
+          {needKm != null && !done ? (
+            <span className="pp-hubMission__track">
+              {t('dashboard.todaySlash', { cur: dayKm.toFixed(1), need: needKm })}
+            </span>
+          ) : null}
+        </div>
+        {done ? (
+          <span className="pp-hubMission__tag">{t('activityHub.doneTag')}</span>
+        ) : needKm != null ? (
+          <button type="button" className="pp-btn pp-btnPrimary" disabled={!walkMet} onClick={() => completeDaily(m.id)}>
+            {walkMet ? t('activityHub.claimReward') : t('activityHub.needKm', { n: needKm })}
+          </button>
+        ) : (
+          <button type="button" className="pp-btn pp-btnPrimary" onClick={() => completeDaily(m.id)}>
+            {t('activityHub.gotIt')}
+          </button>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className="pp-feed pp-activityHub">
@@ -234,18 +272,21 @@ export default function Dashboard() {
           </div>
           <p className="pp-hubGoal__motivate">{t('activityHub.weeklyGoalLine', { pct: weeklyPct })}</p>
         </div>
-        <div className="pp-hubGoal pp-hubGoal--xp">
-          <div className="pp-hubGoal__row">
-            <span>{t('lifetime.title')} — {t('activityHub.levelXpLabel')}</span>
-            <span className="pp-hubGoal__nums">
-              {ownerXp} XP
-            </span>
+        <details className="pp-hubXpFold">
+          <summary className="pp-hubXpFold__sum">{t('activityHub.xpDetailsToggle')}</summary>
+          <div className="pp-hubGoal pp-hubGoal--xp">
+            <div className="pp-hubGoal__row">
+              <span>
+                {t('lifetime.title')} — {t('activityHub.levelXpLabel')}
+              </span>
+              <span className="pp-hubGoal__nums">{ownerXp} XP</span>
+            </div>
+            <div className="pp-levelBar pp-hubGoal__bar" aria-hidden>
+              <div className="pp-levelBar__fill pp-levelBar__fill--purple" style={{ width: `${levelPct}%` }} />
+            </div>
+            <p className="pp-hubGoal__motivate">{t('activityHub.xpToNext', { current: levelXp, max: nextMax })}</p>
           </div>
-          <div className="pp-levelBar pp-hubGoal__bar" aria-hidden>
-            <div className="pp-levelBar__fill pp-levelBar__fill--purple" style={{ width: `${levelPct}%` }} />
-          </div>
-          <p className="pp-hubGoal__motivate">{t('activityHub.xpToNext', { current: levelXp, max: nextMax })}</p>
-        </div>
+        </details>
       </section>
 
       {/* 4. Daily missions */}
@@ -254,39 +295,13 @@ export default function Dashboard() {
         <p className="pp-subtle" style={{ marginBottom: 12 }}>
           {t('activityHub.dailySub')}
         </p>
-        <div className="pp-hubMissionGrid">
-          {DAILY_MISSIONS.map((m) => {
-            const done = isDailyDone(m.id);
-            const needKm = m.minWalkKmToday;
-            const dayKm = walkTotals.day;
-            const walkMet = needKm == null || dayKm >= needKm;
-            return (
-              <div key={m.id} className={`pp-hubMission ${done ? 'pp-hubMission--done' : ''}`}>
-                <div className="pp-hubMission__body">
-                  <span className="pp-hubMission__label">{m.label}</span>
-                  <span className="pp-hubMission__xp">+{m.xp} XP</span>
-                  {m.description ? <span className="pp-hubMission__desc">{m.description}</span> : null}
-                  {needKm != null && !done ? (
-                    <span className="pp-hubMission__track">
-                      {t('dashboard.todaySlash', { cur: dayKm.toFixed(1), need: needKm })}
-                    </span>
-                  ) : null}
-                </div>
-                {done ? (
-                  <span className="pp-hubMission__tag">{t('activityHub.doneTag')}</span>
-                ) : needKm != null ? (
-                  <button type="button" className="pp-btn pp-btnPrimary" disabled={!walkMet} onClick={() => completeDaily(m.id)}>
-                    {walkMet ? t('activityHub.claimReward') : t('activityHub.needKm', { n: needKm })}
-                  </button>
-                ) : (
-                  <button type="button" className="pp-btn pp-btnPrimary" onClick={() => completeDaily(m.id)}>
-                    {t('activityHub.gotIt')}
-                  </button>
-                )}
-              </div>
-            );
-          })}
-        </div>
+        <div className="pp-hubMissionGrid">{dailyPrimary.map((m) => renderMission(m))}</div>
+        {dailyExtra.length ? (
+          <details className="pp-hubMissionFold">
+            <summary className="pp-hubMissionFold__sum">{t('activityHub.dailyShowMore', { n: DAILY_MISSIONS.length })}</summary>
+            <div className="pp-hubMissionGrid pp-hubMissionGrid--extra">{dailyExtra.map((m) => renderMission(m))}</div>
+          </details>
+        ) : null}
       </section>
 
       {/* 5. Walk log */}
@@ -369,7 +384,7 @@ export default function Dashboard() {
           </p>
         ) : (
           <ul className="pp-hubPackList">
-            {pets.map((p) => (
+            {pets.slice(0, PACK_HUB_MAX).map((p) => (
               <li key={p.id} className="pp-hubPackList__item">
                 <PetAvatar pet={p} size={40} />
                 <div className="pp-hubPackList__meta">
@@ -380,6 +395,13 @@ export default function Dashboard() {
             ))}
           </ul>
         )}
+        {pets.length > PACK_HUB_MAX ? (
+          <p className="pp-subtle pp-activityHub__packMore">
+            <Link className="pp-link" to="/pets" style={{ padding: 0 }}>
+              {t('activityHub.packMorePets', { n: pets.length - PACK_HUB_MAX })}
+            </Link>
+          </p>
+        ) : null}
       </section>
 
       {/* Per-pet tracks (accordion) */}
@@ -390,6 +412,7 @@ export default function Dashboard() {
             <p className="pp-subtle" style={{ marginBottom: 12 }}>
               {t('activityHub.petTracksSub')}
             </p>
+            <p className="pp-subtle pp-activityHub__petGoalsHint">{t('activityHub.petGoalsHubHint')}</p>
             {pets.map((p) => (
               <details key={p.id} className="pp-hubAccordion pp-hubAccordion--nested">
                 <summary className="pp-hubAccordion__sum">
@@ -398,7 +421,7 @@ export default function Dashboard() {
                 <div className="pp-petAchGrid pp-petAchGrid--hub">
                   <div className="pp-achSection pp-achSection--track">
                     <div className="pp-achSection__label">📡 GPS</div>
-                    {trackingAchievementDefs.map((a) => (
+                    {trackingAchievementDefs.slice(0, PET_ACH_HUB).map((a) => (
                       <div key={a.key} className="pp-achLine pp-achLine--compact">
                         <div style={{ fontWeight: 700, fontSize: 13 }}>{a.label}</div>
                         <ProgressMicro value01={petProgressPercent(p.id, 'track', a.key)} />
@@ -407,7 +430,7 @@ export default function Dashboard() {
                   </div>
                   <div className="pp-achSection pp-achSection--walk">
                     <div className="pp-achSection__label">🚶 Walks</div>
-                    {walkAchievementDefs.map((a) => (
+                    {walkAchievementDefs.slice(0, PET_ACH_HUB).map((a) => (
                       <div key={a.key} className="pp-achLine pp-achLine--compact">
                         <div style={{ fontWeight: 700, fontSize: 13 }}>{a.label}</div>
                         <ProgressMicro value01={petProgressPercent(p.id, 'walk', a.key)} />

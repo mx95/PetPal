@@ -17,15 +17,39 @@ function formatTime(iso, lang) {
   }
 }
 
-/** Last seen: seconds if ≤120s, otherwise whole minutes */
+const MIN = 60;
+const HOUR = 3600;
+const DAY = 86400;
+const WEEK = 7 * DAY;
+const MONTH = 30 * DAY;
+
+/** Relative “last update”: seconds → minutes → hours → days → weeks → months */
 function formatLastSeen(secondsAgo, t) {
   if (secondsAgo == null || !Number.isFinite(secondsAgo)) return t('trackingPage.lastUpdateUnknown');
   const s = Math.max(0, secondsAgo);
-  if (s > 120) {
-    const minutes = Math.max(1, Math.round(s / 60));
-    return t('trackingPage.lastUpdateMinutes', { minutes });
+  if (s < 60) return t('trackingPage.lastUpdateSeconds', { seconds: Math.max(0, Math.round(s)) });
+  if (s < HOUR) return t('trackingPage.lastUpdateMinutes', { minutes: Math.max(1, Math.floor(s / MIN)) });
+  if (s < DAY) {
+    const hours = Math.max(1, Math.floor(s / HOUR));
+    return t('trackingPage.lastUpdateHours', { hours });
   }
-  return t('trackingPage.lastUpdateSeconds', { seconds: Math.round(s) });
+  if (s < WEEK) {
+    const n = Math.max(1, Math.floor(s / DAY));
+    const unit = n === 1 ? t('trackingPage.timeUnitDay') : t('trackingPage.timeUnitDays');
+    return t('trackingPage.lastUpdateDays', { n, unit });
+  }
+  if (s < 4 * WEEK) {
+    const n = Math.max(1, Math.floor(s / WEEK));
+    const unit = n === 1 ? t('trackingPage.timeUnitWeek') : t('trackingPage.timeUnitWeeks');
+    return t('trackingPage.lastUpdateWeeks', { n, unit });
+  }
+  if (s < 365 * DAY) {
+    const n = Math.max(1, Math.floor(s / MONTH));
+    const unit = n === 1 ? t('trackingPage.timeUnitMonth') : t('trackingPage.timeUnitMonths');
+    return t('trackingPage.lastUpdateMonths', { n, unit });
+  }
+  const months = Math.floor(s / MONTH);
+  return t('trackingPage.lastUpdateMonthsLong', { months: Math.max(12, months) });
 }
 
 function batteryFillStyle(pct) {

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
+import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
 import { bookSlot, fetchOpenSlots } from '../bookings/bookingFirestore';
 import { subscribePets } from '../pets/petsFirestore';
@@ -12,6 +12,7 @@ function toLocalInputValue(d) {
 export default function BookService() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const { providerId, serviceId } = useParams();
   const companyId = String(providerId || '');
   const uid = user?.uid || null;
@@ -25,6 +26,12 @@ export default function BookService() {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => subscribePets(uid, setPets), [uid]);
+
+  useEffect(() => {
+    const st = location.state && typeof location.state === 'object' ? location.state : null;
+    const ad = st?.afterDate;
+    if (typeof ad === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(ad)) setAfterDate(ad.slice(0, 10));
+  }, [location.state]);
 
   useEffect(() => {
     if (!petId && pets.length) setPetId(pets[0].id);
@@ -52,6 +59,12 @@ export default function BookService() {
     refresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [companyId, serviceId, afterDate]);
+
+  useEffect(() => {
+    const st = location.state && typeof location.state === 'object' ? location.state : null;
+    const sid = st?.slotId;
+    if (typeof sid === 'string' && sid && slots.some((s) => s.id === sid)) setSlotId(sid);
+  }, [location.state, slots]);
 
   if (!user) return <Navigate to="/login" replace />;
 

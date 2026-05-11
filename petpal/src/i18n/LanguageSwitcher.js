@@ -7,11 +7,21 @@ const LANGUAGE_LABEL = {
   ru: 'Russian',
 };
 
+const LANGUAGE_SHORT = {
+  en: 'EN',
+  el: 'EL',
+  ru: 'RU',
+};
+
+function langShort(code) {
+  return LANGUAGE_SHORT[code] || String(code || '').toUpperCase().slice(0, 3);
+}
+
 function FlagIcon({ code, className = '' }) {
   const c = String(code || '').toLowerCase();
   if (c === 'ru') {
     return (
-      <svg className={`pp-langFlag ${className}`.trim()} viewBox="0 0 24 16" role="img" aria-hidden="true">
+      <svg className={`pp-langFlagSvg ${className}`.trim()} viewBox="0 0 24 16" role="img" aria-hidden="true">
         <rect width="24" height="16" fill="#ffffff" />
         <rect y="5.33" width="24" height="5.34" fill="#1c57a7" />
         <rect y="10.66" width="24" height="5.34" fill="#c92a2a" />
@@ -19,9 +29,8 @@ function FlagIcon({ code, className = '' }) {
     );
   }
   if (c === 'el') {
-    // Simplified Greece flag: stripes + canton cross.
     return (
-      <svg className={`pp-langFlag ${className}`.trim()} viewBox="0 0 24 16" role="img" aria-hidden="true">
+      <svg className={`pp-langFlagSvg ${className}`.trim()} viewBox="0 0 24 16" role="img" aria-hidden="true">
         <rect width="24" height="16" fill="#0d5eaf" />
         <rect y="2" width="24" height="2" fill="#ffffff" />
         <rect y="6" width="24" height="2" fill="#ffffff" />
@@ -33,11 +42,9 @@ function FlagIcon({ code, className = '' }) {
       </svg>
     );
   }
-  // Simplified UK/GB flag for English.
   return (
-    <svg className={`pp-langFlag ${className}`.trim()} viewBox="0 0 24 16" role="img" aria-hidden="true">
+    <svg className={`pp-langFlagSvg ${className}`.trim()} viewBox="0 0 24 16" role="img" aria-hidden="true">
       <rect width="24" height="16" fill="#1b4fbf" />
-      {/* diagonals */}
       <path
         d="M0 0 L3 0 L24 13 L24 16 L21 16 L0 3 Z M24 0 L21 0 L0 13 L0 16 L3 16 L24 3 Z"
         fill="#ffffff"
@@ -45,7 +52,6 @@ function FlagIcon({ code, className = '' }) {
       />
       <path d="M0 0 L1.8 0 L24 14.2 L24 16 L22.2 16 L0 1.8 Z" fill="#d62d2d" opacity="0.95" />
       <path d="M24 0 L22.2 0 L0 14.2 L0 16 L1.8 16 L24 1.8 Z" fill="#d62d2d" opacity="0.95" />
-      {/* central cross */}
       <rect x="9.2" width="5.6" height="16" fill="#ffffff" />
       <rect y="5.2" width="24" height="5.6" fill="#ffffff" />
       <rect x="10.2" width="3.6" height="16" fill="#d62d2d" />
@@ -97,20 +103,22 @@ export function LanguageSwitcher({ className = '' }) {
         {t('languageSwitcher.label')}
       </label>
       <div className="pp-langSelectWrap" ref={wrapRef}>
-        <span className="pp-langSelectWrap__flag" aria-hidden>
-          <FlagIcon code={language} />
-        </span>
         <button
           id="pp-language-select"
           type="button"
-          className="pp-langSelect pp-langSelect--minimal"
+          className="pp-langTrigger"
           onClick={() => setOpen((prev) => !prev)}
-          aria-label={t('languageSwitcher.ariaSelect')}
+          aria-label={`${t('languageSwitcher.ariaSelect')}: ${LANGUAGE_LABEL[language] || language}`}
           aria-haspopup="listbox"
           aria-expanded={open}
           title={t('languageSwitcher.selectHint')}
         >
-          <span className="pp-sr">{LANGUAGE_LABEL[language] || String(language || '').toUpperCase()}</span>
+          <span className="pp-langFlagRing" aria-hidden>
+            <FlagIcon code={language} />
+          </span>
+          <span className="pp-langTrigger__code" aria-hidden>
+            {langShort(language)}
+          </span>
         </button>
 
         {open && (
@@ -127,7 +135,9 @@ export function LanguageSwitcher({ className = '' }) {
                     onClick={() => onSelect(code)}
                   >
                     <span className="pp-langMenu__flag" aria-hidden>
-                      <FlagIcon code={code} className="pp-langFlag--menu" />
+                      <span className="pp-langFlagRing pp-langFlagRing--sm">
+                        <FlagIcon code={code} className="pp-langFlagSvg--menu" />
+                      </span>
                     </span>
                     <span>{LANGUAGE_LABEL[code] || code.toUpperCase()}</span>
                   </button>
