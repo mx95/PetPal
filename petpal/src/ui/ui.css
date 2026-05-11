@@ -93,7 +93,7 @@
   left: 12px;
   top: 50%;
   transform: translateY(-50%);
-  font-size: 16px;
+  font-size: 12px;
   line-height: 1;
   pointer-events: none;
 }
@@ -187,8 +187,27 @@
 }
 
 .pp-langMenu__flag {
-  font-size: 16px;
   line-height: 1;
+}
+
+.pp-langBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 20px;
+  min-width: 26px;
+  padding: 0 7px;
+  border-radius: 999px;
+  background: rgba(91, 55, 255, 0.14);
+  color: #2f1c95;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+}
+
+.pp-langBadge--menu {
+  background: rgba(16, 24, 40, 0.08);
+  color: #101828;
+  font-weight: 800;
 }
 
 .pp-langSelect:hover {

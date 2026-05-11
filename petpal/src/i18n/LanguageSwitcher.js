@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { SUPPORTED, useI18n } from './I18nContext';
 
-const FLAG_EMOJI = { en: '🇬🇧', el: '🇬🇷', ru: '🇷🇺' };
 const LANGUAGE_LABEL = {
   en: 'English',
   el: 'Greek',
@@ -13,6 +12,10 @@ const LANGUAGE_SHORT = {
   el: 'EL',
   ru: 'RU',
 };
+
+function langShort(code) {
+  return LANGUAGE_SHORT[code] || String(code || '').toUpperCase().slice(0, 3);
+}
 
 /**
  * Dropdown language selector (EN / EL / RU).
@@ -58,7 +61,7 @@ export function LanguageSwitcher({ className = '' }) {
       </label>
       <div className="pp-langSelectWrap" ref={wrapRef}>
         <span className="pp-langSelectWrap__flag" aria-hidden>
-          {FLAG_EMOJI[language] || '🌐'}
+          <span className="pp-langBadge">{langShort(language)}</span>
         </span>
         <button
           id="pp-language-select"
@@ -87,7 +90,7 @@ export function LanguageSwitcher({ className = '' }) {
                     onClick={() => onSelect(code)}
                   >
                     <span className="pp-langMenu__flag" aria-hidden>
-                      {FLAG_EMOJI[code] || '🌐'}
+                      <span className="pp-langBadge pp-langBadge--menu">{langShort(code)}</span>
                     </span>
                     <span>{LANGUAGE_LABEL[code] || code.toUpperCase()}</span>
                   </button>
