@@ -26,7 +26,11 @@ function mapsLink(lat, lng) {
 
 function PostCard({ post, taggedPet, authorLetter }) {
   const { t } = useI18n();
+  const { show: showToast } = useToast();
   const [liked, setLiked] = useState(false);
+  const [commentsOpen, setCommentsOpen] = useState(false);
+  const [commentDraft, setCommentDraft] = useState('');
+  const [localComments, setLocalComments] = useState(() => []);
   const baseLikes = Number(post.likes) || 0;
   const shownLikes = baseLikes + (liked ? 1 : 0);
   const feedKind = post.feedKind || 'community';
@@ -38,6 +42,27 @@ function PostCard({ post, taggedPet, authorLetter }) {
   const hasVideo = Boolean(post.videoUrl);
   const hasWalk = Boolean(post.walkEmbed);
   const humanLetter = (authorLetter || post.author || '?').trim().charAt(0).toUpperCase();
+
+  const shownComments = (Number(post.comments) || 0) + localComments.length;
+
+  async function copyAuthor() {
+    const val = String(post.author || '').trim();
+    if (!val) return;
+    try {
+      await navigator.clipboard.writeText(val);
+      showToast('Copied');
+    } catch {
+      showToast(val);
+    }
+  }
+
+  function submitComment() {
+    const text = String(commentDraft || '').trim().slice(0, 220);
+    if (!text) return;
+    setLocalComments((prev) => [{ id: `${Date.now()}_${Math.random().toString(16).slice(2)}`, text }, ...prev].slice(0, 20));
+    setCommentDraft('');
+    setCommentsOpen(true);
+  }
 
   return (
     <article
@@ -68,7 +93,12 @@ function PostCard({ post, taggedPet, authorLetter }) {
           </div>
           <div className="pp-post__meta">
           <div className="pp-post__title">
-            <span className="pp-post__human">{post.author}</span>
+            <button type="button" className="pp-post__human" onClick={copyAuthor} title="Copy author">
+              {post.author}
+              <span aria-hidden style={{ marginLeft: 6, opacity: 0.7, fontWeight: 900 }}>
+                ▾
+              </span>
+            </button>
             {isCompany ? (
               <>
                 <span className="pp-post__dot">·</span>
@@ -203,13 +233,51 @@ function PostCard({ post, taggedPet, authorLetter }) {
         >
           {liked ? '❤️' : '🤍'} <span>{shownLikes}</span>
         </button>
-        <button type="button" className="pp-post__action" aria-label={t('community.feedComment')}>
-          💬 <span>{post.comments}</span>
+        <button
+          type="button"
+          className="pp-post__action"
+          aria-label={t('community.feedComment')}
+          aria-expanded={commentsOpen}
+          onClick={() => setCommentsOpen((v) => !v)}
+        >
+          💬 <span>{shownComments}</span>
         </button>
         <button type="button" className="pp-post__action pp-post__action--share" aria-label={t('community.feedShare')}>
           ↗
         </button>
       </div>
+
+      {commentsOpen ? (
+        <div className="pp-post__comments">
+          <div className="pp-post__commentComposer">
+            <input
+              className="pp-input"
+              value={commentDraft}
+              onChange={(e) => setCommentDraft(e.target.value)}
+              placeholder="Write a comment…"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') submitComment();
+              }}
+            />
+            <button type="button" className="pp-btn pp-btn--primary" onClick={submitComment}>
+              Post
+            </button>
+          </div>
+          {localComments.length === 0 ? (
+            <div className="pp-muted" style={{ marginTop: 8, fontSize: 13 }}>
+              No comments yet.
+            </div>
+          ) : (
+            <div className="pp-stack" style={{ marginTop: 10 }}>
+              {localComments.map((c) => (
+                <div key={c.id} className="pp-rowBetween pp-rowBetween--card" style={{ padding: 10 }}>
+                  <div style={{ fontWeight: 700, fontSize: 13 }}>{c.text}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : null}
 
       {post.tags?.length ? (
         <div className="pp-post__tags">

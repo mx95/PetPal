@@ -19,12 +19,83 @@ function podiumThree(rows) {
   return [rows[1], rows[0], rows[2]];
 }
 
-function RowAvatar({ name }) {
+/**
+ * @param {{ name: string, variant?: 'row' | 'podium' | 'me' }} props
+ */
+function LbAvatar({ name, variant = 'row' }) {
+  const letter = (name || '?').trim().charAt(0).toUpperCase();
   return (
-    <span className="pp-lbCard__avatar" aria-hidden>
-      {(name || '?').trim().charAt(0).toUpperCase()}
+    <span className={`pp-lb-avatar pp-lb-avatar--${variant}`} aria-hidden>
+      {letter}
     </span>
   );
+}
+
+/**
+ * @param {{ rank: number, compact?: boolean }} props
+ */
+function RankBadge({ rank, compact = false }) {
+  const tier = rank === 1 ? 'gold' : rank === 2 ? 'silver' : rank === 3 ? 'bronze' : 'default';
+  return (
+    <span
+      className={`pp-lb-rankBadge pp-lb-rankBadge--${tier} ${compact ? 'pp-lb-rankBadge--sm' : ''}`.trim()}
+      aria-hidden
+    >
+      #{rank}
+    </span>
+  );
+}
+
+/**
+ * @param {{
+ *   row: Record<string, unknown>,
+ *   rank: number,
+ *   km: number,
+ *   maxKm: number,
+ *   isYou: boolean,
+ *   t: (k: string, v?: object) => string,
+ * }} props
+ */
+function WalkLeaderboardRow({ row, rank, km, maxKm, isYou, t }) {
+  const pct = Math.min(100, Math.round((km / maxKm) * 100));
+  const label = String(row.displayName || '?');
+  return (
+    <li
+      className={`pp-lb-row ${isYou ? 'pp-lb-row--me' : ''} ${rank <= 3 ? `pp-lb-row--place-${rank}` : ''}`}
+    >
+      <div className="pp-lb-row__rankCol">
+        <RankBadge rank={rank} />
+      </div>
+      <LbAvatar name={label} variant="row" />
+      <div className="pp-lb-row__main">
+        <div className="pp-lb-row__nameRow">
+          <span className="pp-lb-row__name">{label}</span>
+          {isYou ? <span className="pp-lb-row__you">{t('leaderboardPage.tblYouBadge')}</span> : null}
+        </div>
+        <div
+          className="pp-lb-row__bar"
+          role="progressbar"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={pct}
+          aria-label={t('leaderboardPage.progressAria')}
+        >
+          <div className="pp-lb-row__barFill" style={{ width: `${pct}%` }} />
+        </div>
+      </div>
+      <div className="pp-lb-row__stat">
+        <span className="pp-lb-row__statVal">{formatKm(km)}</span>
+        <span className="pp-lb-row__statUnit">{t('leaderboardPage.tblKmSuffix')}</span>
+      </div>
+    </li>
+  );
+}
+
+/**
+ * @param {{ children: React.ReactNode, className?: string, hover?: boolean }} props
+ */
+function LbSurface({ children, className = '', hover = true }) {
+  return <div className={`pp-lb-surface ${hover ? 'pp-lb-surface--hover' : ''} ${className}`.trim()}>{children}</div>;
 }
 
 export default function Leaderboard() {
@@ -95,11 +166,14 @@ export default function Leaderboard() {
   const myRow = useMemo(() => rows.find((r) => r.id === user?.uid), [rows, user?.uid]);
   const myVal = myRow ? Number(myRow[key] || 0) : 0;
   const aheadRow = yourRank != null && yourRank > 1 ? rows[yourRank - 2] : null;
-  const gapKm =
-    aheadRow && myRow != null ? Math.max(0, (Number(aheadRow[key]) || 0) - myVal) : null;
+  const gapKm = aheadRow && myRow != null ? Math.max(0, (Number(aheadRow[key]) || 0) - myVal) : null;
 
-  const onToggle = async (e) => {
-    const next = e.target.checked;
+  const maxWalkKm = useMemo(() => {
+    if (!rows.length) return 1;
+    return Math.max(1, ...rows.map((r) => Number(r[key]) || 0));
+  }, [rows, key]);
+
+  const onShareToggle = async (next) => {
     setSaving(true);
     try {
       await setShareOnLeaderboard(next);
@@ -111,211 +185,222 @@ export default function Leaderboard() {
   const showPodium = !loading && rowsWithKm.length > 0;
 
   return (
-    <div className="pp-feed pp-lb-page">
-      <header className="pp-lb-hero pp-card pp-pad">
-        <span className="pp-lb-hero__emoji" aria-hidden>
-          {t('leaderboardPage.heroEmoji')}
-        </span>
-        <h1 className="pp-lb-hero__title">{t('leaderboardPage.heroTitle')}</h1>
-        <p className="pp-lb-hero__sub">{t('leaderboardPage.heroSub')}</p>
-        <p className="pp-subtle pp-lb-hero__intro">
-          {t('leaderboardPage.introStart')}{' '}
-          <Link to="/dashboard" className="pp-link" style={{ display: 'inline', padding: 0 }}>
-            {t('leaderboardPage.introDashLink')}
-          </Link>
-          {t('leaderboardPage.introEnd')}
-        </p>
-        <Link className="pp-btn pp-btn--ghost pp-lb-hero__back" to="/dashboard" style={{ textDecoration: 'none' }}>
-          {t('common.backDashboard')}
-        </Link>
-      </header>
-
-      <section className="pp-card pp-pad pp-lb-privacy">
-        <h2 className="pp-sectionTitle">{t('leaderboardPage.privacyHeading')}</h2>
-        <p className="pp-subtle" style={{ marginBottom: 12 }}>
-          {t('leaderboardPage.privacyBody')}
-        </p>
-        {!isFirestoreEnabled ? (
-          <p className="pp-subtle" style={{ color: '#b42318' }}>
-            {t('leaderboardPage.firebaseWarn')}
+    <div className="pp-lb-shell">
+      <div className="pp-lb-page pp-lb-page--v2">
+        <LbSurface hover={false} className="pp-lb-hero">
+          <div className="pp-lb-hero__top">
+            <span className="pp-lb-hero__emoji" aria-hidden>
+              {t('leaderboardPage.heroEmoji')}
+            </span>
+            <span className="pp-lb-hero__spark" aria-hidden>
+              ✨
+            </span>
+          </div>
+          <h1 className="pp-lb-hero__title">{t('leaderboardPage.heroTitle')}</h1>
+          <p className="pp-lb-hero__sub">{t('leaderboardPage.heroSub')}</p>
+          <p className="pp-lb-hero__intro">
+            {t('leaderboardPage.introStart')}{' '}
+            <Link to="/dashboard" className="pp-lb-hero__link">
+              {t('leaderboardPage.introDashLink')}
+            </Link>
+            {t('leaderboardPage.introEnd')}
           </p>
-        ) : (
-          <label className="pp-row pp-lb-privacyOpt" style={{ gap: 10, alignItems: 'center', flexWrap: 'wrap', cursor: 'pointer' }}>
-            <input type="checkbox" checked={shareOnLeaderboard} disabled={!shareLoaded || saving} onChange={onToggle} />
-            <span style={{ fontWeight: 700 }}>{t('leaderboardPage.optInCheckbox')}</span>
-          </label>
-        )}
-        {lastSyncError ? <p style={{ color: '#b42318', marginTop: 8, fontSize: 14 }}>{lastSyncError}</p> : null}
-        <p className="pp-subtle" style={{ marginTop: 10, fontSize: 13 }}>
-          {t('leaderboardPage.totalsLine', {
-            today: formatKm(walkTotals.day),
-            week: formatKm(walkTotals.week),
-            year: formatKm(walkTotals.year),
-          })}
-          {shareOnLeaderboard && yourRank != null ? (
-            <> {t('leaderboardPage.rankSuffix', { rank: yourRank })}</>
-          ) : null}
-        </p>
-      </section>
+          <Link className="pp-lb-btn pp-lb-btn--primary" to="/dashboard">
+            {t('common.backDashboard')}
+          </Link>
+        </LbSurface>
 
-      <section className="pp-lb-toolbar pp-card pp-pad">
-        <div className="pp-lbSegment" role="group" aria-label={t('leaderboardPage.rankingsHeading')}>
-          {periods.map((p) => (
-            <button
-              key={p.id}
-              type="button"
-              className={`pp-lbSegment__btn ${period === p.id ? 'pp-lbSegment__btn--on' : ''}`}
-              onClick={() => setPeriod(p.id)}
-            >
-              {p.label}
-            </button>
-          ))}
-        </div>
-        <button type="button" className="pp-btn pp-btn--ghost" onClick={load} disabled={loading}>
-          {loading ? t('common.loading') : t('leaderboardPage.refresh')}
-        </button>
-      </section>
+        <LbSurface hover={false} className="pp-lb-privacy">
+          <h2 className="pp-lb-h2">{t('leaderboardPage.privacyHeading')}</h2>
+          <p className="pp-lb-lead">{t('leaderboardPage.privacyBody')}</p>
+          {!isFirestoreEnabled ? (
+            <p className="pp-lb-warn">{t('leaderboardPage.firebaseWarn')}</p>
+          ) : (
+            <div className="pp-lb-switchRow">
+              <button
+                type="button"
+                className="pp-lb-switch"
+                role="switch"
+                aria-checked={shareOnLeaderboard}
+                aria-label={t('leaderboardPage.optInSwitchAria')}
+                disabled={!shareLoaded || saving}
+                onClick={() => onShareToggle(!shareOnLeaderboard)}
+              />
+              <span className="pp-lb-switchLabel">{t('leaderboardPage.optInCheckbox')}</span>
+            </div>
+          )}
+          {lastSyncError ? <p className="pp-lb-warn pp-lb-warn--mt">{lastSyncError}</p> : null}
+          <p className="pp-lb-meta">
+            {t('leaderboardPage.totalsLine', {
+              today: formatKm(walkTotals.day),
+              week: formatKm(walkTotals.week),
+              year: formatKm(walkTotals.year),
+            })}
+            {shareOnLeaderboard && yourRank != null ? (
+              <> {t('leaderboardPage.rankSuffix', { rank: yourRank })}</>
+            ) : null}
+          </p>
+        </LbSurface>
 
-      {loadError ? <p className="pp-error pp-lb-error">{loadError}</p> : null}
-      {loading && rows.length === 0 ? <p className="pp-subtle pp-lb-loading">{t('common.loading')}</p> : null}
-      {!loading && !loadError && rows.length === 0 && isFirestoreEnabled ? (
-        <p className="pp-subtle pp-lb-empty">{t('leaderboardPage.podiumEmpty')}</p>
-      ) : null}
-      {!loading && !loadError && rows.length > 0 && rowsWithKm.length === 0 && isFirestoreEnabled ? (
-        <p className="pp-subtle pp-lb-empty">{t('leaderboardPage.emptySharers')}</p>
-      ) : null}
+        <LbSurface className="pp-lb-toolbar">
+          <div className="pp-lbSegment" role="group" aria-label={t('leaderboardPage.rankingsHeading')}>
+            {periods.map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                className={`pp-lbSegment__btn ${period === p.id ? 'pp-lbSegment__btn--on' : ''}`}
+                onClick={() => setPeriod(p.id)}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+          <button type="button" className="pp-lb-btn pp-lb-btn--primary pp-lb-btn--sm" onClick={load} disabled={loading}>
+            {loading ? t('common.loading') : t('leaderboardPage.refresh')}
+          </button>
+        </LbSurface>
 
-      {showPodium ? (
-        <>
-          <h2 className="pp-feed__sectionTitle">{t('leaderboardPage.rankingsHeading')}</h2>
-          <div className="pp-lb-podium">
-            {[p2, p1, p3].map((r, idx) => {
-              const medals = ['🥈', '🥇', '🥉'];
-              const heights = ['pp-lb-podium__block--silver', 'pp-lb-podium__block--gold', 'pp-lb-podium__block--bronze'];
-              const rankNums = [2, 1, 3];
-              if (!r) {
+        {loadError ? <p className="pp-lb-error">{loadError}</p> : null}
+        {loading && rows.length === 0 ? <p className="pp-lb-muted">{t('common.loading')}</p> : null}
+        {!loading && !loadError && rows.length === 0 && isFirestoreEnabled ? (
+          <p className="pp-lb-muted">{t('leaderboardPage.podiumEmpty')}</p>
+        ) : null}
+        {!loading && !loadError && rows.length > 0 && rowsWithKm.length === 0 && isFirestoreEnabled ? (
+          <p className="pp-lb-muted">{t('leaderboardPage.emptySharers')}</p>
+        ) : null}
+
+        {showPodium ? (
+          <section className="pp-lb-section">
+            <h2 className="pp-lb-sectionTitle">{t('leaderboardPage.rankingsHeading')}</h2>
+            <div className="pp-lb-podium">
+              {[p2, p1, p3].map((r, idx) => {
+                const medals = ['🥈', '🥇', '🥉'];
+                const heights = ['pp-lb-podium__block--silver', 'pp-lb-podium__block--gold', 'pp-lb-podium__block--bronze'];
+                const rankNums = [2, 1, 3];
+                if (!r) {
+                  return (
+                    <div key={`empty-${idx}`} className={`pp-lb-podium__block ${heights[idx]} pp-lb-podium__block--empty`}>
+                      <span className="pp-lb-podium__medal" aria-hidden>
+                        {medals[idx]}
+                      </span>
+                      <span className="pp-lb-podium__empty">—</span>
+                    </div>
+                  );
+                }
+                const isYou = r.id === user?.uid;
                 return (
-                  <div key={`empty-${idx}`} className={`pp-lb-podium__block ${heights[idx]} pp-lb-podium__block--empty`}>
+                  <div key={r.id} className={`pp-lb-podium__block ${heights[idx]} ${isYou ? 'pp-lb-podium__block--me' : ''}`}>
                     <span className="pp-lb-podium__medal" aria-hidden>
                       {medals[idx]}
                     </span>
-                    <span className="pp-lb-podium__empty">—</span>
+                    <LbAvatar name={r.displayName} variant="podium" />
+                    <span className="pp-lb-podium__name">{r.displayName}</span>
+                    <span className="pp-lb-podium__km">
+                      {formatKm(r[key])} {t('leaderboardPage.tblKmSuffix')}
+                    </span>
+                    <span className="pp-lb-podium__rank">#{rankNums[idx]}</span>
+                    {isYou ? <span className="pp-lb-podium__you">{t('leaderboardPage.tblYouBadge')}</span> : null}
                   </div>
                 );
-              }
-              const isYou = r.id === user?.uid;
-              return (
-                <div key={r.id} className={`pp-lb-podium__block ${heights[idx]} ${isYou ? 'pp-lb-podium__block--me' : ''}`}>
-                  <span className="pp-lb-podium__medal" aria-hidden>
-                    {medals[idx]}
-                  </span>
-                  <RowAvatar name={r.displayName} />
-                  <span className="pp-lb-podium__name">{r.displayName}</span>
-                  <span className="pp-lb-podium__km">
-                    {formatKm(r[key])} {t('leaderboardPage.tblKmSuffix')}
-                  </span>
-                  <span className="pp-lb-podium__rank">#{rankNums[idx]}</span>
-                  {isYou ? <span className="pp-lb-podium__you">{t('leaderboardPage.tblYouBadge')}</span> : null}
-                </div>
-              );
-            })}
-          </div>
-        </>
-      ) : null}
-
-      {shareOnLeaderboard && myRow && yourRank != null ? (
-        <div className="pp-card pp-pad pp-lb-meCard">
-          <div className="pp-lb-meCard__row">
-            <div>
-              <span className="pp-lifetime__eyebrow">{t('leaderboardPage.myPositionHeading')}</span>
-              <div className="pp-lb-meCard__rank">#{yourRank}</div>
-              <div className="pp-lb-meCard__km">
-                {formatKm(myRow[key])}{' '}
-                <span>
-                  {t('leaderboardPage.tblKmSuffix')} · {currentPeriodLabel}
-                </span>
-              </div>
+              })}
             </div>
-            <RowAvatar name={myRow.displayName} />
-          </div>
-          {gapKm != null && gapKm > 0 && aheadRow ? (
-            <p className="pp-subtle pp-lb-meCard__hint">
-              {t('leaderboardPage.nextRankGap', { km: formatKm(gapKm), rank: yourRank - 1 })}
-            </p>
-          ) : yourRank === 1 && rowsWithKm.length > 0 ? (
-            <p className="pp-subtle pp-lb-meCard__hint">{t('leaderboardPage.leadingPack')}</p>
-          ) : null}
-        </div>
-      ) : null}
+          </section>
+        ) : null}
 
-      {!loading && rows.length > 0 ? (
-        <section className="pp-lb-listSection">
-          <h2 className="pp-feed__sectionTitle">{t('leaderboardPage.listHeadingWalk', { period: currentPeriodLabel })}</h2>
-          <ul className="pp-lb-cards">
-            {rows.map((r, i) => {
-              const v = r[key] ?? 0;
-              const isYou = r.id === user?.uid;
-              return (
-                <li key={r.id} className={`pp-lb-card ${isYou ? 'pp-lb-card--me' : ''}`}>
-                  <span className="pp-lb-card__rank">#{i + 1}</span>
-                  <RowAvatar name={r.displayName} />
-                  <div className="pp-lb-card__body">
-                    <span className="pp-lb-card__name">
-                      {r.displayName}
-                      {isYou ? <span className="pp-lb-card__badge">{t('leaderboardPage.tblYouBadge')}</span> : null}
-                    </span>
-                  </div>
-                  <span className="pp-lb-card__stat">
-                    {formatKm(v)} {t('leaderboardPage.tblKmSuffix')}
+        {shareOnLeaderboard && myRow && yourRank != null ? (
+          <LbSurface hover={false} className="pp-lb-meCard">
+            <span className="pp-lb-meCard__badge">{t('leaderboardPage.yourPositionBadge')}</span>
+            <div className="pp-lb-meCard__row">
+              <div>
+                <span className="pp-lb-meCard__eyebrow">{t('leaderboardPage.myPositionHeading')}</span>
+                <div className="pp-lb-meCard__rank">#{yourRank}</div>
+                <div className="pp-lb-meCard__km">
+                  {formatKm(myRow[key])}{' '}
+                  <span>
+                    {t('leaderboardPage.tblKmSuffix')} · {currentPeriodLabel}
                   </span>
-                </li>
-              );
-            })}
-          </ul>
-        </section>
-      ) : null}
+                </div>
+              </div>
+              <LbAvatar name={myRow.displayName} variant="me" />
+            </div>
+            {gapKm != null && gapKm > 0 && aheadRow ? (
+              <p className="pp-lb-meCard__hint">
+                {t('leaderboardPage.nextRankGap', { km: formatKm(gapKm), rank: yourRank - 1 })}
+              </p>
+            ) : yourRank === 1 && rowsWithKm.length > 0 ? (
+              <p className="pp-lb-meCard__hint">{t('leaderboardPage.leadingPack')}</p>
+            ) : null}
+          </LbSurface>
+        ) : null}
 
-      <section className="pp-lb-achSection">
-        <div className="pp-card pp-pad">
-          <h2 className="pp-sectionTitle">{t('leaderboardPage.achTitle')}</h2>
-          <p className="pp-subtle pp-lb-achLead">{t('leaderboardPage.achIntroStart')}</p>
-          {!loading && !loadError && achievementRows.length === 0 && isFirestoreEnabled ? (
-            <p className="pp-subtle">{t('leaderboardPage.achEmpty')}</p>
-          ) : null}
-          <ul className="pp-lb-achCards">
-            {achievementRows.map((r, i) => {
-              const isYou = r.id === user?.uid;
-              const ax = Math.round(Number(r.achievementXp) || 0);
-              const ac = Math.round(Number(r.achievementCount) || 0);
-              const at = Math.round(Number(r.achievementTotal) || 0);
-              const lvl = Math.max(1, Math.round(Number(r.level) || 1));
-              return (
-                <li key={`ach-${r.id}`} className={`pp-lb-achCard ${isYou ? 'pp-lb-achCard--me' : ''}`}>
-                  <span className="pp-lb-achCard__rank">#{i + 1}</span>
-                  <RowAvatar name={r.displayName} />
-                  <div className="pp-lb-achCard__main">
-                    <span className="pp-lb-achCard__name">
-                      {r.displayName}
-                      {isYou ? <span className="pp-lb-card__badge">{t('leaderboardPage.tblYouBadge')}</span> : null}
-                    </span>
-                    <div className="pp-lb-achCard__stats">
-                      <span>{ax} XP</span>
-                      <span>
-                        {ac}
-                        {at > 0 ? ` / ${at}` : ''}{' '}
-                        {t('leaderboardPage.achTblBadges')}
-                      </span>
-                      <span>
-                        {t('leaderboardPage.achTblLevel')} {lvl}
-                      </span>
+        {!loading && rows.length > 0 ? (
+          <section className="pp-lb-section">
+            <h2 className="pp-lb-sectionTitle">{t('leaderboardPage.listHeadingWalk', { period: currentPeriodLabel })}</h2>
+            <LbSurface hover={false} className="pp-lb-listWrap">
+              <ul className="pp-lb-rows">
+                {rows.map((r, i) => {
+                  const v = r[key] ?? 0;
+                  const isYou = r.id === user?.uid;
+                  return (
+                    <WalkLeaderboardRow
+                      key={r.id}
+                      row={r}
+                      rank={i + 1}
+                      km={Number(v) || 0}
+                      maxKm={maxWalkKm}
+                      isYou={isYou}
+                      t={t}
+                    />
+                  );
+                })}
+              </ul>
+            </LbSurface>
+          </section>
+        ) : null}
+
+        <section className="pp-lb-section">
+          <LbSurface hover={false} className="pp-lb-ach">
+            <h2 className="pp-lb-h2">{t('leaderboardPage.achTitle')}</h2>
+            <p className="pp-lb-lead pp-lb-lead--tight">{t('leaderboardPage.achIntroStart')}</p>
+            {!loading && !loadError && achievementRows.length === 0 && isFirestoreEnabled ? (
+              <p className="pp-lb-muted">{t('leaderboardPage.achEmpty')}</p>
+            ) : null}
+            <ul className="pp-lb-achRows">
+              {achievementRows.map((r, i) => {
+                const isYou = r.id === user?.uid;
+                const ax = Math.round(Number(r.achievementXp) || 0);
+                const ac = Math.round(Number(r.achievementCount) || 0);
+                const at = Math.round(Number(r.achievementTotal) || 0);
+                const lvl = Math.max(1, Math.round(Number(r.level) || 1));
+                return (
+                  <li key={`ach-${r.id}`} className={`pp-lb-achRow ${isYou ? 'pp-lb-achRow--me' : ''}`}>
+                    <div className="pp-lb-achRow__rank">
+                      <RankBadge rank={i + 1} compact />
                     </div>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      </section>
+                    <LbAvatar name={r.displayName} variant="row" />
+                    <div className="pp-lb-achRow__main">
+                      <span className="pp-lb-achRow__name">
+                        {r.displayName}
+                        {isYou ? <span className="pp-lb-row__you">{t('leaderboardPage.tblYouBadge')}</span> : null}
+                      </span>
+                      <div className="pp-lb-achRow__stats">
+                        <span>{ax} XP</span>
+                        <span>
+                          {ac}
+                          {at > 0 ? ` / ${at}` : ''} {t('leaderboardPage.achTblBadges')}
+                        </span>
+                        <span>
+                          {t('leaderboardPage.achTblLevel')} {lvl}
+                        </span>
+                      </div>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </LbSurface>
+        </section>
+      </div>
     </div>
   );
 }

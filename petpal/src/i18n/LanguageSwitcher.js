@@ -7,14 +7,51 @@ const LANGUAGE_LABEL = {
   ru: 'Russian',
 };
 
-const LANGUAGE_SHORT = {
-  en: 'EN',
-  el: 'EL',
-  ru: 'RU',
-};
-
-function langShort(code) {
-  return LANGUAGE_SHORT[code] || String(code || '').toUpperCase().slice(0, 3);
+function FlagIcon({ code, className = '' }) {
+  const c = String(code || '').toLowerCase();
+  if (c === 'ru') {
+    return (
+      <svg className={`pp-langFlag ${className}`.trim()} viewBox="0 0 24 16" role="img" aria-hidden="true">
+        <rect width="24" height="16" fill="#ffffff" />
+        <rect y="5.33" width="24" height="5.34" fill="#1c57a7" />
+        <rect y="10.66" width="24" height="5.34" fill="#c92a2a" />
+      </svg>
+    );
+  }
+  if (c === 'el') {
+    // Simplified Greece flag: stripes + canton cross.
+    return (
+      <svg className={`pp-langFlag ${className}`.trim()} viewBox="0 0 24 16" role="img" aria-hidden="true">
+        <rect width="24" height="16" fill="#0d5eaf" />
+        <rect y="2" width="24" height="2" fill="#ffffff" />
+        <rect y="6" width="24" height="2" fill="#ffffff" />
+        <rect y="10" width="24" height="2" fill="#ffffff" />
+        <rect y="14" width="24" height="2" fill="#ffffff" />
+        <rect width="10" height="10" fill="#0d5eaf" />
+        <rect x="4" width="2" height="10" fill="#ffffff" />
+        <rect y="4" width="10" height="2" fill="#ffffff" />
+      </svg>
+    );
+  }
+  // Simplified UK/GB flag for English.
+  return (
+    <svg className={`pp-langFlag ${className}`.trim()} viewBox="0 0 24 16" role="img" aria-hidden="true">
+      <rect width="24" height="16" fill="#1b4fbf" />
+      {/* diagonals */}
+      <path
+        d="M0 0 L3 0 L24 13 L24 16 L21 16 L0 3 Z M24 0 L21 0 L0 13 L0 16 L3 16 L24 3 Z"
+        fill="#ffffff"
+        opacity="0.95"
+      />
+      <path d="M0 0 L1.8 0 L24 14.2 L24 16 L22.2 16 L0 1.8 Z" fill="#d62d2d" opacity="0.95" />
+      <path d="M24 0 L22.2 0 L0 14.2 L0 16 L1.8 16 L24 1.8 Z" fill="#d62d2d" opacity="0.95" />
+      {/* central cross */}
+      <rect x="9.2" width="5.6" height="16" fill="#ffffff" />
+      <rect y="5.2" width="24" height="5.6" fill="#ffffff" />
+      <rect x="10.2" width="3.6" height="16" fill="#d62d2d" />
+      <rect y="6.2" width="24" height="3.6" fill="#d62d2d" />
+    </svg>
+  );
 }
 
 /**
@@ -61,7 +98,7 @@ export function LanguageSwitcher({ className = '' }) {
       </label>
       <div className="pp-langSelectWrap" ref={wrapRef}>
         <span className="pp-langSelectWrap__flag" aria-hidden>
-          <span className="pp-langBadge">{langShort(language)}</span>
+          <FlagIcon code={language} />
         </span>
         <button
           id="pp-language-select"
@@ -73,7 +110,7 @@ export function LanguageSwitcher({ className = '' }) {
           aria-expanded={open}
           title={t('languageSwitcher.selectHint')}
         >
-          <span className="pp-langSelect__code">{LANGUAGE_SHORT[language] || language.toUpperCase()}</span>
+          <span className="pp-sr">{LANGUAGE_LABEL[language] || String(language || '').toUpperCase()}</span>
         </button>
 
         {open && (
@@ -90,7 +127,7 @@ export function LanguageSwitcher({ className = '' }) {
                     onClick={() => onSelect(code)}
                   >
                     <span className="pp-langMenu__flag" aria-hidden>
-                      <span className="pp-langBadge pp-langBadge--menu">{langShort(code)}</span>
+                      <FlagIcon code={code} className="pp-langFlag--menu" />
                     </span>
                     <span>{LANGUAGE_LABEL[code] || code.toUpperCase()}</span>
                   </button>

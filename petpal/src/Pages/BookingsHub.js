@@ -55,12 +55,55 @@ function BrowseProviders() {
 
   useEffect(() => subscribeProviders(setRows, (e) => setErr(e?.message || 'failed')), []);
 
+  const examples = [
+    {
+      id: 'example_vet',
+      displayName: 'Paws & Care Vet Clinic',
+      address: '123 Oak Street',
+      phone: '+30 210 000 0000',
+    },
+    {
+      id: 'example_groom',
+      displayName: 'Fluffy Cuts Grooming & Pet Shop',
+      address: '45 Sunset Avenue',
+      phone: '+30 210 111 1111',
+    },
+  ];
+
   return (
     <div className="pp-card">
       <div className="pp-card__title">Providers</div>
       {err ? <div className="pp-error">{err}</div> : null}
-      {rows.length === 0 ? <div className="pp-muted">No providers published yet.</div> : null}
+      {rows.length === 0 ? (
+        <>
+          <div className="pp-muted">No providers published yet.</div>
+          <div className="pp-muted" style={{ marginTop: 6, fontSize: 13 }}>
+            Examples (these are just previews — publish real providers from the Provider Portal):
+          </div>
+        </>
+      ) : null}
       <div className="pp-stack" style={{ marginTop: 10 }}>
+        {rows.length === 0
+          ? examples.map((p) => (
+              <div
+                key={p.id}
+                className="pp-rowBetween pp-rowBetween--card"
+                style={{ opacity: 0.75, cursor: 'default' }}
+                role="group"
+                aria-label="Example provider"
+              >
+                <div>
+                  <div style={{ fontWeight: 900 }}>{p.displayName}</div>
+                  <div className="pp-muted" style={{ fontSize: 13 }}>
+                    {p.address} {p.phone ? `• ${p.phone}` : ''}
+                  </div>
+                </div>
+                <span className="pp-muted" style={{ fontWeight: 900 }}>
+                  Example
+                </span>
+              </div>
+            ))
+          : null}
         {rows.map((p) => (
           <Link key={p.id} to={`/bookings/provider/${p.id}`} className="pp-rowBetween pp-rowBetween--card">
             <div>

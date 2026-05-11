@@ -46,19 +46,36 @@ export default function LifetimeAchievements({ variant = 'full' }) {
   const hub = variant === 'hub';
   const { lifetimeAchievements, achievementXp, achievementCount, lifetimeAchievementDefs } = useGame();
 
-  const total = Array.isArray(lifetimeAchievementDefs) ? lifetimeAchievementDefs.length : 0;
+  const totalAll = Array.isArray(lifetimeAchievementDefs) ? lifetimeAchievementDefs.length : 0;
+
+  // Dashboard/hub should feel lightweight: show only a starter set.
+  const BASIC_KINDS = ['distance', 'walks', 'streak', 'level', 'pets'];
+  const ITEMS_PER_KIND = 2;
 
   const groups = useMemo(() => {
-    const order = ['distance', 'walks', 'streak', 'level', 'pets', 'photos', 'peak', 'daily'];
+    const order = hub ? BASIC_KINDS : ['distance', 'walks', 'streak', 'level', 'pets', 'photos', 'peak', 'daily'];
     const buckets = new Map();
     for (const a of lifetimeAchievements || []) {
+      if (hub && !BASIC_KINDS.includes(a.kind)) continue;
       if (!buckets.has(a.kind)) buckets.set(a.kind, []);
       buckets.get(a.kind).push(a);
     }
     return order
       .filter((k) => buckets.has(k))
-      .map((k) => ({ kind: k, items: buckets.get(k) }));
-  }, [lifetimeAchievements]);
+      .map((k) => {
+        const items = buckets
+          .get(k)
+          .slice()
+          .sort((a, b) => (a.target || 0) - (b.target || 0));
+        return { kind: k, items: hub ? items.slice(0, ITEMS_PER_KIND) : items };
+      });
+  }, [lifetimeAchievements, hub]);
+
+  const totals = useMemo(() => {
+    if (!hub) return { total: totalAll, unlocked: achievementCount };
+    const flat = groups.flatMap((g) => g.items);
+    return { total: flat.length, unlocked: flat.filter((a) => a.earned).length };
+  }, [achievementCount, groups, hub, totalAll]);
 
   const closestNext = useMemo(() => {
     const remaining = (lifetimeAchievements || []).filter((a) => !a.earned);
@@ -80,11 +97,11 @@ export default function LifetimeAchievements({ variant = 'full' }) {
         </div>
         <div className="pp-lifetime__summary" role="status" aria-live="polite">
           <div className="pp-lifetime__summaryStat">
-            <span className="pp-lifetime__summaryLabel">{t('lifetime.summaryUnlocked', { n: achievementCount, total })}</span>
+            <span className="pp-lifetime__summaryLabel">{t('lifetime.summaryUnlocked', { n: totals.unlocked, total: totals.total })}</span>
             <div className="pp-lifetime__summaryBar" aria-hidden>
               <div
                 className="pp-lifetime__summaryBarFill"
-                style={{ width: `${total ? Math.round((achievementCount / total) * 100) : 0}%` }}
+                style={{ width: `${totals.total ? Math.round((totals.unlocked / totals.total) * 100) : 0}%` }}
               />
             </div>
           </div>
