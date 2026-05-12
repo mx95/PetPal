@@ -12,6 +12,9 @@ export default function ImeiQrScannerButton({ onImei, disabled }) {
   const scannerElementId = `imei-qr-${reactId.replace(/:/g, '')}`;
   const [open, setOpen] = useState(false);
   const [err, setErr] = useState('');
+  const [torchOn, setTorchOn] = useState(false);
+  const [torchSupported, setTorchSupported] = useState(false);
+  const [starting, setStarting] = useState(false);
   const settledRef = useRef(false);
   const scannerRef = useRef(null);
 
@@ -25,6 +28,9 @@ export default function ImeiQrScannerButton({ onImei, disabled }) {
     } catch {
       // already stopped or DOM cleared
     }
+    setTorchOn(false);
+    setTorchSupported(false);
+    setStarting(false);
   }, []);
 
   useEffect(() => {
@@ -32,6 +38,9 @@ export default function ImeiQrScannerButton({ onImei, disabled }) {
 
     settledRef.current = false;
     setErr('');
+    setTorchOn(false);
+    setTorchSupported(false);
+    setStarting(true);
 
     let cancelled = false;
     const tmr = window.setTimeout(async () => {
@@ -41,7 +50,9 @@ export default function ImeiQrScannerButton({ onImei, disabled }) {
         const qr = new Html5Qrcode(scannerElementId, false);
         scannerRef.current = qr;
         await qr.start(
-          { facingMode: 'environment' },
+          {
+            facingMode: { exact: 'environment' },
+          },
           {
             fps: 8,
             qrbox: (vw, vh) => {
@@ -64,8 +75,56 @@ export default function ImeiQrScannerButton({ onImei, disabled }) {
           },
           () => {}
         );
+        setStarting(false);
+        try {
+          const caps = qr.getRunningTrackCapabilities?.();
+          setTorchSupported(!!caps?.torch);
+        } catch {
+          setTorchSupported(false);
+        }
       } catch {
-        if (!cancelled) setErr(t('myPets.scanQrErrorCamera'));
+        try {
+          const { Html5Qrcode } = await import('html5-qrcode');
+          if (cancelled) return;
+          const qr = new Html5Qrcode(scannerElementId, false);
+          scannerRef.current = qr;
+          await qr.start(
+            { facingMode: 'environment' },
+            {
+              fps: 8,
+              qrbox: (vw, vh) => {
+                const w = Math.min(280, Math.floor(vw * 0.85));
+                const h = Math.min(260, Math.floor(vh * 0.45));
+                return { width: w, height: Math.max(120, h) };
+              },
+            },
+            (decodedText) => {
+              if (settledRef.current) return;
+              const imei = extractImeiFromQr(decodedText);
+              if (!imei) {
+                setErr(t('myPets.scanQrErrorNoImei'));
+                return;
+              }
+              settledRef.current = true;
+              void stopScanner();
+              onImei(imei);
+              setOpen(false);
+            },
+            () => {}
+          );
+          setStarting(false);
+          try {
+            const caps = qr.getRunningTrackCapabilities?.();
+            setTorchSupported(!!caps?.torch);
+          } catch {
+            setTorchSupported(false);
+          }
+        } catch {
+          if (!cancelled) {
+            setErr(t('myPets.scanQrErrorCamera'));
+            setStarting(false);
+          }
+        }
       }
     }, 80);
 
@@ -75,6 +134,17 @@ export default function ImeiQrScannerButton({ onImei, disabled }) {
       void stopScanner();
     };
   }, [open, onImei, scannerElementId, stopScanner, t]);
+
+  const toggleTorch = useCallback(async () => {
+    const qr = scannerRef.current;
+    if (!qr) return;
+    try {
+      await qr.applyVideoConstraints({ advanced: [{ torch: !torchOn }] });
+      setTorchOn((prev) => !prev);
+    } catch {
+      // ignore devices/browsers without torch support
+    }
+  }, [torchOn]);
 
   return (
     <>
@@ -94,9 +164,6 @@ export default function ImeiQrScannerButton({ onImei, disabled }) {
           aria-label={t('myPets.scanQr')}
         >
           <div className="pp-imeiQrPanel pp-card pp-pad">
-            <p className="pp-subtle" style={{ marginTop: 0 }}>
-              {t('myPets.scanQrHint')}
-            </p>
             {err ? (
               <p className="pp-error" style={{ marginBottom: 8 }}>
                 {err}
@@ -107,6 +174,16 @@ export default function ImeiQrScannerButton({ onImei, disabled }) {
               className="pp-imeiQrViewport"
             />
             <div className="pp-row" style={{ marginTop: 12, justifyContent: 'flex-end' }}>
+              {torchSupported ? (
+                <button
+                  type="button"
+                  className="pp-btn"
+                  onClick={toggleTorch}
+                >
+                  {torchOn ? '🔦 Off' : '🔦 On'}
+                </button>
+              ) : null}
+              {starting ? <span className="pp-subtle" style={{ marginRight: 'auto' }}>Opening camera…</span> : null}
               <button
                 type="button"
                 className="pp-btn"

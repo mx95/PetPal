@@ -2007,6 +2007,9 @@ select.pp-input:focus {
   min-width: 180px !important;
   height: 100%;
   line-height: 1.25;
+  font-weight: 500;
+  letter-spacing: normal;
+  text-transform: none;
 }
 
 .pp-petActions {

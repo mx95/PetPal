@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
 import { useAuth } from '../auth/AuthProvider';
 import { getDb, isFirebaseConfigured } from '../firebase';
@@ -373,35 +373,36 @@ export default function MyPets() {
   return (
     <div className="pp-grid">
       <div className="pp-col-12">
-        <div className="pp-row" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div>
           <div>
-            <div className="pp-badge">{t('myPets.badge')}</div>
             <h1 className="pp-h1" style={{ marginTop: 10 }}>
               {t('myPets.title')}
             </h1>
-            <p className="pp-subtle" style={{ marginTop: 6, maxWidth: 560 }}>
+            <p className="pp-subtle" style={{ marginTop: 6 }}>
               {t('myPets.intro')}
             </p>
           </div>
-          <Link className="pp-link" to="/dashboard">
-            {t('common.backDashboard')}
-          </Link>
         </div>
         <div className="pp-row" style={{ marginTop: 12 }}>
-          <button
-            id="add-pet-open"
-            type="button"
-            className="pp-btn pp-btnPrimary"
-            onClick={() => setAddPetDrawerOpen(true)}
-          >
-            + {t('myPets.addTitle')}
-          </button>
-          <div className="pp-row" style={{ marginLeft: 'auto', gap: 8, flexWrap: 'wrap' }}>
+          <div className="pp-row" style={{ gap: 8, flexWrap: 'wrap' }}>
             <div className="pp-petSearchBox">
               <IconSearch />
               <input
                 className="pp-input"
-                style={{ border: 0, boxShadow: 'none', padding: 0, minWidth: 140, background: 'transparent' }}
+                style={{
+                  border: 0,
+                  boxShadow: 'none',
+                  padding: '6px 0 7px',
+                  minWidth: 140,
+                  background: 'transparent',
+                  borderRadius: 0,
+                  fontWeight: 400,
+                  letterSpacing: 'normal',
+                  textTransform: 'none',
+                  lineHeight: 'normal',
+                  height: 'auto',
+                  fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif',
+                }}
                 placeholder="Search pets"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -437,6 +438,15 @@ export default function MyPets() {
               <IconDownload />
             </button>
           </div>
+          <button
+            id="add-pet-open"
+            type="button"
+            className="pp-btn pp-btnPrimary"
+            onClick={() => setAddPetDrawerOpen(true)}
+            style={{ marginLeft: 'auto' }}
+          >
+            + {t('myPets.addTitle')}
+          </button>
         </div>
       </div>
 
@@ -917,17 +927,36 @@ export default function MyPets() {
           aria-label="Pet photo full screen"
           style={{ position: 'fixed', inset: 0, zIndex: 1200, background: 'rgba(0,0,0,0.94)', display: 'grid', placeItems: 'center', padding: 16 }}
         >
-          <button
-            type="button"
-            className="pp-btn"
-            onClick={() => setFullscreenPhotoUrl('')}
-            aria-label="Close"
-            title="Close"
-            style={{ position: 'absolute', top: 12, right: 12 }}
-          >
-            ✕
-          </button>
-          <img src={fullscreenPhotoUrl} alt="" style={{ maxWidth: '95vw', maxHeight: '90vh', objectFit: 'contain' }} />
+          <div style={{ position: 'relative', display: 'inline-block' }}>
+            <button
+              type="button"
+              className="pp-btn"
+              onClick={() => setFullscreenPhotoUrl('')}
+              aria-label="Close"
+              title="Close"
+              style={{
+                position: 'absolute',
+                top: 8,
+                right: 8,
+                width: 36,
+                height: 36,
+                padding: 0,
+                borderRadius: 999,
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: 'rgba(0,0,0,0.55)',
+                color: '#fff',
+                borderColor: 'rgba(255,255,255,0.25)',
+              }}
+            >
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 6L6 18" />
+                <path d="M6 6l12 12" />
+              </svg>
+            </button>
+            <img src={fullscreenPhotoUrl} alt="" style={{ maxWidth: '95vw', maxHeight: '90vh', objectFit: 'contain' }} />
+          </div>
         </div>
       ) : null}
     </div>
