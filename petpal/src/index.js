@@ -1,5 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import './tailwind.generated.css';
 import './index.css';
 import { installGoogleMapsAuthFailureHook } from './config/googleMapsAuthFailure';
 import App from './App';

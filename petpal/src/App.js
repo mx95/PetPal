@@ -1,5 +1,5 @@
-import React, { Suspense, lazy, useEffect, useRef, useState } from 'react';
-import { Link, NavLink, Navigate, Route, Routes, useMatch, useNavigate } from 'react-router-dom';
+import React, { Suspense, lazy } from 'react';
+import { Navigate, Route, Routes } from 'react-router-dom';
 import { RequireAuth } from './auth/RequireAuth';
 import { useAuth } from './auth/AuthProvider';
 import { AppFooter } from './components/AppFooter';
@@ -26,186 +26,22 @@ import ProviderPortal from './Pages/ProviderPortal';
 import BookingsHub from './Pages/BookingsHub';
 import ProviderProfile from './Pages/ProviderProfile';
 import BookService from './Pages/BookService';
-import UserAvatar from './components/UserAvatar';
 import './ui/ui.css';
 import CompanyApply from './Pages/CompanyApply';
 import AdminCompanyQueue from './Pages/AdminCompanyQueue';
 import AdminHub from './Pages/AdminHub';
 import AdminTrackerSetup from './Pages/AdminTrackerSetup';
-import { LanguageSwitcher } from './i18n/LanguageSwitcher';
 import { useI18n } from './i18n/I18nContext';
 import ScrollToTop from './components/ScrollToTop';
 import BottomNav from './components/BottomNav';
+import TopNav from './components/TopNav';
 import { OpeningScreen } from './components/OpeningScreen';
-import { useCompany } from './company/CompanyContext';
 
 const Tracking = lazy(() => import('./Pages/Tracking'));
-
-function navItemClassName(...extra) {
-  return ({ isActive }) => ['pp-link', ...extra, isActive ? 'pp-link--active' : ''].filter(Boolean).join(' ');
-}
 
 function TrackingRouteFallback() {
   const { t } = useI18n();
   return <OpeningScreen subtitle={t('app.loadingTracker')} />;
-}
-
-function TopNav() {
-  const { user, signOut } = useAuth();
-  const { isApprovedCompany, profile } = useCompany();
-  const { t } = useI18n();
-  const premiumPathMatch = useMatch('/premium/*');
-  const navigate = useNavigate();
-  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
-  const accountMenuRef = useRef(null);
-
-  useEffect(() => {
-    if (!accountMenuOpen) return undefined;
-
-    const handleClickOutside = (event) => {
-      if (!accountMenuRef.current) return;
-      if (!accountMenuRef.current.contains(event.target)) {
-        setAccountMenuOpen(false);
-      }
-    };
-
-    const handleEscape = (event) => {
-      if (event.key === 'Escape') {
-        setAccountMenuOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    document.addEventListener('keydown', handleEscape);
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('keydown', handleEscape);
-    };
-  }, [accountMenuOpen]);
-
-  const handleSignOut = async () => {
-    setAccountMenuOpen(false);
-    await signOut();
-    navigate('/', { replace: true });
-  };
-
-  return (
-    <div className={`pp-nav ${user ? 'pp-nav--auth' : ''}`}>
-      <div className="pp-navBrandColumn">
-        <Link className="pp-brandLink" to="/" aria-label={t('nav.home')}>
-          <div className="pp-brand">PetPal</div>
-          <img className="pp-brandLogo" src={`${process.env.PUBLIC_URL}/logo192.png`} alt="PetPal logo" />
-        </Link>
-      </div>
-      <div className="pp-navRight">
-        <div className="pp-navlinks">
-          {user ? (
-            <NavLink className={navItemClassName()} to="/dashboard" end>
-              {t('nav.dashboard')}
-            </NavLink>
-          ) : null}
-          {user ? (
-            <NavLink
-              to="/premium/lost"
-              className={({ isActive }) =>
-                [
-                  'pp-link',
-                  'pp-navlink--premium',
-                  isActive || premiumPathMatch ? 'pp-link--active' : '',
-                ]
-                  .filter(Boolean)
-                  .join(' ')
-              }
-            >
-              {t('nav.premium')}
-            </NavLink>
-          ) : null}
-          {user ? (
-            <NavLink className={navItemClassName()} to="/community">
-              {t('nav.community')}
-            </NavLink>
-          ) : null}
-          {user ? (
-            <NavLink className={navItemClassName()} to="/leaderboard">
-              {t('nav.leaderboard')}
-            </NavLink>
-          ) : null}
-          {user ? (
-            <NavLink className={navItemClassName()} to="/nearby">
-              {t('nav.nearby')}
-            </NavLink>
-          ) : null}
-          {user ? (
-            <NavLink className={navItemClassName()} to="/tracking">
-              {t('nav.tracking')}
-            </NavLink>
-          ) : null}
-          {user ? (
-            <NavLink className={navItemClassName()} to="/bookings">
-              {t('nav.bookings')}
-            </NavLink>
-          ) : null}
-          {user && isApprovedCompany && profile?.bookingEnabled ? (
-            <NavLink className={navItemClassName()} to="/provider">
-              {t('nav.provider')}
-            </NavLink>
-          ) : null}
-          {!user ? (
-            <NavLink className={navItemClassName()} to="/login">
-              {t('nav.login')}
-            </NavLink>
-          ) : null}
-          {!user ? (
-            <NavLink className={navItemClassName()} to="/register">
-              {t('nav.register')}
-            </NavLink>
-          ) : null}
-        </div>
-        <div className="pp-navUtility">
-          <LanguageSwitcher />
-          {user ? (
-            <div className="pp-navAccount" ref={accountMenuRef}>
-              <button
-                type="button"
-                className="pp-navAccountBtn"
-                onClick={() => setAccountMenuOpen((prev) => !prev)}
-                aria-haspopup="menu"
-                aria-expanded={accountMenuOpen}
-              >
-                <UserAvatar user={user} size={30} className="pp-navProfileAvatar" />
-                <span className="pp-navProfileLabel">{t('nav.profile')}</span>
-                <span className="pp-navAccountChev" aria-hidden>
-                  ▾
-                </span>
-              </button>
-
-              {accountMenuOpen ? (
-                <div className="pp-navAccountMenu" role="menu" aria-label={t('nav.profile')}>
-                  <Link className="pp-navAccountItem" to="/profile" role="menuitem" onClick={() => setAccountMenuOpen(false)}>
-                    <span aria-hidden>👤</span>
-                    <span>{t('nav.profile')}</span>
-                  </Link>
-                  <Link className="pp-navAccountItem" to="/pets" role="menuitem" onClick={() => setAccountMenuOpen(false)}>
-                    <span aria-hidden>🐾</span>
-                    <span>{t('nav.myPets')}</span>
-                  </Link>
-                  <button type="button" className="pp-navAccountItem pp-navAccountItem--logout" role="menuitem" onClick={handleSignOut}>
-                    <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M4 3H14V21H4V3Z" stroke="currentColor" strokeWidth="1.8" />
-                      <path d="M10 12H21" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                      <path d="M17 8L21 12L17 16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                    <span>{t('nav.logout')}</span>
-                  </button>
-                </div>
-              ) : null}
-            </div>
-          ) : null}
-        </div>
-      </div>
-    </div>
-  );
 }
 
 function App() {

@@ -5,6 +5,7 @@ import { useI18n } from '../i18n/I18nContext';
 import { useGame } from '../game/GameContext';
 import { usePublicWalk } from '../leaderboard/PublicWalkContext';
 import { fetchPublicLeaderboard } from '../leaderboard/publicWalkFirestore';
+import { EmptyState, PageContainer, PetIllustration, SecondaryButton, SegmentedTabs, SkeletonCard } from '../components/ui';
 
 function formatKm(n) {
   if (n == null || Number.isNaN(n)) return '0.0';
@@ -185,30 +186,29 @@ export default function Leaderboard() {
   const showPodium = !loading && rowsWithKm.length > 0;
 
   return (
-    <div className="pp-lb-shell">
-      <div className="pp-lb-page pp-lb-page--v2">
-        <LbSurface hover={false} className="pp-lb-hero">
-          <div className="pp-lb-hero__top">
-            <span className="pp-lb-hero__emoji" aria-hidden>
-              {t('leaderboardPage.heroEmoji')}
-            </span>
-            <span className="pp-lb-hero__spark" aria-hidden>
-              ✨
-            </span>
+    <PageContainer className="animate-fade-up">
+      <div className="space-y-6">
+        <section className="relative overflow-hidden rounded-[2rem] border border-white/80 bg-white/80 p-6 shadow-lift backdrop-blur sm:p-10">
+          <div className="absolute -right-16 -top-20 h-60 w-60 rounded-full bg-petpal-soft blur-3xl" aria-hidden />
+          <div className="relative grid gap-8 lg:grid-cols-[1fr_260px] lg:items-center">
+            <div>
+              <span className="mb-4 inline-flex rounded-full bg-petpal-soft px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-petpal-lilac">{t('leaderboardPage.rankingsHeading')}</span>
+              <h1 className="text-4xl font-black tracking-[-0.06em] text-petpal-ink sm:text-6xl">{t('leaderboardPage.heroTitle')}</h1>
+              <p className="mt-4 max-w-2xl text-lg leading-8 text-petpal-muted">{t('leaderboardPage.heroSub')}</p>
+              <p className="mt-4 max-w-2xl text-sm leading-6 text-slate-500">
+                {t('leaderboardPage.introStart')}{' '}
+                <Link to="/dashboard" className="font-black text-petpal-lilac">
+                  {t('leaderboardPage.introDashLink')}
+                </Link>
+                {t('leaderboardPage.introEnd')}
+              </p>
+              <SecondaryButton to="/dashboard" className="mt-6">
+                {t('common.backDashboard')}
+              </SecondaryButton>
+            </div>
+            <PetIllustration variant="trophy" className="mx-auto h-56 w-56" />
           </div>
-          <h1 className="pp-lb-hero__title">{t('leaderboardPage.heroTitle')}</h1>
-          <p className="pp-lb-hero__sub">{t('leaderboardPage.heroSub')}</p>
-          <p className="pp-lb-hero__intro">
-            {t('leaderboardPage.introStart')}{' '}
-            <Link to="/dashboard" className="pp-lb-hero__link">
-              {t('leaderboardPage.introDashLink')}
-            </Link>
-            {t('leaderboardPage.introEnd')}
-          </p>
-          <Link className="pp-lb-btn pp-lb-btn--primary" to="/dashboard">
-            {t('common.backDashboard')}
-          </Link>
-        </LbSurface>
+        </section>
 
         <LbSurface hover={false} className="pp-lb-privacy">
           <h2 className="pp-lb-h2">{t('leaderboardPage.privacyHeading')}</h2>
@@ -243,30 +243,25 @@ export default function Leaderboard() {
         </LbSurface>
 
         <LbSurface className="pp-lb-toolbar">
-          <div className="pp-lbSegment" role="group" aria-label={t('leaderboardPage.rankingsHeading')}>
-            {periods.map((p) => (
-              <button
-                key={p.id}
-                type="button"
-                className={`pp-lbSegment__btn ${period === p.id ? 'pp-lbSegment__btn--on' : ''}`}
-                onClick={() => setPeriod(p.id)}
-              >
-                {p.label}
-              </button>
-            ))}
-          </div>
+          <SegmentedTabs tabs={periods} value={period} onChange={setPeriod} ariaLabel={t('leaderboardPage.rankingsHeading')} />
           <button type="button" className="pp-lb-btn pp-lb-btn--primary pp-lb-btn--sm" onClick={load} disabled={loading}>
             {loading ? t('common.loading') : t('leaderboardPage.refresh')}
           </button>
         </LbSurface>
 
         {loadError ? <p className="pp-lb-error">{loadError}</p> : null}
-        {loading && rows.length === 0 ? <p className="pp-lb-muted">{t('common.loading')}</p> : null}
+        {loading && rows.length === 0 ? (
+          <div className="grid gap-4 md:grid-cols-3">
+            <SkeletonCard />
+            <SkeletonCard />
+            <SkeletonCard />
+          </div>
+        ) : null}
         {!loading && !loadError && rows.length === 0 && isFirestoreEnabled ? (
-          <p className="pp-lb-muted">{t('leaderboardPage.podiumEmpty')}</p>
+          <EmptyState title={t('leaderboardPage.podiumEmpty')} body={t('leaderboardPage.emptySharers')} icon="trophy" />
         ) : null}
         {!loading && !loadError && rows.length > 0 && rowsWithKm.length === 0 && isFirestoreEnabled ? (
-          <p className="pp-lb-muted">{t('leaderboardPage.emptySharers')}</p>
+          <EmptyState title={t('leaderboardPage.emptySharers')} body={t('leaderboardPage.optInCheckbox')} icon="trophy" />
         ) : null}
 
         {showPodium ? (
@@ -401,6 +396,6 @@ export default function Leaderboard() {
           </LbSurface>
         </section>
       </div>
-    </div>
+    </PageContainer>
   );
 }

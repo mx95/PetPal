@@ -9,6 +9,7 @@ import { walkStreakDays } from '../walk/walkStats';
 import PetCard from '../components/PetCard';
 import ActivityCard from '../components/ActivityCard';
 import UserAvatar from '../components/UserAvatar';
+import { EmptyState, PageContainer, PetIllustration, PrimaryButton, SecondaryButton, StatCard } from '../components/ui';
 
 function GreyIcon({ children, premium }) {
   return (
@@ -296,16 +297,7 @@ function LoggedInFeed() {
           ) : null}
         </section>
       ) : (
-        <section className="pp-feed__addPet">
-          <div className="pp-feed__addPetCopy">
-            <span aria-hidden style={{ fontSize: 36 }}>🐶</span>
-            <h2 className="pp-feed__addPetTitle">{t('home.feed.noPetTitle')}</h2>
-            <p className="pp-feed__addPetSub">{t('home.feed.noPetSub')}</p>
-          </div>
-          <Link className="pp-btn pp-btnPrimary pp-btn--lg" to="/pets#add-pet">
-            {t('home.feed.noPetCta')}
-          </Link>
-        </section>
+        <EmptyState title={t('home.feed.noPetTitle')} body={t('home.feed.noPetSub')} actionLabel={t('home.feed.noPetCta')} actionTo="/pets#add-pet" />
       )}
 
       <section className="pp-feed__section">
@@ -457,61 +449,55 @@ function LoggedInFeed() {
 function PublicHero() {
   const { t } = useI18n();
   return (
-    <section className="pp-publicHero" aria-labelledby="public-hero-title">
-      <div className="pp-publicHero__inner">
-        <div className="pp-publicHero__copy">
-          <span className="pp-publicHero__eyebrow">{t('home.publicHero.eyebrow')}</span>
-          <h1 id="public-hero-title" className="pp-publicHero__headline">
+    <section className="relative overflow-hidden rounded-[2rem] border border-white/80 bg-white/80 p-6 shadow-lift backdrop-blur animate-fade-up sm:p-10 lg:p-12" aria-labelledby="public-hero-title">
+      <div className="absolute -right-20 -top-20 h-72 w-72 rounded-full bg-petpal-soft blur-3xl" aria-hidden />
+      <div className="absolute -bottom-24 left-1/4 h-72 w-72 rounded-full bg-petpal-cream blur-3xl" aria-hidden />
+      <div className="relative grid gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
+        <div>
+          <span className="mb-4 inline-flex rounded-full bg-petpal-soft px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-petpal-lilac">{t('home.publicHero.eyebrow')}</span>
+          <h1 id="public-hero-title" className="max-w-3xl text-4xl font-black leading-[0.98] tracking-[-0.06em] text-petpal-ink sm:text-6xl">
             {t('home.publicHero.headline')}
           </h1>
-          <p className="pp-publicHero__sub">{t('home.publicHero.sub')}</p>
-          <div className="pp-publicHero__ctaRow">
-            <Link className="pp-btn pp-btnPrimary pp-btn--lg" to="/register">
-              {t('home.publicHero.ctaPrimary')}
-            </Link>
-            <Link className="pp-btn pp-btn--lg pp-btn--ghost" to="/login">
-              {t('home.publicHero.ctaSecondary')}
-            </Link>
+          <p className="mt-6 max-w-2xl text-lg leading-8 text-petpal-muted">{t('home.publicHero.sub')}</p>
+          <div className="mt-8 flex flex-wrap gap-3">
+            <PrimaryButton to="/register">{t('home.publicHero.ctaPrimary')}</PrimaryButton>
+            <SecondaryButton to="/login">{t('home.publicHero.ctaSecondary')}</SecondaryButton>
           </div>
-          <p className="pp-publicHero__trust">{t('home.publicHero.trustLine')}</p>
+          <p className="mt-5 text-sm font-bold text-slate-400">{t('home.publicHero.trustLine')}</p>
         </div>
-        <ul className="pp-publicHero__bullets" aria-label="Highlights">
-          <li>
-            <span className="pp-publicHero__bulletIcon" aria-hidden>🐾</span>
+        <div className="relative">
+          <div className="mx-auto max-w-sm rounded-[2rem] bg-gradient-to-br from-petpal-soft via-white to-petpal-cream p-6 shadow-lift">
+            <PetIllustration className="mx-auto h-52 w-52" />
+            <ul className="mt-4 space-y-3" aria-label="Highlights">
+          <li className="flex gap-3 rounded-3xl bg-white/85 p-4 shadow-soft">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-petpal-soft" aria-hidden>Pets</span>
             <div>
-              <strong>{t('home.publicHero.bullet1Title')}</strong>
-              <span>{t('home.publicHero.bullet1Desc')}</span>
+              <strong className="block text-sm font-black text-petpal-ink">{t('home.publicHero.bullet1Title')}</strong>
+              <span className="text-sm leading-6 text-petpal-muted">{t('home.publicHero.bullet1Desc')}</span>
             </div>
           </li>
-          <li>
-            <span className="pp-publicHero__bulletIcon" aria-hidden>🚨</span>
+          <li className="flex gap-3 rounded-3xl bg-white/85 p-4 shadow-soft">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-orange-50" aria-hidden>Lost</span>
             <div>
-              <strong>{t('home.publicHero.bullet2Title')}</strong>
-              <span>{t('home.publicHero.bullet2Desc')}</span>
+              <strong className="block text-sm font-black text-petpal-ink">{t('home.publicHero.bullet2Title')}</strong>
+              <span className="text-sm leading-6 text-petpal-muted">{t('home.publicHero.bullet2Desc')}</span>
             </div>
           </li>
-          <li>
-            <span className="pp-publicHero__bulletIcon" aria-hidden>📍</span>
+          <li className="flex gap-3 rounded-3xl bg-white/85 p-4 shadow-soft">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-blue-50" aria-hidden>Map</span>
             <div>
-              <strong>{t('home.publicHero.bullet3Title')}</strong>
-              <span>{t('home.publicHero.bullet3Desc')}</span>
+              <strong className="block text-sm font-black text-petpal-ink">{t('home.publicHero.bullet3Title')}</strong>
+              <span className="text-sm leading-6 text-petpal-muted">{t('home.publicHero.bullet3Desc')}</span>
             </div>
           </li>
         </ul>
+          </div>
+        </div>
       </div>
-      <div className="pp-publicHero__stats" role="list">
-        <div className="pp-publicHero__statCell" role="listitem">
-          <span className="pp-publicHero__statValue">{t('home.publicHero.stat1')}</span>
-          <span className="pp-publicHero__statDesc">{t('home.publicHero.stat1Desc')}</span>
-        </div>
-        <div className="pp-publicHero__statCell" role="listitem">
-          <span className="pp-publicHero__statValue">{t('home.publicHero.stat2')}</span>
-          <span className="pp-publicHero__statDesc">{t('home.publicHero.stat2Desc')}</span>
-        </div>
-        <div className="pp-publicHero__statCell" role="listitem">
-          <span className="pp-publicHero__statValue">{t('home.publicHero.stat3')}</span>
-          <span className="pp-publicHero__statDesc">{t('home.publicHero.stat3Desc')}</span>
-        </div>
+      <div className="relative mt-8 grid gap-4 sm:grid-cols-3" role="list">
+        <StatCard value={t('home.publicHero.stat1')} label={t('home.publicHero.stat1Desc')} />
+        <StatCard value={t('home.publicHero.stat2')} label={t('home.publicHero.stat2Desc')} tone="mint" />
+        <StatCard value={t('home.publicHero.stat3')} label={t('home.publicHero.stat3Desc')} tone="gold" />
       </div>
     </section>
   );
@@ -519,32 +505,12 @@ function PublicHero() {
 
 export default function HomeScreen() {
   const { user } = useAuth();
-  const { t } = useI18n();
 
   if (!user) {
     return (
-      <div className="pp-grid">
-        <div className="pp-col-12">
-          <PublicHero />
-        </div>
-        <div className="pp-col-12">
-          <div className="pp-card pp-pad" style={{ maxWidth: 720, margin: '0 auto', textAlign: 'center' }}>
-            <p className="pp-subtle" style={{ margin: 0 }}>
-              <Link className="pp-link" to="/login">
-                {t('nav.login')}
-              </Link>
-              {' · '}
-              <Link className="pp-link" to="/register">
-                {t('nav.register')}
-              </Link>
-              {' · '}
-              <Link className="pp-link" to="/docs">
-                {t('home.tileDocs')}
-              </Link>
-            </p>
-          </div>
-        </div>
-      </div>
+      <PageContainer>
+        <PublicHero />
+      </PageContainer>
     );
   }
 

@@ -22,6 +22,9 @@
     "web-vitals": "^2.1.0"
   },
   "scripts": {
+    "build:tw": "tailwindcss -i ./src/tailwind.input.css -o ./src/tailwind.generated.css",
+    "prestart": "npm run build:tw",
+    "prebuild": "npm run build:tw",
     "start": "react-scripts start",
     "build": "react-scripts build",
     "cap:sync": "npx cap sync",
@@ -35,7 +38,11 @@
   "devDependencies": {
     "@babel/plugin-proposal-private-property-in-object": "^7.21.0",
     "@capacitor/cli": "^6.2.0",
-    "firebase-admin": "^13.0.0"
+    "@tailwindcss/cli": "^4.3.0",
+    "autoprefixer": "^10.5.0",
+    "firebase-admin": "^13.0.0",
+    "postcss": "^8.5.14",
+    "tailwindcss": "^3.4.19"
   },
   "eslintConfig": {
     "extends": [

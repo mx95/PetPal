@@ -413,25 +413,30 @@
 
 .pp-main {
   flex: 1;
-  max-width: 1100px;
+  max-width: 1200px;
   width: 100%;
   min-width: 0;
   margin: 0 auto;
-  padding: 28px 20px 60px;
+  padding: 36px 20px 72px;
   box-sizing: border-box;
 }
 
 .pp-card {
   background:
     radial-gradient(420px 240px at 110% -10%, rgba(91, 55, 255, 0.05), transparent 70%),
-    rgba(255, 255, 255, 0.92);
-  border: 1px solid rgba(16, 24, 40, 0.06);
-  border-radius: 20px;
-  box-shadow: 0 10px 30px -18px rgba(16, 24, 40, 0.18), 0 1px 0 rgba(255, 255, 255, 0.6) inset;
+    rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  border-radius: 24px;
+  box-shadow: 0 14px 45px rgba(16, 24, 40, 0.08), 0 1px 0 rgba(255, 255, 255, 0.7) inset;
   min-width: 0;
   max-width: 100%;
   box-sizing: border-box;
-  transition: box-shadow 220ms ease, transform 220ms ease, border-color 220ms ease;
+  transition: box-shadow 260ms ease, transform 260ms ease, border-color 260ms ease, background 260ms ease;
+}
+
+.pp-card:hover {
+  border-color: rgba(91, 55, 255, 0.14);
+  box-shadow: 0 22px 70px rgba(16, 24, 40, 0.13);
 }
 
 /* Collapsible “add” panels (My pets, Community) */
@@ -4805,14 +4810,15 @@ body.pp-noScroll {
   align-items: center;
   gap: 6px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.92) 0%, rgba(249, 250, 255, 0.9) 100%),
+    radial-gradient(180px 90px at 50% -20%, rgba(91, 55, 255, 0.16), transparent 70%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.94) 0%, rgba(249, 250, 255, 0.92) 100%),
     rgba(255, 255, 255, 0.82);
   backdrop-filter: blur(20px) saturate(1.15);
   -webkit-backdrop-filter: blur(20px) saturate(1.15);
-  border-radius: 24px;
-  border: 1px solid rgba(16, 24, 40, 0.1);
+  border-radius: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.82);
   box-shadow:
-    0 18px 42px -24px rgba(16, 24, 40, 0.35),
+    0 20px 60px -24px rgba(16, 24, 40, 0.42),
     0 1px 0 rgba(255, 255, 255, 0.72) inset;
   padding: 8px 8px 9px;
 }
@@ -4824,16 +4830,16 @@ body.pp-noScroll {
   gap: 3px;
   min-height: 52px;
   padding: 7px 4px;
-  border-radius: 14px;
+  border-radius: 18px;
   color: #344054;
   font-weight: 800;
   font-size: 10px;
   text-decoration: none;
   transition:
-    color 160ms ease,
-    background 160ms ease,
-    transform 160ms ease,
-    box-shadow 180ms ease;
+    color 220ms ease,
+    background 220ms ease,
+    transform 180ms ease,
+    box-shadow 220ms ease;
   -webkit-tap-highlight-color: transparent;
   position: relative;
 }
@@ -5006,6 +5012,188 @@ body.pp-noScroll {
   }
   .pp-bottomNav__fab:active {
     transform: translateY(-9px) scale(0.97);
+  }
+}
+
+/* ============================================================ */
+/*   Premium redesign overlay for legacy pp-* pages              */
+/* ============================================================ */
+
+.pp-pageHeader,
+.pp-book-hero,
+.pp-lb-surface,
+.pp-feed__hello,
+.pp-activityHub__hero,
+.pp-profileHero,
+.pp-premiumHero,
+.pp-providerHero,
+.pp-nearby-page > .pp-row:first-child {
+  position: relative;
+  overflow: hidden;
+  border-radius: 32px;
+  border: 1px solid rgba(255, 255, 255, 0.74);
+  background:
+    radial-gradient(520px 260px at 88% -10%, rgba(91, 55, 255, 0.12), transparent 70%),
+    radial-gradient(420px 220px at 0% 20%, rgba(47, 128, 255, 0.09), transparent 70%),
+    rgba(255, 255, 255, 0.82);
+  box-shadow: 0 18px 60px rgba(16, 24, 40, 0.08);
+  backdrop-filter: blur(16px);
+}
+
+.pp-pageHeader,
+.pp-feed__hello,
+.pp-activityHub__hero,
+.pp-nearby-page > .pp-row:first-child {
+  padding: clamp(24px, 4vw, 44px);
+  margin-bottom: 28px;
+}
+
+.pp-pageHeader__title,
+.pp-book-hero__title,
+.pp-h1,
+.pp-feed__title,
+.pp-lb-hero__title,
+.pp-sectionTitle,
+.pp-card__title {
+  letter-spacing: -0.045em;
+  color: #101828;
+}
+
+.pp-pageHeader__subtitle,
+.pp-pageHeader__sub,
+.pp-book-hero__sub,
+.pp-subtle,
+.pp-muted,
+.pp-feed__sub,
+.pp-lb-lead {
+  color: #667085;
+  line-height: 1.7;
+}
+
+.pp-btn,
+.pp-book-btn,
+.pp-lb-btn,
+.pp-nearby-cta {
+  border-radius: 999px;
+  transition: transform 220ms ease, box-shadow 220ms ease, background 220ms ease, border-color 220ms ease;
+}
+
+.pp-btn:hover,
+.pp-book-btn:hover,
+.pp-lb-btn:hover,
+.pp-nearby-cta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 45px rgba(16, 24, 40, 0.12);
+}
+
+.pp-btnPrimary,
+.pp-btn--primary,
+.pp-book-btn--primary,
+.pp-lb-btn--primary {
+  background: linear-gradient(135deg, #5b37ff 0%, #2f80ff 100%);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 18px 55px rgba(91, 55, 255, 0.18);
+}
+
+.pp-feed__row,
+.pp-homeGrid,
+.pp-book-grid,
+.pp-grid {
+  gap: 24px;
+}
+
+.pp-activityCard,
+.pp-petCard,
+.pp-homeTile,
+.pp-nearby-tile,
+.pp-providerPortalCard,
+.pp-lb-row,
+.pp-lb-achRow,
+.pp-book-mineCard,
+.pp-rowBetween--card {
+  border-radius: 24px;
+  border-color: rgba(255, 255, 255, 0.74);
+  background-color: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 14px 45px rgba(16, 24, 40, 0.07);
+  transition: transform 260ms ease, box-shadow 260ms ease, border-color 260ms ease, background 260ms ease;
+}
+
+.pp-activityCard:hover,
+.pp-petCard:hover,
+.pp-homeTile:hover,
+.pp-nearby-tile:hover,
+.pp-providerPortalCard:hover,
+.pp-lb-row:hover,
+.pp-lb-achRow:hover,
+.pp-book-mineCard:hover,
+.pp-rowBetween--card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(91, 55, 255, 0.16);
+  box-shadow: 0 22px 70px rgba(16, 24, 40, 0.13);
+}
+
+.pp-input,
+.pp-book-input,
+.pp-book-select,
+.pp-field input,
+.pp-field select,
+.pp-field textarea,
+.pp-form input,
+.pp-form select,
+.pp-form textarea {
+  border-radius: 18px;
+  border-color: rgba(16, 24, 40, 0.1);
+  background: rgba(255, 255, 255, 0.86);
+  transition: border-color 180ms ease, box-shadow 180ms ease, background 180ms ease;
+}
+
+.pp-input:focus,
+.pp-book-input:focus,
+.pp-book-select:focus,
+.pp-field input:focus,
+.pp-field select:focus,
+.pp-field textarea:focus,
+.pp-form input:focus,
+.pp-form select:focus,
+.pp-form textarea:focus {
+  outline: none;
+  border-color: rgba(91, 55, 255, 0.45);
+  box-shadow: 0 0 0 4px rgba(91, 55, 255, 0.14);
+  background: #fff;
+}
+
+.pp-book-empty,
+.pp-trackMapEmpty,
+.pp-feed__addPet {
+  border-radius: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  background:
+    radial-gradient(320px 180px at 80% 0%, rgba(91, 55, 255, 0.12), transparent 72%),
+    rgba(255, 255, 255, 0.84);
+  box-shadow: 0 14px 45px rgba(16, 24, 40, 0.08);
+}
+
+.pp-feed,
+.pp-book-page,
+.pp-lb-page,
+.pp-pad,
+.pp-nearby-page,
+.pp-tracker-page {
+  animation: pp-fade-up 520ms ease both;
+}
+
+@media (max-width: 720px) {
+  .pp-main {
+    padding: 24px 14px 64px;
+  }
+
+  .pp-pageHeader,
+  .pp-feed__hello,
+  .pp-activityHub__hero,
+  .pp-nearby-page > .pp-row:first-child {
+    border-radius: 24px;
+    padding: 22px;
   }
 }
 

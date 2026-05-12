@@ -16,6 +16,7 @@ import { ProviderCard } from '../bookings/components/ProviderCard';
 import { BookingModal } from '../bookings/components/BookingModal';
 import { DEMO_PROVIDERS } from '../bookings/demoBookingData';
 import { appleCalendarDataUrl, buildCalendarEvent, googleCalendarUrl } from '../bookings/calendarLinks';
+import { AppCard, EmptyState, PageContainer, SectionHeader, SkeletonCard } from '../components/ui';
 
 const TEST_BOOKINGS_KEY = 'petpal_test_bookings';
 
@@ -39,6 +40,7 @@ function TabButton({ active, onClick, children }) {
 function BrowseProviders() {
   const { t } = useI18n();
   const [rows, setRows] = useState([]);
+  const [loaded, setLoaded] = useState(false);
   const [err, setErr] = useState('');
   const [serviceTab, setServiceTab] = useState(/** @type {'vet'|'saloon'|'hotel'} */ ('vet'));
   const [search, setSearch] = useState('');
@@ -50,7 +52,20 @@ function BrowseProviders() {
   const [locMsg, setLocMsg] = useState('');
   const [modalProvider, setModalProvider] = useState(/** @type {Record<string, unknown> | null} */ (null));
 
-  useEffect(() => subscribeProviders(setRows, (e) => setErr(e?.message || 'failed')), []);
+  useEffect(
+    () =>
+      subscribeProviders(
+        (next) => {
+          setRows(next);
+          setLoaded(true);
+        },
+        (e) => {
+          setErr(e?.message || 'failed');
+          setLoaded(true);
+        }
+      ),
+    []
+  );
 
   const sourceRows = rows.length ? rows : DEMO_PROVIDERS;
 
@@ -115,10 +130,10 @@ function BrowseProviders() {
   const showDemoHint = rows.length === 0;
 
   return (
-    <div className="pp-book-layout">
-      <aside className="pp-book-sidebar">
-        <div className="pp-book-sideBlock">
-          <h3 className="pp-book-sideTitle">{t('bookingsHub.filtersTitle')}</h3>
+    <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
+      <aside>
+        <AppCard hover={false} className="sticky top-24">
+          <h3 className="mb-5 text-lg font-black tracking-[-0.03em] text-petpal-ink">{t('bookingsHub.filtersTitle')}</h3>
           <label className="pp-book-field">
             <span className="pp-sr">{t('bookingsHub.searchPlaceholder')}</span>
             <input
@@ -160,31 +175,31 @@ function BrowseProviders() {
               <option value="30">{t('bookingsHub.distance30')}</option>
             </select>
           </label>
-          <button type="button" className="pp-book-btn pp-book-btn--secondary" onClick={requestLocation} disabled={locating}>
+          <button type="button" className="mt-2 w-full rounded-full border border-slate-200 bg-white px-4 py-3 text-sm font-black text-petpal-ink shadow-soft transition hover:-translate-y-0.5 hover:shadow-lift disabled:opacity-60" onClick={requestLocation} disabled={locating}>
             {locating ? t('bookingsHub.locating') : t('bookingsHub.useLocation')}
           </button>
           {locMsg ? <p className="pp-book-muted pp-book-muted--sm">{locMsg}</p> : null}
-        </div>
+        </AppCard>
       </aside>
 
-      <div className="pp-book-main">
-        <div className="pp-book-serviceBar">
+      <div className="min-w-0">
+        <div className="mb-5 flex flex-col gap-3 rounded-3xl border border-white/75 bg-white/75 p-3 shadow-soft backdrop-blur sm:flex-row sm:items-center sm:justify-between">
           <span className="pp-book-serviceBar__label">{t('bookingsHub.categoryLabel')}</span>
           <ServiceTabs tabs={serviceTabs} value={serviceTab} onChange={setServiceTab} />
         </div>
 
         {err ? <div className="pp-book-error">{err}</div> : null}
 
-        {showEmpty ? (
-          <div className="pp-book-empty">
-            <div className="pp-book-empty__icon" aria-hidden>
-              🐾
-            </div>
-            <h3 className="pp-book-empty__title">{t('bookingsHub.emptyTitle')}</h3>
-            <p className="pp-book-empty__body">{search ? t('bookingsHub.emptySearch') : t('bookingsHub.emptyBody')}</p>
+        {!loaded ? (
+          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+            <SkeletonCard />
+            <SkeletonCard />
+            <SkeletonCard />
           </div>
+        ) : showEmpty ? (
+          <EmptyState title={t('bookingsHub.emptyTitle')} body={search ? t('bookingsHub.emptySearch') : t('bookingsHub.emptyBody')} />
         ) : (
-          <div className="pp-book-grid">
+          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
             {sorted.map(({ p, km }) => (
               <ProviderCard key={String(p.id)} provider={p} distanceKm={km} onBook={() => setModalProvider(p)} t={t} />
             ))}
@@ -263,21 +278,24 @@ export default function BookingsHub() {
 
   return (
     <div className="pp-book-page">
-      <header className="pp-book-hero">
-        <div className="pp-book-hero__badge">{t('bookingsHub.badge')}</div>
-        <h1 className="pp-book-hero__title">{t('bookingsHub.title')}</h1>
-        <p className="pp-book-hero__sub">{t('bookingsHub.subtitle')}</p>
-        <div className="pp-book-heroTabs">
-          <TabButton active={tab === 'browse'} onClick={() => setTab('browse')}>
-            {t('bookingsHub.tabBrowse')}
-          </TabButton>
-          <TabButton active={tab === 'mine'} onClick={() => setTab('mine')}>
-            {t('bookingsHub.tabMine')}
-          </TabButton>
-        </div>
-      </header>
-
-      <div className="pp-book-body">{tab === 'browse' ? <BrowseProviders /> : <MyBookings uid={uid} />}</div>
+      <PageContainer>
+        <SectionHeader
+          eyebrow={t('bookingsHub.badge')}
+          title={t('bookingsHub.title')}
+          subtitle={t('bookingsHub.subtitle')}
+          action={
+            <div className="pp-book-heroTabs">
+              <TabButton active={tab === 'browse'} onClick={() => setTab('browse')}>
+                {t('bookingsHub.tabBrowse')}
+              </TabButton>
+              <TabButton active={tab === 'mine'} onClick={() => setTab('mine')}>
+                {t('bookingsHub.tabMine')}
+              </TabButton>
+            </div>
+          }
+        />
+        {tab === 'browse' ? <BrowseProviders /> : <MyBookings uid={uid} />}
+      </PageContainer>
     </div>
   );
 }
