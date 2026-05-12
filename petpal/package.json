@@ -1,7 +1,7 @@
 {
   "name": "petpal",
   "version": "0.1.0",
-  "homepage": ".",
+  "homepage": "/",
   "private": true,
   "dependencies": {
     "@capacitor/android": "^6.2.0",

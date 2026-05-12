@@ -129,17 +129,17 @@ export default function TopNav() {
               </button>
 
               {accountMenuOpen ? (
-                <div className="absolute right-0 mt-3 w-60 rounded-3xl border border-white/80 bg-white/95 p-2 shadow-lift backdrop-blur animate-soft-pop" role="menu" aria-label={t('nav.profile')}>
+                <div className="absolute right-0 mt-3 w-60 rounded-3xl border border-slate-200 bg-white p-2 shadow-lift animate-soft-pop" role="menu" aria-label={t('nav.profile')}>
                   <Link className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-petpal-ink no-underline transition hover:bg-petpal-soft" to="/profile" role="menuitem" onClick={() => setAccountMenuOpen(false)}>
-                    <span aria-hidden>Profile</span>
+                    <span aria-hidden>👤</span>
                     <span>{t('nav.profile')}</span>
                   </Link>
                   <Link className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-petpal-ink no-underline transition hover:bg-petpal-soft" to="/pets" role="menuitem" onClick={() => setAccountMenuOpen(false)}>
-                    <span aria-hidden>Pets</span>
+                    <span aria-hidden>🐾</span>
                     <span>{t('nav.myPets')}</span>
                   </Link>
                   <button type="button" className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-bold text-red-600 transition hover:bg-red-50" role="menuitem" onClick={handleSignOut}>
-                    <span aria-hidden>Exit</span>
+                    <span aria-hidden>↩️</span>
                     <span>{t('nav.logout')}</span>
                   </button>
                 </div>
