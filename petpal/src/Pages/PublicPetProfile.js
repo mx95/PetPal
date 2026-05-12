@@ -17,20 +17,15 @@ function firstNonEmpty(...values) {
   return '';
 }
 
-function BoolRow({ label, value, yes, no }) {
-  return (
-    <div className="pp-publicPet__kvRow">
-      <dt>{label}</dt>
-      <dd>{value ? yes : no}</dd>
-    </div>
-  );
-}
-
-function ContactRow({ label, value }) {
+function ContactRow({ label, value, href }) {
   return (
     <div className="pp-publicPet__metaRow">
       <span className="pp-publicPet__metaLabel">{label}</span>
-      <span className="pp-publicPet__metaValue">{value || '-'}</span>
+      {href && value ? (
+        <a className="pp-publicPet__metaValue" href={href}>{value}</a>
+      ) : (
+        <span className="pp-publicPet__metaValue">{value || '-'}</span>
+      )}
     </div>
   );
 }
@@ -170,20 +165,28 @@ export default function PublicPetProfile() {
 
             <section className="pp-publicPet__card">
               <h2>{t('petPublic.friendly')}</h2>
-              <dl className="pp-publicPet__kv">
-                <BoolRow label={t('petPublic.people')} value={profile.friendlyWith.people} yes={t('petPublic.yes')} no={t('petPublic.no')} />
-                <BoolRow label={t('petPublic.children')} value={profile.friendlyWith.children} yes={t('petPublic.yes')} no={t('petPublic.no')} />
-                <BoolRow label={t('petPublic.dogs')} value={profile.friendlyWith.dogs} yes={t('petPublic.yes')} no={t('petPublic.no')} />
-                <BoolRow label={t('petPublic.cats')} value={profile.friendlyWith.cats} yes={t('petPublic.yes')} no={t('petPublic.no')} />
-              </dl>
+              <div className="pp-publicPet__friendlyRow">
+                <span className={`pp-publicPet__friendlyChip ${profile.friendlyWith.people ? 'is-yes' : 'is-no'}`}>
+                  {profile.friendlyWith.people ? '✅' : '❌'} {t('petPublic.people')}
+                </span>
+                <span className={`pp-publicPet__friendlyChip ${profile.friendlyWith.children ? 'is-yes' : 'is-no'}`}>
+                  {profile.friendlyWith.children ? '✅' : '❌'} {t('petPublic.children')}
+                </span>
+                <span className={`pp-publicPet__friendlyChip ${profile.friendlyWith.dogs ? 'is-yes' : 'is-no'}`}>
+                  {profile.friendlyWith.dogs ? '✅' : '❌'} {t('petPublic.dogs')}
+                </span>
+                <span className={`pp-publicPet__friendlyChip ${profile.friendlyWith.cats ? 'is-yes' : 'is-no'}`}>
+                  {profile.friendlyWith.cats ? '✅' : '❌'} {t('petPublic.cats')}
+                </span>
+              </div>
             </section>
 
             <section className="pp-publicPet__card">
               <h2>{t('petPublic.contactOwner')}</h2>
-              <p className="pp-publicPet__person">{profile.owner.name || t('petPublic.owner')}</p>
               <div className="pp-publicPet__meta">
+                <ContactRow label={t('petPublic.owner')} value={profile.owner.name || '-'} />
                 <ContactRow label={t('petPublic.phone')} value={profile.owner.phone1} />
-                <ContactRow label={t('petPublic.email')} value={profile.owner.email} />
+                <ContactRow label={t('petPublic.email')} value={profile.owner.email} href={profile.owner.email ? `mailto:${profile.owner.email}` : ''} />
                 <ContactRow label={t('petPublic.location')} value={profile.owner.location} />
               </div>
               <div className="pp-publicPet__actions">
@@ -218,12 +221,12 @@ export default function PublicPetProfile() {
 
             <section className="pp-publicPet__card">
               <h2>{t('petPublic.emergencyTitle')}</h2>
-              <ul className="pp-publicPet__tips">
+              <ol className="pp-publicPet__tips">
                 <li>{t('petPublic.emergencyText1')}</li>
                 <li>{t('petPublic.emergencyText2')}</li>
                 <li>{t('petPublic.emergencyText3')}</li>
                 <li>{t('petPublic.emergencyText4')}</li>
-              </ul>
+              </ol>
             </section>
 
             <p className="pp-publicPet__nfc">📡 {t('petPublic.nfcNote')}</p>

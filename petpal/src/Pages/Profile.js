@@ -6,6 +6,7 @@ import { useAuth } from '../auth/AuthProvider';
 import { useCompany } from '../company/CompanyContext';
 import { useI18n } from '../i18n/I18nContext';
 import { usePets } from '../pets/PetsContext';
+import { syncOwnerContactToPets } from '../pets/petsFirestore';
 import { useGame } from '../game/GameContext';
 import { walkStreakDays } from '../walk/walkStats';
 import { getDb, isFirebaseConfigured } from '../firebase';
@@ -205,6 +206,15 @@ export default function Profile() {
         },
         { merge: true }
       );
+
+      await syncOwnerContactToPets(user.uid, {
+        ownerName: username,
+        ownerPhone: phone,
+        ownerEmail: user.email || '',
+        ownerLocation: form.location.trim(),
+        ownerMapsQuery: form.location.trim(),
+      });
+
       try {
         await updateProfile(user, { displayName: username });
       } catch {

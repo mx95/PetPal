@@ -4,12 +4,14 @@ import {
   deleteDoc,
   doc,
   getDoc,
+  getDocs,
   onSnapshot,
   orderBy,
   query,
   serverTimestamp,
   setDoc,
   updateDoc,
+  writeBatch,
 } from 'firebase/firestore';
 import { getDb, isFirebaseConfigured } from '../firebase';
 
@@ -171,4 +173,66 @@ export async function deletePet(uid, petId) {
       await deleteDoc(doc(getDb(), 'publicPets', publicId));
     }
   }
+}
+
+export async function syncOwnerContactToPets(uid, ownerPatch) {
+  if (!isFirebaseConfigured() || !uid) return;
+
+  const normalized = {
+    ownerName: typeof ownerPatch?.ownerName === 'string' ? ownerPatch.ownerName : '',
+    ownerPhone: typeof ownerPatch?.ownerPhone === 'string' ? ownerPatch.ownerPhone : '',
+    ownerEmail: typeof ownerPatch?.ownerEmail === 'string' ? ownerPatch.ownerEmail : '',
+    ownerLocation: typeof ownerPatch?.ownerLocation === 'string' ? ownerPatch.ownerLocation : '',
+    ownerMapsQuery: typeof ownerPatch?.ownerMapsQuery === 'string' ? ownerPatch.ownerMapsQuery : '',
+  };
+
+  const db = getDb();
+  const snap = await getDocs(petsCol(uid));
+  if (snap.empty) return;
+
+  const batch = writeBatch(db);
+
+  snap.docs.forEach((petDoc) => {
+    const petData = petDoc.data() || {};
+    const petRef = doc(db, 'users', uid, 'pets', petDoc.id);
+
+    const publicId =
+      typeof petData.publicProfileId === 'string' && petData.publicProfileId.trim()
+        ? petData.publicProfileId.trim()
+        : '';
+
+    const nextPublicId = publicId || doc(publicPetsCol()).id;
+
+    batch.set(
+      petRef,
+      {
+        publicProfileId: nextPublicId,
+        ...normalized,
+        updatedAt: serverTimestamp(),
+      },
+      { merge: true }
+    );
+
+    batch.set(
+      doc(db, 'publicPets', nextPublicId),
+      {
+        ownerName: normalized.ownerName,
+        ownerPhone: normalized.ownerPhone,
+        ownerEmail: normalized.ownerEmail,
+        ownerLocation: normalized.ownerLocation,
+        ownerMapsQuery: normalized.ownerMapsQuery,
+        owner: {
+          name: normalized.ownerName,
+          phone1: normalized.ownerPhone,
+          email: normalized.ownerEmail,
+          location: normalized.ownerLocation,
+          mapsQuery: normalized.ownerMapsQuery,
+        },
+        updatedAt: serverTimestamp(),
+      },
+      { merge: true }
+    );
+  });
+
+  await batch.commit();
 }
