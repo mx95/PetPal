@@ -65,6 +65,7 @@ function NearbyMap({ apiKey }) {
   const [searchStatus, setSearchStatus] = useState('idle');
   const [activePlace, setActivePlace] = useState(null);
   const [locFetching, setLocFetching] = useState(false);
+  const [userLocation, setUserLocation] = useState(null);
 
   const selectedCategory = useMemo(() => getCategoryById(selectedCategoryId, t), [selectedCategoryId, t]);
   const mapCenter = useMemo(
@@ -73,9 +74,10 @@ function NearbyMap({ apiKey }) {
   );
 
   const runPlacesSearch = useCallback(
-    (mode) => {
+    (mode, centerOverride) => {
       if (!map || !isLoaded || !window.google?.maps?.places) return;
       const scope = mode || searchScope;
+      const center = centerOverride || searchCenter;
       setActivePlace(null);
       setSearchStatus('loading');
       setPlaces([]);
@@ -96,7 +98,7 @@ function NearbyMap({ apiKey }) {
         }
         request.bounds = bounds;
       } else {
-        const loc = new window.google.maps.LatLng(searchCenter.lat, searchCenter.lng);
+        const loc = new window.google.maps.LatLng(center.lat, center.lng);
         request.location = loc;
         request.radius = NEARBY_SEARCH_RADIUS_M;
       }
@@ -131,10 +133,19 @@ function NearbyMap({ apiKey }) {
       setLocationNote({ kind: 'text', message: t('nearbyPage.locUnavailable') });
       return;
     }
+    if (!window.isSecureContext && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+      setLocationNote({
+        kind: 'text',
+        message: 'Location needs HTTPS or localhost. Open the app on HTTPS, localhost, or the mobile app build.',
+      });
+      return;
+    }
     setLocFetching(true);
+    setSearchStatus('loading');
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const next = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        setUserLocation(next);
         setSearchCenter(next);
         setLocFetching(false);
         setLocationNote({ kind: 'none' });
@@ -143,12 +154,22 @@ function NearbyMap({ apiKey }) {
           map.setZoom(14);
         }
         setSearchScope('radius');
+        runPlacesSearch('radius', next);
       },
-      () => {
+      (err) => {
         setLocFetching(false);
-        setLocationNote({ kind: 'text', message: t('nearbyPage.locDenied') });
+        setSearchStatus('idle');
+        const reason =
+          err?.code === 1
+            ? 'Location permission was denied. Allow location access for this site/app and try again.'
+            : err?.code === 2
+              ? 'Your location is unavailable right now. Check GPS/location services and try again.'
+              : err?.code === 3
+                ? 'Getting your location timed out. Move near a window or try again.'
+                : t('nearbyPage.locDenied');
+        setLocationNote({ kind: 'text', message: reason });
       },
-      { enableHighAccuracy: true, maximumAge: 0, timeout: 15_000 }
+      { enableHighAccuracy: true, maximumAge: 60_000, timeout: 20_000 }
     );
   }
 
@@ -281,6 +302,20 @@ function NearbyMap({ apiKey }) {
                 />
               ) : null
             )}
+            {userLocation ? (
+              <Marker
+                position={userLocation}
+                title="Your location"
+                icon={{
+                  path: window.google.maps.SymbolPath.CIRCLE,
+                  scale: 8,
+                  fillColor: '#2563eb',
+                  fillOpacity: 1,
+                  strokeColor: '#ffffff',
+                  strokeWeight: 3,
+                }}
+              />
+            ) : null}
             {activePlace?.geometry?.location ? (
               <InfoWindow
                 position={activePlace.geometry.location}

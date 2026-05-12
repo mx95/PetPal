@@ -1693,7 +1693,7 @@ select.pp-input:focus {
 
 .pp-nearby-mapActions {
   position: absolute;
-  z-index: 2;
+  z-index: 10;
   top: 12px;
   left: 50%;
   transform: translateX(-50%);

@@ -61,6 +61,10 @@ function batteryFillStyle(pct) {
   return { width: `${n}%`, background: fill };
 }
 
+function hasDiagnostics(position) {
+  return Boolean(position?.diagnostics?.received || position?.diagnostics?.raw);
+}
+
 function accuracyMeterStyle(position) {
   const approx = position?.warningApproximate || position?.accuracy === 'low' || position?.source === 'lbs';
   const stale = Boolean(position?.warningStale);
@@ -205,13 +209,14 @@ export default function Tracking() {
   const langForDate = language === 'el' ? 'el' : language === 'ru' ? 'ru' : 'en';
 
   const signalLive = position != null;
+  const hasCoordinates = position?.lat != null && position?.lng != null;
   const approx = position?.warningApproximate || position?.accuracy === 'low' || position?.source === 'lbs';
   const accuracyLabel = approx ? t('trackingPage.accuracyApprox') : t('trackingPage.accuracyHigh');
   const secondsAgo =
     typeof position?.secondsAgo === 'number' && Number.isFinite(position.secondsAgo) ? position.secondsAgo : null;
   const lastUpdateLabel = formatLastSeen(secondsAgo, t);
 
-  const gpsOkVisual = signalLive && !approx && position?.source !== 'lbs' && !position?.warningStale;
+  const gpsOkVisual = hasCoordinates && !approx && position?.source !== 'lbs' && !position?.warningStale;
 
   const deviceTimeLabel = position?.deviceTimeLocal
     ? position.deviceTimeLocal
@@ -284,7 +289,14 @@ export default function Tracking() {
                   </div>
                 ) : null}
                 {position && accMeter ? (
-                  <div className="pp-trackAccuracyMeter" role="meter" aria-valuemin={0} aria-valuemax={100} aria-label={t('trackingPage.accuracyMeterLabel')}>
+                  <div
+                    className="pp-trackAccuracyMeter"
+                    role="meter"
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-valuenow={Number.parseInt(accMeter.width, 10)}
+                    aria-label={t('trackingPage.accuracyMeterLabel')}
+                  >
                     <div className="pp-trackAccuracyMeter__fill" style={{ width: accMeter.width, background: accMeter.background }} />
                   </div>
                 ) : null}
@@ -357,7 +369,7 @@ export default function Tracking() {
       ) : null}
 
       <section className="pp-card pp-pad pp-trackMapShell">
-        {position ? (
+        {position && hasCoordinates ? (
           <>
             <div className="pp-trackMapHead">
               <h2 className="pp-sectionTitle" style={{ margin: 0 }}>
@@ -394,7 +406,7 @@ export default function Tracking() {
         ) : (
           <div className="pp-trackMapEmpty">
             <p className="pp-subtle" style={{ margin: 0 }}>
-              {error || t('trackingPage.mapPlaceholder')}
+              {position ? 'Provider data received, but no GPS coordinates are available yet.' : error || t('trackingPage.mapPlaceholder')}
             </p>
           </div>
         )}
@@ -434,6 +446,30 @@ export default function Tracking() {
           </button>
         </form>
       </section>
+
+      {hasDiagnostics(position) ? (
+        <section className="pp-card pp-pad">
+          <h2 className="pp-sectionTitle">Everything received from provider</h2>
+          <p className="pp-subtle" style={{ marginTop: 0 }}>
+            Latest raw tracker payload and parsed fields kept by the TCP server.
+          </p>
+          <pre
+            style={{
+              margin: 0,
+              overflow: 'auto',
+              maxHeight: 360,
+              padding: 12,
+              borderRadius: 12,
+              background: '#0f172a',
+              color: '#e2e8f0',
+              fontSize: 12,
+              lineHeight: 1.45,
+            }}
+          >
+            {JSON.stringify(position.diagnostics, null, 2)}
+          </pre>
+        </section>
+      ) : null}
     </div>
   );
 }

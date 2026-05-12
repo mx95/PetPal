@@ -11,6 +11,22 @@ function toBool01(v) {
   return null;
 }
 
+function makeJsonSafe(value) {
+  if (Buffer.isBuffer(value)) return toHexString(value);
+  if (Array.isArray(value)) return value.map(makeJsonSafe);
+  if (!value || typeof value !== "object") return value;
+  const out = {};
+  for (const [key, item] of Object.entries(value)) {
+    if (typeof item === "function") continue;
+    out[key] = makeJsonSafe(item);
+  }
+  return out;
+}
+
+function toHexString(buf) {
+  return Buffer.isBuffer(buf) ? buf.toString("hex").toUpperCase() : null;
+}
+
 function normalizeIncomingDevice(prev, incoming) {
   // Back-compat: allow pre-shaped records (seed fixtures).
   if (incoming && incoming.location && typeof incoming === "object") {
@@ -50,6 +66,16 @@ function normalizeIncomingDevice(prev, incoming) {
       crcOk: p.crcOk ?? null,
       gpsRaw: p.gpsRaw ?? null,
       lbsRaw: p.lbsRaw ?? null
+    },
+    received: {
+      latest: makeJsonSafe(p),
+      packets: [
+        {
+          receivedAt: p.receivedAt || new Date().toISOString(),
+          data: makeJsonSafe(p)
+        },
+        ...((prev?.received?.packets || []).slice(0, 9))
+      ]
     }
   };
 

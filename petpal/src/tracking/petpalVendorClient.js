@@ -118,12 +118,17 @@ function normalizeXexunPosition(json) {
       : json.longitude != null
         ? Number(json.longitude)
         : Number.NaN;
-  if (Number.isNaN(lat) || Number.isNaN(lng)) return null;
+  const diagnostics = {
+    received: json.received ?? null,
+    raw: json.raw ?? null,
+  };
+  const hasCoordinates = !Number.isNaN(lat) && !Number.isNaN(lng);
+  if (!hasCoordinates && !diagnostics.received && !diagnostics.raw) return null;
   const deviceTime = json.deviceTimeUtc || json.deviceTime || null;
   const serverTime = json.lastUpdateServer || json.serverTime || json.lastUpdate || null;
   return {
-    lat,
-    lng,
+    lat: hasCoordinates ? lat : null,
+    lng: hasCoordinates ? lng : null,
     speed: json.speed != null ? Number(json.speed) : null,
     address: json.address || null,
     deviceTime,
@@ -146,6 +151,7 @@ function normalizeXexunPosition(json) {
     steps: json.steps ?? null,
     isMoving: json.isMoving ?? null,
     warningStale: json.warningStale ?? null,
+    diagnostics,
   };
 }
 
@@ -210,6 +216,8 @@ async function fetchXexunPosition(deviceId) {
       throw new Error('Missing IMEI — type the 15-digit IMEI above or set it under My pets.');
     }
     if (res.status === 404 && code === 'no_position') {
+      const device = await fetchXexunDevice(deviceId);
+      if (device) return device;
       throw new Error('No GPS fix stored yet. Wait for coordinates from the device.');
     }
     if (res.status === 404 && code === 'not_found') {
@@ -223,6 +231,28 @@ async function fetchXexunPosition(deviceId) {
   const normalized = normalizeXexunPosition(data);
   if (!normalized) throw new Error('Tracker response had no usable lat/lng (empty or invalid JSON).');
   return normalized;
+}
+
+async function fetchXexunDevice(deviceId) {
+  const base = xexunBase();
+  const path = `/devices/${encodeURIComponent(deviceId)}`;
+  const url = base === '' ? path : `${base}${path}`;
+  const res = await fetch(url, {
+    method: 'GET',
+    headers: { Accept: 'application/json' },
+    credentials: 'omit',
+  });
+  if (!res.ok) return null;
+  const json = await readJsonSafe(res);
+  return normalizeXexunPosition({
+    ...json,
+    lat: json.location?.lat ?? json.gps?.lat ?? null,
+    lng: json.location?.lng ?? json.gps?.lng ?? null,
+    deviceTimeUtc: json.gps?.timestamp ?? null,
+    lastUpdateServer: json.lastUpdate ?? null,
+    received: json.received ?? null,
+    raw: json.raw ?? null,
+  });
 }
 
 async function fetchVendorPosition(deviceId) {

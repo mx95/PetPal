@@ -219,7 +219,9 @@ app.get("/api/app/position", (req, res) => {
     lastUpdateServer: d.lastUpdate ?? null,
     deviceTimeUtc,
     deviceTimeLocal,
-    isStale
+    isStale,
+    received: d.received ?? null,
+    raw: d.raw ?? null
   });
 });
 
@@ -350,7 +352,9 @@ app.get("/position", (req, res) => {
     lastUpdateServer: d.lastUpdate ?? null,
     deviceTimeUtc,
     deviceTimeLocal,
-    isStale
+    isStale,
+    received: d.received ?? null,
+    raw: d.raw ?? null
   });
 });
 

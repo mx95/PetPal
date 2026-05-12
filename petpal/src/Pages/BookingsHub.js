@@ -14,42 +14,19 @@ import {
 import { ServiceTabs } from '../bookings/components/ServiceTabs';
 import { ProviderCard } from '../bookings/components/ProviderCard';
 import { BookingModal } from '../bookings/components/BookingModal';
+import { DEMO_PROVIDERS } from '../bookings/demoBookingData';
+import { appleCalendarDataUrl, buildCalendarEvent, googleCalendarUrl } from '../bookings/calendarLinks';
 
-const DEMO_PROVIDERS = [
-  {
-    id: 'example_vet',
-    displayName: 'Paws & Care Vet Clinic',
-    address: '123 Oak Street, Athens',
-    phone: '+30 210 000 0000',
-    providerTypes: { vet: true, saloon: false, hotel: false },
-    rating: 4.8,
-    priceTier: 2,
-    lat: 37.9838,
-    lng: 23.7275,
-  },
-  {
-    id: 'example_groom',
-    displayName: 'Fluffy Cuts Grooming & Pet Shop',
-    address: '45 Sunset Ave, Kifisia',
-    phone: '+30 210 111 1111',
-    providerTypes: { vet: false, saloon: true, hotel: false },
-    rating: 4.6,
-    priceTier: 1,
-    lat: 38.0744,
-    lng: 23.8125,
-  },
-  {
-    id: 'example_hotel',
-    displayName: 'Snooze Inn Pet Hotel',
-    address: '9 Marina Road, Glyfada',
-    phone: '+30 210 222 2222',
-    providerTypes: { vet: false, saloon: false, hotel: true },
-    rating: 4.9,
-    priceTier: 3,
-    lat: 37.8616,
-    lng: 23.7517,
-  },
-];
+const TEST_BOOKINGS_KEY = 'petpal_test_bookings';
+
+function getLocalTestBookings() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(TEST_BOOKINGS_KEY) || '[]');
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
 
 function TabButton({ active, onClick, children }) {
   return (
@@ -233,28 +210,46 @@ function BrowseProviders() {
 function MyBookings({ uid }) {
   const { t } = useI18n();
   const [rows, setRows] = useState([]);
+  const [testRows, setTestRows] = useState(() => getLocalTestBookings());
   const [err, setErr] = useState('');
 
   useEffect(() => subscribeCustomerBookings(uid, setRows, (e) => setErr(e?.message || 'failed')), [uid]);
 
+  useEffect(() => {
+    setTestRows(getLocalTestBookings());
+  }, []);
+
+  const allRows = [...testRows, ...rows];
+
   return (
     <div className="pp-book-mine">
       {err ? <div className="pp-book-error">{err}</div> : null}
-      {rows.length === 0 ? <p className="pp-book-muted">{t('bookingsHub.mineEmpty')}</p> : null}
+      {allRows.length === 0 ? <p className="pp-book-muted">{t('bookingsHub.mineEmpty')}</p> : null}
       <div className="pp-book-mineList">
-        {rows.map((b) => (
+        {allRows.map((b) => {
+          const event = buildCalendarEvent(b);
+          return (
           <div key={b.id} className="pp-book-mineCard">
             <div>
-              <div className="pp-book-mineCard__title">{b.petSnapshot?.name || 'Pet'}</div>
+              <div className="pp-book-mineCard__title">{b.serviceName || b.petSnapshot?.name || 'Pet'}</div>
               <div className="pp-book-muted">
-                {b.status} · {b.startAt?.toDate ? b.startAt.toDate().toLocaleString() : ''}
+                {b.status} · {b.startAt?.toDate ? b.startAt.toDate().toLocaleString() : b.startAtIso ? new Date(b.startAtIso).toLocaleString() : ''}
               </div>
             </div>
-            <Link className="pp-book-btn pp-book-btn--ghost" to={`/bookings/provider/${b.companyId}`}>
-              {t('bookingsHub.mineOpen')}
-            </Link>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <a className="pp-book-btn pp-book-btn--ghost" href={googleCalendarUrl(event)} target="_blank" rel="noopener noreferrer">
+                Google Calendar
+              </a>
+              <a className="pp-book-btn pp-book-btn--ghost" href={appleCalendarDataUrl(event)} download="petpal-booking.ics">
+                Apple Calendar
+              </a>
+              <Link className="pp-book-btn pp-book-btn--ghost" to={`/bookings/provider/${b.companyId}`}>
+                {t('bookingsHub.mineOpen')}
+              </Link>
+            </div>
           </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

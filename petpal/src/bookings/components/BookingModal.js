@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { fetchOpenSlots, subscribeCompanyServices } from '../bookingFirestore';
+import { getDemoServices, getDemoSlots } from '../demoBookingData';
 import { isFirebaseConfigured } from '../../firebase';
 
 function pad2(n) {
@@ -46,7 +47,16 @@ export function BookingModal({ open, provider, serviceTab, onClose, t }) {
   const companyId = provider ? String(provider.id) : '';
 
   useEffect(() => {
-    if (!open || !provider || isDemo || !isFirebaseConfigured() || !companyId) {
+    if (!open || !provider || !companyId) {
+      setServices([]);
+      setServiceId('');
+      return undefined;
+    }
+    if (isDemo) {
+      setServices(getDemoServices(companyId));
+      return undefined;
+    }
+    if (!isFirebaseConfigured()) {
       setServices([]);
       setServiceId('');
       return undefined;
@@ -76,7 +86,7 @@ export function BookingModal({ open, provider, serviceTab, onClose, t }) {
   const days = useMemo(() => nextDays(14), []);
 
   useEffect(() => {
-    if (!open || isDemo || !companyId || !serviceId || !dayKey) {
+    if (!open || !companyId || !serviceId || !dayKey) {
       setSlots([]);
       setSlotId('');
       return undefined;
@@ -87,7 +97,7 @@ export function BookingModal({ open, provider, serviceTab, onClose, t }) {
       setSlotErr('');
       try {
         const after = new Date(`${dayKey}T00:00:00`);
-        const rows = await fetchOpenSlots(companyId, serviceId, { after });
+        const rows = isDemo ? getDemoSlots(companyId, serviceId, { after }) : await fetchOpenSlots(companyId, serviceId, { after });
         if (cancelled) return;
         setSlots(rows);
         setSlotId(rows[0]?.id || '');
@@ -114,13 +124,30 @@ export function BookingModal({ open, provider, serviceTab, onClose, t }) {
   if (!open || !provider) return null;
 
   const onContinue = () => {
-    if (isDemo) {
-      onClose();
-      return;
-    }
     if (!serviceId || !slotId) return;
+    const selectedService = filteredServices.find((s) => s.id === serviceId) || null;
+    const selectedSlot = slots.find((s) => s.id === slotId) || null;
     navigate(`/bookings/provider/${companyId}/book/${serviceId}`, {
-      state: { afterDate: dayKey, slotId },
+      state: {
+        afterDate: dayKey,
+        slotId,
+        providerName: String(provider.displayName || ''),
+        providerAddress: String(provider.address || ''),
+        serviceName: selectedService?.name || '',
+        demoBooking: isDemo
+          ? {
+              provider,
+              service: selectedService,
+              slot: selectedSlot
+                ? {
+                    id: selectedSlot.id,
+                    startAtIso: selectedSlot.startAtIso || selectedSlot.startAt?.toDate?.()?.toISOString?.(),
+                    endAtIso: selectedSlot.endAtIso || selectedSlot.endAt?.toDate?.()?.toISOString?.(),
+                  }
+                : null,
+            }
+          : null,
+      },
     });
     onClose();
   };
@@ -142,10 +169,8 @@ export function BookingModal({ open, provider, serviceTab, onClose, t }) {
           </button>
         </div>
 
-        {isDemo ? (
-          <p className="pp-book-modalNote">{t('bookingsHub.demoNote')}</p>
-        ) : (
-          <>
+        <>
+          {isDemo ? <p className="pp-book-modalNote">Demo provider: you can book these test slots to try the full flow.</p> : null}
             <label className="pp-book-field">
               <span className="pp-book-field__label">{t('bookingsHub.modalSelectService')}</span>
               {filteredServices.length ? (
@@ -201,8 +226,7 @@ export function BookingModal({ open, provider, serviceTab, onClose, t }) {
                 })}
               </div>
             </div>
-          </>
-        )}
+        </>
 
         <div className="pp-book-modalActions">
           <button type="button" className="pp-book-btn pp-book-btn--ghost" onClick={onClose}>
@@ -212,9 +236,9 @@ export function BookingModal({ open, provider, serviceTab, onClose, t }) {
             type="button"
             className="pp-book-btn pp-book-btn--primary"
             onClick={onContinue}
-            disabled={!isDemo && (!serviceId || !slotId)}
+            disabled={!serviceId || !slotId}
           >
-            {isDemo ? t('bookingsHub.modalDemoCta') : t('bookingsHub.modalContinue')}
+            {t('bookingsHub.modalContinue')}
           </button>
         </div>
       </div>
