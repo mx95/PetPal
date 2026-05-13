@@ -431,8 +431,8 @@ export default function Tracking() {
   const batPct = position?.battery != null ? Math.min(100, Math.max(0, Number(position.battery))) : null;
 
   const accMeter = position ? accuracyMeterStyle(position) : null;
-  const trackingActions = (
-    <div className="pp-row pp-trackMapActions" style={{ gap: 8, flexWrap: 'wrap', margin: '12px 0 10px' }}>
+  const locateAction = (
+    <div className="pp-trackLocateInline">
       <button
         type="button"
         className="pp-btn pp-btnPrimary"
@@ -441,12 +441,6 @@ export default function Tracking() {
       >
         {t('trackingPage.btnLocate')}
       </button>
-      <button type="button" className="pp-btn" disabled={loading || !effectiveDeviceId} onClick={() => void refresh()}>
-        {t('trackingPage.quickRefresh')}
-      </button>
-      <Link className="pp-btn pp-btn--ghost" to="/pets" style={{ textDecoration: 'none' }}>
-        {t('trackingPage.managePets')}
-      </Link>
     </div>
   );
 
@@ -489,7 +483,6 @@ export default function Tracking() {
       <nav className="pp-trackTabs" aria-label="Tracker views">
         {[
           ['live', 'Live'],
-          ['map', 'Map'],
           ['device', 'Device'],
           ['history', 'History'],
         ].map(([id, label]) => (
@@ -538,6 +531,7 @@ export default function Tracking() {
               </div>
             </div>
 
+            {locateAction}
           </div>
 
           {position ? (
@@ -595,7 +589,7 @@ export default function Tracking() {
         </section>
       ) : null}
 
-      {trackerTab === 'map' ? (
+      {trackerTab === 'live' ? (
       <section className="pp-card pp-pad pp-trackMapShell">
         <div className="pp-trackMapHead">
           <h2 className="pp-sectionTitle" style={{ margin: 0 }}>
@@ -613,7 +607,6 @@ export default function Tracking() {
             </a>
           ) : null}
         </div>
-        {trackingActions}
         {position && hasCoordinates ? (
           <>
             <p className="pp-subtle pp-trackMapHint">{t('trackingPage.mapTilesHint')}</p>

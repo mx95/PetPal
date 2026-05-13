@@ -2511,6 +2511,20 @@ body.pp-noScroll {
   box-shadow: 0 14px 24px -16px rgba(91, 55, 255, 0.86);
 }
 
+.pp-trackLocateInline {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  margin-left: auto;
+}
+
+.pp-trackLocateInline .pp-btn {
+  min-height: 38px;
+  padding: 9px 16px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
 .pp-trackHistory {
   display: grid;
   gap: 12px;
@@ -6398,6 +6412,16 @@ body,
   .pp-trackHistoryTimeline__head {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .pp-trackLocateInline {
+    width: 100%;
+    justify-content: stretch;
+    margin-left: 0;
+  }
+
+  .pp-trackLocateInline .pp-btn {
+    width: 100%;
   }
 
   .pp-trackHistoryFilters {
