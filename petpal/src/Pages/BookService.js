@@ -160,7 +160,7 @@ export default function BookService() {
   };
 
   return (
-    <div className="pp-pad">
+    <div className="pp-pad pp-bookConfirm">
       <div className="pp-pageHeader">
         <div className="pp-pageHeader__copy">
           <div className="pp-badge">Book</div>
@@ -172,12 +172,13 @@ export default function BookService() {
       {err ? <div className="pp-error">{err}</div> : null}
 
       {confirmedBooking ? (
-        <div className="pp-card" style={{ marginTop: 14 }}>
+        <div className="pp-card pp-bookConfirm__success" style={{ marginTop: 14 }}>
+          <div className="pp-bookConfirm__successIcon" aria-hidden>✓</div>
           <div className="pp-card__title">Booking confirmed</div>
           <p className="pp-muted">
             {confirmedBooking.serviceName} for {confirmedBooking.petName || confirmedBooking.petSnapshot?.name || 'your pet'}.
           </p>
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 10 }}>
+          <div className="pp-bookConfirm__calendarActions">
             <a
               className="pp-btn pp-btn--primary"
               href={googleCalendarUrl(buildCalendarEvent(confirmedBooking))}
@@ -200,7 +201,7 @@ export default function BookService() {
         </div>
       ) : null}
 
-      <div className="pp-card" style={{ marginTop: 14 }}>
+      <div className="pp-card pp-bookConfirm__details" style={{ marginTop: 14 }}>
         <div className="pp-card__title">Booking details</div>
 
         <div className="pp-form">
@@ -241,7 +242,7 @@ export default function BookService() {
             )}
           </label>
 
-          <div style={{ display: 'flex', gap: 10, marginTop: 10, flexWrap: 'wrap' }}>
+          <div className="pp-bookConfirm__formActions">
             <button
               type="button"
               className="pp-btn pp-btn--primary"

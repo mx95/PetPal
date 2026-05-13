@@ -196,7 +196,7 @@ export function BookingModal({ open, provider, serviceTab, onClose, t }) {
           </button>
         </div>
 
-        <>
+        <div className="pp-book-modalBody">
           {isDemo ? <p className="pp-book-modalNote">Demo provider: you can book these test slots to try the full flow.</p> : null}
             <label className="pp-book-field">
               <span className="pp-book-field__label">{t('bookingsHub.modalSelectService')}</span>
@@ -268,7 +268,7 @@ export function BookingModal({ open, provider, serviceTab, onClose, t }) {
                 ) : null
               )}
             </div>
-        </>
+        </div>
 
         <div className="pp-book-modalActions">
           <button type="button" className="pp-book-btn pp-book-btn--ghost" onClick={onClose}>

@@ -417,10 +417,31 @@ export default function Tracking() {
             </div>
           </>
         ) : (
-          <div className="pp-trackMapEmpty">
-            <p className="pp-subtle" style={{ margin: 0 }}>
-              {position ? 'Provider data received, but no GPS coordinates are available yet.' : error || t('trackingPage.mapPlaceholder')}
+          <div className="pp-trackMapEmpty pp-trackNoSignal">
+            <div className="pp-trackNoSignal__icon" aria-hidden>
+              <svg viewBox="0 0 48 48" width="42" height="42" fill="none">
+                <circle cx="24" cy="24" r="20" fill="currentColor" opacity="0.09" />
+                <path d="M14 26c5-5 15-5 20 0M18 31c3-3 9-3 12 0M22 36h4" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+                <path d="M34 14 14 34" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+              </svg>
+            </div>
+            <h3>No live signal yet</h3>
+            <p>
+              {position ? 'Provider data arrived, but no GPS coordinates are available yet.' : error || 'This IMEI has not checked in on the tracker server yet.'}
             </p>
+            <ul>
+              <li>Check the SIM card is active</li>
+              <li>Confirm the IMEI is correct</li>
+              <li>Make sure the tracker is powered on and online</li>
+            </ul>
+            <div className="pp-trackNoSignal__actions">
+              <button type="button" className="pp-btn pp-btnPrimary" disabled={loading || !effectiveDeviceId} onClick={() => void refresh()}>
+                Retry
+              </button>
+              <Link className="pp-btn pp-btn--ghost" to="/admin/tracker">
+                Setup guide
+              </Link>
+            </div>
           </div>
         )}
       </section>

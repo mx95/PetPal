@@ -5562,16 +5562,17 @@ a.pp-publicPet__metaValue {
 /* ============================================================ */
 
 :root {
-  --pp-bg: #f7f8fc;
+  --pp-bg: #f4f7fb;
   --pp-surface: rgba(255, 255, 255, 0.92);
-  --pp-surface-2: #ffffff;
+  --pp-surface-2: #fbfcff;
   --pp-card: #ffffff;
-  --pp-border: rgba(16, 24, 40, 0.08);
+  --pp-border: rgba(20, 20, 40, 0.06);
   --pp-text: #101828;
   --pp-text-2: #667085;
-  --pp-shadow-sm: 0 10px 28px rgba(16, 24, 40, 0.07);
-  --pp-shadow-md: 0 18px 48px rgba(16, 24, 40, 0.1);
-  --pp-radius-card: 22px;
+  --pp-shadow-xs: 0 1px 2px rgba(16, 24, 40, 0.04), 0 8px 18px rgba(16, 24, 40, 0.045);
+  --pp-shadow-sm: 0 8px 24px rgba(16, 24, 40, 0.065);
+  --pp-shadow-md: 0 16px 42px rgba(16, 24, 40, 0.09);
+  --pp-radius-card: 20px;
 }
 
 html[data-theme="dark"] {
@@ -5601,12 +5602,12 @@ body,
 }
 
 .pp-main {
-  padding-bottom: calc(84px + env(safe-area-inset-bottom));
+  padding-bottom: calc(76px + env(safe-area-inset-bottom));
 }
 
 @media (max-width: 720px) {
   .pp-main {
-    padding: 20px 14px calc(112px + env(safe-area-inset-bottom));
+    padding: 16px 12px calc(92px + env(safe-area-inset-bottom));
   }
 
   .pp-pageHeader,
@@ -5614,14 +5615,14 @@ body,
   .pp-activityHub__hero,
   .pp-nearby-page > .pp-row:first-child {
     min-height: auto;
-    padding: 18px;
-    margin-bottom: 18px;
+    padding: 14px 16px;
+    margin-bottom: 14px;
   }
 
   .pp-pageHeader__title,
   .pp-h1,
   .pp-feed__title {
-    font-size: clamp(26px, 8vw, 36px) !important;
+    font-size: clamp(24px, 7vw, 32px) !important;
     line-height: 1.02 !important;
     letter-spacing: -0.05em;
   }
@@ -5630,8 +5631,8 @@ body,
   .pp-pageHeader__sub,
   .pp-subtle,
   .pp-feed__sub {
-    font-size: 14px;
-    line-height: 1.55;
+    font-size: 13.5px;
+    line-height: 1.5;
   }
 
   .pp-card {
@@ -5646,28 +5647,30 @@ body,
 
 /* Premium bottom dock: less bulky, cleaner iOS-like elevation. */
 .pp-bottomNav {
-  padding: 8px 14px calc(10px + env(safe-area-inset-bottom));
+  padding: 5px 14px calc(6px + env(safe-area-inset-bottom));
 }
 
 .pp-bottomNav__row {
-  max-width: 440px;
+  max-width: 410px;
   margin: 0 auto;
   gap: 2px;
-  border-radius: 26px;
+  border-radius: 24px;
   border-color: rgba(255, 255, 255, 0.72);
-  box-shadow: 0 18px 42px -26px rgba(16, 24, 40, 0.5);
-  padding: 7px 8px;
+  backdrop-filter: blur(12px) saturate(1.05);
+  -webkit-backdrop-filter: blur(12px) saturate(1.05);
+  box-shadow: 0 12px 28px -20px rgba(16, 24, 40, 0.46);
+  padding: 5px 7px;
 }
 
 .pp-bottomNav__item {
-  min-height: 48px;
-  padding: 6px 2px;
+  min-height: 42px;
+  padding: 4px 2px;
   border-radius: 16px;
 }
 
 .pp-bottomNav__icon svg {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
 }
 
 .pp-bottomNav__item--on {
@@ -5676,15 +5679,15 @@ body,
 }
 
 .pp-bottomNav__fab {
-  width: 60px;
-  height: 60px;
-  transform: translateY(-10px);
-  box-shadow: 0 14px 28px -12px rgba(91, 55, 255, 0.58), inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  width: 52px;
+  height: 52px;
+  transform: translateY(-7px);
+  box-shadow: 0 10px 20px -10px rgba(91, 55, 255, 0.48), inset 0 1px 0 rgba(255, 255, 255, 0.22);
 }
 
 .pp-bottomNav__fab:hover {
-  transform: translateY(-11px);
-  box-shadow: 0 16px 32px -12px rgba(91, 55, 255, 0.62), inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  transform: translateY(-8px);
+  box-shadow: 0 12px 24px -10px rgba(91, 55, 255, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.22);
 }
 
 .pp-bottomNav__fabPulse {
@@ -5693,7 +5696,7 @@ body,
 }
 
 .pp-bottomNav__fabLabel {
-  font-size: 9px;
+  font-size: 8.5px;
 }
 
 /* Booking modal: app-sheet behavior on mobile. */
@@ -5709,29 +5712,26 @@ body,
   overflow: hidden;
 }
 
-.pp-book-modalPanel > .pp-book-modalHead {
+.pp-book-modalHead {
   flex: 0 0 auto;
 }
 
-.pp-book-modalPanel > .pp-book-field,
-.pp-book-modalPanel > div:not(.pp-book-modalHead):not(.pp-book-modalActions),
-.pp-book-modalPanel > label {
+.pp-book-modalBody {
+  flex: 1 1 auto;
   min-height: 0;
-}
-
-.pp-book-modalPanel > :not(.pp-book-modalHead):not(.pp-book-modalActions) {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  padding: 2px 2px 10px;
 }
 
 .pp-book-modalActions {
   position: sticky;
   bottom: 0;
   z-index: 2;
-  padding-top: 12px;
-  padding-bottom: calc(10px + env(safe-area-inset-bottom));
+  padding-top: 10px;
+  padding-bottom: calc(8px + env(safe-area-inset-bottom));
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.68), rgba(255, 255, 255, 0.96));
-  backdrop-filter: blur(14px);
+  backdrop-filter: blur(10px);
 }
 
 .pp-book-dateRow,
@@ -5751,19 +5751,26 @@ body,
 }
 
 .pp-book-slot--rich {
-  min-width: 118px;
-  padding: 10px 11px;
+  min-width: 106px;
+  padding: 9px 10px;
   gap: 1px;
 }
 
 .pp-book-slot--rich strong {
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .pp-book-slot--rich span,
 .pp-book-slot--rich small {
   font-size: 11px;
   line-height: 1.35;
+}
+
+.pp-book-dateChip {
+  min-height: 36px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  white-space: nowrap;
 }
 
 @media (max-width: 560px) {
@@ -5773,45 +5780,44 @@ body,
 
   .pp-book-modalPanel {
     width: 100%;
-    max-height: 88vh;
-    border-radius: 28px 28px 0 0;
-    padding: 16px;
+    max-height: 90vh;
+    border-radius: 24px 24px 0 0;
+    padding: 14px;
   }
 
   .pp-book-modalHead {
-    padding-bottom: 10px;
+    padding-bottom: 8px;
   }
 }
 
 /* Nearby: less vertical bulk, map-first density. */
 .pp-nearby-page > .pp-row:first-child {
-  padding: 18px 20px !important;
+  padding: 12px 14px !important;
   align-items: center !important;
 }
 
 .pp-nearby-grid {
-  grid-template-columns: repeat(auto-fit, minmax(116px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+  gap: 8px;
 }
 
 .pp-nearby-tile {
-  min-height: 76px;
-  padding: 12px;
-  border-radius: 18px;
+  min-height: 64px;
+  padding: 9px;
+  border-radius: 16px;
 }
 
 .pp-nearby-tile__icon {
-  font-size: 21px;
-  margin-bottom: 5px;
+  font-size: 18px;
+  margin-bottom: 4px;
 }
 
 .pp-nearby-tile__label {
-  font-size: 13px;
+  font-size: 12px;
 }
 
 .pp-nearby-tile__desc {
-  font-size: 11px;
-  line-height: 1.25;
+  display: none;
 }
 
 .pp-nearby-mapActions {
@@ -5823,9 +5829,9 @@ body,
 }
 
 .pp-nearby-cta {
-  padding: 8px 12px;
-  min-height: 38px;
-  font-size: 12px;
+  padding: 7px 10px;
+  min-height: 34px;
+  font-size: 11.5px;
   box-shadow: var(--pp-shadow-sm);
 }
 
@@ -5920,8 +5926,15 @@ body,
 }
 
 .pp-trackPetCard {
-  min-width: 132px;
-  border-radius: 20px;
+  min-width: 118px;
+  border-radius: 18px;
+  padding: 10px 12px;
+}
+
+.pp-trackPetCard--on {
+  background: rgba(91, 55, 255, 0.1);
+  border-color: rgba(91, 55, 255, 0.28);
+  box-shadow: none;
 }
 
 .pp-trackGpsPill--warn {
@@ -5937,16 +5950,79 @@ body,
 .pp-trackMapShell {
   position: relative;
   overflow: hidden;
+  padding: 14px !important;
 }
 
 .pp-trackMapFrame {
-  border-radius: 22px;
+  border-radius: 18px;
   overflow: hidden;
 }
 
 .pp-trackDeviceCard,
 .pp-tracker-page pre {
   max-height: 420px;
+}
+
+.pp-trackMapActions {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px !important;
+  margin: 10px 0 !important;
+}
+
+.pp-trackMapActions .pp-btn {
+  min-height: 38px !important;
+  padding: 9px 10px;
+  font-size: 13px;
+}
+
+.pp-trackNoSignal {
+  display: grid;
+  place-items: center;
+  text-align: center;
+  padding: 22px 16px !important;
+  min-height: 210px;
+}
+
+.pp-trackNoSignal__icon {
+  color: #5b37ff;
+  width: 54px;
+  height: 54px;
+  display: grid;
+  place-items: center;
+  border-radius: 20px;
+  background: rgba(91, 55, 255, 0.08);
+}
+
+.pp-trackNoSignal h3 {
+  margin: 10px 0 4px;
+  font-size: 18px;
+  font-weight: 950;
+  letter-spacing: -0.03em;
+}
+
+.pp-trackNoSignal p {
+  max-width: 360px;
+  margin: 0;
+  color: var(--pp-text-2);
+  line-height: 1.5;
+}
+
+.pp-trackNoSignal ul {
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+  color: var(--pp-text-2);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.pp-trackNoSignal__actions {
+  margin-top: 14px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
 }
 
 .pp-tracker-page pre {
@@ -5965,6 +6041,14 @@ body,
 
   .pp-trackStatusGrid .pp-card {
     scroll-snap-align: start;
+  }
+
+  .pp-trackMapActions {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+
+  .pp-trackMapActions .pp-btn--ghost {
+    grid-column: auto !important;
   }
 }
 
@@ -6129,6 +6213,48 @@ html[data-theme="dark"] .pp-badge,
 html[data-theme="dark"] .pp-publicHero__eyebrow {
   background: rgba(91, 55, 255, 0.18);
   color: #d6ceff;
+}
+
+/* Booking confirmation: compact, native-feeling checkout flow. */
+.pp-bookConfirm .pp-pageHeader {
+  padding: 16px 18px;
+}
+
+.pp-bookConfirm__success,
+.pp-bookConfirm__details {
+  padding: 18px;
+}
+
+.pp-bookConfirm__successIcon {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #12b76a, #16b981);
+  color: #fff;
+  font-weight: 950;
+  box-shadow: 0 12px 24px rgba(18, 183, 106, 0.2);
+  margin-bottom: 10px;
+}
+
+.pp-bookConfirm__calendarActions,
+.pp-bookConfirm__formActions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.pp-bookConfirm__calendarActions .pp-btn,
+.pp-bookConfirm__formActions .pp-btn {
+  width: 100%;
+  min-height: 42px;
+  padding: 10px 12px;
+}
+
+.pp-bookConfirm__details .pp-form {
+  gap: 12px;
 }
 
 @media (max-width: 520px) {
@@ -9603,4 +9729,256 @@ html[data-theme="dark"] .pp-publicHero__eyebrow {
   .pp-book-modalRoot {
     align-items: flex-end;
   }
+}
+
+/* Final mobile polish overrides: keep this after legacy booking styles. */
+.pp-shell {
+  background:
+    radial-gradient(620px 280px at 10% 0%, rgba(91, 55, 255, 0.07), transparent 62%),
+    linear-gradient(180deg, var(--pp-bg) 0%, #eef3fb 100%);
+  color: var(--pp-text);
+}
+
+.pp-card {
+  background:
+    radial-gradient(320px 160px at 110% -10%, rgba(91, 55, 255, 0.035), transparent 68%),
+    var(--pp-card);
+  border-color: var(--pp-border);
+  box-shadow: var(--pp-shadow-xs);
+}
+
+body:has(.pp-book-modalRoot) .pp-bottomNav {
+  display: none;
+}
+
+.pp-book-modalRoot {
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0;
+}
+
+.pp-book-modalBackdrop {
+  background: rgba(8, 12, 24, 0.44);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.pp-book-modalPanel {
+  width: min(540px, 100%);
+  max-height: min(90vh, 760px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 26px 26px 0 0;
+  padding: 14px 14px 0;
+  background: var(--pp-card);
+  box-shadow: 0 -18px 48px rgba(16, 24, 40, 0.2);
+  animation: pp-book-sheetUp 0.24s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes pp-book-sheetUp {
+  from {
+    transform: translateY(24px);
+    opacity: 0.96;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.pp-book-modalPanel::before {
+  content: "";
+  width: 38px;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(20, 20, 40, 0.16);
+  margin: 0 auto 12px;
+  flex: 0 0 auto;
+}
+
+.pp-book-modalHead {
+  margin-bottom: 10px;
+  flex: 0 0 auto;
+}
+
+.pp-book-modalTitle {
+  font-size: 18px;
+}
+
+.pp-book-modalSub {
+  margin-top: 4px;
+  font-size: 14px;
+}
+
+.pp-book-modalAddr {
+  font-size: 12px;
+}
+
+.pp-book-iconBtn {
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+}
+
+.pp-book-modalBody {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 0 2px 10px;
+}
+
+.pp-book-field {
+  margin-bottom: 12px;
+}
+
+.pp-book-field__label {
+  font-size: 12px;
+}
+
+.pp-book-dateRow,
+.pp-book-slotGrid--premium {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: max-content;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  gap: 8px;
+  padding: 2px 1px 6px;
+  scroll-snap-type: x proximity;
+}
+
+.pp-book-dateChip {
+  min-height: 34px;
+  border-radius: 999px;
+  padding: 7px 12px;
+  scroll-snap-align: start;
+}
+
+.pp-book-slot--rich {
+  min-width: 108px;
+  padding: 9px 10px;
+  border-radius: 14px;
+  scroll-snap-align: start;
+}
+
+.pp-book-slot--rich strong {
+  font-size: 13px;
+  line-height: 1.15;
+}
+
+.pp-book-slot--rich span,
+.pp-book-slot--rich small {
+  font-size: 10.5px;
+  line-height: 1.3;
+}
+
+.pp-book-modalActions {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: 0.8fr 1.2fr;
+  gap: 8px;
+  margin: 0 -14px;
+  padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.98));
+  border-top: 1px solid var(--pp-border);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.pp-book-modalActions .pp-book-btn {
+  min-height: 42px;
+  width: 100%;
+}
+
+@media (max-width: 720px) {
+  .pp-shell {
+    padding-bottom: calc(78px + env(safe-area-inset-bottom));
+  }
+
+  .pp-feed {
+    gap: 12px;
+  }
+
+  .pp-card,
+  .pp-pad {
+    padding: 14px;
+  }
+
+  .pp-pageHeader,
+  .pp-book-hero,
+  .pp-lb-surface,
+  .pp-feed__hello,
+  .pp-activityHub__hero,
+  .pp-profileHero,
+  .pp-premiumHero,
+  .pp-providerHero {
+    border-radius: 22px;
+    padding: 14px 16px !important;
+  }
+
+  .pp-sectionTitle,
+  .pp-card__title {
+    font-size: 17px;
+    line-height: 1.2;
+  }
+
+  .pp-label,
+  .pp-field__label,
+  .pp-badge,
+  .pp-trackGpsPill {
+    font-size: 11px;
+  }
+
+  .pp-trackPetScroll {
+    gap: 8px;
+  }
+
+  .pp-trackStatusGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    overflow: visible !important;
+    gap: 6px !important;
+  }
+
+  .pp-trackStatusGrid .pp-card {
+    padding: 9px !important;
+    border-radius: 16px !important;
+  }
+
+  .pp-trackStatusGrid .pp-subtle {
+    font-size: 11px !important;
+    line-height: 1.3 !important;
+  }
+}
+
+@media (max-width: 380px) {
+  .pp-trackMapActions {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .pp-trackMapActions .pp-btn--ghost {
+    grid-column: 1 / -1 !important;
+  }
+
+  .pp-book-modalActions {
+    grid-template-columns: 1fr;
+  }
+}
+
+html[data-theme="dark"] .pp-shell {
+  background:
+    radial-gradient(circle at 18% 4%, rgba(91, 55, 255, 0.12), transparent 28rem),
+    radial-gradient(circle at 86% 0%, rgba(47, 128, 255, 0.08), transparent 26rem),
+    linear-gradient(180deg, #0b1020 0%, #0d1324 44%, #0b1020 100%);
+}
+
+html[data-theme="dark"] .pp-book-modalActions {
+  background: linear-gradient(180deg, rgba(32, 42, 68, 0.78), #202a44);
+}
+
+html[data-theme="dark"] .pp-book-modalPanel::before {
+  background: rgba(255, 255, 255, 0.18);
 }
