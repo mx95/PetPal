@@ -1,7 +1,7 @@
 import L from 'leaflet';
 import React, { useEffect, useState } from 'react';
-import { GoogleMap, Marker, useJsApiLoader } from '@react-google-maps/api';
-import { MapContainer, Marker as LeafletMarker, Popup, TileLayer, useMap } from 'react-leaflet';
+import { GoogleMap, Marker, Polyline, useJsApiLoader } from '@react-google-maps/api';
+import { CircleMarker, MapContainer, Marker as LeafletMarker, Polyline as LeafletPolyline, Popup, TileLayer, useMap } from 'react-leaflet';
 
 import icon2x from 'leaflet/dist/images/marker-icon-2x.png';
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -38,28 +38,67 @@ function FlyTo({ lat, lng }) {
   return null;
 }
 
-function LeafletPositionMap({ lat, lng }) {
+function FitRoute({ path }) {
+  const map = useMap();
+  useEffect(() => {
+    if (!Array.isArray(path) || path.length < 2) return;
+    const bounds = L.latLngBounds(path.map((p) => [p.lat, p.lng]));
+    map.fitBounds(bounds, { padding: [28, 28], maxZoom: 16 });
+  }, [path, map]);
+  return null;
+}
+
+function LeafletPositionMap({ lat, lng, path = [], routeMarkers = [], playbackPosition = null }) {
   const z = 16;
+  const hasPath = Array.isArray(path) && path.length > 1;
+  const center = playbackPosition || (path[0] || { lat, lng });
   return (
     <MapContainer
-      center={[lat, lng]}
+      center={[center.lat, center.lng]}
       zoom={z}
       scrollWheelZoom
       style={{ height: '100%', width: '100%' }}
     >
-      <FlyTo lat={lat} lng={lng} />
+      {hasPath ? <FitRoute path={path} /> : <FlyTo lat={lat} lng={lng} />}
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
-      <LeafletMarker position={[lat, lng]}>
-        <Popup>Last reported position</Popup>
-      </LeafletMarker>
+      {hasPath ? (
+        <>
+          <LeafletPolyline positions={path.map((p) => [p.lat, p.lng])} pathOptions={{ color: '#5b37ff', weight: 5, opacity: 0.84 }} />
+          <LeafletPolyline positions={path.map((p) => [p.lat, p.lng])} pathOptions={{ color: '#a78bfa', weight: 10, opacity: 0.18 }} />
+          {routeMarkers.map((m) => (
+            <CircleMarker
+              key={m.id}
+              center={[m.lat, m.lng]}
+              radius={m.kind === 'start' || m.kind === 'end' ? 9 : 6}
+              pathOptions={{
+                color: m.kind === 'end' ? '#ef4444' : m.kind === 'rest' ? '#64748b' : '#5b37ff',
+                fillColor: m.kind === 'end' ? '#ef4444' : m.kind === 'rest' ? '#64748b' : '#5b37ff',
+                fillOpacity: 0.86,
+                weight: 3,
+              }}
+            >
+              <Popup>{m.label}</Popup>
+            </CircleMarker>
+          ))}
+          {playbackPosition ? (
+            <CircleMarker center={[playbackPosition.lat, playbackPosition.lng]} radius={11} pathOptions={{ color: '#fff', fillColor: '#5b37ff', fillOpacity: 1, weight: 4 }}>
+              <Popup>Playback position</Popup>
+            </CircleMarker>
+          ) : null}
+        </>
+      ) : (
+        <LeafletMarker position={[lat, lng]}>
+          <Popup>Last reported position</Popup>
+        </LeafletMarker>
+      )}
     </MapContainer>
   );
 }
 
-function GooglePositionMap({ lat, lng, apiKey }) {
+function GooglePositionMap({ lat, lng, apiKey, path = [], routeMarkers = [], playbackPosition = null }) {
   const [authFailed, setAuthFailed] = useState(false);
   useEffect(() => subscribeGoogleMapsAuthFailure(() => setAuthFailed(true)), []);
 
@@ -70,10 +109,11 @@ function GooglePositionMap({ lat, lng, apiKey }) {
     libraries: ['places'],
   });
 
-  const center = { lat, lng };
+  const hasPath = Array.isArray(path) && path.length > 1;
+  const center = playbackPosition || (path[0] || { lat, lng });
 
   if (authFailed || loadError) {
-    return <LeafletPositionMap lat={lat} lng={lng} />;
+    return <LeafletPositionMap lat={lat} lng={lng} path={path} routeMarkers={routeMarkers} playbackPosition={playbackPosition} />;
   }
 
   if (!isLoaded) {
@@ -91,7 +131,17 @@ function GooglePositionMap({ lat, lng, apiKey }) {
       zoom={16}
       options={googleMapOptions}
     >
-      <Marker position={center} />
+      {hasPath ? (
+        <>
+          <Polyline path={path} options={{ strokeColor: '#5b37ff', strokeOpacity: 0.86, strokeWeight: 5 }} />
+          {routeMarkers.map((m) => (
+            <Marker key={m.id} position={{ lat: m.lat, lng: m.lng }} label={m.kind === 'start' ? 'S' : m.kind === 'end' ? 'E' : '•'} title={m.label} />
+          ))}
+          {playbackPosition ? <Marker position={playbackPosition} title="Playback position" /> : null}
+        </>
+      ) : (
+        <Marker position={center} />
+      )}
     </GoogleMap>
   );
 }
@@ -102,11 +152,15 @@ function GooglePositionMap({ lat, lng, apiKey }) {
  *
  * @param {{ lat: number, lng: number }} props
  */
-export default function PositionMap({ lat, lng }) {
+export default function PositionMap({ lat, lng, path = [], routeMarkers = [], playbackPosition = null }) {
   const key = process.env.REACT_APP_GOOGLE_MAPS_API_KEY?.trim();
   return (
     <div className="pp-leaflet-wrap">
-      {key ? <GooglePositionMap lat={lat} lng={lng} apiKey={key} /> : <LeafletPositionMap lat={lat} lng={lng} />}
+      {key ? (
+        <GooglePositionMap lat={lat} lng={lng} apiKey={key} path={path} routeMarkers={routeMarkers} playbackPosition={playbackPosition} />
+      ) : (
+        <LeafletPositionMap lat={lat} lng={lng} path={path} routeMarkers={routeMarkers} playbackPosition={playbackPosition} />
+      )}
     </div>
   );
 }

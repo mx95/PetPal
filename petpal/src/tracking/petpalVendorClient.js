@@ -72,6 +72,24 @@ export function normalizeVendorPosition(p) {
   };
 }
 
+function normalizeHistoryPoint(p, idx = 0) {
+  const lat = typeof p?.latitude === 'number' ? p.latitude : Number(p?.latitude ?? p?.lat);
+  const lng = typeof p?.longitude === 'number' ? p.longitude : Number(p?.longitude ?? p?.lng);
+  if (Number.isNaN(lat) || Number.isNaN(lng)) return null;
+  const timestamp = p.timestamp || p.deviceTimeUtc || p.deviceTime || p.serverTime || p.lastUpdate || new Date(Date.now() - idx * 900_000).toISOString();
+  return {
+    id: p.id || `${timestamp}-${idx}`,
+    lat,
+    lng,
+    speed: p.speed != null ? Number(p.speed) : null,
+    battery: p.battery ?? null,
+    signal: p.signal ?? null,
+    source: p.source || 'history',
+    timestamp,
+    address: p.address || null,
+  };
+}
+
 function bffAuthHeaders() {
   const t = process.env.REACT_APP_TRACKING_BFF_TOKEN;
   if (!t) return {};
@@ -281,6 +299,58 @@ async function fetchVendorPosition(deviceId) {
   return normalized;
 }
 
+async function fetchBffHistory(deviceId, { limit = 240 } = {}) {
+  const base = bffBase();
+  const path = `/history?deviceId=${encodeURIComponent(deviceId)}&limit=${encodeURIComponent(limit)}`;
+  const url = base === '' ? path : `${base}${path}`;
+  const res = await fetch(url, {
+    method: 'GET',
+    headers: { Accept: 'application/json', ...bffAuthHeaders() },
+    credentials: 'include',
+  });
+  const data = await readJsonSafe(res);
+  if (!res.ok) throw new Error(data?.error ? `History returned ${res.status} (${data.error})` : `History returned ${res.status}`);
+  return (Array.isArray(data?.history) ? data.history : Array.isArray(data) ? data : [])
+    .map(normalizeHistoryPoint)
+    .filter(Boolean)
+    .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+}
+
+async function fetchXexunHistory(deviceId, { limit = 240 } = {}) {
+  const base = xexunBase();
+  const path = `/api/app/history?deviceId=${encodeURIComponent(deviceId)}&limit=${encodeURIComponent(limit)}`;
+  const url = base === '' ? path : `${base}${path}`;
+  const res = await fetch(url, {
+    method: 'GET',
+    headers: { Accept: 'application/json' },
+    credentials: 'omit',
+  });
+  const data = await readJsonSafe(res);
+  if (!res.ok) throw new Error(data?.error ? `Tracker history ${res.status} (${data.error})` : `Tracker history returned ${res.status}`);
+  return (Array.isArray(data?.history) ? data.history : [])
+    .map(normalizeHistoryPoint)
+    .filter(Boolean)
+    .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+}
+
+async function fetchVendorHistory(deviceId, { limit = 240 } = {}) {
+  const base = vendorBase();
+  const path = `/api/positions?deviceId=${encodeURIComponent(deviceId)}&limit=${encodeURIComponent(limit)}`;
+  const url = base === '' ? path : `${base}${path}`;
+  const res = await fetch(url, {
+    method: 'GET',
+    headers: { Accept: 'application/json', ...authHeaders() },
+    credentials: 'include',
+  });
+  if (!res.ok) throw new Error(`Vendor history returned ${res.status}`);
+  const data = await res.json();
+  return (Array.isArray(data) ? data : [])
+    .map(normalizeHistoryPoint)
+    .filter(Boolean)
+    .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+    .slice(-limit);
+}
+
 let mockSeed = { lat: 37.9755, lng: 23.7348 };
 function mockPosition(deviceId) {
   const drift = 0.0004;
@@ -298,6 +368,24 @@ function mockPosition(deviceId) {
     source: 'mock',
     _deviceId: deviceId,
   };
+}
+
+function mockHistory(deviceId) {
+  const now = Date.now();
+  const base = { lat: mockSeed.lat, lng: mockSeed.lng };
+  return Array.from({ length: 18 }, (_, idx) => {
+    const angle = idx / 2.2;
+    const step = idx * 0.00018;
+    return {
+      id: `mock-history-${deviceId}-${idx}`,
+      lat: base.lat + Math.sin(angle) * 0.0018 + step,
+      lng: base.lng + Math.cos(angle) * 0.0014 + step * 0.55,
+      speed: idx % 5 === 0 ? 0 : 2.4 + Math.sin(angle) * 1.2,
+      timestamp: new Date(now - (18 - idx) * 12 * 60_000).toISOString(),
+      source: 'mock',
+      address: idx === 0 ? 'Home' : idx === 17 ? 'Returned home' : null,
+    };
+  });
 }
 
 /**
@@ -319,6 +407,15 @@ export async function getLatestPosition(deviceId) {
   if (xexunBase() != null) return fetchXexunPosition(id);
   if (vendorBase() != null) return fetchVendorPosition(id);
   return mockPosition(id);
+}
+
+export async function getPositionHistory(deviceId, opts = {}) {
+  const id = String(deviceId || '').trim();
+  if (!id) throw new Error('Set a device ID to load history.');
+  if (bffBase() != null) return fetchBffHistory(id, opts);
+  if (xexunBase() != null) return fetchXexunHistory(id, opts);
+  if (vendorBase() != null) return fetchVendorHistory(id, opts);
+  return mockHistory(id);
 }
 
 export function mapsLink(lat, lng) {

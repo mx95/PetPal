@@ -2479,6 +2479,344 @@ body.pp-noScroll {
   font-weight: 750;
 }
 
+.pp-trackTabs {
+  position: sticky;
+  top: 74px;
+  z-index: 8;
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: var(--pp-shadow-xs);
+  backdrop-filter: blur(14px);
+  padding: 6px;
+}
+
+.pp-trackTabs button {
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--pp-text-2);
+  padding: 10px 16px;
+  font-weight: 950;
+  white-space: nowrap;
+  transition: transform 160ms ease, background 160ms ease, color 160ms ease, box-shadow 160ms ease;
+}
+
+.pp-trackTabs button.is-active {
+  background: linear-gradient(135deg, #5b37ff, #2f80ff);
+  color: #fff;
+  box-shadow: 0 14px 24px -16px rgba(91, 55, 255, 0.86);
+}
+
+.pp-trackHistory {
+  display: grid;
+  gap: 12px;
+}
+
+.pp-trackHistory__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.pp-trackHistory__head .pp-sectionTitle {
+  margin: 6px 0 4px;
+}
+
+.pp-trackHistoryFilters {
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pp-trackHistoryFilters button,
+.pp-trackHistoryFilters label {
+  border: 1px solid var(--pp-border);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.74);
+  color: var(--pp-text);
+  padding: 9px 11px;
+  font-weight: 950;
+  box-shadow: var(--pp-shadow-xs);
+}
+
+.pp-trackHistoryFilters button {
+  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+}
+
+.pp-trackHistoryFilters button:hover {
+  transform: translateY(-1px);
+  border-color: rgba(91, 55, 255, 0.22);
+}
+
+.pp-trackHistoryFilters button.is-active {
+  border-color: rgba(91, 55, 255, 0.38);
+  background: rgba(91, 55, 255, 0.1);
+  color: #5b37ff;
+}
+
+.pp-trackHistoryFilters label {
+  display: grid;
+  gap: 4px;
+  padding: 7px 10px;
+}
+
+.pp-trackHistoryFilters label span {
+  color: var(--pp-text-2);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.pp-trackHistoryFilters input {
+  border: 0;
+  background: transparent;
+  color: var(--pp-text);
+  font-weight: 900;
+}
+
+.pp-trackHistoryStats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.pp-trackHistoryStats article {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 3px 10px;
+  align-items: center;
+  border: 1px solid var(--pp-border);
+  border-radius: 22px;
+  background: var(--pp-card);
+  box-shadow: var(--pp-shadow-xs);
+  padding: 13px;
+}
+
+.pp-trackHistoryStats span {
+  grid-row: span 2;
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: rgba(91, 55, 255, 0.08);
+  color: #5b37ff;
+  font-weight: 950;
+}
+
+.pp-trackHistoryStats small {
+  color: var(--pp-text-2);
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.pp-trackHistoryStats strong {
+  color: var(--pp-text);
+  font-size: 18px;
+  font-weight: 950;
+}
+
+.pp-trackHistoryLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(300px, 0.75fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.pp-trackHistoryMap,
+.pp-trackHistoryTimeline {
+  min-width: 0;
+}
+
+.pp-trackHistoryMap__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.pp-trackHistoryMap__top h3,
+.pp-trackHistoryTimeline__head h3 {
+  margin: 0;
+  color: var(--pp-text);
+  font-size: 18px;
+  font-weight: 950;
+  letter-spacing: -0.035em;
+}
+
+.pp-trackHistoryMap__top p {
+  margin: 3px 0 0;
+  color: var(--pp-text-2);
+  font-weight: 800;
+}
+
+.pp-trackPlayback {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.pp-trackPlayback button,
+.pp-trackPlayback select {
+  border: 1px solid var(--pp-border);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.78);
+  color: var(--pp-text);
+  padding: 9px 12px;
+  font-weight: 950;
+}
+
+.pp-trackPlayback button:not(:disabled) {
+  background: linear-gradient(135deg, #5b37ff, #2f80ff);
+  color: #fff;
+  box-shadow: 0 14px 24px -16px rgba(91, 55, 255, 0.86);
+}
+
+.pp-trackHistoryFrame .pp-leaflet-wrap,
+.pp-trackHistoryFrame .pp-leaflet-wrap > div,
+.pp-trackHistoryFrame .leaflet-container {
+  min-height: min(62vh, 560px);
+}
+
+.pp-trackPlaybackRange {
+  width: 100%;
+  accent-color: #5b37ff;
+  margin-top: 12px;
+}
+
+.pp-trackHistoryEmpty {
+  min-height: min(54vh, 460px);
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 8px;
+  border: 1px dashed rgba(91, 55, 255, 0.24);
+  border-radius: 22px;
+  background:
+    radial-gradient(260px 160px at 50% 0%, rgba(91, 55, 255, 0.12), transparent 75%),
+    rgba(91, 55, 255, 0.04);
+  text-align: center;
+  padding: 24px;
+}
+
+.pp-trackHistoryEmpty > div {
+  font-size: 42px;
+}
+
+.pp-trackHistoryEmpty h3 {
+  margin: 0;
+  color: var(--pp-text);
+  font-size: 20px;
+  font-weight: 950;
+}
+
+.pp-trackHistoryEmpty p {
+  max-width: 420px;
+  margin: 0;
+  color: var(--pp-text-2);
+  line-height: 1.5;
+}
+
+.pp-trackHistoryTimeline {
+  position: sticky;
+  top: 132px;
+  max-height: calc(100vh - 150px);
+  overflow: auto;
+}
+
+.pp-trackHistoryTimeline__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.pp-trackHistoryTimeline__head span {
+  color: var(--pp-text-2);
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.pp-trackHistoryTimeline button {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 16px auto 1fr;
+  gap: 4px 10px;
+  align-items: center;
+  border: 1px solid transparent;
+  border-radius: 18px;
+  background: transparent;
+  color: var(--pp-text);
+  padding: 10px;
+  text-align: left;
+  transition: transform 160ms ease, background 160ms ease, border-color 160ms ease;
+}
+
+.pp-trackHistoryTimeline button:hover,
+.pp-trackHistoryTimeline button.is-active {
+  transform: translateY(-1px);
+  border-color: rgba(91, 55, 255, 0.16);
+  background: rgba(91, 55, 255, 0.07);
+}
+
+.pp-trackHistoryTimeline__dot {
+  grid-row: span 2;
+  width: 11px;
+  height: 11px;
+  border-radius: 999px;
+  background: #5b37ff;
+  box-shadow: 0 0 0 4px rgba(91, 55, 255, 0.1);
+}
+
+.pp-trackHistoryTimeline__dot.is-rest {
+  background: #64748b;
+  box-shadow: 0 0 0 4px rgba(100, 116, 139, 0.12);
+}
+
+.pp-trackHistoryTimeline__dot.is-movement {
+  background: #f97316;
+  box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.12);
+}
+
+.pp-trackHistoryTimeline__dot.is-end {
+  background: #ef4444;
+  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.12);
+}
+
+.pp-trackHistoryTimeline strong {
+  font-size: 13px;
+  font-weight: 950;
+}
+
+.pp-trackHistoryTimeline em {
+  justify-self: end;
+  border-radius: 999px;
+  background: rgba(91, 55, 255, 0.08);
+  color: #5b37ff;
+  padding: 4px 8px;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 950;
+}
+
+.pp-trackHistoryTimeline small {
+  grid-column: 2 / -1;
+  color: var(--pp-text-2);
+  font-weight: 800;
+}
+
 .pp-petAvatar {
   border-radius: 50%;
   object-fit: cover;
@@ -6050,6 +6388,62 @@ body,
   .pp-trackMapActions .pp-btn--ghost {
     grid-column: auto !important;
   }
+
+  .pp-trackTabs {
+    top: 64px;
+  }
+
+  .pp-trackHistory__head,
+  .pp-trackHistoryMap__top,
+  .pp-trackHistoryTimeline__head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .pp-trackHistoryFilters {
+    justify-content: flex-start;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding-bottom: 4px;
+  }
+
+  .pp-trackHistoryFilters button,
+  .pp-trackHistoryFilters label {
+    flex: 0 0 auto;
+  }
+
+  .pp-trackHistoryStats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .pp-trackHistoryLayout {
+    grid-template-columns: 1fr;
+  }
+
+  .pp-trackHistoryTimeline {
+    position: relative;
+    top: auto;
+    max-height: 360px;
+    border-radius: 24px 24px 0 0;
+  }
+
+  .pp-trackPlayback {
+    position: sticky;
+    top: 112px;
+    z-index: 4;
+    justify-content: flex-start;
+    border: 1px solid rgba(255, 255, 255, 0.72);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.88);
+    padding: 6px;
+    backdrop-filter: blur(14px);
+  }
+
+  .pp-trackHistoryFrame .pp-leaflet-wrap,
+  .pp-trackHistoryFrame .pp-leaflet-wrap > div,
+  .pp-trackHistoryFrame .leaflet-container {
+    min-height: min(48vh, 420px);
+  }
 }
 
 .pp-sponsoredRail {
@@ -6201,6 +6595,21 @@ html[data-theme="dark"] .pp-trackGpsPill--warn {
   background: rgba(245, 158, 11, 0.18);
   color: #facc15;
   border-color: rgba(245, 158, 11, 0.32);
+}
+
+html[data-theme="dark"] .pp-trackTabs,
+html[data-theme="dark"] .pp-trackHistoryFilters button,
+html[data-theme="dark"] .pp-trackHistoryFilters label,
+html[data-theme="dark"] .pp-trackHistoryStats article,
+html[data-theme="dark"] .pp-trackPlayback button,
+html[data-theme="dark"] .pp-trackPlayback select {
+  background: #202a44;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+html[data-theme="dark"] .pp-trackHistoryEmpty {
+  background: rgba(91, 55, 255, 0.08);
+  border-color: rgba(167, 139, 250, 0.24);
 }
 
 html[data-theme="dark"] .pp-error {

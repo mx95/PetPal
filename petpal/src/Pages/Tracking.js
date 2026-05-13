@@ -4,7 +4,7 @@ import { useI18n } from '../i18n/I18nContext';
 import PetAvatar from '../components/PetAvatar';
 import PositionMap from '../tracking/PositionMap';
 import { usePets } from '../pets/PetsContext';
-import { getLatestPosition, getTrackingDataSource, mapsLink } from '../tracking/petpalVendorClient';
+import { getLatestPosition, getPositionHistory, getTrackingDataSource, mapsLink } from '../tracking/petpalVendorClient';
 
 const LAST_LIVE_PET_KEY = 'petpal_live_selectedPetId';
 
@@ -81,6 +81,66 @@ function accuracyMeterStyle(position) {
   return { width: '96%', background: 'linear-gradient(90deg,#22c55e,#86efac)' };
 }
 
+function startOfDay(date) {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+function dateInputValue(date) {
+  const d = startOfDay(date);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function kmBetween(a, b) {
+  if (!a || !b) return 0;
+  const toRad = (v) => (v * Math.PI) / 180;
+  const r = 6371;
+  const dLat = toRad(b.lat - a.lat);
+  const dLng = toRad(b.lng - a.lng);
+  const lat1 = toRad(a.lat);
+  const lat2 = toRad(b.lat);
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+  return 2 * r * Math.asin(Math.sqrt(h));
+}
+
+function movementType(point, prev) {
+  if (!prev) return 'start';
+  const speed = Number(point.speed || 0);
+  if (speed < 0.5) return 'rest';
+  if (speed > 4) return 'movement';
+  return 'walk';
+}
+
+function pointTime(point) {
+  return new Date(point.timestamp).getTime();
+}
+
+function filterHistoryPoints(points, range) {
+  const now = Date.now();
+  const from = range.from ? new Date(`${range.from}T00:00:00`).getTime() : 0;
+  const to = range.to ? new Date(`${range.to}T23:59:59`).getTime() : now;
+  return points.filter((p) => {
+    const ts = pointTime(p);
+    return Number.isFinite(ts) && ts >= from && ts <= to;
+  });
+}
+
+function buildHistoryAnalytics(points) {
+  const distanceKm = points.reduce((sum, p, idx) => sum + (idx ? kmBetween(points[idx - 1], p) : 0), 0);
+  const first = points[0] ? pointTime(points[0]) : 0;
+  const last = points[points.length - 1] ? pointTime(points[points.length - 1]) : 0;
+  const activeMinutes = first && last ? Math.max(0, Math.round((last - first) / 60000)) : 0;
+  const speeds = points.map((p) => Number(p.speed)).filter((n) => Number.isFinite(n) && n > 0);
+  return {
+    distanceKm,
+    activeMinutes,
+    averageSpeed: speeds.length ? speeds.reduce((a, b) => a + b, 0) / speeds.length : 0,
+    stops: points.filter((p, idx) => movementType(p, points[idx - 1]) === 'rest').length,
+    events: points.length,
+  };
+}
+
 export default function Tracking() {
   const { t, language } = useI18n();
   const fieldId = useId();
@@ -93,6 +153,18 @@ export default function Tracking() {
   const [position, setPosition] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [trackerTab, setTrackerTab] = useState('live');
+  const [historyPoints, setHistoryPoints] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyError, setHistoryError] = useState('');
+  const [historyRange, setHistoryRange] = useState(() => {
+    const today = dateInputValue(new Date());
+    return { preset: 'today', from: today, to: today };
+  });
+  const [historyReloadTick, setHistoryReloadTick] = useState(0);
+  const [historyPlaying, setHistoryPlaying] = useState(false);
+  const [historySpeed, setHistorySpeed] = useState(1);
+  const [historyIndex, setHistoryIndex] = useState(0);
 
   const selectedPet = useMemo(() => pets.find((p) => p.id === selectedPetId), [pets, selectedPetId]);
 
@@ -164,6 +236,87 @@ export default function Tracking() {
     }, ms);
     return () => window.clearInterval(id);
   }, [effectiveDeviceId, refresh]);
+
+  useEffect(() => {
+    if (trackerTab !== 'history' || !effectiveDeviceId) return;
+    let cancelled = false;
+    setHistoryLoading(true);
+    setHistoryError('');
+    getPositionHistory(effectiveDeviceId, { limit: 300 })
+      .then((points) => {
+        if (cancelled) return;
+        setHistoryPoints(points);
+        setHistoryIndex(0);
+      })
+      .catch((e) => {
+        if (cancelled) return;
+        setHistoryPoints([]);
+        setHistoryError(e?.message || 'Could not load tracker history.');
+      })
+      .finally(() => {
+        if (!cancelled) setHistoryLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [trackerTab, effectiveDeviceId, historyReloadTick]);
+
+  const filteredHistory = useMemo(() => filterHistoryPoints(historyPoints, historyRange), [historyPoints, historyRange]);
+  const historyAnalytics = useMemo(() => buildHistoryAnalytics(filteredHistory), [filteredHistory]);
+  const historyMarkers = useMemo(() => {
+    if (!filteredHistory.length) return [];
+    return filteredHistory.map((p, idx) => ({
+      id: p.id || `history-${idx}`,
+      lat: p.lat,
+      lng: p.lng,
+      kind: idx === 0 ? 'start' : idx === filteredHistory.length - 1 ? 'end' : movementType(p, filteredHistory[idx - 1]),
+      label: `${idx === 0 ? 'Start' : idx === filteredHistory.length - 1 ? 'End' : movementType(p, filteredHistory[idx - 1])} · ${new Date(p.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
+    }));
+  }, [filteredHistory]);
+
+  useEffect(() => {
+    if (!historyPlaying || filteredHistory.length < 2) return undefined;
+    const id = window.setInterval(() => {
+      setHistoryIndex((idx) => {
+        if (idx >= filteredHistory.length - 1) {
+          setHistoryPlaying(false);
+          return filteredHistory.length - 1;
+        }
+        return idx + 1;
+      });
+    }, Math.max(260, 1100 / historySpeed));
+    return () => window.clearInterval(id);
+  }, [historyPlaying, filteredHistory.length, historySpeed]);
+
+  useEffect(() => {
+    setHistoryIndex(0);
+    setHistoryPlaying(false);
+  }, [historyRange]);
+
+  function applyHistoryPreset(preset) {
+    const today = startOfDay(new Date());
+    if (preset === 'yesterday') {
+      const y = new Date(today);
+      y.setDate(today.getDate() - 1);
+      const value = dateInputValue(y);
+      setHistoryRange({ preset, from: value, to: value });
+      return;
+    }
+    if (preset === '7d') {
+      const from = new Date(today);
+      from.setDate(today.getDate() - 6);
+      setHistoryRange({ preset, from: dateInputValue(from), to: dateInputValue(today) });
+      return;
+    }
+    if (preset === '30d') {
+      const from = new Date(today);
+      from.setDate(today.getDate() - 29);
+      setHistoryRange({ preset, from: dateInputValue(from), to: dateInputValue(today) });
+      return;
+    }
+    const value = dateInputValue(today);
+    setHistoryRange({ preset: 'today', from: value, to: value });
+  }
 
   function saveIdAndLoad(e) {
     e?.preventDefault();
@@ -282,7 +435,20 @@ export default function Tracking() {
         </div>
       </section>
 
-      {selectedPet ? (
+      <nav className="pp-trackTabs" aria-label="Tracker views">
+        {[
+          ['live', 'Live'],
+          ['map', 'Map'],
+          ['device', 'Device'],
+          ['history', 'History'],
+        ].map(([id, label]) => (
+          <button key={id} type="button" className={trackerTab === id ? 'is-active' : ''} onClick={() => setTrackerTab(id)}>
+            {label}
+          </button>
+        ))}
+      </nav>
+
+      {selectedPet && trackerTab === 'live' ? (
         <section className="pp-card pp-pad" aria-label={selectedPet.name}>
           <div className="pp-row" style={{ justifyContent: 'space-between', alignItems: 'flex-start', gap: 14, flexWrap: 'wrap' }}>
             <div className="pp-row" style={{ alignItems: 'center', gap: 12 }}>
@@ -378,6 +544,7 @@ export default function Tracking() {
         </section>
       ) : null}
 
+      {trackerTab === 'map' ? (
       <section className="pp-card pp-pad pp-trackMapShell">
         <div className="pp-trackMapHead">
           <h2 className="pp-sectionTitle" style={{ margin: 0 }}>
@@ -445,7 +612,138 @@ export default function Tracking() {
           </div>
         )}
       </section>
+      ) : null}
 
+      {trackerTab === 'history' ? (
+        <section className="pp-trackHistory">
+          <div className="pp-card pp-pad pp-trackHistory__head">
+            <div>
+              <span className="pp-publicHero__eyebrow">Tracker history</span>
+              <h2 className="pp-sectionTitle">Movement timeline</h2>
+              <p className="pp-subtle">Review routes, stops, active time, and movement patterns for selected dates.</p>
+            </div>
+            <div className="pp-trackHistoryFilters">
+              {[
+                ['today', 'Today'],
+                ['yesterday', 'Yesterday'],
+                ['7d', 'Last 7 days'],
+                ['30d', 'Last 30 days'],
+              ].map(([id, label]) => (
+                <button key={id} type="button" className={historyRange.preset === id ? 'is-active' : ''} onClick={() => applyHistoryPreset(id)}>
+                  {label}
+                </button>
+              ))}
+              <label>
+                <span>From</span>
+                <input
+                  type="date"
+                  value={historyRange.from}
+                  onChange={(e) => setHistoryRange((r) => ({ ...r, preset: 'custom', from: e.target.value }))}
+                />
+              </label>
+              <label>
+                <span>To</span>
+                <input
+                  type="date"
+                  value={historyRange.to}
+                  onChange={(e) => setHistoryRange((r) => ({ ...r, preset: 'custom', to: e.target.value }))}
+                />
+              </label>
+            </div>
+          </div>
+
+          <div className="pp-trackHistoryStats">
+            <article><span>↗</span><small>Distance</small><strong>{historyAnalytics.distanceKm.toFixed(2)} km</strong></article>
+            <article><span>⏱</span><small>Active time</small><strong>{historyAnalytics.activeMinutes} min</strong></article>
+            <article><span>⚡</span><small>Avg speed</small><strong>{historyAnalytics.averageSpeed.toFixed(1)} km/h</strong></article>
+            <article><span>•</span><small>Stops</small><strong>{historyAnalytics.stops}</strong></article>
+          </div>
+
+          <div className="pp-trackHistoryLayout">
+            <div className="pp-card pp-pad pp-trackHistoryMap">
+              <div className="pp-trackHistoryMap__top">
+                <div>
+                  <h3>Route playback</h3>
+                  <p>{historyLoading ? 'Loading route history…' : `${filteredHistory.length} location points`}</p>
+                </div>
+                <div className="pp-trackPlayback">
+                  <button type="button" disabled={filteredHistory.length < 2} onClick={() => setHistoryPlaying((v) => !v)}>
+                    {historyPlaying ? 'Pause' : 'Play route'}
+                  </button>
+                  <select value={historySpeed} onChange={(e) => setHistorySpeed(Number(e.target.value))} aria-label="Playback speed">
+                    <option value={1}>1x</option>
+                    <option value={1.5}>1.5x</option>
+                    <option value={2}>2x</option>
+                  </select>
+                </div>
+              </div>
+              {filteredHistory.length ? (
+                <>
+                  <div className="pp-trackMapFrame pp-trackHistoryFrame">
+                    <PositionMap
+                      lat={filteredHistory[0].lat}
+                      lng={filteredHistory[0].lng}
+                      path={filteredHistory.map((p) => ({ lat: p.lat, lng: p.lng }))}
+                      routeMarkers={historyMarkers}
+                      playbackPosition={filteredHistory[historyIndex] ? { lat: filteredHistory[historyIndex].lat, lng: filteredHistory[historyIndex].lng } : null}
+                    />
+                  </div>
+                  <input
+                    className="pp-trackPlaybackRange"
+                    type="range"
+                    min={0}
+                    max={Math.max(0, filteredHistory.length - 1)}
+                    value={Math.min(historyIndex, Math.max(0, filteredHistory.length - 1))}
+                    onChange={(e) => {
+                      setHistoryPlaying(false);
+                      setHistoryIndex(Number(e.target.value));
+                    }}
+                    aria-label="Jump to route timestamp"
+                  />
+                </>
+              ) : (
+                <div className="pp-trackHistoryEmpty">
+                  <div aria-hidden>🐾</div>
+                  <h3>No movement history yet</h3>
+                  <p>{historyError || 'No tracker locations were found for this date range. Once the device sends stored positions, the route will appear here.'}</p>
+                  <button type="button" className="pp-btn pp-btnPrimary" disabled={!effectiveDeviceId || historyLoading} onClick={() => setHistoryReloadTick((n) => n + 1)}>
+                    {historyLoading ? 'Loading…' : 'Refresh history'}
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <aside className="pp-card pp-pad pp-trackHistoryTimeline">
+              <div className="pp-trackHistoryTimeline__head">
+                <h3>Timeline</h3>
+                <span>{historyRange.from} → {historyRange.to}</span>
+              </div>
+              {filteredHistory.map((p, idx) => {
+                const type = movementType(p, filteredHistory[idx - 1]);
+                return (
+                  <button
+                    key={p.id || idx}
+                    type="button"
+                    className={idx === historyIndex ? 'is-active' : ''}
+                    onClick={() => {
+                      setHistoryPlaying(false);
+                      setHistoryIndex(idx);
+                    }}
+                  >
+                    <span className={`pp-trackHistoryTimeline__dot is-${type}`} />
+                    <strong>{new Date(p.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</strong>
+                    <em>{type === 'start' ? 'Route started' : type === 'rest' ? 'Resting' : type === 'movement' ? 'Fast movement' : 'Walking'}</em>
+                    <small>{p.address || `${p.lat.toFixed(5)}, ${p.lng.toFixed(5)}`}{p.speed != null ? ` · ${Number(p.speed).toFixed(1)} km/h` : ''}</small>
+                  </button>
+                );
+              })}
+              {!filteredHistory.length ? <p className="pp-subtle">Timeline events will appear after tracker history loads.</p> : null}
+            </aside>
+          </div>
+        </section>
+      ) : null}
+
+      {trackerTab === 'device' ? (
       <section className="pp-card pp-pad pp-trackDeviceCard">
         <h2 className="pp-sectionTitle">{t('trackingPage.sectionPetDevice')}</h2>
         <form className="pp-form pp-trackDeviceForm" onSubmit={saveIdAndLoad}>
@@ -480,8 +778,9 @@ export default function Tracking() {
           </button>
         </form>
       </section>
+      ) : null}
 
-      {hasDiagnostics(position) ? (
+      {trackerTab === 'device' && hasDiagnostics(position) ? (
         <section className="pp-card pp-pad">
           <h2 className="pp-sectionTitle">Everything received from provider</h2>
           <p className="pp-subtle" style={{ marginTop: 0 }}>
