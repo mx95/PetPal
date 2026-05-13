@@ -10446,3 +10446,78 @@ html[data-theme="dark"] .pp-book-calendar__monthControls button {
   background: #12182a;
   color: #d6ceff;
 }
+
+/* Bottom bar correction from device screenshot: keep the dock fully visible and centered. */
+@media (max-width: 720px) {
+  .pp-bottomNav {
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 0 14px calc(12px + env(safe-area-inset-bottom)) !important;
+  }
+
+  .pp-bottomNav__row {
+    width: min(100%, 410px);
+    min-height: 60px;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) 62px repeat(2, minmax(0, 1fr));
+    align-items: center;
+    justify-items: center;
+    gap: 2px;
+    padding: 6px 7px !important;
+    border-radius: 25px;
+  }
+
+  .pp-bottomNav__item {
+    width: 100%;
+    min-height: 46px !important;
+    gap: 3px;
+    padding: 5px 2px !important;
+  }
+
+  .pp-bottomNav__label {
+    display: block;
+    font-size: 9.5px;
+    line-height: 1;
+  }
+
+  .pp-bottomNav__icon svg {
+    width: 19px;
+    height: 19px;
+  }
+
+  .pp-bottomNav__fab {
+    width: 54px !important;
+    height: 54px !important;
+    transform: translateY(-8px) !important;
+    box-shadow: 0 12px 24px -12px rgba(91, 55, 255, 0.54), inset 0 1px 0 rgba(255, 255, 255, 0.24) !important;
+  }
+
+  .pp-bottomNav__fab:hover,
+  .pp-bottomNav__fab:active {
+    transform: translateY(-8px) scale(0.98) !important;
+  }
+
+  .pp-bottomNav__fabPulse {
+    display: none !important;
+  }
+
+  .pp-main {
+    padding-bottom: calc(104px + env(safe-area-inset-bottom)) !important;
+  }
+}
+
+@media (max-width: 380px) {
+  .pp-bottomNav {
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+  }
+
+  .pp-bottomNav__row {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) 58px repeat(2, minmax(0, 1fr));
+  }
+
+  .pp-bottomNav__fab {
+    width: 50px !important;
+    height: 50px !important;
+  }
+}

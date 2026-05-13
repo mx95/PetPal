@@ -69,8 +69,8 @@ export default function TopNav() {
     <header className="pp-topNav sticky top-0 z-40 border-b border-white/70 bg-white/75 backdrop-blur-2xl">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
         <Link className="group flex items-center gap-3 no-underline" to="/" aria-label={t('nav.home')}>
-          <span className="pp-logoMark flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-petpal-lilac via-[#7258ff] to-petpal-blue shadow-glow transition-transform duration-300 group-hover:scale-105">
-            <img className="h-8 w-8 rounded-xl" src={petpalLogo} alt="" />
+          <span className="pp-logoMark flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white shadow-soft transition-transform duration-300 group-hover:scale-105">
+            <img className="h-10 w-10 rounded-2xl" src={petpalLogo} alt="" />
           </span>
           <span className="hidden sm:block">
             <span className="block text-lg font-black tracking-[-0.04em] text-petpal-ink">PetPal</span>
