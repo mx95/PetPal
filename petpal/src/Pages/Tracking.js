@@ -141,6 +141,56 @@ function buildHistoryAnalytics(points) {
   };
 }
 
+function formatShortTime(iso) {
+  return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+function buildHistoryTimelineEvents(points) {
+  const sameLocationKm = 0.03;
+  const events = [];
+  let idx = 0;
+
+  while (idx < points.length) {
+    const start = points[idx];
+    let endIndex = idx;
+
+    while (endIndex + 1 < points.length && kmBetween(start, points[endIndex + 1]) <= sameLocationKm) {
+      endIndex += 1;
+    }
+
+    const end = points[endIndex];
+    const count = endIndex - idx + 1;
+    const type = idx === 0 ? 'start' : count > 1 ? 'rest' : movementType(start, points[idx - 1]);
+    const durationMin = Math.max(0, Math.round((pointTime(end) - pointTime(start)) / 60000));
+    const label =
+      count > 1
+        ? `Stayed here${durationMin ? ` · ${durationMin} min` : ''}`
+        : type === 'start'
+          ? 'Route started'
+          : type === 'movement'
+            ? 'Fast movement'
+            : type === 'rest'
+              ? 'Resting'
+              : 'Walking';
+
+    events.push({
+      id: `${start.id || idx}-${end.id || endIndex}`,
+      start,
+      end,
+      startIndex: idx,
+      endIndex,
+      count,
+      type,
+      label,
+      timeLabel: count > 1 ? `${formatShortTime(start.timestamp)} → ${formatShortTime(end.timestamp)}` : formatShortTime(start.timestamp),
+    });
+
+    idx = endIndex + 1;
+  }
+
+  return events;
+}
+
 export default function Tracking() {
   const { t, language } = useI18n();
   const fieldId = useId();
@@ -273,6 +323,7 @@ export default function Tracking() {
       label: `${idx === 0 ? 'Start' : idx === filteredHistory.length - 1 ? 'End' : movementType(p, filteredHistory[idx - 1])} · ${new Date(p.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
     }));
   }, [filteredHistory]);
+  const historyTimelineEvents = useMemo(() => buildHistoryTimelineEvents(filteredHistory), [filteredHistory]);
 
   useEffect(() => {
     if (!historyPlaying || filteredHistory.length < 2) return undefined;
@@ -718,22 +769,26 @@ export default function Tracking() {
                 <h3>Timeline</h3>
                 <span>{historyRange.from} → {historyRange.to}</span>
               </div>
-              {filteredHistory.map((p, idx) => {
-                const type = movementType(p, filteredHistory[idx - 1]);
+              {historyTimelineEvents.map((event) => {
+                const p = event.start;
+                const active = historyIndex >= event.startIndex && historyIndex <= event.endIndex;
                 return (
                   <button
-                    key={p.id || idx}
+                    key={event.id}
                     type="button"
-                    className={idx === historyIndex ? 'is-active' : ''}
+                    className={active ? 'is-active' : ''}
                     onClick={() => {
                       setHistoryPlaying(false);
-                      setHistoryIndex(idx);
+                      setHistoryIndex(event.startIndex);
                     }}
                   >
-                    <span className={`pp-trackHistoryTimeline__dot is-${type}`} />
-                    <strong>{new Date(p.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</strong>
-                    <em>{type === 'start' ? 'Route started' : type === 'rest' ? 'Resting' : type === 'movement' ? 'Fast movement' : 'Walking'}</em>
-                    <small>{p.address || `${p.lat.toFixed(5)}, ${p.lng.toFixed(5)}`}{p.speed != null ? ` · ${Number(p.speed).toFixed(1)} km/h` : ''}</small>
+                    <span className={`pp-trackHistoryTimeline__dot is-${event.type}`} />
+                    <strong>{event.timeLabel}</strong>
+                    <em>{event.label}</em>
+                    <small>
+                      {p.address || `${p.lat.toFixed(5)}, ${p.lng.toFixed(5)}`}
+                      {event.count > 1 ? ` · ${event.count} reports` : p.speed != null ? ` · ${Number(p.speed).toFixed(1)} km/h` : ''}
+                    </small>
                   </button>
                 );
               })}
