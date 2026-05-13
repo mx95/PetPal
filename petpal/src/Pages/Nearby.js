@@ -10,7 +10,7 @@ import { GOOGLE_MAPS_LOADER_ID } from '../config/googleMapsLoaderId';
 import { subscribeGoogleMapsAuthFailure } from '../config/googleMapsAuthFailure';
 import { useI18n } from '../i18n/I18nContext';
 
-const mapContainerStyle = { width: '100%', height: 'min(52vh, 520px)', minHeight: 250, borderRadius: 18 };
+const mapContainerStyle = { width: '100%', height: 'min(62vh, 640px)', minHeight: 340, borderRadius: 28 };
 const DEFAULT_CENTER = { lat: 35.173, lng: 33.364 };
 const mapOptions = { disableDefaultUI: false, streetViewControl: false, mapTypeControl: false };
 
@@ -322,7 +322,7 @@ function NearbyMap({ apiKey }) {
                     key={p.place_id}
                     position={p.geometry.location}
                     title={p.name}
-                    animation={window.google.maps.Animation.DROP}
+                    animation={activePlace?.place_id === p.place_id ? window.google.maps.Animation.BOUNCE : window.google.maps.Animation.DROP}
                     icon={{
                       path: window.google.maps.SymbolPath.CIRCLE,
                       scale: activePlace?.place_id === p.place_id ? 9 : 7,
@@ -362,18 +362,16 @@ function NearbyMap({ apiKey }) {
                       {placePhotoUrl(activePlace, 260, 160) ? <img src={placePhotoUrl(activePlace, 260, 160)} alt="" /> : <span aria-hidden>{selectedCategory.icon}</span>}
                     </div>
                     <strong>{activePlace.name}</strong>
+                    <div className="pp-nearby-info__chips">
+                      <span>{selectedCategory.label}</span>
+                      {activePlace.rating != null ? <span>★ {Number(activePlace.rating).toFixed(1)}</span> : null}
+                      {distanceKm(userLocation || searchCenter, activePlace) != null ? (
+                        <span>{distanceKm(userLocation || searchCenter, activePlace).toFixed(1)} km</span>
+                      ) : null}
+                    </div>
                     {activePlace.vicinity ? <div className="pp-nearby-info__addr">{activePlace.vicinity}</div> : null}
-                    {activePlace.rating != null ? (
-                      <div className="pp-nearby-info__meta">
-                        {t('leaderboardPage.starRatingLine', {
-                          rating: activePlace.rating.toFixed(1),
-                          reviews: activePlace.user_ratings_total || 0,
-                        })}
-                      </div>
-                    ) : null}
                     <a
-                      className="pp-link"
-                      style={{ display: 'inline-block', marginTop: 8, padding: 0 }}
+                      className="pp-nearby-info__maps"
                       href={mapsUrl(activePlace)}
                       target="_blank"
                       rel="noopener noreferrer"
@@ -411,7 +409,7 @@ function NearbyMap({ apiKey }) {
               const km = distanceKm(userLocation || searchCenter, p);
               const active = activePlace?.place_id === p.place_id;
               return (
-              <li key={p.place_id}>
+              <li key={p.place_id} className={active ? 'is-active' : ''}>
                 <button
                   type="button"
                   className={`pp-nearby-listItem ${active ? 'is-active' : ''}`}
@@ -429,16 +427,31 @@ function NearbyMap({ apiKey }) {
                   <span className="pp-nearby-listItem__body">
                     <span className="pp-nearby-listItem__name">{p.name}</span>
                     <span className="pp-nearby-listItem__meta">
-                      <span>{selectedCategory.label}</span>
-                      {p.rating != null ? <span>★ {Number(p.rating).toFixed(1)}</span> : null}
-                      {km != null ? <span>{km.toFixed(1)} km</span> : null}
+                      <span className="pp-nearby-listItem__chip">{selectedCategory.label}</span>
+                      {p.rating != null ? <span className="pp-nearby-listItem__chip">★ {Number(p.rating).toFixed(1)}</span> : null}
+                      {km != null ? <span className="pp-nearby-listItem__chip">{km.toFixed(1)} km</span> : null}
                     </span>
                     {p.vicinity ? <span className="pp-nearby-listItem__vicinity">{p.vicinity}</span> : null}
                   </span>
                 </button>
-                <a className="pp-nearby-listItem__maps" href={mapsUrl(p)} target="_blank" rel="noopener noreferrer">
-                  {t('nearbyPage.infoOpenMaps')}
-                </a>
+                <div className="pp-nearby-listItem__actions">
+                  <button
+                    type="button"
+                    className="pp-nearby-listItem__preview"
+                    onClick={() => {
+                      setActivePlace(p);
+                      if (map && p.geometry?.location) {
+                        map.panTo(p.geometry.location);
+                        map.setZoom(16);
+                      }
+                    }}
+                  >
+                    Preview
+                  </button>
+                  <a className="pp-nearby-listItem__maps" href={mapsUrl(p)} target="_blank" rel="noopener noreferrer">
+                    Open in Maps ↗
+                  </a>
+                </div>
               </li>
               );
             })}

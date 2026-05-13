@@ -24,19 +24,6 @@ function fmtLocal(ms) {
   }
 }
 
-function TabButton({ active, onClick, children }) {
-  return (
-    <button
-      type="button"
-      className={`pp-btn pp-btn--ghost ${active ? 'pp-btn--primary' : ''}`}
-      onClick={onClick}
-      style={{ borderRadius: 999 }}
-    >
-      {children}
-    </button>
-  );
-}
-
 function businessTypeLabel(providerTypes = {}) {
   if (providerTypes.vet) return 'Vet';
   if (providerTypes.shop) return 'Pet shop';
@@ -48,7 +35,39 @@ function businessTypeLabel(providerTypes = {}) {
   return 'All pet services';
 }
 
-function DemoBusinessSwitcher({ businesses, onSelect, compact = false }) {
+function businessIcon(providerTypes = {}) {
+  if (providerTypes.vet) return '🩺';
+  if (providerTypes.shop) return '🛍️';
+  if (providerTypes.park) return '🌳';
+  if (providerTypes.hotel) return '🏨';
+  if (providerTypes.bath || providerTypes.saloon) return '🛁';
+  if (providerTypes.daycare) return '☀️';
+  if (providerTypes.cafe) return '☕';
+  return '🐾';
+}
+
+function serviceIcon(type) {
+  if (type === 'vet') return '🩺';
+  if (type === 'bath' || type === 'saloon') return '🛁';
+  if (type === 'hotel') return '🏨';
+  if (type === 'shop') return '🛍️';
+  if (type === 'daycare') return '☀️';
+  if (type === 'cafe') return '☕';
+  if (type === 'park') return '🌳';
+  return '🐾';
+}
+
+function demoSlotGroups(slots) {
+  return slots.reduce((acc, slot) => {
+    const start = slot.startAt?.toDate?.();
+    const key = start ? start.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : 'Upcoming';
+    acc[key] = acc[key] || [];
+    acc[key].push(slot);
+    return acc;
+  }, {});
+}
+
+function DemoBusinessSwitcher({ businesses, onSelect, activeId = '', compact = false }) {
   return (
     <section className={`pp-card pp-demoBusiness ${compact ? 'pp-demoBusiness--compact' : ''}`}>
       <div className="pp-rowBetween" style={{ alignItems: 'flex-start', gap: 12 }}>
@@ -64,11 +83,203 @@ function DemoBusinessSwitcher({ businesses, onSelect, compact = false }) {
       </div>
       <div className="pp-demoBusiness__grid">
         {businesses.map((b) => (
-          <button key={b.id} type="button" className="pp-demoBusiness__card" onClick={() => onSelect(b.id)}>
+          <button key={b.id} type="button" className={`pp-demoBusiness__card ${b.id === activeId ? 'is-active' : ''}`} onClick={() => onSelect(b.id)}>
+            <span className="pp-demoBusiness__icon" aria-hidden>{businessIcon(b.providerTypes)}</span>
             <span className="pp-demoBusiness__type">{businessTypeLabel(b.providerTypes)}</span>
             <strong>{b.displayName}</strong>
             <small>{b.workingHours || 'Open today'}</small>
           </button>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function ProviderDashboardHero({ business }) {
+  return (
+    <section className="pp-providerDashHero">
+      <div className="pp-providerDashHero__banner" aria-hidden>
+        <span>{businessIcon(business.providerTypes)}</span>
+      </div>
+      <div className="pp-providerDashHero__main">
+        <div className="pp-providerDashHero__avatar" aria-hidden>{businessIcon(business.providerTypes)}</div>
+        <div className="pp-providerDashHero__copy">
+          <div className="pp-providerDashHero__badges">
+            <span>{businessTypeLabel(business.providerTypes)}</span>
+            <span className="is-live">Open</span>
+            <span className="is-enabled">Booking enabled</span>
+          </div>
+          <h1>{business.displayName}</h1>
+          <p>{business.address}</p>
+        </div>
+      </div>
+      <div className="pp-providerDashHero__side">
+        <Link className="pp-btn pp-btn--primary" to="/bookings">View customer page</Link>
+        <div className="pp-providerDashHero__miniStats">
+          <span><strong>{business.services.length}</strong> services</span>
+          <span><strong>{business.bookings.length}</strong> today</span>
+          <span><strong>{business.clientPets.length}</strong> clients</span>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ProviderStats({ business }) {
+  const next = business.bookings[0]?.startAtLabel || business.nextAvailable || 'No upcoming';
+  return (
+    <section className="pp-providerStats">
+      <article><span aria-hidden>📅</span><small>Today's bookings</small><strong>{business.bookings.length}</strong><em>+2 from demo</em></article>
+      <article><span aria-hidden>🧾</span><small>Active services</small><strong>{business.services.filter((s) => s.active !== false).length}</strong><em>All bookable</em></article>
+      <article><span aria-hidden>⏰</span><small>Upcoming</small><strong>{next}</strong><em>Next appointment</em></article>
+      <article><span aria-hidden>🐾</span><small>Total clients</small><strong>{business.clientPets.length}</strong><em>2 tracked pets</em></article>
+    </section>
+  );
+}
+
+function ProviderTabs({ tab, setTab }) {
+  const tabs = [
+    ['services', 'Services'],
+    ['availability', 'Availability'],
+    ['bookings', 'Bookings'],
+    ['clientPets', 'Client pets'],
+  ];
+  return (
+    <div className="pp-providerTabs" role="tablist" aria-label="Provider sections">
+      {tabs.map(([id, label]) => (
+        <button key={id} type="button" className={tab === id ? 'is-active' : ''} onClick={() => setTab(id)} role="tab" aria-selected={tab === id}>
+          {label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function DemoServicesPanel({ services }) {
+  return (
+    <section className="pp-providerPanel">
+      <div className="pp-providerPanel__head">
+        <div>
+          <h2>Services</h2>
+          <p>Compact menu of what customers can book.</p>
+        </div>
+        <button type="button" className="pp-btn pp-btn--primary" disabled>+ Add service</button>
+      </div>
+      <div className="pp-providerServiceGrid">
+        {services.map((s) => (
+          <article key={s.id} className="pp-providerServiceCard">
+            <div className="pp-providerServiceCard__icon" aria-hidden>{serviceIcon(s.type)}</div>
+            <div className="pp-providerServiceCard__body">
+              <div className="pp-providerServiceCard__top">
+                <h3>{s.name}</h3>
+                <span className={s.active === false ? 'is-off' : 'is-on'}>{s.active === false ? 'Inactive' : 'Active'}</span>
+              </div>
+              <p>{s.description || 'No description yet.'}</p>
+              <div className="pp-providerServiceCard__meta">
+                <span>{s.durationMin} min</span>
+                <span>{s.type}</span>
+              </div>
+            </div>
+            <div className="pp-providerServiceCard__actions">
+              <button type="button" disabled>Edit</button>
+              <button type="button" disabled>Disable</button>
+              <button type="button" disabled>Delete</button>
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function DemoAvailabilityPanel({ business, slots }) {
+  const groups = demoSlotGroups(slots);
+  return (
+    <section className="pp-providerPanel">
+      <div className="pp-providerPanel__head">
+        <div>
+          <h2>Availability</h2>
+          <p>Grouped schedule with quick slot states.</p>
+        </div>
+        <div className="pp-providerPanel__actions">
+          <button type="button" className="pp-btn pp-btn--ghost" disabled>Week</button>
+          <button type="button" className="pp-btn pp-btn--primary" disabled>+ Add availability</button>
+        </div>
+      </div>
+      <div className="pp-providerTimeline">
+        {Object.entries(groups).map(([day, daySlots]) => (
+          <div key={day} className="pp-providerTimeline__day">
+            <div className="pp-providerTimeline__date">
+              <strong>{day}</strong>
+              <small>{business.displayName}</small>
+            </div>
+            <div className="pp-providerTimeline__slots">
+              {daySlots.map((slot, idx) => {
+                const start = slot.startAt?.toDate?.();
+                return (
+                  <button key={slot.id} type="button" className={idx % 3 === 2 ? 'is-blocked' : 'is-open'} disabled>
+                    {start ? start.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : 'Slot'}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function DemoBookingsPanel({ bookings }) {
+  return (
+    <section className="pp-providerPanel">
+      <div className="pp-providerPanel__head">
+        <div>
+          <h2>Bookings</h2>
+          <p>Appointments with customer and pet context.</p>
+        </div>
+      </div>
+      <div className="pp-providerBookingList">
+        {bookings.map((b) => (
+          <article key={b.id} className="pp-providerBookingCard">
+            <div className="pp-providerAvatar" aria-hidden>{b.petName.charAt(0)}</div>
+            <div>
+              <h3>{b.petName}</h3>
+              <p>{b.serviceName}</p>
+              <small>{b.ownerName} · {b.startAtLabel}</small>
+            </div>
+            <span className={`pp-providerStatus pp-providerStatus--${b.status}`}>{b.status}</span>
+            <div className="pp-providerBookingCard__actions">
+              <button type="button" disabled>Complete</button>
+              <button type="button" disabled>Cancel</button>
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function DemoClientPetsPanel({ pets }) {
+  return (
+    <section className="pp-providerPanel">
+      <div className="pp-providerPanel__head">
+        <div>
+          <h2>Client pets</h2>
+          <p>Pets attached to bookings, owners, and tracker data.</p>
+        </div>
+      </div>
+      <div className="pp-providerClientGrid">
+        {pets.map((p) => (
+          <article key={p.id} className="pp-providerClientCard">
+            <div className="pp-providerAvatar" aria-hidden>{p.name.charAt(0)}</div>
+            <div>
+              <h3>{p.name}</h3>
+              <p>{p.ownerName}</p>
+              <small>{p.ownerPhone || 'No phone'} · {p.trackingImei ? 'Tracker linked' : 'No tracker'}</small>
+            </div>
+            <a href={`tel:${p.ownerPhone || ''}`} className="pp-btn pp-btn--ghost">Contact</a>
+          </article>
         ))}
       </div>
     </section>
@@ -82,136 +293,19 @@ function DemoProviderPortal({ business, businesses, onChangeBusiness }) {
 
   return (
     <div className="pp-pad pp-demoProviderPortal">
-      <div className="pp-pageHeader">
-        <div className="pp-pageHeader__copy">
-          <div className="pp-badge">Demo provider portal</div>
-          <div className="pp-pageHeader__title">{business.displayName}</div>
-          <div className="pp-pageHeader__subtitle">
-            {businessTypeLabel(business.providerTypes)} · {business.address}
-          </div>
-        </div>
-        <Link className="pp-pageHeader__back" to="/bookings">
-          View customer booking page
-        </Link>
-      </div>
+      <ProviderDashboardHero business={business} />
 
-      <DemoBusinessSwitcher businesses={businesses} onSelect={onChangeBusiness} compact />
+      <DemoBusinessSwitcher businesses={businesses} onSelect={onChangeBusiness} activeId={business.id} compact />
 
-      <div className="pp-card pp-demoProviderPortal__summary">
-        <div>
-          <span className="pp-label">Public listing</span>
-          <strong>Booking enabled</strong>
-          <small>{business.workingHours}</small>
-        </div>
-        <div>
-          <span className="pp-label">Today</span>
-          <strong>{business.bookings.length} bookings</strong>
-          <small>{business.nextAvailable}</small>
-        </div>
-        <div>
-          <span className="pp-label">Clients</span>
-          <strong>{business.clientPets.length} pets</strong>
-          <small>Visible in client pets</small>
-        </div>
-      </div>
+      <ProviderStats business={business} />
 
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 14 }}>
-        <TabButton active={tab === 'services'} onClick={() => setTab('services')}>
-          Services
-        </TabButton>
-        <TabButton active={tab === 'availability'} onClick={() => setTab('availability')}>
-          Availability
-        </TabButton>
-        <TabButton active={tab === 'bookings'} onClick={() => setTab('bookings')}>
-          Bookings
-        </TabButton>
-        <TabButton active={tab === 'clientPets'} onClick={() => setTab('clientPets')}>
-          Client pets
-        </TabButton>
-      </div>
+      <ProviderTabs tab={tab} setTab={setTab} />
 
-      <div style={{ marginTop: 16 }}>
-        {tab === 'services' ? (
-          <div className="pp-card">
-            <div className="pp-card__title">Services</div>
-            <div className="pp-stack" style={{ marginTop: 10 }}>
-              {business.services.map((s) => (
-                <div key={s.id} className="pp-rowBetween pp-rowBetween--card">
-                  <div>
-                    <div style={{ fontWeight: 900 }}>{s.name}</div>
-                    <div className="pp-muted" style={{ fontSize: 13 }}>
-                      {s.type} · {s.durationMin} min · {s.active === false ? 'inactive' : 'active'}
-                    </div>
-                    {s.description ? <div className="pp-subtle" style={{ marginTop: 4 }}>{s.description}</div> : null}
-                  </div>
-                  <span className="pp-badge">Demo</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : null}
-
-        {tab === 'availability' ? (
-          <div className="pp-card">
-            <div className="pp-card__title">Availability</div>
-            <div className="pp-stack" style={{ marginTop: 10 }}>
-              {slots.map((s) => (
-                <div key={s.id} className="pp-rowBetween pp-rowBetween--card">
-                  <div>
-                    <div style={{ fontWeight: 900 }}>{business.services.find((x) => x.id === s.serviceId)?.name || 'Service'}</div>
-                    <div className="pp-muted" style={{ fontSize: 13 }}>
-                      {s.startAt?.toDate ? s.startAt.toDate().toLocaleString() : ''} → {s.endAt?.toDate ? s.endAt.toDate().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : ''} · {s.status}
-                    </div>
-                  </div>
-                  <button type="button" className="pp-btn pp-btn--ghost" disabled>
-                    Block
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : null}
-
-        {tab === 'bookings' ? (
-          <div className="pp-card">
-            <div className="pp-card__title">Bookings</div>
-            <div className="pp-stack" style={{ marginTop: 10 }}>
-              {business.bookings.map((b) => (
-                <div key={b.id} className="pp-rowBetween pp-rowBetween--card">
-                  <div>
-                    <div style={{ fontWeight: 900 }}>{b.petName}</div>
-                    <div className="pp-muted" style={{ fontSize: 13 }}>
-                      {b.serviceName} · {b.ownerName} · {b.startAtLabel} · {b.status}
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <button type="button" className="pp-btn pp-btn--ghost" disabled>Complete</button>
-                    <button type="button" className="pp-btn pp-btn--ghost" disabled>Cancel</button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : null}
-
-        {tab === 'clientPets' ? (
-          <div className="pp-card">
-            <div className="pp-card__title">Client pets</div>
-            <div className="pp-stack" style={{ marginTop: 10 }}>
-              {business.clientPets.map((p) => (
-                <div key={p.id} className="pp-rowBetween pp-rowBetween--card">
-                  <div>
-                    <div style={{ fontWeight: 900 }}>{p.name}</div>
-                    <div className="pp-muted" style={{ fontSize: 13 }}>
-                      {p.ownerName} {p.ownerPhone ? `· ${p.ownerPhone}` : ''} {p.trackingImei ? `· IMEI ${p.trackingImei}` : ''}
-                    </div>
-                  </div>
-                  <button type="button" className="pp-btn pp-btn--ghost" disabled>Remove</button>
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : null}
+      <div className="pp-providerTabContent">
+        {tab === 'services' ? <DemoServicesPanel services={business.services} /> : null}
+        {tab === 'availability' ? <DemoAvailabilityPanel business={business} slots={slots} /> : null}
+        {tab === 'bookings' ? <DemoBookingsPanel bookings={business.bookings} /> : null}
+        {tab === 'clientPets' ? <DemoClientPetsPanel pets={business.clientPets} /> : null}
       </div>
     </div>
   );
@@ -280,14 +374,19 @@ export default function ProviderPortal() {
   }
 
   return (
-    <div className="pp-pad">
-      <div className="pp-pageHeader">
-        <div className="pp-pageHeader__copy">
-          <div className="pp-badge">Provider portal</div>
-          <div className="pp-pageHeader__title">{profile?.businessName || 'Business'}</div>
-          <div className="pp-pageHeader__subtitle">Manage services, availability, bookings, and pets.</div>
-        </div>
-      </div>
+    <div className="pp-pad pp-demoProviderPortal">
+      <ProviderDashboardHero
+        business={{
+          displayName: profile?.businessName || publish.displayName || 'Business',
+          address: profile?.addressLine || publish.address || 'Business profile',
+          providerTypes: publish.providerTypes,
+          services: [],
+          bookings: [],
+          clientPets: [],
+          workingHours: publish.workingHours,
+          nextAvailable: 'Manage live availability',
+        }}
+      />
       <DemoBusinessSwitcher businesses={demoBusinesses} onSelect={(id) => setSearchParams({ demoBusiness: id })} compact />
 
       <div className="pp-card" style={{ marginTop: 14 }}>
@@ -381,22 +480,9 @@ export default function ProviderPortal() {
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 14 }}>
-        <TabButton active={tab === 'services'} onClick={() => setTab('services')}>
-          Services
-        </TabButton>
-        <TabButton active={tab === 'availability'} onClick={() => setTab('availability')}>
-          Availability
-        </TabButton>
-        <TabButton active={tab === 'bookings'} onClick={() => setTab('bookings')}>
-          Bookings
-        </TabButton>
-        <TabButton active={tab === 'clientPets'} onClick={() => setTab('clientPets')}>
-          Client pets
-        </TabButton>
-      </div>
+      <ProviderTabs tab={tab} setTab={setTab} />
 
-      <div style={{ marginTop: 16 }}>
+      <div className="pp-providerTabContent">
         {tab === 'services' ? <Services companyId={companyId} /> : null}
         {tab === 'availability' ? <Availability companyId={companyId} /> : null}
         {tab === 'bookings' ? <Bookings companyId={companyId} /> : null}
