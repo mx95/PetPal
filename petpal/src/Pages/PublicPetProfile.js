@@ -3,6 +3,7 @@ import { Link, useLocation, useParams } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
 import { getDb, isFirebaseConfigured } from '../firebase';
 import { useI18n } from '../i18n/I18nContext';
+import petpalLogo from '../logo.svg';
 
 function getSafe(v, fallback = '') {
   if (typeof v === 'string') return v;
@@ -91,7 +92,7 @@ export default function PublicPetProfile() {
           traits: firstNonEmpty(raw.traits, raw.identifyingMarks),
           notes: firstNonEmpty(raw.notes, raw.medicalNotes, raw.description),
           veterinarian: getSafe(raw.veterinarian),
-          imageUrl: firstNonEmpty(raw.imageUrl, raw.photoUrl, `${process.env.PUBLIC_URL || ''}/logo192.png`),
+          imageUrl: firstNonEmpty(raw.imageUrl, raw.photoUrl, petpalLogo),
           friendlyWith: {
             people: friendlyObj ? !!friendlyObj.people : friendlyArr.includes('people'),
             children: friendlyObj ? !!friendlyObj.children : friendlyArr.includes('children'),

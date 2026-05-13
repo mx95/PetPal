@@ -304,9 +304,24 @@ export default function Profile() {
 
       <div className="pp-col-12">
         <section className="pp-heroCard" aria-label={t('profile.headerAria')}>
-          <div className="pp-heroCard__avatar" aria-hidden>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            className="pp-visuallyHidden"
+            onChange={onPickPhoto}
+            aria-label={t('profile.photo.upload')}
+          />
+          <button
+            type="button"
+            className="pp-heroCard__avatar pp-profilePhotoEdit"
+            onClick={() => fileRef.current?.click()}
+            disabled={photoBusy}
+            aria-label={photoBusy ? t('profile.photo.uploading') : t('profile.photo.upload')}
+          >
             <UserAvatar user={user} size={64} />
-          </div>
+            <span className="pp-profilePhotoEdit__badge" aria-hidden>📷</span>
+          </button>
           <div className="pp-heroCard__copy">
             <span className="pp-heroCard__eyebrow">{t('profile.headerEyebrow')}</span>
             <h2 className="pp-heroCard__title">{displayName || t('profile.youFallback')}</h2>
@@ -419,14 +434,6 @@ export default function Profile() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 12 }}>
                   <UserAvatar user={user} size={68} />
                   <div className="pp-profilePhotoRow" style={{ marginBottom: 0 }}>
-                    <input
-                      ref={fileRef}
-                      type="file"
-                      accept="image/*"
-                      className="pp-visuallyHidden"
-                      onChange={onPickPhoto}
-                      aria-label={t('profile.photo.upload')}
-                    />
                     <button
                       type="button"
                       className="pp-btn pp-btnPrimary"

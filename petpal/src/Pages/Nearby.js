@@ -10,9 +10,42 @@ import { GOOGLE_MAPS_LOADER_ID } from '../config/googleMapsLoaderId';
 import { subscribeGoogleMapsAuthFailure } from '../config/googleMapsAuthFailure';
 import { useI18n } from '../i18n/I18nContext';
 
-const mapContainerStyle = { width: '100%', height: 'min(62vh, 620px)', minHeight: 280, borderRadius: 18 };
+const mapContainerStyle = { width: '100%', height: 'min(52vh, 520px)', minHeight: 250, borderRadius: 18 };
 const DEFAULT_CENTER = { lat: 35.173, lng: 33.364 };
 const mapOptions = { disableDefaultUI: false, streetViewControl: false, mapTypeControl: false };
+
+function placePhotoUrl(place, width = 360, height = 220) {
+  try {
+    return place?.photos?.[0]?.getUrl({ maxWidth: width, maxHeight: height }) || '';
+  } catch {
+    return '';
+  }
+}
+
+function placeLatLng(place) {
+  const loc = place?.geometry?.location;
+  if (!loc) return null;
+  const lat = typeof loc.lat === 'function' ? loc.lat() : loc.lat;
+  const lng = typeof loc.lng === 'function' ? loc.lng() : loc.lng;
+  return Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null;
+}
+
+function distanceKm(from, place) {
+  const to = placeLatLng(place);
+  if (!from || !to) return null;
+  const r = 6371;
+  const toRad = (d) => (d * Math.PI) / 180;
+  const dLat = toRad(to.lat - from.lat);
+  const dLng = toRad(to.lng - from.lng);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRad(from.lat)) * Math.cos(toRad(to.lat)) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  return Math.round(r * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)) * 10) / 10;
+}
+
+function mapsUrl(place) {
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place?.name || '')}&query_place_id=${encodeURIComponent(place?.place_id || '')}`;
+}
 
 function NoKeyView() {
   const { t } = useI18n();
@@ -200,13 +233,12 @@ function NearbyMap({ apiKey }) {
 
   return (
     <div className="pp-nearby-page">
-      <div className="pp-row" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      <div className="pp-nearbyHeader">
         <div>
-          <div className="pp-badge">{t('nearbyPage.badge')}</div>
-          <h1 className="pp-h1" style={{ marginTop: 10 }}>
+          <h1 className="pp-nearbyHeader__title">
             {t('nearbyPage.title')}
           </h1>
-          <p className="pp-subtle" style={{ marginTop: 6, maxWidth: 640 }}>{t('nearbyPage.introLead')} nearby places for your pet.</p>
+          <p className="pp-nearbyHeader__sub">{t('nearbyPage.introLead')} nearby places for your pet.</p>
         </div>
         <Link className="pp-link" to="/dashboard">
           {t('common.backDashboard')}
@@ -290,6 +322,15 @@ function NearbyMap({ apiKey }) {
                   key={p.place_id}
                   position={p.geometry.location}
                   title={p.name}
+                  animation={window.google.maps.Animation.DROP}
+                  icon={{
+                    path: window.google.maps.SymbolPath.CIRCLE,
+                    scale: activePlace?.place_id === p.place_id ? 9 : 7,
+                    fillColor: activePlace?.place_id === p.place_id ? '#5b37ff' : '#ffffff',
+                    fillOpacity: 1,
+                    strokeColor: '#5b37ff',
+                    strokeWeight: 3,
+                  }}
                   onClick={() => setActivePlace(p)}
                 />
               ) : null
@@ -314,10 +355,16 @@ function NearbyMap({ apiKey }) {
                 onCloseClick={() => setActivePlace(null)}
               >
                 <div className="pp-nearby-info">
+                  <button type="button" className="pp-nearby-info__close" onClick={() => setActivePlace(null)} aria-label="Close place preview">
+                    ×
+                  </button>
+                  <div className="pp-nearby-info__image">
+                    {placePhotoUrl(activePlace, 260, 160) ? <img src={placePhotoUrl(activePlace, 260, 160)} alt="" /> : <span aria-hidden>{selectedCategory.icon}</span>}
+                  </div>
                   <strong>{activePlace.name}</strong>
-                  {activePlace.vicinity ? <div>{activePlace.vicinity}</div> : null}
+                  {activePlace.vicinity ? <div className="pp-nearby-info__addr">{activePlace.vicinity}</div> : null}
                   {activePlace.rating != null ? (
-                    <div style={{ marginTop: 6, fontSize: 12 }}>
+                    <div className="pp-nearby-info__meta">
                       {t('leaderboardPage.starRatingLine', {
                         rating: activePlace.rating.toFixed(1),
                         reviews: activePlace.user_ratings_total || 0,
@@ -327,9 +374,7 @@ function NearbyMap({ apiKey }) {
                   <a
                     className="pp-link"
                     style={{ display: 'inline-block', marginTop: 8, padding: 0 }}
-                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                      activePlace.name || ''
-                    )}&query_place_id=${encodeURIComponent(activePlace.place_id || '')}`}
+                    href={mapsUrl(activePlace)}
                     target="_blank"
                     rel="noopener noreferrer"
                   >
@@ -360,11 +405,15 @@ function NearbyMap({ apiKey }) {
             <p className="pp-subtle">{t('nearbyPage.noMarkers')}</p>
           ) : null}
           <ol className="pp-nearby-list">
-            {places.map((p) => (
+            {places.map((p) => {
+              const photo = placePhotoUrl(p);
+              const km = distanceKm(userLocation || searchCenter, p);
+              const active = activePlace?.place_id === p.place_id;
+              return (
               <li key={p.place_id}>
                 <button
                   type="button"
-                  className="pp-nearby-listItem"
+                  className={`pp-nearby-listItem ${active ? 'is-active' : ''}`}
                   onClick={() => {
                     setActivePlace(p);
                     if (map && p.geometry?.location) {
@@ -373,11 +422,25 @@ function NearbyMap({ apiKey }) {
                     }
                   }}
                 >
-                  <span className="pp-nearby-listItem__name">{p.name}</span>
-                  {p.vicinity ? <span className="pp-nearby-listItem__vicinity">{p.vicinity}</span> : null}
+                  <span className="pp-nearby-listItem__thumb">
+                    {photo ? <img src={photo} alt="" /> : <span aria-hidden>{selectedCategory.icon}</span>}
+                  </span>
+                  <span className="pp-nearby-listItem__body">
+                    <span className="pp-nearby-listItem__name">{p.name}</span>
+                    <span className="pp-nearby-listItem__meta">
+                      <span>{selectedCategory.label}</span>
+                      {p.rating != null ? <span>★ {Number(p.rating).toFixed(1)}</span> : null}
+                      {km != null ? <span>{km.toFixed(1)} km</span> : null}
+                    </span>
+                    {p.vicinity ? <span className="pp-nearby-listItem__vicinity">{p.vicinity}</span> : null}
+                  </span>
                 </button>
+                <a className="pp-nearby-listItem__maps" href={mapsUrl(p)} target="_blank" rel="noopener noreferrer">
+                  {t('nearbyPage.infoOpenMaps')}
+                </a>
               </li>
-            ))}
+              );
+            })}
           </ol>
         </aside>
       </div>

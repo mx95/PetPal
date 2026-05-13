@@ -1,4 +1,4 @@
-/** @typedef {'vet'|'saloon'|'hotel'} ServiceTabId */
+/** @typedef {'vet'|'saloon'|'hotel'|'bath'} ServiceTabId */
 
 /**
  * @param {Record<string, unknown>} p
@@ -7,6 +7,7 @@
 export function providerMatchesServiceTab(p, tabId) {
   const pt = p?.providerTypes && typeof p.providerTypes === 'object' ? p.providerTypes : {};
   if (tabId === 'vet') return Boolean(pt.vet);
+  if (tabId === 'bath') return Boolean(pt.bath || pt.saloon);
   if (tabId === 'saloon') return Boolean(pt.saloon);
   if (tabId === 'hotel') return Boolean(pt.hotel);
   return true;
@@ -43,17 +44,6 @@ export function matchesRatingFilter(rating, filter) {
   if (filter === '4') return r >= 4;
   if (filter === '4.5') return r >= 4.5;
   return true;
-}
-
-/**
- * @param {number|undefined} tier 1–3
- * @param {'any'|'1'|'2'|'3'} filter
- */
-export function matchesPriceTierFilter(tier, filter) {
-  if (filter === 'any') return true;
-  const t = Number(tier);
-  if (!Number.isFinite(t)) return true;
-  return String(Math.min(3, Math.max(1, Math.round(t)))) === filter;
 }
 
 export function haversineKm(lat1, lng1, lat2, lng2) {

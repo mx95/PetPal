@@ -15,7 +15,7 @@ export const DEMO_PROVIDERS = [
     displayName: 'Fluffy Cuts Grooming & Pet Shop',
     address: '45 Sunset Ave, Kifisia',
     phone: '+30 210 111 1111',
-    providerTypes: { vet: false, saloon: true, hotel: false },
+    providerTypes: { vet: false, bath: true, saloon: true, hotel: false },
     rating: 4.6,
     priceTier: 1,
     lat: 38.0744,
@@ -40,7 +40,7 @@ const DEMO_SERVICES = {
     { id: 'demo_vet_vaccine', type: 'vet', name: 'Vaccination visit', durationMin: 20, description: 'Routine vaccine appointment', active: true },
   ],
   example_groom: [
-    { id: 'demo_groom_basic', type: 'saloon', name: 'Bath & brush', durationMin: 45, description: 'Coat wash and brush-out', active: true },
+    { id: 'demo_bath_basic', type: 'bath', name: 'Bath & brush', durationMin: 45, description: 'Coat wash and brush-out', active: true },
     { id: 'demo_groom_full', type: 'saloon', name: 'Full grooming', durationMin: 90, description: 'Wash, trim, ears and nails', active: true },
   ],
   example_hotel: [
@@ -81,7 +81,7 @@ export function getDemoSlots(providerId, serviceId, { after = new Date() } = {})
   if (!service) return [];
 
   const start = new Date(after);
-  const slots = [1, 2, 3, 4, 5].flatMap((dayOffset) => {
+  const slots = [0, 1, 2, 3, 4, 5].flatMap((dayOffset) => {
     const day = addDays(start, dayOffset);
     return [atTime(day, 10, 0), atTime(day, 14, 30)];
   });

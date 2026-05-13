@@ -5,6 +5,7 @@ import { useCompany } from '../company/CompanyContext';
 import { useI18n } from '../i18n/I18nContext';
 import { LanguageSwitcher } from '../i18n/LanguageSwitcher';
 import UserAvatar from './UserAvatar';
+import petpalLogo from '../logo.svg';
 
 function navItemClassName({ isActive }) {
   return [
@@ -69,7 +70,7 @@ export default function TopNav() {
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
         <Link className="group flex items-center gap-3 no-underline" to="/" aria-label={t('nav.home')}>
           <span className="pp-logoMark flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-petpal-lilac via-[#7258ff] to-petpal-blue shadow-glow transition-transform duration-300 group-hover:scale-105">
-            <img className="h-8 w-8 rounded-xl" src={`${process.env.PUBLIC_URL}/logo192.png`} alt="" />
+            <img className="h-8 w-8 rounded-xl" src={petpalLogo} alt="" />
           </span>
           <span className="hidden sm:block">
             <span className="block text-lg font-black tracking-[-0.04em] text-petpal-ink">PetPal</span>

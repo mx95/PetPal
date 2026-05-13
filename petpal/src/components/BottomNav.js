@@ -98,7 +98,6 @@ export default function BottomNav() {
     >
       <span className="pp-bottomNav__icon">{ICONS[item.key]}</span>
       <span className="pp-bottomNav__label">{t(item.labelKey)}</span>
-      <span className="pp-bottomNav__activeDot" aria-hidden />
     </NavLink>
   );
 

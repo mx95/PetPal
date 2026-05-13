@@ -5,7 +5,6 @@ import { useI18n } from '../i18n/I18nContext';
 import { subscribeCustomerBookings } from '../bookings/bookingFirestore';
 import { subscribeProviders } from '../bookings/providerDirectoryFirestore';
 import {
-  matchesPriceTierFilter,
   matchesRatingFilter,
   matchesSearch,
   providerDistanceKm,
@@ -42,10 +41,9 @@ function BrowseProviders() {
   const [rows, setRows] = useState([]);
   const [loaded, setLoaded] = useState(false);
   const [err, setErr] = useState('');
-  const [serviceTab, setServiceTab] = useState(/** @type {'vet'|'saloon'|'hotel'} */ ('vet'));
+  const [serviceTab, setServiceTab] = useState(/** @type {'vet'|'saloon'|'hotel'|'bath'} */ ('vet'));
   const [search, setSearch] = useState('');
   const [ratingFilter, setRatingFilter] = useState(/** @type {'any'|'4'|'4.5'} */ ('any'));
-  const [priceFilter, setPriceFilter] = useState(/** @type {'any'|'1'|'2'|'3'} */ ('any'));
   const [distanceFilter, setDistanceFilter] = useState(/** @type {'any'|'5'|'15'|'30'} */ ('any'));
   const [userLoc, setUserLoc] = useState(/** @type {{ lat: number, lng: number } | null} */ (null));
   const [locating, setLocating] = useState(false);
@@ -74,10 +72,9 @@ function BrowseProviders() {
       (p) =>
         providerMatchesServiceTab(p, serviceTab) &&
         matchesSearch(p, search) &&
-        matchesRatingFilter(Number(p.rating), ratingFilter) &&
-        matchesPriceTierFilter(p.priceTier != null ? Number(p.priceTier) : undefined, priceFilter)
+        matchesRatingFilter(Number(p.rating), ratingFilter)
     );
-  }, [sourceRows, serviceTab, search, ratingFilter, priceFilter]);
+  }, [sourceRows, serviceTab, search, ratingFilter]);
 
   const maxKm = distanceFilter === 'any' ? null : Number(distanceFilter);
 
@@ -111,6 +108,7 @@ function BrowseProviders() {
   const serviceTabs = useMemo(
     () => [
       { id: 'vet', emoji: '🐾', label: t('bookingsHub.tabVet') },
+      { id: 'bath', emoji: '🛁', label: 'Bath' },
       { id: 'saloon', emoji: '✂️', label: t('bookingsHub.tabGroom') },
       { id: 'hotel', emoji: '🏨', label: t('bookingsHub.tabHotel') },
     ],
@@ -161,15 +159,6 @@ function BrowseProviders() {
               <option value="any">{t('bookingsHub.ratingAny')}</option>
               <option value="4">{t('bookingsHub.rating4')}</option>
               <option value="4.5">{t('bookingsHub.rating45')}</option>
-            </select>
-          </label>
-          <label className="pp-book-field">
-            <span className="pp-book-field__label">{t('bookingsHub.filterPriceLabel')}</span>
-            <select className="pp-book-select" value={priceFilter} onChange={(e) => setPriceFilter(e.target.value)}>
-              <option value="any">{t('bookingsHub.priceAny')}</option>
-              <option value="1">{t('bookingsHub.price1')}</option>
-              <option value="2">{t('bookingsHub.price2')}</option>
-              <option value="3">{t('bookingsHub.price3')}</option>
             </select>
           </label>
           <label className="pp-book-field">

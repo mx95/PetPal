@@ -5,16 +5,10 @@ function categoryLabel(types, t) {
   const pt = types && typeof types === 'object' ? types : {};
   const bits = [];
   if (pt.vet) bits.push(t('bookingsHub.tabVet'));
+  if (pt.bath) bits.push('Bath');
   if (pt.saloon) bits.push(t('bookingsHub.tabGroom'));
   if (pt.hotel) bits.push(t('bookingsHub.tabHotel'));
   return bits.length ? bits.join(' · ') : t('bookingsHub.tabVet');
-}
-
-function priceTierLabel(tier, t) {
-  const n = Number(tier);
-  if (!Number.isFinite(n) || n < 1) return null;
-  const k = Math.min(3, Math.max(1, Math.round(n)));
-  return t('bookingsHub.priceFrom', { tier: '€'.repeat(k) });
 }
 
 /**
@@ -30,7 +24,6 @@ export function ProviderCard({ provider, distanceKm, onBook, t }) {
   const rating = Number(provider.rating);
   const hasRating = Number.isFinite(rating) && rating > 0;
   const cat = useMemo(() => categoryLabel(provider.providerTypes, t), [provider.providerTypes, t]);
-  const priceLine = useMemo(() => priceTierLabel(provider.priceTier, t), [provider.priceTier, t]);
   const providerName = String(provider.displayName || 'Provider');
   const sponsored = Boolean(provider.sponsored || provider.boostEnabled || provider.recommended);
   const hours = provider.workingHours || 'Open today';
@@ -70,7 +63,6 @@ export function ProviderCard({ provider, distanceKm, onBook, t }) {
         <p className="mt-2 text-sm font-bold text-petpal-lilac">{servicesPreview}</p>
         <p className="mt-2 min-h-[2.5rem] text-sm leading-6 text-petpal-muted">{String(provider.address || '')}</p>
         <div className="mt-4 flex flex-wrap gap-2">
-          {priceLine ? <span className="rounded-full bg-slate-50 px-3 py-1 text-xs font-black text-slate-600">{priceLine}</span> : null}
           {distanceKm != null ? <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-black text-blue-700">About {distanceKm.toFixed(1)} km</span> : null}
           {isDemo ? <span className="rounded-full bg-violet-50 px-3 py-1 text-xs font-black text-violet-700">Demo slots</span> : null}
         </div>

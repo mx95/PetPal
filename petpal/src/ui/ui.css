@@ -9982,3 +9982,467 @@ html[data-theme="dark"] .pp-book-modalActions {
 html[data-theme="dark"] .pp-book-modalPanel::before {
   background: rgba(255, 255, 255, 0.18);
 }
+
+/* Mobile refinement pass: Nearby, pets, profile photos, booking calendar. */
+.pp-bottomNav__activeDot,
+.pp-bottomNav__item--on .pp-bottomNav__activeDot {
+  display: none !important;
+}
+
+.pp-bottomNav__row {
+  justify-items: center;
+}
+
+.pp-bottomNav__item--on {
+  color: #5b37ff;
+  background: linear-gradient(180deg, rgba(91, 55, 255, 0.14), rgba(91, 55, 255, 0.08));
+  box-shadow: 0 8px 20px -16px rgba(91, 55, 255, 0.75);
+}
+
+.pp-nearbyHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 0 0 12px;
+}
+
+.pp-nearbyHeader__title {
+  margin: 0;
+  font-size: clamp(24px, 7vw, 34px);
+  line-height: 1.05;
+  letter-spacing: -0.045em;
+  font-weight: 950;
+  color: var(--pp-text);
+}
+
+.pp-nearbyHeader__sub {
+  margin: 5px 0 0;
+  max-width: 520px;
+  color: var(--pp-text-2);
+  font-size: 13.5px;
+  line-height: 1.45;
+}
+
+.pp-nearby-list {
+  display: grid;
+  gap: 10px;
+}
+
+.pp-nearby-list > li {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  align-items: stretch;
+  border-radius: 22px;
+  padding: 8px;
+  background:
+    radial-gradient(180px 90px at 15% 0%, rgba(91, 55, 255, 0.08), transparent 70%),
+    rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(255, 255, 255, 0.76);
+  box-shadow: var(--pp-shadow-xs);
+  backdrop-filter: blur(10px);
+}
+
+.pp-nearby-listItem {
+  display: grid !important;
+  grid-template-columns: 72px 1fr;
+  gap: 10px;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+  padding: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  text-align: left;
+}
+
+.pp-nearby-listItem::before {
+  display: none !important;
+  content: none !important;
+}
+
+.pp-nearby-listItem.is-active {
+  transform: none;
+}
+
+.pp-nearby-listItem__thumb {
+  width: 72px;
+  height: 72px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(91, 55, 255, 0.12), rgba(47, 128, 255, 0.12));
+  color: #5b37ff;
+  font-size: 24px;
+  flex: 0 0 auto;
+}
+
+.pp-nearby-listItem__thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.pp-nearby-listItem__body {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.pp-nearby-listItem__name {
+  font-size: 14px;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.pp-nearby-listItem__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  color: #5b37ff;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.pp-nearby-listItem__meta span {
+  border-radius: 999px;
+  background: rgba(91, 55, 255, 0.08);
+  padding: 3px 7px;
+}
+
+.pp-nearby-listItem__vicinity {
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--pp-text-2);
+}
+
+.pp-nearby-listItem__maps {
+  align-self: center;
+  border-radius: 999px;
+  padding: 8px 10px;
+  background: rgba(91, 55, 255, 0.1);
+  color: #4a2de2;
+  font-size: 11px;
+  font-weight: 950;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.pp-nearby-info {
+  position: relative;
+  width: 220px;
+  padding: 4px;
+  color: #101828;
+}
+
+.pp-nearby-info__image {
+  width: 100%;
+  height: 92px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 16px;
+  margin-bottom: 9px;
+  background: linear-gradient(135deg, rgba(91, 55, 255, 0.12), rgba(47, 128, 255, 0.12));
+  color: #5b37ff;
+  font-size: 26px;
+}
+
+.pp-nearby-info__image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.pp-nearby-info__close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 2;
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+  color: #101828;
+  font-size: 17px;
+  line-height: 1;
+  box-shadow: var(--pp-shadow-xs);
+}
+
+.pp-nearby-info strong {
+  display: block;
+  font-size: 14px;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.pp-nearby-info__addr,
+.pp-nearby-info__meta {
+  margin-top: 5px;
+  color: #667085;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.pp-petAvatar,
+.pp-userAvatar,
+.pp-userAvatar__img {
+  border-radius: 50% !important;
+}
+
+.pp-petAvatar,
+.pp-userAvatar__img {
+  object-fit: cover;
+  object-position: center;
+}
+
+.pp-petList__item {
+  background:
+    radial-gradient(220px 100px at 0% 0%, rgba(91, 55, 255, 0.055), transparent 70%),
+    var(--pp-card);
+  border-color: var(--pp-border);
+}
+
+.pp-petList__row > div:first-child {
+  align-items: center;
+}
+
+.pp-petList__row .pp-petAvatar {
+  width: 58px !important;
+  height: 58px !important;
+  min-width: 58px;
+  border: 3px solid #fff;
+  box-shadow: 0 10px 24px rgba(16, 24, 40, 0.12);
+}
+
+.pp-profilePhotoEdit {
+  position: relative;
+  cursor: pointer;
+  border: 0;
+  padding: 0;
+  transition: transform 180ms ease, filter 180ms ease;
+}
+
+.pp-profilePhotoEdit:hover {
+  transform: translateY(-1px) scale(1.02);
+}
+
+.pp-profilePhotoEdit__badge {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #5b37ff, #2f80ff);
+  color: #fff;
+  border: 2px solid #fff;
+  font-size: 13px;
+  box-shadow: 0 10px 20px rgba(91, 55, 255, 0.26);
+}
+
+.pp-book-serviceBar__label {
+  text-align: center;
+}
+
+.pp-book-serviceTabs {
+  justify-content: center;
+  width: 100%;
+}
+
+.pp-book-pill {
+  border-radius: 999px;
+  padding: 9px 13px;
+}
+
+.pp-book-calendar {
+  display: grid;
+  gap: 10px;
+}
+
+.pp-book-calendar__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.pp-book-calendar__monthControls {
+  display: inline-grid;
+  grid-template-columns: 30px auto 30px;
+  align-items: center;
+  gap: 4px;
+  border-radius: 999px;
+  padding: 4px;
+  background: rgba(91, 55, 255, 0.08);
+}
+
+.pp-book-calendar__monthControls button {
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 999px;
+  background: #fff;
+  color: #5b37ff;
+  font-size: 18px;
+  font-weight: 950;
+}
+
+.pp-book-calendar__monthControls strong {
+  min-width: 118px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 950;
+  color: var(--pp-text);
+}
+
+.pp-book-calendarGrid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 5px;
+  padding: 10px;
+  border-radius: 20px;
+  background: rgba(91, 55, 255, 0.045);
+  border: 1px solid var(--pp-border);
+}
+
+.pp-book-calendarGrid__dow {
+  text-align: center;
+  color: var(--pp-text-2);
+  font-size: 10px;
+  font-weight: 950;
+}
+
+.pp-book-calendarDay {
+  aspect-ratio: 1;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--pp-text);
+  font-size: 12px;
+  font-weight: 900;
+  transition: transform 160ms ease, background 160ms ease, color 160ms ease, box-shadow 160ms ease;
+}
+
+.pp-book-calendarDay.is-muted {
+  color: rgba(102, 112, 133, 0.45);
+}
+
+.pp-book-calendarDay:disabled {
+  opacity: 0.28;
+}
+
+.pp-book-calendarDay.is-active {
+  background: linear-gradient(135deg, #5b37ff, #2f80ff);
+  color: #fff;
+  box-shadow: 0 10px 20px -12px rgba(91, 55, 255, 0.8);
+  transform: scale(1.04);
+}
+
+.pp-book-weekSchedule {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(48px, 1fr));
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.pp-book-weekDay {
+  min-height: 54px;
+  border: 1px solid var(--pp-border);
+  border-radius: 16px;
+  background: var(--pp-card);
+  color: var(--pp-text);
+  font-weight: 950;
+  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+}
+
+.pp-book-weekDay span,
+.pp-book-weekDay strong {
+  display: block;
+}
+
+.pp-book-weekDay span {
+  font-size: 10px;
+  color: var(--pp-text-2);
+}
+
+.pp-book-weekDay strong {
+  margin-top: 3px;
+  font-size: 15px;
+}
+
+.pp-book-weekDay.is-active {
+  background: rgba(91, 55, 255, 0.1);
+  border-color: rgba(91, 55, 255, 0.34);
+  color: #5b37ff;
+  transform: translateY(-1px);
+}
+
+.pp-book-slot--rich.is-active {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 12px 26px -16px rgba(91, 55, 255, 0.8);
+}
+
+@media (max-width: 720px) {
+  .pp-nearby-page {
+    padding-top: 0;
+  }
+
+  .pp-nearby-body--sheet {
+    gap: 12px;
+  }
+
+  .pp-nearby-mapWrap {
+    border-radius: 22px;
+  }
+
+  .pp-nearby-sheet {
+    padding: 12px;
+    border-radius: 22px;
+  }
+
+  .pp-nearby-list > li {
+    grid-template-columns: 1fr;
+  }
+
+  .pp-nearby-listItem__maps {
+    justify-self: stretch;
+    text-align: center;
+  }
+
+  .pp-heroCard {
+    align-items: center;
+    gap: 14px;
+    padding: 16px;
+  }
+
+  .pp-book-serviceTabs {
+    gap: 7px;
+  }
+}
+
+html[data-theme="dark"] .pp-nearby-list > li,
+html[data-theme="dark"] .pp-book-calendarGrid,
+html[data-theme="dark"] .pp-book-weekDay {
+  background: #202a44;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+html[data-theme="dark"] .pp-nearby-listItem__maps,
+html[data-theme="dark"] .pp-nearby-listItem__meta span,
+html[data-theme="dark"] .pp-book-calendar__monthControls {
+  background: rgba(91, 55, 255, 0.18);
+  color: #d6ceff;
+}
+
+html[data-theme="dark"] .pp-book-calendar__monthControls button {
+  background: #12182a;
+  color: #d6ceff;
+}

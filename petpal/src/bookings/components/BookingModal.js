@@ -12,16 +12,39 @@ function toYmd(d) {
   return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 }
 
-function nextDays(n) {
-  const out = [];
-  const start = new Date();
-  start.setHours(0, 0, 0, 0);
-  for (let i = 0; i < n; i += 1) {
-    const d = new Date(start);
-    d.setDate(start.getDate() + i);
-    out.push({ key: toYmd(d), date: d, label: d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }) });
-  }
-  return out;
+function addDays(date, count) {
+  const d = new Date(date);
+  d.setDate(d.getDate() + count);
+  return d;
+}
+
+function monthGrid(monthDate) {
+  const first = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
+  const start = addDays(first, -first.getDay());
+  return Array.from({ length: 42 }, (_, idx) => {
+    const date = addDays(start, idx);
+    return {
+      key: toYmd(date),
+      date,
+      inMonth: date.getMonth() === monthDate.getMonth(),
+      isPast: date < new Date(new Date().setHours(0, 0, 0, 0)),
+    };
+  });
+}
+
+function weekFor(dayKey) {
+  const selected = new Date(`${dayKey}T00:00:00`);
+  const start = addDays(selected, -selected.getDay());
+  return Array.from({ length: 7 }, (_, idx) => {
+    const date = addDays(start, idx);
+    return {
+      key: toYmd(date),
+      date,
+      label: date.toLocaleDateString(undefined, { weekday: 'short' }),
+      day: date.getDate(),
+      isPast: date < new Date(new Date().setHours(0, 0, 0, 0)),
+    };
+  });
 }
 
 function formatTime(date) {
@@ -47,7 +70,7 @@ function slotPeriod(slot) {
  * @param {{
  *   open: boolean,
  *   provider: Record<string, unknown> | null,
- *   serviceTab: 'vet'|'saloon'|'hotel',
+ *   serviceTab: 'vet'|'saloon'|'hotel'|'bath',
  *   onClose: () => void,
  *   t: (k: string, v?: object) => string,
  * }} props
@@ -57,6 +80,7 @@ export function BookingModal({ open, provider, serviceTab, onClose, t }) {
   const [services, setServices] = useState([]);
   const [serviceId, setServiceId] = useState('');
   const [dayKey, setDayKey] = useState(() => toYmd(new Date()));
+  const [monthDate, setMonthDate] = useState(() => new Date());
   const [slots, setSlots] = useState([]);
   const [slotId, setSlotId] = useState('');
   const [loadingSlots, setLoadingSlots] = useState(false);
@@ -89,7 +113,11 @@ export function BookingModal({ open, provider, serviceTab, onClose, t }) {
 
   const filteredServices = useMemo(() => {
     const act = services.filter((s) => s && s.active !== false);
-    const forTab = act.filter((s) => String(s.type || 'vet') === serviceTab);
+    const forTab = act.filter((s) => {
+      const type = String(s.type || 'vet');
+      if (serviceTab === 'bath') return type === 'bath' || /bath/i.test(String(s.name || ''));
+      return type === serviceTab;
+    });
     if (forTab.length) return forTab;
     return act;
   }, [services, serviceTab]);
@@ -102,16 +130,28 @@ export function BookingModal({ open, provider, serviceTab, onClose, t }) {
     setServiceId((prev) => (filteredServices.some((s) => s.id === prev) ? prev : filteredServices[0].id));
   }, [filteredServices]);
 
-  const days = useMemo(() => nextDays(14), []);
+  const monthDays = useMemo(() => monthGrid(monthDate), [monthDate]);
+  const weekDays = useMemo(() => weekFor(dayKey), [dayKey]);
+  const monthLabel = monthDate.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
   const selectedService = useMemo(() => filteredServices.find((s) => s.id === serviceId) || null, [filteredServices, serviceId]);
+  const uniqueSlots = useMemo(() => {
+    const seen = new Set();
+    return slots.filter((sl) => {
+      const start = slotDate(sl, 'startAt');
+      const key = start ? start.toISOString() : sl.id;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [slots]);
   const groupedSlots = useMemo(() => {
-    return slots.reduce((acc, sl) => {
+    return uniqueSlots.reduce((acc, sl) => {
       const key = slotPeriod(sl);
       acc[key] = acc[key] || [];
       acc[key].push(sl);
       return acc;
     }, {});
-  }, [slots]);
+  }, [uniqueSlots]);
 
   useEffect(() => {
     if (!open || !companyId || !serviceId || !dayKey) {
@@ -126,9 +166,13 @@ export function BookingModal({ open, provider, serviceTab, onClose, t }) {
       try {
         const after = new Date(`${dayKey}T00:00:00`);
         const rows = isDemo ? getDemoSlots(companyId, serviceId, { after }) : await fetchOpenSlots(companyId, serviceId, { after });
+        const sameDayRows = rows.filter((slot) => {
+          const start = slotDate(slot, 'startAt');
+          return start ? toYmd(start) === dayKey : true;
+        });
         if (cancelled) return;
-        setSlots(rows);
-        setSlotId(rows[0]?.id || '');
+        setSlots(sameDayRows);
+        setSlotId(sameDayRows[0]?.id || '');
       } catch (e) {
         if (!cancelled) setSlotErr(e?.message || 'failed');
       } finally {
@@ -142,7 +186,9 @@ export function BookingModal({ open, provider, serviceTab, onClose, t }) {
 
   useEffect(() => {
     if (!open) {
-      setDayKey(toYmd(new Date()));
+      const today = new Date();
+      setDayKey(toYmd(today));
+      setMonthDate(today);
       setSlots([]);
       setSlotId('');
       setSlotErr('');
@@ -213,17 +259,48 @@ export function BookingModal({ open, provider, serviceTab, onClose, t }) {
               )}
             </label>
 
-            <div className="pp-book-field">
-              <span className="pp-book-field__label">{t('bookingsHub.modalPickDate')}</span>
-              <div className="pp-book-dateRow">
-                {days.map((d) => (
+            <div className="pp-book-field pp-book-calendar">
+              <div className="pp-book-calendar__head">
+                <span className="pp-book-field__label">{t('bookingsHub.modalPickDate')}</span>
+                <div className="pp-book-calendar__monthControls" aria-label="Change month">
+                  <button type="button" onClick={() => setMonthDate((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))}>‹</button>
+                  <strong>{monthLabel}</strong>
+                  <button type="button" onClick={() => setMonthDate((prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1))}>›</button>
+                </div>
+              </div>
+              <div className="pp-book-calendarGrid" role="grid" aria-label={monthLabel}>
+                {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, idx) => (
+                  <span key={`${d}-${idx}`} className="pp-book-calendarGrid__dow">{d}</span>
+                ))}
+                {monthDays.map((d) => (
                   <button
                     key={d.key}
                     type="button"
-                    className={`pp-book-dateChip ${d.key === dayKey ? 'is-active' : ''}`}
-                    onClick={() => setDayKey(d.key)}
+                    className={`pp-book-calendarDay ${d.key === dayKey ? 'is-active' : ''} ${d.inMonth ? '' : 'is-muted'}`}
+                    onClick={() => {
+                      setDayKey(d.key);
+                      setSlotId('');
+                    }}
+                    disabled={d.isPast}
                   >
-                    {d.label}
+                    {d.date.getDate()}
+                  </button>
+                ))}
+              </div>
+              <div className="pp-book-weekSchedule" aria-label="Selected week">
+                {weekDays.map((d) => (
+                  <button
+                    key={d.key}
+                    type="button"
+                    className={`pp-book-weekDay ${d.key === dayKey ? 'is-active' : ''}`}
+                    onClick={() => {
+                      setDayKey(d.key);
+                      setMonthDate(new Date(d.date.getFullYear(), d.date.getMonth(), 1));
+                    }}
+                    disabled={d.isPast}
+                  >
+                    <span>{d.label}</span>
+                    <strong>{d.day}</strong>
                   </button>
                 ))}
               </div>
@@ -233,7 +310,7 @@ export function BookingModal({ open, provider, serviceTab, onClose, t }) {
               <span className="pp-book-field__label">{t('bookingsHub.modalPickSlot')}</span>
               {selectedService ? (
                 <p className="pp-book-muted pp-book-muted--sm" style={{ marginTop: 4 }}>
-                  {selectedService.durationMin || 30} mins {selectedService.price ? `• ${selectedService.price}` : ''}
+                  {selectedService.durationMin || 30} mins
                 </p>
               ) : null}
               {loadingSlots ? <p className="pp-book-muted">{t('bookingsHub.modalLoadingSlots')}</p> : null}
