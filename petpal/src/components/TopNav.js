@@ -81,9 +81,6 @@ export default function TopNav() {
         <nav className="hidden min-w-0 flex-1 items-center justify-center gap-1 lg:flex" aria-label="Primary">
           {user ? (
             <>
-              <NavLink className={navItemClassName} to="/dashboard" end>
-                {t('nav.dashboard')}
-              </NavLink>
               <NavLink
                 to="/premium/lost"
                 className={({ isActive }) =>
@@ -94,9 +91,6 @@ export default function TopNav() {
               </NavLink>
               <NavLink className={navItemClassName} to="/community">
                 {t('nav.community')}
-              </NavLink>
-              <NavLink className={navItemClassName} to="/leaderboard">
-                {t('nav.leaderboard')}
               </NavLink>
               <NavLink className={navItemClassName} to="/nearby">
                 {t('nav.nearby')}
@@ -157,6 +151,14 @@ export default function TopNav() {
                   <Link className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-petpal-ink no-underline transition hover:bg-petpal-soft" to="/profile" role="menuitem" onClick={() => setAccountMenuOpen(false)}>
                     <span aria-hidden>👤</span>
                     <span>{t('nav.profile')}</span>
+                  </Link>
+                  <Link className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-petpal-ink no-underline transition hover:bg-petpal-soft" to="/dashboard" role="menuitem" onClick={() => setAccountMenuOpen(false)}>
+                    <span aria-hidden>📊</span>
+                    <span>{t('nav.dashboard')}</span>
+                  </Link>
+                  <Link className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-petpal-ink no-underline transition hover:bg-petpal-soft" to="/leaderboard" role="menuitem" onClick={() => setAccountMenuOpen(false)}>
+                    <span aria-hidden>🏆</span>
+                    <span>{t('nav.leaderboard')}</span>
                   </Link>
                   <Link className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-petpal-ink no-underline transition hover:bg-petpal-soft" to="/pets" role="menuitem" onClick={() => setAccountMenuOpen(false)}>
                     <span aria-hidden>🐾</span>

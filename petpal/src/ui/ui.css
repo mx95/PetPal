@@ -8060,7 +8060,23 @@ html[data-theme="dark"] .pp-publicHero__eyebrow {
 }
 
 .pp-hubPackList__name {
+  display: block;
   font-weight: 800;
+  line-height: 1.2;
+}
+
+.pp-hubPackList__meta {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pp-hubPackList__sub {
+  display: block;
+  color: #667085;
+  font-size: 13px;
+  line-height: 1.25;
 }
 
 .pp-hubLb {
