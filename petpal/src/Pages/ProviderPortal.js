@@ -15,15 +15,6 @@ import { createClientPet, deleteClientPet, subscribeClientPets } from '../bookin
 import { publishProviderProfile } from '../bookings/providerDirectoryFirestore';
 import { getDemoBusinessAccount, getDemoBusinessAccounts, getDemoSlots } from '../bookings/demoBookingData';
 
-function fmtLocal(ms) {
-  if (!ms) return '';
-  try {
-    return new Date(ms).toLocaleString();
-  } catch {
-    return '';
-  }
-}
-
 function businessTypeLabel(providerTypes = {}) {
   if (providerTypes.vet) return 'Vet';
   if (providerTypes.shop) return 'Pet shop';
@@ -57,14 +48,205 @@ function serviceIcon(type) {
   return '🐾';
 }
 
-function demoSlotGroups(slots) {
-  return slots.reduce((acc, slot) => {
-    const start = slot.startAt?.toDate?.();
-    const key = start ? start.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : 'Upcoming';
-    acc[key] = acc[key] || [];
-    acc[key].push(slot);
-    return acc;
-  }, {});
+function startOfDay(date) {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+function addDays(date, days) {
+  const d = new Date(date);
+  d.setDate(d.getDate() + days);
+  return d;
+}
+
+function monthDays(date) {
+  const first = new Date(date.getFullYear(), date.getMonth(), 1);
+  const start = addDays(first, -first.getDay());
+  return Array.from({ length: 42 }, (_, idx) => addDays(start, idx));
+}
+
+function weekDays(date) {
+  const selected = startOfDay(date);
+  const start = addDays(selected, -selected.getDay());
+  return Array.from({ length: 7 }, (_, idx) => addDays(start, idx));
+}
+
+function dateKey(date) {
+  const d = startOfDay(date);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function slotDate(slot) {
+  if (slot.startAtMs) return new Date(slot.startAtMs);
+  if (slot.startAt?.toDate) return slot.startAt.toDate();
+  if (slot.startAt instanceof Date) return slot.startAt;
+  return null;
+}
+
+function slotEndDate(slot) {
+  if (slot.endAtMs) return new Date(slot.endAtMs);
+  if (slot.endAt?.toDate) return slot.endAt.toDate();
+  if (slot.endAt instanceof Date) return slot.endAt;
+  return null;
+}
+
+function slotTimeLabel(slot) {
+  const start = slotDate(slot);
+  if (!start) return 'Slot';
+  return start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+function slotPeriod(slot) {
+  const start = slotDate(slot);
+  const hour = start ? start.getHours() : 9;
+  if (hour < 12) return 'Morning';
+  if (hour < 17) return 'Afternoon';
+  return 'Evening';
+}
+
+function CalendarAvailabilityPanel({ slots, servicesById, onToggleSlot, addPanel, emptyText = 'No availability yet.' }) {
+  const firstSlotDate = slotDate(slots[0]);
+  const [selectedDate, setSelectedDate] = useState(() => firstSlotDate || new Date());
+  const [visibleMonth, setVisibleMonth] = useState(() => firstSlotDate || new Date());
+  const [view, setView] = useState('month');
+  const [showAdd, setShowAdd] = useState(false);
+  const [selectedSlotId, setSelectedSlotId] = useState('');
+
+  const slotsByDay = useMemo(() => {
+    const grouped = new Map();
+    slots.forEach((slot) => {
+      const start = slotDate(slot);
+      if (!start) return;
+      const key = dateKey(start);
+      const rows = grouped.get(key) || [];
+      rows.push(slot);
+      grouped.set(key, rows);
+    });
+    grouped.forEach((rows) => rows.sort((a, b) => (slotDate(a)?.getTime() || 0) - (slotDate(b)?.getTime() || 0)));
+    return grouped;
+  }, [slots]);
+
+  const calendarDays = view === 'week' ? weekDays(selectedDate) : monthDays(visibleMonth);
+  const selectedKey = dateKey(selectedDate);
+  const selectedSlots = slotsByDay.get(selectedKey) || [];
+  const periods = ['Morning', 'Afternoon', 'Evening'];
+  const monthLabel = visibleMonth.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+
+  const selectDate = (day) => {
+    setSelectedDate(day);
+    setVisibleMonth(new Date(day.getFullYear(), day.getMonth(), 1));
+  };
+
+  return (
+    <section className="pp-providerPanel pp-providerCalendarPanel">
+      <div className="pp-providerPanel__head">
+        <div>
+          <h2>Availability</h2>
+          <p>Calendar scheduling with fast slot controls.</p>
+        </div>
+        <div className="pp-providerCalendarControls">
+          <div className="pp-providerCalendarToggle" aria-label="Calendar view">
+            <button type="button" className={view === 'month' ? 'is-active' : ''} onClick={() => setView('month')}>Month</button>
+            <button type="button" className={view === 'week' ? 'is-active' : ''} onClick={() => setView('week')}>Week</button>
+          </div>
+          <button type="button" className="pp-btn pp-btn--ghost" onClick={() => selectDate(new Date())}>Today</button>
+          <button type="button" className="pp-btn pp-btn--primary" onClick={() => setShowAdd((v) => !v)}>+ Add availability</button>
+        </div>
+      </div>
+
+      {showAdd ? (
+        <div className="pp-providerAddSheet">
+          <div className="pp-providerAddSheet__head">
+            <strong>Quick add availability</strong>
+            <button type="button" onClick={() => setShowAdd(false)}>Close</button>
+          </div>
+          {addPanel || <p>Choose a service, date, and time range to publish new bookable slots.</p>}
+        </div>
+      ) : null}
+
+      <div className="pp-providerCalendarLayout">
+        <div className="pp-providerCalendarCard">
+          <div className="pp-providerCalendarCard__top">
+            <button type="button" aria-label="Previous month" onClick={() => setVisibleMonth((d) => new Date(d.getFullYear(), d.getMonth() - 1, 1))}>‹</button>
+            <strong>{monthLabel}</strong>
+            <button type="button" aria-label="Next month" onClick={() => setVisibleMonth((d) => new Date(d.getFullYear(), d.getMonth() + 1, 1))}>›</button>
+          </div>
+          <div className="pp-providerCalendarWeek">
+            {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, idx) => <span key={`${d}-${idx}`}>{d}</span>)}
+          </div>
+          <div className={`pp-providerCalendarGrid ${view === 'week' ? 'is-week' : ''}`}>
+            {calendarDays.map((day) => {
+              const key = dateKey(day);
+              const daySlots = slotsByDay.get(key) || [];
+              const isSelected = key === selectedKey;
+              const inMonth = day.getMonth() === visibleMonth.getMonth();
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  className={`${isSelected ? 'is-selected' : ''} ${!inMonth && view === 'month' ? 'is-muted' : ''} ${daySlots.length ? 'has-slots' : ''}`}
+                  onClick={() => selectDate(day)}
+                >
+                  <span>{day.getDate()}</span>
+                  {daySlots.length ? <em>{Math.min(daySlots.length, 4)}</em> : null}
+                </button>
+              );
+            })}
+          </div>
+          <div className="pp-providerCalendarStrip" aria-label="Mobile date picker">
+            {calendarDays.map((day) => {
+              const key = dateKey(day);
+              return (
+                <button key={`strip-${key}`} type="button" className={key === selectedKey ? 'is-selected' : ''} onClick={() => selectDate(day)}>
+                  <small>{day.toLocaleDateString(undefined, { weekday: 'short' })}</small>
+                  <strong>{day.getDate()}</strong>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="pp-providerDaySchedule">
+          <div className="pp-providerDaySchedule__head">
+            <span>Selected date</span>
+            <strong>{selectedDate.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}</strong>
+          </div>
+          {selectedSlots.length === 0 ? <div className="pp-providerCalendarEmpty">{emptyText}</div> : null}
+          {periods.map((period) => {
+            const periodSlots = selectedSlots.filter((slot) => slotPeriod(slot) === period);
+            if (!periodSlots.length) return null;
+            return (
+              <div key={period} className="pp-providerTimePeriod">
+                <div className="pp-providerTimePeriod__title">{period}</div>
+                <div className="pp-providerTimeSlots">
+                  {periodSlots.map((slot) => {
+                    const status = slot.status || 'open';
+                    const end = slotEndDate(slot);
+                    return (
+                      <button
+                        key={slot.id}
+                        type="button"
+                        className={`is-${status} ${selectedSlotId === slot.id ? 'is-selected' : ''}`}
+                        title={`${servicesById.get(slot.serviceId) || 'Service'}${end ? ` ends ${end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : ''}`}
+                        onClick={() => {
+                          setSelectedSlotId(slot.id);
+                          if (onToggleSlot) onToggleSlot(slot);
+                        }}
+                      >
+                        <strong>{slotTimeLabel(slot)}</strong>
+                        <small>{status === 'open' ? 'Available' : status}</small>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
 }
 
 function DemoBusinessSwitcher({ businesses, onSelect, activeId = '', compact = false }) {
@@ -193,40 +375,17 @@ function DemoServicesPanel({ services }) {
 }
 
 function DemoAvailabilityPanel({ business, slots }) {
-  const groups = demoSlotGroups(slots);
+  const servicesById = useMemo(() => {
+    const m = new Map();
+    business.services.forEach((s) => m.set(s.id, s.name));
+    return m;
+  }, [business.services]);
   return (
-    <section className="pp-providerPanel">
-      <div className="pp-providerPanel__head">
-        <div>
-          <h2>Availability</h2>
-          <p>Grouped schedule with quick slot states.</p>
-        </div>
-        <div className="pp-providerPanel__actions">
-          <button type="button" className="pp-btn pp-btn--ghost" disabled>Week</button>
-          <button type="button" className="pp-btn pp-btn--primary" disabled>+ Add availability</button>
-        </div>
-      </div>
-      <div className="pp-providerTimeline">
-        {Object.entries(groups).map(([day, daySlots]) => (
-          <div key={day} className="pp-providerTimeline__day">
-            <div className="pp-providerTimeline__date">
-              <strong>{day}</strong>
-              <small>{business.displayName}</small>
-            </div>
-            <div className="pp-providerTimeline__slots">
-              {daySlots.map((slot, idx) => {
-                const start = slot.startAt?.toDate?.();
-                return (
-                  <button key={slot.id} type="button" className={idx % 3 === 2 ? 'is-blocked' : 'is-open'} disabled>
-                    {start ? start.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : 'Slot'}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        ))}
-      </div>
-    </section>
+    <CalendarAvailabilityPanel
+      slots={slots.map((slot, idx) => ({ ...slot, status: idx % 5 === 3 ? 'booked' : slot.status || 'open' }))}
+      servicesById={servicesById}
+      emptyText="No demo slots on this date."
+    />
   );
 }
 
@@ -649,65 +808,51 @@ function Availability({ companyId }) {
   }, [services]);
 
   return (
-    <div className="pp-grid2" style={{ gap: 14 }}>
-      <div className="pp-card">
-        <div className="pp-card__title">Create slot</div>
-        {err ? <div className="pp-error">{err}</div> : null}
-        <form onSubmit={onCreate} className="pp-form">
-          <label className="pp-field">
-            <span className="pp-field__label">Service</span>
-            <select value={serviceId} onChange={(e) => setServiceId(e.target.value)}>
-              {services.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <div className="pp-modalGrid2">
+    <>
+      {err ? <div className="pp-error" style={{ marginBottom: 10 }}>{err}</div> : null}
+      <CalendarAvailabilityPanel
+        slots={slots}
+        servicesById={byServiceName}
+        onToggleSlot={(s) => setSlotStatus(companyId, s.id, s.status === 'open' ? 'blocked' : 'open')}
+        addPanel={(
+          <form onSubmit={onCreate} className="pp-form pp-providerQuickAdd">
             <label className="pp-field">
-              <span className="pp-field__label">Date</span>
-              <input type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
+              <span className="pp-field__label">Service</span>
+              <select value={serviceId} onChange={(e) => setServiceId(e.target.value)}>
+                {services.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
             </label>
-            <label className="pp-field">
-              <span className="pp-field__label">Start</span>
-              <input type="time" value={start} onChange={(e) => setStart(e.target.value)} required />
-            </label>
-            <label className="pp-field">
-              <span className="pp-field__label">End</span>
-              <input type="time" value={end} onChange={(e) => setEnd(e.target.value)} required />
-            </label>
-          </div>
-          <button className="pp-btn pp-btn--primary" type="submit" disabled={!services.length}>
-            Add slot
-          </button>
-        </form>
-      </div>
-
-      <div className="pp-card">
-        <div className="pp-card__title">Slots</div>
-        {slots.length === 0 ? <div className="pp-muted">No availability yet.</div> : null}
-        <div className="pp-stack" style={{ marginTop: 10 }}>
-          {slots.map((s) => (
-            <div key={s.id} className="pp-rowBetween pp-rowBetween--card">
-              <div>
-                <div style={{ fontWeight: 900 }}>{byServiceName.get(s.serviceId) || 'Service'}</div>
-                <div className="pp-muted" style={{ fontSize: 13 }}>
-                  {fmtLocal(s.startAtMs)} → {fmtLocal(s.endAtMs)} • {s.status}
-                </div>
-              </div>
-              <button
-                type="button"
-                className="pp-btn pp-btn--ghost"
-                onClick={() => setSlotStatus(companyId, s.id, s.status === 'open' ? 'blocked' : 'open')}
-              >
-                {s.status === 'open' ? 'Block' : 'Open'}
-              </button>
+            <div className="pp-modalGrid2">
+              <label className="pp-field">
+                <span className="pp-field__label">Date</span>
+                <input type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
+              </label>
+              <label className="pp-field">
+                <span className="pp-field__label">Start</span>
+                <input type="time" value={start} onChange={(e) => setStart(e.target.value)} required />
+              </label>
+              <label className="pp-field">
+                <span className="pp-field__label">End</span>
+                <input type="time" value={end} onChange={(e) => setEnd(e.target.value)} required />
+              </label>
             </div>
-          ))}
-        </div>
-      </div>
-    </div>
+            <div className="pp-providerTemplates">
+              <span>Quick templates</span>
+              <button type="button" onClick={() => { setStart('09:00'); setEnd('17:00'); }}>Full day</button>
+              <button type="button" onClick={() => { setStart('09:00'); setEnd('12:00'); }}>Morning</button>
+              <button type="button" onClick={() => { setStart('14:00'); setEnd('18:00'); }}>Afternoon</button>
+            </div>
+            <button className="pp-btn pp-btn--primary" type="submit" disabled={!services.length}>
+              Add slot
+            </button>
+          </form>
+        )}
+      />
+    </>
   );
 }
 
