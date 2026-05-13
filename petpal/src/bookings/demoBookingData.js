@@ -9,6 +9,8 @@ export const DEMO_PROVIDERS = [
     priceTier: 2,
     lat: 37.9838,
     lng: 23.7275,
+    workingHours: 'Mon-Fri 09:00-18:00',
+    nextAvailable: 'Next slot 10:00 AM',
   },
   {
     id: 'example_groom',
@@ -20,6 +22,8 @@ export const DEMO_PROVIDERS = [
     priceTier: 1,
     lat: 38.0744,
     lng: 23.8125,
+    workingHours: 'Tue-Sat 10:00-19:00',
+    nextAvailable: 'Bath slots today',
   },
   {
     id: 'example_hotel',
@@ -31,6 +35,56 @@ export const DEMO_PROVIDERS = [
     priceTier: 3,
     lat: 37.8616,
     lng: 23.7517,
+    workingHours: '24/7 boarding',
+    nextAvailable: 'Tours this week',
+  },
+  {
+    id: 'example_shop',
+    displayName: 'TailWag Market Pet Shop',
+    address: '18 Makariou Avenue, Nicosia',
+    phone: '+357 22 000 001',
+    providerTypes: { shop: true },
+    rating: 4.7,
+    lat: 35.1694,
+    lng: 33.3665,
+    workingHours: 'Mon-Sat 09:00-20:00',
+    nextAvailable: 'Pickup consultations',
+  },
+  {
+    id: 'example_daycare',
+    displayName: 'Happy Paws Daycare',
+    address: '7 Park Lane, Strovolos',
+    phone: '+357 22 000 002',
+    providerTypes: { daycare: true },
+    rating: 4.8,
+    lat: 35.1453,
+    lng: 33.3557,
+    workingHours: 'Mon-Fri 07:30-18:30',
+    nextAvailable: 'Trial day tomorrow',
+  },
+  {
+    id: 'example_cafe',
+    displayName: 'Bark & Brew Pet Cafe',
+    address: '4 Ledra Street, Nicosia',
+    phone: '+357 22 000 003',
+    providerTypes: { cafe: true },
+    rating: 4.5,
+    lat: 35.1738,
+    lng: 33.3639,
+    workingHours: 'Daily 08:00-22:00',
+    nextAvailable: 'Event tables open',
+  },
+  {
+    id: 'example_park',
+    displayName: 'Green Leash Dog Park',
+    address: 'Municipal Park, Engomi',
+    phone: '+357 22 000 004',
+    providerTypes: { park: true },
+    rating: 4.6,
+    lat: 35.1601,
+    lng: 33.3214,
+    workingHours: 'Daily 06:00-21:00',
+    nextAvailable: 'Training slots weekend',
   },
 ];
 
@@ -46,6 +100,22 @@ const DEMO_SERVICES = {
   example_hotel: [
     { id: 'demo_hotel_daycare', type: 'hotel', name: 'Day care trial', durationMin: 240, description: 'Half-day care session', active: true },
     { id: 'demo_hotel_night', type: 'hotel', name: 'Overnight stay', durationMin: 720, description: 'One night boarding', active: true },
+  ],
+  example_shop: [
+    { id: 'demo_shop_food', type: 'shop', name: 'Nutrition consultation', durationMin: 30, description: 'Food, treats, and care product guidance', active: true },
+    { id: 'demo_shop_pickup', type: 'shop', name: 'Click-and-collect fitting', durationMin: 20, description: 'Harness, collar, and essentials fitting', active: true },
+  ],
+  example_daycare: [
+    { id: 'demo_daycare_trial', type: 'daycare', name: 'Daycare temperament trial', durationMin: 60, description: 'Meet the team and assess social comfort', active: true },
+    { id: 'demo_daycare_half', type: 'daycare', name: 'Half-day daycare', durationMin: 240, description: 'Supervised play and rest session', active: true },
+  ],
+  example_cafe: [
+    { id: 'demo_cafe_table', type: 'cafe', name: 'Pet-friendly table booking', durationMin: 90, description: 'Reserve a table with space for your pet', active: true },
+    { id: 'demo_cafe_event', type: 'cafe', name: 'Puppy social event', durationMin: 120, description: 'Small social gathering for pets and owners', active: true },
+  ],
+  example_park: [
+    { id: 'demo_park_training', type: 'park', name: 'Intro training session', durationMin: 45, description: 'Recall, leash manners, and park etiquette', active: true },
+    { id: 'demo_park_social', type: 'park', name: 'Supervised social hour', durationMin: 60, description: 'Guided play group with a trainer', active: true },
   ],
 };
 
@@ -74,6 +144,42 @@ export function getDemoProvider(providerId) {
 
 export function getDemoServices(providerId) {
   return (DEMO_SERVICES[providerId] || []).map((s) => ({ ...s }));
+}
+
+export function getDemoBusinessAccounts() {
+  return DEMO_PROVIDERS.map((provider) => ({
+    ...provider,
+    bookingEnabled: true,
+    sponsored: provider.id === 'example_vet' || provider.id === 'example_groom',
+    recommended: true,
+    services: getDemoServices(provider.id),
+    bookings: [
+      {
+        id: `${provider.id}_booking_1`,
+        petName: 'Odin',
+        ownerName: 'Sotiris',
+        status: 'booked',
+        serviceName: getDemoServices(provider.id)[0]?.name || 'Appointment',
+        startAtLabel: 'Today, 10:00 AM',
+      },
+      {
+        id: `${provider.id}_booking_2`,
+        petName: 'Adonis',
+        ownerName: 'Maria',
+        status: 'pending',
+        serviceName: getDemoServices(provider.id)[1]?.name || 'Follow-up',
+        startAtLabel: 'Tomorrow, 2:30 PM',
+      },
+    ],
+    clientPets: [
+      { id: `${provider.id}_pet_odin`, name: 'Odin', ownerName: 'Sotiris', ownerPhone: '+357 99 111 222', trackingImei: '867488001234567' },
+      { id: `${provider.id}_pet_luna`, name: 'Luna', ownerName: 'Maria', ownerPhone: '+357 99 333 444', trackingImei: '' },
+    ],
+  }));
+}
+
+export function getDemoBusinessAccount(providerId) {
+  return getDemoBusinessAccounts().find((p) => p.id === providerId) || null;
 }
 
 export function getDemoSlots(providerId, serviceId, { after = new Date() } = {}) {

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Link, Navigate } from 'react-router-dom';
+import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
 import { useCompany } from '../company/CompanyContext';
 import {
@@ -13,6 +13,7 @@ import {
 } from '../bookings/bookingFirestore';
 import { createClientPet, deleteClientPet, subscribeClientPets } from '../bookings/providerPetsFirestore';
 import { publishProviderProfile } from '../bookings/providerDirectoryFirestore';
+import { getDemoBusinessAccount, getDemoBusinessAccounts, getDemoSlots } from '../bookings/demoBookingData';
 
 function fmtLocal(ms) {
   if (!ms) return '';
@@ -36,10 +37,194 @@ function TabButton({ active, onClick, children }) {
   );
 }
 
+function businessTypeLabel(providerTypes = {}) {
+  if (providerTypes.vet) return 'Vet';
+  if (providerTypes.shop) return 'Pet shop';
+  if (providerTypes.park) return 'Pet / dog park';
+  if (providerTypes.hotel) return 'Pet hotel & boarding';
+  if (providerTypes.bath || providerTypes.saloon) return 'Grooming & bath';
+  if (providerTypes.daycare) return 'Daycare';
+  if (providerTypes.cafe) return 'Pet cafe & events';
+  return 'All pet services';
+}
+
+function DemoBusinessSwitcher({ businesses, onSelect, compact = false }) {
+  return (
+    <section className={`pp-card pp-demoBusiness ${compact ? 'pp-demoBusiness--compact' : ''}`}>
+      <div className="pp-rowBetween" style={{ alignItems: 'flex-start', gap: 12 }}>
+        <div>
+          <div className="pp-badge">Demo business accounts</div>
+          <h2 className="pp-sectionTitle" style={{ margin: '8px 0 4px' }}>
+            Preview business perspective
+          </h2>
+          <p className="pp-subtle" style={{ margin: 0 }}>
+            Open a ready-made business portal for each nearby category to see what providers can manage.
+          </p>
+        </div>
+      </div>
+      <div className="pp-demoBusiness__grid">
+        {businesses.map((b) => (
+          <button key={b.id} type="button" className="pp-demoBusiness__card" onClick={() => onSelect(b.id)}>
+            <span className="pp-demoBusiness__type">{businessTypeLabel(b.providerTypes)}</span>
+            <strong>{b.displayName}</strong>
+            <small>{b.workingHours || 'Open today'}</small>
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function DemoProviderPortal({ business, businesses, onChangeBusiness }) {
+  const [tab, setTab] = useState('services');
+  const firstService = business.services[0];
+  const slots = firstService ? getDemoSlots(business.id, firstService.id, { after: new Date() }).slice(0, 6) : [];
+
+  return (
+    <div className="pp-pad pp-demoProviderPortal">
+      <div className="pp-pageHeader">
+        <div className="pp-pageHeader__copy">
+          <div className="pp-badge">Demo provider portal</div>
+          <div className="pp-pageHeader__title">{business.displayName}</div>
+          <div className="pp-pageHeader__subtitle">
+            {businessTypeLabel(business.providerTypes)} · {business.address}
+          </div>
+        </div>
+        <Link className="pp-pageHeader__back" to="/bookings">
+          View customer booking page
+        </Link>
+      </div>
+
+      <DemoBusinessSwitcher businesses={businesses} onSelect={onChangeBusiness} compact />
+
+      <div className="pp-card pp-demoProviderPortal__summary">
+        <div>
+          <span className="pp-label">Public listing</span>
+          <strong>Booking enabled</strong>
+          <small>{business.workingHours}</small>
+        </div>
+        <div>
+          <span className="pp-label">Today</span>
+          <strong>{business.bookings.length} bookings</strong>
+          <small>{business.nextAvailable}</small>
+        </div>
+        <div>
+          <span className="pp-label">Clients</span>
+          <strong>{business.clientPets.length} pets</strong>
+          <small>Visible in client pets</small>
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 14 }}>
+        <TabButton active={tab === 'services'} onClick={() => setTab('services')}>
+          Services
+        </TabButton>
+        <TabButton active={tab === 'availability'} onClick={() => setTab('availability')}>
+          Availability
+        </TabButton>
+        <TabButton active={tab === 'bookings'} onClick={() => setTab('bookings')}>
+          Bookings
+        </TabButton>
+        <TabButton active={tab === 'clientPets'} onClick={() => setTab('clientPets')}>
+          Client pets
+        </TabButton>
+      </div>
+
+      <div style={{ marginTop: 16 }}>
+        {tab === 'services' ? (
+          <div className="pp-card">
+            <div className="pp-card__title">Services</div>
+            <div className="pp-stack" style={{ marginTop: 10 }}>
+              {business.services.map((s) => (
+                <div key={s.id} className="pp-rowBetween pp-rowBetween--card">
+                  <div>
+                    <div style={{ fontWeight: 900 }}>{s.name}</div>
+                    <div className="pp-muted" style={{ fontSize: 13 }}>
+                      {s.type} · {s.durationMin} min · {s.active === false ? 'inactive' : 'active'}
+                    </div>
+                    {s.description ? <div className="pp-subtle" style={{ marginTop: 4 }}>{s.description}</div> : null}
+                  </div>
+                  <span className="pp-badge">Demo</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
+        {tab === 'availability' ? (
+          <div className="pp-card">
+            <div className="pp-card__title">Availability</div>
+            <div className="pp-stack" style={{ marginTop: 10 }}>
+              {slots.map((s) => (
+                <div key={s.id} className="pp-rowBetween pp-rowBetween--card">
+                  <div>
+                    <div style={{ fontWeight: 900 }}>{business.services.find((x) => x.id === s.serviceId)?.name || 'Service'}</div>
+                    <div className="pp-muted" style={{ fontSize: 13 }}>
+                      {s.startAt?.toDate ? s.startAt.toDate().toLocaleString() : ''} → {s.endAt?.toDate ? s.endAt.toDate().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : ''} · {s.status}
+                    </div>
+                  </div>
+                  <button type="button" className="pp-btn pp-btn--ghost" disabled>
+                    Block
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
+        {tab === 'bookings' ? (
+          <div className="pp-card">
+            <div className="pp-card__title">Bookings</div>
+            <div className="pp-stack" style={{ marginTop: 10 }}>
+              {business.bookings.map((b) => (
+                <div key={b.id} className="pp-rowBetween pp-rowBetween--card">
+                  <div>
+                    <div style={{ fontWeight: 900 }}>{b.petName}</div>
+                    <div className="pp-muted" style={{ fontSize: 13 }}>
+                      {b.serviceName} · {b.ownerName} · {b.startAtLabel} · {b.status}
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button type="button" className="pp-btn pp-btn--ghost" disabled>Complete</button>
+                    <button type="button" className="pp-btn pp-btn--ghost" disabled>Cancel</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
+        {tab === 'clientPets' ? (
+          <div className="pp-card">
+            <div className="pp-card__title">Client pets</div>
+            <div className="pp-stack" style={{ marginTop: 10 }}>
+              {business.clientPets.map((p) => (
+                <div key={p.id} className="pp-rowBetween pp-rowBetween--card">
+                  <div>
+                    <div style={{ fontWeight: 900 }}>{p.name}</div>
+                    <div className="pp-muted" style={{ fontSize: 13 }}>
+                      {p.ownerName} {p.ownerPhone ? `· ${p.ownerPhone}` : ''} {p.trackingImei ? `· IMEI ${p.trackingImei}` : ''}
+                    </div>
+                  </div>
+                  <button type="button" className="pp-btn pp-btn--ghost" disabled>Remove</button>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 export default function ProviderPortal() {
   const { user } = useAuth();
   const { profile, profileLoading, isApprovedCompany } = useCompany();
+  const [searchParams, setSearchParams] = useSearchParams();
   const companyId = user?.uid || null;
+  const demoBusinessId = searchParams.get('demoBusiness') || '';
+  const demoBusinesses = useMemo(() => getDemoBusinessAccounts(), []);
+  const demoBusiness = useMemo(() => getDemoBusinessAccount(demoBusinessId), [demoBusinessId]);
 
   const [tab, setTab] = useState('services'); // services|availability|bookings|clientPets
   const [publishErr, setPublishErr] = useState('');
@@ -58,6 +243,16 @@ export default function ProviderPortal() {
     bookingLimitPerDay: profile?.bookingLimitPerDay || 12,
     boostEnabled: Boolean(profile?.boostEnabled),
   }));
+
+  if (demoBusiness) {
+    return (
+      <DemoProviderPortal
+        business={demoBusiness}
+        businesses={demoBusinesses}
+        onChangeBusiness={(id) => setSearchParams({ demoBusiness: id })}
+      />
+    );
+  }
 
   const canUse = Boolean(companyId) && isApprovedCompany;
   if (!user) return <Navigate to="/login" replace />;
@@ -79,6 +274,7 @@ export default function ProviderPortal() {
             Apply as a business
           </Link>
         </div>
+        <DemoBusinessSwitcher businesses={demoBusinesses} onSelect={(id) => setSearchParams({ demoBusiness: id })} />
       </div>
     );
   }
@@ -92,6 +288,7 @@ export default function ProviderPortal() {
           <div className="pp-pageHeader__subtitle">Manage services, availability, bookings, and pets.</div>
         </div>
       </div>
+      <DemoBusinessSwitcher businesses={demoBusinesses} onSelect={(id) => setSearchParams({ demoBusiness: id })} compact />
 
       <div className="pp-card" style={{ marginTop: 14 }}>
         <div className="pp-card__title">Public listing</div>

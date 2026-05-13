@@ -160,6 +160,10 @@ export default function TopNav() {
                     <span aria-hidden>🏆</span>
                     <span>{t('nav.leaderboard')}</span>
                   </Link>
+                  <Link className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-petpal-ink no-underline transition hover:bg-petpal-soft" to="/provider?demoBusiness=example_vet" role="menuitem" onClick={() => setAccountMenuOpen(false)}>
+                    <span aria-hidden>🏪</span>
+                    <span>Business demos</span>
+                  </Link>
                   <Link className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-petpal-ink no-underline transition hover:bg-petpal-soft" to="/pets" role="menuitem" onClick={() => setAccountMenuOpen(false)}>
                     <span aria-hidden>🐾</span>
                     <span>{t('nav.myPets')}</span>

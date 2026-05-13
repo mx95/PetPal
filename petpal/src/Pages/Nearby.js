@@ -284,10 +284,10 @@ function NearbyMap({ apiKey }) {
         )}
       </p>
 
-      <div className="pp-nearby-body pp-nearby-body--sheet">
-        <div className="pp-nearby-mapStage">
+      <div className="pp-nearby-body pp-nearby-body--separated">
+        <section className="pp-nearby-mapStage pp-card" aria-label="Nearby map">
           <div className="pp-nearby-mapWrap">
-          <div className="pp-nearby-mapActions">
+            <div className="pp-nearby-mapActions">
             <button
               type="button"
               className="pp-nearby-cta pp-nearby-cta--location"
@@ -307,86 +307,87 @@ function NearbyMap({ apiKey }) {
             >
               {t('nearbyPage.searchNearMe')}
             </button>
-          </div>
-          <GoogleMap
-            mapContainerStyle={mapContainerStyle}
-            center={mapCenter}
-            zoom={14}
-            onLoad={setMap}
-            options={mapOptions}
-            onClick={() => setActivePlace(null)}
-          >
-            {places.map((p) =>
-              p.geometry?.location ? (
+            </div>
+            <GoogleMap
+              mapContainerStyle={mapContainerStyle}
+              center={mapCenter}
+              zoom={14}
+              onLoad={setMap}
+              options={mapOptions}
+              onClick={() => setActivePlace(null)}
+            >
+              {places.map((p) =>
+                p.geometry?.location ? (
+                  <Marker
+                    key={p.place_id}
+                    position={p.geometry.location}
+                    title={p.name}
+                    animation={window.google.maps.Animation.DROP}
+                    icon={{
+                      path: window.google.maps.SymbolPath.CIRCLE,
+                      scale: activePlace?.place_id === p.place_id ? 9 : 7,
+                      fillColor: activePlace?.place_id === p.place_id ? '#5b37ff' : '#ffffff',
+                      fillOpacity: 1,
+                      strokeColor: '#5b37ff',
+                      strokeWeight: 3,
+                    }}
+                    onClick={() => setActivePlace(p)}
+                  />
+                ) : null
+              )}
+              {userLocation ? (
                 <Marker
-                  key={p.place_id}
-                  position={p.geometry.location}
-                  title={p.name}
-                  animation={window.google.maps.Animation.DROP}
+                  position={userLocation}
+                  title="Your location"
                   icon={{
                     path: window.google.maps.SymbolPath.CIRCLE,
-                    scale: activePlace?.place_id === p.place_id ? 9 : 7,
-                    fillColor: activePlace?.place_id === p.place_id ? '#5b37ff' : '#ffffff',
+                    scale: 8,
+                    fillColor: '#2563eb',
                     fillOpacity: 1,
-                    strokeColor: '#5b37ff',
+                    strokeColor: '#ffffff',
                     strokeWeight: 3,
                   }}
-                  onClick={() => setActivePlace(p)}
                 />
-              ) : null
-            )}
-            {userLocation ? (
-              <Marker
-                position={userLocation}
-                title="Your location"
-                icon={{
-                  path: window.google.maps.SymbolPath.CIRCLE,
-                  scale: 8,
-                  fillColor: '#2563eb',
-                  fillOpacity: 1,
-                  strokeColor: '#ffffff',
-                  strokeWeight: 3,
-                }}
-              />
-            ) : null}
-            {activePlace?.geometry?.location ? (
-              <InfoWindow
-                position={activePlace.geometry.location}
-                onCloseClick={() => setActivePlace(null)}
-              >
-                <div className="pp-nearby-info">
-                  <button type="button" className="pp-nearby-info__close" onClick={() => setActivePlace(null)} aria-label="Close place preview">
-                    ×
-                  </button>
-                  <div className="pp-nearby-info__image">
-                    {placePhotoUrl(activePlace, 260, 160) ? <img src={placePhotoUrl(activePlace, 260, 160)} alt="" /> : <span aria-hidden>{selectedCategory.icon}</span>}
-                  </div>
-                  <strong>{activePlace.name}</strong>
-                  {activePlace.vicinity ? <div className="pp-nearby-info__addr">{activePlace.vicinity}</div> : null}
-                  {activePlace.rating != null ? (
-                    <div className="pp-nearby-info__meta">
-                      {t('leaderboardPage.starRatingLine', {
-                        rating: activePlace.rating.toFixed(1),
-                        reviews: activePlace.user_ratings_total || 0,
-                      })}
+              ) : null}
+              {activePlace?.geometry?.location ? (
+                <InfoWindow
+                  position={activePlace.geometry.location}
+                  onCloseClick={() => setActivePlace(null)}
+                >
+                  <div className="pp-nearby-info">
+                    <button type="button" className="pp-nearby-info__close" onClick={() => setActivePlace(null)} aria-label="Close place preview">
+                      ×
+                    </button>
+                    <div className="pp-nearby-info__image">
+                      {placePhotoUrl(activePlace, 260, 160) ? <img src={placePhotoUrl(activePlace, 260, 160)} alt="" /> : <span aria-hidden>{selectedCategory.icon}</span>}
                     </div>
-                  ) : null}
-                  <a
-                    className="pp-link"
-                    style={{ display: 'inline-block', marginTop: 8, padding: 0 }}
-                    href={mapsUrl(activePlace)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    {t('nearbyPage.infoOpenMaps')}
-                  </a>
-                </div>
-              </InfoWindow>
-            ) : null}
-          </GoogleMap>
-        </div>
+                    <strong>{activePlace.name}</strong>
+                    {activePlace.vicinity ? <div className="pp-nearby-info__addr">{activePlace.vicinity}</div> : null}
+                    {activePlace.rating != null ? (
+                      <div className="pp-nearby-info__meta">
+                        {t('leaderboardPage.starRatingLine', {
+                          rating: activePlace.rating.toFixed(1),
+                          reviews: activePlace.user_ratings_total || 0,
+                        })}
+                      </div>
+                    ) : null}
+                    <a
+                      className="pp-link"
+                      style={{ display: 'inline-block', marginTop: 8, padding: 0 }}
+                      href={mapsUrl(activePlace)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {t('nearbyPage.infoOpenMaps')}
+                    </a>
+                  </div>
+                </InfoWindow>
+              ) : null}
+            </GoogleMap>
+          </div>
+        </section>
 
-        <aside className="pp-nearby-sheet" aria-label={t('nearbyPage.resultsHeading')}>
+        <aside className="pp-nearby-sheet pp-card" aria-label={t('nearbyPage.resultsHeading')}>
           <div className="pp-nearby-sheet__handle" aria-hidden />
           <h3 className="pp-nearby-listTitle">{t('nearbyPage.resultsHeading')}</h3>
           {searchStatus === 'loading' ? <p className="pp-subtle">{t('nearbyPage.searching')}</p> : null}
@@ -460,7 +461,6 @@ function NearbyMap({ apiKey }) {
           </div>
         ) : null}
       </section>
-      </div>
     </div>
   );
 }

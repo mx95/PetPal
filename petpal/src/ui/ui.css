@@ -10463,6 +10463,114 @@ html[data-theme="dark"] .pp-book-calendar__monthControls button {
   color: #d6ceff;
 }
 
+.pp-demoBusiness {
+  margin-top: 14px;
+}
+
+.pp-demoBusiness--compact {
+  padding: 16px;
+}
+
+.pp-demoBusiness__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.pp-demoBusiness__card {
+  display: grid;
+  gap: 5px;
+  text-align: left;
+  border: 1px solid var(--pp-border);
+  border-radius: 20px;
+  background:
+    radial-gradient(180px 90px at 100% 0%, rgba(91, 55, 255, 0.08), transparent 72%),
+    var(--pp-card);
+  color: var(--pp-text);
+  padding: 14px;
+  box-shadow: var(--pp-shadow-xs);
+  cursor: pointer;
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.pp-demoBusiness__card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(91, 55, 255, 0.22);
+  box-shadow: var(--pp-shadow-sm);
+}
+
+.pp-demoBusiness__card strong {
+  font-size: 15px;
+  line-height: 1.2;
+}
+
+.pp-demoBusiness__card small {
+  color: var(--pp-text-2);
+  font-weight: 800;
+}
+
+.pp-demoBusiness__type {
+  width: fit-content;
+  border-radius: 999px;
+  background: rgba(91, 55, 255, 0.1);
+  color: #5b37ff;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 950;
+}
+
+.pp-demoProviderPortal__summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.pp-demoProviderPortal__summary > div {
+  display: grid;
+  gap: 4px;
+  border-radius: 18px;
+  background: rgba(91, 55, 255, 0.055);
+  padding: 14px;
+}
+
+.pp-demoProviderPortal__summary strong {
+  font-size: 18px;
+  line-height: 1.2;
+}
+
+.pp-demoProviderPortal__summary small {
+  color: var(--pp-text-2);
+  font-weight: 800;
+}
+
+@media (max-width: 720px) {
+  .pp-demoProviderPortal__summary {
+    grid-template-columns: 1fr;
+  }
+}
+
+.pp-nearby-body--separated {
+  display: grid;
+  gap: 18px;
+}
+
+.pp-nearby-body--separated .pp-nearby-mapStage {
+  padding: 0;
+  overflow: hidden;
+  border-radius: 28px;
+}
+
+.pp-nearby-body--separated .pp-nearby-mapWrap {
+  border-radius: 28px;
+}
+
+.pp-nearby-body--separated .pp-nearby-sheet {
+  margin-top: 0;
+  border-radius: 28px;
+}
+
 /* Booking modal visual fix: compact calendar and keep slots clear of footer. */
 .pp-book-modalPanel {
   max-height: min(92dvh, 760px) !important;
