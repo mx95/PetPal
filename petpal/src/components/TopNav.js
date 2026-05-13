@@ -8,8 +8,8 @@ import UserAvatar from './UserAvatar';
 
 function navItemClassName({ isActive }) {
   return [
-    'group relative rounded-full px-4 py-2 text-sm font-extrabold text-slate-600 no-underline transition-all duration-300 hover:bg-white hover:text-petpal-ink hover:shadow-soft',
-    isActive ? 'bg-white text-petpal-ink shadow-soft' : '',
+    'pp-topNavLink group relative rounded-full px-4 py-2 text-sm font-extrabold text-slate-600 no-underline transition-all duration-300 hover:bg-white hover:text-petpal-ink hover:shadow-soft',
+    isActive ? 'pp-topNavLink--active bg-petpal-soft text-petpal-lilac shadow-glow' : '',
   ]
     .filter(Boolean)
     .join(' ');
@@ -22,7 +22,21 @@ export default function TopNav() {
   const premiumPathMatch = useMatch('/premium/*');
   const navigate = useNavigate();
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const [theme, setTheme] = useState(() => {
+    try {
+      return localStorage.getItem('petpal_theme') || 'light';
+    } catch {
+      return 'light';
+    }
+  });
   const accountMenuRef = useRef(null);
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    try {
+      localStorage.setItem('petpal_theme', theme);
+    } catch (_) {}
+  }, [theme]);
 
   useEffect(() => {
     if (!accountMenuOpen) return undefined;
@@ -51,10 +65,10 @@ export default function TopNav() {
   };
 
   return (
-    <header className="sticky top-0 z-40 border-b border-white/70 bg-white/75 backdrop-blur-2xl">
+    <header className="pp-topNav sticky top-0 z-40 border-b border-white/70 bg-white/75 backdrop-blur-2xl">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
         <Link className="group flex items-center gap-3 no-underline" to="/" aria-label={t('nav.home')}>
-          <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-petpal-lilac to-petpal-blue shadow-glow transition-transform duration-300 group-hover:scale-105">
+          <span className="pp-logoMark flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-petpal-lilac via-[#7258ff] to-petpal-blue shadow-glow transition-transform duration-300 group-hover:scale-105">
             <img className="h-8 w-8 rounded-xl" src={`${process.env.PUBLIC_URL}/logo192.png`} alt="" />
           </span>
           <span className="hidden sm:block">
@@ -111,6 +125,15 @@ export default function TopNav() {
         </nav>
 
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            className="pp-themeToggle"
+            onClick={() => setTheme((cur) => (cur === 'dark' ? 'light' : 'dark'))}
+            aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            title={theme === 'dark' ? 'Light mode' : 'Dark mode'}
+          >
+            <span aria-hidden>{theme === 'dark' ? 'Sun' : 'Moon'}</span>
+          </button>
           <LanguageSwitcher />
           {user ? (
             <div className="relative" ref={accountMenuRef}>

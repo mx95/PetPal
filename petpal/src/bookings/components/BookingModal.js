@@ -24,6 +24,25 @@ function nextDays(n) {
   return out;
 }
 
+function formatTime(date) {
+  return date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+}
+
+function slotDate(slot, key) {
+  const v = slot?.[key];
+  if (v?.toDate) return v.toDate();
+  if (slot?.[`${key}Iso`]) return new Date(slot[`${key}Iso`]);
+  return null;
+}
+
+function slotPeriod(slot) {
+  const start = slotDate(slot, 'startAt');
+  const h = start ? start.getHours() : 12;
+  if (h < 12) return 'Morning';
+  if (h < 17) return 'Afternoon';
+  return 'Evening';
+}
+
 /**
  * @param {{
  *   open: boolean,
@@ -84,6 +103,15 @@ export function BookingModal({ open, provider, serviceTab, onClose, t }) {
   }, [filteredServices]);
 
   const days = useMemo(() => nextDays(14), []);
+  const selectedService = useMemo(() => filteredServices.find((s) => s.id === serviceId) || null, [filteredServices, serviceId]);
+  const groupedSlots = useMemo(() => {
+    return slots.reduce((acc, sl) => {
+      const key = slotPeriod(sl);
+      acc[key] = acc[key] || [];
+      acc[key].push(sl);
+      return acc;
+    }, {});
+  }, [slots]);
 
   useEffect(() => {
     if (!open || !companyId || !serviceId || !dayKey) {
@@ -125,7 +153,6 @@ export function BookingModal({ open, provider, serviceTab, onClose, t }) {
 
   const onContinue = () => {
     if (!serviceId || !slotId) return;
-    const selectedService = filteredServices.find((s) => s.id === serviceId) || null;
     const selectedSlot = slots.find((s) => s.id === slotId) || null;
     navigate(`/bookings/provider/${companyId}/book/${serviceId}`, {
       state: {
@@ -204,27 +231,42 @@ export function BookingModal({ open, provider, serviceTab, onClose, t }) {
 
             <div className="pp-book-field">
               <span className="pp-book-field__label">{t('bookingsHub.modalPickSlot')}</span>
+              {selectedService ? (
+                <p className="pp-book-muted pp-book-muted--sm" style={{ marginTop: 4 }}>
+                  {selectedService.durationMin || 30} mins {selectedService.price ? `• ${selectedService.price}` : ''}
+                </p>
+              ) : null}
               {loadingSlots ? <p className="pp-book-muted">{t('bookingsHub.modalLoadingSlots')}</p> : null}
               {slotErr ? <p className="pp-book-error">{slotErr}</p> : null}
               {!loadingSlots && !slotErr && !slots.length ? (
                 <p className="pp-book-muted">{t('bookingsHub.modalNoSlots')}</p>
               ) : null}
-              <div className="pp-book-slotGrid">
-                {slots.map((sl) => {
-                  const active = sl.id === slotId;
-                  const label = sl.startAt?.toDate ? sl.startAt.toDate().toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : sl.id;
-                  return (
-                    <button
-                      key={sl.id}
-                      type="button"
-                      className={`pp-book-slot ${active ? 'is-active' : ''}`}
-                      onClick={() => setSlotId(sl.id)}
-                    >
-                      {label}
-                    </button>
-                  );
-                })}
-              </div>
+              {['Morning', 'Afternoon', 'Evening'].map((period) =>
+                groupedSlots[period]?.length ? (
+                  <div key={period} className="pp-book-slotPeriod">
+                    <div className="pp-book-slotPeriod__title">{period}</div>
+                    <div className="pp-book-slotGrid pp-book-slotGrid--premium">
+                      {groupedSlots[period].map((sl) => {
+                        const active = sl.id === slotId;
+                        const startDate = slotDate(sl, 'startAt');
+                        const endDate = slotDate(sl, 'endAt');
+                        return (
+                          <button
+                            key={sl.id}
+                            type="button"
+                            className={`pp-book-slot pp-book-slot--rich ${active ? 'is-active' : ''}`}
+                            onClick={() => setSlotId(sl.id)}
+                          >
+                            <strong>{startDate ? formatTime(startDate) : sl.id}</strong>
+                            <span>{selectedService?.durationMin || 30} mins</span>
+                            <small>{endDate ? `Ends ${formatTime(endDate)}` : 'Finish time set after booking'}</small>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : null
+              )}
             </div>
         </>
 

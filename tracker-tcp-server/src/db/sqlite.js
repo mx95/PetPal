@@ -69,6 +69,24 @@ function openSqlite(dbPath) {
     );
 
     CREATE INDEX IF NOT EXISTS idx_http_requests_ts ON http_requests(ts);
+
+    CREATE TABLE IF NOT EXISTS tcp_inbound_requests (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      ts TEXT NOT NULL,
+      remote_address TEXT,
+      remote_port INTEGER,
+      event TEXT NOT NULL,
+      imei TEXT,
+      message_id INTEGER,
+      byte_length INTEGER,
+      raw_hex TEXT,
+      ascii_preview TEXT,
+      parsed_json TEXT,
+      note TEXT
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_tcp_inbound_requests_ts ON tcp_inbound_requests(ts);
+    CREATE INDEX IF NOT EXISTS idx_tcp_inbound_requests_imei_ts ON tcp_inbound_requests(imei, ts);
   `);
 
   const upsertDevice = db.prepare(`
@@ -142,6 +160,13 @@ function openSqlite(dbPath) {
     VALUES (@ts, @method, @path, @query_json, @body_json, @ip, @user_agent, @status_code, @latency_ms)
   `);
 
+  const insertTcpInboundRequest = db.prepare(`
+    INSERT INTO tcp_inbound_requests
+      (ts, remote_address, remote_port, event, imei, message_id, byte_length, raw_hex, ascii_preview, parsed_json, note)
+    VALUES
+      (@ts, @remote_address, @remote_port, @event, @imei, @message_id, @byte_length, @raw_hex, @ascii_preview, @parsed_json, @note)
+  `);
+
   return {
     path: fullPath,
     db,
@@ -153,7 +178,8 @@ function openSqlite(dbPath) {
     insertCommandQueued,
     markLatestCommandSent,
     markLatestCommandAcked,
-    insertHttpRequest
+    insertHttpRequest,
+    insertTcpInboundRequest
   };
 }
 

@@ -277,9 +277,34 @@ function LoggedInFeed() {
 
       {pet ? (
         <section aria-label={t('home.feed.petCardAria')}>
-          <PetCard pet={pet} statusKey={statusKey} statusValue={statusValue} onStartWalk={() => {
-            window.location.assign('/dashboard#pp-walk-input-anchor');
-          }} />
+          <div className="pp-petCarousel" aria-label={t('home.feed.switchPet')}>
+            {pets.map((p, i) => {
+              const active = i === petIdx % pets.length;
+              return (
+                <div
+                  key={p.id}
+                  role="button"
+                  tabIndex={0}
+                  className={`pp-petCarousel__slide ${active ? 'pp-petCarousel__slide--active' : ''}`}
+                  onClick={() => setPetIdx(i)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') setPetIdx(i);
+                  }}
+                  aria-label={p.name}
+                  aria-current={active ? 'true' : undefined}
+                >
+                  <PetCard
+                    pet={p}
+                    statusKey={active ? statusKey : 'resting'}
+                    statusValue={active ? statusValue : ''}
+                    onStartWalk={() => {
+                      window.location.assign('/dashboard#pp-walk-input-anchor');
+                    }}
+                  />
+                </div>
+              );
+            })}
+          </div>
           {pets.length > 1 ? (
             <div className="pp-feed__petDots" role="tablist" aria-label={t('home.feed.switchPet')}>
               {pets.map((p, i) => (

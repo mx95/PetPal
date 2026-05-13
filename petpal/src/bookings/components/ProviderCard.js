@@ -32,13 +32,22 @@ export function ProviderCard({ provider, distanceKm, onBook, t }) {
   const cat = useMemo(() => categoryLabel(provider.providerTypes, t), [provider.providerTypes, t]);
   const priceLine = useMemo(() => priceTierLabel(provider.priceTier, t), [provider.priceTier, t]);
   const providerName = String(provider.displayName || 'Provider');
+  const sponsored = Boolean(provider.sponsored || provider.boostEnabled || provider.recommended);
+  const hours = provider.workingHours || 'Open today';
+  const nextSlot = provider.nextAvailable || 'Next slots today';
+  const servicesPreview = provider.servicesPreview || cat;
 
   return (
     <article className="group overflow-hidden rounded-[1.75rem] border border-white/75 bg-white/90 shadow-soft backdrop-blur transition-all duration-300 hover:-translate-y-1 hover:shadow-lift">
       <div className="relative h-44 overflow-hidden bg-gradient-to-br from-petpal-soft via-white to-petpal-cream" aria-hidden>
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(91,55,255,0.18),transparent_28%),radial-gradient(circle_at_85%_15%,rgba(47,128,255,0.16),transparent_24%)]" />
         <PetIllustration variant={provider.providerTypes?.hotel ? 'cat' : 'pet'} className="absolute bottom-[-20px] right-6 h-40 w-40 transition-transform duration-500 group-hover:scale-105" />
-        <div className="absolute left-4 top-4 flex gap-2">
+        <div className="absolute left-4 top-4 flex flex-wrap gap-2">
+          {sponsored ? (
+            <span className="rounded-full bg-gradient-to-r from-petpal-lilac to-petpal-blue px-3 py-1 text-xs font-black text-white shadow-glow">
+              Recommended
+            </span>
+          ) : null}
           <span className="rounded-full bg-white/90 px-3 py-1 text-xs font-black text-petpal-ink shadow-soft">
             {isDemo ? 'Test ready' : 'Verified'}
           </span>
@@ -58,12 +67,16 @@ export function ProviderCard({ provider, distanceKm, onBook, t }) {
             <span className="rounded-full bg-petpal-soft px-3 py-1 text-sm font-black text-petpal-lilac">{t('bookingsHub.newOnPetpal')}</span>
           )}
         </div>
-        <p className="mt-2 text-sm font-bold text-petpal-lilac">{cat}</p>
+        <p className="mt-2 text-sm font-bold text-petpal-lilac">{servicesPreview}</p>
         <p className="mt-2 min-h-[2.5rem] text-sm leading-6 text-petpal-muted">{String(provider.address || '')}</p>
         <div className="mt-4 flex flex-wrap gap-2">
           {priceLine ? <span className="rounded-full bg-slate-50 px-3 py-1 text-xs font-black text-slate-600">{priceLine}</span> : null}
           {distanceKm != null ? <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-black text-blue-700">About {distanceKm.toFixed(1)} km</span> : null}
           {isDemo ? <span className="rounded-full bg-violet-50 px-3 py-1 text-xs font-black text-violet-700">Demo slots</span> : null}
+        </div>
+        <div className="mt-4 grid grid-cols-2 gap-2 text-xs font-bold text-petpal-muted">
+          <span className="rounded-2xl bg-slate-50 px-3 py-2">Hours: {hours}</span>
+          <span className="rounded-2xl bg-emerald-50 px-3 py-2 text-emerald-700">{nextSlot}</span>
         </div>
         <div className="mt-5">
           <PrimaryButton onClick={onBook} className="w-full">

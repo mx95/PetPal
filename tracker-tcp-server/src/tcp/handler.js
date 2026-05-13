@@ -26,6 +26,36 @@ function extractFirst6aRawBlock(rawPayload) {
   return null;
 }
 
+function asciiPreview(buf, max = 160) {
+  if (!Buffer.isBuffer(buf) || buf.length === 0) return null;
+  return buf
+    .subarray(0, max)
+    .toString("utf8")
+    .replace(/[^\x20-\x7E]/g, ".");
+}
+
+function safeJson(value) {
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return null;
+  }
+}
+
+function recordTcpInbound(store, socket, event, patch = {}) {
+  const entry = {
+    ts: new Date().toISOString(),
+    remoteAddress: socket.remoteAddress || null,
+    remotePort: socket.remotePort || null,
+    event,
+    ...patch
+  };
+  console.log(`${logPrefix({ dir: "in", tag: "TCP" })} AUDIT ${JSON.stringify(entry)}`);
+  if (typeof store.recordTcpInboundRequest === "function") {
+    store.recordTcpInboundRequest(entry);
+  }
+}
+
 function extractStatusFrom020Payload(rawPayload) {
   // rawPayload is the message body payload (after IMEI, before CRC), i.e. TLV chain.
   // Find first 0x6A status block: [0x6A][len][battery][networkDuration:2][signal][trackingSeq]...
@@ -129,11 +159,17 @@ function createTcpServer({ port, store }) {
     console.log(
       `${logPrefix({ dir: "in" })} connection from ${socket.remoteAddress}:${socket.remotePort}`
     );
+    recordTcpInbound(store, socket, "connection", { note: "socket connected" });
 
     let pending = Buffer.alloc(0);
 
     socket.on("data", (data) => {
       console.log(`${logPrefix({ dir: "in" })} RAW HEX: ${toHex(data)}`);
+      recordTcpInbound(store, socket, "data", {
+        byteLength: data.length,
+        rawHex: toHex(data),
+        asciiPreview: asciiPreview(data)
+      });
 
       pending = Buffer.concat([pending, data]);
       const { frames, rest } = extractFramesFromStream(pending);
@@ -145,6 +181,12 @@ function createTcpServer({ port, store }) {
         console.log(
           `${logPrefix({ dir: "in" })} Warning: received ${pending.length} bytes with no FC header yet (not an Xexun frame). Check provider port is TCP 5001 and it forwards raw FC…CF.`
         );
+        recordTcpInbound(store, socket, "non_xexun_pending", {
+          byteLength: pending.length,
+          rawHex: toHex(pending),
+          asciiPreview: asciiPreview(pending),
+          note: "pending bytes contain no FC frame header"
+        });
       }
 
       for (const frame of frames) {
@@ -152,12 +194,24 @@ function createTcpServer({ port, store }) {
         const crcCheck = isValidCrc(frame);
         if (!crcCheck.ok) {
           console.log(`${logPrefix({ dir: "in", at: receivedAt })} CRC invalid, ignoring frame: ${toHex(frame)}`);
+          recordTcpInbound(store, socket, "frame_crc_invalid", {
+            byteLength: frame.length,
+            rawHex: toHex(frame),
+            asciiPreview: asciiPreview(frame),
+            note: crcCheck.reason || "crc invalid"
+          });
           continue;
         }
 
         const parsed = parseXexunPacket(frame);
         if (!parsed) {
           console.log(`${logPrefix({ dir: "in", at: receivedAt })} Unparsed frame: ${toHex(frame)}`);
+          recordTcpInbound(store, socket, "frame_unparsed", {
+            byteLength: frame.length,
+            rawHex: toHex(frame),
+            asciiPreview: asciiPreview(frame),
+            note: "parseXexunPacket returned null"
+          });
           continue;
         }
 
@@ -193,6 +247,13 @@ function createTcpServer({ port, store }) {
           raw: parsed.rawHex
         };
         console.log(`${logPrefix({ dir: "in", at: receivedAt })} PARSED: ${JSON.stringify(logObj)}`);
+        recordTcpInbound(store, socket, "frame_parsed", {
+          imei: parsed.imei ?? null,
+          messageId: parsed.messageId ?? null,
+          byteLength: frame.length,
+          rawHex: toHex(frame),
+          parsedJson: safeJson(logObj)
+        });
 
         if (
           parsed.messageId !== 0x20 &&
@@ -321,8 +382,12 @@ function createTcpServer({ port, store }) {
     socket.on("close", () => {
       store.releaseSocket(socket);
       console.log(`${logPrefix({ dir: "in" })} connection closed`);
+      recordTcpInbound(store, socket, "close", { note: "socket closed" });
     });
-    socket.on("error", (err) => console.log(`${logPrefix({ dir: "in" })} socket error:`, err.message));
+    socket.on("error", (err) => {
+      console.log(`${logPrefix({ dir: "in" })} socket error:`, err.message);
+      recordTcpInbound(store, socket, "error", { note: err.message || String(err) });
+    });
   });
 
   server.listen(port, () => console.log(`TCP server listening on port ${port}`));

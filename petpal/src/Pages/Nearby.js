@@ -66,6 +66,7 @@ function NearbyMap({ apiKey }) {
   const [activePlace, setActivePlace] = useState(null);
   const [locFetching, setLocFetching] = useState(false);
   const [userLocation, setUserLocation] = useState(null);
+  const [infoOpen, setInfoOpen] = useState(false);
 
   const selectedCategory = useMemo(() => getCategoryById(selectedCategoryId, t), [selectedCategoryId, t]);
   const mapCenter = useMemo(
@@ -205,22 +206,13 @@ function NearbyMap({ apiKey }) {
           <h1 className="pp-h1" style={{ marginTop: 10 }}>
             {t('nearbyPage.title')}
           </h1>
-          <p className="pp-subtle" style={{ marginTop: 6, maxWidth: 640 }}>
-            {t('nearbyPage.introLead')} <strong>{t('nearbyPage.introSearchArea')}</strong>{' '}
-            {t('nearbyPage.introMid')} <strong>{t('nearbyPage.introSearchNear')}</strong>{' '}
-            {t('nearbyPage.introTrail', { radiusKm })}
-          </p>
+          <p className="pp-subtle" style={{ marginTop: 6, maxWidth: 640 }}>{t('nearbyPage.introLead')} nearby places for your pet.</p>
         </div>
         <Link className="pp-link" to="/dashboard">
           {t('common.backDashboard')}
         </Link>
       </div>
 
-      {locationNote?.kind === 'default' ? (
-        <p className="pp-subtle" style={{ marginTop: 12, marginBottom: 0, fontSize: 14 }}>
-          {t('nearbyPage.locDefaultHint')}
-        </p>
-      ) : null}
       {locationNote?.kind === 'text' ? (
         <p className="pp-subtle" style={{ marginTop: 12, marginBottom: 0, fontSize: 14 }}>
           {locationNote.message}
@@ -389,6 +381,22 @@ function NearbyMap({ apiKey }) {
           </ol>
         </aside>
       </div>
+      <section className="pp-card pp-nearbyInfoCard">
+        <button type="button" className="pp-nearbyInfoCard__toggle" onClick={() => setInfoOpen((v) => !v)} aria-expanded={infoOpen}>
+          <span>How nearby search works</span>
+          <strong>{infoOpen ? 'Close' : 'Learn more'}</strong>
+        </button>
+        {infoOpen ? (
+          <div className="pp-nearbyInfoCard__body">
+            <p>
+              {t('nearbyPage.introLead')} <strong>{t('nearbyPage.introSearchArea')}</strong>{' '}
+              {t('nearbyPage.introMid')} <strong>{t('nearbyPage.introSearchNear')}</strong>{' '}
+              {t('nearbyPage.introTrail', { radiusKm })}
+            </p>
+            <p>{t('nearbyPage.locDefaultHint')}</p>
+          </div>
+        ) : null}
+      </section>
       </div>
     </div>
   );

@@ -5049,10 +5049,11 @@ a.pp-publicPet__metaValue {
 
 .pp-bottomNav__fab {
   display: inline-flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: 58px;
-  height: 58px;
+  width: 68px;
+  height: 68px;
   margin: 0 auto;
   border-radius: 50%;
   background: linear-gradient(145deg, #5b37ff 0%, #7b60ff 58%, #66a3ff 100%);
@@ -5084,7 +5085,13 @@ a.pp-publicPet__metaValue {
     0 16px 34px -10px rgba(91, 55, 255, 0.62);
 }
 .pp-bottomNav__fab:active { transform: translateY(-11px) scale(0.97); }
-.pp-bottomNav__fabIcon { font-size: 29px; line-height: 1; font-weight: 700; margin-top: -3px; }
+.pp-bottomNav__fabIcon { display: inline-flex; line-height: 0; font-weight: 700; margin-top: 1px; }
+.pp-bottomNav__fabLabel {
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1;
+  margin-top: 2px;
+}
 .pp-bottomNav__fabPulse {
   position: absolute;
   inset: -6px;
@@ -5341,6 +5348,372 @@ a.pp-publicPet__metaValue {
   .pp-nearby-page > .pp-row:first-child {
     border-radius: 24px;
     padding: 22px;
+  }
+}
+
+.pp-trackStatusGrid .pp-label {
+  font-size: 11px;
+  letter-spacing: 0.02em;
+}
+
+.pp-trackStatusGrid .pp-trackGpsPill {
+  padding: 6px 10px;
+  white-space: nowrap;
+}
+
+.pp-trackStatusGrid .pp-batteryBar {
+  height: 32px;
+  min-width: 0;
+}
+
+.pp-trackStatusGrid .pp-batteryBar__label {
+  font-size: 12px;
+}
+
+.pp-trackMapActions .pp-btn {
+  min-height: 46px;
+}
+
+.pp-topNavLink--active::after {
+  content: "";
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  bottom: 4px;
+  height: 3px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #5b37ff, #2f80ff);
+  box-shadow: 0 0 18px rgba(91, 55, 255, 0.35);
+}
+
+.pp-logoMark {
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 18px 40px rgba(91, 55, 255, 0.26), inset 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+
+.pp-logoMark::after {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  border-radius: inherit;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.28), transparent 45%);
+  pointer-events: none;
+}
+
+.pp-themeToggle {
+  min-width: 42px;
+  height: 42px;
+  border: 1px solid rgba(255, 255, 255, 0.78);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+  color: #5b37ff;
+  font-size: 11px;
+  font-weight: 900;
+  box-shadow: 0 14px 35px rgba(16, 24, 40, 0.08);
+  cursor: pointer;
+  transition: transform 220ms ease, box-shadow 220ms ease, background 220ms ease;
+}
+
+.pp-themeToggle:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 50px rgba(16, 24, 40, 0.14);
+}
+
+.pp-petCarousel {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(82%, 1fr);
+  gap: 16px;
+  overflow-x: auto;
+  padding: 4px 20px 14px 2px;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: thin;
+}
+
+.pp-petCarousel__slide {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  text-align: left;
+  scroll-snap-align: center;
+  transform: scale(0.96);
+  opacity: 0.72;
+  transition: transform 260ms ease, opacity 260ms ease;
+  min-width: 0;
+}
+
+.pp-petCarousel__slide--active {
+  transform: scale(1);
+  opacity: 1;
+}
+
+@media (min-width: 760px) {
+  .pp-petCarousel {
+    grid-auto-columns: minmax(420px, 520px);
+  }
+}
+
+.pp-book-slotPeriod {
+  margin-top: 14px;
+}
+
+.pp-book-slotPeriod__title {
+  margin-bottom: 8px;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #667085;
+}
+
+.pp-book-slotGrid--premium {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+  gap: 10px;
+}
+
+.pp-book-slot--rich {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  padding: 12px;
+  border-radius: 18px;
+  text-align: left;
+  background: rgba(255, 255, 255, 0.9);
+  transition: transform 220ms ease, box-shadow 220ms ease, border-color 220ms ease;
+}
+
+.pp-book-slot--rich strong {
+  font-size: 15px;
+  color: #101828;
+}
+
+.pp-book-slot--rich span,
+.pp-book-slot--rich small {
+  color: #667085;
+  font-weight: 800;
+}
+
+.pp-book-slot--rich.is-active {
+  background: linear-gradient(135deg, rgba(91, 55, 255, 0.14), rgba(47, 128, 255, 0.1));
+  border-color: rgba(91, 55, 255, 0.38);
+  box-shadow: 0 16px 42px rgba(91, 55, 255, 0.18);
+  transform: translateY(-2px);
+}
+
+.pp-boostPanel {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid rgba(91, 55, 255, 0.16);
+  border-radius: 22px;
+  background: linear-gradient(135deg, rgba(91, 55, 255, 0.08), rgba(47, 128, 255, 0.06));
+}
+
+.pp-boostPanel strong,
+.pp-boostPanel small {
+  display: block;
+}
+
+.pp-boostPanel small {
+  margin-top: 4px;
+  color: #667085;
+  line-height: 1.5;
+}
+
+.pp-nearbyInfoCard {
+  padding: 16px;
+  margin-top: 18px;
+}
+
+.pp-nearbyInfoCard__toggle {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  font: inherit;
+  cursor: pointer;
+  color: inherit;
+}
+
+.pp-nearbyInfoCard__toggle span {
+  font-weight: 900;
+}
+
+.pp-nearbyInfoCard__toggle strong {
+  color: #5b37ff;
+  font-size: 13px;
+}
+
+.pp-nearbyInfoCard__body {
+  margin-top: 12px;
+  color: #667085;
+  line-height: 1.7;
+}
+
+.pp-sponsoredRail {
+  margin-bottom: 24px;
+}
+
+.pp-sponsoredRail__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: end;
+  margin-bottom: 12px;
+}
+
+.pp-sponsoredRail__head span {
+  font-size: 18px;
+  font-weight: 950;
+  letter-spacing: -0.03em;
+  color: #101828;
+}
+
+.pp-sponsoredRail__head small {
+  color: #667085;
+  font-weight: 800;
+}
+
+.pp-sponsoredRail__row {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(280px, 360px);
+  gap: 16px;
+  overflow-x: auto;
+  padding: 4px 4px 14px;
+  scroll-snap-type: x proximity;
+}
+
+.pp-sponsoredRail__row > * {
+  scroll-snap-align: start;
+}
+
+html[data-theme="dark"] body {
+  color: #f5f7fb;
+  background:
+    radial-gradient(circle at 18% 8%, rgba(91, 55, 255, 0.18), transparent 28rem),
+    radial-gradient(circle at 86% 4%, rgba(47, 128, 255, 0.14), transparent 26rem),
+    linear-gradient(180deg, #0f1117 0%, #12151d 48%, #0f1117 100%);
+}
+
+html[data-theme="dark"] .pp-shell {
+  color: #f5f7fb;
+  background: transparent;
+}
+
+html[data-theme="dark"] .pp-topNav,
+html[data-theme="dark"] .pp-bottomNav__row,
+html[data-theme="dark"] .pp-card,
+html[data-theme="dark"] .pp-pageHeader,
+html[data-theme="dark"] .pp-feed__hello,
+html[data-theme="dark"] .pp-book-modalPanel,
+html[data-theme="dark"] .pp-lb-surface,
+html[data-theme="dark"] .pp-nearby-sheet,
+html[data-theme="dark"] .pp-book-mineCard,
+html[data-theme="dark"] .pp-activityCard,
+html[data-theme="dark"] .pp-petCard,
+html[data-theme="dark"] .pp-homeTile,
+html[data-theme="dark"] .pp-rowBetween--card {
+  background-color: rgba(30, 34, 48, 0.86);
+  border-color: rgba(255, 255, 255, 0.06);
+  color: #f5f7fb;
+}
+
+html[data-theme="dark"] .pp-topNavLink,
+html[data-theme="dark"] .pp-brand,
+html[data-theme="dark"] .pp-card__title,
+html[data-theme="dark"] .pp-sectionTitle,
+html[data-theme="dark"] .pp-pageHeader__title,
+html[data-theme="dark"] .pp-feed__title,
+html[data-theme="dark"] .pp-h1,
+html[data-theme="dark"] .pp-activityCard__title,
+html[data-theme="dark"] .pp-petCard__name,
+html[data-theme="dark"] .pp-book-modalTitle {
+  color: #f5f7fb;
+}
+
+html[data-theme="dark"] .pp-subtle,
+html[data-theme="dark"] .pp-muted,
+html[data-theme="dark"] .pp-pageHeader__subtitle,
+html[data-theme="dark"] .pp-feed__sub,
+html[data-theme="dark"] .pp-activityCard__sub,
+html[data-theme="dark"] .pp-book-muted {
+  color: #aeb6c7;
+}
+
+html[data-theme="dark"] input,
+html[data-theme="dark"] select,
+html[data-theme="dark"] textarea,
+html[data-theme="dark"] .pp-book-input,
+html[data-theme="dark"] .pp-book-select,
+html[data-theme="dark"] .pp-input {
+  background: rgba(23, 26, 34, 0.92);
+  border-color: rgba(255, 255, 255, 0.08);
+  color: #f5f7fb;
+}
+
+html[data-theme="dark"] .pp-themeToggle,
+html[data-theme="dark"] .pp-navAccount button,
+html[data-theme="dark"] .pp-bottomNav__item {
+  background: rgba(30, 34, 48, 0.82);
+  border-color: rgba(255, 255, 255, 0.08);
+  color: #f5f7fb;
+}
+
+html[data-theme="dark"] .pp-topNavLink--active {
+  background: rgba(91, 55, 255, 0.18) !important;
+  color: #c7bbff !important;
+}
+
+html[data-theme="dark"] .pp-sponsoredRail__head span,
+html[data-theme="dark"] .pp-book-slot--rich strong {
+  color: #f5f7fb;
+}
+
+html[data-theme="dark"] .pp-book-slot--rich,
+html[data-theme="dark"] .pp-sponsoredRail__row article,
+html[data-theme="dark"] .pp-nearbyInfoCard {
+  background: rgba(30, 34, 48, 0.86);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+@media (max-width: 520px) {
+  .pp-trackStatusGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+
+  .pp-trackStatusGrid .pp-card {
+    padding: 10px !important;
+    border-radius: 18px !important;
+  }
+
+  .pp-trackStatusGrid .pp-subtle {
+    font-size: 12px !important;
+  }
+
+  .pp-trackStatusGrid .pp-batteryBar {
+    height: 28px;
+  }
+
+  .pp-trackStatusGrid .pp-batteryBar__label {
+    font-size: 10px;
+  }
+
+  .pp-trackMapActions {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .pp-trackMapActions .pp-btn--ghost {
+    grid-column: 1 / -1;
   }
 }
 

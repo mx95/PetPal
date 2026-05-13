@@ -89,13 +89,24 @@ function BrowseProviders() {
 
   const sorted = useMemo(() => {
     const copy = withDistance.slice();
+    copy.sort((a, b) => Number(Boolean(b.p.sponsored || b.p.recommended || b.p.boostEnabled)) - Number(Boolean(a.p.sponsored || a.p.recommended || a.p.boostEnabled)));
     if (userLoc) {
-      copy.sort((a, b) => (a.km ?? 1e9) - (b.km ?? 1e9));
+      copy.sort((a, b) => {
+        const sponsorDelta = Number(Boolean(b.p.sponsored || b.p.recommended || b.p.boostEnabled)) - Number(Boolean(a.p.sponsored || a.p.recommended || a.p.boostEnabled));
+        if (sponsorDelta) return sponsorDelta;
+        return (a.km ?? 1e9) - (b.km ?? 1e9);
+      });
     } else {
-      copy.sort((a, b) => String(a.p.displayName || '').localeCompare(String(b.p.displayName || '')));
+      copy.sort((a, b) => {
+        const sponsorDelta = Number(Boolean(b.p.sponsored || b.p.recommended || b.p.boostEnabled)) - Number(Boolean(a.p.sponsored || a.p.recommended || a.p.boostEnabled));
+        if (sponsorDelta) return sponsorDelta;
+        return String(a.p.displayName || '').localeCompare(String(b.p.displayName || ''));
+      });
     }
     return copy;
   }, [withDistance, userLoc]);
+
+  const recommended = useMemo(() => sorted.filter(({ p }) => p.sponsored || p.recommended || p.boostEnabled).slice(0, 4), [sorted]);
 
   const serviceTabs = useMemo(
     () => [
@@ -199,11 +210,26 @@ function BrowseProviders() {
         ) : showEmpty ? (
           <EmptyState title={t('bookingsHub.emptyTitle')} body={search ? t('bookingsHub.emptySearch') : t('bookingsHub.emptyBody')} />
         ) : (
-          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-            {sorted.map(({ p, km }) => (
-              <ProviderCard key={String(p.id)} provider={p} distanceKm={km} onBook={() => setModalProvider(p)} t={t} />
-            ))}
-          </div>
+          <>
+            {recommended.length ? (
+              <section className="pp-sponsoredRail">
+                <div className="pp-sponsoredRail__head">
+                  <span>Recommended</span>
+                  <small>Boosted businesses, curated softly</small>
+                </div>
+                <div className="pp-sponsoredRail__row">
+                  {recommended.map(({ p, km }) => (
+                    <ProviderCard key={`rec-${String(p.id)}`} provider={p} distanceKm={km} onBook={() => setModalProvider(p)} t={t} />
+                  ))}
+                </div>
+              </section>
+            ) : null}
+            <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+              {sorted.map(({ p, km }) => (
+                <ProviderCard key={String(p.id)} provider={p} distanceKm={km} onBook={() => setModalProvider(p)} t={t} />
+              ))}
+            </div>
+          </>
         )}
 
         {showDemoHint && !showEmpty ? (

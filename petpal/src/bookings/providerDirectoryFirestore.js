@@ -62,6 +62,15 @@ export async function publishProviderProfile(companyId, patch) {
     lat: typeof patch?.lat === 'number' ? patch.lat : null,
     lng: typeof patch?.lng === 'number' ? patch.lng : null,
     providerTypes: patch?.providerTypes && typeof patch.providerTypes === 'object' ? patch.providerTypes : {},
+    workingHours: patch?.workingHours ? String(patch.workingHours).trim().slice(0, 120) : '',
+    breakHours: patch?.breakHours ? String(patch.breakHours).trim().slice(0, 120) : '',
+    holidayClosures: patch?.holidayClosures ? String(patch.holidayClosures).trim().slice(0, 300) : '',
+    staffCount: Number.isFinite(Number(patch?.staffCount)) ? Math.max(1, Number(patch.staffCount)) : 1,
+    slotIntervalMin: Number.isFinite(Number(patch?.slotIntervalMin)) ? Math.max(5, Number(patch.slotIntervalMin)) : 30,
+    bookingLimitPerDay: Number.isFinite(Number(patch?.bookingLimitPerDay)) ? Math.max(1, Number(patch.bookingLimitPerDay)) : 12,
+    boostEnabled: Boolean(patch?.boostEnabled),
+    sponsored: Boolean(patch?.sponsored || patch?.boostEnabled),
+    recommended: Boolean(patch?.recommended || patch?.boostEnabled),
     updatedAt: serverTimestamp(),
   };
   await setDoc(doc(getDb(), 'providers', companyId), payload, { merge: true });

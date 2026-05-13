@@ -1,8 +1,7 @@
 import React from 'react';
-import { Link, NavLink } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import { useI18n } from '../i18n/I18nContext';
 import { useAuth } from '../auth/AuthProvider';
-import { useCompany } from '../company/CompanyContext';
 
 const ICONS = {
   home: (
@@ -22,6 +21,12 @@ const ICONS = {
       <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.6" opacity="0.45" />
       <circle cx="12" cy="12" r="6" stroke="currentColor" strokeWidth="1.6" opacity="0.75" />
       <circle cx="12" cy="12" r="3" fill="currentColor" opacity="0.45" stroke="none" />
+    </svg>
+  ),
+  nearby: (
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+      <path d="M12 21s7-5.8 7-11a7 7 0 1 0-14 0c0 5.2 7 11 7 11Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+      <circle cx="12" cy="10.5" r="2.2" stroke="currentColor" strokeWidth="1.5" />
     </svg>
   ),
   community: (
@@ -68,23 +73,19 @@ const ICONS = {
 const BASE_ITEMS = [
   { to: '/', end: true, key: 'home', labelKey: 'bottomNav.home' },
   { to: '/pets', key: 'pets', labelKey: 'bottomNav.pets' },
-  { to: '/tracking', key: 'tracking', labelKey: 'bottomNav.tracking' },
 ];
 
 /** Mobile-first sticky bottom navigation with a centered FAB for "Start walk". */
 export default function BottomNav() {
   const { user } = useAuth();
-  const { isApprovedCompany, profile } = useCompany();
   const { t } = useI18n();
   if (!user) return null;
 
-  const last =
-    isApprovedCompany && profile?.bookingEnabled
-      ? { to: '/provider', key: 'provider', labelKey: 'bottomNav.provider' }
-      : { to: '/bookings', key: 'bookings', labelKey: 'bottomNav.bookings' };
-  const ITEMS = [...BASE_ITEMS, last];
-  const left = ITEMS.slice(0, 2);
-  const right = ITEMS.slice(2);
+  const left = BASE_ITEMS;
+  const right = [
+    { to: '/nearby', key: 'nearby', labelKey: 'nav.nearby' },
+    { to: '/bookings', key: 'bookings', labelKey: 'bottomNav.bookings' },
+  ];
 
   const Item = ({ item }) => (
     <NavLink
@@ -107,15 +108,16 @@ export default function BottomNav() {
         {left.map((it) => (
           <Item key={it.key} item={it} />
         ))}
-        <Link
-          to="/dashboard#pp-walk-input-anchor"
-          className="pp-bottomNav__fab"
-          aria-label={t('bottomNav.fab')}
-          title={t('bottomNav.fab')}
+        <NavLink
+          to="/tracking"
+          className={({ isActive }) => `pp-bottomNav__fab ${isActive ? 'pp-bottomNav__fab--on' : ''}`}
+          aria-label={t('bottomNav.tracking')}
+          title={t('bottomNav.tracking')}
         >
-          <span className="pp-bottomNav__fabIcon" aria-hidden>＋</span>
+          <span className="pp-bottomNav__fabIcon" aria-hidden>{ICONS.tracking}</span>
+          <span className="pp-bottomNav__fabLabel">{t('bottomNav.tracking')}</span>
           <span className="pp-bottomNav__fabPulse" aria-hidden />
-        </Link>
+        </NavLink>
         {right.map((it) => (
           <Item key={it.key} item={it} />
         ))}

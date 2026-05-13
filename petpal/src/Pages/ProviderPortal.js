@@ -50,6 +50,13 @@ export default function ProviderPortal() {
     address: profile?.addressLine || '',
     phone: profile?.publicEmail || '',
     providerTypes: { vet: true, saloon: false, hotel: false, shop: false },
+    workingHours: profile?.workingHours || 'Mon-Fri 09:00-18:00',
+    breakHours: profile?.breakHours || '13:00-14:00',
+    holidayClosures: profile?.holidayClosures || '',
+    staffCount: profile?.staffCount || 1,
+    slotIntervalMin: profile?.slotIntervalMin || 30,
+    bookingLimitPerDay: profile?.bookingLimitPerDay || 12,
+    boostEnabled: Boolean(profile?.boostEnabled),
   }));
 
   const canUse = Boolean(companyId) && isApprovedCompany;
@@ -117,6 +124,45 @@ export default function ProviderPortal() {
             <span className="pp-field__label">Address (optional)</span>
             <input value={publish.address} onChange={(e) => setPublish((p) => ({ ...p, address: e.target.value }))} />
           </label>
+          <div className="pp-modalGrid2">
+            <label className="pp-field">
+              <span className="pp-field__label">Working hours</span>
+              <input value={publish.workingHours} onChange={(e) => setPublish((p) => ({ ...p, workingHours: e.target.value }))} placeholder="Mon-Fri 09:00-18:00" />
+            </label>
+            <label className="pp-field">
+              <span className="pp-field__label">Break hours</span>
+              <input value={publish.breakHours} onChange={(e) => setPublish((p) => ({ ...p, breakHours: e.target.value }))} placeholder="13:00-14:00" />
+            </label>
+          </div>
+          <div className="pp-modalGrid2">
+            <label className="pp-field">
+              <span className="pp-field__label">Available staff</span>
+              <input type="number" min={1} value={publish.staffCount} onChange={(e) => setPublish((p) => ({ ...p, staffCount: Number(e.target.value) }))} />
+            </label>
+            <label className="pp-field">
+              <span className="pp-field__label">Slot interval (min)</span>
+              <input type="number" min={5} value={publish.slotIntervalMin} onChange={(e) => setPublish((p) => ({ ...p, slotIntervalMin: Number(e.target.value) }))} />
+            </label>
+            <label className="pp-field">
+              <span className="pp-field__label">Booking limit / day</span>
+              <input type="number" min={1} value={publish.bookingLimitPerDay} onChange={(e) => setPublish((p) => ({ ...p, bookingLimitPerDay: Number(e.target.value) }))} />
+            </label>
+          </div>
+          <label className="pp-field">
+            <span className="pp-field__label">Holiday closures</span>
+            <textarea rows={2} value={publish.holidayClosures} onChange={(e) => setPublish((p) => ({ ...p, holidayClosures: e.target.value }))} placeholder="Public holidays, renovation days, team leave..." />
+          </label>
+          <label className="pp-field pp-boostPanel">
+            <input
+              type="checkbox"
+              checked={publish.boostEnabled}
+              onChange={(e) => setPublish((p) => ({ ...p, boostEnabled: e.target.checked }))}
+            />
+            <span>
+              <strong>Business boost</strong>
+              <small>Show as Recommended/Sponsored and prioritize visibility in premium sections.</small>
+            </span>
+          </label>
           <button
             type="button"
             className="pp-btn pp-btn--primary"
@@ -166,7 +212,16 @@ export default function ProviderPortal() {
 function Services({ companyId }) {
   const [services, setServices] = useState([]);
   const [err, setErr] = useState('');
-  const [form, setForm] = useState({ type: 'vet', name: '', durationMin: 30, description: '', active: true });
+  const [form, setForm] = useState({
+    type: 'vet',
+    name: '',
+    durationMin: 30,
+    price: '',
+    description: '',
+    addOns: '',
+    preparationNotes: '',
+    active: true,
+  });
 
   useEffect(() => subscribeCompanyServices(companyId, setServices, (e) => setErr(e?.message || 'failed')), [companyId]);
 
@@ -175,7 +230,7 @@ function Services({ companyId }) {
     setErr('');
     try {
       await upsertCompanyService(companyId, null, form);
-      setForm({ type: 'vet', name: '', durationMin: 30, description: '', active: true });
+      setForm({ type: 'vet', name: '', durationMin: 30, price: '', description: '', addOns: '', preparationNotes: '', active: true });
     } catch (e2) {
       setErr(e2?.message || 'failed');
     }
@@ -205,6 +260,10 @@ function Services({ companyId }) {
                 onChange={(e) => setForm((p) => ({ ...p, durationMin: Number(e.target.value) }))}
               />
             </label>
+            <label className="pp-field">
+              <span className="pp-field__label">Price</span>
+              <input value={form.price} onChange={(e) => setForm((p) => ({ ...p, price: e.target.value }))} placeholder="€25" />
+            </label>
           </div>
           <label className="pp-field">
             <span className="pp-field__label">Name</span>
@@ -217,6 +276,14 @@ function Services({ companyId }) {
               value={form.description}
               onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
             />
+          </label>
+          <label className="pp-field">
+            <span className="pp-field__label">Optional add-ons</span>
+            <textarea rows={2} value={form.addOns} onChange={(e) => setForm((p) => ({ ...p, addOns: e.target.value }))} placeholder="Nail trim +€8, medicated shampoo +€10" />
+          </label>
+          <label className="pp-field">
+            <span className="pp-field__label">Preparation notes</span>
+            <textarea rows={2} value={form.preparationNotes} onChange={(e) => setForm((p) => ({ ...p, preparationNotes: e.target.value }))} placeholder="Bring vaccination booklet, arrive 10 minutes early..." />
           </label>
           <label className="pp-field" style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
             <input
@@ -243,7 +310,7 @@ function Services({ companyId }) {
               <div>
                 <div style={{ fontWeight: 900 }}>{s.name}</div>
                 <div className="pp-muted" style={{ fontSize: 13 }}>
-                  {s.type} • {s.durationMin} min • {s.active === false ? 'inactive' : 'active'}
+                  {s.type} • {s.price || 'No price'} • {s.durationMin} min • {s.active === false ? 'inactive' : 'active'}
                 </div>
               </div>
               <button

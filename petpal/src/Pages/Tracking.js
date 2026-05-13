@@ -227,6 +227,24 @@ export default function Tracking() {
   const batPct = position?.battery != null ? Math.min(100, Math.max(0, Number(position.battery))) : null;
 
   const accMeter = position ? accuracyMeterStyle(position) : null;
+  const trackingActions = (
+    <div className="pp-row pp-trackMapActions" style={{ gap: 8, flexWrap: 'wrap', margin: '12px 0 10px' }}>
+      <button
+        type="button"
+        className="pp-btn pp-btnPrimary"
+        disabled={loading || !effectiveDeviceId}
+        onClick={() => void refresh()}
+      >
+        {t('trackingPage.btnLocate')}
+      </button>
+      <button type="button" className="pp-btn" disabled={loading || !effectiveDeviceId} onClick={() => void refresh()}>
+        {t('trackingPage.quickRefresh')}
+      </button>
+      <Link className="pp-btn pp-btn--ghost" to="/pets" style={{ textDecoration: 'none' }}>
+        {t('trackingPage.managePets')}
+      </Link>
+    </div>
+  );
 
   return (
     <div className="pp-feed pp-tracker-page">
@@ -303,39 +321,31 @@ export default function Tracking() {
               </div>
             </div>
 
-            <div className="pp-row" style={{ gap: 8, flexWrap: 'wrap' }}>
-              <button
-                type="button"
-                className="pp-btn pp-btnPrimary"
-                disabled={loading || !effectiveDeviceId}
-                onClick={() => void refresh()}
-              >
-                {loading ? t('trackingPage.btnRefresh') : t('trackingPage.btnLocate')}
-              </button>
-              <button type="button" className="pp-btn" disabled={loading || !effectiveDeviceId} onClick={() => void refresh()}>
-                {t('trackingPage.quickRefresh')}
-              </button>
-              <Link className="pp-btn pp-btn--ghost" to="/pets" style={{ textDecoration: 'none' }}>
-                {t('trackingPage.managePets')}
-              </Link>
-            </div>
           </div>
 
           {position ? (
-            <div className="pp-row" style={{ marginTop: 14, gap: 12, flexWrap: 'wrap' }}>
-              <div className="pp-card pp-pad" style={{ flex: '1 1 220px' }}>
+            <div
+              className="pp-trackStatusGrid"
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+                gap: 10,
+                marginTop: 14,
+              }}
+            >
+              <div className="pp-card" style={{ minWidth: 0, padding: 12, borderRadius: 20 }}>
                 <div className="pp-label">{t('trackingPage.cardLocation')}</div>
                 <div style={{ marginTop: 6 }}>
                   <span className={`pp-trackGpsPill ${approx ? 'pp-trackGpsPill--warn' : 'pp-trackGpsPill--ok'}`} style={{ fontSize: 12 }}>
                     {approx ? t('trackingPage.badgeApprox') : 'GPS'}
                   </span>
                 </div>
-                <p className="pp-subtle" style={{ marginTop: 8, marginBottom: 0 }}>
+                <p className="pp-subtle" style={{ marginTop: 8, marginBottom: 0, fontSize: 13, lineHeight: 1.35 }}>
                   {position.accuracyText || t(approx ? 'trackingPage.accuracyApprox' : 'trackingPage.accuracyHigh')}
                 </p>
               </div>
 
-              <div className="pp-card pp-pad" style={{ flex: '1 1 220px' }}>
+              <div className="pp-card" style={{ minWidth: 0, padding: 12, borderRadius: 20 }}>
                 <div className="pp-label">{t('trackingPage.cardHealth')}</div>
                 {batPct != null ? (
                   <div className="pp-batteryBar" aria-label={t('trackingPage.batteryPctAria', { pct: batPct })}>
@@ -345,21 +355,21 @@ export default function Tracking() {
                     </div>
                   </div>
                 ) : (
-                  <p className="pp-subtle" style={{ marginTop: 8, marginBottom: 0 }}>
+                  <p className="pp-subtle" style={{ marginTop: 8, marginBottom: 0, fontSize: 13, lineHeight: 1.35 }}>
                     {t('trackingPage.healthBattery')}: —
                   </p>
                 )}
-                <p className="pp-subtle" style={{ marginTop: 10, marginBottom: 0 }}>
+                <p className="pp-subtle" style={{ marginTop: 8, marginBottom: 0, fontSize: 13, lineHeight: 1.35 }}>
                   {t('trackingPage.healthSignal')}: {position.signal != null ? `${position.signal} (${position.signalStatus || '—'})` : '—'}
                 </p>
               </div>
 
-              <div className="pp-card pp-pad" style={{ flex: '1 1 220px' }}>
+              <div className="pp-card" style={{ minWidth: 0, padding: 12, borderRadius: 20 }}>
                 <div className="pp-label">{t('trackingPage.cardActivity')}</div>
-                <p className="pp-subtle" style={{ marginTop: 8, marginBottom: 0 }}>
+                <p className="pp-subtle" style={{ marginTop: 8, marginBottom: 0, fontSize: 13, lineHeight: 1.35 }}>
                   {t('trackingPage.activitySteps')}: {position.steps ?? '—'}
                 </p>
-                <p className="pp-subtle" style={{ marginTop: 6, marginBottom: 0 }}>
+                <p className="pp-subtle" style={{ marginTop: 6, marginBottom: 0, fontSize: 13, lineHeight: 1.35 }}>
                   {position.movementText || (position.isMoving ? t('trackingPage.moving') : t('trackingPage.notMoving'))}
                 </p>
               </div>
@@ -369,22 +379,25 @@ export default function Tracking() {
       ) : null}
 
       <section className="pp-card pp-pad pp-trackMapShell">
+        <div className="pp-trackMapHead">
+          <h2 className="pp-sectionTitle" style={{ margin: 0 }}>
+            {t('trackingPage.sectionMap')}
+          </h2>
+          {position && hasCoordinates ? (
+            <a
+              className="pp-btn pp-btn--ghost"
+              href={mapsLink(position.lat, position.lng)}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ textDecoration: 'none' }}
+            >
+              {t('trackingPage.openGoogleMaps')}
+            </a>
+          ) : null}
+        </div>
+        {trackingActions}
         {position && hasCoordinates ? (
           <>
-            <div className="pp-trackMapHead">
-              <h2 className="pp-sectionTitle" style={{ margin: 0 }}>
-                {t('trackingPage.sectionMap')}
-              </h2>
-              <a
-                className="pp-btn pp-btn--ghost"
-                href={mapsLink(position.lat, position.lng)}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ textDecoration: 'none' }}
-              >
-                {t('trackingPage.openGoogleMaps')}
-              </a>
-            </div>
             <p className="pp-subtle pp-trackMapHint">{t('trackingPage.mapTilesHint')}</p>
             <div className="pp-trackMapFrame">
               <PositionMap lat={position.lat} lng={position.lng} />

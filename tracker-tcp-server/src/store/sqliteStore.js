@@ -176,6 +176,34 @@ function createSqliteStore({ dbPath }) {
         status_code: statusCode ?? null,
         latency_ms: latencyMs ?? null
       });
+    },
+
+    recordTcpInboundRequest({
+      ts,
+      remoteAddress,
+      remotePort,
+      event,
+      imei,
+      messageId,
+      byteLength,
+      rawHex,
+      asciiPreview,
+      parsedJson,
+      note
+    }) {
+      sqlite.insertTcpInboundRequest.run({
+        ts: ts || new Date().toISOString(),
+        remote_address: remoteAddress ?? null,
+        remote_port: remotePort ?? null,
+        event: String(event || "data"),
+        imei: imei ?? null,
+        message_id: messageId ?? null,
+        byte_length: byteLength ?? null,
+        raw_hex: rawHex ?? null,
+        ascii_preview: asciiPreview ?? null,
+        parsed_json: parsedJson ?? null,
+        note: note ?? null
+      });
     }
   };
 }

@@ -65,6 +65,12 @@ function safeJsonStringify(value) {
 app.use((req, res, next) => {
   const start = Date.now();
   res.locals.requestUser = req.header("x-user") || req.header("x-user-id") || null;
+  console.log(
+    `${logPrefix({ dir: "http_in", tag: "HTTP" })} REQUEST ${req.method} ${req.originalUrl || req.path} ` +
+      `ip=${req.ip || req.socket?.remoteAddress || "-"} query=${safeJsonStringify(req.query) || "{}"} body=${
+        safeJsonStringify(req.body) || "{}"
+      }`
+  );
 
   res.on("finish", () => {
     const latencyMs = Date.now() - start;
