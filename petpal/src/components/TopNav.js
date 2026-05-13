@@ -5,7 +5,7 @@ import { useCompany } from '../company/CompanyContext';
 import { useI18n } from '../i18n/I18nContext';
 import { LanguageSwitcher } from '../i18n/LanguageSwitcher';
 import UserAvatar from './UserAvatar';
-import petpalLogo from '../logo.svg';
+import petpalLogo from '../logo.png';
 
 function navItemClassName({ isActive }) {
   return [

@@ -6,7 +6,7 @@
   </defs>
   <rect width="256" height="256" rx="62" fill="#FFFFFF"/>
   <rect x="10" y="10" width="236" height="236" rx="56" fill="#FFFFFF" stroke="#EEF1F8" stroke-width="4"/>
-  <g filter="url(#petpal-shadow)">
+  <g filter="url(#petpal-shadow)" stroke="#FFFFFF" stroke-width="10" stroke-linejoin="round" paint-order="stroke fill">
     <circle cx="80" cy="90" r="22" fill="#111827"/>
     <circle cx="126" cy="72" r="24" fill="#111827"/>
     <circle cx="176" cy="92" r="22" fill="#111827"/>

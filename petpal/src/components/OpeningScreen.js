@@ -1,5 +1,5 @@
 import React from 'react';
-import petpalLogo from '../logo.svg';
+import petpalLogo from '../logo.png';
 
 /**
  * Centered auth/session splash — calm gradient, glass card, orbit + pulse loaders

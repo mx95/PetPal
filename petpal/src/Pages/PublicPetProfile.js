@@ -3,7 +3,7 @@ import { Link, useLocation, useParams } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
 import { getDb, isFirebaseConfigured } from '../firebase';
 import { useI18n } from '../i18n/I18nContext';
-import petpalLogo from '../logo.svg';
+import petpalLogo from '../logo.png';
 
 function getSafe(v, fallback = '') {
   if (typeof v === 'string') return v;
