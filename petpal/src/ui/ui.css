@@ -10447,6 +10447,157 @@ html[data-theme="dark"] .pp-book-calendar__monthControls button {
   color: #d6ceff;
 }
 
+/* Booking modal visual fix: compact calendar and keep slots clear of footer. */
+.pp-book-modalPanel {
+  max-height: min(92dvh, 760px) !important;
+}
+
+.pp-book-modalHead {
+  margin-bottom: 8px !important;
+}
+
+.pp-book-modalBody {
+  padding-bottom: 88px !important;
+}
+
+.pp-book-calendar {
+  gap: 8px !important;
+}
+
+.pp-book-calendar__head {
+  align-items: center;
+  margin-bottom: 0;
+}
+
+.pp-book-calendar__head > .pp-book-field__label {
+  font-size: 12px;
+  letter-spacing: 0.12em;
+}
+
+.pp-book-calendar__monthControls {
+  grid-template-columns: 28px auto 28px;
+  padding: 3px;
+  background: rgba(91, 55, 255, 0.075);
+}
+
+.pp-book-calendar__monthControls button {
+  width: 28px;
+  height: 28px;
+  line-height: 1;
+}
+
+.pp-book-calendar__monthControls strong {
+  min-width: 104px;
+  font-size: 11.5px;
+}
+
+.pp-book-calendarGrid {
+  gap: 4px !important;
+  padding: 8px !important;
+  border-radius: 18px !important;
+}
+
+.pp-book-calendarGrid__dow {
+  height: 18px;
+  display: grid;
+  place-items: center;
+  font-size: 10px;
+  color: rgba(102, 112, 133, 0.68);
+}
+
+.pp-book-calendarDay {
+  aspect-ratio: auto !important;
+  height: 34px;
+  min-height: 34px;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+}
+
+.pp-book-calendarDay.is-muted {
+  opacity: 0.34;
+}
+
+.pp-book-calendarDay:disabled {
+  opacity: 0.2;
+}
+
+.pp-book-calendarDay.is-active {
+  box-shadow: 0 12px 22px -10px rgba(91, 55, 255, 0.7);
+}
+
+.pp-book-weekSchedule {
+  grid-template-columns: repeat(7, minmax(42px, 1fr));
+  gap: 5px;
+}
+
+.pp-book-weekDay {
+  min-height: 48px;
+  border-radius: 14px;
+}
+
+.pp-book-weekDay span {
+  font-size: 9.5px;
+}
+
+.pp-book-weekDay strong {
+  font-size: 14px;
+}
+
+.pp-book-slotPeriod {
+  margin-top: 12px !important;
+}
+
+.pp-book-slotPeriod__title {
+  margin-bottom: 7px !important;
+  font-size: 11px !important;
+  letter-spacing: 0.14em !important;
+}
+
+.pp-book-slotGrid--premium {
+  padding-bottom: 6px !important;
+}
+
+.pp-book-slot--rich {
+  min-width: 150px;
+  border-radius: 16px;
+}
+
+.pp-book-modalActions {
+  min-height: 72px;
+  align-items: center;
+  box-shadow: 0 -14px 30px rgba(16, 24, 40, 0.06);
+}
+
+@media (max-width: 560px) {
+  .pp-book-modalPanel {
+    padding: 12px 14px 0 !important;
+    border-radius: 24px 24px 0 0 !important;
+  }
+
+  .pp-book-modalPanel::before {
+    margin-bottom: 10px !important;
+  }
+
+  .pp-book-modalTitle {
+    font-size: 18px !important;
+    line-height: 1.15;
+  }
+
+  .pp-book-modalSub {
+    font-size: 13.5px !important;
+  }
+
+  .pp-book-modalAddr {
+    font-size: 12px !important;
+  }
+
+  .pp-book-iconBtn {
+    width: 36px !important;
+    height: 36px !important;
+  }
+}
+
 /* Bottom bar correction from device screenshot: keep the dock fully visible and centered. */
 @media (max-width: 720px) {
   .pp-bottomNav {

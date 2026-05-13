@@ -1,21 +1,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="PetPal logo">
   <defs>
-    <linearGradient id="petpal-paw" x1="65" y1="56" x2="190" y2="203" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#6D4CFF"/>
-      <stop offset=".55" stop-color="#5B37FF"/>
-      <stop offset="1" stop-color="#2F80FF"/>
-    </linearGradient>
     <filter id="petpal-shadow" x="36" y="34" width="184" height="191" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
-      <feDropShadow dx="0" dy="12" stdDeviation="13" flood-color="#5B37FF" flood-opacity=".20"/>
+      <feDropShadow dx="0" dy="12" stdDeviation="13" flood-color="#101828" flood-opacity=".12"/>
     </filter>
   </defs>
   <rect width="256" height="256" rx="62" fill="#FFFFFF"/>
   <rect x="10" y="10" width="236" height="236" rx="56" fill="#FFFFFF" stroke="#EEF1F8" stroke-width="4"/>
   <g filter="url(#petpal-shadow)">
-    <circle cx="80" cy="90" r="22" fill="url(#petpal-paw)" opacity=".96"/>
-    <circle cx="126" cy="72" r="24" fill="url(#petpal-paw)" opacity=".98"/>
-    <circle cx="176" cy="92" r="22" fill="url(#petpal-paw)" opacity=".96"/>
-    <circle cx="74" cy="143" r="20" fill="url(#petpal-paw)" opacity=".94"/>
-    <path d="M128 115c33 0 61 29 61 59 0 24-18 38-43 28-8-3-14-5-19-5s-11 2-19 5c-25 10-43-4-43-28 0-30 30-59 63-59Z" fill="url(#petpal-paw)"/>
+    <circle cx="80" cy="90" r="22" fill="#111827"/>
+    <circle cx="126" cy="72" r="24" fill="#111827"/>
+    <circle cx="176" cy="92" r="22" fill="#111827"/>
+    <circle cx="74" cy="143" r="20" fill="#111827"/>
+    <path d="M128 115c33 0 61 29 61 59 0 24-18 38-43 28-8-3-14-5-19-5s-11 2-19 5c-25 10-43-4-43-28 0-30 30-59 63-59Z" fill="#111827"/>
   </g>
 </svg>
