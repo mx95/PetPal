@@ -82,7 +82,10 @@ function BrowseProviders() {
   const withDistance = useMemo(() => {
     return filtered
       .map((p) => ({ p, km: providerDistanceKm(p, userLoc) }))
-      .filter(({ km }) => (maxKm != null && userLoc && km != null ? km <= maxKm : true));
+      .filter(({ km }) => {
+        if (maxKm == null || !userLoc) return true;
+        return km != null && km <= maxKm;
+      });
   }, [filtered, userLoc, maxKm]);
 
   const sorted = useMemo(() => {
@@ -123,17 +126,35 @@ function BrowseProviders() {
     }
     setLocating(true);
     setLocMsg('');
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setUserLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-        setLocating(false);
-      },
-      () => {
-        setLocMsg(t('bookingsHub.locationDenied'));
-        setLocating(false);
-      },
-      { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 }
-    );
+    const optsList = [
+      { enableHighAccuracy: false, timeout: 22000, maximumAge: 300000 },
+      { enableHighAccuracy: true, timeout: 30000, maximumAge: 0 },
+    ];
+    let attempt = 0;
+    const run = () => {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setUserLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+          setLocating(false);
+        },
+        (err) => {
+          attempt += 1;
+          if (attempt < optsList.length) {
+            run();
+            return;
+          }
+          const code = err && typeof err.code === 'number' ? err.code : 0;
+          let msgKey = 'bookingsHub.locationDenied';
+          if (code === 1) msgKey = 'bookingsHub.locationPermissionDenied';
+          else if (code === 2) msgKey = 'bookingsHub.locationUnavailable';
+          else if (code === 3) msgKey = 'bookingsHub.locationTimeout';
+          setLocMsg(t(msgKey));
+          setLocating(false);
+        },
+        optsList[attempt]
+      );
+    };
+    run();
   };
 
   const showEmpty = sorted.length === 0;
@@ -198,7 +219,16 @@ function BrowseProviders() {
             <SkeletonCard />
           </div>
         ) : showEmpty ? (
-          <EmptyState title={t('bookingsHub.emptyTitle')} body={search ? t('bookingsHub.emptySearch') : t('bookingsHub.emptyBody')} />
+          <EmptyState
+            title={t('bookingsHub.emptyTitle')}
+            body={
+              search
+                ? t('bookingsHub.emptySearch')
+                : userLoc && maxKm != null && filtered.length > 0
+                  ? t('bookingsHub.distanceEmptyHint')
+                  : t('bookingsHub.emptyBody')
+            }
+          />
         ) : (
           <>
             {recommended.length ? (

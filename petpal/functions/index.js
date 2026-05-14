@@ -155,5 +155,13 @@ exports.tracking = functions
     });
   });
 
+/** Default Admin app must exist before any function uses Firestore (see jccPayments ensureAdmin). */
+const admin = require('firebase-admin');
+try {
+  admin.app();
+} catch {
+  admin.initializeApp();
+}
+
 Object.assign(exports, require('./jccPayments'));
 

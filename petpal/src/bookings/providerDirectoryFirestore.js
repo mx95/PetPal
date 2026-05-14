@@ -15,6 +15,16 @@ function providersCol() {
   return collection(getDb(), 'providers');
 }
 
+/** @param {unknown} v */
+function finiteCoordFromPatch(v) {
+  if (typeof v === 'number' && Number.isFinite(v)) return v;
+  if (typeof v === 'string' && v.trim() !== '') {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : null;
+  }
+  return null;
+}
+
 export function subscribeProviders(onNext, onError) {
   if (!isFirebaseConfigured()) {
     onNext([]);
@@ -46,8 +56,8 @@ export async function seedProviderListingFromCompany(companyId, companyData) {
     displayName,
     address: String(companyData.addressLine || '').trim().slice(0, 200),
     phone: String(companyData.publicEmail || '').trim().slice(0, 60),
-    lat: typeof companyData.lat === 'number' ? companyData.lat : null,
-    lng: typeof companyData.lng === 'number' ? companyData.lng : null,
+    lat: finiteCoordFromPatch(companyData.lat),
+    lng: finiteCoordFromPatch(companyData.lng),
     providerTypes: { vet: true, saloon: true, hotel: true, shop: false },
   });
 }
@@ -59,8 +69,8 @@ export async function publishProviderProfile(companyId, patch) {
     displayName: String(patch?.displayName || '').trim().slice(0, 120),
     address: patch?.address ? String(patch.address).trim().slice(0, 200) : '',
     phone: patch?.phone ? String(patch.phone).trim().slice(0, 60) : '',
-    lat: typeof patch?.lat === 'number' ? patch.lat : null,
-    lng: typeof patch?.lng === 'number' ? patch.lng : null,
+    lat: finiteCoordFromPatch(patch?.lat),
+    lng: finiteCoordFromPatch(patch?.lng),
     providerTypes: patch?.providerTypes && typeof patch.providerTypes === 'object' ? patch.providerTypes : {},
     workingHours: patch?.workingHours ? String(patch.workingHours).trim().slice(0, 120) : '',
     breakHours: patch?.breakHours ? String(patch.breakHours).trim().slice(0, 120) : '',

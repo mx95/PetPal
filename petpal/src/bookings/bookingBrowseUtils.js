@@ -58,16 +58,46 @@ export function haversineKm(lat1, lng1, lat2, lng2) {
   return Math.round(r * c * 10) / 10;
 }
 
+/** @param {unknown} v */
+function finiteCoord(v) {
+  if (typeof v === 'number') return Number.isFinite(v) ? v : null;
+  if (typeof v === 'string' && v.trim() !== '') {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : null;
+  }
+  return null;
+}
+
+/**
+ * Map pin for a provider: flat lat/lng, numeric strings, or GeoPoint-like { latitude, longitude }.
+ * @param {Record<string, unknown>} p
+ * @returns {{ lat: number, lng: number } | null}
+ */
+export function providerLatLng(p) {
+  if (!p || typeof p !== 'object') return null;
+  const nested = p.geo ?? p.location ?? p.coordinates ?? p.position;
+  if (nested && typeof nested === 'object') {
+    const latRaw = 'latitude' in nested ? nested.latitude : nested.lat;
+    const lngRaw = 'longitude' in nested ? nested.longitude : nested.lng;
+    const lat = finiteCoord(latRaw);
+    const lng = finiteCoord(lngRaw);
+    if (lat != null && lng != null) return { lat, lng };
+  }
+  const lat = finiteCoord(p.lat);
+  const lng = finiteCoord(p.lng);
+  if (lat != null && lng != null) return { lat, lng };
+  return null;
+}
+
 /**
  * @param {Record<string, unknown>} p
  * @param {{ lat: number, lng: number } | null} userLoc
  */
 export function providerDistanceKm(p, userLoc) {
   if (!userLoc) return null;
-  const lat = Number(p.lat);
-  const lng = Number(p.lng);
-  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
-  return haversineKm(userLoc.lat, userLoc.lng, lat, lng);
+  const ll = providerLatLng(p);
+  if (!ll) return null;
+  return haversineKm(userLoc.lat, userLoc.lng, ll.lat, ll.lng);
 }
 
 /**

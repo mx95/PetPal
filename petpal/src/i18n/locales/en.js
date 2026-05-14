@@ -725,6 +725,11 @@ const en = {
     useLocation: 'Use my location',
     locating: 'Locating…',
     locationDenied: 'Location unavailable — distance filter off.',
+    locationPermissionDenied: 'Location blocked in the browser — allow location for this site, then try again.',
+    locationTimeout: 'Location timed out — try again or move closer to a window or Wi‑Fi.',
+    locationUnavailable: 'Could not read your position — try again in a moment.',
+    distanceEmptyHint:
+      'No providers match this radius on the map. Widen the distance, turn distance to “Any”, or search by name.',
     categoryLabel: 'Service',
     bookNow: 'Book now',
     newOnPetpal: 'New',

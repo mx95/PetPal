@@ -103,7 +103,18 @@ function paidOrderStatus(json) {
 }
 
 function ensureAdmin() {
-  if (!admin.apps.length) admin.initializeApp();
+  try {
+    admin.app();
+    return;
+  } catch {
+    /* default app missing — do not rely on admin.apps.length (can disagree with admin.app() on some runtimes). */
+  }
+  try {
+    admin.initializeApp();
+  } catch (e) {
+    if (e && e.code === 'app/duplicate-app') return;
+    throw e;
+  }
 }
 
 function uniqueOrderNumber(prefix) {
