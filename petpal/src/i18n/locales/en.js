@@ -18,6 +18,7 @@ const en = {
     logout: 'Log out',
     docs: 'Docs',
     bookings: 'Bookings',
+    shop: 'Shop',
     provider: 'Provider',
   },
   home: {

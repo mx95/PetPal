@@ -18,6 +18,7 @@ const ru = {
     logout: 'Выйти',
     docs: 'Документация',
     bookings: 'Запись',
+    shop: 'Магазин',
     provider: 'Провайдер',
   },
   home: {

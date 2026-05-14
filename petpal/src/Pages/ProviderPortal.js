@@ -548,6 +548,22 @@ export default function ProviderPortal() {
       />
       <DemoBusinessSwitcher businesses={demoBusinesses} onSelect={(id) => setSearchParams({ demoBusiness: id })} compact />
 
+      <div className="pp-card pp-providerBoostCta" style={{ marginTop: 14 }}>
+        <div className="pp-card__title">Recommended on Nearby &amp; Bookings</div>
+        <p className="pp-muted" style={{ marginTop: 8, marginBottom: 0, lineHeight: 1.5 }}>
+          Boost your clinic or shop so pet parents see you first on the Nearby map strip and in Bookings. Paid monthly via
+          PetPal Shop (JCC hosted checkout); renewals use your saved card token.
+        </p>
+        <div style={{ marginTop: 14, display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
+          <Link className="pp-btn pp-btn--primary" to="/shop?sku=STORE_BOOST_MONTHLY">
+            Open boost in Shop
+          </Link>
+          <Link className="pp-link" to="/shop">
+            Browse all products
+          </Link>
+        </div>
+      </div>
+
       <div className="pp-card" style={{ marginTop: 14 }}>
         <div className="pp-card__title">Public listing</div>
         <div className="pp-muted" style={{ marginTop: 6 }}>
@@ -614,8 +630,11 @@ export default function ProviderPortal() {
               onChange={(e) => setPublish((p) => ({ ...p, boostEnabled: e.target.checked }))}
             />
             <span>
-              <strong>Business boost</strong>
-              <small>Show as Recommended/Sponsored and prioritize visibility in premium sections.</small>
+              <strong>Business boost (listing flag)</strong>
+              <small>
+                For production, use <Link to="/shop?sku=STORE_BOOST_MONTHLY">PetPal Shop — Business boost</Link> so visibility
+                matches paid renewals. This toggle is for testing or manual admin overrides only.
+              </small>
             </span>
           </label>
           <button

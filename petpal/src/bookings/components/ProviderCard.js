@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { PetIllustration, PrimaryButton } from '../../components/ui';
+import { providerBoostIsActive } from '../bookingBrowseUtils';
 
 function categoryLabel(types, t) {
   const pt = types && typeof types === 'object' ? types : {};
@@ -25,7 +26,7 @@ export function ProviderCard({ provider, distanceKm, onBook, t }) {
   const hasRating = Number.isFinite(rating) && rating > 0;
   const cat = useMemo(() => categoryLabel(provider.providerTypes, t), [provider.providerTypes, t]);
   const providerName = String(provider.displayName || 'Provider');
-  const sponsored = Boolean(provider.sponsored || provider.boostEnabled || provider.recommended);
+  const sponsored = providerBoostIsActive(provider);
   const hours = provider.workingHours || 'Open today';
   const nextSlot = provider.nextAvailable || 'Next slots today';
   const servicesPreview = provider.servicesPreview || cat;

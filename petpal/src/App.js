@@ -24,6 +24,7 @@ import PublicPetProfile from './Pages/PublicPetProfile';
 import Profile from './Pages/Profile';
 import ProviderPortal from './Pages/ProviderPortal';
 import BookingsHub from './Pages/BookingsHub';
+import Shop from './Pages/Shop';
 import ProviderProfile from './Pages/ProviderProfile';
 import BookService from './Pages/BookService';
 import './ui/ui.css';
@@ -120,6 +121,14 @@ function App() {
             element={
               <RequireAuth>
                 <ProviderPortal />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/shop"
+            element={
+              <RequireAuth>
+                <Shop />
               </RequireAuth>
             }
           />

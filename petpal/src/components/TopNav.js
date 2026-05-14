@@ -101,6 +101,9 @@ export default function TopNav() {
               <NavLink className={navItemClassName} to="/bookings">
                 {t('nav.bookings')}
               </NavLink>
+              <NavLink className={navItemClassName} to="/shop">
+                {t('nav.shop')}
+              </NavLink>
               {isApprovedCompany && profile?.bookingEnabled ? (
                 <NavLink className={navItemClassName} to="/provider">
                   {t('nav.provider')}
@@ -148,6 +151,10 @@ export default function TopNav() {
 
               {accountMenuOpen ? (
                 <div className="absolute right-0 mt-3 w-60 rounded-3xl border border-slate-200 bg-white p-2 shadow-lift animate-soft-pop" role="menu" aria-label={t('nav.profile')}>
+                  <Link className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-petpal-ink no-underline transition hover:bg-petpal-soft" to="/shop" role="menuitem" onClick={() => setAccountMenuOpen(false)}>
+                    <span aria-hidden>🛒</span>
+                    <span>{t('nav.shop')}</span>
+                  </Link>
                   <Link className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-petpal-ink no-underline transition hover:bg-petpal-soft" to="/profile" role="menuitem" onClick={() => setAccountMenuOpen(false)}>
                     <span aria-hidden>👤</span>
                     <span>{t('nav.profile')}</span>

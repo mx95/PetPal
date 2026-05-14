@@ -69,3 +69,20 @@ export function providerDistanceKm(p, userLoc) {
   if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
   return haversineKm(userLoc.lat, userLoc.lng, lat, lng);
 }
+
+/**
+ * True when a provider should appear as “recommended” in UI (honours optional `boostUntil`).
+ * @param {Record<string, unknown> | null | undefined} p
+ */
+export function providerBoostIsActive(p) {
+  if (!p || typeof p !== 'object') return false;
+  const flagged = Boolean(p.sponsored || p.recommended || p.boostEnabled);
+  if (!flagged) return false;
+  const until = p.boostUntil;
+  if (until == null) return true;
+  let ms = null;
+  if (typeof until.toMillis === 'function') ms = until.toMillis();
+  else if (typeof until.seconds === 'number') ms = until.seconds * 1000;
+  if (ms == null || !Number.isFinite(ms)) return true;
+  return ms > Date.now();
+}

@@ -155,3 +155,5 @@ exports.tracking = functions
     });
   });
 
+Object.assign(exports, require('./jccPayments'));
+

@@ -94,6 +94,11 @@ service cloud.firestore {
         allow read: if true;
         allow create, update, delete: if request.auth != null && request.auth.uid == userId;
       }
+
+      match /billing/{docId} {
+        allow read: if request.auth != null && request.auth.uid == userId;
+        allow write: if false;
+      }
     }
 
     // Bookings: top-level collection so customers and providers can query efficiently.
@@ -142,6 +147,17 @@ service cloud.firestore {
       allow read: if request.auth != null;
       allow create, update: if isAdmin() || isApprovedCompany(companyId);
       allow delete: if false;
+    }
+
+    // JCC payment sessions — Cloud Functions (Admin SDK) only.
+    match /paymentSessions/{sessionId} {
+      allow read, write: if false;
+    }
+
+    // Active subscriptions (renewed by scheduled Cloud Function).
+    match /billingSubscriptions/{subId} {
+      allow read: if request.auth != null && resource.data.uid == request.auth.uid;
+      allow write: if false;
     }
 
     // Public profile docs used by NFC/QR pages (sanitized fields only).

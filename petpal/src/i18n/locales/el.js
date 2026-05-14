@@ -18,6 +18,7 @@ const el = {
     logout: 'Αποσύνδεση',
     docs: 'Οδηγίες',
     bookings: 'Κρατήσεις',
+    shop: 'Κατάστημα',
     provider: 'Πάροχος',
   },
   home: {

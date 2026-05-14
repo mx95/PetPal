@@ -7,6 +7,7 @@ import { subscribeProviders } from '../bookings/providerDirectoryFirestore';
 import {
   matchesRatingFilter,
   matchesSearch,
+  providerBoostIsActive,
   providerDistanceKm,
   providerMatchesServiceTab,
 } from '../bookings/bookingBrowseUtils';
@@ -86,16 +87,16 @@ function BrowseProviders() {
 
   const sorted = useMemo(() => {
     const copy = withDistance.slice();
-    copy.sort((a, b) => Number(Boolean(b.p.sponsored || b.p.recommended || b.p.boostEnabled)) - Number(Boolean(a.p.sponsored || a.p.recommended || a.p.boostEnabled)));
+    copy.sort((a, b) => Number(providerBoostIsActive(b.p)) - Number(providerBoostIsActive(a.p)));
     if (userLoc) {
       copy.sort((a, b) => {
-        const sponsorDelta = Number(Boolean(b.p.sponsored || b.p.recommended || b.p.boostEnabled)) - Number(Boolean(a.p.sponsored || a.p.recommended || a.p.boostEnabled));
+        const sponsorDelta = Number(providerBoostIsActive(b.p)) - Number(providerBoostIsActive(a.p));
         if (sponsorDelta) return sponsorDelta;
         return (a.km ?? 1e9) - (b.km ?? 1e9);
       });
     } else {
       copy.sort((a, b) => {
-        const sponsorDelta = Number(Boolean(b.p.sponsored || b.p.recommended || b.p.boostEnabled)) - Number(Boolean(a.p.sponsored || a.p.recommended || a.p.boostEnabled));
+        const sponsorDelta = Number(providerBoostIsActive(b.p)) - Number(providerBoostIsActive(a.p));
         if (sponsorDelta) return sponsorDelta;
         return String(a.p.displayName || '').localeCompare(String(b.p.displayName || ''));
       });
@@ -103,7 +104,7 @@ function BrowseProviders() {
     return copy;
   }, [withDistance, userLoc]);
 
-  const recommended = useMemo(() => sorted.filter(({ p }) => p.sponsored || p.recommended || p.boostEnabled).slice(0, 4), [sorted]);
+  const recommended = useMemo(() => sorted.filter(({ p }) => providerBoostIsActive(p)).slice(0, 4), [sorted]);
 
   const serviceTabs = useMemo(
     () => [

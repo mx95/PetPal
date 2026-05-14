@@ -12521,3 +12521,161 @@ html[data-theme="dark"] .pp-nearby-list > li {
     height: 50px !important;
   }
 }
+
+/* --- Shop (JCC checkout entry) --- */
+.pp-shopGrid {
+  display: grid;
+  gap: 1.25rem;
+  margin-top: 1.25rem;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+}
+
+.pp-shopCard {
+  padding: 1.25rem 1.35rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.pp-shopCard__badge {
+  align-self: flex-start;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.25rem 0.55rem;
+  border-radius: 999px;
+  background: linear-gradient(120deg, rgba(91, 55, 255, 0.12), rgba(47, 128, 255, 0.1));
+  color: #4338ca;
+}
+
+.pp-shopCard__price {
+  font-size: 1.35rem;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  color: var(--pp-ink, #0f172a);
+}
+
+.pp-shopSaveRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--pp-muted, #64748b);
+}
+
+.pp-shopSaveRow input {
+  margin-top: 0.2rem;
+}
+
+.pp-shopCard--focus {
+  outline: 2px solid rgba(91, 55, 255, 0.55);
+  outline-offset: 3px;
+  box-shadow: 0 16px 40px -18px rgba(91, 55, 255, 0.45);
+}
+
+.pp-providerBoostCta {
+  border-color: rgba(91, 55, 255, 0.22);
+  background: linear-gradient(135deg, rgba(91, 55, 255, 0.06), rgba(255, 255, 255, 0.95));
+}
+
+.pp-shopBanner {
+  margin-top: 1rem;
+  padding: 0.85rem 1rem;
+  border-radius: 1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.pp-shopBanner--ok {
+  background: rgba(16, 185, 129, 0.12);
+  color: #047857;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+}
+
+.pp-shopBanner--warn {
+  background: rgba(245, 158, 11, 0.12);
+  color: #b45309;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
+html[data-theme="dark"] .pp-shopCard__badge {
+  color: #c4b5fd;
+  background: linear-gradient(120deg, rgba(91, 55, 255, 0.28), rgba(47, 128, 255, 0.2));
+}
+
+/* --- Nearby: PetPal partner strip --- */
+.pp-nearbyPartners {
+  margin-top: 1.25rem;
+}
+
+.pp-nearbyPartners__row {
+  align-items: stretch;
+}
+
+.pp-nearbyPartnerCard {
+  flex: 0 0 min(260px, 82vw);
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 1rem 1.1rem;
+  border-radius: 1.25rem;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(255, 255, 255, 0.92);
+  text-decoration: none;
+  color: inherit;
+  box-shadow: 0 8px 22px -14px rgba(15, 23, 42, 0.35);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.pp-nearbyPartnerCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 28px -12px rgba(91, 55, 255, 0.35);
+}
+
+.pp-nearbyPartnerCard__badge {
+  align-self: flex-start;
+  font-size: 0.65rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #5b37ff, #2f80ff);
+  color: #fff;
+}
+
+.pp-nearbyPartnerCard__name {
+  font-size: 1rem;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  color: var(--pp-ink, #0f172a);
+}
+
+.pp-nearbyPartnerCard__addr {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--pp-muted, #64748b);
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.pp-nearbyPartnerCard__cta {
+  margin-top: auto;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #5b37ff;
+}
+
+html[data-theme="dark"] .pp-nearbyPartnerCard {
+  background: rgba(30, 41, 59, 0.85);
+  border-color: rgba(148, 163, 184, 0.25);
+}
+
+html[data-theme="dark"] .pp-nearbyPartnerCard__name {
+  color: #f8fafc;
+}

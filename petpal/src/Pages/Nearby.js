@@ -9,6 +9,9 @@ import {
 import { GOOGLE_MAPS_LOADER_ID } from '../config/googleMapsLoaderId';
 import { subscribeGoogleMapsAuthFailure } from '../config/googleMapsAuthFailure';
 import { useI18n } from '../i18n/I18nContext';
+import { subscribeProviders } from '../bookings/providerDirectoryFirestore';
+import { providerBoostIsActive, providerDistanceKm } from '../bookings/bookingBrowseUtils';
+import { isFirebaseConfigured } from '../firebase';
 
 const mapContainerStyle = { width: '100%', height: 'min(62vh, 640px)', minHeight: 340, borderRadius: 28 };
 const DEFAULT_CENTER = { lat: 35.173, lng: 33.364 };
@@ -100,6 +103,33 @@ function NearbyMap({ apiKey }) {
   const [locFetching, setLocFetching] = useState(false);
   const [userLocation, setUserLocation] = useState(null);
   const [infoOpen, setInfoOpen] = useState(false);
+  const [allProviders, setAllProviders] = useState(/** @type {Record<string, unknown>[]} */ ([]));
+
+  useEffect(() => {
+    if (!isFirebaseConfigured()) {
+      setAllProviders([]);
+      return undefined;
+    }
+    return subscribeProviders(
+      (rows) => setAllProviders(rows),
+      () => setAllProviders([])
+    );
+  }, []);
+
+  const petpalPartners = useMemo(() => {
+    const center = userLocation || searchCenter;
+    const loc = Number.isFinite(center?.lat) && Number.isFinite(center?.lng) ? center : null;
+    return allProviders
+      .filter((p) => providerBoostIsActive(p))
+      .map((p) => ({ p, km: providerDistanceKm(p, loc) }))
+      .sort((a, b) => {
+        if (a.km != null && b.km != null) return a.km - b.km;
+        if (a.km != null) return -1;
+        if (b.km != null) return 1;
+        return String(a.p.displayName || '').localeCompare(String(b.p.displayName || ''));
+      })
+      .slice(0, 12);
+  }, [allProviders, userLocation, searchCenter]);
 
   const selectedCategory = useMemo(() => getCategoryById(selectedCategoryId, t), [selectedCategoryId, t]);
   const mapCenter = useMemo(
@@ -249,6 +279,32 @@ function NearbyMap({ apiKey }) {
         <p className="pp-subtle" style={{ marginTop: 12, marginBottom: 0, fontSize: 14 }}>
           {locationNote.message}
         </p>
+      ) : null}
+
+      {petpalPartners.length ? (
+        <section className="pp-sponsoredRail pp-nearbyPartners" aria-label="PetPal recommended businesses">
+          <div className="pp-sponsoredRail__head">
+            <span>Recommended on PetPal</span>
+            <small>Boosted vet, groom, and hotel partners — book services from Bookings</small>
+          </div>
+          <div className="pp-sponsoredRail__row pp-nearbyPartners__row">
+            {petpalPartners.map(({ p, km }) => (
+              <Link
+                key={String(p.id)}
+                to={`/bookings/provider/${encodeURIComponent(String(p.id))}`}
+                className="pp-nearbyPartnerCard"
+              >
+                <span className="pp-nearbyPartnerCard__badge">Partner</span>
+                <strong className="pp-nearbyPartnerCard__name">{String(p.displayName || 'Business')}</strong>
+                {p.address ? <span className="pp-nearbyPartnerCard__addr">{String(p.address)}</span> : null}
+                <span className="pp-nearbyPartnerCard__cta">
+                  {km != null ? `${km.toFixed(1)} km · ` : null}
+                  View and book →
+                </span>
+              </Link>
+            ))}
+          </div>
+        </section>
       ) : null}
 
       <h2 className="pp-sectionTitle" style={{ marginTop: 22 }}>
