@@ -1,4 +1,4 @@
-import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
 import { useI18n } from '../i18n/I18nContext';
@@ -65,6 +65,60 @@ export default function Dashboard() {
   const [walkLogBusy, setWalkLogBusy] = useState(false);
   const [walkPhotoMsg, setWalkPhotoMsg] = useState('');
   const [petIdx, setPetIdx] = useState(0);
+  const carouselRef = useRef(null);
+  const scrollSyncRaf = useRef(null);
+
+  const petsKey = useMemo(() => pets.map((p) => p.id).join(','), [pets]);
+
+  const syncPetFromCarouselScroll = useCallback(() => {
+    const el = carouselRef.current;
+    if (!el || pets.length <= 1) return;
+    const rect = el.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    let bestIdx = 0;
+    let bestDist = Infinity;
+    Array.from(el.children).forEach((child, i) => {
+      const cr = child.getBoundingClientRect();
+      if (cr.width <= 0) return;
+      const mid = cr.left + cr.width / 2;
+      const d = Math.abs(mid - centerX);
+      if (d < bestDist) {
+        bestDist = d;
+        bestIdx = i;
+      }
+    });
+    setPetIdx((prev) => (prev !== bestIdx ? bestIdx : prev));
+  }, [pets.length]);
+
+  const onCarouselScroll = useCallback(() => {
+    if (scrollSyncRaf.current != null) return;
+    scrollSyncRaf.current = window.requestAnimationFrame(() => {
+      scrollSyncRaf.current = null;
+      syncPetFromCarouselScroll();
+    });
+  }, [syncPetFromCarouselScroll]);
+
+  useEffect(() => {
+    const el = carouselRef.current;
+    if (!el || pets.length <= 1) return;
+    const opts = { passive: true };
+    el.addEventListener('scroll', onCarouselScroll, opts);
+    el.addEventListener('scrollend', onCarouselScroll);
+    syncPetFromCarouselScroll();
+    return () => {
+      el.removeEventListener('scroll', onCarouselScroll);
+      el.removeEventListener('scrollend', onCarouselScroll);
+      if (scrollSyncRaf.current != null) {
+        window.cancelAnimationFrame(scrollSyncRaf.current);
+        scrollSyncRaf.current = null;
+      }
+    };
+  }, [pets.length, petsKey, onCarouselScroll, syncPetFromCarouselScroll]);
+
+  function scrollSlideIntoView(i) {
+    const el = carouselRef.current?.children[i];
+    el?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+  }
 
   const streakDays = walkStreakDays(walkLog);
   const pet = pets.length ? pets[petIdx % pets.length] : null;
@@ -196,17 +250,47 @@ export default function Dashboard() {
 
       {/* 1. Hero */}
       <section aria-label={t('home.feed.petCardAria')} className="pp-activityHub__block">
-        {pet ? (
+        {pets.length ? (
           <>
-            <PetCard
-              pet={pet}
-              statusKey={statusKey}
-              statusValue={statusValue}
-              onStartWalk={() => {
-                const anchor = document.getElementById('pp-walk-input-anchor');
-                anchor?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-              }}
-            />
+            <div
+              ref={carouselRef}
+              className="pp-petCarousel"
+              aria-label={t('home.feed.switchPet')}
+            >
+              {pets.map((p, i) => {
+                const active = i === petIdx % pets.length;
+                return (
+                  <div
+                    key={p.id}
+                    role="button"
+                    tabIndex={0}
+                    className={`pp-petCarousel__slide ${active ? 'pp-petCarousel__slide--active' : ''}`}
+                    onClick={() => {
+                      setPetIdx(i);
+                      scrollSlideIntoView(i);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        setPetIdx(i);
+                        scrollSlideIntoView(i);
+                      }
+                    }}
+                    aria-label={p.name}
+                    aria-current={active ? 'true' : undefined}
+                  >
+                    <PetCard
+                      pet={p}
+                      statusKey={active ? statusKey : 'resting'}
+                      statusValue={active ? statusValue : ''}
+                      onStartWalk={() => {
+                        const anchor = document.getElementById('pp-walk-input-anchor');
+                        anchor?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      }}
+                    />
+                  </div>
+                );
+              })}
+            </div>
             <div className="pp-hubHeroActions">
               <a href="#pp-walk-input-anchor" className="pp-btn pp-btnPrimary">
                 {t('home.dashboardHero.logWalkCta')}
@@ -227,7 +311,10 @@ export default function Dashboard() {
                     role="tab"
                     aria-selected={i === petIdx % pets.length}
                     className={`pp-feed__petDot ${i === petIdx % pets.length ? 'pp-feed__petDot--on' : ''}`}
-                    onClick={() => setPetIdx(i)}
+                    onClick={() => {
+                      setPetIdx(i);
+                      scrollSlideIntoView(i);
+                    }}
                     aria-label={p.name}
                   />
                 ))}

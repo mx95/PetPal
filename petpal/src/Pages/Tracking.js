@@ -890,17 +890,6 @@ export default function Tracking() {
           </div>
 
           <div className="pp-trackHistoryLayout">
-            <div className="pp-trackHistoryStats">
-              <article><span>↗</span><small>Distance</small><strong>{historyAnalytics.distanceKm.toFixed(2)} km</strong></article>
-              <article>
-                <span>⏱</span>
-                <small>Active time</small>
-                <strong>{formatDurationMinutes(historyAnalytics.activeMinutes, t)}</strong>
-              </article>
-              <article><span>⚡</span><small>Avg speed</small><strong>{historyAnalytics.averageSpeed.toFixed(1)} km/h</strong></article>
-              <article><span>•</span><small>Stops</small><strong>{historyAnalytics.stops}</strong></article>
-            </div>
-
             <div className="pp-card pp-pad pp-trackHistoryMap">
               <div className="pp-trackHistoryMap__top">
                 <div>
@@ -952,12 +941,6 @@ export default function Tracking() {
                   </button>
                 </div>
               )}
-              <div className="pp-trackHistoryStats pp-trackHistoryStats--belowMap" aria-label="Route summary">
-                <article><span>↗</span><small>Distance</small><strong>{historyAnalytics.distanceKm.toFixed(2)} km</strong></article>
-                <article><span>⏱</span><small>Active time</small><strong>{historyAnalytics.activeMinutes} min</strong></article>
-                <article><span>⚡</span><small>Avg speed</small><strong>{historyAnalytics.averageSpeed.toFixed(1)} km/h</strong></article>
-                <article><span>•</span><small>Stops</small><strong>{historyAnalytics.stops}</strong></article>
-              </div>
             </div>
 
             <aside className="pp-card pp-pad pp-trackHistoryTimeline">
@@ -995,6 +978,17 @@ export default function Tracking() {
               })}
               {!filteredHistory.length ? <p className="pp-subtle">Timeline events will appear after tracker history loads.</p> : null}
             </aside>
+          </div>
+
+          <div className="pp-trackHistoryStats pp-trackHistoryStats--footer" aria-label="Route summary">
+            <article><span>↗</span><small>Distance</small><strong>{historyAnalytics.distanceKm.toFixed(2)} km</strong></article>
+            <article>
+              <span>⏱</span>
+              <small>Active time</small>
+              <strong>{formatDurationMinutes(historyAnalytics.activeMinutes, t)}</strong>
+            </article>
+            <article><span>⚡</span><small>Avg speed</small><strong>{historyAnalytics.averageSpeed.toFixed(1)} km/h</strong></article>
+            <article><span>•</span><small>Stops</small><strong>{historyAnalytics.stops}</strong></article>
           </div>
         </section>
       ) : null}

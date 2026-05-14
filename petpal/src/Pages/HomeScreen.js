@@ -72,6 +72,12 @@ const ICONS = {
       <circle cx="12" cy="10.5" r="2.2" stroke="currentColor" strokeWidth="1.5" />
     </>
   ),
+  shop: (
+    <>
+      <path d="M9 8V6a3 3 0 0 1 6 0v2" stroke="currentColor" strokeWidth="1.65" strokeLinecap="round" />
+      <path d="M5 9h14l-1.2 11H6.2L5 9Z" stroke="currentColor" strokeWidth="1.65" strokeLinejoin="round" />
+    </>
+  ),
   tracking: (
     <>
       <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.65" opacity="0.45" />
@@ -298,6 +304,7 @@ function LoggedInFeed() {
     { iconKey: 'community', titleKey: 'home.tileCommunity', to: '/community' },
     { iconKey: 'leaderboard', titleKey: 'home.tileLeaderboard', to: '/leaderboard' },
     { iconKey: 'nearby', titleKey: 'home.tileNearby', to: '/nearby' },
+    { iconKey: 'shop', titleKey: 'home.tileShop', to: '/shop' },
     { iconKey: 'tracking', titleKey: 'home.tileTracking', to: '/tracking' },
     { iconKey: 'pets', titleKey: 'home.tilePets', to: '/pets' },
     { iconKey: 'dashboard', titleKey: 'home.tileDashboard', to: '/dashboard' },

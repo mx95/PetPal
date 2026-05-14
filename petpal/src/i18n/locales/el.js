@@ -34,6 +34,7 @@ const el = {
     tileCommunity: 'Κοινότητα',
     tileLeaderboard: 'Κατάταξη',
     tileNearby: 'Κοντά',
+    tileShop: 'Κατάστημα',
     tileTracking: 'Παρακολούθηση',
     tileBusiness: 'Επιχείρηση',
     tileDocs: 'Οδηγίες',

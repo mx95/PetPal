@@ -34,6 +34,7 @@ const ru = {
     tileCommunity: 'Сообщество',
     tileLeaderboard: 'Рейтинг',
     tileNearby: 'Рядом',
+    tileShop: 'Магазин',
     tileTracking: 'Трекер',
     tileBusiness: 'Бизнес',
     tileDocs: 'Справка',

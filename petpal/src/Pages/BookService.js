@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
+import { useI18n } from '../i18n/I18nContext';
 import { bookSlot, fetchOpenSlots } from '../bookings/bookingFirestore';
 import { appleCalendarDataUrl, buildCalendarEvent, googleCalendarUrl } from '../bookings/calendarLinks';
 import { getDemoProvider, getDemoServices, getDemoSlots } from '../bookings/demoBookingData';
@@ -13,6 +14,39 @@ function toLocalInputValue(d) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
+function asDate(value) {
+  if (!value) return null;
+  if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value;
+  if (typeof value.toDate === 'function') {
+    const d = value.toDate();
+    return d instanceof Date && !Number.isNaN(d.getTime()) ? d : null;
+  }
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+function formatWhenLine(date) {
+  if (!date) return '';
+  const day = date.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' });
+  const time = date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+  return `${day} · ${time}`;
+}
+
+function durationBetween(start, end) {
+  if (!start || !end) return null;
+  const ms = end.getTime() - start.getTime();
+  if (!Number.isFinite(ms) || ms <= 0) return null;
+  return Math.round(ms / 60000);
+}
+
+function providerInitials(name) {
+  const s = String(name || '').trim();
+  if (!s) return 'PP';
+  const parts = s.split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase().slice(0, 2);
+  return s.slice(0, 2).toUpperCase();
+}
+
 function saveLocalTestBooking(row) {
   try {
     const parsed = JSON.parse(localStorage.getItem(TEST_BOOKINGS_KEY) || '[]');
@@ -23,7 +57,30 @@ function saveLocalTestBooking(row) {
   }
 }
 
+function GoogleCalIcon() {
+  return (
+    <svg className="pp-bookConfirmCalBtn__svg" viewBox="0 0 24 24" width="22" height="22" aria-hidden>
+      <path
+        fill="currentColor"
+        d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zM9 14H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2z"
+      />
+    </svg>
+  );
+}
+
+function AppleCalIcon() {
+  return (
+    <svg className="pp-bookConfirmCalBtn__svg" viewBox="0 0 24 24" width="22" height="22" aria-hidden>
+      <path
+        fill="currentColor"
+        d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"
+      />
+    </svg>
+  );
+}
+
 export default function BookService() {
+  const { t } = useI18n();
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -101,7 +158,7 @@ export default function BookService() {
     setBusy(true);
     try {
       const pet = petOptions.find((p) => p.id === petId);
-      const selectedSlot = slots.find((s) => s.id === slotId) || null;
+      const slot = slots.find((s) => s.id === slotId) || null;
       if (isDemo) {
         const bookingId = `test_${Date.now()}`;
         const row = {
@@ -114,12 +171,15 @@ export default function BookService() {
           petId,
           petName: pet?.name || 'Demo pet',
           petSnapshot: { name: pet?.name || 'Demo pet', categoryId: pet?.categoryId || 'dog' },
-          providerName: demoProvider?.displayName || routeState?.providerName || 'Demo provider',
+          providerName: demoProvider?.displayName || routeState?.providerName || 'PetPal partner',
           providerAddress: demoProvider?.address || routeState?.providerAddress || '',
-          serviceName: demoService?.name || routeState?.serviceName || 'Demo appointment',
-          startAtIso: selectedSlot?.startAtIso || selectedSlot?.startAt?.toDate?.()?.toISOString?.(),
-          endAtIso: selectedSlot?.endAtIso || selectedSlot?.endAt?.toDate?.()?.toISOString?.(),
-          status: 'test booked',
+          serviceName: demoService?.name || routeState?.serviceName || 'Appointment',
+          startAtIso: slot?.startAtIso || slot?.startAt?.toDate?.()?.toISOString?.(),
+          endAtIso: slot?.endAtIso || slot?.endAt?.toDate?.()?.toISOString?.(),
+          startAt: slot?.startAt || null,
+          endAt: slot?.endAt || null,
+          durationMin: demoService?.durationMin ?? durationBetween(asDate(slot?.startAt), asDate(slot?.endAt)),
+          status: 'confirmed',
           createdAtIso: new Date().toISOString(),
         };
         saveLocalTestBooking(row);
@@ -144,11 +204,13 @@ export default function BookService() {
         petId,
         petName: pet?.name || 'Pet',
         petSnapshot: { name: pet?.name || 'Pet', categoryId: pet?.categoryId || 'dog' },
-        providerName: routeState?.providerName || 'PetPal provider',
+        providerName: routeState?.providerName || 'PetPal partner',
         providerAddress: routeState?.providerAddress || '',
-        serviceName: routeState?.serviceName || 'PetPal appointment',
-        startAt: selectedSlot?.startAt || null,
-        endAt: selectedSlot?.endAt || null,
+        serviceName: routeState?.serviceName || 'Appointment',
+        startAt: slot?.startAt || null,
+        endAt: slot?.endAt || null,
+        startAtIso: slot?.startAtIso || slot?.startAt?.toDate?.()?.toISOString?.(),
+        endAtIso: slot?.endAtIso || slot?.endAt?.toDate?.()?.toISOString?.(),
         status: 'booked',
       });
       setBusy(false);
@@ -159,108 +221,198 @@ export default function BookService() {
     }
   };
 
-  return (
-    <div className="pp-pad pp-bookConfirm">
-      <div className="pp-pageHeader">
-        <div className="pp-pageHeader__copy">
-          <div className="pp-badge">Book</div>
-          <div className="pp-pageHeader__title">Confirm your booking</div>
-          <div className="pp-pageHeader__subtitle">Pick your pet and a time slot.</div>
-        </div>
-      </div>
+  const bookingStart = confirmedBooking ? asDate(confirmedBooking.startAt || confirmedBooking.startAtIso) : null;
+  const bookingEnd = confirmedBooking ? asDate(confirmedBooking.endAt || confirmedBooking.endAtIso) : null;
+  const bookingDuration =
+    confirmedBooking &&
+    (typeof confirmedBooking.durationMin === 'number'
+      ? confirmedBooking.durationMin
+      : durationBetween(bookingStart, bookingEnd));
 
-      {err ? <div className="pp-error">{err}</div> : null}
+  const calEvent = confirmedBooking ? buildCalendarEvent(confirmedBooking) : null;
+
+  return (
+    <div className="pp-bookConfirmPage">
+      <header className="pp-bookConfirmPage__header">
+        <div className="pp-bookConfirmPage__mark" aria-hidden>
+          {confirmedBooking ? (
+            <span className="pp-bookConfirmPage__markTick">✓</span>
+          ) : (
+            <span className="pp-bookConfirmPage__markIcon">📅</span>
+          )}
+        </div>
+        <p className="pp-bookConfirmPage__eyebrow">
+          {confirmedBooking ? t('bookConfirm.successEyebrow') : t('bookConfirm.eyebrow')}
+        </p>
+        <h1 className="pp-bookConfirmPage__title">
+          {confirmedBooking ? t('bookConfirm.successTitle') : t('bookConfirm.title')}
+        </h1>
+        <p className="pp-bookConfirmPage__lead">
+          {confirmedBooking ? t('bookConfirm.successLead') : t('bookConfirm.subtitle')}
+        </p>
+      </header>
+
+      {err ? <div className="pp-bookConfirmPage__alert">{err}</div> : null}
 
       {confirmedBooking ? (
-        <div className="pp-card pp-bookConfirm__success" style={{ marginTop: 14 }}>
-          <div className="pp-bookConfirm__successIcon" aria-hidden>✓</div>
-          <div className="pp-card__title">Booking confirmed</div>
-          <p className="pp-muted">
-            {confirmedBooking.serviceName} for {confirmedBooking.petName || confirmedBooking.petSnapshot?.name || 'your pet'}.
-          </p>
-          <div className="pp-bookConfirm__calendarActions">
-            <a
-              className="pp-btn pp-btn--primary"
-              href={googleCalendarUrl(buildCalendarEvent(confirmedBooking))}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Add to Google Calendar
-            </a>
-            <a
-              className="pp-btn pp-btn--ghost"
-              href={appleCalendarDataUrl(buildCalendarEvent(confirmedBooking))}
-              download="petpal-booking.ics"
-            >
-              Add to Apple Calendar
-            </a>
-            <button type="button" className="pp-btn pp-btn--ghost" onClick={() => navigate('/bookings', { replace: true })}>
-              Back to bookings
-            </button>
-          </div>
-        </div>
+        <>
+          <section className="pp-bookConfirmPass" aria-label={t('bookConfirm.passAria')}>
+            <div className="pp-bookConfirmPass__top">
+              <div className="pp-bookConfirmPass__avatar" aria-hidden>
+                {providerInitials(confirmedBooking.providerName)}
+              </div>
+              <div className="pp-bookConfirmPass__topText">
+                <span className="pp-bookConfirmPass__provider">{confirmedBooking.providerName}</span>
+                <span className="pp-bookConfirmPass__service">{confirmedBooking.serviceName}</span>
+              </div>
+              <span className="pp-bookConfirmPass__badge">{t('bookConfirm.instantBadge')}</span>
+            </div>
+            <div className="pp-bookConfirmPass__divider" />
+            <dl className="pp-bookConfirmPass__rows">
+              <div className="pp-bookConfirmPass__row">
+                <dt>{t('bookConfirm.petLabel')}</dt>
+                <dd>{confirmedBooking.petName || confirmedBooking.petSnapshot?.name || '—'}</dd>
+              </div>
+              <div className="pp-bookConfirmPass__row">
+                <dt>{t('bookConfirm.whenLabel')}</dt>
+                <dd>{bookingStart ? formatWhenLine(bookingStart) : '—'}</dd>
+              </div>
+              {bookingDuration != null ? (
+                <div className="pp-bookConfirmPass__row">
+                  <dt>{t('bookConfirm.durationLabel')}</dt>
+                  <dd>{t('bookConfirm.mins', { n: bookingDuration })}</dd>
+                </div>
+              ) : null}
+              {confirmedBooking.providerAddress ? (
+                <div className="pp-bookConfirmPass__row">
+                  <dt>{t('bookConfirm.addressLabel')}</dt>
+                  <dd>{confirmedBooking.providerAddress}</dd>
+                </div>
+              ) : null}
+              <div className="pp-bookConfirmPass__row pp-bookConfirmPass__row--ref">
+                <dt>{t('bookConfirm.refLabel')}</dt>
+                <dd>
+                  <code className="pp-bookConfirmPass__code">{String(confirmedBooking.bookingId || confirmedBooking.id)}</code>
+                </dd>
+              </div>
+            </dl>
+          </section>
+
+          {calEvent ? (
+            <div className="pp-bookConfirmCalRow" role="group" aria-label={t('bookConfirm.calGroupAria')}>
+              <a
+                className="pp-bookConfirmCalBtn"
+                href={googleCalendarUrl(calEvent)}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={t('bookConfirm.calGoogleAria')}
+              >
+                <GoogleCalIcon />
+                <span>{t('bookConfirm.calGoogleShort')}</span>
+              </a>
+              <a
+                className="pp-bookConfirmCalBtn"
+                href={appleCalendarDataUrl(calEvent)}
+                download="petpal-booking.ics"
+                aria-label={t('bookConfirm.calAppleAria')}
+              >
+                <AppleCalIcon />
+                <span>{t('bookConfirm.calAppleShort')}</span>
+              </a>
+            </div>
+          ) : null}
+
+          <ul className="pp-bookConfirmTrust">
+            <li>{t('bookConfirm.trustFreeCancel')}</li>
+            <li>{t('bookConfirm.trustSecure')}</li>
+            <li>{t('bookConfirm.trustEmail')}</li>
+            <li>{t('bookConfirm.trustReminder')}</li>
+          </ul>
+
+          <button type="button" className="pp-bookConfirmPage__textCta" onClick={() => navigate('/bookings', { replace: true })}>
+            {t('bookConfirm.backBookings')}
+          </button>
+        </>
       ) : null}
 
-      <div className="pp-card pp-bookConfirm__details" style={{ marginTop: 14 }}>
-        <div className="pp-card__title">Booking details</div>
+      {!confirmedBooking ? (
+        <section className="pp-bookConfirmForm">
+          <h2 className="pp-bookConfirmForm__title">{t('bookConfirm.sectionDetails')}</h2>
 
-        <div className="pp-form">
-          <label className="pp-field">
-            <span className="pp-field__label">Pet</span>
-            {petOptions.length ? (
-              <select value={petId} onChange={(e) => setPetId(e.target.value)}>
-                {petOptions.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <div className="pp-muted">
-                No pets yet. <Link to="/pets">Add a pet</Link> first.
-              </div>
-            )}
-          </label>
+          <div className="pp-bookConfirmForm__fields">
+            <label className="pp-bookConfirmField">
+              <span className="pp-bookConfirmField__label">{t('bookConfirm.petField')}</span>
+              {petOptions.length ? (
+                <select
+                  className="pp-bookConfirmField__control"
+                  value={petId}
+                  onChange={(e) => setPetId(e.target.value)}
+                >
+                  {petOptions.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <div className="pp-bookConfirmField__empty">
+                  <p>{t('bookConfirm.noPetsLead')}</p>
+                  <Link className="pp-bookConfirmPage__link" to="/pets#add-pet">
+                    {t('bookConfirm.noPetsCta')}
+                  </Link>
+                </div>
+              )}
+            </label>
 
-          <label className="pp-field">
-            <span className="pp-field__label">Show slots after</span>
-            <input type="date" value={afterDate} onChange={(e) => setAfterDate(e.target.value)} />
-          </label>
+            <label className="pp-bookConfirmField">
+              <span className="pp-bookConfirmField__label">{t('bookConfirm.dateField')}</span>
+              <input
+                className="pp-bookConfirmField__control"
+                type="date"
+                value={afterDate}
+                onChange={(e) => setAfterDate(e.target.value)}
+              />
+            </label>
 
-          <label className="pp-field">
-            <span className="pp-field__label">Time slot</span>
-            {slots.length ? (
-              <select value={slotId} onChange={(e) => setSlotId(e.target.value)}>
-                {slots.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.startAt?.toDate ? s.startAt.toDate().toLocaleString() : s.id}
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <div className="pp-muted">No open slots right now.</div>
-            )}
-          </label>
+            <label className="pp-bookConfirmField">
+              <span className="pp-bookConfirmField__label">{t('bookConfirm.slotField')}</span>
+              {slots.length ? (
+                <select className="pp-bookConfirmField__control" value={slotId} onChange={(e) => setSlotId(e.target.value)}>
+                  {slots.map((s) => {
+                    const start = asDate(s.startAt) || asDate(s.startAtIso);
+                    return (
+                      <option key={s.id} value={s.id}>
+                        {start ? formatWhenLine(start) : s.id}
+                      </option>
+                    );
+                  })}
+                </select>
+              ) : (
+                <div className="pp-bookConfirmField__empty">{t('bookConfirm.noSlots')}</div>
+              )}
+            </label>
+          </div>
 
-          <div className="pp-bookConfirm__formActions">
+          <div className="pp-bookConfirmForm__actions">
             <button
               type="button"
-              className="pp-btn pp-btn--primary"
-              disabled={busy || !petOptions.length || !slotId || Boolean(confirmedBooking)}
+              className="pp-bookConfirmForm__primary"
+              disabled={busy || !petOptions.length || !slotId}
               onClick={onBook}
             >
-              {isDemo ? 'Book test appointment' : 'Book now'}
+              {busy ? t('bookConfirm.submitting') : t('bookConfirm.ctaConfirm')}
             </button>
-            <Link className="pp-btn pp-btn--ghost" to={`/bookings/provider/${companyId}`}>
-              Back
-            </Link>
-            <button type="button" className="pp-btn pp-btn--ghost" onClick={refresh} disabled={busy}>
-              Refresh slots
-            </button>
+            <div className="pp-bookConfirmForm__secondary">
+              <Link className="pp-bookConfirmForm__ghost" to={`/bookings/provider/${companyId}`}>
+                {t('bookConfirm.backProvider')}
+              </Link>
+              <button type="button" className="pp-bookConfirmForm__ghost" onClick={refresh} disabled={busy}>
+                {t('bookConfirm.refreshSlots')}
+              </button>
+            </div>
           </div>
-        </div>
-      </div>
+        </section>
+      ) : null}
     </div>
   );
 }
-

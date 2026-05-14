@@ -2629,9 +2629,8 @@ body.pp-noScroll {
   gap: 10px;
 }
 
-.pp-trackHistoryStats--belowMap {
-  margin-top: 18px;
-  padding-top: 4px;
+.pp-trackHistoryStats--footer {
+  margin-top: 14px;
 }
 
 .pp-trackHistoryStats article {
@@ -2677,10 +2676,6 @@ body.pp-noScroll {
   grid-template-columns: minmax(0, 1.5fr) minmax(300px, 0.75fr);
   gap: 12px;
   align-items: start;
-}
-
-.pp-trackHistoryLayout > .pp-trackHistoryStats {
-  grid-column: 1 / -1;
 }
 
 .pp-trackHistoryMap,
@@ -5900,7 +5895,6 @@ a.pp-publicPet__metaValue {
   background: linear-gradient(135deg, rgba(91, 55, 255, 0.14), rgba(47, 128, 255, 0.1));
   border-color: rgba(91, 55, 255, 0.38);
   box-shadow: 0 16px 42px rgba(91, 55, 255, 0.18);
-  transform: translateY(-2px);
 }
 
 .pp-boostPanel {
@@ -6134,14 +6128,23 @@ body,
   backdrop-filter: blur(10px);
 }
 
-.pp-book-dateRow,
+.pp-book-dateRow {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: max-content;
+  overflow-x: auto;
+  gap: 8px;
+  padding: 2px 0 4px;
+  scroll-snap-type: x proximity;
+}
+
 .pp-book-slotGrid--premium {
   display: grid;
   grid-auto-flow: column;
   grid-auto-columns: max-content;
   overflow-x: auto;
   gap: 8px;
-  padding-bottom: 4px;
+  padding: 8px 6px 12px;
   scroll-snap-type: x proximity;
 }
 
@@ -6702,46 +6705,453 @@ html[data-theme="dark"] .pp-publicHero__eyebrow {
   color: #d6ceff;
 }
 
-/* Booking confirmation: compact, native-feeling checkout flow. */
-.pp-bookConfirm .pp-pageHeader {
-  padding: 16px 18px;
+/* —— Booking confirmation (premium customer flow) —— */
+.pp-bookConfirmPage {
+  max-width: 440px;
+  margin: 0 auto;
+  padding: 12px 16px calc(96px + env(safe-area-inset-bottom));
+  box-sizing: border-box;
 }
 
-.pp-bookConfirm__success,
-.pp-bookConfirm__details {
-  padding: 18px;
+.pp-bookConfirmPage__header {
+  text-align: center;
+  padding: 8px 0 16px;
 }
 
-.pp-bookConfirm__successIcon {
-  width: 42px;
-  height: 42px;
+.pp-bookConfirmPage__mark {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 10px;
+  border-radius: 16px;
   display: grid;
   place-items: center;
-  border-radius: 16px;
-  background: linear-gradient(135deg, #12b76a, #16b981);
-  color: #fff;
+  background: linear-gradient(145deg, rgba(91, 55, 255, 0.12), rgba(47, 128, 255, 0.08));
+  border: 1px solid rgba(91, 55, 255, 0.14);
+  box-shadow: 0 8px 24px -16px rgba(16, 24, 40, 0.2);
+}
+
+.pp-bookConfirmPage__markTick {
+  font-size: 22px;
+  font-weight: 900;
+  color: #059669;
+  line-height: 1;
+}
+
+.pp-bookConfirmPage__markIcon {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.pp-bookConfirmPage__eyebrow {
+  margin: 0 0 6px;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.pp-bookConfirmPage__title {
+  margin: 0 0 8px;
+  font-size: clamp(1.45rem, 4.8vw, 1.75rem);
   font-weight: 950;
-  box-shadow: 0 12px 24px rgba(18, 183, 106, 0.2);
-  margin-bottom: 10px;
+  letter-spacing: -0.04em;
+  line-height: 1.12;
+  color: #0f172a;
 }
 
-.pp-bookConfirm__calendarActions,
-.pp-bookConfirm__formActions {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
-  gap: 10px;
-  margin-top: 14px;
+.pp-bookConfirmPage__lead {
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: #64748b;
+  max-width: 34em;
+  margin-inline: auto;
 }
 
-.pp-bookConfirm__calendarActions .pp-btn,
-.pp-bookConfirm__formActions .pp-btn {
-  width: 100%;
-  min-height: 42px;
+.pp-bookConfirmPage__alert {
+  margin: 0 0 14px;
   padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(220, 38, 38, 0.08);
+  border: 1px solid rgba(220, 38, 38, 0.2);
+  color: #991b1b;
+  font-size: 0.875rem;
+  font-weight: 700;
 }
 
-.pp-bookConfirm__details .pp-form {
+.pp-bookConfirmPage__textCta {
+  display: block;
+  width: 100%;
+  margin-top: 16px;
+  padding: 12px;
+  border: 0;
+  background: transparent;
+  color: #5b37ff;
+  font-weight: 800;
+  font-size: 0.9375rem;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.pp-bookConfirmPage__link {
+  font-weight: 800;
+  color: #5b37ff;
+}
+
+.pp-bookConfirmPass {
+  position: relative;
+  border-radius: 22px;
+  padding: 16px 16px 14px;
+  background:
+    linear-gradient(165deg, rgba(255, 255, 255, 0.96) 0%, rgba(248, 250, 255, 0.98) 100%);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.85) inset,
+    0 18px 40px -28px rgba(15, 23, 42, 0.25);
+  animation: pp-bookConfirmPassIn 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes pp-bookConfirmPassIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.pp-bookConfirmPass__top {
+  display: flex;
+  align-items: flex-start;
   gap: 12px;
+  padding-bottom: 14px;
+}
+
+.pp-bookConfirmPass__avatar {
+  flex: 0 0 auto;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  font-size: 14px;
+  font-weight: 950;
+  letter-spacing: 0.02em;
+  color: #312e81;
+  background: linear-gradient(135deg, rgba(91, 55, 255, 0.16), rgba(47, 128, 255, 0.1));
+  border: 1px solid rgba(91, 55, 255, 0.22);
+}
+
+.pp-bookConfirmPass__topText {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pp-bookConfirmPass__provider {
+  font-size: 1.05rem;
+  font-weight: 950;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+  line-height: 1.2;
+}
+
+.pp-bookConfirmPass__service {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #5b37ff;
+}
+
+.pp-bookConfirmPass__badge {
+  flex: 0 0 auto;
+  align-self: flex-start;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 5px 8px;
+  border-radius: 999px;
+  color: #065f46;
+  background: rgba(16, 185, 129, 0.14);
+  border: 1px solid rgba(16, 185, 129, 0.28);
+}
+
+.pp-bookConfirmPass__divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(15, 23, 42, 0.08), transparent);
+  margin: 0 0 12px;
+}
+
+.pp-bookConfirmPass__rows {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pp-bookConfirmPass__row {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  gap: 10px;
+  align-items: baseline;
+  font-size: 0.875rem;
+}
+
+.pp-bookConfirmPass__row dt {
+  margin: 0;
+  font-weight: 800;
+  color: #94a3b8;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.pp-bookConfirmPass__row dd {
+  margin: 0;
+  font-weight: 700;
+  color: #1e293b;
+  line-height: 1.4;
+}
+
+.pp-bookConfirmPass__row--ref dd {
+  font-weight: 800;
+}
+
+.pp-bookConfirmPass__code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #4338ca;
+  background: rgba(91, 55, 255, 0.06);
+  padding: 3px 8px;
+  border-radius: 8px;
+}
+
+.pp-bookConfirmCalRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.pp-bookConfirmCalBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 46px;
+  padding: 0 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  background: rgba(255, 255, 255, 0.92);
+  color: #0f172a;
+  font-weight: 800;
+  font-size: 0.8125rem;
+  text-decoration: none;
+  box-shadow: 0 6px 16px -12px rgba(15, 23, 42, 0.2);
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.18s ease;
+}
+
+.pp-bookConfirmCalBtn:hover {
+  border-color: rgba(91, 55, 255, 0.35);
+  box-shadow: 0 10px 22px -14px rgba(91, 55, 255, 0.35);
+}
+
+.pp-bookConfirmCalBtn:active {
+  transform: scale(0.98);
+}
+
+.pp-bookConfirmCalBtn__svg {
+  flex-shrink: 0;
+  opacity: 0.88;
+}
+
+.pp-bookConfirmTrust {
+  list-style: none;
+  margin: 18px 0 0;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: rgba(248, 250, 252, 0.95);
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  display: grid;
+  gap: 8px;
+}
+
+.pp-bookConfirmTrust li {
+  position: relative;
+  padding-left: 22px;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: #475569;
+  line-height: 1.35;
+}
+
+.pp-bookConfirmTrust li::before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  top: 0;
+  font-size: 12px;
+  font-weight: 900;
+  color: #10b981;
+}
+
+.pp-bookConfirmForm {
+  margin-top: 20px;
+  padding: 16px 16px 18px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(15, 23, 42, 0.07);
+  box-shadow: 0 12px 32px -28px rgba(15, 23, 42, 0.2);
+}
+
+.pp-bookConfirmForm__title {
+  margin: 0 0 14px;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+.pp-bookConfirmForm__fields {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.pp-bookConfirmField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pp-bookConfirmField__label {
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.pp-bookConfirmField__control {
+  width: 100%;
+  min-height: 46px;
+  padding: 0 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  background-color: #fff;
+  font: inherit;
+  font-size: 0.9375rem;
+  font-weight: 650;
+  color: #0f172a;
+  box-sizing: border-box;
+}
+
+input.pp-bookConfirmField__control[type='date'] {
+  appearance: auto;
+}
+
+select.pp-bookConfirmField__control {
+  appearance: none;
+  padding-right: 40px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M4 6l4 4 4-4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+}
+
+.pp-bookConfirmField__control:focus {
+  outline: none;
+  border-color: rgba(91, 55, 255, 0.45);
+  box-shadow: 0 0 0 3px rgba(91, 55, 255, 0.15);
+}
+
+.pp-bookConfirmField__empty {
+  font-size: 0.875rem;
+  color: #64748b;
+  line-height: 1.45;
+}
+
+.pp-bookConfirmForm__actions {
+  margin-top: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pp-bookConfirmForm__primary {
+  width: 100%;
+  min-height: 48px;
+  border: 0;
+  border-radius: 14px;
+  font-weight: 900;
+  font-size: 0.9375rem;
+  letter-spacing: -0.01em;
+  color: #fff;
+  cursor: pointer;
+  background: linear-gradient(135deg, #5b37ff 0%, #4338ca 55%, #3730a3 100%);
+  box-shadow: 0 10px 28px -12px rgba(79, 70, 229, 0.55);
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    opacity 0.15s ease;
+}
+
+.pp-bookConfirmForm__primary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.pp-bookConfirmForm__primary:not(:disabled):active {
+  transform: scale(0.99);
+}
+
+.pp-bookConfirmForm__secondary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  justify-content: center;
+}
+
+.pp-bookConfirmForm__ghost {
+  min-height: 40px;
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  background: transparent;
+  font-weight: 800;
+  font-size: 0.8125rem;
+  color: #475569;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.pp-bookConfirmForm__ghost:hover {
+  background: rgba(248, 250, 252, 0.9);
+  border-color: rgba(15, 23, 42, 0.14);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pp-bookConfirmPass {
+    animation: none;
+  }
 }
 
 @media (max-width: 520px) {
@@ -10376,7 +10786,7 @@ body:has(.pp-book-modalRoot) .pp-bottomNav {
   min-height: 0;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  padding: 0 2px 10px;
+  padding: 0 10px 10px;
 }
 
 .pp-book-field {
@@ -10387,8 +10797,7 @@ body:has(.pp-book-modalRoot) .pp-bottomNav {
   font-size: 12px;
 }
 
-.pp-book-dateRow,
-.pp-book-slotGrid--premium {
+.pp-book-dateRow {
   display: grid;
   grid-auto-flow: column;
   grid-auto-columns: max-content;
@@ -10396,6 +10805,18 @@ body:has(.pp-book-modalRoot) .pp-bottomNav {
   overflow-x: auto;
   gap: 8px;
   padding: 2px 1px 6px;
+  scroll-snap-type: x proximity;
+}
+
+.pp-book-slotGrid--premium {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: max-content;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  gap: 8px;
+  /* Room for 1px border + box-shadow without clipping against overflow */
+  padding: 8px 6px 12px;
   scroll-snap-type: x proximity;
 }
 
@@ -10896,7 +11317,6 @@ html[data-theme="dark"] .pp-book-modalPanel::before {
 }
 
 .pp-book-slot--rich.is-active {
-  transform: translateY(-2px) scale(1.02);
   box-shadow: 0 12px 26px -16px rgba(91, 55, 255, 0.8);
 }
 
@@ -12441,13 +12861,16 @@ html[data-theme="dark"] .pp-nearby-list > li {
 }
 
 .pp-book-slotPeriod__title {
-  margin-bottom: 7px !important;
+  margin-bottom: 10px !important;
   font-size: 11px !important;
   letter-spacing: 0.14em !important;
 }
 
 .pp-book-slotGrid--premium {
   padding-bottom: 6px !important;
+  padding-top: 6px !important;
+  padding-left: 6px !important;
+  padding-right: 6px !important;
 }
 
 .pp-book-slot--rich {
@@ -12532,12 +12955,17 @@ html[data-theme="dark"] .pp-nearby-list > li {
     width: 54px !important;
     height: 54px !important;
     transform: translateY(-8px) !important;
-    box-shadow: 0 12px 24px -12px rgba(91, 55, 255, 0.54), inset 0 1px 0 rgba(255, 255, 255, 0.24) !important;
+    box-shadow: 0 8px 20px -14px rgba(91, 55, 255, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.22) !important;
   }
 
   .pp-bottomNav__fab:hover,
   .pp-bottomNav__fab:active {
     transform: translateY(-8px) scale(0.98) !important;
+  }
+
+  .pp-bottomNav__item--on {
+    background: linear-gradient(180deg, rgba(91, 55, 255, 0.1) 0%, rgba(91, 55, 255, 0.05) 100%) !important;
+    box-shadow: inset 0 0 0 1px rgba(91, 55, 255, 0.16) !important;
   }
 
   .pp-bottomNav__fabPulse {
