@@ -130,6 +130,83 @@ function pointTime(point) {
   return new Date(point.timestamp).getTime();
 }
 
+function defaultHistoryDayTimes() {
+  return { timeFrom: '00:00', timeTo: '23:59' };
+}
+
+function isTrustedGpsFix(p) {
+  if (!p) return true;
+  const src = String(p.source || '').toLowerCase();
+  if (src === 'lbs') return false;
+  const acc = String(p.accuracy || '').toLowerCase();
+  if (acc === 'lbs' || acc === 'wifi') return false;
+  if (p.gpsValid === false) return false;
+  return true;
+}
+
+/**
+ * LBS / Wi-Fi / triangulated fixes: keep timestamps and metadata but reuse the last real GPS
+ * coordinates so distance, map path, and timeline do not jump to cell-tower positions.
+ */
+function resolveNonGpsHistoryPoints(points) {
+  if (!Array.isArray(points) || points.length === 0) return [];
+  let lastLat = null;
+  let lastLng = null;
+  const out = [];
+  for (const p of points) {
+    if (!p || Number.isNaN(Number(p.lat)) || Number.isNaN(Number(p.lng))) continue;
+    const lat = Number(p.lat);
+    const lng = Number(p.lng);
+    if (isTrustedGpsFix(p)) {
+      lastLat = lat;
+      lastLng = lng;
+      out.push({ ...p, lat, lng });
+      continue;
+    }
+    if (lastLat != null && lastLng != null) {
+      out.push({
+        ...p,
+        lat: lastLat,
+        lng: lastLng,
+        positionHeldFromPreviousGps: true,
+      });
+    }
+  }
+  return out;
+}
+
+function inDailyLocalTimeWindow(iso, range) {
+  const timeFrom = range?.timeFrom || '00:00';
+  const timeTo = range?.timeTo || '23:59';
+  const parseHm = (str) => {
+    const m = String(str || '00:00').trim().match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+    if (!m) return { h: 0, min: 0, sec: 0 };
+    const h = Math.min(23, Math.max(0, Number(m[1]) || 0));
+    const min = Math.min(59, Math.max(0, Number(m[2]) || 0));
+    const sec = m[3] != null ? Math.min(59, Math.max(0, Number(m[3]) || 0)) : 0;
+    return { h, min, sec };
+  };
+  let ts;
+  try {
+    ts = new Date(iso).getTime();
+  } catch {
+    return true;
+  }
+  if (!Number.isFinite(ts)) return true;
+  const d = new Date(ts);
+  const startOfDay = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0, 0);
+  const a = parseHm(timeFrom);
+  const b = parseHm(timeTo);
+  const winStart = new Date(startOfDay);
+  winStart.setHours(a.h, a.min, a.sec, 0);
+  const winEnd = new Date(startOfDay);
+  winEnd.setHours(b.h, b.min, b.sec, 999);
+  if (winStart.getTime() > winEnd.getTime()) {
+    return d.getTime() >= winStart.getTime() || d.getTime() <= winEnd.getTime();
+  }
+  return d.getTime() >= winStart.getTime() && d.getTime() <= winEnd.getTime();
+}
+
 function historyRangeToIsoBounds(range) {
   if (!range?.from || !range?.to) return {};
   const fromMs = new Date(`${range.from}T00:00:00`).getTime();
@@ -144,31 +221,33 @@ function filterHistoryPoints(points, range) {
   const to = range.to ? new Date(`${range.to}T23:59:59.999`).getTime() : now;
   return points.filter((p) => {
     const ts = pointTime(p);
-    return Number.isFinite(ts) && ts >= from && ts <= to;
+    if (!Number.isFinite(ts) || ts < from || ts > to) return false;
+    return inDailyLocalTimeWindow(p.timestamp, range);
   });
 }
 
 /** Initial / preset date span for the History tab (inclusive). */
 function computeHistoryRangeForPreset(preset) {
+  const times = defaultHistoryDayTimes();
   const today = startOfDay(new Date());
   if (preset === 'yesterday') {
     const y = new Date(today);
     y.setDate(today.getDate() - 1);
     const value = dateInputValue(y);
-    return { preset, from: value, to: value };
+    return { preset, from: value, to: value, ...times };
   }
   if (preset === '7d') {
     const from = new Date(today);
     from.setDate(today.getDate() - 6);
-    return { preset, from: dateInputValue(from), to: dateInputValue(today) };
+    return { preset, from: dateInputValue(from), to: dateInputValue(today), ...times };
   }
   if (preset === '30d') {
     const from = new Date(today);
     from.setDate(today.getDate() - 29);
-    return { preset, from: dateInputValue(from), to: dateInputValue(today) };
+    return { preset, from: dateInputValue(from), to: dateInputValue(today), ...times };
   }
   const value = dateInputValue(today);
-  return { preset: 'today', from: value, to: value };
+  return { preset: 'today', from: value, to: value, ...times };
 }
 
 function buildHistoryAnalytics(points) {
@@ -407,12 +486,14 @@ export default function Tracking() {
     };
   }, [trackerTab, effectiveDeviceId, historyReloadTick, historyRange.from, historyRange.to]);
 
+  const resolvedHistory = useMemo(() => resolveNonGpsHistoryPoints(historyPoints), [historyPoints]);
+
   const filteredHistory = useMemo(() => {
-    if (!historyCalendarMatch) return historyPoints;
-    const filtered = filterHistoryPoints(historyPoints, historyRange);
-    if (filtered.length === 0 && historyPoints.length > 0) return historyPoints;
+    if (!historyCalendarMatch) return resolvedHistory;
+    const filtered = filterHistoryPoints(resolvedHistory, historyRange);
+    if (filtered.length === 0 && resolvedHistory.length > 0) return resolvedHistory;
     return filtered;
-  }, [historyPoints, historyRange, historyCalendarMatch]);
+  }, [resolvedHistory, historyRange, historyCalendarMatch]);
   const historyAnalytics = useMemo(() => buildHistoryAnalytics(filteredHistory), [filteredHistory]);
   const historyMarkers = useMemo(() => {
     if (!filteredHistory.length) return [];
@@ -749,33 +830,68 @@ export default function Tracking() {
               <h2 className="pp-sectionTitle">Movement timeline</h2>
               <p className="pp-subtle">Review routes, stops, active time, and movement patterns for selected dates.</p>
             </div>
-            <div className="pp-trackHistoryFilters">
-              {[
-                ['today', 'Today'],
-                ['yesterday', 'Yesterday'],
-                ['7d', 'Last 7 days'],
-                ['30d', 'Last 30 days'],
-              ].map(([id, label]) => (
-                <button key={id} type="button" className={historyRange.preset === id ? 'is-active' : ''} onClick={() => applyHistoryPreset(id)}>
-                  {label}
-                </button>
-              ))}
-              <label>
-                <span>From</span>
-                <input
-                  type="date"
-                  value={historyRange.from}
-                  onChange={(e) => setHistoryRange((r) => ({ ...r, preset: 'custom', from: e.target.value }))}
-                />
-              </label>
-              <label>
-                <span>To</span>
-                <input
-                  type="date"
-                  value={historyRange.to}
-                  onChange={(e) => setHistoryRange((r) => ({ ...r, preset: 'custom', to: e.target.value }))}
-                />
-              </label>
+            <div>
+              <div className="pp-trackHistoryFilters">
+                {[
+                  ['today', 'Today'],
+                  ['yesterday', 'Yesterday'],
+                  ['7d', 'Last 7 days'],
+                  ['30d', 'Last 30 days'],
+                ].map(([id, label]) => (
+                  <button key={id} type="button" className={historyRange.preset === id ? 'is-active' : ''} onClick={() => applyHistoryPreset(id)}>
+                    {label}
+                  </button>
+                ))}
+                <label>
+                  <span>From</span>
+                  <input
+                    type="date"
+                    value={historyRange.from}
+                    onChange={(e) => setHistoryRange((r) => ({ ...r, preset: 'custom', from: e.target.value }))}
+                  />
+                </label>
+                <label>
+                  <span>To</span>
+                  <input
+                    type="date"
+                    value={historyRange.to}
+                    onChange={(e) => setHistoryRange((r) => ({ ...r, preset: 'custom', to: e.target.value }))}
+                  />
+                </label>
+                <label>
+                  <span>{t('trackingPage.historyTimeFrom')}</span>
+                  <input
+                    type="time"
+                    step={60}
+                    value={historyRange.timeFrom ?? defaultHistoryDayTimes().timeFrom}
+                    onChange={(e) =>
+                      setHistoryRange((r) => ({
+                        ...r,
+                        preset: 'custom',
+                        timeFrom: e.target.value || defaultHistoryDayTimes().timeFrom,
+                      }))
+                    }
+                  />
+                </label>
+                <label>
+                  <span>{t('trackingPage.historyTimeTo')}</span>
+                  <input
+                    type="time"
+                    step={60}
+                    value={historyRange.timeTo ?? defaultHistoryDayTimes().timeTo}
+                    onChange={(e) =>
+                      setHistoryRange((r) => ({
+                        ...r,
+                        preset: 'custom',
+                        timeTo: e.target.value || defaultHistoryDayTimes().timeTo,
+                      }))
+                    }
+                  />
+                </label>
+              </div>
+              <p className="pp-subtle" style={{ margin: '10px 0 0', fontSize: 12, lineHeight: 1.35, maxWidth: 520 }}>
+                {t('trackingPage.historyTimeHint')}
+              </p>
             </div>
           </div>
 
@@ -847,7 +963,12 @@ export default function Tracking() {
             <aside className="pp-card pp-pad pp-trackHistoryTimeline">
               <div className="pp-trackHistoryTimeline__head">
                 <h3>Timeline</h3>
-                <span>{historyRange.from} → {historyRange.to}</span>
+                <span>
+                  {historyRange.from} → {historyRange.to}
+                  {' · '}
+                  {(historyRange.timeFrom ?? defaultHistoryDayTimes().timeFrom).slice(0, 5)}–
+                  {(historyRange.timeTo ?? defaultHistoryDayTimes().timeTo).slice(0, 5)}
+                </span>
               </div>
               {historyTimelineEvents.map((event) => {
                 const p = event.start;

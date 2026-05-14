@@ -32,9 +32,10 @@ const defaultIcon = L.icon({
 });
 L.Marker.prototype.options.icon = defaultIcon;
 
-/** Route dots — align with tracker history UI (purple + white ring). */
-const ROUTE_DOT = '#7c3aed';
-const ROUTE_LINE = '#7c3aed';
+/** Route: red dots; current playback index is green. */
+const ROUTE_DOT = '#ef4444';
+const ROUTE_DOT_ACTIVE = '#22c55e';
+const ROUTE_LINE = '#ef4444';
 
 const googleMapContainerStyle = {
   width: '100%',
@@ -61,11 +62,8 @@ function FitRoute({ path }) {
   return null;
 }
 
-function markerFill(kind) {
-  if (kind === 'end') return '#ef4444';
-  if (kind === 'start') return '#22c55e';
-  if (kind === 'rest') return '#64748b';
-  return ROUTE_DOT;
+function markerFill(active) {
+  return active ? ROUTE_DOT_ACTIVE : ROUTE_DOT;
 }
 
 function leafletDotRadius(kind, active) {
@@ -131,7 +129,7 @@ function LeafletPositionMap({ lat, lng, path = [], routeMarkers = [], playbackPo
                 pathOptions={{
                   color: stroke.color,
                   weight: stroke.weight,
-                  fillColor: markerFill(m.kind),
+                  fillColor: markerFill(active),
                   fillOpacity: active ? 1 : 0.92,
                   opacity: 1,
                 }}
@@ -155,7 +153,7 @@ function googleRouteDotIcon(maps, kind, active) {
   const strokeWeight = active ? 2.5 : 1.25;
   return {
     path: maps.SymbolPath.CIRCLE,
-    fillColor: markerFill(kind),
+    fillColor: markerFill(active),
     fillOpacity: 1,
     strokeColor: '#ffffff',
     strokeWeight,
@@ -216,7 +214,7 @@ function GooglePositionMap({ lat, lng, apiKey, path = [], routeMarkers = [], pla
  * Falls back to Leaflet + OpenStreetMap when no key or Google script fails.
  *
  * @param {{ lat: number, lng: number, path?: Array, routeMarkers?: Array, playbackPointIndex?: number|null }} props
- * Route markers may include `pointIndex`, `kind` ('start'|'end'|'rest'|other), `id`, `label`.
+ * Route markers use red fill; the marker matching `playbackPointIndex` uses green.
  */
 export default function PositionMap({ lat, lng, path = [], routeMarkers = [], playbackPointIndex = null }) {
   const key = process.env.REACT_APP_GOOGLE_MAPS_API_KEY?.trim();

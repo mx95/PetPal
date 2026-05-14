@@ -84,7 +84,10 @@ function normalizeHistoryPoint(p, idx = 0) {
     speed: p.speed != null ? Number(p.speed) : null,
     battery: p.battery ?? null,
     signal: p.signal ?? null,
-    source: p.source || 'history',
+    source: p.source != null && String(p.source).trim() !== '' ? String(p.source).trim() : null,
+    accuracy: p.accuracy != null && String(p.accuracy).trim() !== '' ? String(p.accuracy).trim() : null,
+    gpsValid: p.gpsValid === true ? true : p.gpsValid === false ? false : null,
+    warningApproximate: Boolean(p.warningApproximate),
     timestamp,
     address: p.address || null,
   };

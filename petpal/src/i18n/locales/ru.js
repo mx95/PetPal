@@ -611,6 +611,10 @@ const ru = {
     activitySteps: 'Шаги',
     moving: 'Движется',
     notMoving: 'Не движется',
+    historyTimeFrom: 'Ежедневно с',
+    historyTimeTo: 'Ежедневно до',
+    historyTimeHint:
+      'Время по часовому поясу устройства. Для каждого дня в диапазоне на карте и в ленте показываются только точки между этими часами.',
   },
   nearbyPage: {
     badge: 'Рядом',

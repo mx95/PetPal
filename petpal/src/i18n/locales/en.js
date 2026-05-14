@@ -608,6 +608,10 @@ const en = {
     activitySteps: 'Steps',
     moving: 'Moving',
     notMoving: 'Not moving',
+    historyTimeFrom: 'Daily from',
+    historyTimeTo: 'Daily to',
+    historyTimeHint:
+      'Clock times use your device timezone. Each day in the range only includes points between these times on the map and timeline.',
   },
   nearbyPage: {
     badge: 'Nearby',
