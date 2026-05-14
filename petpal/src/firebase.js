@@ -43,6 +43,11 @@ if (firebaseReady) {
 /** @type {import('firebase/auth').Auth | null} */
 export const auth = app ? getAuth(app) : null;
 
+/** Default Firebase app (null when web env vars are incomplete). */
+export function getFirebaseApp() {
+  return app;
+}
+
 /** Firestore (leaderboard + opt-in). Requires full web config (see isFirebaseConfigured). */
 let db;
 export function getDb() {

@@ -73,10 +73,27 @@ async function jccPost(restBase, method, params) {
 
 function jccOk(json) {
   if (!json || typeof json !== 'object') return false;
+  if (json.error === true) return false;
   if (json.success === true) return true;
   const ec = json.errorCode;
-  if (ec === 0 || ec === '0') return true;
+  if (ec === 0 || ec === '0' || Number(ec) === 0) return true;
   return false;
+}
+
+/**
+ * register.do (and similar) often succeeds with only `orderId` + `formUrl` and no `errorCode`
+ * (see JCC redirect integration docs).
+ */
+function jccRegisterDoSucceeded(reg) {
+  if (!reg || typeof reg !== 'object') return false;
+  if (reg.error === true) return false;
+  const ec = reg.errorCode;
+  if (ec !== undefined && ec !== null && ec !== '') {
+    const n = Number(ec);
+    const ok = ec === 0 || ec === '0' || (Number.isFinite(n) && n === 0);
+    if (!ok) return false;
+  }
+  return Boolean(reg.orderId && reg.formUrl);
 }
 
 function paidOrderStatus(json) {
@@ -162,7 +179,7 @@ exports.createJccCheckout = functions.region('europe-west1').https.onCall(async 
   }
 
   const reg = await jccPost(restBase, 'register.do', params);
-  if (!jccOk(reg) || !reg.orderId || !reg.formUrl) {
+  if (!jccRegisterDoSucceeded(reg)) {
     await sessionRef.set(
       {
         status: 'register_failed',
@@ -363,7 +380,7 @@ exports.billingRenewal = functions
           language: 'en',
           clientId: clientId || uid,
         });
-        if (!jccOk(reg) || !reg.orderId) {
+        if (!jccRegisterDoSucceeded(reg)) {
           await renewRef.set({ status: 'register_failed', raw: reg }, { merge: true });
           continue;
         }
