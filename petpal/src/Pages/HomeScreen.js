@@ -409,6 +409,47 @@ function LoggedInFeed() {
 
       <section className="pp-feed__section">
         <div className="pp-feed__sectionHead">
+          <h2 className="pp-feed__sectionTitle">{t('home.feed.discoverTitle')}</h2>
+        </div>
+        <div className="pp-discover">
+          {exploreItems.map((it) => (
+            <Link key={it.to} className={`pp-discoverChip pp-discoverChip--${it.iconKey}`} to={it.to}>
+              <GreyIcon>{ICONS[it.iconKey]}</GreyIcon>
+              <span className="pp-discoverChip__label">{t(it.titleKey)}</span>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <section className="pp-feed__section">
+        <div className="pp-feed__sectionHead">
+          <span className="pp-badge pp-badge--premium">{t('premium.badge')}</span>
+          <h2 className="pp-feed__sectionTitle" style={{ flex: 1 }}>{t('premium.title')}</h2>
+        </div>
+        <p className="pp-subtle" style={{ margin: '0 0 12px' }}>{t('premium.subtitle')}</p>
+        <div className="pp-homeGrid pp-homeGrid--premiumSub">
+          {[
+            { iconKey: 'lost', titleKey: 'premium.tabLost', hintKey: 'home.premiumCardLostHint', to: '/premium/lost' },
+            { iconKey: 'stray', titleKey: 'premium.tabStray', hintKey: 'home.premiumCardStrayHint', to: '/premium/stray' },
+            { iconKey: 'breeding', titleKey: 'premium.tabBreeding', hintKey: 'home.premiumCardBreedingHint', to: '/premium/breeding' },
+          ].map(({ iconKey, titleKey, hintKey, to }) => (
+            <HomeTileLink
+              key={to}
+              iconChildren={ICONS_PREMIUM[iconKey]}
+              iconPremium
+              accentKey={iconKey}
+              title={t(titleKey)}
+              hint={t(hintKey)}
+              locked={false}
+              openAria={t(titleKey)}
+              to={to}
+            />
+          ))}
+        </div>
+      </section>
+
+      <section className="pp-feed__section">
+        <div className="pp-feed__sectionHead">
           <h2 className="pp-feed__sectionTitle">{t('home.feed.continueTitle')}</h2>
           <Link className="pp-feed__sectionLink" to="/dashboard">
             {t('home.feed.openDashboard')}
@@ -504,47 +545,6 @@ function LoggedInFeed() {
               eyebrow={t('home.feed.eyebrowTip')}
               title={t(tip.titleKey)}
               subtitle={t(tip.descKey)}
-            />
-          ))}
-        </div>
-      </section>
-
-      <section className="pp-feed__section">
-        <div className="pp-feed__sectionHead">
-          <h2 className="pp-feed__sectionTitle">{t('home.feed.discoverTitle')}</h2>
-        </div>
-        <div className="pp-discover">
-          {exploreItems.map((it) => (
-            <Link key={it.to} className={`pp-discoverChip pp-discoverChip--${it.iconKey}`} to={it.to}>
-              <GreyIcon>{ICONS[it.iconKey]}</GreyIcon>
-              <span className="pp-discoverChip__label">{t(it.titleKey)}</span>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      <section className="pp-feed__section">
-        <div className="pp-feed__sectionHead">
-          <span className="pp-badge pp-badge--premium">{t('premium.badge')}</span>
-          <h2 className="pp-feed__sectionTitle" style={{ flex: 1 }}>{t('premium.title')}</h2>
-        </div>
-        <p className="pp-subtle" style={{ margin: '0 0 12px' }}>{t('premium.subtitle')}</p>
-        <div className="pp-homeGrid pp-homeGrid--premiumSub">
-          {[
-            { iconKey: 'lost', titleKey: 'premium.tabLost', hintKey: 'home.premiumCardLostHint', to: '/premium/lost' },
-            { iconKey: 'stray', titleKey: 'premium.tabStray', hintKey: 'home.premiumCardStrayHint', to: '/premium/stray' },
-            { iconKey: 'breeding', titleKey: 'premium.tabBreeding', hintKey: 'home.premiumCardBreedingHint', to: '/premium/breeding' },
-          ].map(({ iconKey, titleKey, hintKey, to }) => (
-            <HomeTileLink
-              key={to}
-              iconChildren={ICONS_PREMIUM[iconKey]}
-              iconPremium
-              accentKey={iconKey}
-              title={t(titleKey)}
-              hint={t(hintKey)}
-              locked={false}
-              openAria={t(titleKey)}
-              to={to}
             />
           ))}
         </div>

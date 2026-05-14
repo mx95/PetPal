@@ -134,7 +134,7 @@ const en = {
         active: 'On a walk · {value}',
         resting: 'Resting',
         lastSeen: 'Last walk · {value}',
-        trackingHint: 'GPS in Tracker — log a walk on the dashboard to count km today',
+        trackingHint: 'GPS on — log a walk to count km',
         firstWalk: 'First walk awaits',
       },
     },
@@ -718,7 +718,7 @@ const en = {
   bookingsHub: {
     badge: 'Bookings',
     title: 'Book care for your pet',
-    subtitle: 'Choose a service, compare providers, and pick a time that works for you.',
+    subtitle: 'Pick a service, compare providers, and choose a time.',
     tabBrowse: 'Browse',
     tabMine: 'My bookings',
     tabVet: 'Vet',

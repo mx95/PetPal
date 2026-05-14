@@ -32,21 +32,6 @@ function monthGrid(monthDate) {
   });
 }
 
-function weekFor(dayKey) {
-  const selected = new Date(`${dayKey}T00:00:00`);
-  const start = addDays(selected, -selected.getDay());
-  return Array.from({ length: 7 }, (_, idx) => {
-    const date = addDays(start, idx);
-    return {
-      key: toYmd(date),
-      date,
-      label: date.toLocaleDateString(undefined, { weekday: 'short' }),
-      day: date.getDate(),
-      isPast: date < new Date(new Date().setHours(0, 0, 0, 0)),
-    };
-  });
-}
-
 function formatTime(date) {
   return date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
 }
@@ -131,7 +116,6 @@ export function BookingModal({ open, provider, serviceTab, onClose, t }) {
   }, [filteredServices]);
 
   const monthDays = useMemo(() => monthGrid(monthDate), [monthDate]);
-  const weekDays = useMemo(() => weekFor(dayKey), [dayKey]);
   const monthLabel = monthDate.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
   const selectedService = useMemo(() => filteredServices.find((s) => s.id === serviceId) || null, [filteredServices, serviceId]);
   const uniqueSlots = useMemo(() => {
@@ -279,28 +263,12 @@ export function BookingModal({ open, provider, serviceTab, onClose, t }) {
                     className={`pp-book-calendarDay ${d.key === dayKey ? 'is-active' : ''} ${d.inMonth ? '' : 'is-muted'}`}
                     onClick={() => {
                       setDayKey(d.key);
+                      setMonthDate(new Date(d.date.getFullYear(), d.date.getMonth(), 1));
                       setSlotId('');
                     }}
                     disabled={d.isPast}
                   >
                     {d.date.getDate()}
-                  </button>
-                ))}
-              </div>
-              <div className="pp-book-weekSchedule" aria-label="Selected week">
-                {weekDays.map((d) => (
-                  <button
-                    key={d.key}
-                    type="button"
-                    className={`pp-book-weekDay ${d.key === dayKey ? 'is-active' : ''}`}
-                    onClick={() => {
-                      setDayKey(d.key);
-                      setMonthDate(new Date(d.date.getFullYear(), d.date.getMonth(), 1));
-                    }}
-                    disabled={d.isPast}
-                  >
-                    <span>{d.label}</span>
-                    <strong>{d.day}</strong>
                   </button>
                 ))}
               </div>

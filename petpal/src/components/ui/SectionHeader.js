@@ -1,7 +1,7 @@
 import React from 'react';
 import { cx } from './classNames';
 
-export function SectionHeader({ eyebrow, title, subtitle, action, align = 'left', className = '' }) {
+export function SectionHeader({ eyebrow, title, subtitle, subtitleClassName, action, align = 'left', className = '' }) {
   return (
     <div
       className={cx(
@@ -18,7 +18,9 @@ export function SectionHeader({ eyebrow, title, subtitle, action, align = 'left'
           </div>
         ) : null}
         <h1 className="text-3xl font-black tracking-[-0.04em] text-petpal-ink sm:text-4xl lg:text-5xl">{title}</h1>
-        {subtitle ? <p className="mt-4 text-base leading-7 text-petpal-muted sm:text-lg">{subtitle}</p> : null}
+        {subtitle ? (
+          <p className={cx('mt-4 text-base leading-7 text-petpal-muted sm:text-lg', subtitleClassName)}>{subtitle}</p>
+        ) : null}
       </div>
       {action ? <div className="shrink-0">{action}</div> : null}
     </div>

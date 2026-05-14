@@ -1,4 +1,5 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { NavLink } from 'react-router-dom';
 import { useI18n } from '../i18n/I18nContext';
 import { useAuth } from '../auth/AuthProvider';
@@ -101,7 +102,7 @@ export default function BottomNav() {
     </NavLink>
   );
 
-  return (
+  const dock = (
     <nav className="pp-bottomNav" aria-label={t('bottomNav.aria')}>
       <div className="pp-bottomNav__row">
         {left.map((it) => (
@@ -123,4 +124,10 @@ export default function BottomNav() {
       </div>
     </nav>
   );
+
+  // Portal keeps `position:fixed` on the visual viewport (iOS + maps / backdrop-filter quirks).
+  if (typeof document !== 'undefined') {
+    return createPortal(dock, document.body);
+  }
+  return dock;
 }

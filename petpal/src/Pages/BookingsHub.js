@@ -163,10 +163,10 @@ function BrowseProviders() {
   const hasAdvancedFiltersActive = ratingFilter !== 'any' || (userLoc && distanceFilter !== 'any');
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
+    <div className="grid gap-4 lg:grid-cols-[300px_1fr] lg:gap-5">
       <aside>
-        <AppCard hover={false} className="sticky top-24">
-          <h3 className="mb-5 text-lg font-black tracking-[-0.03em] text-petpal-ink">{t('bookingsHub.filtersTitle')}</h3>
+        <AppCard hover={false} className="sticky top-20 lg:top-24">
+          <h3 className="mb-3 text-base font-black tracking-[-0.03em] text-petpal-ink">{t('bookingsHub.filtersTitle')}</h3>
           <label className="pp-book-field">
             <span className="pp-sr">{t('bookingsHub.searchPlaceholder')}</span>
             <input
@@ -226,7 +226,7 @@ function BrowseProviders() {
       </aside>
 
       <div className="min-w-0">
-        <div className="mb-5 flex flex-col gap-3 rounded-3xl border border-white/75 bg-white/75 p-3 shadow-soft backdrop-blur sm:flex-row sm:items-center sm:justify-between">
+        <div className="mb-3 flex flex-col gap-2 rounded-2xl border border-white/75 bg-white/80 p-2.5 shadow-soft backdrop-blur sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:p-3">
           <span className="pp-book-serviceBar__label">{t('bookingsHub.categoryLabel')}</span>
           <ServiceTabs tabs={serviceTabs} value={serviceTab} onChange={setServiceTab} />
         </div>
@@ -234,7 +234,7 @@ function BrowseProviders() {
         {err ? <div className="pp-book-error">{err}</div> : null}
 
         {!loaded ? (
-          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             <SkeletonCard />
             <SkeletonCard />
             <SkeletonCard />
@@ -265,7 +265,7 @@ function BrowseProviders() {
                 </div>
               </section>
             ) : null}
-            <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {sorted.map(({ p, km }) => (
                 <ProviderCard key={String(p.id)} provider={p} distanceKm={km} onBook={() => setModalProvider(p)} t={t} />
               ))}
@@ -345,8 +345,10 @@ export default function BookingsHub() {
 
   return (
     <div className="pp-book-page">
-      <PageContainer>
+      <PageContainer className="!py-4 sm:!py-5 lg:!py-6">
         <SectionHeader
+          className="!mb-4 !gap-2 sm:!mb-5 sm:!gap-3"
+          subtitleClassName="!mt-2 text-sm leading-snug sm:!mt-3 sm:text-base sm:leading-6"
           eyebrow={t('bookingsHub.badge')}
           title={t('bookingsHub.title')}
           subtitle={t('bookingsHub.subtitle')}

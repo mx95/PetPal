@@ -9593,7 +9593,7 @@ html[data-theme="dark"] .pp-publicHero__eyebrow {
   --book-muted: #6b7280;
   max-width: 1200px;
   margin: 0 auto;
-  padding: 24px 18px 96px;
+  padding: 12px 12px calc(96px + env(safe-area-inset-bottom));
   box-sizing: border-box;
   background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 38%, #f9fafb 100%);
   min-height: 60vh;
@@ -10895,46 +10895,6 @@ html[data-theme="dark"] .pp-book-modalPanel::before {
   transform: scale(1.04);
 }
 
-.pp-book-weekSchedule {
-  display: grid;
-  grid-template-columns: repeat(7, minmax(48px, 1fr));
-  gap: 6px;
-  overflow-x: auto;
-  padding-bottom: 2px;
-}
-
-.pp-book-weekDay {
-  min-height: 54px;
-  border: 1px solid var(--pp-border);
-  border-radius: 16px;
-  background: var(--pp-card);
-  color: var(--pp-text);
-  font-weight: 950;
-  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
-}
-
-.pp-book-weekDay span,
-.pp-book-weekDay strong {
-  display: block;
-}
-
-.pp-book-weekDay span {
-  font-size: 10px;
-  color: var(--pp-text-2);
-}
-
-.pp-book-weekDay strong {
-  margin-top: 3px;
-  font-size: 15px;
-}
-
-.pp-book-weekDay.is-active {
-  background: rgba(91, 55, 255, 0.1);
-  border-color: rgba(91, 55, 255, 0.34);
-  color: #5b37ff;
-  transform: translateY(-1px);
-}
-
 .pp-book-slot--rich.is-active {
   transform: translateY(-2px) scale(1.02);
   box-shadow: 0 12px 26px -16px rgba(91, 55, 255, 0.8);
@@ -10979,8 +10939,7 @@ html[data-theme="dark"] .pp-book-modalPanel::before {
 }
 
 html[data-theme="dark"] .pp-nearby-list > li,
-html[data-theme="dark"] .pp-book-calendarGrid,
-html[data-theme="dark"] .pp-book-weekDay {
+html[data-theme="dark"] .pp-book-calendarGrid {
   background: #202a44;
   border-color: rgba(255, 255, 255, 0.08);
 }
@@ -12412,6 +12371,7 @@ html[data-theme="dark"] .pp-nearby-list > li {
 
 .pp-book-calendar {
   gap: 8px !important;
+  margin-bottom: 4px !important;
 }
 
 .pp-book-calendar__head {
@@ -12476,26 +12436,8 @@ html[data-theme="dark"] .pp-nearby-list > li {
   box-shadow: 0 12px 22px -10px rgba(91, 55, 255, 0.7);
 }
 
-.pp-book-weekSchedule {
-  grid-template-columns: repeat(7, minmax(42px, 1fr));
-  gap: 5px;
-}
-
-.pp-book-weekDay {
-  min-height: 48px;
-  border-radius: 14px;
-}
-
-.pp-book-weekDay span {
-  font-size: 9.5px;
-}
-
-.pp-book-weekDay strong {
-  font-size: 14px;
-}
-
 .pp-book-slotPeriod {
-  margin-top: 12px !important;
+  margin-top: 8px !important;
 }
 
 .pp-book-slotPeriod__title {

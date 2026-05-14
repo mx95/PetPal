@@ -715,9 +715,6 @@ export default function Tracking() {
                     {approx ? t('trackingPage.badgeApprox') : 'GPS'}
                   </span>
                 </div>
-                <p className="pp-subtle" style={{ marginTop: 8, marginBottom: 0, fontSize: 13, lineHeight: 1.35 }}>
-                  {position.accuracyText || t(approx ? 'trackingPage.accuracyApprox' : 'trackingPage.accuracyHigh')}
-                </p>
               </div>
 
               <div className="pp-card" style={{ minWidth: 0, padding: 12, borderRadius: 20 }}>
@@ -734,9 +731,6 @@ export default function Tracking() {
                     {t('trackingPage.healthBattery')}: —
                   </p>
                 )}
-                <p className="pp-subtle" style={{ marginTop: 8, marginBottom: 0, fontSize: 13, lineHeight: 1.35 }}>
-                  {t('trackingPage.healthSignal')}: {position.signal != null ? `${position.signal} (${position.signalStatus || '—'})` : '—'}
-                </p>
               </div>
 
               <div className="pp-card" style={{ minWidth: 0, padding: 12, borderRadius: 20 }}>
