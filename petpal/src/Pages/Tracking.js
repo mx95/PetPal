@@ -8,10 +8,24 @@ import { getLatestPosition, getPositionHistory, getTrackingDataSource, mapsLink 
 
 const LAST_LIVE_PET_KEY = 'petpal_live_selectedPetId';
 
+function timeLocaleTag(lang) {
+  if (lang === 'el') return 'el';
+  if (lang === 'ru') return 'ru';
+  return 'en-GB';
+}
+
 function formatTime(iso, lang) {
   if (!iso) return '—';
   try {
-    return new Date(iso).toLocaleString(lang === 'el' ? 'el' : lang === 'ru' ? 'ru' : undefined);
+    return new Date(iso).toLocaleString(timeLocaleTag(lang), {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    });
   } catch {
     return String(iso);
   }
@@ -134,6 +148,29 @@ function filterHistoryPoints(points, range) {
   });
 }
 
+/** Initial / preset date span for the History tab (inclusive). */
+function computeHistoryRangeForPreset(preset) {
+  const today = startOfDay(new Date());
+  if (preset === 'yesterday') {
+    const y = new Date(today);
+    y.setDate(today.getDate() - 1);
+    const value = dateInputValue(y);
+    return { preset, from: value, to: value };
+  }
+  if (preset === '7d') {
+    const from = new Date(today);
+    from.setDate(today.getDate() - 6);
+    return { preset, from: dateInputValue(from), to: dateInputValue(today) };
+  }
+  if (preset === '30d') {
+    const from = new Date(today);
+    from.setDate(today.getDate() - 29);
+    return { preset, from: dateInputValue(from), to: dateInputValue(today) };
+  }
+  const value = dateInputValue(today);
+  return { preset: 'today', from: value, to: value };
+}
+
 function buildHistoryAnalytics(points) {
   const distanceKm = points.reduce((sum, p, idx) => sum + (idx ? kmBetween(points[idx - 1], p) : 0), 0);
   const first = points[0] ? pointTime(points[0]) : 0;
@@ -149,8 +186,13 @@ function buildHistoryAnalytics(points) {
   };
 }
 
-function formatShortTime(iso) {
-  return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+function formatShortTime(iso, lang) {
+  if (!iso) return '—';
+  try {
+    return new Date(iso).toLocaleTimeString(timeLocaleTag(lang), { hour: '2-digit', minute: '2-digit', hour12: false });
+  } catch {
+    return '—';
+  }
 }
 
 /** Same-location clusters longer than this use report count only (device timestamps often wrong). */
@@ -185,7 +227,7 @@ function mapRouteMarkerKindLabel(kind, t) {
   return t('trackingPage.timelineWalking');
 }
 
-function buildHistoryTimelineEvents(points, t) {
+function buildHistoryTimelineEvents(points, t, lang) {
   const sameLocationKm = 0.03;
   const events = [];
   let idx = 0;
@@ -231,7 +273,10 @@ function buildHistoryTimelineEvents(points, t) {
       count,
       type,
       label,
-      timeLabel: count > 1 ? `${formatShortTime(start.timestamp)} → ${formatShortTime(end.timestamp)}` : formatShortTime(start.timestamp),
+      timeLabel:
+        count > 1
+          ? `${formatShortTime(start.timestamp, lang)} → ${formatShortTime(end.timestamp, lang)}`
+          : formatShortTime(start.timestamp, lang),
     });
 
     idx = endIndex + 1;
@@ -256,10 +301,7 @@ export default function Tracking() {
   const [historyPoints, setHistoryPoints] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyError, setHistoryError] = useState('');
-  const [historyRange, setHistoryRange] = useState(() => {
-    const today = dateInputValue(new Date());
-    return { preset: 'today', from: today, to: today };
-  });
+  const [historyRange, setHistoryRange] = useState(() => computeHistoryRangeForPreset('7d'));
   const [historyReloadTick, setHistoryReloadTick] = useState(0);
   const [historyPlaying, setHistoryPlaying] = useState(false);
   const [historySpeed, setHistorySpeed] = useState(1);
@@ -367,7 +409,9 @@ export default function Tracking() {
 
   const filteredHistory = useMemo(() => {
     if (!historyCalendarMatch) return historyPoints;
-    return filterHistoryPoints(historyPoints, historyRange);
+    const filtered = filterHistoryPoints(historyPoints, historyRange);
+    if (filtered.length === 0 && historyPoints.length > 0) return historyPoints;
+    return filtered;
   }, [historyPoints, historyRange, historyCalendarMatch]);
   const historyAnalytics = useMemo(() => buildHistoryAnalytics(filteredHistory), [filteredHistory]);
   const historyMarkers = useMemo(() => {
@@ -379,11 +423,11 @@ export default function Tracking() {
         lat: p.lat,
         lng: p.lng,
         kind,
-        label: `${mapRouteMarkerKindLabel(kind, t)} · ${new Date(p.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
+        label: `${mapRouteMarkerKindLabel(kind, t)} · ${formatShortTime(p.timestamp, language)}`,
       };
     });
-  }, [filteredHistory, t]);
-  const historyTimelineEvents = useMemo(() => buildHistoryTimelineEvents(filteredHistory, t), [filteredHistory, t]);
+  }, [filteredHistory, t, language]);
+  const historyTimelineEvents = useMemo(() => buildHistoryTimelineEvents(filteredHistory, t, language), [filteredHistory, t, language]);
 
   useEffect(() => {
     if (!historyPlaying || filteredHistory.length < 2) return undefined;
@@ -405,28 +449,7 @@ export default function Tracking() {
   }, [historyRange]);
 
   function applyHistoryPreset(preset) {
-    const today = startOfDay(new Date());
-    if (preset === 'yesterday') {
-      const y = new Date(today);
-      y.setDate(today.getDate() - 1);
-      const value = dateInputValue(y);
-      setHistoryRange({ preset, from: value, to: value });
-      return;
-    }
-    if (preset === '7d') {
-      const from = new Date(today);
-      from.setDate(today.getDate() - 6);
-      setHistoryRange({ preset, from: dateInputValue(from), to: dateInputValue(today) });
-      return;
-    }
-    if (preset === '30d') {
-      const from = new Date(today);
-      from.setDate(today.getDate() - 29);
-      setHistoryRange({ preset, from: dateInputValue(from), to: dateInputValue(today) });
-      return;
-    }
-    const value = dateInputValue(today);
-    setHistoryRange({ preset: 'today', from: value, to: value });
+    setHistoryRange(computeHistoryRangeForPreset(preset));
   }
 
   function saveIdAndLoad(e) {
@@ -470,7 +493,6 @@ export default function Tracking() {
     );
   }
 
-  const langForDate = language === 'el' ? 'el' : language === 'ru' ? 'ru' : 'en';
 
   const signalLive = position != null;
   const hasCoordinates = position?.lat != null && position?.lng != null;
@@ -485,7 +507,7 @@ export default function Tracking() {
   const deviceTimeLabel = position?.deviceTimeLocal
     ? position.deviceTimeLocal
     : position?.deviceTime
-      ? formatTime(position.deviceTime, langForDate)
+      ? formatTime(position.deviceTime, language)
       : '—';
 
   const batPct = position?.battery != null ? Math.min(100, Math.max(0, Number(position.battery))) : null;

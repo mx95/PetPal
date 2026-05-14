@@ -11,6 +11,7 @@ export default function PaymentSuccess() {
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const checkout = searchParams.get('checkout');
+  const orderNumber = searchParams.get('orderNumber');
   const focusSku = searchParams.get('sku');
   const plusBound = searchParams.get('plusBound');
   const collarComboParam = searchParams.get('collarCombo');
@@ -86,6 +87,11 @@ export default function PaymentSuccess() {
         <p className="pp-pageHeader__sub" style={{ marginTop: 8 }}>
           {t('paymentSuccess.lead')}
         </p>
+        {orderNumber ? (
+          <p className="pp-muted" style={{ marginTop: 12, fontSize: 14 }}>
+            {t('paymentSuccess.orderRef', { ref: orderNumber })}
+          </p>
+        ) : null}
         <div className="pp-shopBanner pp-shopBanner--ok pp-paymentSuccess__detail" role="status">
           {detail}
         </div>

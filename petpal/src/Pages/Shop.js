@@ -196,6 +196,7 @@ export default function Shop() {
               <input
                 type="checkbox"
                 checked={Boolean(saveCardById[p.id])}
+                disabled={p.id === PLUS_SKU && plusActive}
                 onChange={(e) => setSaveCardById((prev) => ({ ...prev, [p.id]: e.target.checked }))}
               />
               <span>
@@ -205,10 +206,18 @@ export default function Shop() {
             <button
               type="button"
               className="pp-btn pp-btn--primary"
-              disabled={Boolean(busy) || (p.id === 'STORE_BOOST_MONTHLY' && !isApprovedCompany)}
+              disabled={
+                Boolean(busy) ||
+                (p.id === 'STORE_BOOST_MONTHLY' && !isApprovedCompany) ||
+                (p.id === PLUS_SKU && plusActive)
+              }
               onClick={() => void onPay(p)}
             >
-              {busy === p.id ? 'Starting checkout…' : 'Pay with card'}
+              {busy === p.id
+                ? 'Starting checkout…'
+                : p.id === PLUS_SKU && plusActive
+                  ? t('shopPage.plusSubscribedCta')
+                  : 'Pay with card'}
             </button>
           </article>
         ))}

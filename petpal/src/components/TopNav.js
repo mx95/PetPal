@@ -23,21 +23,14 @@ export default function TopNav() {
   const premiumPathMatch = useMatch('/premium/*');
   const navigate = useNavigate();
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
-  const [theme, setTheme] = useState(() => {
-    try {
-      return localStorage.getItem('petpal_theme') || 'light';
-    } catch {
-      return 'light';
-    }
-  });
   const accountMenuRef = useRef(null);
 
   useEffect(() => {
-    document.documentElement.dataset.theme = theme;
+    document.documentElement.dataset.theme = 'light';
     try {
-      localStorage.setItem('petpal_theme', theme);
+      localStorage.setItem('petpal_theme', 'light');
     } catch (_) {}
-  }, [theme]);
+  }, []);
 
   useEffect(() => {
     if (!accountMenuOpen) return undefined;
@@ -123,15 +116,6 @@ export default function TopNav() {
         </nav>
 
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            className="pp-themeToggle"
-            onClick={() => setTheme((cur) => (cur === 'dark' ? 'light' : 'dark'))}
-            aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-            title={theme === 'dark' ? 'Light mode' : 'Dark mode'}
-          >
-            <span aria-hidden>{theme === 'dark' ? 'Sun' : 'Moon'}</span>
-          </button>
           <LanguageSwitcher />
           {user ? (
             <div className="relative" ref={accountMenuRef}>

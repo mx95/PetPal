@@ -9,7 +9,11 @@
  *   jcc.pass="YOUR_API_PASSWORD"
  *   jcc.rest_base="https://gateway-test.jcc.com.cy/payment/rest"
  *   jcc.return_url="https://europe-west1-<PROJECT>.cloudfunctions.net/jccPaymentReturn"
- *   jcc.frontend_url="https://your-petpal-host" (no trailing slash; paid customers return to /payment/success on this origin)
+ *   jcc.frontend_url="https://your-petpal-host" (no trailing slash; must match the SPA origin users open)
+ *
+ * Return flow: register.do sets returnUrl to jccPaymentReturn?orderNumber=<session id>. After pay, JCC
+ * redirects there with the same orderNumber plus gateway params (orderId / mdOrder). jccPaymentReturn
+ * verifies the session, then 302s to {frontend_url}/payment/success?checkout=success&sku=…&orderNumber=…
  *
  * Do not commit real passwords. Test base URL from JCC docs:
  * https://gateway-test.jcc.com.cy/payment/rest/
@@ -336,7 +340,8 @@ exports.jccPaymentReturn = functions.region('europe-west1').https.onRequest(asyn
   }
 
   const catalog = SKUS[sku];
-  if (catalog?.recurring && bindingId) {
+  /** Record subscription on successful payment even if JCC did not return a binding yet (UI shows Plus active; renewals need bindingId). */
+  if (catalog?.recurring) {
     const next = new Date();
     next.setMonth(next.getMonth() + 1);
     await db
@@ -348,7 +353,7 @@ exports.jccPaymentReturn = functions.region('europe-west1').https.onRequest(asyn
           sku,
           amountCents: catalog.amountCents,
           currency: catalog.currency,
-          bindingId,
+          bindingId: bindingId || null,
           clientId: uid,
           status: 'active',
           nextRenewalAt: admin.firestore.Timestamp.fromDate(next),
@@ -421,6 +426,7 @@ exports.jccPaymentReturn = functions.region('europe-west1').https.onRequest(asyn
       String(stData.totalCollarPurchases ?? 0)
     )}`;
   }
+  successQs += `&orderNumber=${encodeURIComponent(orderNumber)}&gatewayOrderId=${encodeURIComponent(jccOrderId)}`;
   redirect(res, `${frontendUrl}/payment/success?${successQs}`);
 });
 

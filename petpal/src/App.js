@@ -1,5 +1,5 @@
-import React, { Suspense, lazy } from 'react';
-import { Navigate, Route, Routes } from 'react-router-dom';
+import React, { Suspense, lazy, useEffect } from 'react';
+import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { RequireAuth } from './auth/RequireAuth';
 import { useAuth } from './auth/AuthProvider';
 import { AppFooter } from './components/AppFooter';
@@ -46,6 +46,20 @@ function TrackingRouteFallback() {
   return <OpeningScreen subtitle={t('app.loadingTracker')} />;
 }
 
+/** JCC / gateway sometimes lands users on `/` or `/dashboard` with `?checkout=success` — normalize to the success screen. */
+function CheckoutSuccessBridge() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  useEffect(() => {
+    const sp = new URLSearchParams(location.search);
+    if (sp.get('checkout') !== 'success') return;
+    if (location.pathname === '/payment/success') return;
+    const q = sp.toString();
+    navigate(q ? `/payment/success?${q}` : '/payment/success?checkout=success', { replace: true });
+  }, [location.pathname, location.search, navigate]);
+  return null;
+}
+
 function App() {
   const { initializing } = useAuth();
 
@@ -56,6 +70,7 @@ function App() {
     <div className="pp-shell">
       <ScrollToTop />
       <TopNav />
+      <CheckoutSuccessBridge />
       <div className="pp-main">
         <Routes>
           <Route path="/" element={<HomeScreen />} />
