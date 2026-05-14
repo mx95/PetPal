@@ -31,7 +31,7 @@ This service exposes **two API groups**:
 - **List devices**: `GET /api/app/devices`
 - **Get one device**: `GET /api/app/devices/:imei`
 - **Latest position**: `GET /api/app/position?deviceId=IMEI`
-- **History**: `GET /api/app/history?deviceId=IMEI&limit=…` (optional `from` / `to` as ISO timestamps to load a date range chronologically, up to 20k points; without them, the latest points are returned)
+- **History**: `GET /api/app/history?deviceId=IMEI&limit=…` (optional `from` / `to` as ISO timestamps for a chronological window, up to 20k points; without them, the latest points are returned). Response includes `calendarMatch` (`false` when the server returned a recent trail because nothing fell in the requested window — e.g. device GPS clock wrong vs real dates).
 
 ### Tracker API (device commands)
 

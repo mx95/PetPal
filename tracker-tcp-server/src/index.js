@@ -240,8 +240,15 @@ app.get("/api/app/history", (req, res) => {
   const limit = Number(req.query.limit ?? 100);
   const from = String(req.query.from || "").trim() || null;
   const to = String(req.query.to || "").trim() || null;
-  const history = store.history(imei, { limit, from, to });
-  res.json({ imei, history });
+  let calendarMatch = true;
+  let history = store.history(imei, { limit, from, to });
+  // Device GPS clock often wrong (e.g. year 2028) while packets arrive "today" — calendar filter then returns nothing.
+  if (from && to && Array.isArray(history) && history.length === 0) {
+    const lim = Math.min(10000, Number.isFinite(limit) && limit > 0 ? Math.floor(limit) : 5000);
+    history = store.history(imei, { limit: lim });
+    calendarMatch = false;
+  }
+  res.json({ imei, history, calendarMatch });
 });
 
 app.get("/devices", (req, res) => {

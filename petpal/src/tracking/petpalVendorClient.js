@@ -315,10 +315,12 @@ async function fetchBffHistory(deviceId, { limit = 240, from, to } = {}) {
   });
   const data = await readJsonSafe(res);
   if (!res.ok) throw new Error(data?.error ? `History returned ${res.status} (${data.error})` : `History returned ${res.status}`);
-  return (Array.isArray(data?.history) ? data.history : Array.isArray(data) ? data : [])
+  const calendarMatch = data?.calendarMatch !== false;
+  const history = (Array.isArray(data?.history) ? data.history : Array.isArray(data) ? data : [])
     .map(normalizeHistoryPoint)
     .filter(Boolean)
     .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+  return { history, calendarMatch };
 }
 
 async function fetchXexunHistory(deviceId, { limit = 240, from, to } = {}) {
@@ -337,10 +339,12 @@ async function fetchXexunHistory(deviceId, { limit = 240, from, to } = {}) {
   });
   const data = await readJsonSafe(res);
   if (!res.ok) throw new Error(data?.error ? `Tracker history ${res.status} (${data.error})` : `Tracker history returned ${res.status}`);
-  return (Array.isArray(data?.history) ? data.history : [])
+  const calendarMatch = data?.calendarMatch !== false;
+  const history = (Array.isArray(data?.history) ? data.history : [])
     .map(normalizeHistoryPoint)
     .filter(Boolean)
     .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+  return { history, calendarMatch };
 }
 
 async function fetchVendorHistory(deviceId, { limit = 240 } = {}) {
@@ -354,11 +358,12 @@ async function fetchVendorHistory(deviceId, { limit = 240 } = {}) {
   });
   if (!res.ok) throw new Error(`Vendor history returned ${res.status}`);
   const data = await res.json();
-  return (Array.isArray(data) ? data : [])
+  const history = (Array.isArray(data) ? data : [])
     .map(normalizeHistoryPoint)
     .filter(Boolean)
     .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
     .slice(-limit);
+  return { history, calendarMatch: true };
 }
 
 let mockSeed = { lat: 37.9755, lng: 23.7348 };
@@ -425,7 +430,7 @@ export async function getPositionHistory(deviceId, opts = {}) {
   if (bffBase() != null) return fetchBffHistory(id, opts);
   if (xexunBase() != null) return fetchXexunHistory(id, opts);
   if (vendorBase() != null) return fetchVendorHistory(id, opts);
-  return mockHistory(id);
+  return { history: mockHistory(id), calendarMatch: true };
 }
 
 export function mapsLink(lat, lng) {

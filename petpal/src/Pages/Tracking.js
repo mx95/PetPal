@@ -223,6 +223,7 @@ export default function Tracking() {
   const [historyPlaying, setHistoryPlaying] = useState(false);
   const [historySpeed, setHistorySpeed] = useState(1);
   const [historyIndex, setHistoryIndex] = useState(0);
+  const [historyCalendarMatch, setHistoryCalendarMatch] = useState(true);
 
   const selectedPet = useMemo(() => pets.find((p) => p.id === selectedPetId), [pets, selectedPetId]);
 
@@ -304,9 +305,10 @@ export default function Tracking() {
       limit: 20000,
       ...historyRangeToIsoBounds(historyRange),
     })
-      .then((points) => {
+      .then(({ history, calendarMatch }) => {
         if (cancelled) return;
-        setHistoryPoints(points);
+        setHistoryPoints(history);
+        setHistoryCalendarMatch(calendarMatch !== false);
         setHistoryIndex(0);
       })
       .catch((e) => {
@@ -322,7 +324,10 @@ export default function Tracking() {
     };
   }, [trackerTab, effectiveDeviceId, historyReloadTick, historyRange.from, historyRange.to]);
 
-  const filteredHistory = useMemo(() => filterHistoryPoints(historyPoints, historyRange), [historyPoints, historyRange]);
+  const filteredHistory = useMemo(() => {
+    if (!historyCalendarMatch) return historyPoints;
+    return filterHistoryPoints(historyPoints, historyRange);
+  }, [historyPoints, historyRange, historyCalendarMatch]);
   const historyAnalytics = useMemo(() => buildHistoryAnalytics(filteredHistory), [filteredHistory]);
   const historyMarkers = useMemo(() => {
     if (!filteredHistory.length) return [];
@@ -706,6 +711,12 @@ export default function Tracking() {
               </label>
             </div>
           </div>
+
+          {!historyCalendarMatch && filteredHistory.length ? (
+            <div className="pp-card pp-pad pp-trackHistoryClockWarn" role="status">
+              {t('trackingPage.historyClockMismatch')}
+            </div>
+          ) : null}
 
           <div className="pp-trackHistoryStats">
             <article><span>↗</span><small>Distance</small><strong>{historyAnalytics.distanceKm.toFixed(2)} km</strong></article>

@@ -557,6 +557,8 @@ const en = {
     sectionMap: 'Map',
     mapTilesHint:
       'Use the map type control (Google) or the layer control top-right (Map / Satellite) when using OpenStreetMap + Esri imagery.',
+    historyClockMismatch:
+      'The collar’s GPS clock does not match the dates you selected (often a wrong year in the device). Showing the latest stored fixes instead of a strict calendar filter.',
     deviceSuffix: '(device #{id})',
     deviceChip: 'Tracker #{id}',
     noDeviceChip: 'No device',

@@ -1,11 +1,31 @@
 const { createMemoryStore } = require("./memory");
 const { openSqlite } = require("../db/sqlite");
 
+const MS_PER_DAY = 86400000;
+/** If device GPS clock differs from server receive time by more than this, store server time (fixes bogus future dates in DB / history). */
+const DEVICE_TIME_SKEW_MAX_MS = 14 * MS_PER_DAY;
+
 function hasFiniteLatLng(obj) {
   if (!obj) return false;
   const lat = obj.lat != null ? Number(obj.lat) : Number.NaN;
   const lng = obj.lng != null ? Number(obj.lng) : Number.NaN;
   return Number.isFinite(lat) && Number.isFinite(lng);
+}
+
+/** Persisted `positions.timestamp`: prefer device GPS time when plausible vs server; else last fix time (ingest). */
+function pickPersistedPositionTimestamp(rec) {
+  const serverIso = rec.lastUpdate || rec.receivedAt;
+  const deviceIso = rec.gps?.timestamp || rec.deviceStatus?.timestamp;
+  const serverMs = serverIso ? Date.parse(serverIso) : Number.NaN;
+  const deviceMs = deviceIso ? Date.parse(deviceIso) : Number.NaN;
+
+  if (!Number.isFinite(serverMs)) {
+    if (deviceIso && Number.isFinite(deviceMs)) return String(deviceIso);
+    return new Date().toISOString();
+  }
+  if (!Number.isFinite(deviceMs)) return String(serverIso);
+  if (Math.abs(deviceMs - serverMs) > DEVICE_TIME_SKEW_MAX_MS) return String(serverIso);
+  return String(deviceIso);
 }
 
 function toDeviceRow(rec) {
@@ -42,7 +62,7 @@ function toPositionRow(rec) {
     source: rec.source ?? null,
     battery: rec.battery ?? null,
     signal: rec.signal ?? null,
-    timestamp: rec.gps?.timestamp ?? rec.lastUpdate ?? rec.receivedAt ?? new Date().toISOString()
+    timestamp: pickPersistedPositionTimestamp(rec),
   };
 }
 
