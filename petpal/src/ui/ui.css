@@ -2646,6 +2646,10 @@ body.pp-noScroll {
   align-items: start;
 }
 
+.pp-trackHistoryLayout > .pp-trackHistoryStats {
+  grid-column: 1 / -1;
+}
+
 .pp-trackHistoryMap,
 .pp-trackHistoryTimeline {
   min-width: 0;

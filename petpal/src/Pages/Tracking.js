@@ -420,6 +420,7 @@ export default function Tracking() {
       const kind = idx === 0 ? 'start' : idx === filteredHistory.length - 1 ? 'end' : movementType(p, filteredHistory[idx - 1]);
       return {
         id: p.id || `history-${idx}`,
+        pointIndex: idx,
         lat: p.lat,
         lng: p.lng,
         kind,
@@ -778,18 +779,18 @@ export default function Tracking() {
             </div>
           </div>
 
-          <div className="pp-trackHistoryStats">
-            <article><span>↗</span><small>Distance</small><strong>{historyAnalytics.distanceKm.toFixed(2)} km</strong></article>
-            <article>
-              <span>⏱</span>
-              <small>Active time</small>
-              <strong>{formatDurationMinutes(historyAnalytics.activeMinutes, t)}</strong>
-            </article>
-            <article><span>⚡</span><small>Avg speed</small><strong>{historyAnalytics.averageSpeed.toFixed(1)} km/h</strong></article>
-            <article><span>•</span><small>Stops</small><strong>{historyAnalytics.stops}</strong></article>
-          </div>
-
           <div className="pp-trackHistoryLayout">
+            <div className="pp-trackHistoryStats">
+              <article><span>↗</span><small>Distance</small><strong>{historyAnalytics.distanceKm.toFixed(2)} km</strong></article>
+              <article>
+                <span>⏱</span>
+                <small>Active time</small>
+                <strong>{formatDurationMinutes(historyAnalytics.activeMinutes, t)}</strong>
+              </article>
+              <article><span>⚡</span><small>Avg speed</small><strong>{historyAnalytics.averageSpeed.toFixed(1)} km/h</strong></article>
+              <article><span>•</span><small>Stops</small><strong>{historyAnalytics.stops}</strong></article>
+            </div>
+
             <div className="pp-card pp-pad pp-trackHistoryMap">
               <div className="pp-trackHistoryMap__top">
                 <div>
@@ -815,7 +816,7 @@ export default function Tracking() {
                       lng={filteredHistory[0].lng}
                       path={filteredHistory.map((p) => ({ lat: p.lat, lng: p.lng }))}
                       routeMarkers={historyMarkers}
-                      playbackPosition={filteredHistory[historyIndex] ? { lat: filteredHistory[historyIndex].lat, lng: filteredHistory[historyIndex].lng } : null}
+                      playbackPointIndex={filteredHistory.length ? Math.min(historyIndex, filteredHistory.length - 1) : null}
                     />
                   </div>
                   <input

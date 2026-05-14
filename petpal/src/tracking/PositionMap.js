@@ -32,6 +32,10 @@ const defaultIcon = L.icon({
 });
 L.Marker.prototype.options.icon = defaultIcon;
 
+/** Route dots — align with tracker history UI (purple + white ring). */
+const ROUTE_DOT = '#7c3aed';
+const ROUTE_LINE = '#7c3aed';
+
 const googleMapContainerStyle = {
   width: '100%',
   height: '100%',
@@ -57,10 +61,32 @@ function FitRoute({ path }) {
   return null;
 }
 
-function LeafletPositionMap({ lat, lng, path = [], routeMarkers = [], playbackPosition = null }) {
+function markerFill(kind) {
+  if (kind === 'end') return '#ef4444';
+  if (kind === 'start') return '#22c55e';
+  if (kind === 'rest') return '#64748b';
+  return ROUTE_DOT;
+}
+
+function leafletDotRadius(kind, active) {
+  if (active) return kind === 'start' || kind === 'end' ? 8 : 7;
+  if (kind === 'start' || kind === 'end') return 4;
+  return 3;
+}
+
+function leafletDotStroke(active) {
+  if (active) return { weight: 2.5, color: '#ffffff' };
+  return { weight: 1.25, color: '#ffffff' };
+}
+
+function LeafletPositionMap({ lat, lng, path = [], routeMarkers = [], playbackPointIndex = null }) {
   const z = 16;
   const hasPath = Array.isArray(path) && path.length > 1;
-  const center = playbackPosition || (path[0] || { lat, lng });
+  const head =
+    playbackPointIndex != null && path[playbackPointIndex]
+      ? path[playbackPointIndex]
+      : path[0] || { lat, lng };
+  const center = head;
   return (
     <MapContainer
       center={[center.lat, center.lng]}
@@ -85,28 +111,35 @@ function LeafletPositionMap({ lat, lng, path = [], routeMarkers = [], playbackPo
       </LayersControl>
       {hasPath ? (
         <>
-          <LeafletPolyline positions={path.map((p) => [p.lat, p.lng])} pathOptions={{ color: '#5b37ff', weight: 5, opacity: 0.84 }} />
-          <LeafletPolyline positions={path.map((p) => [p.lat, p.lng])} pathOptions={{ color: '#a78bfa', weight: 10, opacity: 0.18 }} />
-          {routeMarkers.map((m) => (
-            <CircleMarker
-              key={m.id}
-              center={[m.lat, m.lng]}
-              radius={m.kind === 'start' || m.kind === 'end' ? 9 : 6}
-              pathOptions={{
-                color: m.kind === 'end' ? '#ef4444' : m.kind === 'rest' ? '#64748b' : '#5b37ff',
-                fillColor: m.kind === 'end' ? '#ef4444' : m.kind === 'rest' ? '#64748b' : '#5b37ff',
-                fillOpacity: 0.86,
-                weight: 3,
-              }}
-            >
-              <Popup>{m.label}</Popup>
-            </CircleMarker>
-          ))}
-          {playbackPosition ? (
-            <CircleMarker center={[playbackPosition.lat, playbackPosition.lng]} radius={11} pathOptions={{ color: '#fff', fillColor: '#5b37ff', fillOpacity: 1, weight: 4 }}>
-              <Popup>Playback position</Popup>
-            </CircleMarker>
-          ) : null}
+          <LeafletPolyline
+            positions={path.map((p) => [p.lat, p.lng])}
+            pathOptions={{ color: ROUTE_LINE, weight: 2, opacity: 0.88, dashArray: '6 10' }}
+          />
+          <LeafletPolyline
+            positions={path.map((p) => [p.lat, p.lng])}
+            pathOptions={{ color: ROUTE_LINE, weight: 8, opacity: 0.12, dashArray: '6 10' }}
+          />
+          {routeMarkers.map((m) => {
+            const active = playbackPointIndex != null && m.pointIndex === playbackPointIndex;
+            const r = leafletDotRadius(m.kind, active);
+            const stroke = leafletDotStroke(active);
+            return (
+              <CircleMarker
+                key={m.id}
+                center={[m.lat, m.lng]}
+                radius={r}
+                pathOptions={{
+                  color: stroke.color,
+                  weight: stroke.weight,
+                  fillColor: markerFill(m.kind),
+                  fillOpacity: active ? 1 : 0.92,
+                  opacity: 1,
+                }}
+              >
+                <Popup>{m.label}</Popup>
+              </CircleMarker>
+            );
+          })}
         </>
       ) : (
         <LeafletMarker position={[lat, lng]}>
@@ -117,7 +150,20 @@ function LeafletPositionMap({ lat, lng, path = [], routeMarkers = [], playbackPo
   );
 }
 
-function GooglePositionMap({ lat, lng, apiKey, path = [], routeMarkers = [], playbackPosition = null }) {
+function googleRouteDotIcon(maps, kind, active) {
+  const scale = active ? (kind === 'start' || kind === 'end' ? 7 : 6.5) : kind === 'start' || kind === 'end' ? 4.5 : 3.5;
+  const strokeWeight = active ? 2.5 : 1.25;
+  return {
+    path: maps.SymbolPath.CIRCLE,
+    fillColor: markerFill(kind),
+    fillOpacity: 1,
+    strokeColor: '#ffffff',
+    strokeWeight,
+    scale,
+  };
+}
+
+function GooglePositionMap({ lat, lng, apiKey, path = [], routeMarkers = [], playbackPointIndex = null }) {
   const [authFailed, setAuthFailed] = useState(false);
   useEffect(() => subscribeGoogleMapsAuthFailure(() => setAuthFailed(true)), []);
 
@@ -129,10 +175,14 @@ function GooglePositionMap({ lat, lng, apiKey, path = [], routeMarkers = [], pla
   });
 
   const hasPath = Array.isArray(path) && path.length > 1;
-  const center = playbackPosition || (path[0] || { lat, lng });
+  const head =
+    playbackPointIndex != null && path[playbackPointIndex]
+      ? path[playbackPointIndex]
+      : path[0] || { lat, lng };
+  const center = head;
 
   if (authFailed || loadError) {
-    return <LeafletPositionMap lat={lat} lng={lng} path={path} routeMarkers={routeMarkers} playbackPosition={playbackPosition} />;
+    return <LeafletPositionMap lat={lat} lng={lng} path={path} routeMarkers={routeMarkers} playbackPointIndex={playbackPointIndex} />;
   }
 
   if (!isLoaded) {
@@ -144,19 +194,15 @@ function GooglePositionMap({ lat, lng, apiKey, path = [], routeMarkers = [], pla
   }
 
   return (
-    <GoogleMap
-      mapContainerStyle={googleMapContainerStyle}
-      center={center}
-      zoom={16}
-      options={googleMapOptions}
-    >
+    <GoogleMap mapContainerStyle={googleMapContainerStyle} center={center} zoom={16} options={googleMapOptions}>
       {hasPath ? (
         <>
-          <Polyline path={path} options={{ strokeColor: '#5b37ff', strokeOpacity: 0.86, strokeWeight: 5 }} />
-          {routeMarkers.map((m) => (
-            <Marker key={m.id} position={{ lat: m.lat, lng: m.lng }} label={m.kind === 'start' ? 'S' : m.kind === 'end' ? 'E' : '•'} title={m.label} />
-          ))}
-          {playbackPosition ? <Marker position={playbackPosition} title="Playback position" /> : null}
+          <Polyline path={path} options={{ strokeColor: ROUTE_LINE, strokeOpacity: 0.88, strokeWeight: 2 }} />
+          {routeMarkers.map((m) => {
+            const active = playbackPointIndex != null && m.pointIndex === playbackPointIndex;
+            const icon = googleRouteDotIcon(window.google.maps, m.kind, active);
+            return <Marker key={`${m.id}-${active ? 'a' : 'i'}`} position={{ lat: m.lat, lng: m.lng }} icon={icon} title={m.label} />;
+          })}
         </>
       ) : (
         <Marker position={center} />
@@ -169,16 +215,17 @@ function GooglePositionMap({ lat, lng, apiKey, path = [], routeMarkers = [], pla
  * Uses Google Maps when `REACT_APP_GOOGLE_MAPS_API_KEY` is set (same loader id as Nearby).
  * Falls back to Leaflet + OpenStreetMap when no key or Google script fails.
  *
- * @param {{ lat: number, lng: number }} props
+ * @param {{ lat: number, lng: number, path?: Array, routeMarkers?: Array, playbackPointIndex?: number|null }} props
+ * Route markers may include `pointIndex`, `kind` ('start'|'end'|'rest'|other), `id`, `label`.
  */
-export default function PositionMap({ lat, lng, path = [], routeMarkers = [], playbackPosition = null }) {
+export default function PositionMap({ lat, lng, path = [], routeMarkers = [], playbackPointIndex = null }) {
   const key = process.env.REACT_APP_GOOGLE_MAPS_API_KEY?.trim();
   return (
     <div className="pp-leaflet-wrap">
       {key ? (
-        <GooglePositionMap lat={lat} lng={lng} apiKey={key} path={path} routeMarkers={routeMarkers} playbackPosition={playbackPosition} />
+        <GooglePositionMap lat={lat} lng={lng} apiKey={key} path={path} routeMarkers={routeMarkers} playbackPointIndex={playbackPointIndex} />
       ) : (
-        <LeafletPositionMap lat={lat} lng={lng} path={path} routeMarkers={routeMarkers} playbackPosition={playbackPosition} />
+        <LeafletPositionMap lat={lat} lng={lng} path={path} routeMarkers={routeMarkers} playbackPointIndex={playbackPointIndex} />
       )}
     </div>
   );
