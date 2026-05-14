@@ -153,7 +153,39 @@ function formatShortTime(iso) {
   return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
-function buildHistoryTimelineEvents(points) {
+/** Same-location clusters longer than this use report count only (device timestamps often wrong). */
+const STAY_DURATION_PLAUSIBLE_MAX_MIN = 48 * 60;
+
+/**
+ * Format a non-negative duration given in whole minutes (hours, days when needed).
+ * @param {number} totalMinutes
+ * @param {(key: string, vars?: Record<string, string | number>) => string} t
+ */
+function formatDurationMinutes(totalMinutes, t) {
+  if (!Number.isFinite(totalMinutes) || totalMinutes < 0) return '—';
+  const wholeMin = Math.floor(totalMinutes);
+  if (wholeMin < 1) {
+    const sec = Math.max(0, Math.round(totalMinutes * 60));
+    return t('trackingPage.durationSec', { n: sec });
+  }
+  const days = Math.floor(wholeMin / 1440);
+  let rem = wholeMin % 1440;
+  const hours = Math.floor(rem / 60);
+  const minutes = rem % 60;
+  if (days > 0) return t('trackingPage.durationDaysHoursMinutes', { days, hours, minutes });
+  if (hours > 0) return t('trackingPage.durationHoursMinutes', { hours, minutes });
+  return t('trackingPage.durationMinutesOnly', { minutes });
+}
+
+function mapRouteMarkerKindLabel(kind, t) {
+  if (kind === 'start') return t('trackingPage.mapLabelStart');
+  if (kind === 'end') return t('trackingPage.mapLabelEnd');
+  if (kind === 'rest') return t('trackingPage.timelineResting');
+  if (kind === 'movement') return t('trackingPage.timelineFastMovement');
+  return t('trackingPage.timelineWalking');
+}
+
+function buildHistoryTimelineEvents(points, t) {
   const sameLocationKm = 0.03;
   const events = [];
   let idx = 0;
@@ -170,16 +202,25 @@ function buildHistoryTimelineEvents(points) {
     const count = endIndex - idx + 1;
     const type = idx === 0 ? 'start' : count > 1 ? 'rest' : movementType(start, points[idx - 1]);
     const durationMin = Math.max(0, Math.round((pointTime(end) - pointTime(start)) / 60000));
-    const label =
-      count > 1
-        ? `Stayed here${durationMin ? ` · ${durationMin} min` : ''}`
-        : type === 'start'
-          ? 'Route started'
-          : type === 'movement'
-            ? 'Fast movement'
-            : type === 'rest'
-              ? 'Resting'
-              : 'Walking';
+    let label;
+    if (count > 1) {
+      if (durationMin > STAY_DURATION_PLAUSIBLE_MAX_MIN) {
+        label = t('trackingPage.timelineStayReports', { count });
+      } else {
+        label =
+          durationMin > 0
+            ? t('trackingPage.timelineStayDuration', { duration: formatDurationMinutes(durationMin, t) })
+            : t('trackingPage.timelineStayShort');
+      }
+    } else if (type === 'start') {
+      label = t('trackingPage.timelineRouteStarted');
+    } else if (type === 'movement') {
+      label = t('trackingPage.timelineFastMovement');
+    } else if (type === 'rest') {
+      label = t('trackingPage.timelineResting');
+    } else {
+      label = t('trackingPage.timelineWalking');
+    }
 
     events.push({
       id: `${start.id || idx}-${end.id || endIndex}`,
@@ -331,15 +372,18 @@ export default function Tracking() {
   const historyAnalytics = useMemo(() => buildHistoryAnalytics(filteredHistory), [filteredHistory]);
   const historyMarkers = useMemo(() => {
     if (!filteredHistory.length) return [];
-    return filteredHistory.map((p, idx) => ({
-      id: p.id || `history-${idx}`,
-      lat: p.lat,
-      lng: p.lng,
-      kind: idx === 0 ? 'start' : idx === filteredHistory.length - 1 ? 'end' : movementType(p, filteredHistory[idx - 1]),
-      label: `${idx === 0 ? 'Start' : idx === filteredHistory.length - 1 ? 'End' : movementType(p, filteredHistory[idx - 1])} · ${new Date(p.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
-    }));
-  }, [filteredHistory]);
-  const historyTimelineEvents = useMemo(() => buildHistoryTimelineEvents(filteredHistory), [filteredHistory]);
+    return filteredHistory.map((p, idx) => {
+      const kind = idx === 0 ? 'start' : idx === filteredHistory.length - 1 ? 'end' : movementType(p, filteredHistory[idx - 1]);
+      return {
+        id: p.id || `history-${idx}`,
+        lat: p.lat,
+        lng: p.lng,
+        kind,
+        label: `${mapRouteMarkerKindLabel(kind, t)} · ${new Date(p.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
+      };
+    });
+  }, [filteredHistory, t]);
+  const historyTimelineEvents = useMemo(() => buildHistoryTimelineEvents(filteredHistory, t), [filteredHistory, t]);
 
   useEffect(() => {
     if (!historyPlaying || filteredHistory.length < 2) return undefined;
@@ -712,15 +756,13 @@ export default function Tracking() {
             </div>
           </div>
 
-          {!historyCalendarMatch && filteredHistory.length ? (
-            <div className="pp-card pp-pad pp-trackHistoryClockWarn" role="status">
-              {t('trackingPage.historyClockMismatch')}
-            </div>
-          ) : null}
-
           <div className="pp-trackHistoryStats">
             <article><span>↗</span><small>Distance</small><strong>{historyAnalytics.distanceKm.toFixed(2)} km</strong></article>
-            <article><span>⏱</span><small>Active time</small><strong>{historyAnalytics.activeMinutes} min</strong></article>
+            <article>
+              <span>⏱</span>
+              <small>Active time</small>
+              <strong>{formatDurationMinutes(historyAnalytics.activeMinutes, t)}</strong>
+            </article>
             <article><span>⚡</span><small>Avg speed</small><strong>{historyAnalytics.averageSpeed.toFixed(1)} km/h</strong></article>
             <article><span>•</span><small>Stops</small><strong>{historyAnalytics.stops}</strong></article>
           </div>
