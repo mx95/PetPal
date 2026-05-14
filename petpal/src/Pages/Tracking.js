@@ -618,7 +618,6 @@ export default function Tracking() {
           <h1 className="pp-pageHeader__title">
             {selectedPet ? t('trackingPage.titleWithPet', { name: selectedPet.name }) : t('trackingPage.title')}
           </h1>
-          <p className="pp-pageHeader__sub">{t('trackingPage.intro')}</p>
         </div>
         <Link className="pp-pageHeader__back" to="/dashboard">
           {t('common.backDashboard')}
@@ -767,7 +766,6 @@ export default function Tracking() {
         </div>
         {position && hasCoordinates ? (
           <>
-            <p className="pp-subtle pp-trackMapHint">{t('trackingPage.mapTilesHint')}</p>
             <div className="pp-trackMapFrame">
               <PositionMap lat={position.lat} lng={position.lng} />
             </div>
@@ -818,75 +816,88 @@ export default function Tracking() {
 
       {trackerTab === 'history' ? (
         <section className="pp-trackHistory">
-          <div className="pp-card pp-pad pp-trackHistory__head">
-            <div>
-              <span className="pp-publicHero__eyebrow">Tracker history</span>
-              <h2 className="pp-sectionTitle">Movement timeline</h2>
-              <p className="pp-subtle">Review routes, stops, active time, and movement patterns for selected dates.</p>
+          <div className="pp-card pp-pad pp-trackHistoryRangeCard">
+            <div className="pp-trackHistoryRangeCard__head">
+              <span className="pp-publicHero__eyebrow pp-trackHistoryRangeCard__eyebrow">{t('trackingPage.historyEyebrow')}</span>
+              <h2 className="pp-trackHistoryRangeCard__title">{t('trackingPage.historyTitle')}</h2>
             </div>
-            <div>
-              <div className="pp-trackHistoryFilters">
-                {[
-                  ['today', 'Today'],
-                  ['yesterday', 'Yesterday'],
-                  ['7d', 'Last 7 days'],
-                  ['30d', 'Last 30 days'],
-                ].map(([id, label]) => (
-                  <button key={id} type="button" className={historyRange.preset === id ? 'is-active' : ''} onClick={() => applyHistoryPreset(id)}>
-                    {label}
-                  </button>
-                ))}
-                <label>
-                  <span>From</span>
-                  <input
-                    type="date"
-                    value={historyRange.from}
-                    onChange={(e) => setHistoryRange((r) => ({ ...r, preset: 'custom', from: e.target.value }))}
-                  />
-                </label>
-                <label>
-                  <span>To</span>
-                  <input
-                    type="date"
-                    value={historyRange.to}
-                    onChange={(e) => setHistoryRange((r) => ({ ...r, preset: 'custom', to: e.target.value }))}
-                  />
-                </label>
-                <label>
-                  <span>{t('trackingPage.historyTimeFrom')}</span>
-                  <input
-                    type="time"
-                    step={60}
-                    value={historyRange.timeFrom ?? defaultHistoryDayTimes().timeFrom}
-                    onChange={(e) =>
-                      setHistoryRange((r) => ({
-                        ...r,
-                        preset: 'custom',
-                        timeFrom: e.target.value || defaultHistoryDayTimes().timeFrom,
-                      }))
-                    }
-                  />
-                </label>
-                <label>
-                  <span>{t('trackingPage.historyTimeTo')}</span>
-                  <input
-                    type="time"
-                    step={60}
-                    value={historyRange.timeTo ?? defaultHistoryDayTimes().timeTo}
-                    onChange={(e) =>
-                      setHistoryRange((r) => ({
-                        ...r,
-                        preset: 'custom',
-                        timeTo: e.target.value || defaultHistoryDayTimes().timeTo,
-                      }))
-                    }
-                  />
-                </label>
+            <div className="pp-trackHistoryPresets" role="group" aria-label={t('trackingPage.historyPresetsAria')}>
+              {(
+                [
+                  ['today', 'presetToday'],
+                  ['yesterday', 'presetYesterday'],
+                  ['7d', 'preset7d'],
+                ]
+              ).map(([id, labelKey]) => (
+                <button
+                  key={id}
+                  type="button"
+                  className={`pp-trackHistoryPresetBtn ${historyRange.preset === id ? 'is-active' : ''}`}
+                  onClick={() => applyHistoryPreset(id)}
+                >
+                  {t(`trackingPage.${labelKey}`)}
+                </button>
+              ))}
+            </div>
+            <div className="pp-trackHistoryManual" role="group" aria-label={t('trackingPage.historyManualAria')}>
+              <div className="pp-trackHistoryManual__row">
+                <span className="pp-trackHistoryManual__key">{t('trackingPage.historyFromLabel')}</span>
+                <div className="pp-trackHistoryManual__pair">
+                  <label className="pp-trackHistoryManual__field">
+                    <input
+                      type="date"
+                      value={historyRange.from}
+                      aria-label={t('trackingPage.historyFromDateAria')}
+                      onChange={(e) => setHistoryRange((r) => ({ ...r, preset: 'custom', from: e.target.value }))}
+                    />
+                  </label>
+                  <label className="pp-trackHistoryManual__field">
+                    <input
+                      type="time"
+                      step={60}
+                      value={historyRange.timeFrom ?? defaultHistoryDayTimes().timeFrom}
+                      aria-label={t('trackingPage.historyFromTimeAria')}
+                      onChange={(e) =>
+                        setHistoryRange((r) => ({
+                          ...r,
+                          preset: 'custom',
+                          timeFrom: e.target.value || defaultHistoryDayTimes().timeFrom,
+                        }))
+                      }
+                    />
+                  </label>
+                </div>
               </div>
-              <p className="pp-subtle" style={{ margin: '10px 0 0', fontSize: 12, lineHeight: 1.35, maxWidth: 520 }}>
-                {t('trackingPage.historyTimeHint')}
-              </p>
+              <div className="pp-trackHistoryManual__row">
+                <span className="pp-trackHistoryManual__key">{t('trackingPage.historyToLabel')}</span>
+                <div className="pp-trackHistoryManual__pair">
+                  <label className="pp-trackHistoryManual__field">
+                    <input
+                      type="date"
+                      value={historyRange.to}
+                      aria-label={t('trackingPage.historyToDateAria')}
+                      onChange={(e) => setHistoryRange((r) => ({ ...r, preset: 'custom', to: e.target.value }))}
+                    />
+                  </label>
+                  <label className="pp-trackHistoryManual__field">
+                    <input
+                      type="time"
+                      step={60}
+                      value={historyRange.timeTo ?? defaultHistoryDayTimes().timeTo}
+                      aria-label={t('trackingPage.historyToTimeAria')}
+                      onChange={(e) =>
+                        setHistoryRange((r) => ({
+                          ...r,
+                          preset: 'custom',
+                          timeTo: e.target.value || defaultHistoryDayTimes().timeTo,
+                        }))
+                      }
+                    />
+                  </label>
+                </div>
+              </div>
             </div>
+            <p className="pp-subtle pp-trackHistoryRangeCard__hint">{t('trackingPage.historyRangeHint')}</p>
           </div>
 
           <div className="pp-trackHistoryLayout">

@@ -11,6 +11,7 @@ import { PrettySelect } from '../components/PrettySelect';
 import { useI18n } from '../i18n/I18nContext';
 import { useToast } from '../components/Toast';
 import ImeiQrScannerButton from '../components/ImeiQrScannerButton';
+import PetMedicationModal from '../components/PetMedicationModal';
 
 function IconPencil() {
   return (
@@ -106,6 +107,7 @@ export default function MyPets() {
   const [editPhotoBusy, setEditPhotoBusy] = useState(false);
   const [addPetDrawerOpen, setAddPetDrawerOpen] = useState(false);
   const [fullscreenPhotoUrl, setFullscreenPhotoUrl] = useState('');
+  const [medModalPet, setMedModalPet] = useState(null);
   const [search, setSearch] = useState('');
   const importRef = useRef(null);
   const addPhotoInputId = useId();
@@ -722,6 +724,19 @@ export default function MyPets() {
                           {t('myPets.listDevice')} {p.trackingDeviceId}
                         </div>
                       ) : null}
+                      <div className="pp-petList__medRow">
+                        <button
+                          type="button"
+                          className="pp-petMedPill"
+                          onClick={() => setMedModalPet(p)}
+                          aria-label={t('myPets.medsOpen')}
+                        >
+                          <svg className="pp-petMedPill__icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden>
+                            <rect x="5" y="9" width="14" height="8" rx="4" fill="none" stroke="currentColor" strokeWidth="1.8" />
+                            <path d="M9 9V7a3 3 0 0 1 6 0v2" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                          </svg>
+                        </button>
+                      </div>
                     </>
                   )}
                 </li>
@@ -918,6 +933,17 @@ export default function MyPets() {
             </form>
           </div>
         </div>
+      ) : null}
+
+      {medModalPet ? (
+        <PetMedicationModal
+          open
+          onClose={() => setMedModalPet(null)}
+          mode="owner"
+          petName={medModalPet.name}
+          ownerUid={user?.uid || null}
+          petId={medModalPet.id}
+        />
       ) : null}
 
       {fullscreenPhotoUrl ? (

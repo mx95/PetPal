@@ -11,7 +11,8 @@ import {
   updateBookingStatus,
   upsertCompanyService,
 } from '../bookings/bookingFirestore';
-import { createClientPet, deleteClientPet, subscribeClientPets } from '../bookings/providerPetsFirestore';
+import { createClientPet, deleteClientPet, patchClientPet, subscribeClientPets } from '../bookings/providerPetsFirestore';
+import PetMedicationModal from '../components/PetMedicationModal';
 import { publishProviderProfile } from '../bookings/providerDirectoryFirestore';
 import { getDemoBusinessAccount, getDemoBusinessAccounts, getDemoSlots } from '../bookings/demoBookingData';
 
@@ -664,7 +665,9 @@ export default function ProviderPortal() {
         {tab === 'services' ? <Services companyId={companyId} /> : null}
         {tab === 'availability' ? <Availability companyId={companyId} /> : null}
         {tab === 'bookings' ? <Bookings companyId={companyId} /> : null}
-        {tab === 'clientPets' ? <ClientPets companyId={companyId} /> : null}
+        {tab === 'clientPets' ? (
+          <ClientPets companyId={companyId} clinicLabel={publish.displayName || profile?.businessName || ''} />
+        ) : null}
       </div>
     </div>
   );
@@ -918,10 +921,11 @@ function Bookings({ companyId }) {
   );
 }
 
-function ClientPets({ companyId }) {
+function ClientPets({ companyId, clinicLabel = '' }) {
   const [rows, setRows] = useState([]);
   const [err, setErr] = useState('');
   const [form, setForm] = useState({ name: '', ownerName: '', ownerPhone: '', trackingImei: '' });
+  const [medClient, setMedClient] = useState(/** @type {Record<string, unknown> | null} */ (null));
 
   useEffect(() => subscribeClientPets(companyId, setRows, (e) => setErr(e?.message || 'failed')), [companyId]);
 
@@ -937,7 +941,31 @@ function ClientPets({ companyId }) {
   };
 
   return (
-    <div className="pp-grid2" style={{ gap: 14 }}>
+    <>
+      {medClient ? (
+        <PetMedicationModal
+          key={medClient.id}
+          open
+          onClose={() => setMedClient(null)}
+          mode="vet"
+          petName={String(medClient.name || '')}
+          vetClinicLabel={clinicLabel}
+          initialVetRows={Array.isArray(medClient.medications) ? medClient.medications : []}
+          onSaveVet={async (nextRows) => {
+            const medications = nextRows.map((r) => ({
+              id: String(r.id),
+              name: String(r.name || ''),
+              time: String(r.time || '09:00'),
+              dosage: String(r.dosage || ''),
+              notes: String(r.notes || ''),
+              source: r.source === 'owner' ? 'owner' : 'vet',
+              vetLabel: String(r.vetLabel || ''),
+            }));
+            await patchClientPet(companyId, String(medClient.id), { medications });
+          }}
+        />
+      ) : null}
+      <div className="pp-grid2" style={{ gap: 14 }}>
       <div className="pp-card">
         <div className="pp-card__title">Add client pet</div>
         {err ? <div className="pp-error">{err}</div> : null}
@@ -971,22 +999,36 @@ function ClientPets({ companyId }) {
         {rows.length === 0 ? <div className="pp-muted">No pets added yet.</div> : null}
         <div className="pp-stack" style={{ marginTop: 10 }}>
           {rows.map((p) => (
-            <div key={p.id} className="pp-rowBetween pp-rowBetween--card">
-              <div>
+            <div key={p.id} className="pp-rowBetween pp-rowBetween--card" style={{ alignItems: 'center', gap: 10 }}>
+              <div style={{ minWidth: 0, flex: 1 }}>
                 <div style={{ fontWeight: 900 }}>{p.name}</div>
                 <div className="pp-muted" style={{ fontSize: 13 }}>
                   {p.ownerName || '—'} {p.ownerPhone ? `• ${p.ownerPhone}` : ''}{' '}
                   {p.trackingImei ? `• IMEI ${p.trackingImei}` : ''}
                 </div>
               </div>
-              <button type="button" className="pp-btn pp-btn--ghost" onClick={() => deleteClientPet(companyId, p.id)}>
-                Remove
-              </button>
+              <div className="pp-row" style={{ gap: 8, flexShrink: 0 }}>
+                <button
+                  type="button"
+                  className="pp-petMedPill pp-petMedPill--compact"
+                  aria-label="Medication schedule"
+                  onClick={() => setMedClient(p)}
+                >
+                  <svg className="pp-petMedPill__icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden>
+                    <rect x="5" y="9" width="14" height="8" rx="4" fill="none" stroke="currentColor" strokeWidth="1.8" />
+                    <path d="M9 9V7a3 3 0 0 1 6 0v2" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                  </svg>
+                </button>
+                <button type="button" className="pp-btn pp-btn--ghost" onClick={() => deleteClientPet(companyId, p.id)}>
+                  Remove
+                </button>
+              </div>
             </div>
           ))}
         </div>
       </div>
     </div>
+    </>
   );
 }
 

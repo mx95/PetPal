@@ -113,9 +113,9 @@ function BrowseProviders() {
   const serviceTabs = useMemo(
     () => [
       { id: 'vet', emoji: '🐾', label: t('bookingsHub.tabVet') },
+      { id: 'hotel', emoji: '🏨', label: t('bookingsHub.tabHotel') },
       { id: 'bath', emoji: '🛁', label: 'Bath' },
       { id: 'saloon', emoji: '✂️', label: t('bookingsHub.tabGroom') },
-      { id: 'hotel', emoji: '🏨', label: t('bookingsHub.tabHotel') },
     ],
     [t]
   );

@@ -14,6 +14,37 @@ function toLocalInputValue(d) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
+function todayYmdLocal() {
+  return toLocalInputValue(new Date());
+}
+
+function maxAfterYmdLocal() {
+  const d = new Date();
+  d.setDate(d.getDate() + 400);
+  return toLocalInputValue(d);
+}
+
+/** Keep native <input type="date"> within a sane window so iOS/Android do not show "out of range". */
+function clampAfterDateYmd(value) {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return todayYmdLocal();
+  const min = todayYmdLocal();
+  const max = maxAfterYmdLocal();
+  if (value < min) return min;
+  if (value > max) return max;
+  return value;
+}
+
+function calendarMarkParts(ymd) {
+  const d = new Date(`${ymd}T12:00:00`);
+  if (Number.isNaN(d.getTime())) return { mon: '—', day: '·' };
+  const mon = d
+    .toLocaleString(undefined, { month: 'short' })
+    .replace(/\./g, '')
+    .slice(0, 3)
+    .toUpperCase();
+  return { mon: mon || '—', day: String(d.getDate()) };
+}
+
 function asDate(value) {
   if (!value) return null;
   if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value;
@@ -92,7 +123,7 @@ export default function BookService() {
   const [petId, setPetId] = useState('');
   const [slots, setSlots] = useState([]);
   const [slotId, setSlotId] = useState('');
-  const [afterDate, setAfterDate] = useState(toLocalInputValue(new Date()));
+  const [afterDate, setAfterDate] = useState(() => clampAfterDateYmd(toLocalInputValue(new Date())));
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
   const [confirmedBooking, setConfirmedBooking] = useState(null);
@@ -112,8 +143,19 @@ export default function BookService() {
 
   useEffect(() => {
     const st = location.state && typeof location.state === 'object' ? location.state : null;
+    if (!st) return;
+    const demoSlot = st?.demoBooking?.slot;
+    if (demoSlot?.startAtIso) {
+      const d = new Date(String(demoSlot.startAtIso));
+      if (!Number.isNaN(d.getTime())) {
+        setAfterDate(clampAfterDateYmd(toLocalInputValue(d)));
+        return;
+      }
+    }
     const ad = st?.afterDate;
-    if (typeof ad === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(ad)) setAfterDate(ad.slice(0, 10));
+    if (typeof ad === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(ad)) {
+      setAfterDate(clampAfterDateYmd(ad.slice(0, 10)));
+    }
   }, [location.state]);
 
   useEffect(() => {
@@ -121,8 +163,17 @@ export default function BookService() {
   }, [petOptions, petId]);
 
   const after = useMemo(() => {
-    const d = new Date(`${afterDate}T00:00:00`);
+    const safeYmd = clampAfterDateYmd(afterDate);
+    const d = new Date(`${safeYmd}T00:00:00`);
     return Number.isNaN(d.getTime()) ? new Date() : d;
+  }, [afterDate]);
+
+  const minAfterYmd = todayYmdLocal();
+  const maxAfterYmd = maxAfterYmdLocal();
+
+  useEffect(() => {
+    const c = clampAfterDateYmd(afterDate);
+    if (c !== afterDate) setAfterDate(c);
   }, [afterDate]);
 
   const refresh = async () => {
@@ -132,8 +183,10 @@ export default function BookService() {
         ? getDemoSlots(companyId, String(serviceId || ''), { after })
         : await fetchOpenSlots(companyId, String(serviceId || ''), { after });
       setSlots(rows);
-      if (rows.length) setSlotId(rows[0].id);
-      else setSlotId('');
+      setSlotId((prev) => {
+        if (rows.some((r) => r.id === prev)) return prev;
+        return rows.length ? rows[0].id : '';
+      });
     } catch (e) {
       setErr(e?.message || 'failed');
     }
@@ -148,7 +201,20 @@ export default function BookService() {
   useEffect(() => {
     const st = location.state && typeof location.state === 'object' ? location.state : null;
     const sid = st?.slotId;
-    if (typeof sid === 'string' && sid && slots.some((s) => s.id === sid)) setSlotId(sid);
+    if (typeof sid !== 'string' || !sid || !slots.some((s) => s.id === sid)) return;
+    const slot = slots.find((s) => s.id === sid);
+    if (!slot) return;
+    setSlotId(sid);
+    const start = asDate(slot.startAt) || asDate(slot.startAtIso);
+    if (!start) return;
+    const slotDay = toLocalInputValue(start);
+    setAfterDate((prev) => {
+      const prevMs = new Date(`${clampAfterDateYmd(prev)}T00:00:00`).getTime();
+      const slotMs = new Date(`${slotDay}T00:00:00`).getTime();
+      if (!Number.isFinite(prevMs) || !Number.isFinite(slotMs)) return clampAfterDateYmd(slotDay);
+      if (prevMs > slotMs) return clampAfterDateYmd(slotDay);
+      return clampAfterDateYmd(prev);
+    });
   }, [location.state, slots]);
 
   if (!user) return <Navigate to="/login" replace />;
@@ -221,6 +287,8 @@ export default function BookService() {
     }
   };
 
+  const markParts = confirmedBooking ? null : calendarMarkParts(clampAfterDateYmd(afterDate));
+
   const bookingStart = confirmedBooking ? asDate(confirmedBooking.startAt || confirmedBooking.startAtIso) : null;
   const bookingEnd = confirmedBooking ? asDate(confirmedBooking.endAt || confirmedBooking.endAtIso) : null;
   const bookingDuration =
@@ -238,7 +306,10 @@ export default function BookService() {
           {confirmedBooking ? (
             <span className="pp-bookConfirmPage__markTick">✓</span>
           ) : (
-            <span className="pp-bookConfirmPage__markIcon">📅</span>
+            <span className="pp-bookConfirmPage__markCal">
+              <span className="pp-bookConfirmPage__markCalMon">{markParts.mon}</span>
+              <span className="pp-bookConfirmPage__markCalDay">{markParts.day}</span>
+            </span>
           )}
         </div>
         <p className="pp-bookConfirmPage__eyebrow">
@@ -369,8 +440,10 @@ export default function BookService() {
               <input
                 className="pp-bookConfirmField__control"
                 type="date"
+                min={minAfterYmd}
+                max={maxAfterYmd}
                 value={afterDate}
-                onChange={(e) => setAfterDate(e.target.value)}
+                onChange={(e) => setAfterDate(clampAfterDateYmd(e.target.value || minAfterYmd))}
               />
             </label>
 
@@ -402,14 +475,14 @@ export default function BookService() {
             >
               {busy ? t('bookConfirm.submitting') : t('bookConfirm.ctaConfirm')}
             </button>
-            <div className="pp-bookConfirmForm__secondary">
-              <Link className="pp-bookConfirmForm__ghost" to={`/bookings/provider/${companyId}`}>
-                {t('bookConfirm.backProvider')}
-              </Link>
-              <button type="button" className="pp-bookConfirmForm__ghost" onClick={refresh} disabled={busy}>
-                {t('bookConfirm.refreshSlots')}
-              </button>
-            </div>
+            <button
+              type="button"
+              className="pp-bookConfirmForm__ghost pp-bookConfirmForm__ghost--full"
+              disabled={busy}
+              onClick={() => navigate(`/bookings/provider/${encodeURIComponent(companyId)}`)}
+            >
+              {t('bookConfirm.cancel')}
+            </button>
           </div>
         </section>
       ) : null}

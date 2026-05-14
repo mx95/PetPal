@@ -31,9 +31,10 @@ service cloud.firestore {
       return isCompanyOwner(companyId) && companyDoc(companyId).data.status == 'approved';
     }
 
+    /** True when this company is open for customer booking (used for services/availability reads + booking create). */
     function isPublicBookableCompany(companyId) {
-      return companyDoc(companyId).data.status == 'approved'
-        && companyDoc(companyId).data.bookingEnabled == true;
+      let p = get(/databases/$(database)/documents/providers/$(companyId));
+      return p.exists && p.data.bookingEnabled == true;
     }
 
     match /companies/{userId} {
@@ -93,6 +94,10 @@ service cloud.firestore {
       match /pets/{petId} {
         allow read: if true;
         allow create, update, delete: if request.auth != null && request.auth.uid == userId;
+
+        match /medications/{medId} {
+          allow read, create, update, delete: if request.auth != null && request.auth.uid == userId;
+        }
       }
 
       match /billing/{docId} {

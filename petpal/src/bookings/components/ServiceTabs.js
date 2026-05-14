@@ -1,6 +1,6 @@
 import React from 'react';
 
-/** @typedef {{ id: 'vet'|'saloon'|'hotel', emoji: string, label: string }} ServiceTab */
+/** @typedef {{ id: 'vet'|'saloon'|'hotel'|'bath', emoji: string, label: string }} ServiceTab */
 
 /**
  * @param {{ tabs: ServiceTab[], value: string, onChange: (id: string) => void }} props
