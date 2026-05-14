@@ -958,6 +958,12 @@ export default function Tracking() {
                   </button>
                 </div>
               )}
+              <div className="pp-trackHistoryStats pp-trackHistoryStats--belowMap" aria-label="Route summary">
+                <article><span>↗</span><small>Distance</small><strong>{historyAnalytics.distanceKm.toFixed(2)} km</strong></article>
+                <article><span>⏱</span><small>Active time</small><strong>{historyAnalytics.activeMinutes} min</strong></article>
+                <article><span>⚡</span><small>Avg speed</small><strong>{historyAnalytics.averageSpeed.toFixed(1)} km/h</strong></article>
+                <article><span>•</span><small>Stops</small><strong>{historyAnalytics.stops}</strong></article>
+              </div>
             </div>
 
             <aside className="pp-card pp-pad pp-trackHistoryTimeline">

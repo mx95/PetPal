@@ -8,7 +8,7 @@ import PetCard from '../components/PetCard';
 import HubLeaderboardPeek from '../components/HubLeaderboardPeek';
 import { usePets } from '../pets/PetsContext';
 import { MAX_PHOTOS_PER_WALK_SESSION } from '../walk/walkPhotos';
-import { walkStreakDays } from '../walk/walkStats';
+import { walkStreakDays, kmTodayForPetFromSessions, latestWalkSessionForPet } from '../walk/walkStats';
 import LifetimeAchievements from '../components/LifetimeAchievements';
 
 const WEEKLY_GOAL_KM = 18;
@@ -49,6 +49,7 @@ export default function Dashboard() {
     trackingAchievementDefs,
     walkAchievementDefs,
     walkLog,
+    walkSessions,
     walkTotals,
     addWalkKm,
     latestWalk,
@@ -67,15 +68,32 @@ export default function Dashboard() {
 
   const streakDays = walkStreakDays(walkLog);
   const pet = pets.length ? pets[petIdx % pets.length] : null;
-  const todayKm = walkTotals.day || 0;
+  const petsCount = pets.length;
+  const latestWalkPet = useMemo(
+    () => (pet?.id ? latestWalkSessionForPet(walkSessions, pet.id, petsCount) : null),
+    [walkSessions, pet?.id, petsCount]
+  );
+  const todayKm = useMemo(
+    () =>
+      pet?.id
+        ? kmTodayForPetFromSessions(walkSessions, pet.id, petsCount, walkTotals.day || 0)
+        : walkTotals.day || 0,
+    [walkSessions, pet?.id, petsCount, walkTotals.day]
+  );
 
   const statusKey =
-    todayKm > 0 ? 'active' : streakDays > 0 && latestWalk?.createdAt ? 'lastSeen' : 'noWalkToday';
+    todayKm > 0
+      ? 'active'
+      : streakDays > 0 && latestWalkPet?.createdAt
+        ? 'lastSeen'
+        : pet?.trackingDeviceId?.trim?.()
+          ? 'trackingHint'
+          : 'noWalkToday';
   const statusValue =
     statusKey === 'active'
       ? `${(Math.round(todayKm * 10) / 10).toFixed(1)} km`
-      : statusKey === 'lastSeen' && latestWalk?.createdAt
-        ? new Date(latestWalk.createdAt).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
+      : statusKey === 'lastSeen' && latestWalkPet?.createdAt
+        ? new Date(latestWalkPet.createdAt).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
         : '';
 
   const weeklyPct = Math.min(100, Math.round((Math.max(0, walkTotals.week) / WEEKLY_GOAL_KM) * 100));
@@ -92,7 +110,7 @@ export default function Dashboard() {
     setWalkLogBusy(true);
     try {
       const files = walkFilesRef.current?.files;
-      const ok = await addWalkKm(n, files);
+      const ok = await addWalkKm(n, files, pet?.id);
       if (ok) {
         setWalkInput('');
         if (walkFilesRef.current) walkFilesRef.current.value = '';

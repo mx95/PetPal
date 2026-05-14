@@ -81,3 +81,55 @@ export function walkStreakDays(walkLog) {
   }
   return c;
 }
+
+/**
+ * Km logged today for one pet from `walkSessions` (dayKey + optional petId).
+ * Legacy sessions without `petId` still count when there is only one pet.
+ * @param {unknown[]} walkSessions
+ * @param {string} petId
+ * @param {number} petsCount
+ * @param {number} walkLogDayKm today's aggregate from walkLog (single-pet fallback)
+ */
+export function kmTodayForPetFromSessions(walkSessions, petId, petsCount, walkLogDayKm = 0) {
+  const k = localDayKey();
+  const pidNeed = petId != null ? String(petId).trim() : '';
+  if (!pidNeed) return Math.round((Number(walkLogDayKm) || 0) * 100) / 100;
+  if (!Array.isArray(walkSessions)) {
+    return petsCount <= 1 ? Math.round((Number(walkLogDayKm) || 0) * 100) / 100 : 0;
+  }
+  let sum = 0;
+  for (const s of walkSessions) {
+    if (!s || typeof s !== 'object') continue;
+    if (String(s.dayKey || '') !== k) continue;
+    const sid = s.petId != null ? String(s.petId).trim() : '';
+    if (petsCount <= 1) {
+      if (!sid || sid === pidNeed) sum += Math.max(0, Number(s.km) || 0);
+    } else if (sid === pidNeed) {
+      sum += Math.max(0, Number(s.km) || 0);
+    }
+  }
+  const rounded = Math.round(sum * 100) / 100;
+  if (rounded === 0 && petsCount <= 1) {
+    return Math.round((Number(walkLogDayKm) || 0) * 100) / 100;
+  }
+  return rounded;
+}
+
+/**
+ * Most recent walk session relevant to this pet (same rules as kmTodayForPetFromSessions).
+ */
+export function latestWalkSessionForPet(walkSessions, petId, petsCount) {
+  const pidNeed = petId != null ? String(petId).trim() : '';
+  if (!pidNeed || !Array.isArray(walkSessions) || walkSessions.length === 0) return null;
+  const sorted = [...walkSessions].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  for (const s of sorted) {
+    if (!s || typeof s !== 'object') continue;
+    const sid = s.petId != null ? String(s.petId).trim() : '';
+    if (petsCount <= 1) {
+      if (!sid || sid === pidNeed) return s;
+    } else if (sid === pidNeed) {
+      return s;
+    }
+  }
+  return null;
+}

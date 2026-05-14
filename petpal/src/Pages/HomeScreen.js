@@ -1,11 +1,11 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
 import { useCompany } from '../company/CompanyContext';
 import { useI18n } from '../i18n/I18nContext';
 import { usePets } from '../pets/PetsContext';
 import { useGame } from '../game/GameContext';
-import { walkStreakDays } from '../walk/walkStats';
+import { walkStreakDays, kmTodayForPetFromSessions, latestWalkSessionForPet } from '../walk/walkStats';
 import PetCard from '../components/PetCard';
 import ActivityCard from '../components/ActivityCard';
 import UserAvatar from '../components/UserAvatar';
@@ -178,18 +178,79 @@ function LoggedInFeed() {
   const { user } = useAuth();
   const { isAdmin } = useCompany();
   const { pets } = usePets();
-  const { walkLog, walkSessions, latestWalk, lifetimeAchievements, achievementCount, level } = useGame();
+  const { walkLog, walkSessions, walkTotals, latestWalk, lifetimeAchievements, achievementCount, level } = useGame();
 
   const [petIdx, setPetIdx] = useState(0);
+  const carouselRef = useRef(null);
+  const scrollSyncRaf = useRef(null);
   const pet = pets[petIdx % Math.max(1, pets.length)] || null;
+
+  const petsKey = useMemo(() => pets.map((p) => p.id).join(','), [pets]);
+
+  const syncPetFromCarouselScroll = useCallback(() => {
+    const el = carouselRef.current;
+    if (!el || pets.length <= 1) return;
+    const rect = el.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    let bestIdx = 0;
+    let bestDist = Infinity;
+    Array.from(el.children).forEach((child, i) => {
+      const cr = child.getBoundingClientRect();
+      if (cr.width <= 0) return;
+      const mid = cr.left + cr.width / 2;
+      const d = Math.abs(mid - centerX);
+      if (d < bestDist) {
+        bestDist = d;
+        bestIdx = i;
+      }
+    });
+    setPetIdx((prev) => (prev !== bestIdx ? bestIdx : prev));
+  }, [pets.length]);
+
+  const onCarouselScroll = useCallback(() => {
+    if (scrollSyncRaf.current != null) return;
+    scrollSyncRaf.current = window.requestAnimationFrame(() => {
+      scrollSyncRaf.current = null;
+      syncPetFromCarouselScroll();
+    });
+  }, [syncPetFromCarouselScroll]);
+
+  useEffect(() => {
+    const el = carouselRef.current;
+    if (!el || pets.length <= 1) return;
+    const opts = { passive: true };
+    el.addEventListener('scroll', onCarouselScroll, opts);
+    el.addEventListener('scrollend', onCarouselScroll);
+    syncPetFromCarouselScroll();
+    return () => {
+      el.removeEventListener('scroll', onCarouselScroll);
+      el.removeEventListener('scrollend', onCarouselScroll);
+      if (scrollSyncRaf.current != null) {
+        window.cancelAnimationFrame(scrollSyncRaf.current);
+        scrollSyncRaf.current = null;
+      }
+    };
+  }, [pets.length, petsKey, onCarouselScroll, syncPetFromCarouselScroll]);
+
+  function scrollSlideIntoView(i) {
+    const el = carouselRef.current?.children[i];
+    el?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+  }
 
   const greetingName = user?.displayName?.trim() || user?.email?.split('@')[0] || '';
   const streak = walkStreakDays(walkLog);
-  const todayKm = useMemo(() => {
-    if (!walkLog || typeof walkLog !== 'object') return 0;
-    const today = new Date().toISOString().slice(0, 10);
-    return Math.max(0, Number(walkLog[today]) || 0);
-  }, [walkLog]);
+  const petsCount = pets.length;
+  const latestWalkPet = useMemo(
+    () => (pet?.id ? latestWalkSessionForPet(walkSessions, pet.id, petsCount) : null),
+    [walkSessions, pet?.id, petsCount]
+  );
+  const todayKm = useMemo(
+    () =>
+      pet?.id
+        ? kmTodayForPetFromSessions(walkSessions, pet.id, petsCount, walkTotals?.day || 0)
+        : walkTotals?.day || 0,
+    [walkSessions, pet?.id, petsCount, walkTotals?.day]
+  );
 
   const recentSessions = useMemo(() => {
     if (!Array.isArray(walkSessions)) return [];
@@ -217,12 +278,20 @@ function LoggedInFeed() {
     { id: 'community', emoji: '🐾', titleKey: 'home.feed.tips.communityTitle', descKey: 'home.feed.tips.communityDesc' },
   ];
 
-  const statusKey = todayKm > 0 ? 'active' : streak > 0 ? 'lastSeen' : 'noWalkToday';
+  const hasTracker = Boolean(pet?.trackingDeviceId?.trim?.());
+  const statusKey =
+    todayKm > 0
+      ? 'active'
+      : streak > 0 && latestWalkPet?.createdAt
+        ? 'lastSeen'
+        : hasTracker
+          ? 'trackingHint'
+          : 'noWalkToday';
   const statusValue =
     statusKey === 'active'
       ? `${(Math.round(todayKm * 10) / 10).toFixed(1)} km`
       : statusKey === 'lastSeen'
-        ? relativeTime(t, latestWalk?.createdAt) || ''
+        ? relativeTime(t, latestWalkPet?.createdAt) || ''
         : '';
 
   const exploreItems = [
@@ -277,7 +346,11 @@ function LoggedInFeed() {
 
       {pet ? (
         <section aria-label={t('home.feed.petCardAria')}>
-          <div className="pp-petCarousel" aria-label={t('home.feed.switchPet')}>
+          <div
+            ref={carouselRef}
+            className="pp-petCarousel"
+            aria-label={t('home.feed.switchPet')}
+          >
             {pets.map((p, i) => {
               const active = i === petIdx % pets.length;
               return (
@@ -286,9 +359,15 @@ function LoggedInFeed() {
                   role="button"
                   tabIndex={0}
                   className={`pp-petCarousel__slide ${active ? 'pp-petCarousel__slide--active' : ''}`}
-                  onClick={() => setPetIdx(i)}
+                  onClick={() => {
+                    setPetIdx(i);
+                    scrollSlideIntoView(i);
+                  }}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') setPetIdx(i);
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      setPetIdx(i);
+                      scrollSlideIntoView(i);
+                    }
                   }}
                   aria-label={p.name}
                   aria-current={active ? 'true' : undefined}
@@ -314,7 +393,10 @@ function LoggedInFeed() {
                   role="tab"
                   aria-selected={i === petIdx % pets.length}
                   className={`pp-feed__petDot ${i === petIdx % pets.length ? 'pp-feed__petDot--on' : ''}`}
-                  onClick={() => setPetIdx(i)}
+                  onClick={() => {
+                    setPetIdx(i);
+                    scrollSlideIntoView(i);
+                  }}
                   aria-label={p.name}
                 />
               ))}

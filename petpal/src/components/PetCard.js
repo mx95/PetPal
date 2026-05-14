@@ -11,7 +11,7 @@ import { useI18n } from '../i18n/I18nContext';
  *
  * @param {{
  *   pet: { id: string, name: string, categoryId: string, photoDataUrl?: string, age?: string, colorScheme?: string },
- *   statusKey?: 'active'|'resting'|'lastSeen'|'noWalkToday'|'firstWalk',
+ *   statusKey?: 'active'|'resting'|'lastSeen'|'noWalkToday'|'firstWalk'|'trackingHint',
  *   statusValue?: string,
  *   onStartWalk?: () => void,
  * }} props

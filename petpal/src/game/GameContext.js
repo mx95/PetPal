@@ -46,7 +46,8 @@ function normalizeWalkSessions(raw) {
       const km = Math.max(0, Number(s.km) || 0);
       const createdAt = s.createdAt != null ? String(s.createdAt) : new Date().toISOString();
       const photos = Array.isArray(s.photos) ? s.photos.filter((p) => typeof p === 'string' && p.startsWith('data:')) : [];
-      return { id, dayKey, km, createdAt, photos: photos.slice(0, MAX_PHOTOS_PER_WALK_SESSION) };
+      const petId = s.petId != null ? String(s.petId).trim() : '';
+      return { id, dayKey, km, createdAt, photos: photos.slice(0, MAX_PHOTOS_PER_WALK_SESSION), ...(petId ? { petId } : {}) };
     })
     .filter(Boolean);
 }
@@ -144,7 +145,7 @@ export function GameProvider({ children }) {
   );
 
   const addWalkKm = useCallback(
-    async (km, fileList) => {
+    async (km, fileList, petId) => {
       const n = Math.max(0, Number(km) || 0);
       if (n <= 0) return false;
       let photoUrls = [];
@@ -152,6 +153,7 @@ export function GameProvider({ children }) {
         photoUrls = await filesToResizedDataUrls(Array.from(fileList));
         photoUrls = photoUrls.slice(0, MAX_PHOTOS_PER_WALK_SESSION);
       }
+      const pid = petId != null ? String(petId).trim() : '';
       persist((prev) => {
         const k = localDayKey();
         const cur = (prev.walkLog && prev.walkLog[k]) || 0;
@@ -163,6 +165,7 @@ export function GameProvider({ children }) {
           km: Math.round(n * 100) / 100,
           createdAt: new Date().toISOString(),
           photos: photoUrls,
+          ...(pid ? { petId: pid } : {}),
         };
         sessions.push(session);
         return { ...prev, walkLog: nextLog, walkSessions: sessions };

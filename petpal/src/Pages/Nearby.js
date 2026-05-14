@@ -242,15 +242,6 @@ function NearbyMap({ apiKey }) {
     runPlacesSearch('bounds');
   }
 
-  function onSearchNearMe() {
-    setSearchScope('radius');
-    if (map && window.google?.maps) {
-      map.panTo(new window.google.maps.LatLng(searchCenter.lat, searchCenter.lng));
-      map.setZoom(14);
-    }
-    runPlacesSearch('radius');
-  }
-
   const radiusKm = NEARBY_SEARCH_RADIUS_M / 1000;
 
   if (loadError || mapsAuthFailed) {
@@ -268,18 +259,11 @@ function NearbyMap({ apiKey }) {
           <h1 className="pp-nearbyHeader__title">
             {t('nearbyPage.title')}
           </h1>
-          <p className="pp-nearbyHeader__sub">{t('nearbyPage.introLead')} nearby places for your pet.</p>
         </div>
         <Link className="pp-link" to="/dashboard">
           {t('common.backDashboard')}
         </Link>
       </div>
-
-      {locationNote?.kind === 'text' ? (
-        <p className="pp-subtle" style={{ marginTop: 12, marginBottom: 0, fontSize: 14 }}>
-          {locationNote.message}
-        </p>
-      ) : null}
 
       {petpalPartners.length ? (
         <section className="pp-sponsoredRail pp-nearbyPartners" aria-label="PetPal recommended businesses">
@@ -343,26 +327,25 @@ function NearbyMap({ apiKey }) {
       <div className="pp-nearby-body pp-nearby-body--separated">
         <section className="pp-nearby-mapStage pp-card" aria-label="Nearby map">
           <div className="pp-nearby-mapWrap">
-            <div className="pp-nearby-mapActions">
-            <button
-              type="button"
-              className="pp-nearby-cta pp-nearby-cta--location"
-              onClick={onUseMyLocation}
-              disabled={locFetching}
-            >
-              {locFetching ? t('nearbyPage.locFetching') : t('nearbyPage.useMyLocation')}
-            </button>
-            <button type="button" className="pp-nearby-cta pp-nearby-cta--primary" onClick={onSearchThisArea}>
-              {t('nearbyPage.searchThisArea')}
-            </button>
-            <button
-              type="button"
-              className="pp-nearby-cta"
-              onClick={onSearchNearMe}
-              title={t('nearbyPage.searchNearHint')}
-            >
-              {t('nearbyPage.searchNearMe')}
-            </button>
+            <div className="pp-nearby-mapFloatingBar">
+              <div className="pp-nearby-mapActions">
+                <button
+                  type="button"
+                  className="pp-nearby-cta pp-nearby-cta--location"
+                  onClick={onUseMyLocation}
+                  disabled={locFetching}
+                >
+                  {locFetching ? t('nearbyPage.locFetching') : t('nearbyPage.useMyLocation')}
+                </button>
+                <button type="button" className="pp-nearby-cta pp-nearby-cta--primary" onClick={onSearchThisArea}>
+                  {t('nearbyPage.searchThisArea')}
+                </button>
+              </div>
+              {locationNote?.kind === 'text' ? (
+                <p className="pp-nearby-mapLocNote" role="status">
+                  {locationNote.message}
+                </p>
+              ) : null}
             </div>
             <GoogleMap
               mapContainerStyle={mapContainerStyle}

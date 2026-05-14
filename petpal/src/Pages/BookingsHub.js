@@ -49,6 +49,7 @@ function BrowseProviders() {
   const [userLoc, setUserLoc] = useState(/** @type {{ lat: number, lng: number } | null} */ (null));
   const [locating, setLocating] = useState(false);
   const [locMsg, setLocMsg] = useState('');
+  const [filtersExpanded, setFiltersExpanded] = useState(false);
   const [modalProvider, setModalProvider] = useState(/** @type {Record<string, unknown> | null} */ (null));
 
   useEffect(
@@ -159,6 +160,7 @@ function BrowseProviders() {
 
   const showEmpty = sorted.length === 0;
   const showDemoHint = rows.length === 0;
+  const hasAdvancedFiltersActive = ratingFilter !== 'any' || (userLoc && distanceFilter !== 'any');
 
   return (
     <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
@@ -175,32 +177,51 @@ function BrowseProviders() {
               onChange={(e) => setSearch(e.target.value)}
             />
           </label>
-          <label className="pp-book-field">
-            <span className="pp-book-field__label">{t('bookingsHub.filterRatingLabel')}</span>
-            <select className="pp-book-select" value={ratingFilter} onChange={(e) => setRatingFilter(e.target.value)}>
-              <option value="any">{t('bookingsHub.ratingAny')}</option>
-              <option value="4">{t('bookingsHub.rating4')}</option>
-              <option value="4.5">{t('bookingsHub.rating45')}</option>
-            </select>
-          </label>
-          <label className="pp-book-field">
-            <span className="pp-book-field__label">{t('bookingsHub.filterDistanceLabel')}</span>
-            <select
-              className="pp-book-select"
-              value={distanceFilter}
-              onChange={(e) => setDistanceFilter(e.target.value)}
-              disabled={!userLoc}
-            >
-              <option value="any">{t('bookingsHub.distanceAny')}</option>
-              <option value="5">{t('bookingsHub.distance5')}</option>
-              <option value="15">{t('bookingsHub.distance15')}</option>
-              <option value="30">{t('bookingsHub.distance30')}</option>
-            </select>
-          </label>
-          <button type="button" className="mt-2 w-full rounded-full border border-slate-200 bg-white px-4 py-3 text-sm font-black text-petpal-ink shadow-soft transition hover:-translate-y-0.5 hover:shadow-lift disabled:opacity-60" onClick={requestLocation} disabled={locating}>
-            {locating ? t('bookingsHub.locating') : t('bookingsHub.useLocation')}
+          <button
+            type="button"
+            className="pp-book-moreFiltersBtn"
+            aria-expanded={filtersExpanded}
+            aria-controls="pp-book-advanced-filters"
+            onClick={() => setFiltersExpanded((v) => !v)}
+          >
+            <span className="pp-book-moreFiltersBtn__chevron" aria-hidden>
+              {filtersExpanded ? '▴' : '▾'}
+            </span>
+            <span>
+              {filtersExpanded ? t('bookingsHub.hideFilters') : t('bookingsHub.moreFilters')}
+              {!filtersExpanded && hasAdvancedFiltersActive ? (
+                <span className="pp-book-moreFiltersBtn__dot"> · {t('bookingsHub.filtersActiveHint')}</span>
+              ) : null}
+            </span>
           </button>
-          {locMsg ? <p className="pp-book-muted pp-book-muted--sm">{locMsg}</p> : null}
+          <div id="pp-book-advanced-filters" className="pp-book-advancedFilters" hidden={!filtersExpanded}>
+            <label className="pp-book-field">
+              <span className="pp-book-field__label">{t('bookingsHub.filterRatingLabel')}</span>
+              <select className="pp-book-select" value={ratingFilter} onChange={(e) => setRatingFilter(e.target.value)}>
+                <option value="any">{t('bookingsHub.ratingAny')}</option>
+                <option value="4">{t('bookingsHub.rating4')}</option>
+                <option value="4.5">{t('bookingsHub.rating45')}</option>
+              </select>
+            </label>
+            <label className="pp-book-field">
+              <span className="pp-book-field__label">{t('bookingsHub.filterDistanceLabel')}</span>
+              <select
+                className="pp-book-select"
+                value={distanceFilter}
+                onChange={(e) => setDistanceFilter(e.target.value)}
+                disabled={!userLoc}
+              >
+                <option value="any">{t('bookingsHub.distanceAny')}</option>
+                <option value="5">{t('bookingsHub.distance5')}</option>
+                <option value="15">{t('bookingsHub.distance15')}</option>
+                <option value="30">{t('bookingsHub.distance30')}</option>
+              </select>
+            </label>
+            <button type="button" className="mt-2 w-full rounded-full border border-slate-200 bg-white px-4 py-3 text-sm font-black text-petpal-ink shadow-soft transition hover:-translate-y-0.5 hover:shadow-lift disabled:opacity-60" onClick={requestLocation} disabled={locating}>
+              {locating ? t('bookingsHub.locating') : t('bookingsHub.useLocation')}
+            </button>
+            {locMsg ? <p className="pp-book-muted pp-book-muted--sm">{locMsg}</p> : null}
+          </div>
         </AppCard>
       </aside>
 

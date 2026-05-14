@@ -83,24 +83,20 @@ export async function fileToAvatarJpeg(file) {
     throw new Error('TOO_LARGE');
   }
   const img = await loadImage(file);
-  let w = img.naturalWidth;
-  let h = img.naturalHeight;
-  if (w <= 0 || h <= 0) throw new Error('BAD_IMAGE');
-  if (w > AVATAR_MAX || h > AVATAR_MAX) {
-    if (w >= h) {
-      h = Math.round((h * AVATAR_MAX) / w);
-      w = AVATAR_MAX;
-    } else {
-      w = Math.round((w * AVATAR_MAX) / h);
-      h = AVATAR_MAX;
-    }
-  }
+  const nw = img.naturalWidth;
+  const nh = img.naturalHeight;
+  if (nw <= 0 || nh <= 0) throw new Error('BAD_IMAGE');
+  /** Center-crop to a square so circular avatars look consistent everywhere. */
+  const side = Math.min(nw, nh);
+  const sx = (nw - side) / 2;
+  const sy = (nh - side) / 2;
+  const out = Math.min(side, AVATAR_MAX);
   const canvas = document.createElement('canvas');
-  canvas.width = w;
-  canvas.height = h;
+  canvas.width = out;
+  canvas.height = out;
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('NO_CANVAS');
-  ctx.drawImage(img, 0, 0, w, h);
+  ctx.drawImage(img, sx, sy, side, side, 0, 0, out, out);
   const dataUrl = canvas.toDataURL('image/jpeg', JPEG_Q);
   const blob = await new Promise((resolve, reject) => {
     canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('NO_BLOB'))), 'image/jpeg', JPEG_Q);

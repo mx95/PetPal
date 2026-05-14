@@ -19,7 +19,14 @@ export default function UserAvatar({ user, size = 40, className = '' }) {
 
   const displayName = user?.displayName?.trim() || user?.email?.split('@')[0] || '';
   const letter = (displayName || '?').charAt(0).toUpperCase();
-  const dim = { width: size, height: size };
+  const dim = {
+    width: size,
+    height: size,
+    minWidth: size,
+    minHeight: size,
+    aspectRatio: '1',
+    flexShrink: 0,
+  };
   const ringClass = className ? ` ${className}` : '';
   const photoLabel = displayName
     ? t('profile.photo.imgAlt', { name: displayName })

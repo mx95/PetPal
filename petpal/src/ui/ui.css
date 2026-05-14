@@ -1699,21 +1699,49 @@ select.pp-input:focus {
   box-shadow: 0 8px 30px rgba(16, 24, 40, 0.08);
 }
 
-.pp-nearby-mapActions {
+.pp-nearby-mapFloatingBar {
   position: absolute;
   z-index: 10;
   top: 12px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 8px;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
   max-width: calc(100% - 24px);
   pointer-events: none;
 }
 
+.pp-nearby-mapActions {
+  position: static;
+  transform: none;
+  left: auto;
+  top: auto;
+  right: auto;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  pointer-events: none;
+}
+
 .pp-nearby-mapActions > * {
+  pointer-events: auto;
+}
+
+.pp-nearby-mapLocNote {
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.95);
+  color: #b42318;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.35;
+  text-align: center;
+  max-width: 100%;
+  box-shadow: 0 4px 16px rgba(16, 24, 40, 0.1);
   pointer-events: auto;
 }
 
@@ -2599,6 +2627,11 @@ body.pp-noScroll {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
+}
+
+.pp-trackHistoryStats--belowMap {
+  margin-top: 18px;
+  padding-top: 4px;
 }
 
 .pp-trackHistoryStats article {
@@ -4924,10 +4957,9 @@ a.pp-publicPet__metaValue {
 /* Greeting hero strip */
 .pp-feed__hello {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 18px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 14px;
   padding: 4px 4px 0;
 }
 .pp-feed__eyebrow {
@@ -4955,9 +4987,19 @@ a.pp-publicPet__metaValue {
 }
 .pp-feed__pills {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 8px;
   align-items: center;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding-bottom: 2px;
+}
+.pp-feed__pills::-webkit-scrollbar {
+  display: none;
 }
 .pp-feed__pill {
   display: inline-flex;
@@ -4966,9 +5008,10 @@ a.pp-publicPet__metaValue {
   padding: 6px 12px;
   border-radius: 999px;
   font-weight: 800;
-  font-size: 13px;
+  font-size: clamp(11px, 2.9vw, 13px);
   border: 1px solid transparent;
   white-space: nowrap;
+  flex: 0 0 auto;
 }
 .pp-feed__pill--streak { background: linear-gradient(135deg, #fff1f2, #ffe2e8); color: #b42318; border-color: rgba(255, 99, 132, 0.25); }
 .pp-feed__pill--ghost  { background: rgba(91, 55, 255, 0.06); color: #5b37ff; border-color: rgba(91, 55, 255, 0.18); }
@@ -5073,6 +5116,7 @@ a.pp-publicPet__metaValue {
 }
 .pp-petCard__status--noWalkToday .pp-petCard__statusDot { background: #f79009; box-shadow: 0 0 0 3px rgba(247, 144, 9, 0.22); }
 .pp-petCard__status--lastSeen .pp-petCard__statusDot { background: #5b37ff; box-shadow: 0 0 0 3px rgba(91, 55, 255, 0.22); }
+.pp-petCard__status--trackingHint .pp-petCard__statusDot { background: #2563eb; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.22); }
 .pp-petCard__actions {
   grid-area: actions;
   display: grid;
@@ -6176,11 +6220,17 @@ body,
   display: none;
 }
 
-.pp-nearby-mapActions {
+.pp-nearby-mapFloatingBar {
   top: 10px;
   left: 10px;
   right: 10px;
   transform: none;
+  width: auto;
+  max-width: none;
+  align-items: stretch;
+}
+
+.pp-nearby-mapFloatingBar .pp-nearby-mapActions {
   justify-content: flex-start;
 }
 
@@ -7275,10 +7325,13 @@ html[data-theme="dark"] .pp-publicHero__eyebrow {
 
 .pp-feed__helloMain {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 14px;
-  flex: 1 1 240px;
+  flex: 1 1 auto;
   min-width: 0;
+}
+.pp-feed__helloMain .pp-userAvatar {
+  flex-shrink: 0;
 }
 .pp-feed__helloCopy {
   flex: 1;
@@ -9656,6 +9709,50 @@ html[data-theme="dark"] .pp-publicHero__eyebrow {
   font-size: 12px;
   font-weight: 700;
   color: var(--book-muted);
+}
+
+.pp-book-moreFiltersBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  margin-top: 6px;
+  padding: 12px 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(91, 55, 255, 0.28);
+  background: linear-gradient(180deg, rgba(91, 55, 255, 0.1), rgba(255, 255, 255, 0.96));
+  color: var(--book-text, #0f172a);
+  font-size: 14px;
+  font-weight: 950;
+  letter-spacing: -0.02em;
+  cursor: pointer;
+  box-shadow: 0 8px 22px -14px rgba(91, 55, 255, 0.4);
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
+  font-family: inherit;
+}
+
+.pp-book-moreFiltersBtn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 28px -12px rgba(91, 55, 255, 0.48);
+}
+
+.pp-book-moreFiltersBtn__chevron {
+  flex-shrink: 0;
+  font-size: 11px;
+  line-height: 1;
+  color: #5b37ff;
+}
+
+.pp-book-moreFiltersBtn__dot {
+  font-weight: 800;
+  color: #5b37ff;
+}
+
+.pp-book-advancedFilters {
+  padding-top: 8px;
 }
 
 .pp-book-input,
