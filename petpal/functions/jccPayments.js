@@ -123,87 +123,104 @@ function redirect(res, url) {
 }
 
 exports.createJccCheckout = functions.region('europe-west1').https.onCall(async (data, context) => {
-  if (!context.auth?.uid) {
-    throw new functions.https.HttpsError('unauthenticated', 'Sign in to checkout.');
-  }
-  const uid = context.auth.uid;
-  const sku = String(data?.sku || '').trim();
-  const saveCard = Boolean(data?.saveCard);
-  const companyId = data?.companyId ? String(data.companyId).trim() : '';
+  try {
+    if (!context.auth?.uid) {
+      throw new functions.https.HttpsError('unauthenticated', 'Sign in to checkout.');
+    }
+    const uid = context.auth.uid;
+    const sku = String(data?.sku || '').trim();
+    const saveCard = Boolean(data?.saveCard);
+    const companyId = data?.companyId ? String(data.companyId).trim() : '';
 
-  const catalog = SKUS[sku];
-  if (!catalog) {
-    throw new functions.https.HttpsError('invalid-argument', 'Unknown product.');
-  }
-  if (sku === 'STORE_BOOST_MONTHLY' && companyId !== uid) {
-    throw new functions.https.HttpsError('permission-denied', 'Boost purchase must use your business account id.');
-  }
-  if (catalog.recurring && !saveCard) {
-    throw new functions.https.HttpsError('invalid-argument', 'This plan bills monthly — enable “Save card securely” so renewals can run on file.');
-  }
+    const catalog = SKUS[sku];
+    if (!catalog) {
+      throw new functions.https.HttpsError('invalid-argument', 'Unknown product.');
+    }
+    if (sku === 'STORE_BOOST_MONTHLY' && companyId !== uid) {
+      throw new functions.https.HttpsError('permission-denied', 'Boost purchase must use your business account id.');
+    }
+    if (catalog.recurring && !saveCard) {
+      throw new functions.https.HttpsError('invalid-argument', 'This plan bills monthly — enable “Save card securely” so renewals can run on file.');
+    }
 
-  ensureAdmin();
-  const { userName, password, restBase, returnUrl, frontendUrl } = jccCredentials();
+    ensureAdmin();
+    const { userName, password, restBase, returnUrl, frontendUrl } = jccCredentials();
 
-  const orderNumber = uniqueOrderNumber('PP');
-  const db = admin.firestore();
-  const sessionRef = db.collection('paymentSessions').doc(orderNumber);
-  await sessionRef.set({
-    orderNumber,
-    uid,
-    sku,
-    saveCard,
-    companyId: companyId || null,
-    amountCents: catalog.amountCents,
-    currency: catalog.currency,
-    createdAt: admin.firestore.FieldValue.serverTimestamp(),
-    status: 'pending_register',
-  });
+    const orderNumber = uniqueOrderNumber('PP');
+    const db = admin.firestore();
+    const sessionRef = db.collection('paymentSessions').doc(orderNumber);
+    await sessionRef.set({
+      orderNumber,
+      uid,
+      sku,
+      saveCard,
+      companyId: companyId || null,
+      amountCents: catalog.amountCents,
+      currency: catalog.currency,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      status: 'pending_register',
+    });
 
-  const params = {
-    userName,
-    password,
-    orderNumber,
-    amount: String(catalog.amountCents),
-    currency: catalog.currency,
-    returnUrl: `${returnUrl.replace(/\/$/, '')}?orderNumber=${encodeURIComponent(orderNumber)}`,
-    failUrl: `${frontendUrl}/shop?checkout=fail`,
-    description: catalog.title.slice(0, 240),
-    language: 'en',
-    clientId: uid,
-    jsonParams: JSON.stringify({ backToShopUrl: `${frontendUrl}/shop`, backToShopName: 'Back to PetPal' }),
-  };
+    const params = {
+      userName,
+      password,
+      orderNumber,
+      amount: String(catalog.amountCents),
+      currency: catalog.currency,
+      returnUrl: `${returnUrl.replace(/\/$/, '')}?orderNumber=${encodeURIComponent(orderNumber)}`,
+      failUrl: `${frontendUrl}/shop?checkout=fail`,
+      description: catalog.title.slice(0, 240),
+      language: 'en',
+      clientId: uid,
+      jsonParams: JSON.stringify({ backToShopUrl: `${frontendUrl}/shop`, backToShopName: 'Back to PetPal' }),
+    };
 
-  if (saveCard) {
-    params.features = 'FORCE_CREATE_BINDING';
-  }
+    if (saveCard) {
+      params.features = 'FORCE_CREATE_BINDING';
+    }
 
-  const reg = await jccPost(restBase, 'register.do', params);
-  if (!jccRegisterDoSucceeded(reg)) {
+    const reg = await jccPost(restBase, 'register.do', params);
+    if (!jccRegisterDoSucceeded(reg)) {
+      await sessionRef.set(
+        {
+          status: 'register_failed',
+          jccError: reg?.errorMessage || reg?.error || String(reg?.errorCode),
+          raw: reg,
+        },
+        { merge: true }
+      );
+      throw new functions.https.HttpsError(
+        'failed-precondition',
+        reg?.errorMessage || reg?.error || 'Could not start payment with JCC.'
+      );
+    }
+
     await sessionRef.set(
       {
-        status: 'register_failed',
-        jccError: reg?.errorMessage || reg?.error || String(reg?.errorCode),
-        raw: reg,
+        status: 'awaiting_payment',
+        jccOrderId: reg.orderId,
+        formUrl: reg.formUrl,
       },
       { merge: true }
     );
+
+    return { formUrl: reg.formUrl, orderNumber, jccOrderId: reg.orderId };
+  } catch (e) {
+    if (e instanceof functions.https.HttpsError) throw e;
+    const msg = typeof e?.message === 'string' ? e.message : String(e);
+    // Plain Error() from jccCredentials / jccPost becomes functions/internal on the client — map to visible codes.
+    if (/JCC credentials missing|JCC return URL missing/i.test(msg)) {
+      throw new functions.https.HttpsError('failed-precondition', msg);
+    }
+    if (/JCC non-JSON/i.test(msg) || /fetch failed/i.test(msg) || /ECONNREFUSED|ENOTFOUND|ETIMEDOUT/i.test(msg)) {
+      throw new functions.https.HttpsError('unavailable', msg.slice(0, 500));
+    }
+    functions.logger.error('createJccCheckout failed', { err: e, uid: context.auth?.uid });
     throw new functions.https.HttpsError(
-      'failed-precondition',
-      reg?.errorMessage || reg?.error || 'Could not start payment with JCC.'
+      'internal',
+      'Checkout failed on the server. Inspect Cloud Function logs for createJccCheckout.'
     );
   }
-
-  await sessionRef.set(
-    {
-      status: 'awaiting_payment',
-      jccOrderId: reg.orderId,
-      formUrl: reg.formUrl,
-    },
-    { merge: true }
-  );
-
-  return { formUrl: reg.formUrl, orderNumber, jccOrderId: reg.orderId };
 });
 
 exports.jccPaymentReturn = functions.region('europe-west1').https.onRequest(async (req, res) => {

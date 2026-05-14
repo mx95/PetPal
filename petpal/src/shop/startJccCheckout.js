@@ -17,7 +17,8 @@ function mapCallableError(err) {
     return msg || 'Checkout was rejected. Check JCC credentials and return URL on the server.';
   }
   if (code === 'functions/internal') {
-    return msg || 'Checkout failed on the server. Inspect Cloud Function logs.';
+    const generic = /^internal$/i.test(msg.trim());
+    return generic || !msg ? 'Checkout failed on the server. Inspect Cloud Function logs for createJccCheckout.' : msg;
   }
   return msg || code || 'Checkout failed.';
 }
