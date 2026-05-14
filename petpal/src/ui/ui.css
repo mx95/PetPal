@@ -12556,6 +12556,21 @@ html[data-theme="dark"] .pp-nearby-list > li {
   color: var(--pp-ink, #0f172a);
 }
 
+.pp-shopCard__status {
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 0.35rem 0.65rem;
+  border-radius: 999px;
+  align-self: flex-start;
+  background: rgba(148, 163, 184, 0.2);
+  color: var(--pp-muted, #64748b);
+}
+
+.pp-shopCard__status--on {
+  background: rgba(16, 185, 129, 0.15);
+  color: #047857;
+}
+
 .pp-shopSaveRow {
   display: flex;
   align-items: flex-start;
@@ -12603,6 +12618,61 @@ html[data-theme="dark"] .pp-nearby-list > li {
 html[data-theme="dark"] .pp-shopCard__badge {
   color: #c4b5fd;
   background: linear-gradient(120deg, rgba(91, 55, 255, 0.28), rgba(47, 128, 255, 0.2));
+}
+
+html[data-theme="dark"] .pp-shopCard__status {
+  background: rgba(148, 163, 184, 0.15);
+  color: #94a3b8;
+}
+
+html[data-theme="dark"] .pp-shopCard__status--on {
+  background: rgba(16, 185, 129, 0.22);
+  color: #6ee7b7;
+}
+
+/* --- Payment success (JCC return) --- */
+.pp-paymentSuccess {
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+.pp-paymentSuccess__card {
+  padding: 2rem 1.75rem;
+  text-align: center;
+}
+
+.pp-paymentSuccess__icon {
+  width: 4rem;
+  height: 4rem;
+  margin: 0 auto 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  font-size: 2rem;
+  font-weight: 900;
+  color: #047857;
+  background: rgba(16, 185, 129, 0.18);
+  border: 2px solid rgba(16, 185, 129, 0.45);
+}
+
+.pp-paymentSuccess__detail {
+  margin-top: 1.25rem;
+  text-align: left;
+}
+
+.pp-paymentSuccess__actions {
+  margin-top: 1.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
+html[data-theme="dark"] .pp-paymentSuccess__icon {
+  color: #6ee7b7;
+  background: rgba(16, 185, 129, 0.2);
+  border-color: rgba(16, 185, 129, 0.5);
 }
 
 /* --- Nearby: PetPal partner strip --- */

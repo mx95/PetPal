@@ -31,7 +31,7 @@ This service exposes **two API groups**:
 - **List devices**: `GET /api/app/devices`
 - **Get one device**: `GET /api/app/devices/:imei`
 - **Latest position**: `GET /api/app/position?deviceId=IMEI`
-- **History (last 100)**: `GET /api/app/history?deviceId=IMEI`
+- **History**: `GET /api/app/history?deviceId=IMEI&limit=…` (optional `from` / `to` as ISO timestamps to load a date range chronologically, up to 20k points; without them, the latest points are returned)
 
 ### Tracker API (device commands)
 

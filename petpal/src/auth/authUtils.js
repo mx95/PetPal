@@ -14,8 +14,8 @@ export function mapAuthError(err, t, mode = 'login') {
 }
 
 export function trackAuthEvent(eventName, payload = {}) {
+  if (process.env.NODE_ENV === 'production') return;
   try {
-    // lightweight non-PII telemetry for debugging auth UX
     // eslint-disable-next-line no-console
     console.info('[auth-event]', eventName, payload);
   } catch {

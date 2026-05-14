@@ -1,18 +1,33 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
 import { useCompany } from '../company/CompanyContext';
-import { isFirebaseConfigured } from '../firebase';
+import { getDb, isFirebaseConfigured } from '../firebase';
+import { useI18n } from '../i18n/I18nContext';
 import { SHOP_PRODUCTS, formatEur } from '../shop/catalog';
 import { startJccCheckout } from '../shop/startJccCheckout';
 
+const PLUS_SKU = 'PETPAL_PLUS_MONTHLY';
+
 export default function Shop() {
+  const { t } = useI18n();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { isApprovedCompany } = useCompany();
   const [searchParams] = useSearchParams();
   const checkout = searchParams.get('checkout');
   const focusSku = searchParams.get('sku');
   const cardRefs = useRef(/** @type {Record<string, HTMLElement | null>} */ ({}));
+
+  useEffect(() => {
+    if (checkout !== 'success') return;
+    const q = searchParams.toString();
+    navigate(q ? `/payment/success?${q}` : '/payment/success?checkout=success', { replace: true });
+  }, [checkout, navigate, searchParams]);
+
+  const [plusActive, setPlusActive] = useState(false);
+  const [shopStats, setShopStats] = useState({ combo: 0, total: 0 });
 
   useEffect(() => {
     if (!focusSku) return;
@@ -22,6 +37,40 @@ export default function Shop() {
     }, 250);
     return () => window.clearTimeout(id);
   }, [focusSku]);
+
+  useEffect(() => {
+    if (!user || !isFirebaseConfigured()) {
+      setPlusActive(false);
+      setShopStats({ combo: 0, total: 0 });
+      return () => {};
+    }
+    const db = getDb();
+    const plusDoc = doc(db, 'billingSubscriptions', `${user.uid}_${PLUS_SKU}`);
+    const statsDoc = doc(db, 'shopStats', 'public');
+    const unsubPlus = onSnapshot(
+      plusDoc,
+      (snap) => {
+        setPlusActive(Boolean(snap.exists() && snap.data()?.status === 'active'));
+      },
+      () => setPlusActive(false)
+    );
+    const unsubStats = onSnapshot(
+      statsDoc,
+      (snap) => {
+        const d = snap.data() || {};
+        setShopStats({
+          combo: Math.max(0, Number(d.activeSubscriptionsWithCollar) || 0),
+          total: Math.max(0, Number(d.totalCollarPurchases) || 0),
+        });
+      },
+      () => {}
+    );
+    return () => {
+      unsubPlus();
+      unsubStats();
+    };
+  }, [user]);
+
   const [saveCardById, setSaveCardById] = useState(() =>
     SHOP_PRODUCTS.reduce((acc, p) => {
       acc[p.id] = p.recurring;
@@ -32,9 +81,8 @@ export default function Shop() {
   const [err, setErr] = useState('');
 
   const banner = useMemo(() => {
-    if (checkout === 'success') return { kind: 'ok', text: 'Payment completed. Thank you — your purchase will appear in your account shortly.' };
-    if (checkout === 'fail') return { kind: 'warn', text: 'Payment was not completed. You can try again when you are ready.' };
-    if (checkout === 'error') return { kind: 'warn', text: 'We could not verify the payment return. If you were charged, contact support with your receipt.' };
+    if (checkout === 'fail') return { text: 'Payment was not completed. You can try again when you are ready.' };
+    if (checkout === 'error') return { text: 'We could not verify the payment return. If you were charged, contact support with your receipt.' };
     return null;
   }, [checkout]);
 
@@ -105,7 +153,7 @@ export default function Shop() {
       </header>
 
       {banner ? (
-        <div className={`pp-shopBanner pp-shopBanner--${banner.kind === 'ok' ? 'ok' : 'warn'}`} role="status">
+        <div className="pp-shopBanner pp-shopBanner--warn" role="status">
           {banner.text}
         </div>
       ) : null}
@@ -128,6 +176,18 @@ export default function Shop() {
             <p className="pp-subtle" style={{ marginTop: 0 }}>
               {p.subtitle}
             </p>
+            {p.id === PLUS_SKU ? (
+              <p className={`pp-shopCard__status${plusActive ? ' pp-shopCard__status--on' : ''}`}>
+                {plusActive ? t('shopPage.plusBadgeActive') : t('shopPage.plusBadgeInactive')}
+              </p>
+            ) : null}
+            {p.id === 'TRACKER_HARDWARE' ? (
+              <p className="pp-subtle" style={{ marginTop: 0, lineHeight: 1.5 }}>
+                {t('shopPage.collarStatCombo', { combo: shopStats.combo })}
+                <br />
+                {t('shopPage.collarStatTotal', { total: shopStats.total })}
+              </p>
+            ) : null}
             <div className="pp-shopCard__price">{formatEur(p.amountCents)}</div>
             {p.id === 'STORE_BOOST_MONTHLY' && !isApprovedCompany ? (
               <p className="pp-subtle">Approved business accounts only. Apply from your profile flow first.</p>
@@ -153,16 +213,6 @@ export default function Shop() {
           </article>
         ))}
       </div>
-
-      <section className="pp-card pp-pad pp-shopNote" style={{ marginTop: 16 }}>
-        <h3 className="pp-sectionTitle">Deployment checklist</h3>
-        <ul className="pp-subtle" style={{ marginBottom: 0, lineHeight: 1.55 }}>
-          <li>Deploy Cloud Functions in <code>europe-west1</code> and set config (see <code>petpal/functions/jccPayments.js</code> header).</li>
-          <li>Set <code>jcc.return_url</code> to the public URL of <code>jccPaymentReturn</code> (must match what you register with JCC).</li>
-          <li>Set <code>jcc.frontend_url</code> to this web app origin so customers return to PetPal after payment.</li>
-          <li>Optional: <code>REACT_APP_FUNCTIONS_REGION</code> if your functions region differs.</li>
-        </ul>
-      </section>
     </div>
   );
 }

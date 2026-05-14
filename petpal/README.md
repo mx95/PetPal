@@ -72,7 +72,7 @@ The tracker backend (`tracker-tcp-server`) exposes two API groups. Keep them sep
   - Typical calls:
     - `GET /api/app/position?deviceId=<imei>` (map pin + summary)
     - `GET /api/app/devices` (admin list)
-    - `GET /api/app/history?deviceId=<imei>` (recent trail)
+    - `GET /api/app/history?deviceId=<imei>&limit=…` (optional `from` / `to` ISO bounds for a full-day or multi-day trail, up to 20k points)
 
 - **Tracker API (device commands)**: `/api/tracker/commands/*`
   - **Use this only for configuring the collar**

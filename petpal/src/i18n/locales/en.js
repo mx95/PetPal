@@ -555,7 +555,8 @@ const en = {
     lblSource: 'Source',
     openGoogleMaps: 'Open in Google Maps ↗',
     sectionMap: 'Map',
-    mapTilesHint: 'Tiles: OpenStreetMap (attribution in-map).',
+    mapTilesHint:
+      'Use the map type control (Google) or the layer control top-right (Map / Satellite) when using OpenStreetMap + Esri imagery.',
     deviceSuffix: '(device #{id})',
     deviceChip: 'Tracker #{id}',
     noDeviceChip: 'No device',
@@ -750,6 +751,26 @@ const en = {
     modalDemoCta: 'Got it',
     mineEmpty: 'No bookings yet.',
     mineOpen: 'View details',
+  },
+  shopPage: {
+    successGeneric: 'Payment completed. Thank you — your purchase will appear in your account shortly.',
+    successPlusActive: 'PetPal Plus is now active on your account — premium walks, insights, and perks are unlocked.',
+    successPlusPending:
+      'Payment received. If the bank is still finalising your saved card token, Plus will flip to active within a few minutes — refresh this page if needed.',
+    successCollar:
+      'Your GPS tracker collar order is confirmed. PetPal currently shows {combo} recorded PetPal Plus + collar checkout pairs, and {total} paid collar checkouts in total.',
+    successBoost: 'Business boost is active — you should appear as recommended where your profile and Nearby allow.',
+    plusBadgeActive: 'PetPal Plus subscription active',
+    plusBadgeInactive: 'PetPal Plus not subscribed',
+    collarStatCombo: 'PetPal Plus + collar checkout pairs (recorded): {combo}',
+    collarStatTotal: 'Paid collar checkouts (all customers): {total}',
+  },
+  paymentSuccess: {
+    badge: 'PetPal Shop',
+    title: 'Payment successful',
+    lead: 'Your card payment went through. Here is what applies to your account right now.',
+    ctaShop: 'Continue to shop',
+    ctaDashboard: 'Go to dashboard',
   },
   lifetime: {
     badge: 'Lifetime achievements',

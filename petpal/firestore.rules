@@ -99,6 +99,12 @@ service cloud.firestore {
         allow read: if request.auth != null && request.auth.uid == userId;
         allow write: if false;
       }
+
+      // Shop hardware entitlements (written by Cloud Functions after JCC return).
+      match /shopEntitlements/{docId} {
+        allow read: if request.auth != null && request.auth.uid == userId;
+        allow write: if false;
+      }
     }
 
     // Bookings: top-level collection so customers and providers can query efficiently.
@@ -157,6 +163,12 @@ service cloud.firestore {
     // Active subscriptions (renewed by scheduled Cloud Function).
     match /billingSubscriptions/{subId} {
       allow read: if request.auth != null && resource.data.uid == request.auth.uid;
+      allow write: if false;
+    }
+
+    // Shop aggregate counters (written by Cloud Functions only).
+    match /shopStats/{docId} {
+      allow read: if request.auth != null;
       allow write: if false;
     }
 

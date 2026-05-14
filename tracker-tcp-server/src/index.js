@@ -238,7 +238,9 @@ app.get("/api/app/history", (req, res) => {
     return res.json({ imei, history: [], note: "History available only when SQLite persistence is enabled." });
   }
   const limit = Number(req.query.limit ?? 100);
-  const history = store.history(imei, { limit });
+  const from = String(req.query.from || "").trim() || null;
+  const to = String(req.query.to || "").trim() || null;
+  const history = store.history(imei, { limit, from, to });
   res.json({ imei, history });
 });
 

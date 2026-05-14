@@ -25,6 +25,7 @@ import Profile from './Pages/Profile';
 import ProviderPortal from './Pages/ProviderPortal';
 import BookingsHub from './Pages/BookingsHub';
 import Shop from './Pages/Shop';
+import PaymentSuccess from './Pages/PaymentSuccess';
 import ProviderProfile from './Pages/ProviderProfile';
 import BookService from './Pages/BookService';
 import './ui/ui.css';
@@ -129,6 +130,14 @@ function App() {
             element={
               <RequireAuth>
                 <Shop />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/payment/success"
+            element={
+              <RequireAuth>
+                <PaymentSuccess />
               </RequireAuth>
             }
           />

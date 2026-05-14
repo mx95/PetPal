@@ -1,7 +1,16 @@
 import L from 'leaflet';
 import React, { useEffect, useState } from 'react';
 import { GoogleMap, Marker, Polyline, useJsApiLoader } from '@react-google-maps/api';
-import { CircleMarker, MapContainer, Marker as LeafletMarker, Polyline as LeafletPolyline, Popup, TileLayer, useMap } from 'react-leaflet';
+import {
+  CircleMarker,
+  LayersControl,
+  MapContainer,
+  Marker as LeafletMarker,
+  Polyline as LeafletPolyline,
+  Popup,
+  TileLayer,
+  useMap,
+} from 'react-leaflet';
 
 import icon2x from 'leaflet/dist/images/marker-icon-2x.png';
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -28,7 +37,7 @@ const googleMapContainerStyle = {
   height: '100%',
   minHeight: 'min(52vh, 440px)',
 };
-const googleMapOptions = { streetViewControl: false, mapTypeControl: false, fullscreenControl: true };
+const googleMapOptions = { streetViewControl: false, mapTypeControl: true, fullscreenControl: true };
 
 function FlyTo({ lat, lng }) {
   const map = useMap();
@@ -60,10 +69,20 @@ function LeafletPositionMap({ lat, lng, path = [], routeMarkers = [], playbackPo
       style={{ height: '100%', width: '100%' }}
     >
       {hasPath ? <FitRoute path={path} /> : <FlyTo lat={lat} lng={lng} />}
-      <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
+      <LayersControl position="topright">
+        <LayersControl.BaseLayer checked name="Map">
+          <TileLayer
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
+        </LayersControl.BaseLayer>
+        <LayersControl.BaseLayer name="Satellite">
+          <TileLayer
+            attribution='Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community'
+            url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+          />
+        </LayersControl.BaseLayer>
+      </LayersControl>
       {hasPath ? (
         <>
           <LeafletPolyline positions={path.map((p) => [p.lat, p.lng])} pathOptions={{ color: '#5b37ff', weight: 5, opacity: 0.84 }} />

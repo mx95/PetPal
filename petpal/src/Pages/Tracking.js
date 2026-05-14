@@ -116,10 +116,18 @@ function pointTime(point) {
   return new Date(point.timestamp).getTime();
 }
 
+function historyRangeToIsoBounds(range) {
+  if (!range?.from || !range?.to) return {};
+  const fromMs = new Date(`${range.from}T00:00:00`).getTime();
+  const toMs = new Date(`${range.to}T23:59:59.999`).getTime();
+  if (!Number.isFinite(fromMs) || !Number.isFinite(toMs) || fromMs > toMs) return {};
+  return { from: new Date(fromMs).toISOString(), to: new Date(toMs).toISOString() };
+}
+
 function filterHistoryPoints(points, range) {
   const now = Date.now();
   const from = range.from ? new Date(`${range.from}T00:00:00`).getTime() : 0;
-  const to = range.to ? new Date(`${range.to}T23:59:59`).getTime() : now;
+  const to = range.to ? new Date(`${range.to}T23:59:59.999`).getTime() : now;
   return points.filter((p) => {
     const ts = pointTime(p);
     return Number.isFinite(ts) && ts >= from && ts <= to;
@@ -292,7 +300,10 @@ export default function Tracking() {
     let cancelled = false;
     setHistoryLoading(true);
     setHistoryError('');
-    getPositionHistory(effectiveDeviceId, { limit: 300 })
+    getPositionHistory(effectiveDeviceId, {
+      limit: 20000,
+      ...historyRangeToIsoBounds(historyRange),
+    })
       .then((points) => {
         if (cancelled) return;
         setHistoryPoints(points);
@@ -309,7 +320,7 @@ export default function Tracking() {
     return () => {
       cancelled = true;
     };
-  }, [trackerTab, effectiveDeviceId, historyReloadTick]);
+  }, [trackerTab, effectiveDeviceId, historyReloadTick, historyRange.from, historyRange.to]);
 
   const filteredHistory = useMemo(() => filterHistoryPoints(historyPoints, historyRange), [historyPoints, historyRange]);
   const historyAnalytics = useMemo(() => buildHistoryAnalytics(filteredHistory), [filteredHistory]);

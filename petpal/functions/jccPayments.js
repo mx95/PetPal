@@ -9,7 +9,7 @@
  *   jcc.pass="YOUR_API_PASSWORD"
  *   jcc.rest_base="https://gateway-test.jcc.com.cy/payment/rest"
  *   jcc.return_url="https://europe-west1-<PROJECT>.cloudfunctions.net/jccPaymentReturn"
- *   jcc.frontend_url="https://your-petpal-host"
+ *   jcc.frontend_url="https://your-petpal-host" (no trailing slash; paid customers return to /payment/success on this origin)
  *
  * Do not commit real passwords. Test base URL from JCC docs:
  * https://gateway-test.jcc.com.cy/payment/rest/
@@ -131,6 +131,26 @@ const SKUS = {
 function redirect(res, url) {
   res.set('Cache-Control', 'no-store');
   res.redirect(302, url);
+}
+
+/**
+ * Public counters for Shop (read by clients; only Cloud Functions write).
+ * @param {*} db Firestore instance
+ * @param {Record<string, number>} increments
+ */
+async function incrementShopPublicStats(db, increments) {
+  const ref = db.collection('shopStats').doc('public');
+  await db.runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    const cur = snap.data() || {};
+    const next = { ...cur, updatedAt: admin.firestore.FieldValue.serverTimestamp() };
+    for (const [key, delta] of Object.entries(increments)) {
+      const base = Number(cur[key] ?? 0);
+      const d = Number(delta);
+      next[key] = (Number.isFinite(base) ? base : 0) + (Number.isFinite(d) ? d : 0);
+    }
+    tx.set(ref, next, { merge: true });
+  });
 }
 
 exports.createJccCheckout = functions.region('europe-west1').https.onCall(async (data, context) => {
@@ -338,6 +358,36 @@ exports.jccPaymentReturn = functions.region('europe-west1').https.onRequest(asyn
       );
   }
 
+  if (sku === 'PETPAL_PLUS_MONTHLY' && bindingId) {
+    const collarSnap = await db.collection('users').doc(uid).collection('shopEntitlements').doc('collar').get();
+    if (collarSnap.exists && collarSnap.data()?.status === 'active') {
+      await incrementShopPublicStats(db, { activeSubscriptionsWithCollar: 1 });
+    }
+  }
+
+  if (sku === 'TRACKER_HARDWARE') {
+    await db
+      .collection('users')
+      .doc(uid)
+      .collection('shopEntitlements')
+      .doc('collar')
+      .set(
+        {
+          status: 'active',
+          sku: 'TRACKER_HARDWARE',
+          purchasedAt: admin.firestore.FieldValue.serverTimestamp(),
+          sessionOrderNumber: orderNumber,
+        },
+        { merge: true }
+      );
+    const plusSnap = await db.collection('billingSubscriptions').doc(`${uid}_PETPAL_PLUS_MONTHLY`).get();
+    const plusD = plusSnap.data();
+    const plusActive = Boolean(plusSnap.exists && plusD?.status === 'active');
+    const bumps = { totalCollarPurchases: 1 };
+    if (plusActive) bumps.activeSubscriptionsWithCollar = 1;
+    await incrementShopPublicStats(db, bumps);
+  }
+
   if (sku === 'STORE_BOOST_MONTHLY') {
     const companyId = session.companyId || uid;
     const until = new Date();
@@ -359,7 +409,19 @@ exports.jccPaymentReturn = functions.region('europe-west1').https.onRequest(asyn
   }
 
   await sessionRef.set({ status: 'paid', paidAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
-  redirect(res, `${frontendUrl}/shop?checkout=success&sku=${encodeURIComponent(sku)}`);
+
+  let successQs = `checkout=success&sku=${encodeURIComponent(sku)}`;
+  if (sku === 'PETPAL_PLUS_MONTHLY') {
+    successQs += `&plusBound=${bindingId ? '1' : '0'}`;
+  }
+  if (sku === 'TRACKER_HARDWARE') {
+    const st = await db.collection('shopStats').doc('public').get();
+    const stData = st.data() || {};
+    successQs += `&collarCombo=${encodeURIComponent(String(stData.activeSubscriptionsWithCollar ?? 0))}&collarTotal=${encodeURIComponent(
+      String(stData.totalCollarPurchases ?? 0)
+    )}`;
+  }
+  redirect(res, `${frontendUrl}/payment/success?${successQs}`);
 });
 
 exports.billingRenewal = functions

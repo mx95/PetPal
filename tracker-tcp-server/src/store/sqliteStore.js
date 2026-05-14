@@ -106,9 +106,31 @@ function createSqliteStore({ dbPath }) {
       return deviceFromRow(row);
     },
 
-    history(imei, { limit = 100 } = {}) {
+    history(imei, { limit = 100, from = null, to = null } = {}) {
+      const fromS = from != null && String(from).trim() !== "" ? String(from).trim() : null;
+      const toS = to != null && String(to).trim() !== "" ? String(to).trim() : null;
+
+      if (fromS && toS) {
+        const n = Number(limit);
+        const safeLimit = Number.isFinite(n) && n > 0 ? Math.min(20000, Math.floor(n)) : 20000;
+        const rows = sqlite.listHistoryByImeiInRange.all({
+          imei: String(imei),
+          from: fromS,
+          to: toS,
+          limit: safeLimit,
+        });
+        return rows.map((r) => ({
+          lat: r.lat != null ? Number(r.lat) : null,
+          lng: r.lng != null ? Number(r.lng) : null,
+          source: r.source ?? null,
+          battery: r.battery ?? null,
+          signal: r.signal ?? null,
+          timestamp: r.timestamp ?? null,
+        }));
+      }
+
       const n = Number(limit);
-      const safeLimit = Number.isFinite(n) && n > 0 ? Math.min(500, Math.floor(n)) : 100;
+      const safeLimit = Number.isFinite(n) && n > 0 ? Math.min(10000, Math.floor(n)) : 100;
       const rows = sqlite.listHistoryByImei.all(String(imei), safeLimit);
       return rows.map((r) => ({
         lat: r.lat != null ? Number(r.lat) : null,

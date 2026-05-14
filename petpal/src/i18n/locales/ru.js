@@ -558,7 +558,8 @@ const ru = {
     lblSource: 'Источник',
     openGoogleMaps: 'Открыть в Google Maps ↗',
     sectionMap: 'Карта',
-    mapTilesHint: 'Тайлы: OpenStreetMap (атрибуция на карте).',
+    mapTilesHint:
+      'Тип карты (Google) или переключатель слоев справа вверху (Карта / Спутник) при OpenStreetMap + Esri.',
     deviceSuffix: '(устр. №{id})',
     deviceChip: 'Трекер №{id}',
     noDeviceChip: 'Нет устройства',

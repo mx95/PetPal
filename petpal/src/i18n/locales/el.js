@@ -557,7 +557,8 @@ const el = {
     lblSource: 'Πηγή',
     openGoogleMaps: 'Άνοιγμα σε Google Maps ↗',
     sectionMap: 'Χάρτης',
-    mapTilesHint: 'Πλακίδια: OpenStreetMap (λεζάντα στον χάρτη).',
+    mapTilesHint:
+      'Χρησιμοποιήστε τον έλεγχο τύπου χάρτη (Google) ή τον έλεγχο επιπέδων πάνω δεξιά (Χάρτης / Δορυφόρος) με OpenStreetMap + Esri.',
     deviceSuffix: '(συσκευή #{id})',
     deviceChip: 'Tracker #{id}',
     noDeviceChip: 'Χωρίς συσκευή',

@@ -299,9 +299,14 @@ async function fetchVendorPosition(deviceId) {
   return normalized;
 }
 
-async function fetchBffHistory(deviceId, { limit = 240 } = {}) {
+async function fetchBffHistory(deviceId, { limit = 240, from, to } = {}) {
   const base = bffBase();
-  const path = `/history?deviceId=${encodeURIComponent(deviceId)}&limit=${encodeURIComponent(limit)}`;
+  const qs = new URLSearchParams();
+  qs.set('deviceId', deviceId);
+  qs.set('limit', String(limit));
+  if (from) qs.set('from', from);
+  if (to) qs.set('to', to);
+  const path = `/history?${qs.toString()}`;
   const url = base === '' ? path : `${base}${path}`;
   const res = await fetch(url, {
     method: 'GET',
@@ -316,9 +321,14 @@ async function fetchBffHistory(deviceId, { limit = 240 } = {}) {
     .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
 }
 
-async function fetchXexunHistory(deviceId, { limit = 240 } = {}) {
+async function fetchXexunHistory(deviceId, { limit = 240, from, to } = {}) {
   const base = xexunBase();
-  const path = `/api/app/history?deviceId=${encodeURIComponent(deviceId)}&limit=${encodeURIComponent(limit)}`;
+  const qs = new URLSearchParams();
+  qs.set('deviceId', deviceId);
+  qs.set('limit', String(limit));
+  if (from) qs.set('from', from);
+  if (to) qs.set('to', to);
+  const path = `/api/app/history?${qs.toString()}`;
   const url = base === '' ? path : `${base}${path}`;
   const res = await fetch(url, {
     method: 'GET',
