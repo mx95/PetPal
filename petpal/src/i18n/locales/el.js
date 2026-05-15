@@ -578,7 +578,9 @@ const el = {
     lblLatLng: 'Πλάτος / Μήκος',
     lblSpeed: 'Ταχύτητα (από συσκευή)',
     speedUnitMs: 'm/s',
+    speedUnitKmh: 'km/h',
     lblDeviceTime: 'Ώρα συσκευής',
+    lblReceivedTime: 'Λήφθηκε',
     lblAddress: 'Διεύθυνση (αν υπάρχει)',
     lblSource: 'Πηγή',
     openGoogleMaps: 'Άνοιγμα σε Google Maps ↗',
@@ -655,7 +657,7 @@ const el = {
     historyToDateAria: 'Ημερομηνία λήξης',
     historyToTimeAria: 'Ώρα λήξης (κάθε ημέρα)',
     historyRangeHint:
-      'Ζώνη ώρας συσκευής. Για κάθε ημέρα στο εύρος, χάρτης και χρονολόγιο δείχνουν μόνο σημεία μεταξύ των ωρών Από και Έως.',
+      'Ζώνη ώρας συσκευής. Τα σημεία ομαδοποιούνται κατά ώρα λήψης από τον server (όχι το ρολόι του κολαριού). Κάθε ημέρα περιλαμβάνει μόνο σημεία μεταξύ Από και Έως.',
     historyTimeFrom: 'Ημερήσια από',
     historyTimeTo: 'Ημερήσια έως',
     historyTimeHint:
@@ -664,7 +666,7 @@ const el = {
     historyPointsSummary:
       '{onMap} σημεία GPS στον χάρτη · {stored} αποθηκευμένα · {hidden} κατά προσέγγιση κρυμμένα',
     historyCalendarFallback:
-      'Το ρολόι του tracker δεν ταίριαξε με το εύρος — εμφανίζονται τα τελευταία αποθηκευμένα σημεία.',
+      'Δεν λήφθηκαν σημεία σε αυτό το εύρος — εμφανίζονται τα πιο πρόσφατα αποθηκευμένα.',
   },
   inbox: {
     eyebrow: 'Μηνύματα',

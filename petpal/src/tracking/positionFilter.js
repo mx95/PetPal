@@ -2,6 +2,15 @@
 const MAX_PLAUSIBLE_SPEED_KMH = 50;
 /** Hard cap on a single segment length (km). */
 const MAX_SINGLE_JUMP_KM = 3;
+/** Collar speed above this (km/h) is treated as a bad reading for display and analytics. */
+const MAX_PLAUSIBLE_PET_SPEED_KMH = 40;
+
+export function sanitizeSpeedKmh(speed) {
+  const n = Number(speed);
+  if (!Number.isFinite(n) || n < 0) return null;
+  if (n > MAX_PLAUSIBLE_PET_SPEED_KMH) return null;
+  return n;
+}
 
 function toRad(v) {
   return (v * Math.PI) / 180;
@@ -23,8 +32,13 @@ export function kmBetween(a, b) {
   return 2 * r * Math.asin(Math.sqrt(h));
 }
 
+/** When the server received this fix (preferred for history ordering and date filters). */
+export function pointReceivedIso(p) {
+  return p?.receivedAt || p?.serverTime || p?.lastUpdateServer || p?.timestamp || null;
+}
+
 export function pointTimestampMs(p) {
-  const iso = p?.timestamp || p?.deviceTimeUtc || p?.deviceTime || p?.serverTime || p?.lastUpdate;
+  const iso = pointReceivedIso(p) || p?.deviceTimeUtc || p?.deviceTime;
   if (!iso) return null;
   const ms = new Date(iso).getTime();
   return Number.isFinite(ms) ? ms : null;
@@ -88,13 +102,32 @@ export function countDistinctLocations(points) {
  */
 export function resolveHistoryPositions(points) {
   if (!Array.isArray(points) || points.length === 0) return [];
+
+  let prevTrusted = null;
   const out = [];
+
   for (const p of points) {
     if (!p || Number.isNaN(Number(p.lat)) || Number.isNaN(Number(p.lng))) continue;
-    const candidate = { ...p, lat: Number(p.lat), lng: Number(p.lng) };
+    const candidate = {
+      ...p,
+      lat: Number(p.lat),
+      lng: Number(p.lng),
+      speed: sanitizeSpeedKmh(p.speed),
+    };
     if (!isTrustedGpsFix(candidate)) continue;
+
+    if (!prevTrusted) {
+      out.push(candidate);
+      prevTrusted = candidate;
+      continue;
+    }
+
+    if (!isPlausibleGpsJump(prevTrusted, candidate)) continue;
+
     out.push(candidate);
+    prevTrusted = candidate;
   }
+
   return out;
 }
 

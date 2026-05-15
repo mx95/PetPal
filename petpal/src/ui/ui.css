@@ -2625,15 +2625,44 @@ body.pp-noScroll {
 }
 
 .pp-trackLiveCard__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
   margin-bottom: 0;
 }
 
+.pp-trackLiveCard__identity {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1 1 12rem;
+}
+
+.pp-trackLiveCard__title {
+  margin: 0;
+}
+
+.pp-trackLiveCard__status {
+  margin: 4px 0 0;
+}
+
 .pp-trackStatusGrid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
   margin-top: 10px;
   align-items: stretch;
+}
+
+@media (min-width: 721px) {
+  .pp-trackStatusGrid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
 }
 
 .pp-trackStatCard {
@@ -2899,6 +2928,48 @@ body.pp-noScroll {
   font-weight: 800;
   font-size: 0.875rem;
   min-height: 28px;
+}
+
+.pp-timeInput24 {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  min-width: 0;
+}
+
+.pp-timeInput24__select {
+  flex: 1 1 0;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--pp-text);
+  font-weight: 800;
+  font-size: 0.875rem;
+  min-height: 28px;
+  padding: 0 2px;
+  cursor: pointer;
+}
+
+.pp-timeInput24__sep {
+  font-weight: 800;
+  color: var(--pp-text);
+  flex: 0 0 auto;
+}
+
+.pp-trackHistoryManual__time.pp-timeInput24 {
+  min-width: 7.5rem;
+}
+
+.pp-field .pp-timeInput24__select,
+.pp-medModal__timeInput .pp-timeInput24__select {
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 1px solid var(--pp-border, rgba(16, 24, 40, 0.12));
+  background: var(--pp-surface, #fff);
+  font-weight: 600;
 }
 
 .pp-trackHistoryRangeCard__hint {
@@ -6809,19 +6880,54 @@ body,
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-@media (max-width: 520px) {
-  .pp-trackStatusGrid {
-    display: grid;
-    grid-auto-flow: column;
-    grid-auto-columns: minmax(126px, 1fr);
-    overflow-x: auto;
-    scroll-snap-type: x proximity;
+@media (max-width: 720px) {
+  .pp-trackLiveCard__head {
+    flex-direction: column;
+    align-items: stretch;
   }
 
+  .pp-trackLocateInline {
+    width: 100%;
+  }
+
+  .pp-trackLocateInline .pp-btn {
+    width: 100%;
+  }
+
+  .pp-tracker-page .pp-trackStatusGrid {
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: visible !important;
+    gap: 10px !important;
+  }
+
+  .pp-tracker-page .pp-trackStatCard {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    min-height: auto;
+    box-sizing: border-box;
+  }
+
+  .pp-trackHistoryManual__row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .pp-trackHistoryManual__pair {
+    width: 100%;
+  }
+
+  .pp-trackHistoryManual__field {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 520px) {
   .pp-trackStatusGrid .pp-trackStatCard {
-    scroll-snap-align: start;
-    min-width: 132px;
-    min-height: 104px;
+    min-height: auto;
   }
 
   .pp-trackMapActions {
@@ -7563,28 +7669,6 @@ select.pp-bookConfirmField__control {
 }
 
 @media (max-width: 520px) {
-  .pp-trackStatusGrid {
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-    gap: 8px !important;
-  }
-
-  .pp-trackStatusGrid .pp-card {
-    padding: 10px !important;
-    border-radius: 18px !important;
-  }
-
-  .pp-trackStatusGrid .pp-subtle {
-    font-size: 12px !important;
-  }
-
-  .pp-trackStatusGrid .pp-batteryBar {
-    height: 22px;
-  }
-
-  .pp-trackStatusGrid .pp-batteryBar__label {
-    font-size: 10px;
-  }
-
   .pp-trackMapActions {
     display: grid !important;
     grid-template-columns: 1fr 1fr;
@@ -11314,21 +11398,6 @@ body:has(.pp-book-modalRoot) .pp-bottomNav {
     gap: 8px;
   }
 
-  .pp-trackStatusGrid {
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-    overflow: visible !important;
-    gap: 6px !important;
-  }
-
-  .pp-trackStatusGrid .pp-card {
-    padding: 9px !important;
-    border-radius: 16px !important;
-  }
-
-  .pp-trackStatusGrid .pp-subtle {
-    font-size: 11px !important;
-    line-height: 1.3 !important;
-  }
 }
 
 @media (max-width: 380px) {

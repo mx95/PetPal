@@ -8,6 +8,7 @@ import {
   subscribePetMedications,
 } from '../pets/petMedicationsFirestore';
 import IconMedPill from './icons/IconMedPill';
+import TimeInput24 from './TimeInput24';
 
 function normalizeDraftTimes(times) {
   const out = (Array.isArray(times) ? times : [])
@@ -292,7 +293,7 @@ export default function PetMedicationModal({
             <div className="pp-medModal__timeRows">
               {draftTimes.map((timeVal, idx) => (
                 <div key={`t-${idx}`} className="pp-medModal__timeRow">
-                  <input className="pp-input" type="time" value={timeVal} onChange={(e) => updateDraftTime(idx, e.target.value)} />
+                  <TimeInput24 className="pp-medModal__timeInput" value={timeVal} onChange={(next) => updateDraftTime(idx, next)} aria-label={t('myPets.medsTimeLabel')} />
                   {draftTimes.length > 1 ? (
                     <button type="button" className="pp-btn pp-btn--ghost" onClick={() => removeDraftTime(idx)} aria-label={t('myPets.medsRemoveTime')}>×</button>
                   ) : null}

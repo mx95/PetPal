@@ -89,6 +89,26 @@ function openSqlite(dbPath) {
     CREATE INDEX IF NOT EXISTS idx_tcp_inbound_requests_imei_ts ON tcp_inbound_requests(imei, ts);
   `);
 
+  try {
+    db.exec(`ALTER TABLE positions ADD COLUMN received_at TEXT`);
+  } catch {
+    /* column exists */
+  }
+  try {
+    db.exec(`ALTER TABLE positions ADD COLUMN device_timestamp TEXT`);
+  } catch {
+    /* column exists */
+  }
+  db.exec(`
+    UPDATE positions
+    SET received_at = timestamp
+    WHERE received_at IS NULL OR received_at = ''
+  `);
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_positions_imei_received
+    ON positions(imei, received_at)
+  `);
+
   const upsertDevice = db.prepare(`
     INSERT INTO devices (imei, name, last_lat, last_lng, battery, signal, source, last_update)
     VALUES (@imei, @name, @last_lat, @last_lng, @battery, @signal, @source, @last_update)
@@ -103,35 +123,35 @@ function openSqlite(dbPath) {
   `);
 
   const insertPosition = db.prepare(`
-    INSERT INTO positions (imei, lat, lng, source, battery, signal, timestamp)
-    VALUES (@imei, @lat, @lng, @source, @battery, @signal, @timestamp)
+    INSERT INTO positions (imei, lat, lng, source, battery, signal, timestamp, received_at, device_timestamp)
+    VALUES (@imei, @lat, @lng, @source, @battery, @signal, @timestamp, @received_at, @device_timestamp)
   `);
 
   const listHistoryByImei = db.prepare(`
-    SELECT lat, lng, source, battery, signal, timestamp
+    SELECT lat, lng, source, battery, signal, timestamp, received_at, device_timestamp
     FROM positions
     WHERE imei = ?
-    ORDER BY timestamp DESC, id DESC
+    ORDER BY COALESCE(received_at, timestamp) DESC, id DESC
     LIMIT ?
   `);
 
   /** Most recently stored fixes (insert order), for when device timestamps are wrong. */
   const listHistoryByImeiById = db.prepare(`
-    SELECT lat, lng, source, battery, signal, timestamp
+    SELECT lat, lng, source, battery, signal, timestamp, received_at, device_timestamp
     FROM positions
     WHERE imei = ?
     ORDER BY id DESC
     LIMIT ?
   `);
 
-  /** Chronological fixes within [from, to] (inclusive), for date-range UI — avoids dropping the start of a walk. */
+  /** Chronological fixes within [from, to] on server receive time (inclusive). */
   const listHistoryByImeiInRange = db.prepare(`
-    SELECT lat, lng, source, battery, signal, timestamp
+    SELECT lat, lng, source, battery, signal, timestamp, received_at, device_timestamp
     FROM positions
     WHERE imei = @imei
-      AND timestamp >= @from
-      AND timestamp <= @to
-    ORDER BY timestamp ASC, id ASC
+      AND COALESCE(received_at, timestamp) >= @from
+      AND COALESCE(received_at, timestamp) <= @to
+    ORDER BY COALESCE(received_at, timestamp) ASC, id ASC
     LIMIT @limit
   `);
 

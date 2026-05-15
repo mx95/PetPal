@@ -2,6 +2,8 @@ import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 
 import { Link } from 'react-router-dom';
 import { useI18n } from '../i18n/I18nContext';
 import PetAvatar from '../components/PetAvatar';
+import TimeInput24 from '../components/TimeInput24';
+import { formatDateTime24, formatTime24 } from '../formatTime24';
 import PositionMap from '../tracking/PositionMap';
 import { usePets } from '../pets/PetsContext';
 import { getLatestPosition, getPositionHistory, getTrackingDataSource, mapsLink } from '../tracking/petpalVendorClient';
@@ -10,29 +12,19 @@ import {
   applyHeldGpsPosition,
   isTrustedGpsFix,
   kmBetween,
+  pointReceivedIso,
   resolveHistoryPositions,
+  sanitizeSpeedKmh,
 } from '../tracking/positionFilter';
 
 const LAST_LIVE_PET_KEY = 'petpal_live_selectedPetId';
 
-function timeLocaleTag(lang) {
-  if (lang === 'el') return 'el';
-  if (lang === 'ru') return 'ru';
-  return 'en-GB';
-}
-
 function formatTime(iso, lang) {
   if (!iso) return '—';
   try {
-    return new Date(iso).toLocaleString(timeLocaleTag(lang), {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: false,
-    });
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return String(iso);
+    return formatDateTime24(d, lang);
   } catch {
     return String(iso);
   }
@@ -115,14 +107,16 @@ function dateInputValue(date) {
 
 function movementType(point, prev) {
   if (!prev) return 'start';
-  const speed = Number(point.speed || 0);
+  const speed = sanitizeSpeedKmh(point.speed) ?? 0;
   if (speed < 0.5) return 'rest';
   if (speed > 4) return 'movement';
   return 'walk';
 }
 
 function pointTime(point) {
-  return new Date(point.timestamp).getTime();
+  const iso = pointReceivedIso(point);
+  if (!iso) return Number.NaN;
+  return new Date(iso).getTime();
 }
 
 function defaultHistoryDayTimes() {
@@ -140,9 +134,11 @@ function inDailyLocalTimeWindow(iso, range) {
     const sec = m[3] != null ? Math.min(59, Math.max(0, Number(m[3]) || 0)) : 0;
     return { h, min, sec };
   };
+  const when = iso || null;
+  if (!when) return true;
   let ts;
   try {
-    ts = new Date(iso).getTime();
+    ts = new Date(when).getTime();
   } catch {
     return true;
   }
@@ -176,7 +172,7 @@ function filterHistoryPoints(points, range) {
   return points.filter((p) => {
     const ts = pointTime(p);
     if (!Number.isFinite(ts) || ts < from || ts > to) return false;
-    return inDailyLocalTimeWindow(p.timestamp, range);
+    return inDailyLocalTimeWindow(pointReceivedIso(p), range);
   });
 }
 
@@ -214,7 +210,7 @@ function buildHistoryAnalytics(points) {
   const first = points[0] ? pointTime(points[0]) : 0;
   const last = points[points.length - 1] ? pointTime(points[points.length - 1]) : 0;
   const activeMinutes = first && last ? Math.max(0, Math.round((last - first) / 60000)) : 0;
-  const speeds = points.map((p) => Number(p.speed)).filter((n) => Number.isFinite(n) && n > 0);
+  const speeds = points.map((p) => sanitizeSpeedKmh(p.speed)).filter((n) => n != null && n > 0);
   return {
     distanceKm,
     activeMinutes,
@@ -227,7 +223,9 @@ function buildHistoryAnalytics(points) {
 function formatShortTime(iso, lang) {
   if (!iso) return '—';
   try {
-    return new Date(iso).toLocaleTimeString(timeLocaleTag(lang), { hour: '2-digit', minute: '2-digit', hour12: false });
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return '—';
+    return formatTime24(d, lang);
   } catch {
     return '—';
   }
@@ -322,8 +320,8 @@ function buildHistoryTimelineEvents(points, t, lang) {
       label,
       timeLabel:
         count > 1
-          ? `${formatShortTime(start.timestamp, lang)} → ${formatShortTime(end.timestamp, lang)}`
-          : formatShortTime(start.timestamp, lang),
+          ? `${formatShortTime(pointReceivedIso(start), lang)} → ${formatShortTime(pointReceivedIso(end), lang)}`
+          : formatShortTime(pointReceivedIso(start), lang),
     });
 
     idx = endIndex + 1;
@@ -492,7 +490,7 @@ export default function Tracking() {
         lat: p.lat,
         lng: p.lng,
         kind,
-        label: `${mapRouteMarkerKindLabel(kind, t)} · ${formatShortTime(p.timestamp, language)}`,
+        label: `${mapRouteMarkerKindLabel(kind, t)} · ${formatShortTime(pointReceivedIso(p), language)}`,
       };
     });
   }, [filteredHistory, t, language]);
@@ -580,6 +578,10 @@ export default function Tracking() {
 
   const gpsOkVisual = hasCoordinates && !approx && position?.source !== 'lbs' && !position?.warningStale;
 
+  const receivedTimeLabel = position?.serverTime
+    ? formatTime(position.serverTime, language)
+    : '—';
+
   const deviceTimeLabel = position?.deviceTimeLocal
     ? position.deviceTimeLocal
     : position?.deviceTime
@@ -601,6 +603,7 @@ export default function Tracking() {
       : null;
 
   const accMeter = position ? accuracyMeterStyle(position) : null;
+  const displaySpeedKmh = position ? sanitizeSpeedKmh(position.speed) : null;
   const locateAction = (
     <div className="pp-trackLocateInline">
       <button
@@ -663,14 +666,12 @@ export default function Tracking() {
 
       {selectedPet && trackerTab === 'live' ? (
         <section className="pp-card pp-pad pp-trackLiveCard" aria-label={selectedPet.name}>
-          <div className="pp-row pp-trackLiveCard__head" style={{ justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
-            <div className="pp-row" style={{ alignItems: 'center', gap: 10 }}>
+          <div className="pp-trackLiveCard__head">
+            <div className="pp-trackLiveCard__identity">
               <PetAvatar pet={selectedPet} size={48} />
               <div>
-                <h2 className="pp-sectionTitle" style={{ margin: 0 }}>
-                  {selectedPet.name}
-                </h2>
-                <p className="pp-subtle" style={{ marginTop: 4, marginBottom: 0 }}>
+                <h2 className="pp-sectionTitle pp-trackLiveCard__title">{selectedPet.name}</h2>
+                <p className="pp-subtle pp-trackLiveCard__status">
                   {position?.statusText || (signalLive ? t('trackingPage.signalLive') : t('trackingPage.signalQuiet'))} ·{' '}
                   {lastUpdateLabel}
                 </p>
@@ -745,9 +746,9 @@ export default function Tracking() {
                   <p className="pp-subtle pp-trackStatCard__meta">
                     {position.movementText || (position.isMoving ? t('trackingPage.moving') : t('trackingPage.notMoving'))}
                   </p>
-                  {position?.speed != null && Number.isFinite(Number(position.speed)) ? (
+                  {displaySpeedKmh != null ? (
                     <p className="pp-subtle pp-trackStatCard__meta">
-                      {t('trackingPage.lblSpeed')}: {Number(position.speed).toFixed(1)} {t('trackingPage.speedUnitMs')}
+                      {t('trackingPage.lblSpeed')}: {displaySpeedKmh.toFixed(1)} {t('trackingPage.speedUnitKmh')}
                     </p>
                   ) : null}
                   <div className="pp-trackStatCard__spacer" aria-hidden />
@@ -785,11 +786,14 @@ export default function Tracking() {
               <span>
                 {t('trackingPage.lblLatLng')}: {mapPosition.lat.toFixed(5)}, {mapPosition.lng.toFixed(5)}
               </span>
-              {mapPosition.speed != null ? (
+              {displaySpeedKmh != null ? (
                 <span>
-                  {t('trackingPage.lblSpeed')}: {Number(mapPosition.speed).toFixed(1)} {t('trackingPage.speedUnitMs')}
+                  {t('trackingPage.lblSpeed')}: {displaySpeedKmh.toFixed(1)} {t('trackingPage.speedUnitKmh')}
                 </span>
               ) : null}
+              <span>
+                {t('trackingPage.lblReceivedTime')}: {receivedTimeLabel}
+              </span>
               <span>
                 {t('trackingPage.lblDeviceTime')}: {deviceTimeLabel}
               </span>
@@ -829,10 +833,6 @@ export default function Tracking() {
       {trackerTab === 'history' ? (
         <section className="pp-trackHistory">
           <div className="pp-card pp-pad pp-trackHistoryRangeCard">
-            <div className="pp-trackHistoryRangeCard__head">
-              <span className="pp-publicHero__eyebrow pp-trackHistoryRangeCard__eyebrow">{t('trackingPage.historyEyebrow')}</span>
-              <h2 className="pp-trackHistoryRangeCard__title">{t('trackingPage.historyTitle')}</h2>
-            </div>
             <div className="pp-trackHistoryPresets" role="group" aria-label={t('trackingPage.historyPresetsAria')}>
               {(
                 [
@@ -864,16 +864,15 @@ export default function Tracking() {
                     />
                   </label>
                   <label className="pp-trackHistoryManual__field">
-                    <input
-                      type="time"
-                      step={60}
+                    <TimeInput24
+                      className="pp-trackHistoryManual__time"
                       value={historyRange.timeFrom ?? defaultHistoryDayTimes().timeFrom}
                       aria-label={t('trackingPage.historyFromTimeAria')}
-                      onChange={(e) =>
+                      onChange={(next) =>
                         setHistoryRange((r) => ({
                           ...r,
                           preset: 'custom',
-                          timeFrom: e.target.value || defaultHistoryDayTimes().timeFrom,
+                          timeFrom: next || defaultHistoryDayTimes().timeFrom,
                         }))
                       }
                     />
@@ -892,16 +891,15 @@ export default function Tracking() {
                     />
                   </label>
                   <label className="pp-trackHistoryManual__field">
-                    <input
-                      type="time"
-                      step={60}
+                    <TimeInput24
+                      className="pp-trackHistoryManual__time"
                       value={historyRange.timeTo ?? defaultHistoryDayTimes().timeTo}
                       aria-label={t('trackingPage.historyToTimeAria')}
-                      onChange={(e) =>
+                      onChange={(next) =>
                         setHistoryRange((r) => ({
                           ...r,
                           preset: 'custom',
-                          timeTo: e.target.value || defaultHistoryDayTimes().timeTo,
+                          timeTo: next || defaultHistoryDayTimes().timeTo,
                         }))
                       }
                     />
@@ -909,7 +907,6 @@ export default function Tracking() {
                 </div>
               </div>
             </div>
-            <p className="pp-subtle pp-trackHistoryRangeCard__hint">{t('trackingPage.historyRangeHint')}</p>
           </div>
 
           <div className="pp-trackHistoryLayout">
@@ -917,18 +914,7 @@ export default function Tracking() {
               <div className="pp-trackHistoryMap__top">
                 <div>
                   <h3>Route playback</h3>
-                  <p>
-                    {historyLoading
-                      ? t('trackingPage.historyLoading')
-                      : t('trackingPage.historyPointsSummary', {
-                          onMap: historyLoadMeta.onMap,
-                          stored: historyLoadMeta.stored,
-                          hidden: historyLoadMeta.approximateHidden,
-                        })}
-                  </p>
-                  {!historyLoading && !historyCalendarMatch ? (
-                    <p className="pp-subtle pp-trackHistoryMap__note">{t('trackingPage.historyCalendarFallback')}</p>
-                  ) : null}
+                  {historyLoading ? <p className="pp-subtle">{t('trackingPage.historyLoading')}</p> : null}
                 </div>
                 <div className="pp-trackPlayback">
                   <button type="button" disabled={filteredHistory.length < 2} onClick={() => setHistoryPlaying((v) => !v)}>
@@ -1007,7 +993,11 @@ export default function Tracking() {
                       <em>{event.label}</em>
                       <small>
                         {p.address || `${p.lat.toFixed(5)}, ${p.lng.toFixed(5)}`}
-                        {event.count > 1 ? ` · ${event.count} reports` : p.speed != null ? ` · ${Number(p.speed).toFixed(1)} km/h` : ''}
+                        {event.count > 1
+                          ? ` · ${event.count} reports`
+                          : sanitizeSpeedKmh(p.speed) != null
+                            ? ` · ${sanitizeSpeedKmh(p.speed).toFixed(1)} km/h`
+                            : ''}
                       </small>
                     </button>
                   );

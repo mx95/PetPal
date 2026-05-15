@@ -17,6 +17,7 @@ import IconMedPill from '../components/icons/IconMedPill';
 import { publishProviderProfile } from '../bookings/providerDirectoryFirestore';
 import { getDemoBusinessAccount, getDemoBusinessAccounts, getDemoSlots } from '../bookings/demoBookingData';
 import { formatDateTime24, formatTime24 } from '../formatTime24';
+import TimeInput24 from '../components/TimeInput24';
 
 function businessTypeLabel(providerTypes = {}) {
   if (providerTypes.vet) return 'Vet';
@@ -857,11 +858,11 @@ function Availability({ companyId }) {
               </label>
               <label className="pp-field">
                 <span className="pp-field__label">Start</span>
-                <input type="time" value={start} onChange={(e) => setStart(e.target.value)} required />
+                <TimeInput24 value={start} onChange={setStart} aria-label="Start time" />
               </label>
               <label className="pp-field">
                 <span className="pp-field__label">End</span>
-                <input type="time" value={end} onChange={(e) => setEnd(e.target.value)} required />
+                <TimeInput24 value={end} onChange={setEnd} aria-label="End time" />
               </label>
             </div>
             <div className="pp-providerTemplates">

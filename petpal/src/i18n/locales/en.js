@@ -574,7 +574,9 @@ const en = {
     lblLatLng: 'Latitude / longitude',
     lblSpeed: 'Speed (from device)',
     speedUnitMs: 'm/s',
+    speedUnitKmh: 'km/h',
     lblDeviceTime: 'Device time',
+    lblReceivedTime: 'Received',
     lblAddress: 'Address (if any)',
     lblSource: 'Source',
     openGoogleMaps: 'Open in Google Maps ↗',
@@ -651,7 +653,7 @@ const en = {
     historyToDateAria: 'End date',
     historyToTimeAria: 'End time (each day)',
     historyRangeHint:
-      'Uses your device timezone. On every day in the range, the map and list only include points between the From and To times.',
+      'Uses your timezone. Points are grouped by when the server received them (not the collar clock). Each day only includes fixes between the From and To times.',
     historyTimeFrom: 'Daily from',
     historyTimeTo: 'Daily to',
     historyTimeHint:
@@ -660,7 +662,7 @@ const en = {
     historyPointsSummary:
       '{onMap} GPS points on map · {stored} stored · {hidden} approximate hidden',
     historyCalendarFallback:
-      'Tracker clock did not match this date range — showing the latest stored points instead.',
+      'No fixes received in this date range — showing the most recently stored points instead.',
   },
   inbox: {
     eyebrow: 'Messages',

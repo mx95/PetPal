@@ -115,41 +115,31 @@ app.use(
 
 registerXexunHttpApi(app, store);
 
-// -----------------------------------------------------------------------------
-// App API (frontend-safe) — keep /devices & /position as legacy, but also expose
-// the documented /api/app/* paths used by the PetPal UI.
-// -----------------------------------------------------------------------------
-
-app.get("/api/app/devices", (req, res) => {
-  res.json(store.list());
-});
-
-app.get("/api/app/devices/:imei", (req, res) => {
-  const d = store.get(req.params.imei);
-  if (!d) return res.status(404).json({ error: "not_found" });
-  res.json(d);
-});
-
-app.get("/api/app/position", (req, res) => {
-  // Same output shape as /position (used by PetPal vendor client + Cloud Function).
-  // Duplicate the /position logic here to avoid relying on Express internals.
-  const imei = String(req.query.deviceId || req.query.imei || "").trim();
-  if (!imei) return res.status(400).json({ error: "missing_deviceId" });
-  const d = store.get(imei);
-  if (!d) return res.status(404).json({ error: "not_found" });
-
+/** Live position JSON — freshness and sorting use server receive time, not the collar clock. */
+function buildPositionPayload(imei, d) {
   const loc = d.location || d.gps || {};
   const lat = loc.lat != null ? Number(loc.lat) : Number.NaN;
   const lng = loc.lng != null ? Number(loc.lng) : Number.NaN;
   if (Number.isNaN(lat) || Number.isNaN(lng)) {
-    return res.status(404).json({ error: "no_position" });
+    return { error: "no_position" };
   }
 
   const deviceTimeUtc = d.gps?.timestamp || null;
-  const deviceTimeLocal = deviceTimeUtc ? new Date(deviceTimeUtc).toLocaleString() : null;
+  const deviceTimeLocal = deviceTimeUtc
+    ? new Date(deviceTimeUtc).toLocaleString('en-GB', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+      })
+    : null;
+  const receivedAt = d.lastUpdate || d.receivedAt || null;
 
   const nowMs = Date.now();
-  const baseTs = deviceTimeUtc ? Date.parse(deviceTimeUtc) : d.lastUpdate ? Date.parse(d.lastUpdate) : NaN;
+  const baseTs = receivedAt ? Date.parse(receivedAt) : Number.NaN;
   const secondsAgo = Number.isFinite(baseTs) ? Math.max(0, Math.round((nowMs - baseTs) / 1000)) : null;
   const isStale = secondsAgo != null ? secondsAgo > 120 : null;
 
@@ -189,14 +179,12 @@ app.get("/api/app/position", (req, res) => {
   const accuracyText = source === "gps" ? "Precise GPS location" : "Approximate location";
   const movementText = d.moving ? "Moving" : "Not moving";
 
-  res.json({
-    // Normalized device summary
+  return {
     imei,
     lat,
     lng,
     source,
     accuracy: source === "gps" ? "high" : "low",
-
     battery,
     batteryStatus,
     signal,
@@ -204,31 +192,50 @@ app.get("/api/app/position", (req, res) => {
     isCharging: d.charging === true,
     steps: d.steps ?? null,
     isMoving: d.moving === true,
-
-    lastUpdate: deviceTimeUtc,
+    lastUpdate: receivedAt,
+    receivedAt,
     secondsAgo,
     freshness,
-
-    // Messages (frontend should not interpret protocol fields)
     statusText,
     accuracyText,
     movementText,
-
-    // Warnings
     warningApproximate: isApproximate,
     warningStale: freshness === "stale",
-
-    // Extra diagnostics (still normalized)
     gpsValid: d.gpsValid === true,
     satellites: d.satellites ?? null,
     speed: d.speed != null ? Number(d.speed) : null,
-    lastUpdateServer: d.lastUpdate ?? null,
+    lastUpdateServer: receivedAt,
     deviceTimeUtc,
     deviceTimeLocal,
     isStale,
     received: d.received ?? null,
     raw: d.raw ?? null
-  });
+  };
+}
+
+// -----------------------------------------------------------------------------
+// App API (frontend-safe) — keep /devices & /position as legacy, but also expose
+// the documented /api/app/* paths used by the PetPal UI.
+// -----------------------------------------------------------------------------
+
+app.get("/api/app/devices", (req, res) => {
+  res.json(store.list());
+});
+
+app.get("/api/app/devices/:imei", (req, res) => {
+  const d = store.get(req.params.imei);
+  if (!d) return res.status(404).json({ error: "not_found" });
+  res.json(d);
+});
+
+app.get("/api/app/position", (req, res) => {
+  const imei = String(req.query.deviceId || req.query.imei || "").trim();
+  if (!imei) return res.status(400).json({ error: "missing_deviceId" });
+  const d = store.get(imei);
+  if (!d) return res.status(404).json({ error: "not_found" });
+  const payload = buildPositionPayload(imei, d);
+  if (payload.error === "no_position") return res.status(404).json({ error: "no_position" });
+  res.json(payload);
 });
 
 app.get("/api/app/history", (req, res) => {
@@ -242,7 +249,6 @@ app.get("/api/app/history", (req, res) => {
   const to = String(req.query.to || "").trim() || null;
   let calendarMatch = true;
   let history = store.history(imei, { limit, from, to });
-  // Device GPS clock often wrong (e.g. year 2028) while packets arrive "today" — calendar filter then returns nothing.
   if (from && to && Array.isArray(history) && history.length === 0) {
     const lim = Math.min(10000, Number.isFinite(limit) && limit > 0 ? Math.floor(limit) : 5000);
     history = store.history(imei, { limit: lim });
@@ -279,98 +285,9 @@ app.get("/position", (req, res) => {
   if (!imei) return res.status(400).json({ error: "missing_deviceId" });
   const d = store.get(imei);
   if (!d) return res.status(404).json({ error: "not_found" });
-
-  const loc = d.location || d.gps || {};
-  const lat = loc.lat != null ? Number(loc.lat) : Number.NaN;
-  const lng = loc.lng != null ? Number(loc.lng) : Number.NaN;
-  if (Number.isNaN(lat) || Number.isNaN(lng)) {
-    return res.status(404).json({ error: "no_position" });
-  }
-
-  const deviceTimeUtc = d.gps?.timestamp || null;
-  const deviceTimeLocal = deviceTimeUtc ? new Date(deviceTimeUtc).toLocaleString() : null;
-
-  const nowMs = Date.now();
-  const baseTs = deviceTimeUtc ? Date.parse(deviceTimeUtc) : d.lastUpdate ? Date.parse(d.lastUpdate) : NaN;
-  const secondsAgo = Number.isFinite(baseTs) ? Math.max(0, Math.round((nowMs - baseTs) / 1000)) : null;
-  const isStale = secondsAgo != null ? secondsAgo > 120 : null;
-
-  const source = d.source ?? null;
-  const isApproximate = source === "lbs";
-  const battery = d.battery ?? null;
-  const signal = d.signal ?? null;
-
-  const batteryStatus =
-    typeof battery === "number" && Number.isFinite(battery)
-      ? battery > 70
-        ? "good"
-        : battery > 30
-          ? "medium"
-          : "low"
-      : null;
-  const signalStatus =
-    typeof signal === "number" && Number.isFinite(signal)
-      ? signal > 12
-        ? "strong"
-        : signal > 6
-          ? "medium"
-          : "weak"
-      : null;
-
-  const freshness =
-    typeof secondsAgo === "number"
-      ? secondsAgo < 60
-        ? "live"
-        : secondsAgo < 300
-          ? "recent"
-          : "stale"
-      : null;
-
-  const statusText =
-    freshness === "live" ? "Live tracking" : freshness === "recent" ? "Updated recently" : "Last seen a while ago";
-  const accuracyText = source === "gps" ? "Precise GPS location" : "Approximate location";
-  const movementText = d.moving ? "Moving" : "Not moving";
-
-  res.json({
-    // Normalized device summary
-    imei,
-    lat,
-    lng,
-    source,
-    accuracy: source === "gps" ? "high" : "low",
-
-    battery,
-    batteryStatus,
-    signal,
-    signalStatus,
-    isCharging: d.charging === true,
-    steps: d.steps ?? null,
-    isMoving: d.moving === true,
-
-    lastUpdate: deviceTimeUtc,
-    secondsAgo,
-    freshness,
-
-    // Messages (frontend should not interpret protocol fields)
-    statusText,
-    accuracyText,
-    movementText,
-
-    // Warnings
-    warningApproximate: isApproximate,
-    warningStale: freshness === "stale",
-
-    // Extra diagnostics (still normalized)
-    gpsValid: d.gpsValid === true,
-    satellites: d.satellites ?? null,
-    speed: d.speed != null ? Number(d.speed) : null,
-    lastUpdateServer: d.lastUpdate ?? null,
-    deviceTimeUtc,
-    deviceTimeLocal,
-    isStale,
-    received: d.received ?? null,
-    raw: d.raw ?? null
-  });
+  const payload = buildPositionPayload(imei, d);
+  if (payload.error === "no_position") return res.status(404).json({ error: "no_position" });
+  res.json(payload);
 });
 
 //

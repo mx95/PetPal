@@ -579,7 +579,9 @@ const ru = {
     lblLatLng: 'Широта / долгота',
     lblSpeed: 'Скорость (с устройства)',
     speedUnitMs: 'м/с',
+    speedUnitKmh: 'км/ч',
     lblDeviceTime: 'Время устройства',
+    lblReceivedTime: 'Получено',
     lblAddress: 'Адрес (если есть)',
     lblSource: 'Источник',
     openGoogleMaps: 'Открыть в Google Maps ↗',
@@ -656,7 +658,7 @@ const ru = {
     historyToDateAria: 'Дата конца',
     historyToTimeAria: 'Время конца (каждый день)',
     historyRangeHint:
-      'Часовой пояс устройства. Для каждого дня в диапазоне на карте и в ленте только точки между временем «С» и «По».',
+      'Часовой пояс устройства. Точки группируются по времени получения сервером (не по часам ошейника). Каждый день — только между «С» и «По».',
     historyTimeFrom: 'Ежедневно с',
     historyTimeTo: 'Ежедневно до',
     historyTimeHint:
@@ -665,7 +667,7 @@ const ru = {
     historyPointsSummary:
       '{onMap} GPS-точек на карте · {stored} в базе · {hidden} приблизительных скрыто',
     historyCalendarFallback:
-      'Часы трекера не совпали с диапазоном — показаны последние сохранённые точки.',
+      'В этом диапазоне нет полученных точек — показаны последние сохранённые.',
   },
   inbox: {
     eyebrow: 'Сообщения',

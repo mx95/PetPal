@@ -1,31 +1,11 @@
 const { createMemoryStore } = require("./memory");
 const { openSqlite } = require("../db/sqlite");
 
-const MS_PER_DAY = 86400000;
-/** If device GPS clock differs from server receive time by more than this, store server time (fixes bogus future dates in DB / history). */
-const DEVICE_TIME_SKEW_MAX_MS = 14 * MS_PER_DAY;
-
 function hasFiniteLatLng(obj) {
   if (!obj) return false;
   const lat = obj.lat != null ? Number(obj.lat) : Number.NaN;
   const lng = obj.lng != null ? Number(obj.lng) : Number.NaN;
   return Number.isFinite(lat) && Number.isFinite(lng);
-}
-
-/** Persisted `positions.timestamp`: prefer device GPS time when plausible vs server; else last fix time (ingest). */
-function pickPersistedPositionTimestamp(rec) {
-  const serverIso = rec.lastUpdate || rec.receivedAt;
-  const deviceIso = rec.gps?.timestamp || rec.deviceStatus?.timestamp;
-  const serverMs = serverIso ? Date.parse(serverIso) : Number.NaN;
-  const deviceMs = deviceIso ? Date.parse(deviceIso) : Number.NaN;
-
-  if (!Number.isFinite(serverMs)) {
-    if (deviceIso && Number.isFinite(deviceMs)) return String(deviceIso);
-    return new Date().toISOString();
-  }
-  if (!Number.isFinite(deviceMs)) return String(serverIso);
-  if (Math.abs(deviceMs - serverMs) > DEVICE_TIME_SKEW_MAX_MS) return String(serverIso);
-  return String(deviceIso);
 }
 
 function toDeviceRow(rec) {
@@ -55,6 +35,12 @@ function toPositionRow(rec) {
   const loc = rec.location || rec.gps || null;
   if (!hasFiniteLatLng(loc)) return null;
 
+  const receivedAt = String(rec.lastUpdate || rec.receivedAt || new Date().toISOString());
+  const deviceIso = rec.gps?.timestamp || rec.deviceStatus?.timestamp || null;
+  const deviceMs = deviceIso ? Date.parse(deviceIso) : Number.NaN;
+  const device_timestamp =
+    deviceIso && Number.isFinite(deviceMs) ? String(deviceIso) : null;
+
   return {
     imei,
     lat: Number(loc.lat),
@@ -62,7 +48,23 @@ function toPositionRow(rec) {
     source: rec.source ?? null,
     battery: rec.battery ?? null,
     signal: rec.signal ?? null,
-    timestamp: pickPersistedPositionTimestamp(rec),
+    timestamp: receivedAt,
+    received_at: receivedAt,
+    device_timestamp,
+  };
+}
+
+function mapHistoryRow(r) {
+  const receivedAt = r.received_at ?? r.timestamp ?? null;
+  return {
+    lat: r.lat != null ? Number(r.lat) : null,
+    lng: r.lng != null ? Number(r.lng) : null,
+    source: r.source ?? null,
+    battery: r.battery ?? null,
+    signal: r.signal ?? null,
+    timestamp: receivedAt,
+    receivedAt,
+    deviceTimeUtc: r.device_timestamp ?? null,
   };
 }
 
@@ -139,27 +141,13 @@ function createSqliteStore({ dbPath }) {
           to: toS,
           limit: safeLimit,
         });
-        return rows.map((r) => ({
-          lat: r.lat != null ? Number(r.lat) : null,
-          lng: r.lng != null ? Number(r.lng) : null,
-          source: r.source ?? null,
-          battery: r.battery ?? null,
-          signal: r.signal ?? null,
-          timestamp: r.timestamp ?? null,
-        }));
+        return rows.map(mapHistoryRow);
       }
 
       const n = Number(limit);
       const safeLimit = Number.isFinite(n) && n > 0 ? Math.min(10000, Math.floor(n)) : 100;
       const rows = sqlite.listHistoryByImeiById.all(String(imei), safeLimit);
-      return rows.reverse().map((r) => ({
-        lat: r.lat != null ? Number(r.lat) : null,
-        lng: r.lng != null ? Number(r.lng) : null,
-        source: r.source ?? null,
-        battery: r.battery ?? null,
-        signal: r.signal ?? null,
-        timestamp: r.timestamp ?? null
-      }));
+      return rows.reverse().map(mapHistoryRow);
     },
 
     enqueueCommand: mem.enqueueCommand,

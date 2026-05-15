@@ -10,6 +10,7 @@ import { usePets } from '../pets/PetsContext';
 import { MAX_PHOTOS_PER_WALK_SESSION } from '../walk/walkPhotos';
 import { walkStreakDays, kmTodayForPetFromSessions, latestWalkSessionForPet } from '../walk/walkStats';
 import LifetimeAchievements from '../components/LifetimeAchievements';
+import { formatDateTime24 } from '../formatTime24';
 
 const WEEKLY_GOAL_KM = 18;
 const DAILY_MISSIONS_HUB = 3;
@@ -34,7 +35,7 @@ function ProgressMicro({ value01 }) {
  * Route stays `/dashboard` for deep links (#pp-walk-input-anchor).
  */
 export default function Dashboard() {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const { user } = useAuth();
   const { pets, getCategory } = usePets();
   const {
@@ -147,7 +148,7 @@ export default function Dashboard() {
     statusKey === 'active'
       ? `${(Math.round(todayKm * 10) / 10).toFixed(1)} km`
       : statusKey === 'lastSeen' && latestWalkPet?.createdAt
-        ? new Date(latestWalkPet.createdAt).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
+        ? formatDateTime24(new Date(latestWalkPet.createdAt), language)
         : '';
 
   const weeklyPct = Math.min(100, Math.round((Math.max(0, walkTotals.week) / WEEKLY_GOAL_KM) * 100));
@@ -448,7 +449,7 @@ export default function Dashboard() {
             <h3 className="pp-hubLatestWalk__title">{t('activityHub.latestWalk')}</h3>
             <p className="pp-subtle pp-hubLatestWalk__meta">
               <strong>{km(latestWalk.km)}</strong> ·{' '}
-              {new Date(latestWalk.createdAt).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}
+              {formatDateTime24(new Date(latestWalk.createdAt), language)}
             </p>
             {latestWalk.photos?.length ? (
               <div className="pp-walkPhotoGrid">

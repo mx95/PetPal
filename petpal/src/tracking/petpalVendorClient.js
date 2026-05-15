@@ -7,6 +7,8 @@
  * - Optional third-party vendor API that speaks a common GPS-platform REST shape
  */
 
+import { sanitizeSpeedKmh } from './positionFilter';
+
 function bffBase() {
   const raw = process.env.REACT_APP_TRACKING_BFF_URL;
   if (raw == null || raw === '') return null;
@@ -46,7 +48,7 @@ function authHeaders() {
 }
 
 function timeValue(p) {
-  const t = p.serverTime || p.deviceTime || p.fixTime || p.lastUpdate;
+  const t = p.receivedAt || p.serverTime || p.lastUpdateServer || p.lastUpdate || p.deviceTime;
   if (!t) return 0;
   return new Date(t).getTime();
 }
@@ -64,7 +66,7 @@ export function normalizeVendorPosition(p) {
   return {
     lat,
     lng,
-    speed: p.speed != null ? Number(p.speed) : null,
+    speed: sanitizeSpeedKmh(p.speed),
     address: p.address || null,
     deviceTime: p.deviceTime || null,
     serverTime: p.serverTime || p.lastUpdate || null,
@@ -76,12 +78,18 @@ function normalizeHistoryPoint(p, idx = 0) {
   const lat = typeof p?.latitude === 'number' ? p.latitude : Number(p?.latitude ?? p?.lat);
   const lng = typeof p?.longitude === 'number' ? p.longitude : Number(p?.longitude ?? p?.lng);
   if (Number.isNaN(lat) || Number.isNaN(lng)) return null;
-  const timestamp = p.timestamp || p.deviceTimeUtc || p.deviceTime || p.serverTime || p.lastUpdate || new Date(Date.now() - idx * 900_000).toISOString();
+  const receivedAt =
+    p.receivedAt ||
+    p.serverTime ||
+    p.lastUpdateServer ||
+    p.timestamp ||
+    new Date(Date.now() - idx * 900_000).toISOString();
+  const deviceTime = p.deviceTimeUtc || p.deviceTime || p.device_timestamp || null;
   return {
-    id: p.id || `${timestamp}-${idx}`,
+    id: p.id || `${receivedAt}-${idx}`,
     lat,
     lng,
-    speed: p.speed != null ? Number(p.speed) : null,
+    speed: sanitizeSpeedKmh(p.speed),
     battery: p.battery ?? null,
     signal: p.signal ?? null,
     source: p.source != null && String(p.source).trim() !== '' ? String(p.source).trim() : null,
@@ -93,7 +101,10 @@ function normalizeHistoryPoint(p, idx = 0) {
           : null,
     gpsValid: p.gpsValid === true ? true : p.gpsValid === false ? false : null,
     warningApproximate: Boolean(p.warningApproximate) || p.source === 'lbs',
-    timestamp,
+    timestamp: receivedAt,
+    receivedAt,
+    serverTime: receivedAt,
+    deviceTime,
     address: p.address || null,
   };
 }
@@ -122,7 +133,7 @@ function normalizeBffPosition(json) {
   return {
     lat,
     lng,
-    speed: json.speed != null ? Number(json.speed) : null,
+    speed: sanitizeSpeedKmh(json.speed),
     address: json.address || null,
     deviceTime: json.deviceTime || null,
     serverTime: json.serverTime || json.lastUpdate || null,
@@ -151,11 +162,11 @@ function normalizeXexunPosition(json) {
   const hasCoordinates = !Number.isNaN(lat) && !Number.isNaN(lng);
   if (!hasCoordinates && !diagnostics.received && !diagnostics.raw) return null;
   const deviceTime = json.deviceTimeUtc || json.deviceTime || null;
-  const serverTime = json.lastUpdateServer || json.serverTime || json.lastUpdate || null;
+  const serverTime = json.receivedAt || json.lastUpdateServer || json.serverTime || json.lastUpdate || null;
   return {
     lat: hasCoordinates ? lat : null,
     lng: hasCoordinates ? lng : null,
-    speed: json.speed != null ? Number(json.speed) : null,
+    speed: sanitizeSpeedKmh(json.speed),
     address: json.address || null,
     deviceTime,
     serverTime,
