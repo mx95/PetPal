@@ -10,11 +10,17 @@ import {
 import IconMedPill from './icons/IconMedPill';
 import TimeInput24 from './TimeInput24';
 
+const FREQ_PRESETS = [
+  { key: 'morning', time: '08:00', labelKey: 'myPets.medsFreqMorning' },
+  { key: 'afternoon', time: '14:00', labelKey: 'myPets.medsFreqAfternoon' },
+  { key: 'evening', time: '20:00', labelKey: 'myPets.medsFreqEvening' },
+];
+
 function normalizeDraftTimes(times) {
   const out = (Array.isArray(times) ? times : [])
     .map((t) => String(t || '').trim().slice(0, 5))
     .filter((t) => /^\d{1,2}:\d{2}$/.test(t));
-  return out.length ? [...out].sort((a, b) => a.localeCompare(b)) : ['09:00'];
+  return out.length ? [...new Set(out)].sort((a, b) => a.localeCompare(b)) : ['09:00'];
 }
 
 function formatTimesLabel(times, lang) {
@@ -37,10 +43,33 @@ function formatTimesLabel(times, lang) {
   }
 }
 
+function MedEmptyIllustration() {
+  return (
+    <svg className="pp-medModal__emptyArt" viewBox="0 0 120 120" aria-hidden>
+      <circle cx="60" cy="60" r="52" fill="url(#ppMedEmptyGrad)" opacity="0.35" />
+      <path
+        d="M38 62c0-12 10-22 22-22s22 10 22 22-10 22-22 22"
+        stroke="currentColor"
+        strokeWidth="2.2"
+        fill="none"
+        strokeLinecap="round"
+      />
+      <ellipse cx="52" cy="58" rx="3" ry="4" fill="currentColor" opacity="0.5" />
+      <ellipse cx="68" cy="58" rx="3" ry="4" fill="currentColor" opacity="0.5" />
+      <path d="M54 68c4 3 8 3 12 0" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" />
+      <rect x="72" y="44" width="22" height="34" rx="11" stroke="currentColor" strokeWidth="2" fill="rgba(91,55,255,0.08)" />
+      <path d="M83 52v18M76 61h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <defs>
+        <linearGradient id="ppMedEmptyGrad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#5b37ff" />
+          <stop offset="100%" stopColor="#2f80ff" />
+        </linearGradient>
+      </defs>
+    </svg>
+  );
+}
+
 /**
- * Owner: live-sync to Firestore `users/{uid}/pets/{petId}/medications`.
- * Vet: edits a local list and calls `onSaveVet(rows)` with serializable rows (id, name, time, dosage, notes, source, vetLabel).
- *
  * @param {{
  *   open: boolean,
  *   onClose: () => void,
@@ -48,7 +77,6 @@ function formatTimesLabel(times, lang) {
  *   petName: string,
  *   ownerUid?: string | null,
  *   petId?: string | null,
- *   companyId?: string,
  *   vetClinicLabel?: string,
  *   initialVetRows?: Array<Record<string, unknown>>,
  *   onSaveVet?: (rows: Array<Record<string, unknown>>) => Promise<void> | void,
@@ -73,7 +101,7 @@ export default function PetMedicationModal({
 
   const [draftName, setDraftName] = useState('');
   const [draftTimes, setDraftTimes] = useState(['09:00']);
-  const [draftPillCount, setDraftPillCount] = useState('1');
+  const [draftPillCount, setDraftPillCount] = useState(1);
   const [draftDosage, setDraftDosage] = useState('');
   const [draftNotes, setDraftNotes] = useState('');
 
@@ -117,11 +145,12 @@ export default function PetMedicationModal({
   if (!open) return null;
 
   const rows = mode === 'owner' ? ownerRows : vetRows;
+  const firebaseReady = isFirebaseConfigured();
 
   const resetDraft = () => {
     setDraftName('');
     setDraftTimes(['09:00']);
-    setDraftPillCount('1');
+    setDraftPillCount(1);
     setDraftDosage('');
     setDraftNotes('');
   };
@@ -179,16 +208,31 @@ export default function PetMedicationModal({
   };
 
   const updateDraftTime = (idx, value) => {
+    setDraftTimes((prev) => normalizeDraftTimes(prev.map((t, i) => (i === idx ? value : t))));
+  };
+
+  const addDraftTime = () => {
+    setDraftTimes((prev) => normalizeDraftTimes([...prev, '12:00']));
+  };
+
+  const removeDraftTime = (idx) => {
     setDraftTimes((prev) => {
-      const next = [...prev];
-      next[idx] = value;
-      return next;
+      const next = prev.filter((_, i) => i !== idx);
+      return normalizeDraftTimes(next.length ? next : ['09:00']);
     });
   };
 
-  const addDraftTime = () => setDraftTimes((prev) => [...prev, '12:00']);
-  const removeDraftTime = (idx) => setDraftTimes((prev) => (prev.length <= 1 ? prev : prev.filter((_, i) => i !== idx)));
-  const canAdd = Boolean(buildDraftPayload()) && (mode !== 'owner' || isFirebaseConfigured());
+  const addPresetTime = (time) => {
+    setDraftTimes((prev) => normalizeDraftTimes([...prev, time]));
+  };
+
+  const presetActive = (time) => draftTimes.includes(time);
+
+  const setPillCount = (n) => {
+    setDraftPillCount(Math.max(1, Math.min(99, Math.floor(n))));
+  };
+
+  const canAdd = Boolean(buildDraftPayload()) && (mode !== 'owner' || firebaseReady);
 
   const removeVetRow = (id) => {
     setVetRows((prev) => prev.filter((r) => r.id !== id));
@@ -208,126 +252,230 @@ export default function PetMedicationModal({
     }
   };
 
-  const firebaseReady = isFirebaseConfigured();
-
   return (
-    <div className="pp-modalWrap pp-medModal" role="dialog" aria-modal="true" aria-labelledby="pp-med-modal-title">
+    <div className="pp-modalWrap pp-medModal pp-medModal--open" role="dialog" aria-modal="true" aria-labelledby="pp-med-modal-title">
       <button type="button" className="pp-modalBackdrop" aria-label={t('common.cancel')} onClick={onClose} />
       <div className="pp-modalCard pp-medModal__card">
-        <div className="pp-medModal__hero">
-          <span className="pp-medModal__heroIcon" aria-hidden>
-            <IconMedPill size={22} />
-          </span>
-          <div className="pp-medModal__heroText">
-            <h2 id="pp-med-modal-title" className="pp-sectionTitle" style={{ margin: 0 }}>
-              {t('myPets.medsTitle', { name: petName })}
-            </h2>
-            <p className="pp-subtle" style={{ margin: '6px 0 0', fontSize: 13 }}>
-              {mode === 'vet' ? t('myPets.medsVetHint') : t('myPets.medsOwnerHint')}
-            </p>
+        <header className="pp-medModal__header">
+          <div className="pp-medModal__headerMain">
+            <div className="pp-medModal__headerIcon" aria-hidden>
+              <IconMedPill size={28} />
+            </div>
+            <div className="pp-medModal__headerCopy">
+              <h2 id="pp-med-modal-title" className="pp-medModal__title">
+                {t('myPets.medsTitle', { name: petName })}
+              </h2>
+              <p className="pp-medModal__subtitle">
+                {mode === 'vet' ? t('myPets.medsVetHint') : t('myPets.medsOwnerHint')}
+              </p>
+            </div>
           </div>
-          <button type="button" className="pp-btn pp-medModal__close" onClick={onClose} aria-label={t('common.cancel')}>
-            ✕
+          <button type="button" className="pp-medModal__close" onClick={onClose} aria-label={t('common.cancel')}>
+            <span aria-hidden>뿯½</span>
           </button>
-        </div>
+        </header>
 
-        {err ? <div className="pp-error" style={{ marginBottom: 10 }}>{err}</div> : null}
+        <div className="pp-medModal__scroll">
+          {err ? <div className="pp-error pp-medModal__error" role="alert">{err}</div> : null}
 
-        {mode === 'owner' && !firebaseReady ? (
-          <p className="pp-subtle">{t('myPets.medsNeedFirebase')}</p>
-        ) : null}
+          {mode === 'owner' && !firebaseReady ? (
+            <p className="pp-subtle pp-medModal__warn">{t('myPets.medsNeedFirebase')}</p>
+          ) : null}
 
-        <ul className="pp-medList">
-          {rows.length === 0 ? <li className="pp-subtle pp-medList__empty">{t('myPets.medsEmpty')}</li> : null}
-          {rows.map((r) => (
-            <li key={r.id} className="pp-medList__item">
-              <div>
-                <div className="pp-medList__name">{r.name}</div>
-                <div className="pp-medList__meta">
-                  {r.pillCount > 1
-                    ? t('myPets.medsPillCountPlural', { count: r.pillCount })
-                    : t('myPets.medsPillCountOne')}
-                  {' · '}
-                  {formatTimesLabel(r.times ?? r.time, language)}
-                  {r.dosage ? ` · ${t('myPets.medsDose')}: ${r.dosage}` : ''}
-                  {r.source === 'vet' ? ` · ${t('myPets.medsFromVet')}` : ''}
-                  {r.vetLabel ? ` (${r.vetLabel})` : ''}
-                </div>
-                {r.notes ? <div className="pp-medList__notes">{r.notes}</div> : null}
+          <section className="pp-medModal__listSection" aria-label={t('myPets.medsTitle', { name: petName })}>
+            {rows.length === 0 ? (
+              <div className="pp-medModal__empty">
+                <MedEmptyIllustration />
+                <p className="pp-medModal__emptyTitle">{t('myPets.medsEmptyTitle')}</p>
+                <p className="pp-medModal__emptyHint">{t('myPets.medsEmptyHint')}</p>
               </div>
+            ) : (
+              <ul className="pp-medList">
+                {rows.map((r) => (
+                  <li key={r.id} className="pp-medList__item">
+                    <div className="pp-medList__icon" aria-hidden>
+                      <IconMedPill size={18} />
+                    </div>
+                    <div className="pp-medList__body">
+                      <div className="pp-medList__name">{r.name}</div>
+                      <div className="pp-medList__row">
+                        <span className="pp-medList__tag">{t('myPets.medsWhenLabel')}</span>
+                        <span className="pp-medList__value">{formatTimesLabel(r.times ?? r.time, language)}</span>
+                      </div>
+                      <div className="pp-medList__row">
+                        <span className="pp-medList__tag">{t('myPets.medsDosageLabel')}</span>
+                        <span className="pp-medList__value">
+                          {r.pillCount > 1
+                            ? t('myPets.medsPillCountPlural', { count: r.pillCount })
+                            : t('myPets.medsPillCountOne')}
+                          {r.dosage ? ` 뿯½ ${r.dosage}` : ''}
+                        </span>
+                      </div>
+                      {(r.source === 'vet' || r.vetLabel) && (
+                        <div className="pp-medList__badge">
+                          {r.source === 'vet' ? t('myPets.medsFromVet') : ''}
+                          {r.vetLabel ? ` 뿯½ ${r.vetLabel}` : ''}
+                        </div>
+                      )}
+                      {r.notes ? <p className="pp-medList__notes">{r.notes}</p> : null}
+                    </div>
+                    <button
+                      type="button"
+                      className="pp-medList__remove"
+                      disabled={mode === 'owner' && busy}
+                      onClick={() => (mode === 'owner' ? void removeOwnerRow(r.id) : removeVetRow(r.id))}
+                      aria-label={t('myPets.medsRemove')}
+                    >
+                      뿯½
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          <form
+            className="pp-medModal__form"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (mode === 'owner') void addOwnerRow();
+              else addVetRowLocal();
+            }}
+          >
+            <section className="pp-medModal__section">
+              <h3 className="pp-medModal__sectionTitle">{t('myPets.medsSectionDetails')}</h3>
+              <div className="pp-medModal__fields">
+                <label className="pp-medModal__field pp-medModal__field--wide">
+                  <span className="pp-medModal__label">{t('myPets.medsName')}</span>
+                  <input
+                    className="pp-medModal__input"
+                    value={draftName}
+                    onChange={(e) => setDraftName(e.target.value)}
+                    placeholder={t('myPets.medsNamePh')}
+                    autoComplete="off"
+                  />
+                </label>
+                <label className="pp-medModal__field">
+                  <span className="pp-medModal__label">{t('myPets.medsPillCount')}</span>
+                  <div className="pp-medStepper">
+                    <button
+                      type="button"
+                      className="pp-medStepper__btn"
+                      onClick={() => setPillCount(draftPillCount - 1)}
+                      disabled={draftPillCount <= 1}
+                      aria-label={t('myPets.medsDecrease')}
+                    >
+                      −
+                    </button>
+                    <span className="pp-medStepper__value" aria-live="polite">
+                      {draftPillCount}
+                    </span>
+                    <button
+                      type="button"
+                      className="pp-medStepper__btn"
+                      onClick={() => setPillCount(draftPillCount + 1)}
+                      disabled={draftPillCount >= 99}
+                      aria-label={t('myPets.medsIncrease')}
+                    >
+                      +
+                    </button>
+                  </div>
+                </label>
+                <label className="pp-medModal__field pp-medModal__field--wide">
+                  <span className="pp-medModal__label">{t('myPets.medsDose')}</span>
+                  <input
+                    className="pp-medModal__input"
+                    value={draftDosage}
+                    onChange={(e) => setDraftDosage(e.target.value)}
+                    placeholder={t('myPets.medsDosePh')}
+                    autoComplete="off"
+                  />
+                </label>
+              </div>
+            </section>
+
+            <section className="pp-medModal__section">
+              <h3 className="pp-medModal__sectionTitle">{t('myPets.medsSectionSchedule')}</h3>
+              <p className="pp-medModal__sectionHint">{t('myPets.medsScheduleHint')}</p>
+              <div className="pp-medModal__presets" role="group" aria-label={t('myPets.medsSectionSchedule')}>
+                {FREQ_PRESETS.map((p) => (
+                  <button
+                    key={p.key}
+                    type="button"
+                    className={`pp-medModal__preset${presetActive(p.time) ? ' is-active' : ''}`}
+                    onClick={() => addPresetTime(p.time)}
+                  >
+                    {t(p.labelKey)}
+                  </button>
+                ))}
+              </div>
+              <div className="pp-medModal__timeChips">
+                {draftTimes.map((timeVal, idx) => (
+                  <div key={`t-${idx}-${timeVal}`} className="pp-medTimeChip">
+                    <TimeInput24
+                      className="pp-medModal__timeInput"
+                      value={timeVal}
+                      onChange={(next) => updateDraftTime(idx, next)}
+                      aria-label={`${t('myPets.medsTimeLabel')} ${idx + 1}`}
+                    />
+                    {draftTimes.length > 1 ? (
+                      <button
+                        type="button"
+                        className="pp-medTimeChip__remove"
+                        onClick={() => removeDraftTime(idx)}
+                        aria-label={t('myPets.medsRemoveTime')}
+                      >
+                        뿯½
+                      </button>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+              <button type="button" className="pp-medModal__addTime" onClick={addDraftTime}>
+                <span className="pp-medModal__addTimeIcon" aria-hidden>+</span>
+                {t('myPets.medsAddTime')}
+              </button>
+            </section>
+
+            <section className="pp-medModal__section">
+              <h3 className="pp-medModal__sectionTitle">{t('myPets.medsSectionNotes')}</h3>
+              <label className="pp-medModal__field pp-medModal__field--wide">
+                <span className="pp-medModal__label">{t('myPets.medsNotes')}</span>
+                <textarea
+                  className="pp-medModal__input pp-medModal__textarea"
+                  value={draftNotes}
+                  onChange={(e) => setDraftNotes(e.target.value)}
+                  placeholder={t('myPets.medsNotesPh')}
+                  rows={2}
+                />
+              </label>
+            </section>
+
+            <div className="pp-medModal__actions">
               {mode === 'owner' ? (
-                <button
-                  type="button"
-                  className="pp-btn pp-btn--ghost"
-                  disabled={busy}
-                  onClick={() => void removeOwnerRow(r.id)}
-                >
-                  {t('myPets.medsRemove')}
+                <button type="submit" className="pp-btn pp-btnPrimary pp-medModal__submit" disabled={busy || !canAdd}>
+                  {t('myPets.medsAddMedication')}
                 </button>
               ) : (
-                <button type="button" className="pp-btn pp-btn--ghost" onClick={() => removeVetRow(r.id)}>
-                  {t('myPets.medsRemove')}
-                </button>
+                <>
+                  <button type="submit" className="pp-btn pp-btnPrimary pp-medModal__submit" disabled={!canAdd}>
+                    {t('myPets.medsAddMedication')}
+                  </button>
+                  <button
+                    type="button"
+                    className="pp-btn pp-btnPrimary pp-medModal__submit"
+                    disabled={busy}
+                    onClick={() => void saveVet()}
+                  >
+                    {t('common.save')}
+                  </button>
+                </>
               )}
-            </li>
-          ))}
-        </ul>
-
-        <div className="pp-medModal__form">
-          <div className="pp-label">{t('myPets.medsAddSection')}</div>
-          <div className="pp-modalGrid2">
-            <label className="pp-field">
-              <span className="pp-field__label">{t('myPets.medsName')}</span>
-              <input className="pp-input" value={draftName} onChange={(e) => setDraftName(e.target.value)} />
-            </label>
-            <label className="pp-field">
-              <span className="pp-field__label">{t('myPets.medsPillCount')}</span>
-              <input className="pp-input" type="number" min={1} max={99} value={draftPillCount} onChange={(e) => setDraftPillCount(e.target.value)} />
-            </label>
-          </div>
-          <div className="pp-medModal__times">
-            <div className="pp-medModal__timesHead">
-              <span className="pp-field__label">{t('myPets.medsTimesLabel')}</span>
-              <button type="button" className="pp-btn pp-btn--ghost" onClick={addDraftTime}>{t('myPets.medsAddTime')}</button>
+              <button type="button" className="pp-btn pp-btn--ghost pp-medModal__cancel" onClick={onClose}>
+                {t('common.cancel')}
+              </button>
             </div>
-            <div className="pp-medModal__timeRows">
-              {draftTimes.map((timeVal, idx) => (
-                <div key={`t-${idx}`} className="pp-medModal__timeRow">
-                  <TimeInput24 className="pp-medModal__timeInput" value={timeVal} onChange={(next) => updateDraftTime(idx, next)} aria-label={t('myPets.medsTimeLabel')} />
-                  {draftTimes.length > 1 ? (
-                    <button type="button" className="pp-btn pp-btn--ghost" onClick={() => removeDraftTime(idx)} aria-label={t('myPets.medsRemoveTime')}>×</button>
-                  ) : null}
-                </div>
-              ))}
-            </div>
-          </div>
-          <label className="pp-field" style={{ marginTop: 8 }}>
-            <span className="pp-field__label">{t('myPets.medsDose')}</span>
-            <input className="pp-input" value={draftDosage} onChange={(e) => setDraftDosage(e.target.value)} placeholder={t('myPets.medsDosePh')} />
-          </label>
-          <label className="pp-field" style={{ marginTop: 8 }}>
-            <span className="pp-field__label">{t('myPets.medsNotes')}</span>
-            <input className="pp-input" value={draftNotes} onChange={(e) => setDraftNotes(e.target.value)} />
-          </label>
-          <div className="pp-row" style={{ gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
-            {mode === 'owner' ? (
-              <button type="button" className="pp-btn pp-btnPrimary" disabled={busy || !canAdd} onClick={() => void addOwnerRow()}>
-                {t('myPets.medsAdd')}
-              </button>
-            ) : (
-              <button type="button" className="pp-btn pp-btnPrimary" disabled={!canAdd} onClick={addVetRowLocal}>
-                {t('myPets.medsAdd')}
-              </button>
-            )}
-            {mode === 'vet' ? (
-              <button type="button" className="pp-btn pp-btnPrimary" disabled={busy} onClick={() => void saveVet()}>
-                {t('common.save')}
-              </button>
-            ) : null}
-            <button type="button" className="pp-btn" onClick={onClose}>
-              {t('common.cancel')}
-            </button>
-          </div>
+          </form>
         </div>
       </div>
     </div>

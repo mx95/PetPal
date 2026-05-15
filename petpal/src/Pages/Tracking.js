@@ -678,13 +678,14 @@ export default function Tracking() {
               </div>
             </div>
 
-            {locateAction}
+            <div className="pp-trackLiveCard__locate">{locateAction}</div>
           </div>
 
           {position ? (
             <div className="pp-trackStatusGrid">
               <article className="pp-card pp-trackStatCard">
                 <div className="pp-label">{t('trackingPage.cardGps')}</div>
+                <div className="pp-trackStatCard__body">
                   <span className={`pp-trackGpsPill ${gpsOkVisual ? 'pp-trackGpsPill--ok' : 'pp-trackGpsPill--warn'}`}>
                     {gpsOkVisual ? `✓ ${t('trackingPage.gpsOk')}` : `⚠ ${t('trackingPage.gpsWeak')}`}
                   </span>
@@ -705,6 +706,7 @@ export default function Tracking() {
                       <div className="pp-trackAccuracyMeter__fill" style={{ width: accMeter.width, background: accMeter.background }} />
                     </div>
                   ) : null}
+                </div>
               </article>
 
               <article className="pp-card pp-trackStatCard">

@@ -2067,108 +2067,608 @@ select.pp-input:focus {
 }
 
 .pp-medList__item {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 10px 12px;
-  border-radius: 12px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: start;
+  gap: 10px 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
   border: 1px solid rgba(15, 23, 42, 0.08);
-  background: rgba(248, 250, 252, 0.95);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.92));
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
 }
 
-.pp-medList__name {
-  font-weight: 850;
-  font-size: 14px;
-  color: #0f172a;
+.pp-medList__item:hover {
+  border-color: rgba(91, 55, 255, 0.2);
+  box-shadow: 0 6px 18px rgba(91, 55, 255, 0.08);
 }
 
-.pp-medList__meta {
-  font-size: 12px;
-  color: #64748b;
-  margin-top: 4px;
-}
-
-.pp-medList__notes {
-  font-size: 13px;
-  margin-top: 6px;
-  color: #334155;
-  line-height: 1.35;
-}
-
-.pp-medList__empty {
-  padding: 6px 0;
-}
-
-.pp-medModal .pp-modalCard,
-.pp-medModal__card {
-  max-width: 520px;
-  width: min(100%, 520px);
-}
-
-.pp-medModal__hero {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  margin-bottom: 14px;
-  padding-bottom: 14px;
-  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
-}
-
-.pp-medModal__heroIcon {
-  flex-shrink: 0;
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
+.pp-medList__icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   color: #5b37ff;
-  background: linear-gradient(145deg, rgba(91, 55, 255, 0.12), rgba(47, 128, 255, 0.08));
-  border: 1px solid rgba(91, 55, 255, 0.22);
+  background: linear-gradient(145deg, rgba(91, 55, 255, 0.14), rgba(47, 128, 255, 0.08));
+  border: 1px solid rgba(91, 55, 255, 0.18);
 }
 
-.pp-medModal__heroText {
-  flex: 1;
+.pp-medList__body {
   min-width: 0;
+}
+
+.pp-medList__name {
+  font-weight: 800;
+  font-size: 15px;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+  margin-bottom: 6px;
+}
+
+.pp-medList__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+  margin-top: 3px;
+}
+
+.pp-medList__tag {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.pp-medList__value {
+  font-size: 13px;
+  font-weight: 650;
+  color: #334155;
+}
+
+.pp-medList__badge {
+  margin-top: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #5b37ff;
+}
+
+.pp-medList__notes {
+  font-size: 12px;
+  margin: 8px 0 0;
+  color: #475569;
+  line-height: 1.4;
+}
+
+.pp-medList__remove {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  border-radius: 10px;
+  background: #fff;
+  color: #64748b;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 140ms ease, color 140ms ease, border-color 140ms ease, transform 140ms ease;
+}
+
+.pp-medList__remove:hover:not(:disabled) {
+  color: #b91c1c;
+  border-color: rgba(220, 38, 38, 0.35);
+  background: rgba(254, 226, 226, 0.7);
+  transform: scale(1.04);
+}
+
+/* Pet medication modal — premium clinical UI */
+@keyframes ppMedModalIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes ppMedBackdropIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes ppMedChipIn {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.pp-medModal--open .pp-modalBackdrop {
+  animation: ppMedBackdropIn 220ms ease forwards;
+}
+
+.pp-medModal .pp-modalCard,
+.pp-medModal__card {
+  max-width: 580px;
+  width: min(100%, 580px);
+  max-height: min(90dvh, 880px);
+  animation: ppMedModalIn 280ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.pp-medModal__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 20px 22px 16px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  background: linear-gradient(165deg, rgba(91, 55, 255, 0.1) 0%, rgba(47, 128, 255, 0.05) 42%, transparent 72%);
+}
+
+.pp-medModal__headerMain {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  min-width: 0;
+  flex: 1;
+}
+
+.pp-medModal__headerIcon {
+  flex-shrink: 0;
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #5b37ff;
+  background: linear-gradient(145deg, rgba(91, 55, 255, 0.18), rgba(47, 128, 255, 0.1));
+  border: 1px solid rgba(91, 55, 255, 0.24);
+  box-shadow: 0 8px 20px rgba(91, 55, 255, 0.14);
+}
+
+.pp-medModal__headerCopy {
+  min-width: 0;
+}
+
+.pp-medModal__title {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 850;
+  letter-spacing: -0.03em;
+  color: #0f172a;
+  line-height: 1.2;
+}
+
+.pp-medModal__subtitle {
+  margin: 6px 0 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #64748b;
+  font-weight: 500;
 }
 
 .pp-medModal__close {
   flex-shrink: 0;
-  min-width: 36px;
-  padding: 6px 10px;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.85);
+  color: #475569;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 140ms ease, border-color 140ms ease, transform 140ms ease;
 }
 
-.pp-medModal__form {
-  margin-top: 14px;
+.pp-medModal__close:hover {
+  background: #fff;
+  border-color: rgba(91, 55, 255, 0.3);
+  color: #5b37ff;
+  transform: scale(1.04);
 }
 
-.pp-medModal__times {
-  margin-top: 10px;
+.pp-medModal__scroll {
+  overflow-x: hidden;
+  overflow-y: auto;
+  flex: 1 1 auto;
+  padding: 16px 22px 22px;
+  -webkit-overflow-scrolling: touch;
 }
 
-.pp-medModal__timesHead {
+.pp-medModal__error {
+  margin-bottom: 12px;
+}
+
+.pp-medModal__warn {
+  margin: 0 0 12px;
+  font-size: 13px;
+}
+
+.pp-medModal__listSection {
+  margin-bottom: 18px;
+}
+
+.pp-medModal__empty {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
+  text-align: center;
+  padding: 20px 16px 24px;
+  border-radius: 16px;
+  border: 1px dashed rgba(91, 55, 255, 0.22);
+  background: linear-gradient(180deg, rgba(91, 55, 255, 0.04), rgba(248, 250, 252, 0.6));
+}
+
+.pp-medModal__emptyArt {
+  width: 100px;
+  height: 100px;
+  color: #5b37ff;
   margin-bottom: 8px;
 }
 
-.pp-medModal__timeRows {
+.pp-medModal__emptyTitle {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.pp-medModal__emptyHint {
+  margin: 6px 0 0;
+  max-width: 28rem;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #64748b;
+}
+
+.pp-medModal__form {
   display: flex;
   flex-direction: column;
+  gap: 14px;
+}
+
+.pp-medModal__section {
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(248, 250, 252, 0.65);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+}
+
+.pp-medModal__sectionTitle {
+  margin: 0 0 10px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: #334155;
+}
+
+.pp-medModal__sectionHint {
+  margin: -4px 0 10px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #64748b;
+}
+
+.pp-medModal__fields {
+  display: grid;
+  grid-template-columns: 1fr 140px;
+  gap: 12px;
+}
+
+.pp-medModal__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.pp-medModal__field--wide {
+  grid-column: 1 / -1;
+}
+
+.pp-medModal__label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #475569;
+}
+
+.pp-medModal__input,
+.pp-medModal__textarea {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 42px;
+  padding: 10px 12px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 12px;
+  background: #fff;
+  color: #0f172a;
+  font-size: 14px;
+  font-weight: 550;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  transition: border-color 140ms ease, box-shadow 140ms ease;
+}
+
+.pp-medModal__input::placeholder,
+.pp-medModal__textarea::placeholder {
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.pp-medModal__input:focus,
+.pp-medModal__textarea:focus {
+  outline: none;
+  border-color: rgba(91, 55, 255, 0.45);
+  box-shadow: 0 0 0 3px rgba(91, 55, 255, 0.12);
+}
+
+.pp-medModal__textarea {
+  min-height: 72px;
+  resize: vertical;
+  line-height: 1.45;
+}
+
+.pp-medStepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  overflow: hidden;
+}
+
+.pp-medStepper__btn {
+  width: 40px;
+  height: 42px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #5b37ff;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 140ms ease, color 140ms ease;
+}
+
+.pp-medStepper__btn:hover:not(:disabled) {
+  background: rgba(91, 55, 255, 0.08);
+}
+
+.pp-medStepper__btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.pp-medStepper__value {
+  min-width: 2.5rem;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.pp-medModal__presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.pp-medModal__preset {
+  padding: 7px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: #fff;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color 140ms ease, background 140ms ease, color 140ms ease, transform 140ms ease;
+}
+
+.pp-medModal__preset:hover {
+  border-color: rgba(91, 55, 255, 0.35);
+  color: #5b37ff;
+}
+
+.pp-medModal__preset.is-active {
+  border-color: rgba(91, 55, 255, 0.45);
+  background: rgba(91, 55, 255, 0.1);
+  color: #4c31d8;
+}
+
+.pp-medModal__timeChips {
+  display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
-.pp-medModal__timeRow {
-  display: flex;
+.pp-medTimeChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px 6px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(91, 55, 255, 0.2);
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(91, 55, 255, 0.08);
+  animation: ppMedChipIn 200ms ease backwards;
+}
+
+.pp-medTimeChip__remove {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #94a3b8;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 140ms ease, color 140ms ease;
+}
+
+.pp-medTimeChip__remove:hover {
+  background: rgba(220, 38, 38, 0.1);
+  color: #b91c1c;
+}
+
+.pp-medModal__addTime {
+  display: inline-flex;
   align-items: center;
   gap: 8px;
+  margin-top: 10px;
+  padding: 8px 14px;
+  border: 1px dashed rgba(91, 55, 255, 0.35);
+  border-radius: 12px;
+  background: rgba(91, 55, 255, 0.04);
+  color: #5b37ff;
+  font-size: 13px;
+  font-weight: 750;
+  cursor: pointer;
+  transition: background 140ms ease, border-color 140ms ease, transform 140ms ease;
 }
 
-.pp-medModal__timeRow .pp-input {
-  flex: 1;
+.pp-medModal__addTime:hover {
+  background: rgba(91, 55, 255, 0.1);
+  border-color: rgba(91, 55, 255, 0.5);
+  transform: translateY(-1px);
+}
+
+.pp-medModal__addTimeIcon {
+  width: 22px;
+  height: 22px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #5b37ff, #8b6cff);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.pp-medModal__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-top: 4px;
+}
+
+.pp-medModal__submit {
+  flex: 1 1 12rem;
+  min-height: 44px;
+  transition: transform 140ms ease, box-shadow 140ms ease;
+}
+
+.pp-medModal__submit:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.pp-medModal__cancel {
+  flex: 0 1 auto;
+  min-height: 44px;
+  transition: background 140ms ease, border-color 140ms ease;
+}
+
+@media (max-width: 560px) {
+  .pp-medModal__fields {
+    grid-template-columns: 1fr;
+  }
+
+  .pp-medModal__header,
+  .pp-medModal__scroll {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+}
+
+html[data-theme="dark"] .pp-medModal__card {
+  background: var(--pp-surface, #1a2234);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+html[data-theme="dark"] .pp-medModal__header {
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+  background: linear-gradient(165deg, rgba(91, 55, 255, 0.18) 0%, rgba(47, 128, 255, 0.08) 42%, transparent 72%);
+}
+
+html[data-theme="dark"] .pp-medModal__title,
+html[data-theme="dark"] .pp-medList__name,
+html[data-theme="dark"] .pp-medModal__emptyTitle,
+html[data-theme="dark"] .pp-medStepper__value {
+  color: #f1f5f9;
+}
+
+html[data-theme="dark"] .pp-medModal__subtitle,
+html[data-theme="dark"] .pp-medModal__sectionHint,
+html[data-theme="dark"] .pp-medModal__emptyHint,
+html[data-theme="dark"] .pp-medList__tag {
+  color: #94a3b8;
+}
+
+html[data-theme="dark"] .pp-medModal__sectionTitle,
+html[data-theme="dark"] .pp-medModal__label,
+html[data-theme="dark"] .pp-medList__value {
+  color: #cbd5e1;
+}
+
+html[data-theme="dark"] .pp-medModal__section,
+html[data-theme="dark"] .pp-medModal__empty {
+  background: rgba(15, 23, 42, 0.55);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+html[data-theme="dark"] .pp-medModal__input,
+html[data-theme="dark"] .pp-medModal__textarea,
+html[data-theme="dark"] .pp-medStepper,
+html[data-theme="dark"] .pp-medTimeChip,
+html[data-theme="dark"] .pp-medModal__preset,
+html[data-theme="dark"] .pp-medList__item,
+html[data-theme="dark"] .pp-medModal__close,
+html[data-theme="dark"] .pp-medList__remove {
+  background: rgba(15, 23, 42, 0.85);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #f1f5f9;
+}
+
+html[data-theme="dark"] .pp-medList__item {
+  background: linear-gradient(180deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.9));
+}
+
+html[data-theme="dark"] .pp-medModal__input::placeholder,
+html[data-theme="dark"] .pp-medModal__textarea::placeholder {
+  color: #64748b;
+}
+
+html[data-theme="dark"] .pp-medModal__preset.is-active {
+  background: rgba(91, 55, 255, 0.22);
+  border-color: rgba(139, 108, 255, 0.45);
+  color: #c4b5fd;
+}
+
+html[data-theme="dark"] .pp-medModal__timeInput .pp-timeInput24__select {
+  background: rgba(15, 23, 42, 0.9);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #f1f5f9;
 }
 
 .pp-petSearchBox {
@@ -2649,6 +3149,10 @@ body.pp-noScroll {
   margin: 4px 0 0;
 }
 
+.pp-trackLiveCard__locate {
+  flex: 0 0 auto;
+}
+
 .pp-trackStatusGrid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -2657,67 +3161,93 @@ body.pp-noScroll {
   align-items: stretch;
 }
 
-/* Phone: one compact card, three columns inside */
+/* Phone: stacked mini stat cards inside the live pet card */
 @media (max-width: 720px) {
+  .pp-trackLiveCard.pp-pad {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px 12px;
+  }
+
+  .pp-trackLiveCard__head {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    margin-bottom: 0;
+  }
+
+  .pp-trackLiveCard__identity {
+    gap: 8px;
+  }
+
+  .pp-trackLiveCard__identity .pp-petAvatar {
+    width: 40px !important;
+    height: 40px !important;
+    font-size: 20px !important;
+  }
+
+  .pp-trackLiveCard__locate,
+  .pp-trackLiveCard__locate .pp-trackLocateInline,
+  .pp-trackLiveCard__locate .pp-btn {
+    width: 100%;
+  }
+
   .pp-trackLiveCard .pp-trackStatusGrid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 6px;
-    margin-top: 8px;
-    padding: 8px 10px;
-    border-radius: 14px;
-    background: var(--pp-surface, #fff);
-    border: 1px solid rgba(16, 24, 40, 0.1);
-    box-shadow: var(--pp-shadow-sm, 0 1px 3px rgba(16, 24, 40, 0.08));
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 0;
+    padding: 0;
+    border: none;
+    background: transparent;
+    box-shadow: none;
   }
 
   .pp-trackLiveCard .pp-trackStatCard {
-    min-height: 0 !important;
-    padding: 0 !important;
-    border: none !important;
-    box-shadow: none !important;
-    background: transparent !important;
-    border-radius: 0 !important;
+    width: 100%;
+    min-height: auto !important;
+    height: auto;
+    padding: 8px 10px;
+    border-radius: 12px;
   }
 
   .pp-trackLiveCard .pp-trackStatCard__body {
     min-height: 0;
-    gap: 3px;
+    flex: 0 0 auto;
+    gap: 4px;
     margin-top: 2px;
   }
 
   .pp-trackLiveCard .pp-trackStatCard__meta,
   .pp-trackLiveCard .pp-trackStatCard .pp-label {
-    font-size: 10px;
-    line-height: 1.25;
+    font-size: 11px;
+    line-height: 1.3;
   }
 
   .pp-trackLiveCard .pp-trackGpsPill {
-    font-size: 10px;
-    padding: 2px 7px;
+    font-size: 11px;
+    padding: 3px 8px;
     max-width: 100%;
-    white-space: normal;
+    white-space: nowrap;
   }
 
   .pp-trackLiveCard .pp-batteryBar {
-    height: 17px;
+    height: 20px;
     border-radius: 6px;
   }
 
   .pp-trackLiveCard .pp-batteryBar__label {
-    font-size: 9px;
+    font-size: 10px;
   }
 
   .pp-trackLiveCard .pp-trackAccuracyMeter {
-    height: 4px;
+    height: 5px;
     margin-top: 2px;
   }
 
   .pp-trackLiveCard .pp-trackStatCard__spacer {
     display: none !important;
-  }
-
-  .pp-trackLiveCard.pp-pad {
-    padding: 12px 14px;
   }
 
   .pp-trackLiveCard__title {
@@ -2726,6 +3256,7 @@ body.pp-noScroll {
 
   .pp-trackLiveCard__status {
     font-size: 12px;
+    margin-top: 2px;
   }
 }
 
@@ -3027,13 +3558,18 @@ body.pp-noScroll {
 
 .pp-field .pp-timeInput24__select,
 .pp-medModal__timeInput .pp-timeInput24__select {
-  width: 100%;
-  min-height: 40px;
-  padding: 8px 10px;
-  border-radius: 12px;
-  border: 1px solid var(--pp-border, rgba(16, 24, 40, 0.12));
-  background: var(--pp-surface, #fff);
-  font-weight: 600;
+  min-height: 34px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  font-weight: 700;
+  font-size: 14px;
+  box-shadow: none;
+}
+
+.pp-medModal__timeInput.pp-timeInput24 {
+  gap: 2px;
 }
 
 .pp-trackHistoryRangeCard__hint {
@@ -6945,21 +7481,6 @@ body,
 }
 
 @media (max-width: 720px) {
-  .pp-trackLiveCard__head {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .pp-trackLocateInline {
-    width: 100%;
-  }
-
-  .pp-trackLocateInline .pp-btn {
-    width: 100%;
-  }
-
-  /* Live stats compact sheet — rules in .pp-trackLiveCard block above */
-
   .pp-trackHistoryManual__row {
     flex-direction: column;
     align-items: stretch;
