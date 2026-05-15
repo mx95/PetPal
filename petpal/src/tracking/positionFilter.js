@@ -73,7 +73,7 @@ function isTrustedFixWithJumpCheck(anchor, point) {
 }
 
 /**
- * History / route display: only trusted GPS fixes (LBS / triangulation stored server-side but omitted here).
+ * History / route display: omit LBS / triangulation; hold last GPS on outliers (no map spikes).
  */
 export function resolveTrackerPositions(points) {
   if (!Array.isArray(points) || points.length === 0) return [];
@@ -85,7 +85,9 @@ export function resolveTrackerPositions(points) {
     if (!p || Number.isNaN(Number(p.lat)) || Number.isNaN(Number(p.lng))) continue;
     const candidate = { ...p, lat: Number(p.lat), lng: Number(p.lng) };
 
-    if (isTrustedFixWithJumpCheck(anchor, candidate)) {
+    if (!isTrustedGpsFix(candidate)) continue;
+
+    if (!anchor) {
       anchor = {
         lat: candidate.lat,
         lng: candidate.lng,
@@ -95,7 +97,28 @@ export function resolveTrackerPositions(points) {
         serverTime: candidate.serverTime,
       };
       out.push(candidate);
+      continue;
     }
+
+    if (isPlausibleGpsJump(anchor, candidate)) {
+      anchor = {
+        lat: candidate.lat,
+        lng: candidate.lng,
+        timestamp: candidate.timestamp,
+        deviceTime: candidate.deviceTime,
+        deviceTimeUtc: candidate.deviceTimeUtc,
+        serverTime: candidate.serverTime,
+      };
+      out.push(candidate);
+      continue;
+    }
+
+    out.push({
+      ...candidate,
+      lat: anchor.lat,
+      lng: anchor.lng,
+      positionHeldFromPreviousGps: true,
+    });
   }
 
   return out;

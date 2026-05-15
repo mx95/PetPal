@@ -8,6 +8,7 @@ import { getLatestPosition, getPositionHistory, getTrackingDataSource, mapsLink 
 import {
   anchorFromDisplayedPosition,
   applyHeldGpsPosition,
+  isTrustedGpsFix,
   kmBetween,
   resolveTrackerPositions,
 } from '../tracking/positionFilter';
@@ -229,6 +230,8 @@ function formatShortTime(iso, lang) {
 
 /** Same-location clusters longer than this use report count only (device timestamps often wrong). */
 const STAY_DURATION_PLAUSIBLE_MAX_MIN = 48 * 60;
+/** Split a stay cluster when reports are farther apart than this (same coordinates). */
+const STAY_CLUSTER_MAX_GAP_MIN = 90;
 
 /**
  * Format a non-negative duration given in whole minutes (hours, days when needed).
@@ -268,8 +271,15 @@ function buildHistoryTimelineEvents(points, t, lang) {
     const start = points[idx];
     let endIndex = idx;
 
-    while (endIndex + 1 < points.length && kmBetween(start, points[endIndex + 1]) <= sameLocationKm) {
-      endIndex += 1;
+    while (endIndex + 1 < points.length) {
+      const next = points[endIndex + 1];
+      const samePlace = kmBetween(start, next) <= sameLocationKm;
+      const gapMin = Math.max(0, (pointTime(next) - pointTime(points[endIndex])) / 60000);
+      if (samePlace && gapMin <= STAY_CLUSTER_MAX_GAP_MIN) {
+        endIndex += 1;
+      } else {
+        break;
+      }
     }
 
     const end = points[endIndex];
@@ -478,6 +488,13 @@ export default function Tracking() {
     });
   }, [filteredHistory, t, language]);
   const historyTimelineEvents = useMemo(() => buildHistoryTimelineEvents(filteredHistory, t, language), [filteredHistory, t, language]);
+
+  const historyLoadMeta = useMemo(() => {
+    const stored = historyPoints.length;
+    const onMap = filteredHistory.length;
+    const approximateHidden = historyPoints.filter((p) => p && !isTrustedGpsFix(p)).length;
+    return { stored, onMap, approximateHidden };
+  }, [historyPoints, filteredHistory]);
 
   useEffect(() => {
     if (!historyPlaying || filteredHistory.length < 2) return undefined;
@@ -891,7 +908,18 @@ export default function Tracking() {
               <div className="pp-trackHistoryMap__top">
                 <div>
                   <h3>Route playback</h3>
-                  <p>{historyLoading ? 'Loading route history…' : `${filteredHistory.length} location points`}</p>
+                  <p>
+                    {historyLoading
+                      ? t('trackingPage.historyLoading')
+                      : t('trackingPage.historyPointsSummary', {
+                          onMap: historyLoadMeta.onMap,
+                          stored: historyLoadMeta.stored,
+                          hidden: historyLoadMeta.approximateHidden,
+                        })}
+                  </p>
+                  {!historyLoading && !historyCalendarMatch ? (
+                    <p className="pp-subtle pp-trackHistoryMap__note">{t('trackingPage.historyCalendarFallback')}</p>
+                  ) : null}
                 </div>
                 <div className="pp-trackPlayback">
                   <button type="button" disabled={filteredHistory.length < 2} onClick={() => setHistoryPlaying((v) => !v)}>
