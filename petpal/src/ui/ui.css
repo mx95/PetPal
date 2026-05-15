@@ -2620,18 +2620,26 @@ body.pp-noScroll {
   text-shadow: 0 0 8px rgba(255, 255, 255, 0.9);
 }
 
+.pp-trackLiveCard.pp-pad {
+  padding: 14px 16px;
+}
+
+.pp-trackLiveCard__head {
+  margin-bottom: 0;
+}
+
 .pp-trackStatusGrid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-  margin-top: 14px;
-  align-items: stretch;
+  gap: 8px;
+  margin-top: 10px;
+  align-items: start;
 }
 
 .pp-trackStatCard {
   min-width: 0;
-  padding: 12px 14px;
-  border-radius: 20px;
+  padding: 10px 12px;
+  border-radius: 16px;
   display: flex;
   flex-direction: column;
 }
@@ -2639,33 +2647,38 @@ body.pp-noScroll {
 .pp-trackStatCard__body {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-top: 6px;
-  flex: 1;
-  min-height: 0;
+  gap: 4px;
+  margin-top: 4px;
 }
 
 .pp-trackStatCard__meta {
   margin: 0;
-  font-size: 13px;
-  line-height: 1.35;
+  font-size: 12px;
+  line-height: 1.3;
 }
 
 .pp-trackStatCard .pp-trackAccuracyMeter {
-  margin-top: 2px;
+  margin-top: 0;
+  height: 6px;
 }
 
 .pp-trackStatCard .pp-batteryBar {
   margin-top: 0;
+  height: 22px;
+  border-radius: 8px;
+}
+
+.pp-trackStatCard .pp-batteryBar__label {
+  font-size: 11px;
 }
 
 .pp-trackGpsPill {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
+  gap: 4px;
+  padding: 4px 10px;
   border-radius: 999px;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 750;
   width: fit-content;
 }
@@ -6098,22 +6111,18 @@ a.pp-publicPet__metaValue {
 }
 
 .pp-trackStatusGrid .pp-label {
-  font-size: 11px;
-  letter-spacing: 0.02em;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  margin-bottom: 0;
 }
 
 .pp-trackStatusGrid .pp-trackGpsPill {
-  padding: 6px 10px;
+  padding: 4px 9px;
   white-space: nowrap;
 }
 
 .pp-trackStatusGrid .pp-batteryBar {
-  height: 32px;
   min-width: 0;
-}
-
-.pp-trackStatusGrid .pp-batteryBar__label {
-  font-size: 12px;
 }
 
 .pp-trackMapActions .pp-btn {
@@ -6214,15 +6223,24 @@ a.pp-publicPet__metaValue {
 }
 
 .pp-book-slotGrid--premium {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: stretch;
   gap: 10px;
+  overflow-x: auto;
+  overflow-y: visible;
+  padding: 8px 4px 12px;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
 }
 
 .pp-book-slot--rich {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+  flex: 0 0 auto;
+  min-width: 132px;
+  max-width: min(180px, 44vw);
   gap: 3px;
   padding: 12px;
   border-radius: 18px;
@@ -6245,7 +6263,9 @@ a.pp-publicPet__metaValue {
 .pp-book-slot--rich.is-active {
   background: linear-gradient(135deg, rgba(91, 55, 255, 0.14), rgba(47, 128, 255, 0.1));
   border-color: rgba(91, 55, 255, 0.38);
-  box-shadow: 0 16px 42px rgba(91, 55, 255, 0.18);
+  box-shadow: 0 8px 20px -8px rgba(91, 55, 255, 0.35);
+  position: relative;
+  z-index: 1;
 }
 
 .pp-boostPanel {
@@ -6489,23 +6509,12 @@ body,
   scroll-snap-type: x proximity;
 }
 
-.pp-book-slotGrid--premium {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: max-content;
-  overflow-x: auto;
-  gap: 8px;
-  padding: 8px 6px 12px;
-  scroll-snap-type: x proximity;
-}
-
 .pp-book-dateChip,
 .pp-book-slot--rich {
   scroll-snap-align: start;
 }
 
 .pp-book-slot--rich {
-  min-width: 106px;
   padding: 9px 10px;
   gap: 1px;
 }
@@ -7557,7 +7566,7 @@ select.pp-bookConfirmField__control {
   }
 
   .pp-trackStatusGrid .pp-batteryBar {
-    height: 28px;
+    height: 22px;
   }
 
   .pp-trackStatusGrid .pp-batteryBar__label {
@@ -11204,17 +11213,7 @@ body:has(.pp-book-modalRoot) .pp-bottomNav {
   scroll-snap-type: x proximity;
 }
 
-.pp-book-slotGrid--premium {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: max-content;
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  gap: 8px;
-  /* Room for 1px border + box-shadow without clipping against overflow */
-  padding: 8px 6px 12px;
-  scroll-snap-type: x proximity;
-}
+/* Slot grid layout: see .pp-book-slotGrid--premium near .pp-book-slotPeriod */
 
 .pp-book-dateChip {
   min-height: 34px;
@@ -11224,7 +11223,6 @@ body:has(.pp-book-modalRoot) .pp-bottomNav {
 }
 
 .pp-book-slot--rich {
-  min-width: 108px;
   padding: 9px 10px;
   border-radius: 14px;
   scroll-snap-align: start;
@@ -11700,7 +11698,43 @@ html[data-theme="dark"] .pp-book-modalPanel::before {
   color: rgba(102, 112, 133, 0.45);
 }
 
-.pp-book-calendarDay:disabled {
+.pp-book-calendarGrid__dow--sun {
+  color: #94a3b8;
+}
+
+.pp-book-calendarDay.is-past:disabled {
+  opacity: 0.32;
+  color: rgba(102, 112, 133, 0.5);
+  background: transparent;
+}
+
+.pp-book-calendarDay.is-closed:disabled {
+  opacity: 1;
+  color: #64748b;
+  background: repeating-linear-gradient(
+    -42deg,
+    rgba(148, 163, 184, 0.07),
+    rgba(148, 163, 184, 0.07) 5px,
+    rgba(148, 163, 184, 0.16) 5px,
+    rgba(148, 163, 184, 0.16) 10px
+  );
+  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.22);
+  cursor: not-allowed;
+}
+
+.pp-book-calendarDay.is-sunday.is-closed:disabled {
+  color: #9f1239;
+  background: repeating-linear-gradient(
+    -42deg,
+    rgba(244, 63, 94, 0.06),
+    rgba(244, 63, 94, 0.06) 5px,
+    rgba(244, 63, 94, 0.14) 5px,
+    rgba(244, 63, 94, 0.14) 10px
+  );
+  box-shadow: inset 0 0 0 1px rgba(244, 63, 94, 0.22);
+}
+
+.pp-book-calendarDay:disabled:not(.is-past):not(.is-closed) {
   opacity: 0.28;
 }
 
@@ -13243,7 +13277,15 @@ html[data-theme="dark"] .pp-nearby-list > li {
   opacity: 0.34;
 }
 
-.pp-book-calendarDay:disabled {
+.pp-book-calendarDay.is-past:disabled {
+  opacity: 0.32;
+}
+
+.pp-book-calendarDay.is-closed:disabled {
+  opacity: 1;
+}
+
+.pp-book-calendarDay:disabled:not(.is-past):not(.is-closed) {
   opacity: 0.2;
 }
 
@@ -13262,14 +13304,11 @@ html[data-theme="dark"] .pp-nearby-list > li {
 }
 
 .pp-book-slotGrid--premium {
-  padding-bottom: 6px !important;
-  padding-top: 6px !important;
-  padding-left: 6px !important;
-  padding-right: 6px !important;
+  gap: 10px !important;
+  padding: 6px 4px 10px !important;
 }
 
 .pp-book-slot--rich {
-  min-width: 150px;
   border-radius: 16px;
 }
 
@@ -13614,4 +13653,154 @@ html[data-theme="dark"] .pp-nearbyPartnerCard {
 
 html[data-theme="dark"] .pp-nearbyPartnerCard__name {
   color: #f8fafc;
+}
+
+/* Gmail-style notification badge (profile menu + inbox) */
+.pp-menuItemWithBadge__iconWrap {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  align-items: center;
+  justify-content: center;
+}
+
+.pp-menuItemWithBadge__icon {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.pp-notifyBadge {
+  position: absolute;
+  top: -5px;
+  right: -7px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #ea4335;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 18px;
+  text-align: center;
+  box-shadow: 0 0 0 2px #fff;
+  pointer-events: none;
+}
+
+.pp-notifyBadge--dot {
+  min-width: 10px;
+  width: 10px;
+  height: 10px;
+  padding: 0;
+  top: -2px;
+  right: -2px;
+  font-size: 0;
+  line-height: 0;
+}
+
+.pp-inboxLayout {
+  display: grid;
+  grid-template-columns: minmax(240px, 320px) minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.pp-inboxList__items {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pp-inboxListItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 10px;
+  border: 1px solid rgba(16, 24, 40, 0.08);
+  border-radius: 14px;
+  background: #fff;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.pp-inboxListItem:hover {
+  background: rgba(91, 55, 255, 0.06);
+}
+
+.pp-inboxListItem.is-active {
+  border-color: rgba(91, 55, 255, 0.35);
+  background: rgba(91, 55, 255, 0.08);
+}
+
+.pp-inboxListItem.is-unread strong {
+  font-weight: 900;
+}
+
+.pp-inboxListItem__iconWrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.pp-inboxListItem__icon {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.pp-inboxListItem__copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.pp-inboxListItem__copy strong {
+  font-size: 13px;
+  color: #101828;
+}
+
+.pp-inboxListItem__copy span {
+  font-size: 11px;
+  color: #667085;
+}
+
+.pp-inboxDetail__head {
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(16, 24, 40, 0.08);
+}
+
+.pp-inboxDetail__body {
+  white-space: pre-wrap;
+  line-height: 1.55;
+  font-size: 14px;
+  color: #344054;
+}
+
+.pp-inboxEmpty {
+  text-align: center;
+  padding: 24px 12px;
+  color: #667085;
+}
+
+.pp-inboxEmpty span {
+  font-size: 32px;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.pp-inboxBroadcastForm .pp-field + .pp-field {
+  margin-top: 12px;
+}
+
+@media (max-width: 720px) {
+  .pp-inboxLayout {
+    grid-template-columns: 1fr;
+  }
 }

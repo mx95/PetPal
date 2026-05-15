@@ -72,6 +72,12 @@ export default function AdminHub() {
             title="Tracker setup (ip-transfer)"
             desc="Switch a collar to your server by queueing an ip-transfer command."
           />
+          <AdminActionCard
+            to="/admin/broadcast"
+            icon="📬"
+            title="Broadcast inbox"
+            desc="Send a message to every user’s profile inbox."
+          />
         </div>
       </div>
     </div>

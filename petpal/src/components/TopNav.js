@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, useMatch, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
 import { useCompany } from '../company/CompanyContext';
+import { useInbox } from '../inbox/InboxContext';
 import { useI18n } from '../i18n/I18nContext';
 import { LanguageSwitcher } from '../i18n/LanguageSwitcher';
 import UserAvatar from './UserAvatar';
@@ -19,6 +20,7 @@ function navItemClassName({ isActive }) {
 export default function TopNav() {
   const { user, signOut } = useAuth();
   const { isApprovedCompany, profile } = useCompany();
+  const { unreadCount } = useInbox();
   const { t } = useI18n();
   const premiumPathMatch = useMatch('/premium/*');
   const navigate = useNavigate();
@@ -138,6 +140,22 @@ export default function TopNav() {
                   <Link className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-petpal-ink no-underline transition hover:bg-petpal-soft" to="/shop" role="menuitem" onClick={() => setAccountMenuOpen(false)}>
                     <span aria-hidden>🛒</span>
                     <span>{t('nav.shop')}</span>
+                  </Link>
+                  <Link
+                    className="pp-menuItemWithBadge flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-petpal-ink no-underline transition hover:bg-petpal-soft"
+                    to="/inbox"
+                    role="menuitem"
+                    onClick={() => setAccountMenuOpen(false)}
+                  >
+                    <span className="pp-menuItemWithBadge__iconWrap" aria-hidden>
+                      <span className="pp-menuItemWithBadge__icon">📬</span>
+                      {unreadCount > 0 ? (
+                        <span className="pp-notifyBadge" aria-label={t('nav.inboxUnread', { count: unreadCount })}>
+                          {unreadCount > 99 ? '99+' : unreadCount}
+                        </span>
+                      ) : null}
+                    </span>
+                    <span>{t('nav.inbox')}</span>
                   </Link>
                   <Link className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-petpal-ink no-underline transition hover:bg-petpal-soft" to="/profile" role="menuitem" onClick={() => setAccountMenuOpen(false)}>
                     <span aria-hidden>👤</span>

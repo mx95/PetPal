@@ -350,10 +350,6 @@ function parseXexunPacket(packet) {
     gps = { ...lbsParsed, source: "lbs" };
     source = "lbs";
     accuracy = "lbs";
-  } else if (gpsParsed && Object.keys(gpsParsed).length) {
-    gps = { ...gpsParsed, source: "gps" };
-    source = "gps";
-    accuracy = "gps";
   } else if (lbsParsed && Object.keys(lbsParsed).length) {
     gps = { ...lbsParsed, source: "lbs" };
     source = "lbs";

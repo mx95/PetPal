@@ -3,6 +3,8 @@ const en = {
   nav: {
     home: 'Home',
     profile: 'My Profile',
+    inbox: 'Inbox',
+    inboxUnread: '{count} unread messages',
     dashboard: 'Activity',
     pets: 'Pets',
     myPets: 'My Pets',
@@ -649,6 +651,17 @@ const en = {
     historyTimeHint:
       'Clock times use your device timezone. Each day in the range only includes points between these times on the map and timeline.',
   },
+  inbox: {
+    eyebrow: 'Messages',
+    title: 'Inbox',
+    subtitle: 'Announcements from the PetPal team.',
+    listAria: 'Message list',
+    loading: 'Loading messages…',
+    empty: 'No messages yet.',
+    selectMessage: 'Select a message to read it.',
+    markAllRead: 'Mark all as read',
+    markingRead: 'Marking…',
+  },
   nearbyPage: {
     badge: 'Nearby',
     noKeyTitle: 'Map & places',
@@ -799,6 +812,8 @@ const en = {
     modalClose: 'Close',
     modalSelectService: 'Service',
     modalPickDate: 'Pick a date',
+    modalClosedDayShort: 'Closed',
+    modalClosedDay: '{date} — closed',
     modalPickSlot: 'Available times',
     modalNoSlots: 'No open slots for this day — try another date.',
     modalNoServices: 'No published services for this category yet — try another tab or open the provider page.',

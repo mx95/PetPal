@@ -19,18 +19,30 @@ function addDays(date, count) {
   return d;
 }
 
+/** Monday-first calendar grid (Sunday in the last column, beside Saturday). */
 function monthGrid(monthDate) {
   const first = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
-  const start = addDays(first, -first.getDay());
+  const mondayOffset = (first.getDay() + 6) % 7;
+  const start = addDays(first, -mondayOffset);
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
   return Array.from({ length: 42 }, (_, idx) => {
     const date = addDays(start, idx);
     return {
       key: toYmd(date),
       date,
       inMonth: date.getMonth() === monthDate.getMonth(),
-      isPast: date < new Date(new Date().setHours(0, 0, 0, 0)),
+      isPast: date < todayStart,
+      isSunday: date.getDay() === 0,
     };
   });
+}
+
+function calendarDowLabels() {
+  const monday = new Date(2024, 0, 1);
+  return Array.from({ length: 7 }, (_, i) =>
+    addDays(monday, i).toLocaleDateString(undefined, { weekday: 'narrow' })
+  );
 }
 
 function slotDate(slot, key) {
@@ -112,7 +124,13 @@ export function BookingModal({ open, provider, serviceTab, onClose, t }) {
     setServiceId((prev) => (filteredServices.some((s) => s.id === prev) ? prev : filteredServices[0].id));
   }, [filteredServices]);
 
-  const monthDays = useMemo(() => monthGrid(monthDate), [monthDate]);
+  const monthDays = useMemo(() => {
+    return monthGrid(monthDate).map((d) => ({
+      ...d,
+      isClosed: Boolean(isDemo && isDemoClosedDay(companyId, d.date)),
+    }));
+  }, [monthDate, isDemo, companyId]);
+  const dowLabels = useMemo(() => calendarDowLabels(), []);
   const monthLabel = monthDate.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
   const selectedService = useMemo(() => filteredServices.find((s) => s.id === serviceId) || null, [filteredServices, serviceId]);
   const uniqueSlots = useMemo(() => {
@@ -251,25 +269,48 @@ export function BookingModal({ open, provider, serviceTab, onClose, t }) {
                   <button type="button" onClick={() => setMonthDate((prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1))}>›</button>
                 </div>
               </div>
-              <div className="pp-book-calendarGrid" role="grid" aria-label={monthLabel}>
-                {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, idx) => (
-                  <span key={`${d}-${idx}`} className="pp-book-calendarGrid__dow">{d}</span>
-                ))}
-                {monthDays.map((d) => (
-                  <button
-                    key={d.key}
-                    type="button"
-                    className={`pp-book-calendarDay ${d.key === dayKey ? 'is-active' : ''} ${d.inMonth ? '' : 'is-muted'}`}
-                    onClick={() => {
-                      setDayKey(d.key);
-                      setMonthDate(new Date(d.date.getFullYear(), d.date.getMonth(), 1));
-                      setSlotId('');
-                    }}
-                    disabled={d.isPast || (isDemo && isDemoClosedDay(companyId, d.date))}
+              <div className="pp-book-calendarGrid pp-book-calendarGrid--monFirst" role="grid" aria-label={monthLabel}>
+                {dowLabels.map((label, idx) => (
+                  <span
+                    key={`dow-${idx}`}
+                    className={`pp-book-calendarGrid__dow${idx === 6 ? ' pp-book-calendarGrid__dow--sun' : ''}`}
                   >
-                    {d.date.getDate()}
-                  </button>
+                    {label}
+                  </span>
                 ))}
+                {monthDays.map((d) => {
+                  const dayClasses = [
+                    'pp-book-calendarDay',
+                    d.key === dayKey ? 'is-active' : '',
+                    !d.inMonth ? 'is-muted' : '',
+                    d.isSunday ? 'is-sunday' : '',
+                    d.isClosed ? 'is-closed' : '',
+                    d.isPast && !d.isClosed ? 'is-past' : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' ');
+                  return (
+                    <button
+                      key={d.key}
+                      type="button"
+                      className={dayClasses}
+                      onClick={() => {
+                        setDayKey(d.key);
+                        setMonthDate(new Date(d.date.getFullYear(), d.date.getMonth(), 1));
+                        setSlotId('');
+                      }}
+                      disabled={d.isPast || d.isClosed}
+                      aria-label={
+                        d.isClosed
+                          ? t('bookingsHub.modalClosedDay', { date: d.date.toLocaleDateString() })
+                          : undefined
+                      }
+                      title={d.isClosed ? t('bookingsHub.modalClosedDayShort') : undefined}
+                    >
+                      {d.date.getDate()}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 

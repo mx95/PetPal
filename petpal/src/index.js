@@ -16,6 +16,7 @@ import { GameProvider } from './game/GameContext';
 import { PublicWalkProvider } from './leaderboard/PublicWalkContext';
 import { CommunityProvider } from './social/CommunityContext';
 import { ToastProvider } from './components/Toast';
+import { InboxProvider } from './inbox/InboxContext';
 
 installGoogleMapsAuthFailureHook();
 
@@ -27,6 +28,7 @@ root.render(
         <I18nProvider>
         <AuthProvider>
           <CompanyProvider>
+            <InboxProvider>
             <PetsProvider>
               <LostPetProvider>
                 <GameProvider>
@@ -40,6 +42,7 @@ root.render(
                 </GameProvider>
               </LostPetProvider>
             </PetsProvider>
+            </InboxProvider>
           </CompanyProvider>
         </AuthProvider>
         </I18nProvider>

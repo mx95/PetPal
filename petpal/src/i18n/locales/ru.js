@@ -3,6 +3,8 @@ const ru = {
   nav: {
     home: 'Обзор',
     profile: 'Мой профиль',
+    inbox: 'Входящие',
+    inboxUnread: '{count} непрочитанных',
     dashboard: 'Активность',
     pets: 'Питомцы',
     myPets: 'Мои питомцы',
@@ -653,6 +655,17 @@ const ru = {
     historyTimeTo: 'Ежедневно до',
     historyTimeHint:
       'Время по часовому поясу устройства. Для каждого дня в диапазоне на карте и в ленте показываются только точки между этими часами.',
+  },
+  inbox: {
+    eyebrow: 'Сообщения',
+    title: 'Входящие',
+    subtitle: 'Объявления от команды PetPal.',
+    listAria: 'Список сообщений',
+    loading: 'Загрузка…',
+    empty: 'Сообщений пока нет.',
+    selectMessage: 'Выберите сообщение для чтения.',
+    markAllRead: 'Отметить все прочитанными',
+    markingRead: 'Отмечаем…',
   },
   nearbyPage: {
     badge: 'Рядом',

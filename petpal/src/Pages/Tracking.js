@@ -1,10 +1,16 @@
-import React, { useCallback, useEffect, useId, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useI18n } from '../i18n/I18nContext';
 import PetAvatar from '../components/PetAvatar';
 import PositionMap from '../tracking/PositionMap';
 import { usePets } from '../pets/PetsContext';
 import { getLatestPosition, getPositionHistory, getTrackingDataSource, mapsLink } from '../tracking/petpalVendorClient';
+import {
+  anchorFromDisplayedPosition,
+  applyHeldGpsPosition,
+  kmBetween,
+  resolveTrackerPositions,
+} from '../tracking/positionFilter';
 
 const LAST_LIVE_PET_KEY = 'petpal_live_selectedPetId';
 
@@ -106,18 +112,6 @@ function dateInputValue(date) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-function kmBetween(a, b) {
-  if (!a || !b) return 0;
-  const toRad = (v) => (v * Math.PI) / 180;
-  const r = 6371;
-  const dLat = toRad(b.lat - a.lat);
-  const dLng = toRad(b.lng - a.lng);
-  const lat1 = toRad(a.lat);
-  const lat2 = toRad(b.lat);
-  const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
-  return 2 * r * Math.asin(Math.sqrt(h));
-}
-
 function movementType(point, prev) {
   if (!prev) return 'start';
   const speed = Number(point.speed || 0);
@@ -132,47 +126,6 @@ function pointTime(point) {
 
 function defaultHistoryDayTimes() {
   return { timeFrom: '00:00', timeTo: '23:59' };
-}
-
-function isTrustedGpsFix(p) {
-  if (!p) return true;
-  const src = String(p.source || '').toLowerCase();
-  if (src === 'lbs') return false;
-  const acc = String(p.accuracy || '').toLowerCase();
-  if (acc === 'lbs' || acc === 'wifi') return false;
-  if (p.gpsValid === false) return false;
-  return true;
-}
-
-/**
- * LBS / Wi-Fi / triangulated fixes: keep timestamps and metadata but reuse the last real GPS
- * coordinates so distance, map path, and timeline do not jump to cell-tower positions.
- */
-function resolveNonGpsHistoryPoints(points) {
-  if (!Array.isArray(points) || points.length === 0) return [];
-  let lastLat = null;
-  let lastLng = null;
-  const out = [];
-  for (const p of points) {
-    if (!p || Number.isNaN(Number(p.lat)) || Number.isNaN(Number(p.lng))) continue;
-    const lat = Number(p.lat);
-    const lng = Number(p.lng);
-    if (isTrustedGpsFix(p)) {
-      lastLat = lat;
-      lastLng = lng;
-      out.push({ ...p, lat, lng });
-      continue;
-    }
-    if (lastLat != null && lastLng != null) {
-      out.push({
-        ...p,
-        lat: lastLat,
-        lng: lastLng,
-        positionHeldFromPreviousGps: true,
-      });
-    }
-  }
-  return out;
 }
 
 function inDailyLocalTimeWindow(iso, range) {
@@ -386,6 +339,7 @@ export default function Tracking() {
   const [historySpeed, setHistorySpeed] = useState(1);
   const [historyIndex, setHistoryIndex] = useState(0);
   const [historyCalendarMatch, setHistoryCalendarMatch] = useState(true);
+  const trustedLiveAnchorRef = useRef(null);
 
   const selectedPet = useMemo(() => pets.find((p) => p.id === selectedPetId), [pets, selectedPetId]);
 
@@ -445,6 +399,10 @@ export default function Tracking() {
   }, [effectiveDeviceId, t]);
 
   useEffect(() => {
+    trustedLiveAnchorRef.current = null;
+  }, [effectiveDeviceId]);
+
+  useEffect(() => {
     if (!effectiveDeviceId.trim()) return;
     void refresh();
   }, [effectiveDeviceId, refresh]);
@@ -486,7 +444,17 @@ export default function Tracking() {
     };
   }, [trackerTab, effectiveDeviceId, historyReloadTick, historyRange.from, historyRange.to]);
 
-  const resolvedHistory = useMemo(() => resolveNonGpsHistoryPoints(historyPoints), [historyPoints]);
+  const resolvedHistory = useMemo(() => resolveTrackerPositions(historyPoints), [historyPoints]);
+
+  const mapPosition = useMemo(
+    () => applyHeldGpsPosition(position, trustedLiveAnchorRef.current),
+    [position]
+  );
+
+  useEffect(() => {
+    const nextAnchor = anchorFromDisplayedPosition(mapPosition);
+    if (nextAnchor) trustedLiveAnchorRef.current = nextAnchor;
+  }, [mapPosition]);
 
   const filteredHistory = useMemo(() => {
     if (!historyCalendarMatch) return resolvedHistory;
@@ -577,7 +545,7 @@ export default function Tracking() {
 
 
   const signalLive = position != null;
-  const hasCoordinates = position?.lat != null && position?.lng != null;
+  const hasCoordinates = mapPosition?.lat != null && mapPosition?.lng != null;
   const approx = position?.warningApproximate || position?.accuracy === 'low' || position?.source === 'lbs';
   const accuracyLabel = approx ? t('trackingPage.accuracyApprox') : t('trackingPage.accuracyHigh');
   const secondsAgo =
@@ -656,10 +624,10 @@ export default function Tracking() {
       </nav>
 
       {selectedPet && trackerTab === 'live' ? (
-        <section className="pp-card pp-pad" aria-label={selectedPet.name}>
-          <div className="pp-row" style={{ justifyContent: 'space-between', alignItems: 'flex-start', gap: 14, flexWrap: 'wrap' }}>
-            <div className="pp-row" style={{ alignItems: 'center', gap: 12 }}>
-              <PetAvatar pet={selectedPet} size={56} />
+        <section className="pp-card pp-pad pp-trackLiveCard" aria-label={selectedPet.name}>
+          <div className="pp-row pp-trackLiveCard__head" style={{ justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
+            <div className="pp-row" style={{ alignItems: 'center', gap: 10 }}>
+              <PetAvatar pet={selectedPet} size={48} />
               <div>
                 <h2 className="pp-sectionTitle" style={{ margin: 0 }}>
                   {selectedPet.name}
@@ -741,10 +709,10 @@ export default function Tracking() {
           <h2 className="pp-sectionTitle" style={{ margin: 0 }}>
             {t('trackingPage.sectionMap')}
           </h2>
-          {position && hasCoordinates ? (
+          {mapPosition && hasCoordinates ? (
             <a
               className="pp-btn pp-btn--ghost"
-              href={mapsLink(position.lat, position.lng)}
+              href={mapsLink(mapPosition.lat, mapPosition.lng)}
               target="_blank"
               rel="noopener noreferrer"
               style={{ textDecoration: 'none' }}
@@ -753,18 +721,18 @@ export default function Tracking() {
             </a>
           ) : null}
         </div>
-        {position && hasCoordinates ? (
+        {mapPosition && hasCoordinates ? (
           <>
             <div className="pp-trackMapFrame">
-              <PositionMap lat={position.lat} lng={position.lng} />
+              <PositionMap lat={mapPosition.lat} lng={mapPosition.lng} />
             </div>
             <div className="pp-trackMapMeta">
               <span>
-                {t('trackingPage.lblLatLng')}: {position.lat.toFixed(5)}, {position.lng.toFixed(5)}
+                {t('trackingPage.lblLatLng')}: {mapPosition.lat.toFixed(5)}, {mapPosition.lng.toFixed(5)}
               </span>
-              {position.speed != null ? (
+              {mapPosition.speed != null ? (
                 <span>
-                  {t('trackingPage.lblSpeed')}: {Number(position.speed).toFixed(1)} {t('trackingPage.speedUnitMs')}
+                  {t('trackingPage.lblSpeed')}: {Number(mapPosition.speed).toFixed(1)} {t('trackingPage.speedUnitMs')}
                 </span>
               ) : null}
               <span>
