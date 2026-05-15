@@ -678,6 +678,8 @@ const en = {
     historyTimeHint:
       'Clock times use your device timezone. Each day in the range only includes points between these times on the map and timeline.',
     historyLoading: 'Loading route history…',
+    btnRefreshHistory: 'Refresh history',
+    btnRefreshHistoryAria: 'Reload route history from the tracker server',
     historyPointsSummary:
       '{onMap} GPS points on map · {stored} stored · {hidden} approximate hidden',
     historyCalendarFallback:

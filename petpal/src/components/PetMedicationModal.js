@@ -271,7 +271,7 @@ export default function PetMedicationModal({
             </div>
           </div>
           <button type="button" className="pp-medModal__close" onClick={onClose} aria-label={t('common.cancel')}>
-            <span aria-hidden>뿯½</span>
+            <span aria-hidden>×</span>
           </button>
         </header>
 
@@ -308,13 +308,13 @@ export default function PetMedicationModal({
                           {r.pillCount > 1
                             ? t('myPets.medsPillCountPlural', { count: r.pillCount })
                             : t('myPets.medsPillCountOne')}
-                          {r.dosage ? ` 뿯½ ${r.dosage}` : ''}
+                          {r.dosage ? ` · ${r.dosage}` : ''}
                         </span>
                       </div>
                       {(r.source === 'vet' || r.vetLabel) && (
                         <div className="pp-medList__badge">
                           {r.source === 'vet' ? t('myPets.medsFromVet') : ''}
-                          {r.vetLabel ? ` 뿯½ ${r.vetLabel}` : ''}
+                          {r.vetLabel ? ` · ${r.vetLabel}` : ''}
                         </div>
                       )}
                       {r.notes ? <p className="pp-medList__notes">{r.notes}</p> : null}
@@ -326,7 +326,7 @@ export default function PetMedicationModal({
                       onClick={() => (mode === 'owner' ? void removeOwnerRow(r.id) : removeVetRow(r.id))}
                       aria-label={t('myPets.medsRemove')}
                     >
-                      뿯½
+                      ×
                     </button>
                   </li>
                 ))}
@@ -365,7 +365,7 @@ export default function PetMedicationModal({
                       disabled={draftPillCount <= 1}
                       aria-label={t('myPets.medsDecrease')}
                     >
-                      −
+                        ×
                     </button>
                     <span className="pp-medStepper__value" aria-live="polite">
                       {draftPillCount}
@@ -424,8 +424,7 @@ export default function PetMedicationModal({
                         className="pp-medTimeChip__remove"
                         onClick={() => removeDraftTime(idx)}
                         aria-label={t('myPets.medsRemoveTime')}
-                      >
-                        뿯½
+                        ×
                       </button>
                     ) : null}
                   </div>

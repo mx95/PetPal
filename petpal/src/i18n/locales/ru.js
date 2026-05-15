@@ -683,6 +683,8 @@ const ru = {
     historyTimeHint:
       'Время по часовому поясу устройства. Для каждого дня в диапазоне на карте и в ленте показываются только точки между этими часами.',
     historyLoading: 'Загрузка истории…',
+    btnRefreshHistory: 'Обновить историю',
+    btnRefreshHistoryAria: 'Перезагрузить историю маршрута с сервера трекера',
     historyPointsSummary:
       '{onMap} GPS-точек на карте · {stored} в базе · {hidden} приблизительных скрыто',
     historyCalendarFallback:

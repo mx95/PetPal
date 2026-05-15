@@ -682,6 +682,8 @@ const el = {
     historyTimeHint:
       'Οι ώρες ακολουθούν τη ζώνη ώρας της συσκευής σας. Για κάθε ημέρα στο εύρος εμφανίζονται μόνο σημεία μεταξύ αυτών των ωρών στον χάρτη και τη χρονολογία.',
     historyLoading: 'Φόρτωση ιστορικού…',
+    btnRefreshHistory: 'Ανανέωση ιστορικού',
+    btnRefreshHistoryAria: 'Επαναφόρτωση ιστορικού διαδρομής από τον διακομιστή',
     historyPointsSummary:
       '{onMap} σημεία GPS στον χάρτη · {stored} αποθηκευμένα · {hidden} κατά προσέγγιση κρυμμένα',
     historyCalendarFallback:

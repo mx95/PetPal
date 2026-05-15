@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 
 import { Link } from 'react-router-dom';
 import { useI18n } from '../i18n/I18nContext';
 import PetAvatar from '../components/PetAvatar';
+import IconBattery from '../components/icons/IconBattery';
 import TimeInput24 from '../components/TimeInput24';
 import { formatDateTime24, formatTime24 } from '../formatTime24';
 import PositionMap from '../tracking/PositionMap';
@@ -526,6 +527,13 @@ export default function Tracking() {
     setHistoryRange(computeHistoryRangeForPreset(preset));
   }
 
+  const refreshHistory = useCallback(() => {
+    setHistoryPlaying(false);
+    setHistoryError('');
+    setHistoryIndex(0);
+    setHistoryReloadTick((n) => n + 1);
+  }, []);
+
   function saveIdAndLoad(e) {
     e?.preventDefault();
     const next = deviceId.trim();
@@ -631,12 +639,12 @@ export default function Tracking() {
             <button
               key={p.id}
               type="button"
-              className={`pp-trackPetPill ${selectedPetId === p.id ? 'pp-trackPetPill--on' : ''}`}
+              className={`pp-trackPetCard ${selectedPetId === p.id ? 'pp-trackPetCard--on' : ''}`}
               onClick={() => setSelectedPetId(p.id)}
             >
-              <PetAvatar pet={p} size={28} />
-              <span className="pp-trackPetPill__name">{p.name}</span>
-              <span className="pp-trackPetPill__id">
+              <PetAvatar pet={p} size={36} />
+              <span className="pp-trackPetCard__name">{p.name}</span>
+              <span className="pp-trackPetCard__chip">
                 {p.trackingDeviceId
                   ? t('trackingPage.deviceChip', { id: p.trackingDeviceId })
                   : t('trackingPage.noDeviceChip')}
@@ -686,38 +694,15 @@ export default function Tracking() {
                 {batPct != null ? (
                   <span
                     className="pp-trackMiniChip pp-trackMiniChip--bat"
-                    style={{ '--bat-pct': `${batPct}%` }}
                     aria-label={t('trackingPage.batteryPctAria', { pct: batPct })}
                   >
-                    <span className="pp-trackBatRing" aria-hidden />
+                    <IconBattery pct={batPct} size={16} />
                     {batPct}%
                   </span>
                 ) : null}
               </div>
             ) : null}
           </div>
-          {position ? (
-            <div className="pp-trackLiveStats">
-              <p className="pp-trackLiveStats__line">
-                <span className={`pp-trackMiniChip ${gpsOkVisual ? 'pp-trackMiniChip--ok' : 'pp-trackMiniChip--warn'}`}>{gpsChipLabel}</span>
-                <span className="pp-trackLiveStats__sep">·</span>
-                <span>{t('trackingPage.accuracyLabel', { value: accuracyLabel })}</span>
-                {satellitesLabel ? (<><span className="pp-trackLiveStats__sep">·</span><span>{satellitesLabel}</span></>) : null}
-                {position?.warningStale ? (<><span className="pp-trackLiveStats__sep">·</span><span className="pp-trackLiveStats__warn">{t('trackingPage.warnOffline')}</span></>) : null}
-              </p>
-              <p className="pp-trackLiveStats__line">
-                <span className="pp-trackMiniChip pp-trackMiniChip--neutral">{t('trackingPage.healthBattery')} {batPct != null ? `${batPct}%` : '—'}</span>
-                {signalLabel ? (<><span className="pp-trackLiveStats__sep">·</span><span>{signalLabel}</span></>) : null}
-                {position?.isCharging ? (<><span className="pp-trackLiveStats__sep">·</span><span>{t('trackingPage.charging')}</span></>) : null}
-              </p>
-              <p className="pp-trackLiveStats__line">
-                <span>{t('trackingPage.activitySteps')}: {position.steps ?? '—'}</span>
-                <span className="pp-trackLiveStats__sep">·</span>
-                <span>{activityMovement}</span>
-                {displaySpeedKmh != null ? (<><span className="pp-trackLiveStats__sep">·</span><span>{displaySpeedKmh.toFixed(1)} {t('trackingPage.speedUnitKmh')}</span></>) : null}
-              </p>
-            </div>
-          ) : null}
         </section>
       ) : null}
 
@@ -733,7 +718,7 @@ export default function Tracking() {
               target="_blank"
               rel="noopener noreferrer"
             >
-              {t('trackingPage.openGoogleMaps')} ↗
+              {t('trackingPage.openGoogleMaps')}
             </a>
           ) : null}
         </div>
@@ -757,6 +742,28 @@ export default function Tracking() {
               <span>
                 {t('trackingPage.lblDeviceTime')}: {deviceTimeLabel}
               </span>
+              {position ? (
+                <>
+                  <span>
+                    {t('trackingPage.cardGps')}: {gpsChipLabel}
+                    {position?.warningStale ? ` · ${t('trackingPage.warnOffline')}` : ''}
+                  </span>
+                  <span>{t('trackingPage.accuracyLabel', { value: accuracyLabel })}</span>
+                  {satellitesLabel ? <span>{satellitesLabel}</span> : null}
+                  <span>
+                    {t('trackingPage.healthBattery')}: {batPct != null ? `${batPct}%` : '—'}
+                    {position?.isCharging ? ` · ${t('trackingPage.charging')}` : ''}
+                  </span>
+                  {signalLabel ? (
+                    <span>
+                      {t('trackingPage.healthSignal')}: {signalLabel}
+                    </span>
+                  ) : null}
+                  <span>
+                    {t('trackingPage.activitySteps')}: {position.steps ?? '—'} · {activityMovement}
+                  </span>
+                </>
+              ) : null}
             </div>
           </>
         ) : (
@@ -793,6 +800,22 @@ export default function Tracking() {
       {trackerTab === 'history' ? (
         <section className="pp-trackHistory">
           <div className="pp-card pp-pad pp-trackHistoryRangeCard">
+            <div className="pp-trackHistoryRangeCard__head">
+              <div>
+                <p className="pp-trackHistoryRangeCard__eyebrow pp-subtle">{t('trackingPage.historyEyebrow')}</p>
+                <h2 className="pp-trackHistoryRangeCard__title">{t('trackingPage.historyTitle')}</h2>
+              </div>
+              <button
+                type="button"
+                className="pp-btn pp-btn--ghost pp-trackHistoryRefreshBtn"
+                disabled={!effectiveDeviceId || historyLoading}
+                onClick={refreshHistory}
+                aria-label={t('trackingPage.btnRefreshHistoryAria')}
+              >
+                {historyLoading ? t('trackingPage.btnRefresh') : t('trackingPage.btnRefreshHistory')}
+              </button>
+            </div>
+            {historyError ? <div className="pp-error pp-trackHistoryError">{historyError}</div> : null}
             <div className="pp-trackHistoryPresets" role="group" aria-label={t('trackingPage.historyPresetsAria')}>
               {(
                 [
@@ -885,6 +908,15 @@ export default function Tracking() {
                     <option value={1.5}>1.5x</option>
                     <option value={2}>2x</option>
                   </select>
+                  <button
+                    type="button"
+                    className="pp-btn pp-btn--ghost pp-trackHistoryRefreshBtn"
+                    disabled={!effectiveDeviceId || historyLoading}
+                    onClick={refreshHistory}
+                    aria-label={t('trackingPage.btnRefreshHistoryAria')}
+                  >
+                    {historyLoading ? t('trackingPage.btnRefresh') : t('trackingPage.btnRefreshHistory')}
+                  </button>
                 </div>
               </div>
               {filteredHistory.length ? (
@@ -917,8 +949,8 @@ export default function Tracking() {
                   <div aria-hidden>🐾</div>
                   <h3>No movement history yet</h3>
                   <p>{historyError || 'No tracker locations were found for this date range. Once the device sends stored positions, the route will appear here.'}</p>
-                  <button type="button" className="pp-btn pp-btnPrimary" disabled={!effectiveDeviceId || historyLoading} onClick={() => setHistoryReloadTick((n) => n + 1)}>
-                    {historyLoading ? 'Loading…' : 'Refresh history'}
+                  <button type="button" className="pp-btn pp-btnPrimary" disabled={!effectiveDeviceId || historyLoading} onClick={refreshHistory}>
+                    {historyLoading ? t('trackingPage.btnRefresh') : t('trackingPage.btnRefreshHistory')}
                   </button>
                 </div>
               )}

@@ -3447,6 +3447,24 @@ body.pp-noScroll {
   line-height: 1.2;
 }
 
+.pp-trackHistoryRefreshBtn {
+  flex-shrink: 0;
+  min-height: 34px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+.pp-trackHistoryError {
+  margin: 0;
+  font-size: 12px;
+}
+
+.pp-trackPlayback .pp-trackHistoryRefreshBtn {
+  min-height: 32px;
+}
+
 .pp-trackHistoryPresets {
   display: flex;
   flex-wrap: wrap;
@@ -7376,15 +7394,23 @@ body,
 }
 
 .pp-trackPetCard {
-  min-width: 118px;
-  border-radius: 18px;
-  padding: 10px 12px;
+  min-width: 148px;
+  max-width: min(92vw, 280px);
+  border-radius: 14px;
+  padding: 8px 10px 10px;
 }
 
 .pp-trackPetCard--on {
-  background: rgba(91, 55, 255, 0.1);
-  border-color: rgba(91, 55, 255, 0.28);
-  box-shadow: none;
+  background: rgba(255, 255, 255, 0.98);
+  border-color: rgba(91, 55, 255, 0.35);
+  box-shadow: 0 0 0 1px rgba(91, 55, 255, 0.1), 0 0 20px rgba(91, 55, 255, 0.12);
+}
+
+.pp-trackPetCard__chip {
+  word-break: break-all;
+  white-space: normal;
+  text-align: center;
+  max-width: 100%;
 }
 
 .pp-trackGpsPill--warn {
@@ -10331,37 +10357,49 @@ select.pp-bookConfirmField__control {
   flex-shrink: 0;
 }
 
-/* Legacy pet cards (unused on live page) */
 .pp-trackPetCard {
   flex: 0 0 auto;
   scroll-snap-align: start;
-  min-width: 132px;
+  min-width: 148px;
+  max-width: min(92vw, 280px);
   border-radius: 14px;
   border: 1px solid rgba(16, 24, 40, 0.1);
-  background: rgba(255, 255, 255, 0.9);
-  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.92);
+  padding: 8px 10px 10px;
   cursor: pointer;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 4px;
   font: inherit;
+  transition: border-color 0.14s ease, box-shadow 0.14s ease;
+}
+
+.pp-trackPetCard:hover {
+  border-color: rgba(91, 55, 255, 0.28);
 }
 
 .pp-trackPetCard--on {
   border-color: rgba(91, 55, 255, 0.35);
-  box-shadow: 0 0 18px rgba(91, 55, 255, 0.12);
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 0 0 1px rgba(91, 55, 255, 0.1), 0 0 20px rgba(91, 55, 255, 0.12);
 }
 
 .pp-trackPetCard__name {
-  font-weight: 800;
+  font-weight: 850;
   font-size: 13px;
+  color: #0f172a;
 }
 
 .pp-trackPetCard__chip {
   font-size: 10px;
   font-weight: 650;
-  color: #667085;
+  color: #64748b;
+  text-align: center;
+  line-height: 1.25;
+  word-break: break-all;
+  max-width: 100%;
+  white-space: normal;
 }
 
 /* Segmented tabs */
@@ -10510,13 +10548,9 @@ select.pp-bookConfirmField__control {
   gap: 5px;
 }
 
-.pp-trackBatRing {
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  border: 2px solid rgba(16, 24, 40, 0.12);
-  background: conic-gradient(#22c55e var(--bat-pct, 50%), rgba(16, 24, 40, 0.08) 0);
+.pp-trackMiniChip--bat .pp-iconBattery {
   flex-shrink: 0;
+  color: #059669;
 }
 
 .pp-trackLiveStats {
@@ -10716,12 +10750,17 @@ select.pp-bookConfirmField__control {
 
 .pp-trackMapMeta {
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px 12px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
   margin-top: 8px;
   font-size: 11px;
   font-weight: 650;
   color: #64748b;
+}
+
+.pp-trackMapMeta > span {
+  line-height: 1.35;
 }
 
 .pp-trackMapEmpty {
