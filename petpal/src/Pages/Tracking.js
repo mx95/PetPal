@@ -685,7 +685,6 @@ export default function Tracking() {
             <div className="pp-trackStatusGrid">
               <article className="pp-card pp-trackStatCard">
                 <div className="pp-label">{t('trackingPage.cardGps')}</div>
-                <div className="pp-trackStatCard__body">
                   <span className={`pp-trackGpsPill ${gpsOkVisual ? 'pp-trackGpsPill--ok' : 'pp-trackGpsPill--warn'}`}>
                     {gpsOkVisual ? `✓ ${t('trackingPage.gpsOk')}` : `⚠ ${t('trackingPage.gpsWeak')}`}
                   </span>
@@ -705,10 +704,7 @@ export default function Tracking() {
                     >
                       <div className="pp-trackAccuracyMeter__fill" style={{ width: accMeter.width, background: accMeter.background }} />
                     </div>
-                  ) : (
-                    <div className="pp-trackStatCard__spacer" aria-hidden />
-                  )}
-                </div>
+                  ) : null}
               </article>
 
               <article className="pp-card pp-trackStatCard">
@@ -731,9 +727,7 @@ export default function Tracking() {
                   </p>
                   {position?.isCharging ? (
                     <p className="pp-subtle pp-trackStatCard__meta">{t('trackingPage.charging')}</p>
-                  ) : (
-                    <div className="pp-trackStatCard__spacer" aria-hidden />
-                  )}
+                  ) : null}
                 </div>
               </article>
 
@@ -751,7 +745,6 @@ export default function Tracking() {
                       {t('trackingPage.lblSpeed')}: {displaySpeedKmh.toFixed(1)} {t('trackingPage.speedUnitKmh')}
                     </p>
                   ) : null}
-                  <div className="pp-trackStatCard__spacer" aria-hidden />
                 </div>
               </article>
             </div>

@@ -2650,18 +2650,82 @@ body.pp-noScroll {
 }
 
 .pp-trackStatusGrid {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
   margin-top: 10px;
   align-items: stretch;
 }
 
-@media (min-width: 721px) {
-  .pp-trackStatusGrid {
-    display: grid;
+/* Phone: one compact card, three columns inside */
+@media (max-width: 720px) {
+  .pp-trackLiveCard .pp-trackStatusGrid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 8px;
+    gap: 6px;
+    margin-top: 8px;
+    padding: 8px 10px;
+    border-radius: 14px;
+    background: var(--pp-surface, #fff);
+    border: 1px solid rgba(16, 24, 40, 0.1);
+    box-shadow: var(--pp-shadow-sm, 0 1px 3px rgba(16, 24, 40, 0.08));
+  }
+
+  .pp-trackLiveCard .pp-trackStatCard {
+    min-height: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    border-radius: 0 !important;
+  }
+
+  .pp-trackLiveCard .pp-trackStatCard__body {
+    min-height: 0;
+    gap: 3px;
+    margin-top: 2px;
+  }
+
+  .pp-trackLiveCard .pp-trackStatCard__meta,
+  .pp-trackLiveCard .pp-trackStatCard .pp-label {
+    font-size: 10px;
+    line-height: 1.25;
+  }
+
+  .pp-trackLiveCard .pp-trackGpsPill {
+    font-size: 10px;
+    padding: 2px 7px;
+    max-width: 100%;
+    white-space: normal;
+  }
+
+  .pp-trackLiveCard .pp-batteryBar {
+    height: 17px;
+    border-radius: 6px;
+  }
+
+  .pp-trackLiveCard .pp-batteryBar__label {
+    font-size: 9px;
+  }
+
+  .pp-trackLiveCard .pp-trackAccuracyMeter {
+    height: 4px;
+    margin-top: 2px;
+  }
+
+  .pp-trackLiveCard .pp-trackStatCard__spacer {
+    display: none !important;
+  }
+
+  .pp-trackLiveCard.pp-pad {
+    padding: 12px 14px;
+  }
+
+  .pp-trackLiveCard__title {
+    font-size: 1rem;
+  }
+
+  .pp-trackLiveCard__status {
+    font-size: 12px;
   }
 }
 
@@ -6894,20 +6958,7 @@ body,
     width: 100%;
   }
 
-  .pp-tracker-page .pp-trackStatusGrid {
-    display: flex !important;
-    flex-direction: column !important;
-    overflow: visible !important;
-    gap: 10px !important;
-  }
-
-  .pp-tracker-page .pp-trackStatCard {
-    width: 100%;
-    max-width: 100%;
-    min-width: 0;
-    min-height: auto;
-    box-sizing: border-box;
-  }
+  /* Live stats compact sheet — rules in .pp-trackLiveCard block above */
 
   .pp-trackHistoryManual__row {
     flex-direction: column;
