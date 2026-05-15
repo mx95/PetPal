@@ -567,6 +567,7 @@ const en = {
     heroNoFix: 'Tap refresh to get a fresh GPS fix.',
     heroNoDevice: 'Link a device ID (or collar IMEI) below to start tracking.',
     btnLocate: 'Locate now',
+    liveQuickStatus: 'Quick status',
     btnRefreshLabel: 'Refresh',
     sectionPetDevice: 'Pet & device',
     dataSource: 'Data source:',

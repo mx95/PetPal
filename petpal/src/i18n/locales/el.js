@@ -571,6 +571,7 @@ const el = {
     heroNoFix: 'Πατήστε ανανέωση για νέα θέση GPS.',
     heroNoDevice: 'Συνδέστε ένα ID συσκευής (ή IMEI) για να ξεκινήσετε.',
     btnLocate: 'Εντοπισμός τώρα',
+    liveQuickStatus: 'Γρήγορη κατάσταση',
     btnRefreshLabel: 'Ανανέωση',
     sectionPetDevice: 'Κατοικίδιο & συσκευή',
     dataSource: 'Πηγή δεδομένων:',

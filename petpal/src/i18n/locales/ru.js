@@ -572,6 +572,7 @@ const ru = {
     heroNoFix: 'Нажмите обновить, чтобы получить новый GPS.',
     heroNoDevice: 'Привяжите ID устройства (или IMEI) ниже, чтобы начать.',
     btnLocate: 'Найти сейчас',
+    liveQuickStatus: 'Быстрый статус',
     btnRefreshLabel: 'Обновить',
     sectionPetDevice: 'Питомец и устройство',
     dataSource: 'Источник:',

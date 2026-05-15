@@ -602,20 +602,12 @@ export default function Tracking() {
       ? t('trackingPage.satellites', { count: Number(position.satellites) })
       : null;
 
-  const accMeter = position ? accuracyMeterStyle(position) : null;
   const displaySpeedKmh = position ? sanitizeSpeedKmh(position.speed) : null;
-  const locateAction = (
-    <div className="pp-trackLocateInline">
-      <button
-        type="button"
-        className="pp-btn pp-btnPrimary"
-        disabled={loading || !effectiveDeviceId}
-        onClick={() => void refresh()}
-      >
-        {t('trackingPage.btnLocate')}
-      </button>
-    </div>
-  );
+  const liveStatusShort =
+    position?.statusText || (signalLive ? t('trackingPage.signalLive') : t('trackingPage.signalQuiet'));
+  const gpsChipLabel = gpsOkVisual ? t('trackingPage.gpsOk') : t('trackingPage.gpsWeak');
+  const activityMovement =
+    position?.movementText || (position?.isMoving ? t('trackingPage.moving') : t('trackingPage.notMoving'));
 
   return (
     <div className="pp-feed pp-tracker-page">
@@ -639,20 +631,22 @@ export default function Tracking() {
             <button
               key={p.id}
               type="button"
-              className={`pp-trackPetCard ${selectedPetId === p.id ? 'pp-trackPetCard--on' : ''}`}
+              className={`pp-trackPetPill ${selectedPetId === p.id ? 'pp-trackPetPill--on' : ''}`}
               onClick={() => setSelectedPetId(p.id)}
             >
-              <PetAvatar pet={p} size={44} />
-              <span className="pp-trackPetCard__name">{p.name}</span>
-              <span className="pp-trackPetCard__chip">
-                {p.trackingDeviceId ? t('trackingPage.deviceChip', { id: p.trackingDeviceId }) : t('trackingPage.noDeviceChip')}
+              <PetAvatar pet={p} size={28} />
+              <span className="pp-trackPetPill__name">{p.name}</span>
+              <span className="pp-trackPetPill__id">
+                {p.trackingDeviceId
+                  ? t('trackingPage.deviceChip', { id: p.trackingDeviceId })
+                  : t('trackingPage.noDeviceChip')}
               </span>
             </button>
           ))}
         </div>
       </section>
 
-      <nav className="pp-trackTabs" aria-label="Tracker views">
+      <nav className="pp-trackTabs pp-trackTabs--segment" aria-label="Tracker views">
         {[
           ['live', 'Live'],
           ['device', 'Device'],
@@ -663,112 +657,83 @@ export default function Tracking() {
           </button>
         ))}
       </nav>
-
       {selectedPet && trackerTab === 'live' ? (
-        <section className="pp-card pp-pad pp-trackLiveCard" aria-label={selectedPet.name}>
-          <div className="pp-trackLiveCard__head">
-            <div className="pp-trackLiveCard__identity">
-              <PetAvatar pet={selectedPet} size={48} />
-              <div>
-                <h2 className="pp-sectionTitle pp-trackLiveCard__title">{selectedPet.name}</h2>
-                <p className="pp-subtle pp-trackLiveCard__status">
-                  {position?.statusText || (signalLive ? t('trackingPage.signalLive') : t('trackingPage.signalQuiet'))} ·{' '}
-                  {lastUpdateLabel}
-                </p>
-              </div>
+        <section className="pp-trackLiveBar" aria-label={selectedPet.name}>
+          <div className="pp-trackLiveBar__row pp-trackLiveBar__row--meta">
+            <PetAvatar pet={selectedPet} size={32} />
+            <div className="pp-trackLiveBar__inline">
+              <span className="pp-trackLiveBar__name">{selectedPet.name}</span>
+              <span className="pp-trackLiveBar__dot" aria-hidden>·</span>
+              <span className={`pp-trackLiveBar__live${signalLive ? ' is-live' : ''}`}>{liveStatusShort}</span>
+              <span className="pp-trackLiveBar__dot" aria-hidden>·</span>
+              <span className="pp-trackLiveBar__updated">{lastUpdateLabel}</span>
             </div>
-
-            <div className="pp-trackLiveCard__locate">{locateAction}</div>
           </div>
-
-          {position ? (
-            <div className="pp-trackStatusGrid">
-              <article className="pp-card pp-trackStatCard">
-                <div className="pp-label">{t('trackingPage.cardGps')}</div>
-                <div className="pp-trackStatCard__body">
-                  <span className={`pp-trackGpsPill ${gpsOkVisual ? 'pp-trackGpsPill--ok' : 'pp-trackGpsPill--warn'}`}>
-                    {gpsOkVisual ? `✓ ${t('trackingPage.gpsOk')}` : `⚠ ${t('trackingPage.gpsWeak')}`}
+          <div className="pp-trackLiveBar__row pp-trackLiveBar__row--actions">
+            <button
+              type="button"
+              className="pp-trackLocateBtn pp-btn pp-btnPrimary"
+              disabled={loading || !effectiveDeviceId}
+              onClick={() => void refresh()}
+            >
+              {t('trackingPage.btnLocate')}
+            </button>
+            {position ? (
+              <div className="pp-trackLiveBar__quick" aria-label={t('trackingPage.liveQuickStatus')}>
+                <span className={`pp-trackMiniChip ${gpsOkVisual ? 'pp-trackMiniChip--ok' : 'pp-trackMiniChip--warn'}`}>
+                  {gpsOkVisual ? '✓' : '⚠'} {gpsChipLabel}
+                </span>
+                {batPct != null ? (
+                  <span
+                    className="pp-trackMiniChip pp-trackMiniChip--bat"
+                    style={{ '--bat-pct': `${batPct}%` }}
+                    aria-label={t('trackingPage.batteryPctAria', { pct: batPct })}
+                  >
+                    <span className="pp-trackBatRing" aria-hidden />
+                    {batPct}%
                   </span>
-                  <p className="pp-subtle pp-trackStatCard__meta">
-                    {t('trackingPage.accuracyLabel', { value: accuracyLabel })}
-                    {position?.warningStale ? ` · ${t('trackingPage.warnOffline')}` : ''}
-                  </p>
-                  {satellitesLabel ? <p className="pp-subtle pp-trackStatCard__meta">{satellitesLabel}</p> : null}
-                  {accMeter ? (
-                    <div
-                      className="pp-trackAccuracyMeter"
-                      role="meter"
-                      aria-valuemin={0}
-                      aria-valuemax={100}
-                      aria-valuenow={Number.parseInt(accMeter.width, 10)}
-                      aria-label={t('trackingPage.accuracyMeterLabel')}
-                    >
-                      <div className="pp-trackAccuracyMeter__fill" style={{ width: accMeter.width, background: accMeter.background }} />
-                    </div>
-                  ) : null}
-                </div>
-              </article>
-
-              <article className="pp-card pp-trackStatCard">
-                <div className="pp-label">{t('trackingPage.cardHealth')}</div>
-                <div className="pp-trackStatCard__body">
-                  {batPct != null ? (
-                    <div className="pp-batteryBar" aria-label={t('trackingPage.batteryPctAria', { pct: batPct })}>
-                      <div className="pp-batteryBar__fill" style={batteryFillStyle(batPct)} />
-                      <div className="pp-batteryBar__label">
-                        {batPct}% · {position.batteryStatus || t('trackingPage.healthBattery')}
-                      </div>
-                    </div>
-                  ) : (
-                    <p className="pp-subtle pp-trackStatCard__meta">
-                      {t('trackingPage.healthBattery')}: —
-                    </p>
-                  )}
-                  <p className="pp-subtle pp-trackStatCard__meta">
-                    {t('trackingPage.healthSignal')}: {signalLabel || '—'}
-                  </p>
-                  {position?.isCharging ? (
-                    <p className="pp-subtle pp-trackStatCard__meta">{t('trackingPage.charging')}</p>
-                  ) : null}
-                </div>
-              </article>
-
-              <article className="pp-card pp-trackStatCard">
-                <div className="pp-label">{t('trackingPage.cardActivity')}</div>
-                <div className="pp-trackStatCard__body">
-                  <p className="pp-subtle pp-trackStatCard__meta">
-                    {t('trackingPage.activitySteps')}: {position.steps ?? '—'}
-                  </p>
-                  <p className="pp-subtle pp-trackStatCard__meta">
-                    {position.movementText || (position.isMoving ? t('trackingPage.moving') : t('trackingPage.notMoving'))}
-                  </p>
-                  {displaySpeedKmh != null ? (
-                    <p className="pp-subtle pp-trackStatCard__meta">
-                      {t('trackingPage.lblSpeed')}: {displaySpeedKmh.toFixed(1)} {t('trackingPage.speedUnitKmh')}
-                    </p>
-                  ) : null}
-                </div>
-              </article>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
+          {position ? (
+            <div className="pp-trackLiveStats">
+              <p className="pp-trackLiveStats__line">
+                <span className={`pp-trackMiniChip ${gpsOkVisual ? 'pp-trackMiniChip--ok' : 'pp-trackMiniChip--warn'}`}>{gpsChipLabel}</span>
+                <span className="pp-trackLiveStats__sep">·</span>
+                <span>{t('trackingPage.accuracyLabel', { value: accuracyLabel })}</span>
+                {satellitesLabel ? (<><span className="pp-trackLiveStats__sep">·</span><span>{satellitesLabel}</span></>) : null}
+                {position?.warningStale ? (<><span className="pp-trackLiveStats__sep">·</span><span className="pp-trackLiveStats__warn">{t('trackingPage.warnOffline')}</span></>) : null}
+              </p>
+              <p className="pp-trackLiveStats__line">
+                <span className="pp-trackMiniChip pp-trackMiniChip--neutral">{t('trackingPage.healthBattery')} {batPct != null ? `${batPct}%` : '—'}</span>
+                {signalLabel ? (<><span className="pp-trackLiveStats__sep">·</span><span>{signalLabel}</span></>) : null}
+                {position?.isCharging ? (<><span className="pp-trackLiveStats__sep">·</span><span>{t('trackingPage.charging')}</span></>) : null}
+              </p>
+              <p className="pp-trackLiveStats__line">
+                <span>{t('trackingPage.activitySteps')}: {position.steps ?? '—'}</span>
+                <span className="pp-trackLiveStats__sep">·</span>
+                <span>{activityMovement}</span>
+                {displaySpeedKmh != null ? (<><span className="pp-trackLiveStats__sep">·</span><span>{displaySpeedKmh.toFixed(1)} {t('trackingPage.speedUnitKmh')}</span></>) : null}
+              </p>
             </div>
           ) : null}
         </section>
       ) : null}
 
+
       {trackerTab === 'live' ? (
-      <section className="pp-card pp-pad pp-trackMapShell">
-        <div className="pp-trackMapHead">
-          <h2 className="pp-sectionTitle" style={{ margin: 0 }}>
-            {t('trackingPage.sectionMap')}
-          </h2>
+      <section className="pp-card pp-pad pp-trackMapShell pp-trackMapShell--compact">
+        <div className="pp-trackMapHead pp-trackMapHead--inline">
+          <h2 className="pp-trackMapHead__title">{t('trackingPage.sectionMap')}</h2>
           {mapPosition && hasCoordinates ? (
             <a
-              className="pp-btn pp-btn--ghost"
+              className="pp-trackMapHead__link"
               href={mapsLink(mapPosition.lat, mapPosition.lng)}
               target="_blank"
               rel="noopener noreferrer"
-              style={{ textDecoration: 'none' }}
             >
-              {t('trackingPage.openGoogleMaps')}
+              {t('trackingPage.openGoogleMaps')} ↗
             </a>
           ) : null}
         </div>
