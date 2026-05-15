@@ -12,6 +12,7 @@ import { useI18n } from '../i18n/I18nContext';
 import { useToast } from '../components/Toast';
 import ImeiQrScannerButton from '../components/ImeiQrScannerButton';
 import PetMedicationModal from '../components/PetMedicationModal';
+import IconMedPill from '../components/icons/IconMedPill';
 
 function IconPencil() {
   return (
@@ -727,14 +728,12 @@ export default function MyPets() {
                       <div className="pp-petList__medRow">
                         <button
                           type="button"
-                          className="pp-petMedPill"
+                          className="pp-btn pp-iconBtn pp-iconBtn--outline pp-tooltipBtn"
+                          data-tooltip={t('myPets.medsOpen')}
                           onClick={() => setMedModalPet(p)}
                           aria-label={t('myPets.medsOpen')}
                         >
-                          <svg className="pp-petMedPill__icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden>
-                            <rect x="5" y="9" width="14" height="8" rx="4" fill="none" stroke="currentColor" strokeWidth="1.8" />
-                            <path d="M9 9V7a3 3 0 0 1 6 0v2" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                          </svg>
+                          <IconMedPill />
                         </button>
                       </div>
                     </>

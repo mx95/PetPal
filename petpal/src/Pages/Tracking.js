@@ -668,29 +668,6 @@ export default function Tracking() {
                   {position?.statusText || (signalLive ? t('trackingPage.signalLive') : t('trackingPage.signalQuiet'))} ·{' '}
                   {lastUpdateLabel}
                 </p>
-                {signalLive ? (
-                  <div style={{ marginTop: 10 }}>
-                    <span className={`pp-trackGpsPill ${gpsOkVisual ? 'pp-trackGpsPill--ok' : 'pp-trackGpsPill--warn'}`}>
-                      {gpsOkVisual ? `✓ ${t('trackingPage.gpsOk')}` : `⚠ ${t('trackingPage.gpsWeak')}`}
-                    </span>
-                    <span className="pp-subtle" style={{ marginLeft: 10, fontSize: 13 }}>
-                      {t('trackingPage.accuracyLabel', { value: accuracyLabel })}
-                      {position?.warningStale ? ` · ${t('trackingPage.warnOffline')}` : ''}
-                    </span>
-                  </div>
-                ) : null}
-                {position && accMeter ? (
-                  <div
-                    className="pp-trackAccuracyMeter"
-                    role="meter"
-                    aria-valuemin={0}
-                    aria-valuemax={100}
-                    aria-valuenow={Number.parseInt(accMeter.width, 10)}
-                    aria-label={t('trackingPage.accuracyMeterLabel')}
-                  >
-                    <div className="pp-trackAccuracyMeter__fill" style={{ width: accMeter.width, background: accMeter.background }} />
-                  </div>
-                ) : null}
               </div>
             </div>
 
@@ -698,49 +675,61 @@ export default function Tracking() {
           </div>
 
           {position ? (
-            <div
-              className="pp-trackStatusGrid"
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-                gap: 10,
-                marginTop: 14,
-              }}
-            >
-              <div className="pp-card" style={{ minWidth: 0, padding: 12, borderRadius: 20 }}>
-                <div className="pp-label">{t('trackingPage.cardLocation')}</div>
-                <div style={{ marginTop: 6 }}>
-                  <span className={`pp-trackGpsPill ${approx ? 'pp-trackGpsPill--warn' : 'pp-trackGpsPill--ok'}`} style={{ fontSize: 12 }}>
-                    {approx ? t('trackingPage.badgeApprox') : 'GPS'}
+            <div className="pp-trackStatusGrid">
+              <article className="pp-card pp-trackStatCard">
+                <div className="pp-label">{t('trackingPage.cardGps')}</div>
+                <div className="pp-trackStatCard__body">
+                  <span className={`pp-trackGpsPill ${gpsOkVisual ? 'pp-trackGpsPill--ok' : 'pp-trackGpsPill--warn'}`}>
+                    {gpsOkVisual ? `✓ ${t('trackingPage.gpsOk')}` : `⚠ ${t('trackingPage.gpsWeak')}`}
                   </span>
-                </div>
-              </div>
-
-              <div className="pp-card" style={{ minWidth: 0, padding: 12, borderRadius: 20 }}>
-                <div className="pp-label">{t('trackingPage.cardHealth')}</div>
-                {batPct != null ? (
-                  <div className="pp-batteryBar" aria-label={t('trackingPage.batteryPctAria', { pct: batPct })}>
-                    <div className="pp-batteryBar__fill" style={batteryFillStyle(batPct)} />
-                    <div className="pp-batteryBar__label">
-                      {batPct}% · {position.batteryStatus || t('trackingPage.healthBattery')}
-                    </div>
-                  </div>
-                ) : (
-                  <p className="pp-subtle" style={{ marginTop: 8, marginBottom: 0, fontSize: 13, lineHeight: 1.35 }}>
-                    {t('trackingPage.healthBattery')}: —
+                  <p className="pp-subtle pp-trackStatCard__meta">
+                    {t('trackingPage.accuracyLabel', { value: accuracyLabel })}
+                    {position?.warningStale ? ` · ${t('trackingPage.warnOffline')}` : ''}
                   </p>
-                )}
-              </div>
+                  {accMeter ? (
+                    <div
+                      className="pp-trackAccuracyMeter"
+                      role="meter"
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      aria-valuenow={Number.parseInt(accMeter.width, 10)}
+                      aria-label={t('trackingPage.accuracyMeterLabel')}
+                    >
+                      <div className="pp-trackAccuracyMeter__fill" style={{ width: accMeter.width, background: accMeter.background }} />
+                    </div>
+                  ) : null}
+                </div>
+              </article>
 
-              <div className="pp-card" style={{ minWidth: 0, padding: 12, borderRadius: 20 }}>
+              <article className="pp-card pp-trackStatCard">
+                <div className="pp-label">{t('trackingPage.cardHealth')}</div>
+                <div className="pp-trackStatCard__body">
+                  {batPct != null ? (
+                    <div className="pp-batteryBar" aria-label={t('trackingPage.batteryPctAria', { pct: batPct })}>
+                      <div className="pp-batteryBar__fill" style={batteryFillStyle(batPct)} />
+                      <div className="pp-batteryBar__label">
+                        {batPct}% · {position.batteryStatus || t('trackingPage.healthBattery')}
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="pp-subtle pp-trackStatCard__meta">
+                      {t('trackingPage.healthBattery')}: —
+                    </p>
+                  )}
+                </div>
+              </article>
+
+              <article className="pp-card pp-trackStatCard">
                 <div className="pp-label">{t('trackingPage.cardActivity')}</div>
-                <p className="pp-subtle" style={{ marginTop: 8, marginBottom: 0, fontSize: 13, lineHeight: 1.35 }}>
-                  {t('trackingPage.activitySteps')}: {position.steps ?? '—'}
-                </p>
-                <p className="pp-subtle" style={{ marginTop: 6, marginBottom: 0, fontSize: 13, lineHeight: 1.35 }}>
-                  {position.movementText || (position.isMoving ? t('trackingPage.moving') : t('trackingPage.notMoving'))}
-                </p>
-              </div>
+                <div className="pp-trackStatCard__body">
+                  <p className="pp-subtle pp-trackStatCard__meta">
+                    {t('trackingPage.activitySteps')}: {position.steps ?? '—'}
+                  </p>
+                  <p className="pp-subtle pp-trackStatCard__meta">
+                    {position.movementText || (position.isMoving ? t('trackingPage.moving') : t('trackingPage.notMoving'))}
+                  </p>
+                </div>
+              </article>
             </div>
           ) : null}
         </section>
@@ -919,9 +908,10 @@ export default function Tracking() {
                 </div>
               </div>
               {filteredHistory.length ? (
-                <>
-                  <div className="pp-trackMapFrame pp-trackHistoryFrame">
+                <div className="pp-trackHistoryMap__body">
+                  <div className="pp-trackMapFrame pp-trackHistoryFrame pp-trackHistoryFrame--panorama">
                     <PositionMap
+                      fill
                       lat={filteredHistory[0].lat}
                       lng={filteredHistory[0].lng}
                       path={filteredHistory.map((p) => ({ lat: p.lat, lng: p.lng }))}
@@ -941,7 +931,7 @@ export default function Tracking() {
                     }}
                     aria-label="Jump to route timestamp"
                   />
-                </>
+                </div>
               ) : (
                 <div className="pp-trackHistoryEmpty">
                   <div aria-hidden>🐾</div>
@@ -964,30 +954,34 @@ export default function Tracking() {
                   {(historyRange.timeTo ?? defaultHistoryDayTimes().timeTo).slice(0, 5)}
                 </span>
               </div>
-              {historyTimelineEvents.map((event) => {
-                const p = event.start;
-                const active = historyIndex >= event.startIndex && historyIndex <= event.endIndex;
-                return (
-                  <button
-                    key={event.id}
-                    type="button"
-                    className={active ? 'is-active' : ''}
-                    onClick={() => {
-                      setHistoryPlaying(false);
-                      setHistoryIndex(event.startIndex);
-                    }}
-                  >
-                    <span className={`pp-trackHistoryTimeline__dot is-${event.type}`} />
-                    <strong>{event.timeLabel}</strong>
-                    <em>{event.label}</em>
-                    <small>
-                      {p.address || `${p.lat.toFixed(5)}, ${p.lng.toFixed(5)}`}
-                      {event.count > 1 ? ` · ${event.count} reports` : p.speed != null ? ` · ${Number(p.speed).toFixed(1)} km/h` : ''}
-                    </small>
-                  </button>
-                );
-              })}
-              {!filteredHistory.length ? <p className="pp-subtle">Timeline events will appear after tracker history loads.</p> : null}
+              <div className="pp-trackHistoryTimeline__list">
+                {historyTimelineEvents.map((event) => {
+                  const p = event.start;
+                  const active = historyIndex >= event.startIndex && historyIndex <= event.endIndex;
+                  return (
+                    <button
+                      key={event.id}
+                      type="button"
+                      className={active ? 'is-active' : ''}
+                      onClick={() => {
+                        setHistoryPlaying(false);
+                        setHistoryIndex(event.startIndex);
+                      }}
+                    >
+                      <span className={`pp-trackHistoryTimeline__dot is-${event.type}`} />
+                      <strong>{event.timeLabel}</strong>
+                      <em>{event.label}</em>
+                      <small>
+                        {p.address || `${p.lat.toFixed(5)}, ${p.lng.toFixed(5)}`}
+                        {event.count > 1 ? ` · ${event.count} reports` : p.speed != null ? ` · ${Number(p.speed).toFixed(1)} km/h` : ''}
+                      </small>
+                    </button>
+                  );
+                })}
+                {!filteredHistory.length ? (
+                  <p className="pp-subtle">Timeline events will appear after tracker history loads.</p>
+                ) : null}
+              </div>
             </aside>
           </div>
 

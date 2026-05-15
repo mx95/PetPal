@@ -15,6 +15,7 @@ import { ServiceTabs } from '../bookings/components/ServiceTabs';
 import { ProviderCard } from '../bookings/components/ProviderCard';
 import { BookingModal } from '../bookings/components/BookingModal';
 import { DEMO_PROVIDERS } from '../bookings/demoBookingData';
+import { formatDateTime24 } from '../formatTime24';
 import { appleCalendarDataUrl, buildCalendarEvent, googleCalendarUrl } from '../bookings/calendarLinks';
 import { AppCard, EmptyState, PageContainer, SectionHeader, SkeletonCard } from '../components/ui';
 
@@ -38,7 +39,7 @@ function TabButton({ active, onClick, children }) {
 }
 
 function BrowseProviders() {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const [rows, setRows] = useState([]);
   const [loaded, setLoaded] = useState(false);
   const [err, setErr] = useState('');
@@ -163,9 +164,9 @@ function BrowseProviders() {
   const hasAdvancedFiltersActive = ratingFilter !== 'any' || (userLoc && distanceFilter !== 'any');
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[300px_1fr] lg:gap-5">
-      <aside>
-        <AppCard hover={false} className="sticky top-20 lg:top-24">
+    <div className="pp-book-layout">
+      <aside className="pp-book-sidebar">
+        <AppCard hover={false}>
           <h3 className="mb-3 text-base font-black tracking-[-0.03em] text-petpal-ink">{t('bookingsHub.filtersTitle')}</h3>
           <label className="pp-book-field">
             <span className="pp-sr">{t('bookingsHub.searchPlaceholder')}</span>
@@ -223,14 +224,14 @@ function BrowseProviders() {
             {locMsg ? <p className="pp-book-muted pp-book-muted--sm">{locMsg}</p> : null}
           </div>
         </AppCard>
+
+        <AppCard hover={false} className="pp-book-servicesCard">
+          <h3 className="mb-3 text-base font-black tracking-[-0.03em] text-petpal-ink">{t('bookingsHub.categoryLabel')}</h3>
+          <ServiceTabs tabs={serviceTabs} value={serviceTab} onChange={setServiceTab} />
+        </AppCard>
       </aside>
 
-      <div className="min-w-0">
-        <div className="mb-3 flex flex-col gap-2 rounded-2xl border border-white/75 bg-white/80 p-2.5 shadow-soft backdrop-blur sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:p-3">
-          <span className="pp-book-serviceBar__label">{t('bookingsHub.categoryLabel')}</span>
-          <ServiceTabs tabs={serviceTabs} value={serviceTab} onChange={setServiceTab} />
-        </div>
-
+      <div className="pp-book-main min-w-0">
         {err ? <div className="pp-book-error">{err}</div> : null}
 
         {!loaded ? (
@@ -290,7 +291,7 @@ function BrowseProviders() {
 }
 
 function MyBookings({ uid }) {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const [rows, setRows] = useState([]);
   const [testRows, setTestRows] = useState(() => getLocalTestBookings());
   const [err, setErr] = useState('');
@@ -315,7 +316,13 @@ function MyBookings({ uid }) {
             <div>
               <div className="pp-book-mineCard__title">{b.serviceName || b.petSnapshot?.name || 'Pet'}</div>
               <div className="pp-book-muted">
-                {b.status} · {b.startAt?.toDate ? b.startAt.toDate().toLocaleString() : b.startAtIso ? new Date(b.startAtIso).toLocaleString() : ''}
+                {b.status}
+                {' · '}
+                {b.startAt?.toDate
+                  ? formatDateTime24(b.startAt.toDate(), language)
+                  : b.startAtIso
+                    ? formatDateTime24(new Date(b.startAtIso), language)
+                    : ''}
               </div>
             </div>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -338,7 +345,7 @@ function MyBookings({ uid }) {
 }
 
 export default function BookingsHub() {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const { user } = useAuth();
   const uid = user?.uid || null;
   const [tab, setTab] = useState('browse');

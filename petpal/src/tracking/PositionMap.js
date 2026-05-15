@@ -42,6 +42,12 @@ const googleMapContainerStyle = {
   height: '100%',
   minHeight: 'min(52vh, 440px)',
 };
+
+const googleMapContainerStyleFill = {
+  width: '100%',
+  height: '100%',
+  minHeight: '100%',
+};
 const googleMapOptions = { streetViewControl: false, mapTypeControl: true, fullscreenControl: true };
 
 function FlyTo({ lat, lng }) {
@@ -161,7 +167,7 @@ function googleRouteDotIcon(maps, kind, active) {
   };
 }
 
-function GooglePositionMap({ lat, lng, apiKey, path = [], routeMarkers = [], playbackPointIndex = null }) {
+function GooglePositionMap({ lat, lng, apiKey, path = [], routeMarkers = [], playbackPointIndex = null, fill = false }) {
   const [authFailed, setAuthFailed] = useState(false);
   useEffect(() => subscribeGoogleMapsAuthFailure(() => setAuthFailed(true)), []);
 
@@ -180,7 +186,16 @@ function GooglePositionMap({ lat, lng, apiKey, path = [], routeMarkers = [], pla
   const center = head;
 
   if (authFailed || loadError) {
-    return <LeafletPositionMap lat={lat} lng={lng} path={path} routeMarkers={routeMarkers} playbackPointIndex={playbackPointIndex} />;
+    return (
+      <LeafletPositionMap
+        lat={lat}
+        lng={lng}
+        path={path}
+        routeMarkers={routeMarkers}
+        playbackPointIndex={playbackPointIndex}
+        fill={fill}
+      />
+    );
   }
 
   if (!isLoaded) {
@@ -192,7 +207,12 @@ function GooglePositionMap({ lat, lng, apiKey, path = [], routeMarkers = [], pla
   }
 
   return (
-    <GoogleMap mapContainerStyle={googleMapContainerStyle} center={center} zoom={16} options={googleMapOptions}>
+    <GoogleMap
+      mapContainerStyle={fill ? googleMapContainerStyleFill : googleMapContainerStyle}
+      center={center}
+      zoom={16}
+      options={googleMapOptions}
+    >
       {hasPath ? (
         <>
           <Polyline path={path} options={{ strokeColor: ROUTE_LINE, strokeOpacity: 0.88, strokeWeight: 2 }} />
@@ -213,17 +233,32 @@ function GooglePositionMap({ lat, lng, apiKey, path = [], routeMarkers = [], pla
  * Uses Google Maps when `REACT_APP_GOOGLE_MAPS_API_KEY` is set (same loader id as Nearby).
  * Falls back to Leaflet + OpenStreetMap when no key or Google script fails.
  *
- * @param {{ lat: number, lng: number, path?: Array, routeMarkers?: Array, playbackPointIndex?: number|null }} props
+ * @param {{ lat: number, lng: number, path?: Array, routeMarkers?: Array, playbackPointIndex?: number|null, fill?: boolean }} props
  * Route markers use red fill; the marker matching `playbackPointIndex` uses green.
  */
-export default function PositionMap({ lat, lng, path = [], routeMarkers = [], playbackPointIndex = null }) {
+export default function PositionMap({ lat, lng, path = [], routeMarkers = [], playbackPointIndex = null, fill = false }) {
   const key = process.env.REACT_APP_GOOGLE_MAPS_API_KEY?.trim();
   return (
-    <div className="pp-leaflet-wrap">
+    <div className={`pp-leaflet-wrap${fill ? ' pp-leaflet-wrap--fill' : ''}`}>
       {key ? (
-        <GooglePositionMap lat={lat} lng={lng} apiKey={key} path={path} routeMarkers={routeMarkers} playbackPointIndex={playbackPointIndex} />
+        <GooglePositionMap
+          lat={lat}
+          lng={lng}
+          apiKey={key}
+          path={path}
+          routeMarkers={routeMarkers}
+          playbackPointIndex={playbackPointIndex}
+          fill={fill}
+        />
       ) : (
-        <LeafletPositionMap lat={lat} lng={lng} path={path} routeMarkers={routeMarkers} playbackPointIndex={playbackPointIndex} />
+        <LeafletPositionMap
+          lat={lat}
+          lng={lng}
+          path={path}
+          routeMarkers={routeMarkers}
+          playbackPointIndex={playbackPointIndex}
+          fill={fill}
+        />
       )}
     </div>
   );

@@ -13,8 +13,10 @@ import {
 } from '../bookings/bookingFirestore';
 import { createClientPet, deleteClientPet, patchClientPet, subscribeClientPets } from '../bookings/providerPetsFirestore';
 import PetMedicationModal from '../components/PetMedicationModal';
+import IconMedPill from '../components/icons/IconMedPill';
 import { publishProviderProfile } from '../bookings/providerDirectoryFirestore';
 import { getDemoBusinessAccount, getDemoBusinessAccounts, getDemoSlots } from '../bookings/demoBookingData';
+import { formatDateTime24, formatTime24 } from '../formatTime24';
 
 function businessTypeLabel(providerTypes = {}) {
   if (providerTypes.vet) return 'Vet';
@@ -95,7 +97,7 @@ function slotEndDate(slot) {
 function slotTimeLabel(slot) {
   const start = slotDate(slot);
   if (!start) return 'Slot';
-  return start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  return formatTime24(start);
 }
 
 function slotPeriod(slot) {
@@ -229,7 +231,7 @@ function CalendarAvailabilityPanel({ slots, servicesById, onToggleSlot, addPanel
                         key={slot.id}
                         type="button"
                         className={`is-${status} ${selectedSlotId === slot.id ? 'is-selected' : ''}`}
-                        title={`${servicesById.get(slot.serviceId) || 'Service'}${end ? ` ends ${end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : ''}`}
+                        title={`${servicesById.get(slot.serviceId) || 'Service'}${end ? ` ends ${formatTime24(end)}` : ''}`}
                         onClick={() => {
                           setSelectedSlotId(slot.id);
                           if (onToggleSlot) onToggleSlot(slot);
@@ -895,7 +897,7 @@ function Bookings({ companyId }) {
             <div>
               <div style={{ fontWeight: 900 }}>{b.petSnapshot?.name || 'Pet'}</div>
               <div className="pp-muted" style={{ fontSize: 13 }}>
-                {b.status} • {b.startAt?.toDate ? b.startAt.toDate().toLocaleString() : ''}
+                {b.status} • {b.startAt?.toDate ? formatDateTime24(b.startAt.toDate()) : ''}
               </div>
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
@@ -952,15 +954,23 @@ function ClientPets({ companyId, clinicLabel = '' }) {
           vetClinicLabel={clinicLabel}
           initialVetRows={Array.isArray(medClient.medications) ? medClient.medications : []}
           onSaveVet={async (nextRows) => {
-            const medications = nextRows.map((r) => ({
-              id: String(r.id),
-              name: String(r.name || ''),
-              time: String(r.time || '09:00'),
-              dosage: String(r.dosage || ''),
-              notes: String(r.notes || ''),
-              source: r.source === 'owner' ? 'owner' : 'vet',
-              vetLabel: String(r.vetLabel || ''),
-            }));
+            const medications = nextRows.map((r) => {
+              const times = Array.isArray(r.times) && r.times.length
+                ? r.times.map((t) => String(t).slice(0, 5))
+                : [String(r.time || '09:00').slice(0, 5)];
+              const pillCount = Math.max(1, Number(r.pillCount) || 1);
+              return {
+                id: String(r.id),
+                name: String(r.name || ''),
+                times,
+                time: times[0],
+                pillCount,
+                dosage: String(r.dosage || ''),
+                notes: String(r.notes || ''),
+                source: r.source === 'owner' ? 'owner' : 'vet',
+                vetLabel: String(r.vetLabel || ''),
+              };
+            });
             await patchClientPet(companyId, String(medClient.id), { medications });
           }}
         />
@@ -1010,14 +1020,11 @@ function ClientPets({ companyId, clinicLabel = '' }) {
               <div className="pp-row" style={{ gap: 8, flexShrink: 0 }}>
                 <button
                   type="button"
-                  className="pp-petMedPill pp-petMedPill--compact"
+                  className="pp-btn pp-iconBtn pp-iconBtn--outline"
                   aria-label="Medication schedule"
                   onClick={() => setMedClient(p)}
                 >
-                  <svg className="pp-petMedPill__icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden>
-                    <rect x="5" y="9" width="14" height="8" rx="4" fill="none" stroke="currentColor" strokeWidth="1.8" />
-                    <path d="M9 9V7a3 3 0 0 1 6 0v2" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                  </svg>
+                  <IconMedPill size={16} />
                 </button>
                 <button type="button" className="pp-btn pp-btn--ghost" onClick={() => deleteClientPet(companyId, p.id)}>
                   Remove

@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { fetchOpenSlots, subscribeCompanyServices } from '../bookingFirestore';
-import { getDemoServices, getDemoSlots } from '../demoBookingData';
+import { getDemoServices, getDemoSlots, isDemoClosedDay, nextOpenDemoDayYmd } from '../demoBookingData';
+import { formatTime24 } from '../../formatTime24';
 import { isFirebaseConfigured } from '../../firebase';
 
 function pad2(n) {
@@ -30,10 +31,6 @@ function monthGrid(monthDate) {
       isPast: date < new Date(new Date().setHours(0, 0, 0, 0)),
     };
   });
-}
-
-function formatTime(date) {
-  return date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
 }
 
 function slotDate(slot, key) {
@@ -170,14 +167,16 @@ export function BookingModal({ open, provider, serviceTab, onClose, t }) {
 
   useEffect(() => {
     if (!open) {
-      const today = new Date();
-      setDayKey(toYmd(today));
-      setMonthDate(today);
       setSlots([]);
       setSlotId('');
       setSlotErr('');
+      return;
     }
-  }, [open]);
+    const today = new Date();
+    const initialYmd = isDemo && companyId ? nextOpenDemoDayYmd(companyId, today) : toYmd(today);
+    setDayKey(initialYmd);
+    setMonthDate(new Date(`${initialYmd}T12:00:00`));
+  }, [open, companyId, isDemo]);
 
   if (!open || !provider) return null;
 
@@ -266,7 +265,7 @@ export function BookingModal({ open, provider, serviceTab, onClose, t }) {
                       setMonthDate(new Date(d.date.getFullYear(), d.date.getMonth(), 1));
                       setSlotId('');
                     }}
-                    disabled={d.isPast}
+                    disabled={d.isPast || (isDemo && isDemoClosedDay(companyId, d.date))}
                   >
                     {d.date.getDate()}
                   </button>
@@ -302,9 +301,9 @@ export function BookingModal({ open, provider, serviceTab, onClose, t }) {
                             className={`pp-book-slot pp-book-slot--rich ${active ? 'is-active' : ''}`}
                             onClick={() => setSlotId(sl.id)}
                           >
-                            <strong>{startDate ? formatTime(startDate) : sl.id}</strong>
+                            <strong>{startDate ? formatTime24(startDate) : sl.id}</strong>
                             <span>{selectedService?.durationMin || 30} mins</span>
-                            <small>{endDate ? `Ends ${formatTime(endDate)}` : 'Finish time set after booking'}</small>
+                            <small>{endDate ? `Ends ${formatTime24(endDate)}` : 'Finish time set after booking'}</small>
                           </button>
                         );
                       })}

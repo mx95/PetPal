@@ -5,6 +5,7 @@ import { useI18n } from '../i18n/I18nContext';
 import { bookSlot, fetchOpenSlots } from '../bookings/bookingFirestore';
 import { appleCalendarDataUrl, buildCalendarEvent, googleCalendarUrl } from '../bookings/calendarLinks';
 import { getDemoProvider, getDemoServices, getDemoSlots } from '../bookings/demoBookingData';
+import { formatTime24 } from '../formatTime24';
 import { subscribePets } from '../pets/petsFirestore';
 
 const TEST_BOOKINGS_KEY = 'petpal_test_bookings';
@@ -56,10 +57,10 @@ function asDate(value) {
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
-function formatWhenLine(date) {
+function formatWhenLine(date, lang = 'en') {
   if (!date) return '';
   const day = date.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' });
-  const time = date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+  const time = formatTime24(date, lang);
   return `${day} · ${time}`;
 }
 
@@ -111,7 +112,7 @@ function AppleCalIcon() {
 }
 
 export default function BookService() {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -346,7 +347,7 @@ export default function BookService() {
               </div>
               <div className="pp-bookConfirmPass__row">
                 <dt>{t('bookConfirm.whenLabel')}</dt>
-                <dd>{bookingStart ? formatWhenLine(bookingStart) : '—'}</dd>
+                <dd>{bookingStart ? formatWhenLine(bookingStart, language) : '—'}</dd>
               </div>
               {bookingDuration != null ? (
                 <div className="pp-bookConfirmPass__row">
@@ -455,7 +456,7 @@ export default function BookService() {
                     const start = asDate(s.startAt) || asDate(s.startAtIso);
                     return (
                       <option key={s.id} value={s.id}>
-                        {start ? formatWhenLine(start) : s.id}
+                        {start ? formatWhenLine(start, language) : s.id}
                       </option>
                     );
                   })}

@@ -9,8 +9,8 @@ export const DEMO_PROVIDERS = [
     priceTier: 2,
     lat: 37.9838,
     lng: 23.7275,
-    workingHours: 'Mon-Fri 09:00-18:00',
-    nextAvailable: 'Next slot 10:00 AM',
+    workingHours: 'Mon–Sat 09:00–18:00 (closed Sun)',
+    nextAvailable: 'Next slot 10:00',
   },
   {
     id: 'example_groom',
@@ -88,6 +88,17 @@ export const DEMO_PROVIDERS = [
   },
 ];
 
+/** @type {Record<string, { closedWeekdays: number[], windows: Array<{ start: [number, number], end: [number, number] }> }>} */
+const DEMO_SCHEDULES = {
+  example_vet: {
+    closedWeekdays: [0],
+    windows: [
+      { start: [9, 0], end: [13, 0] },
+      { start: [14, 0], end: [18, 0] },
+    ],
+  },
+};
+
 const DEMO_SERVICES = {
   example_vet: [
     { id: 'demo_vet_checkup', type: 'vet', name: 'Health checkup', durationMin: 30, description: 'General wellness exam', active: true },
@@ -160,7 +171,7 @@ export function getDemoBusinessAccounts() {
         ownerName: 'Sotiris',
         status: 'booked',
         serviceName: getDemoServices(provider.id)[0]?.name || 'Appointment',
-        startAtLabel: 'Today, 10:00 AM',
+        startAtLabel: 'Today, 10:00',
       },
       {
         id: `${provider.id}_booking_2`,
@@ -168,7 +179,7 @@ export function getDemoBusinessAccounts() {
         ownerName: 'Maria',
         status: 'pending',
         serviceName: getDemoServices(provider.id)[1]?.name || 'Follow-up',
-        startAtLabel: 'Tomorrow, 2:30 PM',
+        startAtLabel: 'Tomorrow, 14:30',
       },
     ],
     clientPets: [
@@ -182,30 +193,78 @@ export function getDemoBusinessAccount(providerId) {
   return getDemoBusinessAccounts().find((p) => p.id === providerId) || null;
 }
 
+export function getDemoSchedule(providerId) {
+  return DEMO_SCHEDULES[providerId] || null;
+}
+
+export function isDemoClosedDay(providerId, date) {
+  const schedule = getDemoSchedule(providerId);
+  if (!schedule) return false;
+  return schedule.closedWeekdays.includes(date.getDay());
+}
+
+/** First bookable YYYY-MM-DD on or after `fromDate` for demo providers with a schedule. */
+export function nextOpenDemoDayYmd(providerId, fromDate = new Date()) {
+  const base = new Date(fromDate);
+  base.setHours(12, 0, 0, 0);
+  if (!getDemoSchedule(providerId)) {
+    return `${base.getFullYear()}-${String(base.getMonth() + 1).padStart(2, '0')}-${String(base.getDate()).padStart(2, '0')}`;
+  }
+  for (let i = 0; i < 14; i += 1) {
+    const d = addDays(base, i);
+    if (!isDemoClosedDay(providerId, d)) {
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+  }
+  return `${base.getFullYear()}-${String(base.getMonth() + 1).padStart(2, '0')}-${String(base.getDate()).padStart(2, '0')}`;
+}
+
+function collectDemoSlotStarts(providerId, service, after) {
+  const schedule = getDemoSchedule(providerId);
+  const durationMin = Math.max(5, Number(service.durationMin) || 30);
+  const dayStart = new Date(after);
+  dayStart.setHours(0, 0, 0, 0);
+
+  const windows = schedule?.windows || [
+    { start: [10, 0], end: [18, 0] },
+  ];
+
+  const starts = [];
+  for (let dayOffset = 0; dayOffset < 21 && starts.length < 32; dayOffset += 1) {
+    const day = addDays(dayStart, dayOffset);
+    if (isDemoClosedDay(providerId, day)) continue;
+
+    for (const win of windows) {
+      let cursor = atTime(day, win.start[0], win.start[1]);
+      const windowEnd = atTime(day, win.end[0], win.end[1]);
+      while (cursor.getTime() + durationMin * 60 * 1000 <= windowEnd.getTime()) {
+        if (cursor >= after) starts.push(new Date(cursor));
+        cursor = new Date(cursor.getTime() + durationMin * 60 * 1000);
+      }
+    }
+  }
+
+  starts.sort((a, b) => a.getTime() - b.getTime());
+  return starts;
+}
+
 export function getDemoSlots(providerId, serviceId, { after = new Date() } = {}) {
   const service = getDemoServices(providerId).find((s) => s.id === serviceId);
   if (!service) return [];
 
-  const start = new Date(after);
-  const slots = [0, 1, 2, 3, 4, 5].flatMap((dayOffset) => {
-    const day = addDays(start, dayOffset);
-    return [atTime(day, 10, 0), atTime(day, 14, 30)];
-  });
+  const slotStarts = collectDemoSlotStarts(providerId, service, after).slice(0, 16);
 
-  return slots
-    .filter((slotStart) => slotStart >= after)
-    .slice(0, 8)
-    .map((slotStart, idx) => {
-      const slotEnd = new Date(slotStart.getTime() + service.durationMin * 60 * 1000);
-      return {
-        id: `demo_slot_${providerId}_${serviceId}_${idx}`,
-        serviceId,
-        status: 'open',
-        startAt: asTimestampLike(slotStart),
-        endAt: asTimestampLike(slotEnd),
-        startAtIso: slotStart.toISOString(),
-        endAtIso: slotEnd.toISOString(),
-      };
-    });
+  return slotStarts.map((slotStart, idx) => {
+    const slotEnd = new Date(slotStart.getTime() + service.durationMin * 60 * 1000);
+    return {
+      id: `demo_slot_${providerId}_${serviceId}_${idx}`,
+      serviceId,
+      status: 'open',
+      startAt: asTimestampLike(slotStart),
+      endAt: asTimestampLike(slotEnd),
+      startAtIso: slotStart.toISOString(),
+      endAtIso: slotEnd.toISOString(),
+    };
+  });
 }
 

@@ -1062,6 +1062,14 @@ select.pp-input:focus {
   border: 1px solid rgba(16, 24, 40, 0.1);
 }
 
+.pp-leaflet-wrap--fill {
+  height: 100%;
+  min-height: 100%;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
 .pp-leaflet-wrap .leaflet-container {
   height: 100%;
   width: 100%;
@@ -2092,6 +2100,77 @@ select.pp-input:focus {
   padding: 6px 0;
 }
 
+.pp-medModal .pp-modalCard,
+.pp-medModal__card {
+  max-width: 520px;
+  width: min(100%, 520px);
+}
+
+.pp-medModal__hero {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.pp-medModal__heroIcon {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #5b37ff;
+  background: linear-gradient(145deg, rgba(91, 55, 255, 0.12), rgba(47, 128, 255, 0.08));
+  border: 1px solid rgba(91, 55, 255, 0.22);
+}
+
+.pp-medModal__heroText {
+  flex: 1;
+  min-width: 0;
+}
+
+.pp-medModal__close {
+  flex-shrink: 0;
+  min-width: 36px;
+  padding: 6px 10px;
+}
+
+.pp-medModal__form {
+  margin-top: 14px;
+}
+
+.pp-medModal__times {
+  margin-top: 10px;
+}
+
+.pp-medModal__timesHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.pp-medModal__timeRows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pp-medModal__timeRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pp-medModal__timeRow .pp-input {
+  flex: 1;
+}
+
 .pp-petSearchBox {
   display: inline-flex;
   align-items: center;
@@ -2541,6 +2620,45 @@ body.pp-noScroll {
   text-shadow: 0 0 8px rgba(255, 255, 255, 0.9);
 }
 
+.pp-trackStatusGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+  align-items: stretch;
+}
+
+.pp-trackStatCard {
+  min-width: 0;
+  padding: 12px 14px;
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.pp-trackStatCard__body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 6px;
+  flex: 1;
+  min-height: 0;
+}
+
+.pp-trackStatCard__meta {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.pp-trackStatCard .pp-trackAccuracyMeter {
+  margin-top: 2px;
+}
+
+.pp-trackStatCard .pp-batteryBar {
+  margin-top: 0;
+}
+
 .pp-trackGpsPill {
   display: inline-flex;
   align-items: center;
@@ -2549,6 +2667,7 @@ body.pp-noScroll {
   border-radius: 999px;
   font-size: 13px;
   font-weight: 750;
+  width: fit-content;
 }
 
 .pp-trackGpsPill--ok {
@@ -2816,14 +2935,29 @@ body.pp-noScroll {
 
 .pp-trackHistoryLayout {
   display: grid;
-  grid-template-columns: minmax(0, 1.5fr) minmax(300px, 0.75fr);
-  gap: 12px;
-  align-items: start;
+  grid-template-columns: minmax(0, 1.45fr) minmax(280px, 0.55fr);
+  gap: 14px;
+  align-items: stretch;
+  min-height: min(calc(100vh - 220px), 780px);
 }
 
 .pp-trackHistoryMap,
 .pp-trackHistoryTimeline {
   min-width: 0;
+}
+
+.pp-trackHistoryMap {
+  display: flex;
+  flex-direction: column;
+  min-height: min(calc(100vh - 220px), 780px);
+}
+
+.pp-trackHistoryMap__body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .pp-trackHistoryMap__top {
@@ -2832,6 +2966,7 @@ body.pp-noScroll {
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 12px;
+  flex-shrink: 0;
 }
 
 .pp-trackHistoryMap__top h3,
@@ -2872,16 +3007,52 @@ body.pp-noScroll {
   box-shadow: 0 14px 24px -16px rgba(91, 55, 255, 0.86);
 }
 
-.pp-trackHistoryFrame .pp-leaflet-wrap,
+.pp-trackHistoryFrame {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid rgba(91, 55, 255, 0.14);
+  background:
+    radial-gradient(120% 80% at 0% 0%, rgba(91, 55, 255, 0.08), transparent 55%),
+    radial-gradient(90% 70% at 100% 100%, rgba(47, 128, 255, 0.07), transparent 50%),
+    rgba(248, 250, 252, 0.9);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.75),
+    0 20px 48px -28px rgba(91, 55, 255, 0.35);
+}
+
+.pp-trackHistoryFrame--panorama {
+  border-radius: 36px 14px 36px 14px;
+  clip-path: polygon(0 0, 100% 0, 100% 97%, 99% 100%, 1% 100%, 0 97%);
+}
+
+.pp-trackHistoryFrame .pp-leaflet-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: auto;
+  min-height: 100%;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+}
+
+.pp-trackHistoryFrame .pp-leaflet-wrap--fill,
+.pp-trackHistoryFrame .pp-leaflet-wrap--fill > div,
 .pp-trackHistoryFrame .pp-leaflet-wrap > div,
 .pp-trackHistoryFrame .leaflet-container {
-  min-height: min(62vh, 560px);
+  flex: 1;
+  min-height: 100% !important;
+  height: 100% !important;
 }
 
 .pp-trackPlaybackRange {
   width: 100%;
   accent-color: #5b37ff;
-  margin-top: 12px;
+  margin-top: 0;
+  flex-shrink: 0;
 }
 
 .pp-trackHistoryEmpty {
@@ -2918,10 +3089,47 @@ body.pp-noScroll {
 }
 
 .pp-trackHistoryTimeline {
-  position: sticky;
-  top: 132px;
-  max-height: calc(100vh - 150px);
+  display: flex;
+  flex-direction: column;
+  max-height: min(calc(100vh - 220px), 780px);
+  min-height: min(calc(100vh - 220px), 780px);
+  overflow: hidden;
+}
+
+.pp-trackHistoryTimeline__list {
+  flex: 1;
+  min-height: 0;
   overflow: auto;
+  padding-right: 4px;
+}
+
+@media (min-width: 901px) {
+  .pp-trackHistoryTimeline {
+    position: static;
+    top: auto;
+  }
+}
+
+@media (max-width: 900px) {
+  .pp-trackHistoryLayout {
+    grid-template-columns: 1fr;
+    min-height: 0;
+  }
+
+  .pp-trackHistoryMap {
+    min-height: 0;
+  }
+
+  .pp-trackHistoryTimeline {
+    max-height: min(52vh, 480px);
+    min-height: 0;
+  }
+
+  .pp-trackHistoryFrame--panorama {
+    border-radius: 24px;
+    clip-path: none;
+    min-height: min(48vh, 420px);
+  }
 }
 
 .pp-trackHistoryTimeline__head {
@@ -6591,7 +6799,7 @@ body,
     scroll-snap-type: x proximity;
   }
 
-  .pp-trackStatusGrid .pp-card {
+  .pp-trackStatusGrid .pp-trackStatCard {
     scroll-snap-align: start;
   }
 
@@ -6675,7 +6883,7 @@ body,
   .pp-trackHistoryFrame .pp-leaflet-wrap,
   .pp-trackHistoryFrame .pp-leaflet-wrap > div,
   .pp-trackHistoryFrame .leaflet-container {
-    min-height: min(48vh, 420px);
+    min-height: min(44vh, 380px) !important;
   }
 }
 
@@ -9502,15 +9710,15 @@ select.pp-bookConfirmField__control {
   margin-bottom: 8px;
 }
 
-.pp-trackMapFrame {
+.pp-trackMapFrame:not(.pp-trackHistoryFrame) {
   border-radius: 18px;
   overflow: hidden;
   min-height: min(52vh, 440px);
 }
 
-.pp-trackMapFrame .pp-leaflet-wrap,
-.pp-trackMapFrame .pp-leaflet-wrap > div,
-.pp-trackMapFrame .leaflet-container {
+.pp-trackMapFrame:not(.pp-trackHistoryFrame) .pp-leaflet-wrap,
+.pp-trackMapFrame:not(.pp-trackHistoryFrame) .pp-leaflet-wrap > div,
+.pp-trackMapFrame:not(.pp-trackHistoryFrame) .leaflet-container {
   min-height: min(52vh, 440px);
 }
 
@@ -10264,6 +10472,13 @@ select.pp-bookConfirmField__control {
 .pp-book-sidebar {
   position: sticky;
   top: 72px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.pp-book-servicesCard .pp-book-serviceTabs {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .pp-book-sideBlock {
