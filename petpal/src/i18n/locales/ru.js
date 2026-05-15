@@ -662,7 +662,10 @@ const ru = {
     historyTimeHint:
       'Время по часовому поясу устройства. Для каждого дня в диапазоне на карте и в ленте показываются только точки между этими часами.',
     historyLoading: 'Загрузка истории…',
-    historyPointsSummary: '{onMap} GPS-точек на карте · {stored} в базе · {hidden} приблизительных скрыто',
+    historyPointsSummary:
+      '{onMap} GPS-точек на карте · {stored} в базе · {hidden} приблизительных скрыто · {distinctStored} разных мест в данных',
+    historySameLocationNote:
+      'Все точки на одном месте ({coords}). Возможно, во время движения не было GPS, записана только сеть/Wi‑Fi.',
     historyCalendarFallback:
       'Часы трекера не совпали с диапазоном — показаны последние сохранённые точки.',
   },

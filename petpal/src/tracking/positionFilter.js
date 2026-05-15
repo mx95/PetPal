@@ -59,13 +59,43 @@ export function isPlausibleGpsJump(prev, next) {
 
   const t0 = pointTimestampMs(prev);
   const t1 = pointTimestampMs(next);
-  if (t0 == null || t1 == null) return distKm < 0.5;
+  if (t0 == null || t1 == null) return distKm <= MAX_SINGLE_JUMP_KM;
 
   const dtSec = (t1 - t0) / 1000;
-  if (dtSec <= 0) return distKm < 0.05;
+  // Collars often batch fixes with identical timestamps — do not treat as zero-speed spikes.
+  if (dtSec <= 0) return distKm <= MAX_SINGLE_JUMP_KM;
 
   const speedKmh = (distKm / dtSec) * 3600;
   return speedKmh <= MAX_PLAUSIBLE_SPEED_KMH;
+}
+
+/** Count distinct coordinate pairs (5 decimal places ≈ 1 m). */
+export function countDistinctLocations(points) {
+  if (!Array.isArray(points) || points.length === 0) return 0;
+  const seen = new Set();
+  for (const p of points) {
+    const lat = Number(p?.lat);
+    const lng = Number(p?.lng);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue;
+    seen.add(`${lat.toFixed(5)},${lng.toFixed(5)}`);
+  }
+  return seen.size;
+}
+
+/**
+ * History map / timeline: drop LBS / approximate fixes only — keep real GPS movement.
+ * (Live map still uses {@link resolveTrackerPositions} to suppress outlier spikes.)
+ */
+export function resolveHistoryPositions(points) {
+  if (!Array.isArray(points) || points.length === 0) return [];
+  const out = [];
+  for (const p of points) {
+    if (!p || Number.isNaN(Number(p.lat)) || Number.isNaN(Number(p.lng))) continue;
+    const candidate = { ...p, lat: Number(p.lat), lng: Number(p.lng) };
+    if (!isTrustedGpsFix(candidate)) continue;
+    out.push(candidate);
+  }
+  return out;
 }
 
 function isTrustedFixWithJumpCheck(anchor, point) {

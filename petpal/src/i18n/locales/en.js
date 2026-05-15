@@ -657,7 +657,10 @@ const en = {
     historyTimeHint:
       'Clock times use your device timezone. Each day in the range only includes points between these times on the map and timeline.',
     historyLoading: 'Loading route history…',
-    historyPointsSummary: '{onMap} GPS points on map · {stored} stored · {hidden} approximate hidden',
+    historyPointsSummary:
+      '{onMap} GPS points on map · {stored} stored · {hidden} approximate hidden · {distinctStored} distinct locations in data',
+    historySameLocationNote:
+      'All stored points are at one place on the map ({coords}). The collar may not have had a GPS fix during movement, or only cell/Wi‑Fi location was recorded.',
     historyCalendarFallback:
       'Tracker clock did not match this date range — showing the latest stored points instead.',
   },
