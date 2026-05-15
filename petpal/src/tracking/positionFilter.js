@@ -74,11 +74,14 @@ function isTrustedFixWithJumpCheck(anchor, point) {
 
 /**
  * History / route display: omit LBS / triangulation; hold last GPS on outliers (no map spikes).
+ * Speed checks use the previous raw trusted fix (not the first fix), so a walk after home
+ * is not collapsed to the starting anchor.
  */
 export function resolveTrackerPositions(points) {
   if (!Array.isArray(points) || points.length === 0) return [];
 
-  let anchor = null;
+  let lastOut = null;
+  let prevTrusted = null;
   const out = [];
 
   for (const p of points) {
@@ -87,38 +90,28 @@ export function resolveTrackerPositions(points) {
 
     if (!isTrustedGpsFix(candidate)) continue;
 
-    if (!anchor) {
-      anchor = {
-        lat: candidate.lat,
-        lng: candidate.lng,
-        timestamp: candidate.timestamp,
-        deviceTime: candidate.deviceTime,
-        deviceTimeUtc: candidate.deviceTimeUtc,
-        serverTime: candidate.serverTime,
-      };
+    if (!lastOut) {
       out.push(candidate);
+      lastOut = candidate;
+      prevTrusted = candidate;
       continue;
     }
 
-    if (isPlausibleGpsJump(anchor, candidate)) {
-      anchor = {
-        lat: candidate.lat,
-        lng: candidate.lng,
-        timestamp: candidate.timestamp,
-        deviceTime: candidate.deviceTime,
-        deviceTimeUtc: candidate.deviceTimeUtc,
-        serverTime: candidate.serverTime,
-      };
+    if (isPlausibleGpsJump(prevTrusted, candidate)) {
       out.push(candidate);
+      lastOut = candidate;
+      prevTrusted = candidate;
       continue;
     }
 
     out.push({
       ...candidate,
-      lat: anchor.lat,
-      lng: anchor.lng,
+      lat: lastOut.lat,
+      lng: lastOut.lng,
       positionHeldFromPreviousGps: true,
     });
+    // Chain plausibility on raw fixes so a later walk is not blocked by an old home anchor.
+    prevTrusted = candidate;
   }
 
   return out;

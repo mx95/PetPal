@@ -115,6 +115,15 @@ function openSqlite(dbPath) {
     LIMIT ?
   `);
 
+  /** Most recently stored fixes (insert order), for when device timestamps are wrong. */
+  const listHistoryByImeiById = db.prepare(`
+    SELECT lat, lng, source, battery, signal, timestamp
+    FROM positions
+    WHERE imei = ?
+    ORDER BY id DESC
+    LIMIT ?
+  `);
+
   /** Chronological fixes within [from, to] (inclusive), for date-range UI — avoids dropping the start of a walk. */
   const listHistoryByImeiInRange = db.prepare(`
     SELECT lat, lng, source, battery, signal, timestamp
@@ -184,6 +193,7 @@ function openSqlite(dbPath) {
     upsertDevice,
     insertPosition,
     listHistoryByImei,
+    listHistoryByImeiById,
     listHistoryByImeiInRange,
     listDevices,
     getDevice,

@@ -151,8 +151,8 @@ function createSqliteStore({ dbPath }) {
 
       const n = Number(limit);
       const safeLimit = Number.isFinite(n) && n > 0 ? Math.min(10000, Math.floor(n)) : 100;
-      const rows = sqlite.listHistoryByImei.all(String(imei), safeLimit);
-      return rows.map((r) => ({
+      const rows = sqlite.listHistoryByImeiById.all(String(imei), safeLimit);
+      return rows.reverse().map((r) => ({
         lat: r.lat != null ? Number(r.lat) : null,
         lng: r.lng != null ? Number(r.lng) : null,
         source: r.source ?? null,

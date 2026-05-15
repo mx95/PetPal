@@ -205,7 +205,12 @@ function computeHistoryRangeForPreset(preset) {
 }
 
 function buildHistoryAnalytics(points) {
-  const distanceKm = points.reduce((sum, p, idx) => sum + (idx ? kmBetween(points[idx - 1], p) : 0), 0);
+  const distanceKm = points.reduce((sum, p, idx) => {
+    if (!idx) return sum;
+    const prev = points[idx - 1];
+    if (p.positionHeldFromPreviousGps || prev.positionHeldFromPreviousGps) return sum;
+    return sum + kmBetween(prev, p);
+  }, 0);
   const first = points[0] ? pointTime(points[0]) : 0;
   const last = points[points.length - 1] ? pointTime(points[points.length - 1]) : 0;
   const activeMinutes = first && last ? Math.max(0, Math.round((last - first) / 60000)) : 0;
@@ -467,10 +472,14 @@ export default function Tracking() {
   }, [mapPosition]);
 
   const filteredHistory = useMemo(() => {
-    if (!historyCalendarMatch) return resolvedHistory;
     const filtered = filterHistoryPoints(resolvedHistory, historyRange);
-    if (filtered.length === 0 && resolvedHistory.length > 0) return resolvedHistory;
-    return filtered;
+    if (historyCalendarMatch) {
+      if (filtered.length === 0 && resolvedHistory.length > 0) return resolvedHistory;
+      return filtered;
+    }
+    // Tracker clock mismatch: show points on the selected day when timestamps align; otherwise all loaded fixes.
+    if (filtered.length > 0) return filtered;
+    return resolvedHistory;
   }, [resolvedHistory, historyRange, historyCalendarMatch]);
   const historyAnalytics = useMemo(() => buildHistoryAnalytics(filteredHistory), [filteredHistory]);
   const historyMarkers = useMemo(() => {
