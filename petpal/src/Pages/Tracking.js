@@ -10,7 +10,6 @@ import {
   applyHeldGpsPosition,
   isTrustedGpsFix,
   kmBetween,
-  countDistinctLocations,
   resolveHistoryPositions,
 } from '../tracking/positionFilter';
 
@@ -503,9 +502,7 @@ export default function Tracking() {
     const stored = historyPoints.length;
     const onMap = filteredHistory.length;
     const approximateHidden = historyPoints.filter((p) => p && !isTrustedGpsFix(p)).length;
-    const distinctStored = countDistinctLocations(historyPoints);
-    const distinctOnMap = countDistinctLocations(filteredHistory);
-    return { stored, onMap, approximateHidden, distinctStored, distinctOnMap };
+    return { stored, onMap, approximateHidden };
   }, [historyPoints, filteredHistory]);
 
   useEffect(() => {
@@ -927,19 +924,8 @@ export default function Tracking() {
                           onMap: historyLoadMeta.onMap,
                           stored: historyLoadMeta.stored,
                           hidden: historyLoadMeta.approximateHidden,
-                          distinctStored: historyLoadMeta.distinctStored,
                         })}
                   </p>
-                  {!historyLoading &&
-                  historyLoadMeta.stored > 1 &&
-                  historyLoadMeta.distinctStored <= 1 &&
-                  filteredHistory[0] ? (
-                    <p className="pp-subtle pp-trackHistoryMap__note">
-                      {t('trackingPage.historySameLocationNote', {
-                        coords: `${filteredHistory[0].lat.toFixed(5)}, ${filteredHistory[0].lng.toFixed(5)}`,
-                      })}
-                    </p>
-                  ) : null}
                   {!historyLoading && !historyCalendarMatch ? (
                     <p className="pp-subtle pp-trackHistoryMap__note">{t('trackingPage.historyCalendarFallback')}</p>
                   ) : null}
