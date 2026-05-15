@@ -195,8 +195,8 @@ export default function Dashboard() {
   const greetingName =
     user?.displayName?.trim() || (user?.email ? user.email.split('@')[0] : '') || '';
 
-  const dailyPrimary = useMemo(() => DAILY_MISSIONS.slice(0, DAILY_MISSIONS_HUB), []);
-  const dailyExtra = useMemo(() => DAILY_MISSIONS.slice(DAILY_MISSIONS_HUB), []);
+  const dailyPrimary = useMemo(() => DAILY_MISSIONS.slice(0, DAILY_MISSIONS_HUB), [DAILY_MISSIONS]);
+  const dailyExtra = useMemo(() => DAILY_MISSIONS.slice(DAILY_MISSIONS_HUB), [DAILY_MISSIONS]);
 
   const renderMission = (m) => {
     const done = isDailyDone(m.id);

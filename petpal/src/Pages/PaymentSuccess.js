@@ -61,7 +61,7 @@ export default function PaymentSuccess() {
         collarTotalParam,
         shopStats,
       }),
-    [t, focusSku, plusBound, plusActive, collarComboParam, collarTotalParam, shopStats.combo, shopStats.total]
+    [t, focusSku, plusBound, plusActive, collarComboParam, collarTotalParam, shopStats]
   );
 
   if (!user) {

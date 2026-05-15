@@ -41,16 +41,16 @@ function describe(t, a) {
   return t(key, { n: a.target, s: a.target === 1 ? '' : 's' });
 }
 
+// Dashboard/hub should feel lightweight: show only a starter set.
+const BASIC_KINDS = ['distance', 'walks', 'streak', 'level', 'pets'];
+const ITEMS_PER_KIND = 2;
+
 export default function LifetimeAchievements({ variant = 'full' }) {
   const { t } = useI18n();
   const hub = variant === 'hub';
   const { lifetimeAchievements, achievementXp, achievementCount, lifetimeAchievementDefs } = useGame();
 
   const totalAll = Array.isArray(lifetimeAchievementDefs) ? lifetimeAchievementDefs.length : 0;
-
-  // Dashboard/hub should feel lightweight: show only a starter set.
-  const BASIC_KINDS = ['distance', 'walks', 'streak', 'level', 'pets'];
-  const ITEMS_PER_KIND = 2;
 
   const groups = useMemo(() => {
     const order = hub ? BASIC_KINDS : ['distance', 'walks', 'streak', 'level', 'pets', 'photos', 'peak', 'daily'];

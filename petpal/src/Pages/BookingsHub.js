@@ -39,7 +39,7 @@ function TabButton({ active, onClick, children }) {
 }
 
 function BrowseProviders() {
-  const { t, language } = useI18n();
+  const { t } = useI18n();
   const [rows, setRows] = useState([]);
   const [loaded, setLoaded] = useState(false);
   const [err, setErr] = useState('');
@@ -345,7 +345,7 @@ function MyBookings({ uid }) {
 }
 
 export default function BookingsHub() {
-  const { t, language } = useI18n();
+  const { t } = useI18n();
   const { user } = useAuth();
   const uid = user?.uid || null;
   const [tab, setTab] = useState('browse');

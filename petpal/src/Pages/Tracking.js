@@ -442,7 +442,7 @@ export default function Tracking() {
     return () => {
       cancelled = true;
     };
-  }, [trackerTab, effectiveDeviceId, historyReloadTick, historyRange.from, historyRange.to]);
+  }, [trackerTab, effectiveDeviceId, historyReloadTick, historyRange]);
 
   const resolvedHistory = useMemo(() => resolveTrackerPositions(historyPoints), [historyPoints]);
 

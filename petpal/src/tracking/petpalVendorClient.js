@@ -93,7 +93,6 @@ function normalizeHistoryPoint(p, idx = 0) {
           : null,
     gpsValid: p.gpsValid === true ? true : p.gpsValid === false ? false : null,
     warningApproximate: Boolean(p.warningApproximate) || p.source === 'lbs',
-    warningApproximate: Boolean(p.warningApproximate),
     timestamp,
     address: p.address || null,
   };
