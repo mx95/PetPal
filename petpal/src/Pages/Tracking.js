@@ -562,6 +562,18 @@ export default function Tracking() {
 
   const batPct = position?.battery != null ? Math.min(100, Math.max(0, Number(position.battery))) : null;
 
+  const signalLabel =
+    position?.signal != null && Number.isFinite(Number(position.signal))
+      ? position.signalStatus
+        ? t(`trackingPage.signalLevel_${position.signalStatus}`, { value: Number(position.signal) })
+        : t('trackingPage.signalLevelRaw', { value: Number(position.signal) })
+      : null;
+
+  const satellitesLabel =
+    position?.satellites != null && Number.isFinite(Number(position.satellites))
+      ? t('trackingPage.satellites', { count: Number(position.satellites) })
+      : null;
+
   const accMeter = position ? accuracyMeterStyle(position) : null;
   const locateAction = (
     <div className="pp-trackLocateInline">
@@ -654,6 +666,7 @@ export default function Tracking() {
                     {t('trackingPage.accuracyLabel', { value: accuracyLabel })}
                     {position?.warningStale ? ` · ${t('trackingPage.warnOffline')}` : ''}
                   </p>
+                  {satellitesLabel ? <p className="pp-subtle pp-trackStatCard__meta">{satellitesLabel}</p> : null}
                   {accMeter ? (
                     <div
                       className="pp-trackAccuracyMeter"
@@ -665,7 +678,9 @@ export default function Tracking() {
                     >
                       <div className="pp-trackAccuracyMeter__fill" style={{ width: accMeter.width, background: accMeter.background }} />
                     </div>
-                  ) : null}
+                  ) : (
+                    <div className="pp-trackStatCard__spacer" aria-hidden />
+                  )}
                 </div>
               </article>
 
@@ -684,6 +699,14 @@ export default function Tracking() {
                       {t('trackingPage.healthBattery')}: —
                     </p>
                   )}
+                  <p className="pp-subtle pp-trackStatCard__meta">
+                    {t('trackingPage.healthSignal')}: {signalLabel || '—'}
+                  </p>
+                  {position?.isCharging ? (
+                    <p className="pp-subtle pp-trackStatCard__meta">{t('trackingPage.charging')}</p>
+                  ) : (
+                    <div className="pp-trackStatCard__spacer" aria-hidden />
+                  )}
                 </div>
               </article>
 
@@ -696,6 +719,12 @@ export default function Tracking() {
                   <p className="pp-subtle pp-trackStatCard__meta">
                     {position.movementText || (position.isMoving ? t('trackingPage.moving') : t('trackingPage.notMoving'))}
                   </p>
+                  {position?.speed != null && Number.isFinite(Number(position.speed)) ? (
+                    <p className="pp-subtle pp-trackStatCard__meta">
+                      {t('trackingPage.lblSpeed')}: {Number(position.speed).toFixed(1)} {t('trackingPage.speedUnitMs')}
+                    </p>
+                  ) : null}
+                  <div className="pp-trackStatCard__spacer" aria-hidden />
                 </div>
               </article>
             </div>

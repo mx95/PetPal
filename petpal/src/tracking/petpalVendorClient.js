@@ -178,6 +178,8 @@ function normalizeXexunPosition(json) {
     steps: json.steps ?? null,
     isMoving: json.isMoving ?? null,
     warningStale: json.warningStale ?? null,
+    gpsValid: json.gpsValid === true ? true : json.gpsValid === false ? false : null,
+    satellites: json.satellites != null ? Number(json.satellites) : null,
     diagnostics,
   };
 }

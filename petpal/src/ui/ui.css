@@ -2633,11 +2633,13 @@ body.pp-noScroll {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
   margin-top: 10px;
-  align-items: start;
+  align-items: stretch;
 }
 
 .pp-trackStatCard {
   min-width: 0;
+  height: 100%;
+  min-height: 104px;
   padding: 10px 12px;
   border-radius: 16px;
   display: flex;
@@ -2647,8 +2649,16 @@ body.pp-noScroll {
 .pp-trackStatCard__body {
   display: flex;
   flex-direction: column;
+  justify-content: flex-start;
   gap: 4px;
   margin-top: 4px;
+  flex: 1;
+  min-height: 72px;
+}
+
+.pp-trackStatCard__spacer {
+  flex: 1;
+  min-height: 6px;
 }
 
 .pp-trackStatCard__meta {
@@ -6810,6 +6820,8 @@ body,
 
   .pp-trackStatusGrid .pp-trackStatCard {
     scroll-snap-align: start;
+    min-width: 132px;
+    min-height: 104px;
   }
 
   .pp-trackMapActions {
