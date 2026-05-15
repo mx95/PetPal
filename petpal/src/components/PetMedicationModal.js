@@ -271,7 +271,7 @@ export default function PetMedicationModal({
             </div>
           </div>
           <button type="button" className="pp-medModal__close" onClick={onClose} aria-label={t('common.cancel')}>
-            <span aria-hidden>×</span>
+            <span aria-hidden>{'×'}</span>
           </button>
         </header>
 
@@ -326,7 +326,7 @@ export default function PetMedicationModal({
                       onClick={() => (mode === 'owner' ? void removeOwnerRow(r.id) : removeVetRow(r.id))}
                       aria-label={t('myPets.medsRemove')}
                     >
-                      ×
+                      {'×'}
                     </button>
                   </li>
                 ))}
@@ -365,7 +365,7 @@ export default function PetMedicationModal({
                       disabled={draftPillCount <= 1}
                       aria-label={t('myPets.medsDecrease')}
                     >
-                        ×
+                      −
                     </button>
                     <span className="pp-medStepper__value" aria-live="polite">
                       {draftPillCount}
@@ -424,7 +424,8 @@ export default function PetMedicationModal({
                         className="pp-medTimeChip__remove"
                         onClick={() => removeDraftTime(idx)}
                         aria-label={t('myPets.medsRemoveTime')}
-                        ×
+                      >
+                        {'×'}
                       </button>
                     ) : null}
                   </div>
