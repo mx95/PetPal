@@ -1,6 +1,14 @@
 {
   "indexes": [
     {
+      "collectionGroup": "discoverPosts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "active", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "billingSubscriptions",
       "queryScope": "COLLECTION",
       "fields": [

@@ -214,6 +214,26 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // Home Discover feed — public read; approved businesses and admins publish.
+    match /discoverPosts/{postId} {
+      allow read: if true;
+      allow create: if request.auth != null
+        && request.resource.data.authorUid == request.auth.uid
+        && request.resource.data.active == true
+        && request.resource.data.title is string
+        && request.resource.data.title.size() > 0
+        && request.resource.data.body is string
+        && request.resource.data.body.size() > 0
+        && (
+          isAdmin()
+          || isApprovedCompany(request.auth.uid)
+        );
+      allow update, delete: if isAdmin()
+        || (request.auth != null
+            && resource.data.authorUid == request.auth.uid
+            && isApprovedCompany(request.auth.uid));
+    }
+
     // Dog breeding listings — signed-in readers; owners update their docs only.
     match /breedingListings/{listingId} {
       allow read: if request.auth != null;

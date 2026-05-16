@@ -15219,6 +15219,31 @@ html[data-theme="dark"] .pp-nearbyPartnerCard__name {
 .pp-dSectionHead__link:hover {
   text-decoration: underline;
 }
+.pp-dSectionHead__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px 14px;
+}
+.pp-dSectionHead__linkBtn {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font: inherit;
+}
+
+.pp-dFeedCard__toast {
+  margin: 8px 0 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: #027a48;
+}
+
+.pp-modal--discoverPromote {
+  max-width: 440px;
+}
 
 .pp-dFeedCard {
   border-radius: 20px;
@@ -15341,6 +15366,10 @@ html[data-theme="dark"] .pp-nearbyPartnerCard__name {
   font-weight: 800;
   color: #667085;
   cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   transition: background 0.15s ease, color 0.15s ease;
 }
 .pp-dFeedCard__engage:hover,

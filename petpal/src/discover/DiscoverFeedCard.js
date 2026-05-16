@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useI18n } from '../i18n/I18nContext';
+import { contactDiscoverItem, shareDiscoverItem } from './discoverFeedActions';
 
 function formatCount(n) {
   if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
@@ -18,12 +19,29 @@ function relativeTime(t, iso) {
 }
 
 /**
- * @param {{ item: import('../data/discoverFeed').default extends never ? object : Record<string, unknown> }} props
+ * @param {{ item: Record<string, unknown> }} props
  */
 export default function DiscoverFeedCard({ item }) {
   const { t } = useI18n();
   const [liked, setLiked] = useState(false);
+  const [shareNote, setShareNote] = useState('');
   const likes = item.likes + (liked ? 1 : 0);
+
+  async function onShare() {
+    const res = await shareDiscoverItem(item, t);
+    if (res.message) {
+      setShareNote(res.message);
+      window.setTimeout(() => setShareNote(''), 2800);
+    }
+  }
+
+  function onContact() {
+    const channel = contactDiscoverItem(item);
+    if (!channel) {
+      setShareNote(t('discover.feed.contactUnavailable'));
+      window.setTimeout(() => setShareNote(''), 2800);
+    }
+  }
 
   return (
     <article className="pp-dFeedCard">
@@ -63,10 +81,15 @@ export default function DiscoverFeedCard({ item }) {
               {t(item.ctaLabelKey)}
             </Link>
           ) : null}
-          <button type="button" className="pp-btn pp-btn--ghost pp-dFeedCard__contact">
+          <button type="button" className="pp-btn pp-btn--ghost pp-dFeedCard__contact" onClick={onContact}>
             {t('discover.feed.contact')}
           </button>
         </div>
+        {shareNote ? (
+          <p className="pp-dFeedCard__toast" role="status">
+            {shareNote}
+          </p>
+        ) : null}
       </div>
 
       <footer className="pp-dFeedCard__foot">
@@ -78,10 +101,10 @@ export default function DiscoverFeedCard({ item }) {
         >
           ♥ {formatCount(likes)}
         </button>
-        <button type="button" className="pp-dFeedCard__engage">
+        <Link to="/community" className="pp-dFeedCard__engage">
           💬 {formatCount(item.comments)}
-        </button>
-        <button type="button" className="pp-dFeedCard__engage">
+        </Link>
+        <button type="button" className="pp-dFeedCard__engage" onClick={onShare}>
           ↗ {t('discover.feed.share')}
         </button>
       </footer>
