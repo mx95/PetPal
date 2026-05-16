@@ -11,7 +11,6 @@ import DiscoverFeedSkeleton from './DiscoverFeedSkeleton';
 import DiscoverCommunityCarousel from './DiscoverCommunityCarousel';
 import DiscoverServices from './DiscoverServices';
 import DiscoverTrustStrip from './DiscoverTrustStrip';
-import DiscoverContextualRail from './DiscoverContextualRail';
 import DiscoverPromoteModal from './DiscoverPromoteModal';
 import { useDiscoverFeed } from './useDiscoverFeed';
 
@@ -24,34 +23,31 @@ export default function DiscoverHome() {
   const [promoteOpen, setPromoteOpen] = useState(false);
   const sentinelRef = useRef(null);
 
-  const loadMoreRef = useRef(loadMore);
-  loadMoreRef.current = loadMore;
-
   useEffect(() => {
     const el = sentinelRef.current;
-    if (!el || loading || loadingMore || !hasMore || items.length === 0) return undefined;
-
+    if (!el) return undefined;
     const obs = new IntersectionObserver(
       (entries) => {
-        if (entries[0]?.isIntersecting) loadMoreRef.current();
+        if (entries[0]?.isIntersecting) loadMore();
       },
-      { rootMargin: '80px' }
+      { rootMargin: '240px' }
     );
     obs.observe(el);
     return () => obs.disconnect();
-  }, [loading, loadingMore, hasMore, items.length]);
+  }, [loadMore]);
 
   return (
     <div className="pp-discoverPage">
-      <header className="pp-discoverPage__intro">
-        <DiscoverHero user={user} pets={pets} />
-        <DiscoverQuickActions />
-      </header>
+      <DiscoverHero user={user} pets={pets} />
+      <DiscoverQuickActions />
 
       <div className="pp-discoverPage__layout">
         <main className="pp-discoverPage__main">
-          <div className="pp-dSectionHead pp-dSectionHead--feed pp-dSectionHead--minimal">
-            <h2 className="pp-dSectionHead__title">{t('discover.feed.title')}</h2>
+          <div className="pp-dSectionHead pp-dSectionHead--feed">
+            <div>
+              <h2 className="pp-dSectionHead__title">{t('discover.feed.title')}</h2>
+              <p className="pp-dSectionHead__sub">{t('discover.feed.sub')}</p>
+            </div>
             <div className="pp-dSectionHead__actions">
               {isApprovedCompany ? (
                 <button type="button" className="pp-dSectionHead__link pp-dSectionHead__linkBtn" onClick={() => setPromoteOpen(true)}>
@@ -61,6 +57,9 @@ export default function DiscoverHome() {
               <button type="button" className="pp-dSectionHead__link pp-dSectionHead__linkBtn" onClick={refresh}>
                 {t('discover.feed.refresh')}
               </button>
+              <Link className="pp-dSectionHead__link" to="/community">
+                {t('discover.feed.postCta')}
+              </Link>
             </div>
           </div>
 
@@ -81,21 +80,15 @@ export default function DiscoverHome() {
               <DiscoverFeedCard key={item.id} item={item} />
             ))}
             {loadingMore ? <DiscoverFeedSkeleton count={1} /> : null}
-            {!loading && hasMore && items.length > 0 ? (
-              <div ref={sentinelRef} className="pp-discoverPage__sentinel" aria-hidden />
-            ) : null}
+            {hasMore ? <div ref={sentinelRef} className="pp-discoverPage__sentinel" aria-hidden /> : null}
           </div>
         </main>
 
         <aside className="pp-discoverPage__aside">
-          <DiscoverContextualRail pets={pets} />
+          <DiscoverCommunityCarousel pets={pets} />
+          <DiscoverServices />
         </aside>
       </div>
-
-      <section className="pp-discoverPage__below" aria-label={t('discover.below.aria')}>
-        <DiscoverCommunityCarousel pets={pets} />
-        <DiscoverServices />
-      </section>
 
       <DiscoverTrustStrip loggedIn={Boolean(user)} />
 

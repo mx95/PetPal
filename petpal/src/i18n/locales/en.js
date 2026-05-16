@@ -195,15 +195,6 @@ const en = {
       enroll: 'Enroll',
       tryFeature: 'Try it',
     },
-    below: {
-      aria: 'More from PetPal',
-    },
-    contextual: {
-      aria: 'Suggested for you',
-    },
-    nearby: {
-      title: 'Nearby picks',
-    },
     community: {
       title: 'Community highlights',
       seeAll: 'See all',

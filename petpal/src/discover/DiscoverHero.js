@@ -21,6 +21,7 @@ export default function DiscoverHero({ user, pets }) {
   return (
     <section className="pp-dHero" aria-labelledby="discover-hero-title">
       <div className="pp-dHero__glow pp-dHero__glow--a" aria-hidden />
+      <div className="pp-dHero__glow pp-dHero__glow--b" aria-hidden />
       <div className="pp-dHero__inner">
         <div className="pp-dHero__copy">
           {user ? (
@@ -38,7 +39,7 @@ export default function DiscoverHero({ user, pets }) {
             <Link className="pp-btn pp-btnPrimary pp-dHero__btn" to="/nearby">
               {t('discover.hero.ctaExplore')}
             </Link>
-            <Link className="pp-btn pp-btn--ghost pp-dHero__btn" to="/tracking">
+            <Link className="pp-btn pp-btn--glass pp-dHero__btn" to="/tracking">
               {t('discover.hero.ctaTrack')}
             </Link>
           </div>
@@ -59,6 +60,12 @@ export default function DiscoverHero({ user, pets }) {
               <span className="pp-dHero__tipLabel">{t('discover.hero.spotlight')}</span>
               <strong>{t(rot.titleKey)}</strong>
               <p>{t(rot.subKey)}</p>
+            </div>
+            <div className="pp-dHero__float pp-dHero__float--paw" aria-hidden>
+              🐾
+            </div>
+            <div className="pp-dHero__float pp-dHero__float--heart" aria-hidden>
+              ♥
             </div>
           </div>
         </div>

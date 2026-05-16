@@ -2,13 +2,15 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useI18n } from '../i18n/I18nContext';
 
-/** Core shortcuts — kept minimal so the feed stays the focal point. */
 const ACTIONS = [
   { key: 'vets', icon: '🏥', to: '/nearby', labelKey: 'discover.actions.vets' },
+  { key: 'groom', icon: '✂️', to: '/nearby', labelKey: 'discover.actions.groomers' },
+  { key: 'shops', icon: '🛒', to: '/shop', labelKey: 'discover.actions.shops' },
+  { key: 'lost', icon: '🆘', to: '/premium/lost', labelKey: 'discover.actions.lost' },
   { key: 'book', icon: '📅', to: '/bookings', labelKey: 'discover.actions.bookings' },
   { key: 'walk', icon: '🚶', to: '/dashboard', labelKey: 'discover.actions.walk' },
   { key: 'pack', icon: '💬', to: '/community', labelKey: 'discover.actions.community' },
-  { key: 'lost', icon: '🆘', to: '/premium/lost', labelKey: 'discover.actions.lost' },
+  { key: 'sos', icon: '⚡', to: '/premium/lost', labelKey: 'discover.actions.emergency' },
 ];
 
 export default function DiscoverQuickActions() {

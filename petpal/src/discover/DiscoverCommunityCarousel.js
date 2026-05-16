@@ -18,8 +18,8 @@ export default function DiscoverCommunityCarousel({ pets }) {
       : DISCOVER_COMMUNITY_PETS.map((c) => ({ ...c, story: t(c.storyKey), pet: null }));
 
   return (
-    <section className="pp-dCommunity pp-dCommunity--light">
-      <div className="pp-dSectionHead pp-dSectionHead--compact">
+    <section className="pp-dCommunity">
+      <div className="pp-dSectionHead">
         <h2 className="pp-dSectionHead__title">{t('discover.community.title')}</h2>
         <Link className="pp-dSectionHead__link" to="/community">
           {t('discover.community.seeAll')}
