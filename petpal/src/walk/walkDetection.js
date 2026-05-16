@@ -2,7 +2,7 @@ import {
   kmBetween,
   pointReceivedIso,
   pointTimestampMs,
-  resolveTrackerPositions,
+  resolveHistoryRoutePositions,
   sanitizeSpeedKmh,
 } from '../tracking/positionFilter';
 
@@ -88,7 +88,7 @@ function finalizeSegment(raw) {
 export function detectWalkSegments(points) {
   if (!Array.isArray(points) || points.length < 2) return [];
 
-  const filtered = resolveTrackerPositions(sortPoints(points));
+  const filtered = resolveHistoryRoutePositions(sortPoints(points));
   if (filtered.length < 2) return [];
 
   const maxGapMs = MAX_GAP_MIN * 60 * 1000;

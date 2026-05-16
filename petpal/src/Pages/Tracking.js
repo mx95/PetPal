@@ -15,7 +15,7 @@ import {
   kmBetween,
   pointReceivedIso,
   pointTimestampMs,
-  resolveTrackerPositions,
+  resolveHistoryRoutePositions,
   sanitizeSpeedKmh,
 } from '../tracking/positionFilter';
 
@@ -500,7 +500,7 @@ export default function Tracking() {
     const sorted = [...historyPoints].sort(
       (a, b) => (pointTimestampMs(a) ?? 0) - (pointTimestampMs(b) ?? 0)
     );
-    return resolveTrackerPositions(sorted);
+    return resolveHistoryRoutePositions(sorted);
   }, [historyPoints]);
 
   const mapPosition = useMemo(
@@ -549,7 +549,7 @@ export default function Tracking() {
         const sorted = [...history].sort(
           (a, b) => (pointTimestampMs(a) ?? 0) - (pointTimestampMs(b) ?? 0)
         );
-        const resolved = resolveTrackerPositions(sorted);
+        const resolved = resolveHistoryRoutePositions(sorted);
         for (let i = resolved.length - 1; i >= 0; i--) {
           const p = resolved[i];
           if (!hasValidCoords(p)) continue;

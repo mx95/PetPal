@@ -1,6 +1,7 @@
 import {
   isPlausibleGpsJump,
   kmBetween,
+  resolveHistoryRoutePositions,
   resolveTrackerPositions,
 } from './positionFilter';
 
@@ -33,5 +34,28 @@ describe('resolveTrackerPositions', () => {
     expect(out[1].positionHeldFromPreviousGps).toBe(true);
     expect(out[2].lat).toBe(home.lat);
     expect(out[2].positionHeldFromPreviousGps).toBe(true);
+  });
+});
+
+describe('resolveHistoryRoutePositions', () => {
+  it('does not draw lines between alternating distant cell-tower clusters', () => {
+    const base = Date.parse('2026-05-16T13:00:00.000Z');
+    const iso = (min) => new Date(base + min * 60_000).toISOString();
+    const A = [34.99942, 33.98033];
+    const B = [34.98478, 33.84349];
+    const points = [];
+    for (let i = 0; i < 6; i++) points.push(pt(A[0], A[1], iso(i)));
+    for (let i = 0; i < 3; i++) points.push(pt(B[0], B[1], iso(10 + i)));
+    for (let i = 0; i < 6; i++) points.push(pt(A[0], A[1], iso(20 + i)));
+    for (let i = 0; i < 4; i++) points.push(pt(B[0], B[1], iso(30 + i)));
+
+    const route = resolveHistoryRoutePositions(points);
+    expect(route.length).toBeGreaterThan(0);
+
+    let maxSeg = 0;
+    for (let i = 1; i < route.length; i++) {
+      maxSeg = Math.max(maxSeg, kmBetween(route[i - 1], route[i]));
+    }
+    expect(maxSeg).toBeLessThan(2);
   });
 });

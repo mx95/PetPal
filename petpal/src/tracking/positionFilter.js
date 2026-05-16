@@ -66,24 +66,33 @@ export function isTrustedGpsFix(p) {
   return true;
 }
 
-export function isPlausibleGpsJump(prev, next) {
+export function isPlausibleGpsJump(prev, next, limits = {}) {
   if (!prev || prev.lat == null || prev.lng == null) return true;
   if (!next || next.lat == null || next.lng == null) return false;
 
+  const maxJumpKm = limits.maxJumpKm ?? MAX_SINGLE_JUMP_KM;
+  const maxBatchJumpKm = limits.maxBatchJumpKm ?? MAX_BATCH_JUMP_KM;
+  const maxSpeedKmh = limits.maxSpeedKmh ?? MAX_PLAUSIBLE_SPEED_KMH;
+
   const distKm = kmBetween(prev, next);
-  if (distKm > MAX_SINGLE_JUMP_KM) return false;
+  if (distKm > maxJumpKm) return false;
 
   const t0 = pointTimestampMs(prev);
   const t1 = pointTimestampMs(next);
-  if (t0 == null || t1 == null) return distKm <= MAX_SINGLE_JUMP_KM;
+  if (t0 == null || t1 == null) return distKm <= maxJumpKm;
 
   const dtSec = (t1 - t0) / 1000;
   // Batched fixes share receive time — allow only short hops, not multi‑km GPS spikes.
-  if (dtSec <= 0) return distKm <= MAX_BATCH_JUMP_KM;
+  if (dtSec <= 0) return distKm <= maxBatchJumpKm;
 
   const speedKmh = (distKm / dtSec) * 3600;
-  return speedKmh <= MAX_PLAUSIBLE_SPEED_KMH;
+  return speedKmh <= maxSpeedKmh;
 }
+
+/** Stricter limits for history map polylines (pet on foot). */
+const HISTORY_ROUTE_LIMITS = { maxJumpKm: 0.45, maxBatchJumpKm: 0.15, maxSpeedKmh: 28 };
+const HISTORY_CLUSTER_RADIUS_KM = 0.12;
+const HISTORY_CLUSTER_MIN_POINTS = 3;
 
 /** Count distinct coordinate pairs (5 decimal places ≈ 1 m). */
 export function countDistinctLocations(points) {
@@ -98,9 +107,94 @@ export function countDistinctLocations(points) {
   return seen.size;
 }
 
+function clusterIsCoherent(points, radiusKm = HISTORY_CLUSTER_RADIUS_KM) {
+  if (!points.length) return false;
+  const anchor = points[0];
+  return points.every((p) => kmBetween(anchor, p) <= radiusKm);
+}
+
+/**
+ * History map / timeline route: trusted GPS only, no lines to distant “ping‑pong” towers.
+ * New clusters need several fixes in one place before connecting to the last plotted point.
+ */
+export function resolveHistoryRoutePositions(points) {
+  if (!Array.isArray(points) || points.length === 0) return [];
+
+  const trusted = [];
+  for (const p of points) {
+    if (!p || Number.isNaN(Number(p.lat)) || Number.isNaN(Number(p.lng))) continue;
+    const candidate = { ...p, lat: Number(p.lat), lng: Number(p.lng), speed: sanitizeSpeedKmh(p.speed) };
+    if (!isTrustedGpsFix(candidate)) continue;
+    trusted.push(candidate);
+  }
+  if (trusted.length === 0) return [];
+
+  const out = [];
+  let lastPlotted = null;
+  let prevRaw = null;
+  let pendingCluster = [];
+
+  const flushPendingCluster = () => {
+    if (pendingCluster.length < HISTORY_CLUSTER_MIN_POINTS) {
+      pendingCluster = [];
+      return;
+    }
+    if (!clusterIsCoherent(pendingCluster)) {
+      pendingCluster = [];
+      return;
+    }
+    const seed = pendingCluster[0];
+    const canConnect =
+      !lastPlotted || isPlausibleGpsJump(lastPlotted, seed, HISTORY_ROUTE_LIMITS);
+    if (!canConnect) {
+      pendingCluster = [];
+      return;
+    }
+    for (const p of pendingCluster) {
+      out.push(p);
+      lastPlotted = p;
+    }
+    pendingCluster = [];
+  };
+
+  for (const candidate of trusted) {
+    if (!prevRaw) {
+      out.push(candidate);
+      lastPlotted = candidate;
+      prevRaw = candidate;
+      continue;
+    }
+
+    if (!isPlausibleGpsJump(prevRaw, candidate, HISTORY_ROUTE_LIMITS)) {
+      flushPendingCluster();
+      pendingCluster = [];
+      continue;
+    }
+    prevRaw = candidate;
+
+    if (!lastPlotted) {
+      out.push(candidate);
+      lastPlotted = candidate;
+      continue;
+    }
+
+    if (isPlausibleGpsJump(lastPlotted, candidate, HISTORY_ROUTE_LIMITS)) {
+      flushPendingCluster();
+      out.push(candidate);
+      lastPlotted = candidate;
+      continue;
+    }
+
+    pendingCluster.push(candidate);
+    flushPendingCluster();
+  }
+
+  flushPendingCluster();
+  return out;
+}
+
 /**
  * History analytics: drop LBS / approximate fixes and implausible jumps (no held coords).
- * Prefer {@link resolveTrackerPositions} for map polylines to avoid spike lines.
  */
 export function resolveHistoryPositions(points) {
   if (!Array.isArray(points) || points.length === 0) return [];
