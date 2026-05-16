@@ -106,11 +106,12 @@ export default function BottomNav() {
 
   const dock = (
     <nav className="pp-bottomNav" aria-label={t('bottomNav.aria')}>
-      <div className="pp-bottomNav__row">
-        {left.map((it) => (
+      <div className="pp-bottomNav__inner">
+        <div className="pp-bottomNav__row">
+          {left.map((it) => (
           <Item key={it.key} item={it} />
-        ))}
-        <NavLink
+          ))}
+          <NavLink
           to="/tracking"
           className={({ isActive }) => `pp-bottomNav__fab ${isActive ? 'pp-bottomNav__fab--on' : ''}`}
           aria-label={t('bottomNav.tracking')}
@@ -123,6 +124,7 @@ export default function BottomNav() {
         {right.map((it) => (
           <Item key={it.key} item={it} />
         ))}
+      </div>
       </div>
     </nav>
   );

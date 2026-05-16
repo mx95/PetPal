@@ -1,14 +1,14 @@
 /** Seed content for Discover feed — replace with API later. */
 
 const GRAD = {
-  vet: 'linear-gradient(135deg, #5b37ff 0%, #7c3aed 45%, #a78bfa 100%)',
-  groom: 'linear-gradient(135deg, #ec4899 0%, #f472b6 50%, #fda4af 100%)',
-  shop: 'linear-gradient(135deg, #0ea5e9 0%, #38bdf8 55%, #7dd3fc 100%)',
-  train: 'linear-gradient(135deg, #10b981 0%, #34d399 50%, #6ee7b7 100%)',
-  event: 'linear-gradient(135deg, #f59e0b 0%, #fbbf24 50%, #fde68a 100%)',
-  tip: 'linear-gradient(135deg, #6366f1 0%, #818cf8 100%)',
-  adopt: 'linear-gradient(135deg, #14b8a6 0%, #2dd4bf 100%)',
-  brand: 'linear-gradient(135deg, #4930dd 0%, #5b37ff 40%, #8b5cf6 100%)',
+  vet: 'linear-gradient(135deg, #5b37ff 0%, #7c5cff 100%)',
+  groom: 'linear-gradient(135deg, #6d4aff 0%, #9b8cff 100%)',
+  shop: 'linear-gradient(135deg, #5b37ff 0%, #8b9cff 100%)',
+  train: 'linear-gradient(135deg, #4f46e5 0%, #7c6cff 100%)',
+  event: 'linear-gradient(135deg, #5b37ff 0%, #a78bfa 100%)',
+  tip: 'linear-gradient(135deg, #eef2ff 0%, #e9e4ff 100%)',
+  adopt: 'linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%)',
+  brand: 'linear-gradient(135deg, #4930dd 0%, #5b37ff 55%, #8b5cf6 100%)',
 };
 
 function agoHours(h) {

@@ -11,6 +11,7 @@ import DiscoverFeedSkeleton from './DiscoverFeedSkeleton';
 import DiscoverCommunityCarousel from './DiscoverCommunityCarousel';
 import DiscoverServices from './DiscoverServices';
 import DiscoverTrustStrip from './DiscoverTrustStrip';
+import DiscoverContextualRail from './DiscoverContextualRail';
 import DiscoverPromoteModal from './DiscoverPromoteModal';
 import { useDiscoverFeed } from './useDiscoverFeed';
 
@@ -42,16 +43,15 @@ export default function DiscoverHome() {
 
   return (
     <div className="pp-discoverPage">
-      <DiscoverHero user={user} pets={pets} />
-      <DiscoverQuickActions />
+      <header className="pp-discoverPage__intro">
+        <DiscoverHero user={user} pets={pets} />
+        <DiscoverQuickActions />
+      </header>
 
       <div className="pp-discoverPage__layout">
         <main className="pp-discoverPage__main">
-          <div className="pp-dSectionHead pp-dSectionHead--feed">
-            <div>
-              <h2 className="pp-dSectionHead__title">{t('discover.feed.title')}</h2>
-              <p className="pp-dSectionHead__sub">{t('discover.feed.sub')}</p>
-            </div>
+          <div className="pp-dSectionHead pp-dSectionHead--feed pp-dSectionHead--minimal">
+            <h2 className="pp-dSectionHead__title">{t('discover.feed.title')}</h2>
             <div className="pp-dSectionHead__actions">
               {isApprovedCompany ? (
                 <button type="button" className="pp-dSectionHead__link pp-dSectionHead__linkBtn" onClick={() => setPromoteOpen(true)}>
@@ -61,9 +61,6 @@ export default function DiscoverHome() {
               <button type="button" className="pp-dSectionHead__link pp-dSectionHead__linkBtn" onClick={refresh}>
                 {t('discover.feed.refresh')}
               </button>
-              <Link className="pp-dSectionHead__link" to="/community">
-                {t('discover.feed.postCta')}
-              </Link>
             </div>
           </div>
 
@@ -91,10 +88,14 @@ export default function DiscoverHome() {
         </main>
 
         <aside className="pp-discoverPage__aside">
-          <DiscoverCommunityCarousel pets={pets} />
-          <DiscoverServices />
+          <DiscoverContextualRail pets={pets} />
         </aside>
       </div>
+
+      <section className="pp-discoverPage__below" aria-label={t('discover.below.aria')}>
+        <DiscoverCommunityCarousel pets={pets} />
+        <DiscoverServices />
+      </section>
 
       <DiscoverTrustStrip loggedIn={Boolean(user)} />
 
