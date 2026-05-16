@@ -24,9 +24,6 @@
 .bottom-\[-20px\] {
   bottom: -20px;
 }
-.left-1\/4 {
-  left: calc(1 / 4 * 100%);
-}
 .z-40 {
   z-index: 40;
 }
@@ -144,10 +141,6 @@
 }
 .text-\[11px\] {
   font-size: 11px;
-}
-.leading-\[0\.98\] {
-  --tw-leading: 0.98;
-  line-height: 0.98;
 }
 .tracking-\[-0\.03em\] {
   --tw-tracking: -0.03em;
@@ -344,10 +337,6 @@
   inherits: false;
   initial-value: solid;
 }
-@property --tw-leading {
-  syntax: "*";
-  inherits: false;
-}
 @property --tw-tracking {
   syntax: "*";
   inherits: false;
@@ -474,7 +463,6 @@
       --tw-skew-x: initial;
       --tw-skew-y: initial;
       --tw-border-style: solid;
-      --tw-leading: initial;
       --tw-tracking: initial;
       --tw-blur: initial;
       --tw-brightness: initial;
