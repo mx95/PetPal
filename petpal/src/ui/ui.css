@@ -6632,7 +6632,7 @@ a.pp-publicPet__metaValue {
     overflow-y: auto;
     overscroll-behavior-y: contain;
     -webkit-overflow-scrolling: touch;
-    padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px));
   }
 }
 
@@ -7602,7 +7602,8 @@ body,
   }
 
   .pp-trackTabs {
-    top: 64px;
+    position: relative;
+    top: auto;
   }
 
   .pp-trackHistoryRangeCard__head,
@@ -7659,9 +7660,9 @@ body,
   }
 
   .pp-trackPlayback {
-    position: sticky;
-    top: 112px;
-    z-index: 4;
+    position: relative;
+    top: auto;
+    z-index: 1;
     justify-content: flex-start;
     border: 1px solid rgba(255, 255, 255, 0.72);
     border-radius: 999px;
@@ -14540,18 +14541,18 @@ html[data-theme="dark"] .pp-nearby-list > li {
 
   .pp-bottomNav__inner {
     max-width: none;
-    padding: 4px 8px 6px !important;
+    padding: 0 6px 0 !important;
   }
 
   .pp-bottomNav__row {
     width: 100% !important;
-    min-height: 56px;
+    min-height: 50px;
     max-width: none;
     grid-template-columns: repeat(2, minmax(0, 1fr)) 58px repeat(2, minmax(0, 1fr));
     align-items: center;
     justify-items: center;
     gap: 2px;
-    padding: 4px 6px !important;
+    padding: 2px 4px !important;
     border-radius: 0;
     border: none;
     box-shadow: none;
@@ -14566,9 +14567,9 @@ html[data-theme="dark"] .pp-nearby-list > li {
 
   .pp-bottomNav__item {
     width: 100%;
-    min-height: 46px !important;
-    gap: 3px;
-    padding: 5px 2px !important;
+    min-height: 42px !important;
+    gap: 2px;
+    padding: 3px 2px !important;
   }
 
   .pp-bottomNav__label {
@@ -14583,15 +14584,15 @@ html[data-theme="dark"] .pp-nearby-list > li {
   }
 
   .pp-bottomNav__fab {
-    width: 50px !important;
-    height: 50px !important;
-    transform: translateY(-4px) !important;
-    box-shadow: 0 6px 16px -10px rgba(91, 55, 255, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.22) !important;
+    width: 44px !important;
+    height: 44px !important;
+    transform: none !important;
+    box-shadow: 0 4px 12px -8px rgba(91, 55, 255, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.22) !important;
   }
 
   .pp-bottomNav__fab:hover,
   .pp-bottomNav__fab:active {
-    transform: translateY(-4px) scale(0.98) !important;
+    transform: scale(0.98) !important;
   }
 
   .pp-bottomNav__item--on {
@@ -14603,8 +14604,67 @@ html[data-theme="dark"] .pp-nearby-list > li {
     display: none !important;
   }
 
+  body.pp-mobile-dock .pp-main,
   .pp-main {
-    padding-bottom: calc(104px + env(safe-area-inset-bottom)) !important;
+    padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+}
+
+/* Tracker mobile: no sticky chrome jumping; live map + meta stay stable */
+@media (max-width: 720px) {
+  .pp-tracker-page {
+    padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .pp-tracker-page .pp-trackTabs,
+  .pp-tracker-page .pp-trackTabs--segment {
+    position: relative;
+    top: auto;
+    z-index: 1;
+  }
+
+  .pp-tracker-page .pp-trackPlayback {
+    position: relative;
+    top: auto;
+    z-index: 1;
+    margin-bottom: 8px;
+  }
+
+  .pp-tracker-page .pp-trackLiveBar {
+    position: relative;
+    top: auto;
+  }
+
+  .pp-trackMapShell--compact .pp-trackMapFrame:not(.pp-trackHistoryFrame) {
+    height: min(44vh, 380px);
+    min-height: 200px;
+    max-height: 380px;
+  }
+
+  .pp-trackMapShell--compact .pp-trackMapFrame:not(.pp-trackHistoryFrame) .pp-leaflet-wrap,
+  .pp-trackMapShell--compact .pp-trackMapFrame:not(.pp-trackHistoryFrame) .pp-leaflet-wrap > div,
+  .pp-trackMapShell--compact .pp-trackMapFrame:not(.pp-trackHistoryFrame) .leaflet-container {
+    height: 100% !important;
+    min-height: 100% !important;
+  }
+
+  .pp-trackMapMeta {
+    max-height: 132px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+    margin-top: 6px;
+    padding-right: 2px;
+  }
+
+  .pp-trackHistoryTimeline {
+    max-height: min(38vh, 300px);
+    min-height: 0;
+  }
+
+  .pp-trackHistoryTimeline__list {
+    max-height: min(32vh, 260px);
   }
 }
 
