@@ -1,6 +1,7 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
 import { NavLink } from 'react-router-dom';
+import { useVisualViewportBottom } from '../hooks/useVisualViewportBottom';
 import { useI18n } from '../i18n/I18nContext';
 import { useAuth } from '../auth/AuthProvider';
 
@@ -80,6 +81,7 @@ const BASE_ITEMS = [
 export default function BottomNav() {
   const { user } = useAuth();
   const { t } = useI18n();
+  useVisualViewportBottom();
   if (!user) return null;
 
   const left = BASE_ITEMS;

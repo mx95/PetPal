@@ -6403,10 +6403,14 @@ a.pp-publicPet__metaValue {
   position: fixed;
   left: 0;
   right: 0;
-  bottom: 0;
-  z-index: 40;
-  padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
+  bottom: var(--pp-bottom-nav-offset, 0px);
+  z-index: 1200;
+  padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px));
   pointer-events: none;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 .pp-bottomNav__row {
   pointer-events: auto;
@@ -6585,6 +6589,7 @@ a.pp-publicPet__metaValue {
 /* Mobile-only: show bottom nav, give the page room, lighten the top nav */
 @media (max-width: 720px) {
   .pp-bottomNav { display: block; }
+  .pp-footer { display: none; }
   .pp-shell { padding-bottom: calc(102px + env(safe-area-inset-bottom)); }
   .pp-nav .pp-navlinks { display: none; }
   .pp-nav--auth .pp-navUtility .pp-langSwitcher { display: none; }
@@ -14469,8 +14474,8 @@ html[data-theme="dark"] .pp-nearby-list > li {
   .pp-bottomNav {
     left: 0;
     right: 0;
-    bottom: 0;
-    padding: 0 14px calc(12px + env(safe-area-inset-bottom)) !important;
+    bottom: var(--pp-bottom-nav-offset, 0px);
+    padding: 0 14px calc(12px + env(safe-area-inset-bottom, 0px)) !important;
   }
 
   .pp-bottomNav__row {
