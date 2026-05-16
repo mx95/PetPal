@@ -186,11 +186,12 @@ export const HERO_ROTATION_KEYS = [
 /** @param {{ page: number, pageSize?: number }} opts */
 export function fetchDiscoverFeedPage({ page, pageSize = 4 }) {
   const start = page * pageSize;
-  const slice = [];
-  for (let i = 0; i < pageSize; i++) {
-    const src = BASE[(start + i) % BASE.length];
-    slice.push({ ...src, id: `${src.id}-p${page}-${i}` });
+  if (start >= BASE.length) {
+    return Promise.resolve({ items: [], hasMore: false });
   }
-  const hasMore = page < 12;
-  return Promise.resolve({ items: slice, hasMore });
+  const slice = BASE.slice(start, start + pageSize).map((src) => ({
+    ...src,
+    dedupeKey: src.id,
+  }));
+  return Promise.resolve({ items: slice, hasMore: start + slice.length < BASE.length });
 }

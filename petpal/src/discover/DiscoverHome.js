@@ -23,18 +23,22 @@ export default function DiscoverHome() {
   const [promoteOpen, setPromoteOpen] = useState(false);
   const sentinelRef = useRef(null);
 
+  const loadMoreRef = useRef(loadMore);
+  loadMoreRef.current = loadMore;
+
   useEffect(() => {
     const el = sentinelRef.current;
-    if (!el) return undefined;
+    if (!el || loading || loadingMore || !hasMore || items.length === 0) return undefined;
+
     const obs = new IntersectionObserver(
       (entries) => {
-        if (entries[0]?.isIntersecting) loadMore();
+        if (entries[0]?.isIntersecting) loadMoreRef.current();
       },
-      { rootMargin: '240px' }
+      { rootMargin: '80px' }
     );
     obs.observe(el);
     return () => obs.disconnect();
-  }, [loadMore]);
+  }, [loading, loadingMore, hasMore, items.length]);
 
   return (
     <div className="pp-discoverPage">
@@ -80,7 +84,9 @@ export default function DiscoverHome() {
               <DiscoverFeedCard key={item.id} item={item} />
             ))}
             {loadingMore ? <DiscoverFeedSkeleton count={1} /> : null}
-            {hasMore ? <div ref={sentinelRef} className="pp-discoverPage__sentinel" aria-hidden /> : null}
+            {!loading && hasMore && items.length > 0 ? (
+              <div ref={sentinelRef} className="pp-discoverPage__sentinel" aria-hidden />
+            ) : null}
           </div>
         </main>
 

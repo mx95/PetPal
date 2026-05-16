@@ -23,33 +23,35 @@ export async function fetchDiscoverPostsFromFirestore({ pageSize = 6, cursor = n
     return { items: [], cursor: null, hasMore: false, source: 'offline' };
   }
 
-  const constraints = [
-    collection(getDb(), COL),
-    where('active', '==', true),
-    orderBy('createdAt', 'desc'),
-    limit(pageSize),
-  ];
-
-  let q = query(...constraints);
-  if (cursor) {
-    q = query(
+  try {
+    let q = query(
       collection(getDb(), COL),
       where('active', '==', true),
       orderBy('createdAt', 'desc'),
-      startAfter(cursor),
       limit(pageSize)
     );
-  }
+    if (cursor) {
+      q = query(
+        collection(getDb(), COL),
+        where('active', '==', true),
+        orderBy('createdAt', 'desc'),
+        startAfter(cursor),
+        limit(pageSize)
+      );
+    }
 
-  const snap = await getDocs(q);
-  const items = snap.docs.map((d) => mapDiscoverPostDoc(d.id, d.data()));
-  const last = snap.docs.length ? snap.docs[snap.docs.length - 1] : null;
-  return {
-    items,
-    cursor: last,
-    hasMore: snap.docs.length >= pageSize,
-    source: 'firestore',
-  };
+    const snap = await getDocs(q);
+    const items = snap.docs.map((d) => mapDiscoverPostDoc(d.id, d.data()));
+    const last = snap.docs.length ? snap.docs[snap.docs.length - 1] : null;
+    return {
+      items,
+      cursor: last,
+      hasMore: snap.docs.length >= pageSize,
+      source: 'firestore',
+    };
+  } catch {
+    return { items: [], cursor: null, hasMore: false, source: 'firestore_error' };
+  }
 }
 
 /**
@@ -59,7 +61,7 @@ export async function fetchDiscoverFeedHybrid({ pageIndex, pageSize = 6, firesto
   const fs = await fetchDiscoverPostsFromFirestore({ pageSize, cursor: firestoreCursor });
 
   if (pageIndex === 0 && fs.items.length === 0) {
-    const seed = await fetchDiscoverFeedPage({ page: 0, pageSize: Math.max(pageSize, 6) });
+    const seed = await fetchDiscoverFeedPage({ page: 0, pageSize });
     return {
       items: seed.items.map((s) => ({ ...s, dedupeKey: s.dedupeKey || s.id })),
       cursor: null,
