@@ -108,8 +108,15 @@ function createSqliteStore({ dbPath }) {
     if (pRow) sqlite.insertPosition.run(pRow);
   }
 
+  const countPositionsStmt = sqlite.db.prepare(`SELECT COUNT(*) AS n FROM positions`);
+
   return {
     sqlitePath: sqlite.path,
+
+    countPositions() {
+      const row = countPositionsStmt.get();
+      return row?.n != null ? Number(row.n) : 0;
+    },
 
     upsert(imei, data) {
       mem.upsert(imei, data);

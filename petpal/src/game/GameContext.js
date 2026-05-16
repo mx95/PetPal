@@ -33,6 +33,7 @@ function defaultState() {
     perPet: {},
     walkLog: {},
     walkSessions: [],
+    dismissedGpsWalkKeys: [],
   };
 }
 
@@ -47,7 +48,22 @@ function normalizeWalkSessions(raw) {
       const createdAt = s.createdAt != null ? String(s.createdAt) : new Date().toISOString();
       const photos = Array.isArray(s.photos) ? s.photos.filter((p) => typeof p === 'string' && p.startsWith('data:')) : [];
       const petId = s.petId != null ? String(s.petId).trim() : '';
-      return { id, dayKey, km, createdAt, photos: photos.slice(0, MAX_PHOTOS_PER_WALK_SESSION), ...(petId ? { petId } : {}) };
+      const source = s.source === 'gps' ? 'gps' : 'manual';
+      const gpsKey = s.gpsKey != null ? String(s.gpsKey) : '';
+      const startedAt = s.startedAt != null ? String(s.startedAt) : '';
+      const endedAt = s.endedAt != null ? String(s.endedAt) : '';
+      return {
+        id,
+        dayKey,
+        km,
+        createdAt,
+        photos: photos.slice(0, MAX_PHOTOS_PER_WALK_SESSION),
+        source,
+        ...(petId ? { petId } : {}),
+        ...(gpsKey ? { gpsKey } : {}),
+        ...(startedAt ? { startedAt } : {}),
+        ...(endedAt ? { endedAt } : {}),
+      };
     })
     .filter(Boolean);
 }
@@ -67,6 +83,9 @@ function normalizeState(raw) {
   }
   const walkLog = raw.walkLog && typeof raw.walkLog === 'object' ? { ...raw.walkLog } : {};
   const walkSessions = normalizeWalkSessions(raw.walkSessions);
+  const dismissedGpsWalkKeys = Array.isArray(raw.dismissedGpsWalkKeys)
+    ? raw.dismissedGpsWalkKeys.map((k) => String(k)).filter(Boolean).slice(-300)
+    : [];
   return {
     ownerXp: Math.max(0, Number(raw.ownerXp) || 0),
     daily,
@@ -74,6 +93,7 @@ function normalizeState(raw) {
     perPet: raw.perPet && typeof raw.perPet === 'object' ? raw.perPet : {},
     walkLog,
     walkSessions,
+    dismissedGpsWalkKeys,
   };
 }
 
@@ -145,7 +165,7 @@ export function GameProvider({ children }) {
   );
 
   const addWalkKm = useCallback(
-    async (km, fileList, petId) => {
+    async (km, fileList, petId, options = {}) => {
       const n = Math.max(0, Number(km) || 0);
       if (n <= 0) return false;
       let photoUrls = [];
@@ -154,6 +174,10 @@ export function GameProvider({ children }) {
         photoUrls = photoUrls.slice(0, MAX_PHOTOS_PER_WALK_SESSION);
       }
       const pid = petId != null ? String(petId).trim() : '';
+      const source = options.source === 'gps' ? 'gps' : 'manual';
+      const gpsKey = options.gpsKey != null ? String(options.gpsKey).trim() : '';
+      const startedAt = options.startedAt != null ? String(options.startedAt) : '';
+      const endedAt = options.endedAt != null ? String(options.endedAt) : '';
       persist((prev) => {
         const k = localDayKey();
         const cur = (prev.walkLog && prev.walkLog[k]) || 0;
@@ -165,12 +189,30 @@ export function GameProvider({ children }) {
           km: Math.round(n * 100) / 100,
           createdAt: new Date().toISOString(),
           photos: photoUrls,
+          source,
           ...(pid ? { petId: pid } : {}),
+          ...(gpsKey ? { gpsKey } : {}),
+          ...(startedAt ? { startedAt } : {}),
+          ...(endedAt ? { endedAt } : {}),
         };
         sessions.push(session);
         return { ...prev, walkLog: nextLog, walkSessions: sessions };
       });
       return true;
+    },
+    [persist]
+  );
+
+  const dismissSuggestedWalk = useCallback(
+    (gpsKey) => {
+      const key = String(gpsKey || '').trim();
+      if (!key) return;
+      persist((prev) => {
+        const keys = Array.isArray(prev.dismissedGpsWalkKeys) ? [...prev.dismissedGpsWalkKeys] : [];
+        if (keys.includes(key)) return prev;
+        keys.push(key);
+        return { ...prev, dismissedGpsWalkKeys: keys.slice(-300) };
+      });
     },
     [persist]
   );
@@ -296,9 +338,11 @@ export function GameProvider({ children }) {
       setPetTrackProgress,
       walkLog: state.walkLog,
       walkSessions: state.walkSessions,
+      dismissedGpsWalkKeys: state.dismissedGpsWalkKeys,
       walkTotals,
       latestWalk,
       addWalkKm,
+      dismissSuggestedWalk,
       addPhotosToLatestWalk,
       removePhotoFromLatestWalk,
       trackingAchievementDefs: trackingAchievementDefs(),
@@ -320,6 +364,7 @@ export function GameProvider({ children }) {
       walkTotals,
       latestWalk,
       addWalkKm,
+      dismissSuggestedWalk,
       addPhotosToLatestWalk,
       removePhotoFromLatestWalk,
       lifetimeAchievements,

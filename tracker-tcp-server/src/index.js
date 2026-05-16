@@ -12,12 +12,20 @@ const { logPrefix } = require("./logging/time");
 const TCP_PORT = Number(process.env.TCP_PORT || 5001);
 const HTTP_PORT = Number(process.env.HTTP_PORT || 5002);
 
-const SQLITE_PATH = process.env.SQLITE_PATH || "./data/petpal.sqlite";
+/** Always under tracker-tcp-server/data — never depends on PM2 cwd (fixes “empty DB after restart”). */
+const DEFAULT_SQLITE_PATH = path.join(__dirname, "..", "data", "petpal.sqlite");
+const SQLITE_PATH = process.env.SQLITE_PATH || DEFAULT_SQLITE_PATH;
 const PERSIST_TO_SQLITE = String(process.env.PERSIST_TO_SQLITE || "1") !== "0";
 
 const store = PERSIST_TO_SQLITE ? createSqliteStore({ dbPath: SQLITE_PATH }) : createMemoryStore();
 if (PERSIST_TO_SQLITE) {
   console.log(`[db] SQLite enabled at ${store.sqlitePath}`);
+  if (typeof store.countPositions === "function") {
+    const n = store.countPositions();
+    console.log(`[db] ${n} position rows on disk (persists across pm2 restart)`);
+  }
+} else {
+  console.warn("[db] PERSIST_TO_SQLITE=0 — all GPS data is in RAM only and is LOST on pm2 restart");
 }
 
 /** Optional demo/fixture: preload one IMEI so GET /devices and /position work before TCP connects. */

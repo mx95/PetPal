@@ -154,12 +154,16 @@ npm run build
 cd ~/PetPal/tracker-tcp-server
 npm ci
 pm2 restart tracker
+pm2 logs tracker --lines 20
 ```
+
+After restart, logs must show `[db] … position rows on disk`. If you see `PERSIST_TO_SQLITE=0` or `0 position rows` while you expect history, see `tracker-tcp-server/README.md` (PM2 database path).
 
 Notes:
 
 - If you changed only frontend files, you can usually skip `npm ci` in `tracker-tcp-server`.
 - If you changed only backend files, you can skip `npm ci` + `npm run build` in `petpal`.
+- First-time PM2 setup: `cd tracker-tcp-server && pm2 start ecosystem.config.cjs && pm2 save`.
 
 Then in `petpal/.env.local` set:
 

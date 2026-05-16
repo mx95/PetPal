@@ -7,3 +7,6 @@ ngrok/
 
 # Tracker TCP server
 tracker-tcp-server/node_modules/
+tracker-tcp-server/data/*.sqlite
+tracker-tcp-server/data/*.sqlite-*
+tracker-tcp-server/data/backups/

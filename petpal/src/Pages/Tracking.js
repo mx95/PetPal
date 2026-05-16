@@ -14,11 +14,43 @@ import {
   isTrustedGpsFix,
   kmBetween,
   pointReceivedIso,
-  resolveHistoryPositions,
+  pointTimestampMs,
+  resolveTrackerPositions,
   sanitizeSpeedKmh,
 } from '../tracking/positionFilter';
 
 const LAST_LIVE_PET_KEY = 'petpal_live_selectedPetId';
+const LAST_LIVE_COORDS_KEY = 'petpal_last_live_coords_v1';
+
+function hasValidCoords(p) {
+  return (
+    p?.lat != null &&
+    p?.lng != null &&
+    Number.isFinite(Number(p.lat)) &&
+    Number.isFinite(Number(p.lng))
+  );
+}
+
+function loadStoredLastCoords(deviceId) {
+  if (!deviceId) return null;
+  try {
+    const all = JSON.parse(localStorage.getItem(LAST_LIVE_COORDS_KEY) || '{}');
+    const entry = all?.[deviceId];
+    if (!hasValidCoords(entry)) return null;
+    return { lat: Number(entry.lat), lng: Number(entry.lng) };
+  } catch {
+    return null;
+  }
+}
+
+function saveStoredLastCoords(deviceId, lat, lng) {
+  if (!deviceId || !Number.isFinite(lat) || !Number.isFinite(lng)) return;
+  try {
+    const all = JSON.parse(localStorage.getItem(LAST_LIVE_COORDS_KEY) || '{}');
+    all[deviceId] = { lat, lng, savedAt: Date.now() };
+    localStorage.setItem(LAST_LIVE_COORDS_KEY, JSON.stringify(all));
+  } catch (_) {}
+}
 
 function formatTime(iso, lang) {
   if (!iso) return '—';
@@ -354,6 +386,8 @@ export default function Tracking() {
   const [historyIndex, setHistoryIndex] = useState(0);
   const [historyCalendarMatch, setHistoryCalendarMatch] = useState(true);
   const trustedLiveAnchorRef = useRef(null);
+  const lastKnownLiveRef = useRef(null);
+  const [liveHistoryFallback, setLiveHistoryFallback] = useState(null);
 
   const selectedPet = useMemo(() => pets.find((p) => p.id === selectedPetId), [pets, selectedPetId]);
 
@@ -405,8 +439,11 @@ export default function Tracking() {
       const p = await getLatestPosition(effectiveDeviceId);
       setPosition(p);
     } catch (e) {
-      setPosition(null);
-      setError(e?.message || t('trackingPage.errLoadPosition'));
+      const msg = e?.message || t('trackingPage.errLoadPosition');
+      setError(msg);
+      if (e?.status === 404 || /not checked in|not seen on tracker|Missing IMEI/i.test(msg)) {
+        setPosition(null);
+      }
     } finally {
       setLoading(false);
     }
@@ -414,6 +451,7 @@ export default function Tracking() {
 
   useEffect(() => {
     trustedLiveAnchorRef.current = null;
+    setLiveHistoryFallback(null);
   }, [effectiveDeviceId]);
 
   useEffect(() => {
@@ -458,7 +496,12 @@ export default function Tracking() {
     };
   }, [trackerTab, effectiveDeviceId, historyReloadTick, historyRange]);
 
-  const resolvedHistory = useMemo(() => resolveHistoryPositions(historyPoints), [historyPoints]);
+  const resolvedHistory = useMemo(() => {
+    const sorted = [...historyPoints].sort(
+      (a, b) => (pointTimestampMs(a) ?? 0) - (pointTimestampMs(b) ?? 0)
+    );
+    return resolveTrackerPositions(sorted);
+  }, [historyPoints]);
 
   const mapPosition = useMemo(
     () => applyHeldGpsPosition(position, trustedLiveAnchorRef.current),
@@ -469,6 +512,97 @@ export default function Tracking() {
     const nextAnchor = anchorFromDisplayedPosition(mapPosition);
     if (nextAnchor) trustedLiveAnchorRef.current = nextAnchor;
   }, [mapPosition]);
+
+  useEffect(() => {
+    if (!effectiveDeviceId) return;
+    let lat;
+    let lng;
+    if (hasValidCoords(mapPosition) && !mapPosition.positionHiddenApproximate) {
+      lat = Number(mapPosition.lat);
+      lng = Number(mapPosition.lng);
+    } else if (hasValidCoords(position)) {
+      lat = Number(position.lat);
+      lng = Number(position.lng);
+    } else {
+      return;
+    }
+    lastKnownLiveRef.current = { deviceId: effectiveDeviceId, lat, lng };
+    saveStoredLastCoords(effectiveDeviceId, lat, lng);
+  }, [mapPosition, position, effectiveDeviceId]);
+
+  const hasImmediateLiveCoords = useMemo(() => {
+    if (hasValidCoords(mapPosition) && !mapPosition.positionHiddenApproximate) return true;
+    if (hasValidCoords(position)) return true;
+    return false;
+  }, [mapPosition, position]);
+
+  useEffect(() => {
+    if (trackerTab !== 'live' || !effectiveDeviceId.trim()) return;
+    if (hasImmediateLiveCoords) {
+      setLiveHistoryFallback(null);
+      return;
+    }
+    let cancelled = false;
+    getPositionHistory(effectiveDeviceId, { limit: 120 })
+      .then(({ history }) => {
+        if (cancelled || !Array.isArray(history) || history.length === 0) return;
+        const sorted = [...history].sort(
+          (a, b) => (pointTimestampMs(a) ?? 0) - (pointTimestampMs(b) ?? 0)
+        );
+        const resolved = resolveTrackerPositions(sorted);
+        for (let i = resolved.length - 1; i >= 0; i--) {
+          const p = resolved[i];
+          if (!hasValidCoords(p)) continue;
+          setLiveHistoryFallback({
+            lat: Number(p.lat),
+            lng: Number(p.lng),
+            at: pointReceivedIso(p),
+          });
+          saveStoredLastCoords(effectiveDeviceId, Number(p.lat), Number(p.lng));
+          return;
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [trackerTab, effectiveDeviceId, hasImmediateLiveCoords]);
+
+  const liveMapCoords = useMemo(() => {
+    if (hasValidCoords(mapPosition) && !mapPosition.positionHiddenApproximate) {
+      return { lat: Number(mapPosition.lat), lng: Number(mapPosition.lng), mode: 'live' };
+    }
+    if (hasValidCoords(mapPosition) && mapPosition.positionHeldFromPreviousGps) {
+      return { lat: Number(mapPosition.lat), lng: Number(mapPosition.lng), mode: 'lastKnown' };
+    }
+    if (hasValidCoords(position)) {
+      const approximate =
+        mapPosition?.positionHiddenApproximate ||
+        position?.warningApproximate ||
+        position?.accuracy === 'low' ||
+        position?.source === 'lbs';
+      return {
+        lat: Number(position.lat),
+        lng: Number(position.lng),
+        mode: approximate ? 'approximate' : 'live',
+      };
+    }
+    if (liveHistoryFallback && hasValidCoords(liveHistoryFallback)) {
+      return {
+        lat: liveHistoryFallback.lat,
+        lng: liveHistoryFallback.lng,
+        mode: 'lastKnown',
+        at: liveHistoryFallback.at,
+      };
+    }
+    const stored = loadStoredLastCoords(effectiveDeviceId);
+    if (stored) return { ...stored, mode: 'lastKnown' };
+    const cached = lastKnownLiveRef.current;
+    if (cached?.deviceId === effectiveDeviceId && hasValidCoords(cached)) {
+      return { lat: cached.lat, lng: cached.lng, mode: 'lastKnown' };
+    }
+    return null;
+  }, [mapPosition, position, liveHistoryFallback, effectiveDeviceId]);
 
   const filteredHistory = useMemo(() => {
     const filtered = filterHistoryPoints(resolvedHistory, historyRange);
@@ -577,7 +711,8 @@ export default function Tracking() {
 
 
   const signalLive = position != null;
-  const hasCoordinates = mapPosition?.lat != null && mapPosition?.lng != null;
+  const hasCoordinates = liveMapCoords != null;
+  const showingLastKnownOnMap = liveMapCoords?.mode === 'lastKnown' || liveMapCoords?.mode === 'approximate';
   const approx = position?.warningApproximate || position?.accuracy === 'low' || position?.source === 'lbs';
   const accuracyLabel = approx ? t('trackingPage.accuracyApprox') : t('trackingPage.accuracyHigh');
   const secondsAgo =
@@ -711,10 +846,10 @@ export default function Tracking() {
       <section className="pp-card pp-pad pp-trackMapShell pp-trackMapShell--compact">
         <div className="pp-trackMapHead pp-trackMapHead--inline">
           <h2 className="pp-trackMapHead__title">{t('trackingPage.sectionMap')}</h2>
-          {mapPosition && hasCoordinates ? (
+          {liveMapCoords ? (
             <a
               className="pp-trackMapHead__link"
-              href={mapsLink(mapPosition.lat, mapPosition.lng)}
+              href={mapsLink(liveMapCoords.lat, liveMapCoords.lng)}
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -722,14 +857,26 @@ export default function Tracking() {
             </a>
           ) : null}
         </div>
-        {mapPosition && hasCoordinates ? (
+        {liveMapCoords ? (
           <>
+            {showingLastKnownOnMap ? (
+              <p className="pp-trackMapLastKnown" role="status">
+                {liveMapCoords.mode === 'approximate'
+                  ? t('trackingPage.mapApproximateBanner')
+                  : t('trackingPage.mapLastKnownBanner')}
+                {liveMapCoords.at
+                  ? ` · ${formatTime(liveMapCoords.at, language)}`
+                  : liveMapCoords.mode === 'lastKnown' && position?.serverTime
+                    ? ` · ${formatTime(position.serverTime, language)}`
+                    : ''}
+              </p>
+            ) : null}
             <div className="pp-trackMapFrame">
-              <PositionMap lat={mapPosition.lat} lng={mapPosition.lng} />
+              <PositionMap lat={liveMapCoords.lat} lng={liveMapCoords.lng} />
             </div>
             <div className="pp-trackMapMeta">
               <span>
-                {t('trackingPage.lblLatLng')}: {mapPosition.lat.toFixed(5)}, {mapPosition.lng.toFixed(5)}
+                {t('trackingPage.lblLatLng')}: {liveMapCoords.lat.toFixed(5)}, {liveMapCoords.lng.toFixed(5)}
               </span>
               {displaySpeedKmh != null ? (
                 <span>
@@ -775,21 +922,19 @@ export default function Tracking() {
                 <path d="M34 14 14 34" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
               </svg>
             </div>
-            <h3>No live signal yet</h3>
-            <p>
-              {position ? 'Provider data arrived, but no GPS coordinates are available yet.' : error || 'This IMEI has not checked in on the tracker server yet.'}
-            </p>
+            <h3>{t('trackingPage.noLiveSignalTitle')}</h3>
+            <p>{error || t('trackingPage.noLiveSignalBody')}</p>
             <ul>
-              <li>Check the SIM card is active</li>
-              <li>Confirm the IMEI is correct</li>
-              <li>Make sure the tracker is powered on and online</li>
+              <li>{t('trackingPage.noLiveSignalTipSim')}</li>
+              <li>{t('trackingPage.noLiveSignalTipImei')}</li>
+              <li>{t('trackingPage.noLiveSignalTipPower')}</li>
             </ul>
             <div className="pp-trackNoSignal__actions">
               <button type="button" className="pp-btn pp-btnPrimary" disabled={loading || !effectiveDeviceId} onClick={() => void refresh()}>
-                Retry
+                {t('trackingPage.quickRefresh')}
               </button>
               <Link className="pp-btn pp-btn--ghost" to="/admin/tracker">
-                Setup guide
+                {t('trackingPage.setupGuide')}
               </Link>
             </div>
           </div>
@@ -801,10 +946,7 @@ export default function Tracking() {
         <section className="pp-trackHistory">
           <div className="pp-card pp-pad pp-trackHistoryRangeCard">
             <div className="pp-trackHistoryRangeCard__head">
-              <div>
-                <p className="pp-trackHistoryRangeCard__eyebrow pp-subtle">{t('trackingPage.historyEyebrow')}</p>
-                <h2 className="pp-trackHistoryRangeCard__title">{t('trackingPage.historyTitle')}</h2>
-              </div>
+              <h2 className="pp-trackHistoryRangeCard__title">{t('trackingPage.historyTitle')}</h2>
               <button
                 type="button"
                 className="pp-btn pp-btn--ghost pp-trackHistoryRefreshBtn"

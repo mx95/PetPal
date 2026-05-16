@@ -2,6 +2,8 @@
 const MAX_PLAUSIBLE_SPEED_KMH = 50;
 /** Hard cap on a single segment length (km). */
 const MAX_SINGLE_JUMP_KM = 3;
+/** Collars often upload several fixes with the same receive time — cap segment length for those batches. */
+const MAX_BATCH_JUMP_KM = 0.2;
 /** Collar speed above this (km/h) is treated as a bad reading for display and analytics. */
 const MAX_PLAUSIBLE_PET_SPEED_KMH = 40;
 
@@ -76,8 +78,8 @@ export function isPlausibleGpsJump(prev, next) {
   if (t0 == null || t1 == null) return distKm <= MAX_SINGLE_JUMP_KM;
 
   const dtSec = (t1 - t0) / 1000;
-  // Collars often batch fixes with identical timestamps — do not treat as zero-speed spikes.
-  if (dtSec <= 0) return distKm <= MAX_SINGLE_JUMP_KM;
+  // Batched fixes share receive time — allow only short hops, not multi‑km GPS spikes.
+  if (dtSec <= 0) return distKm <= MAX_BATCH_JUMP_KM;
 
   const speedKmh = (distKm / dtSec) * 3600;
   return speedKmh <= MAX_PLAUSIBLE_SPEED_KMH;
@@ -97,8 +99,8 @@ export function countDistinctLocations(points) {
 }
 
 /**
- * History map / timeline: drop LBS / approximate fixes only — keep real GPS movement.
- * (Live map still uses {@link resolveTrackerPositions} to suppress outlier spikes.)
+ * History analytics: drop LBS / approximate fixes and implausible jumps (no held coords).
+ * Prefer {@link resolveTrackerPositions} for map polylines to avoid spike lines.
  */
 export function resolveHistoryPositions(points) {
   if (!Array.isArray(points) || points.length === 0) return [];

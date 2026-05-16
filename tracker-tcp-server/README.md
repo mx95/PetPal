@@ -10,6 +10,84 @@ npm install
 npm start
 ```
 
+## PM2 — keep GPS history across restarts
+
+Data is stored in **SQLite** (default: `tracker-tcp-server/data/petpal.sqlite`). A normal `pm2 restart` must **not** wipe history.
+
+If history disappears after every restart, the process was almost certainly using a **different database file** each time (relative `./data/...` resolved from the wrong working directory) or `PERSIST_TO_SQLITE=0` (RAM only).
+
+**Fix (recommended):**
+
+```bash
+cd ~/PetPal/tracker-tcp-server
+pm2 delete tracker   # only if you need to re-register the app
+pm2 start ecosystem.config.cjs
+pm2 save
+pm2 logs tracker --lines 30
+```
+
+You should see:
+
+```text
+[db] SQLite enabled at /.../tracker-tcp-server/data/petpal.sqlite
+[db] 1234 position rows on disk (persists across pm2 restart)
+```
+
+If the row count is `0` but you had data before, search for older DB files and copy the largest into `data/petpal.sqlite`:
+
+```bash
+find ~/PetPal -name "petpal.sqlite" -exec ls -lh {} \;
+# then, after stopping pm2:
+cp /path/to/largest/petpal.sqlite ~/PetPal/tracker-tcp-server/data/petpal.sqlite
+pm2 restart tracker
+```
+
+**Never set** `PERSIST_TO_SQLITE=0` in production.
+
+## Backup GPS data (before restart or deploy)
+
+All collar history lives in one file: `data/petpal.sqlite`.
+
+**One-off backup (recommended — works while PM2 is running):**
+
+```bash
+cd ~/PetPal/tracker-tcp-server
+chmod +x scripts/backup-sqlite.sh
+./scripts/backup-sqlite.sh
+```
+
+Backups go to `data/backups/petpal-YYYYMMDD-HHMMSS.sqlite` (keeps the 14 newest).
+
+**Manual backup:**
+
+```bash
+mkdir -p ~/PetPal/tracker-tcp-server/data/backups
+sqlite3 ~/PetPal/tracker-tcp-server/data/petpal.sqlite \
+  ".backup '~/PetPal/tracker-tcp-server/data/backups/petpal-manual-$(date -u +%Y%m%d).sqlite'"
+ls -lh ~/PetPal/tracker-tcp-server/data/backups/
+```
+
+**Copy off the server (optional):** download the backup with `scp` to your PC so a full server loss does not lose history.
+
+**Restore from backup:**
+
+```bash
+pm2 stop tracker
+cp ~/PetPal/tracker-tcp-server/data/backups/petpal-YYYYMMDD-HHMMSS.sqlite \
+   ~/PetPal/tracker-tcp-server/data/petpal.sqlite
+pm2 start tracker
+```
+
+**Daily automatic backup (cron, 03:15 UTC):**
+
+```bash
+crontab -e
+# add:
+15 3 * * * cd /root/PetPal/tracker-tcp-server && ./scripts/backup-sqlite.sh >> /var/log/petpal-db-backup.log 2>&1
+```
+
+`pm2 restart tracker` does **not** delete `data/petpal.sqlite` — backups are for mistakes, disk failure, or before risky changes.
+
 ## Ports
 
 - TCP: `5001` (override with `TCP_PORT`) — **trackers must connect here**

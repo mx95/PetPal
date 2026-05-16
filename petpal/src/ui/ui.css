@@ -7452,6 +7452,17 @@ body,
   font-size: 13px;
 }
 
+.pp-trackMapLastKnown {
+  margin: 0 0 10px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: rgba(234, 179, 8, 0.12);
+  color: #92400e;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
 .pp-trackNoSignal {
   display: grid;
   place-items: center;
@@ -10054,6 +10065,105 @@ select.pp-bookConfirmField__control {
   font-size: 13px;
   font-weight: 700;
   color: #5b37ff;
+}
+
+.pp-suggestedWalks {
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(91, 55, 255, 0.18);
+  background: linear-gradient(180deg, rgba(91, 55, 255, 0.06), rgba(255, 255, 255, 0.9));
+}
+
+.pp-suggestedWalks__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.pp-suggestedWalks__title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.pp-suggestedWalks__refresh {
+  font-size: 13px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
+.pp-suggestedWalks__sub,
+.pp-suggestedWalks__empty,
+.pp-suggestedWalks__err,
+.pp-suggestedWalks__hint {
+  margin: 0 0 8px;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.pp-suggestedWalks__list {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pp-suggestedWalk {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #fff;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.pp-suggestedWalk__km {
+  display: block;
+  font-size: 17px;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  color: var(--pp-text);
+}
+
+.pp-suggestedWalk__meta {
+  display: block;
+  font-size: 12px;
+  color: var(--pp-text-2);
+  margin-top: 2px;
+}
+
+.pp-suggestedWalk__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pp-suggestedWalk__actions .pp-btn {
+  min-height: 36px;
+  padding: 8px 12px;
+  font-size: 13px;
+}
+
+.pp-hubManualWalk__sum {
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--pp-text-2);
+  list-style: none;
+}
+
+.pp-hubManualWalk__sum::-webkit-details-marker {
+  display: none;
 }
 
 .pp-hubWalkCard {

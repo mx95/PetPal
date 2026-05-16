@@ -9,6 +9,8 @@ import HubLeaderboardPeek from '../components/HubLeaderboardPeek';
 import { usePets } from '../pets/PetsContext';
 import { MAX_PHOTOS_PER_WALK_SESSION } from '../walk/walkPhotos';
 import { walkStreakDays, kmTodayForPetFromSessions, latestWalkSessionForPet } from '../walk/walkStats';
+import { useSuggestedWalks } from '../walk/useSuggestedWalks';
+import { formatTime24 } from '../formatTime24';
 import LifetimeAchievements from '../components/LifetimeAchievements';
 import { formatDateTime24 } from '../formatTime24';
 
@@ -53,6 +55,8 @@ export default function Dashboard() {
     walkSessions,
     walkTotals,
     addWalkKm,
+    dismissSuggestedWalk,
+    dismissedGpsWalkKeys,
     latestWalk,
     addPhotosToLatestWalk,
     removePhotoFromLatestWalk,
@@ -65,6 +69,7 @@ export default function Dashboard() {
   const [walkInput, setWalkInput] = useState('');
   const [walkLogBusy, setWalkLogBusy] = useState(false);
   const [walkPhotoMsg, setWalkPhotoMsg] = useState('');
+  const [suggestionBusyKey, setSuggestionBusyKey] = useState('');
   const [petIdx, setPetIdx] = useState(0);
   const carouselRef = useRef(null);
   const scrollSyncRaf = useRef(null);
@@ -153,6 +158,37 @@ export default function Dashboard() {
 
   const weeklyPct = Math.min(100, Math.round((Math.max(0, walkTotals.week) / WEEKLY_GOAL_KM) * 100));
   const levelPct = Math.max(2, Math.min(100, (levelXp / Math.max(1, nextMax)) * 100));
+
+  const trackerDeviceId = pet?.trackingDeviceId?.trim?.() || '';
+  const { suggestions: suggestedWalks, loading: suggestionsLoading, error: suggestionsError, refresh: refreshSuggestions } =
+    useSuggestedWalks({
+      deviceId: trackerDeviceId,
+      petId: pet?.id,
+      walkSessions,
+      dismissedGpsWalkKeys,
+    });
+
+  const onAcceptSuggestion = async (s) => {
+    if (!s?.gpsKey || suggestionBusyKey) return;
+    setWalkPhotoMsg('');
+    setSuggestionBusyKey(s.gpsKey);
+    try {
+      const ok = await addWalkKm(s.distanceKm, null, pet?.id, {
+        source: 'gps',
+        gpsKey: s.gpsKey,
+        startedAt: s.startAt,
+        endedAt: s.endAt,
+      });
+      if (ok) setWalkPhotoMsg(t('activityHub.suggestedWalkLogged', { km: s.distanceKm.toFixed(1) }));
+    } finally {
+      setSuggestionBusyKey('');
+    }
+  };
+
+  const onDismissSuggestion = (s) => {
+    if (!s?.gpsKey) return;
+    dismissSuggestedWalk(s.gpsKey);
+  };
 
   const onLogWalk = async (e) => {
     e.preventDefault();
@@ -416,7 +452,75 @@ export default function Dashboard() {
         <p className="pp-subtle" style={{ marginBottom: 12 }}>
           {t('activityHub.walkSub')}
         </p>
-        <form onSubmit={onLogWalk} className="pp-form" style={{ marginBottom: 14 }}>
+
+        {trackerDeviceId ? (
+          <div className="pp-suggestedWalks" style={{ marginBottom: 16 }}>
+            <div className="pp-suggestedWalks__head">
+              <h3 className="pp-suggestedWalks__title">{t('activityHub.suggestedWalksTitle')}</h3>
+              <button
+                type="button"
+                className="pp-link pp-suggestedWalks__refresh"
+                disabled={suggestionsLoading}
+                onClick={() => void refreshSuggestions()}
+              >
+                {suggestionsLoading ? t('activityHub.suggestedWalksLoading') : t('activityHub.suggestedWalksRefresh')}
+              </button>
+            </div>
+            <p className="pp-subtle pp-suggestedWalks__sub">{t('activityHub.suggestedWalksSub')}</p>
+            {suggestionsError ? (
+              <p className="pp-subtle pp-suggestedWalks__err">{suggestionsError}</p>
+            ) : null}
+            {!suggestionsLoading && suggestedWalks.length === 0 && !suggestionsError ? (
+              <p className="pp-subtle pp-suggestedWalks__empty">{t('activityHub.suggestedWalksEmpty')}</p>
+            ) : null}
+            {suggestedWalks.length > 0 ? (
+              <ul className="pp-suggestedWalks__list">
+                {suggestedWalks.map((s) => {
+                  const timeLabel = `${formatTime24(new Date(s.startAt), language)} – ${formatTime24(new Date(s.endAt), language)}`;
+                  const busy = suggestionBusyKey === s.gpsKey;
+                  return (
+                    <li key={s.gpsKey} className="pp-suggestedWalk">
+                      <div className="pp-suggestedWalk__body">
+                        <span className="pp-suggestedWalk__km">{s.distanceKm.toFixed(1)} km</span>
+                        <span className="pp-suggestedWalk__meta">
+                          {timeLabel}
+                          {' · '}
+                          {t('activityHub.suggestedWalkDuration', { min: s.durationMin })}
+                        </span>
+                      </div>
+                      <div className="pp-suggestedWalk__actions">
+                        <button
+                          type="button"
+                          className="pp-btn pp-btnPrimary"
+                          disabled={busy || walkLogBusy}
+                          onClick={() => void onAcceptSuggestion(s)}
+                        >
+                          {busy ? t('activityHub.saving') : t('activityHub.suggestedWalkAdd')}
+                        </button>
+                        <button
+                          type="button"
+                          className="pp-btn pp-btn--ghost"
+                          disabled={busy}
+                          onClick={() => onDismissSuggestion(s)}
+                        >
+                          {t('activityHub.suggestedWalkDismiss')}
+                        </button>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : null}
+          </div>
+        ) : (
+          <p className="pp-subtle pp-suggestedWalks__hint" style={{ marginBottom: 14 }}>
+            {t('activityHub.suggestedWalksNoTracker')}
+          </p>
+        )}
+
+        <details className="pp-hubManualWalk">
+          <summary className="pp-hubManualWalk__sum">{t('activityHub.manualWalkToggle')}</summary>
+        <form onSubmit={onLogWalk} className="pp-form" style={{ marginBottom: 14, marginTop: 12 }}>
           <div className="pp-row" style={{ gap: 8, flexWrap: 'wrap', alignItems: 'flex-end' }}>
             <div>
               <label htmlFor={walkFieldId} className="pp-label">
@@ -443,6 +547,7 @@ export default function Dashboard() {
             </p>
           ) : null}
         </form>
+        </details>
 
         {latestWalk ? (
           <div className="pp-hubLatestWalk">
