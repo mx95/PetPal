@@ -6,6 +6,14 @@ export default function ScrollToTop() {
   const { pathname } = useLocation();
   useEffect(() => {
     if (typeof window === 'undefined') return;
+    const main = document.querySelector('.pp-main');
+    if (main) {
+      try {
+        main.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+      } catch {
+        main.scrollTop = 0;
+      }
+    }
     try {
       window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
     } catch {

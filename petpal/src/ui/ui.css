@@ -6403,14 +6403,10 @@ a.pp-publicPet__metaValue {
   position: fixed;
   left: 0;
   right: 0;
-  bottom: var(--pp-bottom-nav-offset, 0px);
+  bottom: 0;
   z-index: 1200;
-  padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px));
+  padding: 8px 12px max(8px, env(safe-area-inset-bottom, 0px));
   pointer-events: none;
-  transform: translateZ(0);
-  -webkit-transform: translateZ(0);
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
 }
 .pp-bottomNav__row {
   pointer-events: auto;
@@ -6586,11 +6582,54 @@ a.pp-publicPet__metaValue {
   }
 }
 
+/* Mobile dock: body locked, main column scrolls — fixes iOS fixed-bottom drift */
+@media (max-width: 720px) {
+  body.pp-mobile-dock {
+    height: 100%;
+    height: 100dvh;
+    overflow: hidden;
+    width: 100%;
+    position: fixed;
+    inset: 0;
+  }
+
+  body.pp-mobile-dock #root {
+    height: 100%;
+    height: 100dvh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  body.pp-mobile-dock .pp-shell {
+    flex: 1;
+    min-height: 0;
+    height: 100%;
+    overflow: hidden;
+    padding-bottom: 0;
+  }
+
+  body.pp-mobile-dock .pp-nav {
+    position: relative;
+    top: auto;
+    flex-shrink: 0;
+  }
+
+  body.pp-mobile-dock .pp-main {
+    flex: 1;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
 /* Mobile-only: show bottom nav, give the page room, lighten the top nav */
 @media (max-width: 720px) {
   .pp-bottomNav { display: block; }
   .pp-footer { display: none; }
-  .pp-shell { padding-bottom: calc(102px + env(safe-area-inset-bottom)); }
   .pp-nav .pp-navlinks { display: none; }
   .pp-nav--auth .pp-navUtility .pp-langSwitcher { display: none; }
   .pp-nav { padding-top: 12px; padding-bottom: 12px; }
@@ -14474,8 +14513,8 @@ html[data-theme="dark"] .pp-nearby-list > li {
   .pp-bottomNav {
     left: 0;
     right: 0;
-    bottom: var(--pp-bottom-nav-offset, 0px);
-    padding: 0 14px calc(12px + env(safe-area-inset-bottom, 0px)) !important;
+    bottom: 0;
+    padding: 0 14px max(12px, env(safe-area-inset-bottom, 0px)) !important;
   }
 
   .pp-bottomNav__row {
@@ -14487,6 +14526,13 @@ html[data-theme="dark"] .pp-nearby-list > li {
     gap: 2px;
     padding: 6px 7px !important;
     border-radius: 25px;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: rgba(255, 255, 255, 0.97);
+  }
+
+  html[data-theme="dark"] .pp-bottomNav__row {
+    background: #12182a;
   }
 
   .pp-bottomNav__item {
