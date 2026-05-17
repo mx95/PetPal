@@ -622,6 +622,10 @@ video {
   top: 1rem;
 }
 
+.top-full {
+  top: 100%;
+}
+
 .z-40 {
   z-index: 40;
 }
@@ -1145,10 +1149,6 @@ video {
 
 .p-1 {
   padding: 0.25rem;
-}
-
-.p-1\.5 {
-  padding: 0.375rem;
 }
 
 .p-2 {

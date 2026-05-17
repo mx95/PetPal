@@ -7,14 +7,26 @@ const LANGUAGE_LABEL = {
   ru: 'Russian',
 };
 
-const LANGUAGE_SHORT = {
-  en: 'EN',
-  el: 'EL',
-  ru: 'RU',
-};
-
-function langShort(code) {
-  return LANGUAGE_SHORT[code] || String(code || '').toUpperCase().slice(0, 3);
+function WorldIcon({ className = '' }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      role="img"
+      aria-hidden="true"
+      focusable="false"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="12" cy="12" r="9" />
+      <path d="M3 12h18" />
+      <path d="M12 3a14 14 0 0 1 0 18" />
+      <path d="M12 3a14 14 0 0 0 0 18" />
+    </svg>
+  );
 }
 
 function FlagIcon({ code, className = '' }) {
@@ -113,11 +125,8 @@ export function LanguageSwitcher({ className = '' }) {
           aria-expanded={open}
           title={t('languageSwitcher.selectHint')}
         >
-          <span className="pp-langFlagRing" aria-hidden>
-            <FlagIcon code={language} />
-          </span>
-          <span className="pp-langTrigger__code" aria-hidden>
-            {langShort(language)}
+          <span className="pp-langTrigger__icon" aria-hidden>
+            <WorldIcon className="pp-langFlagSvg" />
           </span>
         </button>
 

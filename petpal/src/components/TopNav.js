@@ -105,22 +105,23 @@ export default function TopNav() {
           ) : null}
         </nav>
 
-        <div className="flex items-center gap-2">
+        <div className="pp-topNavUtilityCluster">
           <LanguageSwitcher />
           {user ? (
             <div className="relative" ref={accountMenuRef}>
               <button
                 type="button"
-                className="flex items-center justify-center rounded-full border border-white/80 bg-white/90 p-1.5 text-sm font-black text-petpal-ink shadow-soft transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lift"
+                className="pp-topNavAccountBtn"
                 onClick={() => setAccountMenuOpen((prev) => !prev)}
                 aria-haspopup="menu"
                 aria-expanded={accountMenuOpen}
               >
                 <UserAvatar user={user} size={32} className="pp-navProfileAvatar" />
+                <span className="pp-topNavAccountBtn__label">{t('nav.profile')}</span>
               </button>
 
               {accountMenuOpen ? (
-                <div className="absolute right-0 mt-3 w-60 rounded-3xl border border-slate-200 bg-white p-2 shadow-lift animate-soft-pop" role="menu" aria-label={t('nav.profile')}>
+                <div className="absolute right-0 top-full mt-3 w-60 rounded-3xl border border-slate-200 bg-white p-2 shadow-lift animate-soft-pop" role="menu" aria-label={t('nav.profile')}>
                   <Link className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-petpal-ink no-underline transition hover:bg-petpal-soft" to="/shop" role="menuitem" onClick={() => setAccountMenuOpen(false)}>
                     <span aria-hidden>🛒</span>
                     <span>{t('nav.shop')}</span>
