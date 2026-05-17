@@ -111,16 +111,12 @@ export default function TopNav() {
             <div className="relative" ref={accountMenuRef}>
               <button
                 type="button"
-                className="flex items-center gap-2 rounded-full border border-white/80 bg-white/90 py-1.5 pl-1.5 pr-3 text-sm font-black text-petpal-ink shadow-soft transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lift"
+                className="flex items-center justify-center rounded-full border border-white/80 bg-white/90 p-1.5 text-sm font-black text-petpal-ink shadow-soft transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lift"
                 onClick={() => setAccountMenuOpen((prev) => !prev)}
                 aria-haspopup="menu"
                 aria-expanded={accountMenuOpen}
               >
                 <UserAvatar user={user} size={32} className="pp-navProfileAvatar" />
-                <span className="hidden sm:inline">{t('nav.profile')}</span>
-                <span className="text-slate-400" aria-hidden>
-                  ▾
-                </span>
               </button>
 
               {accountMenuOpen ? (

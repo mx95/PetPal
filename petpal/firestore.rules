@@ -20,7 +20,8 @@ service cloud.firestore {
     }
 
     function isCompanyOwner(companyId) {
-      return request.auth != null && request.auth.uid == companyId;
+      return request.auth != null
+        && companyDoc(companyId).data.ownerUid == request.auth.uid;
     }
 
     function companyDoc(companyId) {
@@ -31,40 +32,49 @@ service cloud.firestore {
       return isCompanyOwner(companyId) && companyDoc(companyId).data.status == 'approved';
     }
 
+    function ownerHasApprovedCompany(ownerUid) {
+      return request.auth != null
+        && request.auth.uid == ownerUid
+        && exists(/databases/$(database)/documents/companies/$(request.auth.uid))
+        && get(/databases/$(database)/documents/companies/$(request.auth.uid)).data.status == 'approved';
+    }
+
     /** True when this company is open for customer booking (used for services/availability reads + booking create). */
     function isPublicBookableCompany(companyId) {
       let p = get(/databases/$(database)/documents/providers/$(companyId));
       return p.exists && p.data.bookingEnabled == true;
     }
 
-    match /companies/{userId} {
+    match /companies/{companyId} {
       allow read: if request.auth != null
-        && (request.auth.uid == userId || isAdmin());
-      allow create: if request.auth != null && request.auth.uid == userId
+        && (resource.data.ownerUid == request.auth.uid || isAdmin());
+      allow create: if request.auth != null
+        && request.resource.data.ownerUid == request.auth.uid
         && request.resource.data.accountType == 'company'
         && request.resource.data.status == 'pending';
       // Owner may resubmit after rejection, or edit while still pending. Admins can set status / reviews.
       allow update: if isAdmin()
-        || (request.auth != null && request.auth.uid == userId
+        || (request.auth != null
+            && resource.data.ownerUid == request.auth.uid
             && request.resource.data.status == 'pending'
             && (resource.data.status == 'pending' || resource.data.status == 'rejected'));
       allow delete: if false;
 
       // Provider service catalog (public read if booking-enabled + approved; owner/admin writes).
       match /services/{serviceId} {
-        allow read: if request.auth != null && isPublicBookableCompany(userId);
-        allow create, update, delete: if isAdmin() || isApprovedCompany(userId);
+        allow read: if request.auth != null && isPublicBookableCompany(companyId);
+        allow create, update, delete: if isAdmin() || isApprovedCompany(companyId);
       }
 
       // Slot-based availability (public read if booking-enabled + approved; owner/admin writes).
       match /availability/{slotId} {
-        allow read: if request.auth != null && isPublicBookableCompany(userId);
-        allow create, update, delete: if isAdmin() || isApprovedCompany(userId);
+        allow read: if request.auth != null && isPublicBookableCompany(companyId);
+        allow create, update, delete: if isAdmin() || isApprovedCompany(companyId);
       }
 
       // Provider-managed roster for walk-ins / unregistered dogs (private to provider/admin).
       match /clientPets/{petId} {
-        allow read, create, update, delete: if isAdmin() || isApprovedCompany(userId);
+        allow read, create, update, delete: if isAdmin() || isApprovedCompany(companyId);
       }
     }
 
@@ -226,12 +236,12 @@ service cloud.firestore {
         && request.resource.data.body.size() > 0
         && (
           isAdmin()
-          || isApprovedCompany(request.auth.uid)
+          || ownerHasApprovedCompany(request.auth.uid)
         );
       allow update, delete: if isAdmin()
         || (request.auth != null
             && resource.data.authorUid == request.auth.uid
-            && isApprovedCompany(request.auth.uid));
+            && ownerHasApprovedCompany(request.auth.uid));
     }
 
     // Dog breeding listings — signed-in readers; owners update their docs only.

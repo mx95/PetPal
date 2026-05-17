@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../auth/AuthProvider';
 import { isFirebaseConfigured } from '../firebase';
-import { subscribeCompanyProfile, subscribeIsAdmin } from './companyFirestore';
+import { subscribeCompanyProfile, subscribeCompanyProfiles, subscribeIsAdmin } from './companyFirestore';
 
 const CompanyContext = createContext(null);
 
@@ -9,17 +9,19 @@ export function CompanyProvider({ children }) {
   const { user } = useAuth();
   const uid = user?.uid ?? null;
   const [profile, setProfile] = useState(/** @type {import('./companyTypes').CompanyProfile | null} */ (null));
+  const [profiles, setProfiles] = useState(/** @type {import('./companyTypes').CompanyProfile[]} */ ([]));
   const [profileLoading, setProfileLoading] = useState(!!isFirebaseConfigured() && !!uid);
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     if (!uid || !isFirebaseConfigured()) {
       setProfile(null);
+      setProfiles([]);
       setProfileLoading(false);
       return undefined;
     }
     setProfileLoading(true);
-    const off = subscribeCompanyProfile(
+    const offPrimary = subscribeCompanyProfile(
       uid,
       (data) => {
         setProfile(data);
@@ -30,7 +32,17 @@ export function CompanyProvider({ children }) {
         setProfileLoading(false);
       }
     );
-    return off;
+
+    const offAll = subscribeCompanyProfiles(
+      uid,
+      (rows) => setProfiles(rows),
+      () => setProfiles([])
+    );
+
+    return () => {
+      offPrimary();
+      offAll();
+    };
   }, [uid]);
 
   useEffect(() => {
@@ -48,6 +60,7 @@ export function CompanyProvider({ children }) {
   const value = useMemo(
     () => ({
       profile,
+      profiles,
       profileLoading,
       isApprovedCompany,
       isPendingCompany,
@@ -55,7 +68,7 @@ export function CompanyProvider({ children }) {
       isAdmin,
       firebaseReady: isFirebaseConfigured(),
     }),
-    [profile, profileLoading, isApprovedCompany, isPendingCompany, isRejectedCompany, isAdmin]
+    [profile, profiles, profileLoading, isApprovedCompany, isPendingCompany, isRejectedCompany, isAdmin]
   );
 
   return <CompanyContext.Provider value={value}>{children}</CompanyContext.Provider>;

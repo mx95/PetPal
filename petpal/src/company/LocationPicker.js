@@ -45,12 +45,23 @@ function FlyToSearchResult({ lat, lng, recenterSignal }) {
   return null;
 }
 
+function MapInstanceBridge({ onMap }) {
+  const map = useMap();
+  useEffect(() => {
+    onMap(map);
+  }, [map, onMap]);
+  return null;
+}
+
 /**
  * Picker for a single lat/lng on OpenStreetMap (no Google key required).
  * @param {{ lat: number, lng: number, onChange: (lat: number, lng: number) => void, disabled?: boolean, recenterSignal?: number }} props
  */
 export default function LocationPicker({ lat, lng, onChange, disabled, recenterSignal = 0 }) {
   const [mapReady, setMapReady] = useState(false);
+  const [locating, setLocating] = useState(false);
+  const [locError, setLocError] = useState('');
+  const mapRef = useRef(null);
   useEffect(() => {
     setMapReady(true);
   }, []);
@@ -66,8 +77,43 @@ export default function LocationPicker({ lat, lng, onChange, disabled, recenterS
     [onChange]
   );
 
+  const goToCurrentLocation = useCallback(() => {
+    if (disabled || locating) return;
+    if (!navigator?.geolocation) {
+      setLocError('Geolocation is not available in this browser/device.');
+      return;
+    }
+    setLocError('');
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (g) => {
+        const nextLat = g.coords.latitude;
+        const nextLng = g.coords.longitude;
+        onChange(nextLat, nextLng);
+        if (mapRef.current) mapRef.current.flyTo([nextLat, nextLng], 17, { duration: 0.45 });
+        setLocating(false);
+      },
+      (err) => {
+        const msg =
+          err?.code === 1
+            ? 'Location permission denied. Please allow location access in your browser settings.'
+            : err?.code === 2
+              ? 'Could not detect your location. Try again in an open-sky area or with better network.'
+              : 'Location request timed out. Please try again.';
+        setLocError(msg);
+        setLocating(false);
+      },
+      { enableHighAccuracy: true, maximumAge: 20_000, timeout: 12_000 }
+    );
+  }, [disabled, locating, onChange]);
+
   return (
-    <div className="pp-leaflet-wrap pp-companyMap" role="application" aria-label="Choose business location on map">
+    <div
+      className="pp-leaflet-wrap pp-companyMap"
+      role="application"
+      aria-label="Choose business location on map"
+      style={{ position: 'relative' }}
+    >
       <p className="pp-subtle" style={{ fontSize: 12, marginBottom: 8 }}>
         Search for your business, then fine-tune by dragging the pin or clicking the map.
       </p>
@@ -83,6 +129,7 @@ export default function LocationPicker({ lat, lng, onChange, disabled, recenterS
           scrollWheelZoom={!disabled}
           style={{ height: 320, width: '100%' }}
         >
+          <MapInstanceBridge onMap={(map) => { mapRef.current = map; }} />
           <FlyToSearchResult lat={safeLat} lng={safeLng} recenterSignal={recenterSignal} />
           <ClickToPlace onPick={onChange} disabled={!!disabled} />
           <TileLayer
@@ -96,6 +143,37 @@ export default function LocationPicker({ lat, lng, onChange, disabled, recenterS
           />
         </MapContainer>
       )}
+      <button
+        type="button"
+        className="pp-btn"
+        onClick={goToCurrentLocation}
+        disabled={!!disabled || locating}
+        aria-label="Use my current location"
+        title="Use my current location"
+        style={{
+          position: 'absolute',
+          right: 12,
+          bottom: 12,
+          zIndex: 600,
+          width: 40,
+          height: 40,
+          borderRadius: 12,
+          padding: 0,
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: 18,
+          boxShadow: '0 8px 20px rgba(16,24,40,.18)',
+          background: '#fff',
+        }}
+      >
+        {locating ? '…' : '◎'}
+      </button>
+      {locError ? (
+        <p className="pp-error" style={{ margin: '8px 0 0', fontSize: 12 }}>
+          {locError}
+        </p>
+      ) : null}
     </div>
   );
 }

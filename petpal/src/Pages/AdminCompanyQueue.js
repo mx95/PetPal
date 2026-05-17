@@ -126,8 +126,13 @@ export default function AdminCompanyQueue() {
                     {c.businessName}
                   </h2>
                   <p className="pp-subtle" style={{ marginTop: 4, marginBottom: 4 }}>
-                    User ID: <code style={{ fontSize: 12 }}>{id}</code>
+                    Application ID: <code style={{ fontSize: 12 }}>{id}</code>
                   </p>
+                  {c.ownerUid ? (
+                    <p className="pp-subtle" style={{ marginTop: 4, marginBottom: 4 }}>
+                      Owner UID: <code style={{ fontSize: 12 }}>{c.ownerUid}</code>
+                    </p>
+                  ) : null}
                   {c.addressLine ? (
                     <p className="pp-subtle" style={{ marginTop: 4 }}>
                       {c.addressLine}

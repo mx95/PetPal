@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
 import { useCompany } from '../company/CompanyContext';
 import { saveCompanyApplication } from '../company/companyFirestore';
@@ -10,16 +10,28 @@ function mapsLink(lat, lng) {
   return `https://www.google.com/maps?q=${encodeURIComponent(`${lat},${lng}`)}`;
 }
 
+const BUSINESS_TYPES = [
+  { id: 'vet_clinic', label: 'Vet clinic' },
+  { id: 'pet_shop', label: 'Pet shop' },
+  { id: 'pet_hotel', label: 'Pet hotel' },
+  { id: 'other', label: 'Other' },
+];
+
 export default function CompanyApply() {
   const { user } = useAuth();
   const { state: locationState } = useLocation();
-  const { profile, profileLoading, isApprovedCompany, isPendingCompany, isRejectedCompany, firebaseReady } = useCompany();
+  const { profiles, profileLoading, firebaseReady } = useCompany();
 
+  const [modalOpen, setModalOpen] = useState(false);
   const [businessName, setBusinessName] = useState(
     () => (locationState && typeof locationState === 'object' && locationState.businessName) || ''
   );
+  const [businessType, setBusinessType] = useState('other');
+  const [logoUrl, setLogoUrl] = useState('');
   const [addressLine, setAddressLine] = useState('');
   const [publicEmail, setPublicEmail] = useState(() => (user && user.email) || '');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [workingHours, setWorkingHours] = useState('');
   const [lat, setLat] = useState(defaultMapCenter.lat);
   const [lng, setLng] = useState(defaultMapCenter.lng);
   const [submitting, setSubmitting] = useState(false);
@@ -39,6 +51,15 @@ export default function CompanyApply() {
     [setPos]
   );
 
+  const sortedProfiles = useMemo(() => {
+    const rows = Array.isArray(profiles) ? profiles : [];
+    return [...rows].sort((a, b) => {
+      const ta = a?.submittedAt?.toMillis ? a.submittedAt.toMillis() : 0;
+      const tb = b?.submittedAt?.toMillis ? b.submittedAt.toMillis() : 0;
+      return tb - ta;
+    });
+  }, [profiles]);
+
   useEffect(() => {
     if (!navigator?.geolocation) return;
     navigator.geolocation.getCurrentPosition(
@@ -49,18 +70,20 @@ export default function CompanyApply() {
   }, [setPos]);
 
   useEffect(() => {
-    if (profile && profile.businessName) setBusinessName(profile.businessName);
-    if (profile && profile.addressLine) setAddressLine(profile.addressLine);
-    if (profile && profile.publicEmail) setPublicEmail(profile.publicEmail);
-    if (profile && profile.lat != null && profile.lng != null) {
-      const plat = Number(profile.lat);
-      const plng = Number(profile.lng);
-      if (Number.isFinite(plat) && Number.isFinite(plng)) {
-        setLat(plat);
-        setLng(plng);
-      }
-    }
-  }, [profile]);
+    if (!modalOpen) return;
+    const onKey = (e) => {
+      if (e.key === 'Escape') setModalOpen(false);
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [modalOpen]);
+
+  useEffect(() => {
+    const cls = 'pp-noScroll';
+    if (modalOpen) document.body.classList.add(cls);
+    else document.body.classList.remove(cls);
+    return () => document.body.classList.remove(cls);
+  }, [modalOpen]);
 
   async function onSubmit(e) {
     e.preventDefault();
@@ -77,11 +100,23 @@ export default function CompanyApply() {
     try {
       await saveCompanyApplication(user.uid, {
         businessName: businessName.trim(),
+        businessType,
+        logoUrl,
         addressLine,
         publicEmail: publicEmail.trim(),
+        phoneNumber,
+        workingHours,
         lat,
         lng,
       });
+      setModalOpen(false);
+      setBusinessName('');
+      setBusinessType('other');
+      setLogoUrl('');
+      setAddressLine('');
+      setPublicEmail((user && user.email) || '');
+      setPhoneNumber('');
+      setWorkingHours('');
     } catch (err) {
       const c = err?.code || err?.message || '';
       if (c.includes('permission') || c.includes('PERMISSION')) {
@@ -100,65 +135,7 @@ export default function CompanyApply() {
     return (
       <div className="pp-grid">
         <div className="pp-col-12">
-          <p className="pp-subtle">Loading business profile…</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (isApprovedCompany && profile) {
-    return (
-      <div className="pp-grid">
-        <div className="pp-col-12" style={{ maxWidth: 640 }}>
-          <div className="pp-badge">Business</div>
-          <h1 className="pp-h1" style={{ marginTop: 10 }}>
-            {profile.businessName} is live
-          </h1>
-          <p className="pp-subtle" style={{ marginTop: 8 }}>
-            Your listing is approved. You can post business updates in Community — including paid boosted posts (checkout
-            coming soon; your boost request is stored on the post for now).
-          </p>
-          <p className="pp-subtle" style={{ marginTop: 6 }}>
-            <a className="pp-link" href={mapsLink(profile.lat, profile.lng)} target="_blank" rel="noopener noreferrer">
-              Open your pin in Google Maps
-            </a>
-          </p>
-          <p style={{ marginTop: 20 }}>
-            <Link className="pp-btn pp-btnPrimary" to="/community">
-              Go to Community
-            </Link>
-            <Link className="pp-link" to="/dashboard" style={{ marginLeft: 12 }}>
-              Dashboard
-            </Link>
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  if (isPendingCompany && profile) {
-    return (
-      <div className="pp-grid">
-        <div className="pp-col-12" style={{ maxWidth: 640 }}>
-          <div className="pp-badge">Business</div>
-          <h1 className="pp-h1" style={{ marginTop: 10 }}>
-            Awaiting confirmation
-          </h1>
-          <p className="pp-subtle" style={{ marginTop: 8 }}>
-            <strong>{profile.businessName}</strong> is waiting for a PetPal admin to verify your map pin and business
-            details. You can still use the app as a pet owner; business posting unlocks after approval.
-          </p>
-          <p>
-            <Link className="pp-link" to="/community">
-              Community
-            </Link>
-            <span className="pp-subtle" style={{ margin: '0 8px' }}>
-              ·
-            </span>
-            <Link className="pp-link" to="/dashboard">
-              Dashboard
-            </Link>
-          </p>
+          <p className="pp-subtle">Loading businesses…</p>
         </div>
       </div>
     );
@@ -169,11 +146,6 @@ export default function CompanyApply() {
       <div className="pp-grid">
         <div className="pp-col-12" style={{ maxWidth: 640 }}>
           <div className="pp-error">Firebase is not configured. Add your web app keys to the environment, then try again.</div>
-          <p className="pp-subtle" style={{ marginTop: 8 }}>
-            <Link className="pp-link" to="/dashboard">
-              ← Back
-            </Link>
-          </p>
         </div>
       </div>
     );
@@ -181,87 +153,213 @@ export default function CompanyApply() {
 
   return (
     <div className="pp-grid">
-      <div className="pp-col-12" style={{ maxWidth: 720 }}>
-        <div className="pp-row" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <div>
-            <div className="pp-badge">Business</div>
-            <h1 className="pp-h1" style={{ marginTop: 10 }}>
-              Register on the map
-            </h1>
-            <p className="pp-subtle" style={{ marginTop: 6, maxWidth: 560 }}>
-              Place your real-world location. An admin must approve your listing before you can run paid boosted posts
-              in Community. With a Google Maps key we search with Google Places; otherwise search uses OpenStreetMap.
-            </p>
-            {isRejectedCompany && profile?.rejectionNote ? (
-              <p className="pp-error" style={{ marginTop: 10 }}>
-                Previous request was not approved: {profile.rejectionNote}
-              </p>
-            ) : null}
-          </div>
-          <Link className="pp-link" to="/dashboard">
-            ← Dashboard
-          </Link>
-        </div>
+      <div className="pp-col-12" style={{ maxWidth: 960 }}>
+        <h1 className="pp-h1" style={{ marginTop: 10 }}>
+          Grow your business on PetPal
+        </h1>
+        <p className="pp-subtle" style={{ marginTop: 6, maxWidth: 760 }}>
+          Add your business to PetPal to increase visibility, reach more pet parents, and become part of the pet
+          community.
+        </p>
 
-        <div className="pp-card pp-pad pp-companyApplyCard" style={{ marginTop: 18 }}>
-          <h2 className="pp-sectionTitle">Business details &amp; pin</h2>
-          <form className="pp-form pp-companyApplyForm" onSubmit={onSubmit} style={{ gap: 12 }}>
-            <div>
-              <div className="pp-label">Business or venue name</div>
-              <input
-                className="pp-input"
-                value={businessName}
-                onChange={(e) => setBusinessName(e.target.value)}
-                required
-                maxLength={120}
-                placeholder="e.g. Happy Paws Daycare"
-              />
-            </div>
-            <div>
-              <div className="pp-label">Address (optional, shown in admin review)</div>
-              <input
-                className="pp-input"
-                value={addressLine}
-                onChange={(e) => setAddressLine(e.target.value)}
-                maxLength={200}
-                placeholder="Street, city"
-              />
-            </div>
-            <div>
-              <div className="pp-label">Contact email (optional)</div>
-              <input
-                className="pp-input"
-                type="email"
-                value={publicEmail}
-                onChange={(e) => setPublicEmail(e.target.value)}
-                placeholder="hello@example.com"
-              />
-            </div>
-            <div className="pp-companyMapSection">
-              <div className="pp-label">Find your business on the map</div>
-              <CompanyPlaceSearchField
-                onPicked={onPlacePicked}
-                businessName={businessName}
-                addressLine={addressLine}
-              />
-              <div className="pp-label" style={{ marginTop: 14 }}>Pin position</div>
-              <LocationPicker lat={lat} lng={lng} onChange={setPos} recenterSignal={recenterSignal} />
-              <p className="pp-subtle" style={{ fontSize: 12, marginTop: 6, marginBottom: 0 }}>
-                <a className="pp-link" style={{ display: 'inline' }} href={mapsLink(lat, lng)} target="_blank" rel="noopener noreferrer">
-                  Preview in Google Maps
-                </a>{' '}
-                (opens new tab)
-              </p>
-            </div>
-            {error ? <div className="pp-error">{error}</div> : null}
-            <div>
-              <button type="submit" className="pp-btn pp-btnPrimary" disabled={submitting}>
-                {submitting ? 'Submitting…' : 'Submit for review'}
-              </button>
-            </div>
-          </form>
+        <div className="pp-row" style={{ marginTop: 12 }}>
+          <button type="button" className="pp-btn pp-btnPrimary" onClick={() => setModalOpen(true)} style={{ marginLeft: 'auto' }}>
+            + Add Business
+          </button>
         </div>
       </div>
+
+      <div className="pp-col-12" style={{ maxWidth: 960 }}>
+        <div className="pp-card pp-pad">
+          <h2 className="pp-sectionTitle">Your businesses ({sortedProfiles.length})</h2>
+          {sortedProfiles.length === 0 ? (
+            <p className="pp-subtle">No businesses yet. Click “Add Business” to submit your first listing.</p>
+          ) : (
+            <ul className="pp-petList">
+              {sortedProfiles.map((c) => (
+                <li key={c.id || `${c.businessName}-${c.lat}-${c.lng}`} className="pp-petList__item">
+                  <div className="pp-petList__row" style={{ alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                    <div style={{ minWidth: 0 }}>
+                      <div className="pp-petList__name">🏪 {c.businessName}</div>
+                      <div className="pp-petList__tags" style={{ marginTop: 8 }}>
+                        <span className="pp-petTag">{c.businessType || 'other'}</span>
+                        <span
+                          className="pp-petTag"
+                          style={{
+                            borderColor:
+                              c.status === 'approved'
+                                ? 'rgba(22,163,74,.45)'
+                                : c.status === 'pending'
+                                  ? 'rgba(59,130,246,.45)'
+                                  : 'rgba(220,38,38,.45)',
+                            background:
+                              c.status === 'approved'
+                                ? 'rgba(22,163,74,.10)'
+                                : c.status === 'pending'
+                                  ? 'rgba(59,130,246,.10)'
+                                  : 'rgba(220,38,38,.10)',
+                            color:
+                              c.status === 'approved'
+                                ? '#166534'
+                                : c.status === 'pending'
+                                  ? '#1d4ed8'
+                                  : '#991b1b',
+                          }}
+                        >
+                          {c.status}
+                        </span>
+                      </div>
+                      {c.addressLine ? <div className="pp-petList__meta" style={{ marginTop: 8 }}>{c.addressLine}</div> : null}
+                      {c.publicEmail ? (
+                        <div className="pp-petList__meta" style={{ marginTop: 4 }}>
+                          <strong>Email:</strong> {c.publicEmail}
+                        </div>
+                      ) : null}
+                      {c.phoneNumber ? (
+                        <div className="pp-petList__meta" style={{ marginTop: 4 }}>
+                          <strong>Phone:</strong> {c.phoneNumber}
+                        </div>
+                      ) : null}
+                      {c.workingHours ? <p className="pp-petList__desc">{c.workingHours}</p> : null}
+                      {c.status === 'rejected' && c.rejectionNote ? (
+                        <p className="pp-error" style={{ marginTop: 8, marginBottom: 0 }}>
+                          Previous request was not approved: {c.rejectionNote}
+                        </p>
+                      ) : null}
+                      {c.lat != null && c.lng != null ? (
+                        <p style={{ marginTop: 8, marginBottom: 0 }}>
+                          <a className="pp-link" href={mapsLink(c.lat, c.lng)} target="_blank" rel="noopener noreferrer">
+                            Preview in Google Maps
+                          </a>
+                        </p>
+                      ) : null}
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+
+      {modalOpen ? (
+        <div className="pp-modalWrap" role="dialog" aria-modal="true" aria-labelledby="add-business-title">
+          <button type="button" className="pp-modalBackdrop" aria-label="Close" onClick={() => setModalOpen(false)} />
+          <div className="pp-modalCard pp-modalCard--petAdd" style={{ maxWidth: 1120, width: 'min(1120px, calc(100vw - 24px))' }}>
+            <div className="pp-modalHead">
+              <div>
+                <h2 id="add-business-title" className="pp-sectionTitle" style={{ margin: 0 }}>
+                  Add business
+                </h2>
+              </div>
+              <button type="button" className="pp-btn" onClick={() => setModalOpen(false)} aria-label="Close" title="Close">
+                ✕
+              </button>
+            </div>
+
+            <form className="pp-form pp-modalForm" onSubmit={onSubmit}>
+              <div>
+                <div className="pp-label">Business or venue name</div>
+                <input
+                  className="pp-input"
+                  value={businessName}
+                  onChange={(e) => setBusinessName(e.target.value)}
+                  required
+                  maxLength={120}
+                  placeholder="e.g. Happy Paws Daycare"
+                />
+              </div>
+
+              <div>
+                <div className="pp-label">Business type</div>
+                <div className="pp-row" style={{ gap: 10, flexWrap: 'wrap' }}>
+                  {BUSINESS_TYPES.map((type) => (
+                    <button
+                      key={type.id}
+                      type="button"
+                      className={`pp-btn ${businessType === type.id ? 'pp-btnPrimary' : ''}`}
+                      onClick={() => setBusinessType(type.id)}
+                    >
+                      {type.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <div className="pp-label">Business logo URL</div>
+                <input className="pp-input" value={logoUrl} onChange={(e) => setLogoUrl(e.target.value)} placeholder="https://…" />
+              </div>
+
+              <div>
+                <div className="pp-label">Address</div>
+                <input
+                  className="pp-input"
+                  value={addressLine}
+                  onChange={(e) => setAddressLine(e.target.value)}
+                  maxLength={200}
+                  placeholder="Street, city"
+                />
+              </div>
+
+              <div>
+                <div className="pp-label">Contact email</div>
+                <input
+                  className="pp-input"
+                  type="email"
+                  value={publicEmail}
+                  onChange={(e) => setPublicEmail(e.target.value)}
+                  placeholder="hello@example.com"
+                />
+              </div>
+
+              <div>
+                <div className="pp-label">Phone number</div>
+                <input
+                  className="pp-input"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  placeholder="e.g. +357 99 123456"
+                />
+              </div>
+
+              <div>
+                <div className="pp-label">Working hours</div>
+                <textarea
+                  className="pp-input"
+                  value={workingHours}
+                  onChange={(e) => setWorkingHours(e.target.value)}
+                  style={{ minHeight: 80, resize: 'vertical' }}
+                  placeholder="e.g. Mon–Fri 10:00–18:00, Sat 11:00–19:00, Sun closed"
+                />
+              </div>
+
+              <div className="pp-companyMapSection">
+                <div className="pp-label">Find your business on the map</div>
+                <CompanyPlaceSearchField onPicked={onPlacePicked} businessName={businessName} addressLine={addressLine} />
+                <div className="pp-label" style={{ marginTop: 14 }}>Pin position</div>
+                <LocationPicker lat={lat} lng={lng} onChange={setPos} recenterSignal={recenterSignal} />
+                <p className="pp-subtle" style={{ fontSize: 12, marginTop: 6, marginBottom: 0 }}>
+                  <a className="pp-link" style={{ display: 'inline' }} href={mapsLink(lat, lng)} target="_blank" rel="noopener noreferrer">
+                    Preview in Google Maps
+                  </a>
+                </p>
+              </div>
+
+              {error ? <div className="pp-error">{error}</div> : null}
+
+              <div className="pp-modalActions">
+                <button type="button" className="pp-btn" onClick={() => setModalOpen(false)}>
+                  Cancel
+                </button>
+                <button type="submit" className="pp-btn pp-btnPrimary" disabled={submitting}>
+                  {submitting ? 'Submitting…' : 'Submit for review'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
