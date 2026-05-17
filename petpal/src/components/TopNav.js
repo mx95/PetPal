@@ -96,25 +96,13 @@ export default function TopNav() {
               <NavLink className={navItemClassName} to="/bookings">
                 {t('nav.bookings')}
               </NavLink>
-              <NavLink className={navItemClassName} to="/shop">
-                {t('nav.shop')}
-              </NavLink>
               {isApprovedCompany && profile?.bookingEnabled ? (
                 <NavLink className={navItemClassName} to="/provider">
                   {t('nav.provider')}
                 </NavLink>
               ) : null}
             </>
-          ) : (
-            <>
-              <NavLink className={navItemClassName} to="/login">
-                {t('nav.login')}
-              </NavLink>
-              <NavLink className={navItemClassName} to="/register">
-                {t('nav.register')}
-              </NavLink>
-            </>
-          )}
+          ) : null}
         </nav>
 
         <div className="flex items-center gap-2">
@@ -185,8 +173,11 @@ export default function TopNav() {
               ) : null}
             </div>
           ) : (
-            <NavLink className="hidden rounded-full bg-petpal-ink px-5 py-3 text-sm font-black text-white no-underline shadow-soft transition hover:-translate-y-0.5 hover:shadow-lift sm:inline-flex" to="/register">
-              {t('nav.register')}
+            <NavLink
+              className="hidden items-center justify-center rounded-full bg-petpal-ink px-4 py-2 text-sm font-black text-white no-underline shadow-soft transition hover:-translate-y-0.5 hover:shadow-lift sm:inline-flex"
+              to="/login"
+            >
+              Get Started
             </NavLink>
           )}
         </div>

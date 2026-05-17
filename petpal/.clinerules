@@ -1,0 +1,36 @@
+# PetPal Homepage Rules
+
+PetPal is a platform for pet parents and pet-friendly businesses.
+
+Tone:
+- Friendly
+- Trustworthy
+- Modern
+- Clear
+- Pet-focused
+
+Design:
+- Use modern landing page structure.
+- Prefer clean Tailwind-style sections.
+- Use rounded cards, soft shadows, responsive grids, and strong CTAs.
+- Avoid generic SaaS wording.
+- Avoid placeholder lorem ipsum.
+- Every section must clearly relate to pets, pet safety, GPS tracking, NFC tags, pet-friendly places, bookings, or community.
+
+Content priorities:
+1. GPS Tracker
+2. NFC Pet Tag
+3. Pet profiles
+4. Nearby pet-friendly places
+5. Business registration
+6. Bookings
+7. Coming soon community features
+
+Rules:
+- The homepage can be fully replaced.
+- Do not break existing routes, auth, APIs, or shared layout.
+- Do not invent backend functionality.
+- Mark unfinished features as "Coming soon".
+- Keep code clean and easy to modify later.
+
+Priority: make the homepage visually match the Appline reference first. Content accuracy is secondary because I will manually update the text, prices, screenshots, and links later.

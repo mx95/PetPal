@@ -424,6 +424,9 @@ const en = {
     terms: 'Terms',
     cookies: 'Cookies',
     cookieSettings: 'Cookie settings',
+    brandDesc:
+      'Supporting pet families with reliable care tools and trusted local resources.',
+    rightsAndByline: 'All rights reserved · Created with ❤️ by fellow pet parents.',
     note:
       'EU/EEA: information provided for transparency. Replace placeholders in legal pages with your entity details.',
   },
