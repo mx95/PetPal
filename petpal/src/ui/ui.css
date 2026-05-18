@@ -3671,53 +3671,116 @@ body.pp-noScroll {
   color: #5b37ff;
 }
 
-.pp-trackHistoryManual {
-  display: grid;
+.pp-trackHistoryRangePickers {
+  display: flex;
+  flex-direction: column;
   gap: 8px;
-  margin-top: 2px;
+  margin-top: 4px;
 }
 
-.pp-trackHistoryManual__row {
-  display: grid;
-  grid-template-columns: minmax(52px, 64px) minmax(0, 1fr);
-  gap: 8px 10px;
-  align-items: center;
+.pp-trackHistoryRangeBlock {
+  margin: 0;
+  padding: 10px 12px 12px;
+  border: 1px solid var(--pp-border);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: var(--pp-shadow-xs);
+  min-width: 0;
 }
 
-.pp-trackHistoryManual__key {
-  font-size: 10px;
+.pp-trackHistoryRangeBlock--from {
+  border-left: 4px solid #5b37ff;
+  background: linear-gradient(135deg, rgba(91, 55, 255, 0.07) 0%, rgba(255, 255, 255, 0.9) 55%);
+}
+
+.pp-trackHistoryRangeBlock--to {
+  border-left: 4px solid #2f80ff;
+  background: linear-gradient(135deg, rgba(47, 128, 255, 0.08) 0%, rgba(255, 255, 255, 0.9) 55%);
+}
+
+.pp-trackHistoryRangeBlock__legend {
+  padding: 0;
+  margin: 0 0 4px;
+  font-size: 13px;
   font-weight: 950;
-  letter-spacing: 0.08em;
+  letter-spacing: -0.02em;
+  color: var(--pp-text);
+  float: none;
+  width: 100%;
+}
+
+.pp-trackHistoryRangeBlock__hint {
+  margin: 0 0 10px;
+  font-size: 11px;
+  line-height: 1.4;
+  font-weight: 600;
+  color: var(--pp-text-2);
+}
+
+.pp-trackHistoryRangeBlock__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.pp-trackHistoryRangeArrow {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0;
+  line-height: 1;
+}
+
+.pp-trackHistoryRangeArrow__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: rgba(91, 55, 255, 0.1);
+  color: #5b37ff;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.pp-trackHistoryRangeField {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.pp-trackHistoryRangeField__label {
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
   color: var(--pp-text-2);
 }
 
-.pp-trackHistoryManual__pair {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  min-width: 0;
-}
-
-.pp-trackHistoryManual__field {
-  flex: 1 1 120px;
-  min-width: 0;
-  border: 1px solid var(--pp-border);
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.74);
-  box-shadow: var(--pp-shadow-xs);
-  padding: 6px 10px;
+.pp-trackHistoryRangeField__control {
+  border: 1px solid rgba(16, 24, 40, 0.12);
+  border-radius: 12px;
+  background: #fff;
+  padding: 6px 8px;
   display: block;
+  min-width: 0;
 }
 
-.pp-trackHistoryManual__field input {
+.pp-trackHistoryRangeField__control input {
   width: 100%;
   border: 0;
   background: transparent;
   color: var(--pp-text);
   font-weight: 800;
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   min-height: 28px;
+}
+
+.pp-trackHistoryRangeField__time.pp-timeInput24 {
+  min-width: 0;
+  width: 100%;
 }
 
 .pp-timeInput24 {
@@ -3747,8 +3810,8 @@ body.pp-noScroll {
   flex: 0 0 auto;
 }
 
-.pp-trackHistoryManual__time.pp-timeInput24 {
-  min-width: 7.5rem;
+.pp-trackHistoryRangeField__time .pp-timeInput24__select {
+  font-size: 0.8125rem;
 }
 
 .pp-field .pp-timeInput24__select,
@@ -3914,8 +3977,7 @@ body.pp-noScroll {
 }
 
 .pp-trackHistoryFrame--panorama {
-  border-radius: 36px 14px 36px 14px;
-  clip-path: polygon(0 0, 100% 0, 100% 97%, 99% 100%, 1% 100%, 0 97%);
+  border-radius: 24px;
 }
 
 .pp-positionMap--routeVertices .leaflet-interactive {
@@ -8399,19 +8461,8 @@ body,
 }
 
 @media (max-width: 720px) {
-  .pp-trackHistoryManual__row {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 8px;
-  }
-
-  .pp-trackHistoryManual__pair {
-    width: 100%;
-  }
-
-  .pp-trackHistoryManual__field {
-    flex: 1 1 auto;
-    min-width: 0;
+  .pp-trackHistoryRangeBlock__grid {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -8462,13 +8513,8 @@ body,
     flex: 0 0 auto;
   }
 
-  .pp-trackHistoryManual__row {
+  .pp-trackHistoryRangeBlock__grid {
     grid-template-columns: 1fr;
-    gap: 6px;
-  }
-
-  .pp-trackHistoryManual__key {
-    margin-bottom: -2px;
   }
 
   .pp-trackHistoryStats {
@@ -8689,7 +8735,8 @@ html[data-theme="dark"] .pp-trackTabs--segment button.is-active {
 
 html[data-theme="dark"] .pp-trackTabs,
 html[data-theme="dark"] .pp-trackHistoryPresetBtn,
-html[data-theme="dark"] .pp-trackHistoryManual__field,
+html[data-theme="dark"] .pp-trackHistoryRangeField__control,
+html[data-theme="dark"] .pp-trackHistoryRangeBlock,
 html[data-theme="dark"] .pp-trackHistoryStats article,
 html[data-theme="dark"] .pp-trackPlayback button,
 html[data-theme="dark"] .pp-trackPlayback select {

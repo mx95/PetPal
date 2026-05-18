@@ -149,6 +149,47 @@ function GoogleFitRoute({ path }) {
   return null;
 }
 
+/** Native google.maps.Polyline — @react-google-maps/api <Polyline> often fails to render on history routes. */
+function GoogleRoutePolylines({ path, emphasize }) {
+  const map = useGoogleMap();
+  const pathKey = useMemo(() => JSON.stringify(path), [path]);
+
+  useEffect(() => {
+    if (!map || !window.google?.maps) return undefined;
+    let coords;
+    try {
+      coords = JSON.parse(pathKey);
+    } catch {
+      return undefined;
+    }
+    if (!Array.isArray(coords) || coords.length < 2) return undefined;
+
+    const glow = new window.google.maps.Polyline({
+      path: coords,
+      geodesic: false,
+      strokeColor: ROUTE_LINE,
+      strokeOpacity: 0.18,
+      strokeWeight: emphasize ? 10 : 8,
+      map,
+    });
+    const line = new window.google.maps.Polyline({
+      path: coords,
+      geodesic: false,
+      strokeColor: ROUTE_LINE,
+      strokeOpacity: 1,
+      strokeWeight: emphasize ? 5 : 4,
+      map,
+    });
+
+    return () => {
+      line.setMap(null);
+      glow.setMap(null);
+    };
+  }, [map, pathKey, emphasize]);
+
+  return null;
+}
+
 function GoogleUserPanDetector({ onUserPan }) {
   const map = useGoogleMap();
   useEffect(() => {
@@ -542,30 +583,7 @@ function GooglePositionMap({
         ) : null}
         {hasPath ? (
           <>
-            <Polyline
-              key={`route-line-${routePath.length}`}
-              path={routePath}
-              options={{
-                strokeColor: ROUTE_LINE,
-                strokeOpacity: 0.95,
-                strokeWeight: showRouteVertices ? 4 : 3,
-                geodesic: false,
-                zIndex: 10,
-                clickable: false,
-              }}
-            />
-            <Polyline
-              key={`route-glow-${routePath.length}`}
-              path={routePath}
-              options={{
-                strokeColor: ROUTE_LINE,
-                strokeOpacity: 0.16,
-                strokeWeight: showRouteVertices ? 10 : 9,
-                geodesic: false,
-                zIndex: 9,
-                clickable: false,
-              }}
-            />
+            <GoogleRoutePolylines path={routePath} emphasize={showRouteVertices} />
             {displayMarkers.map((m) => {
               const active = playbackPointIndex != null && m.pointIndex === playbackPointIndex;
               const icon = googleRouteDotIcon(maps, m.kind, active, showRouteVertices);

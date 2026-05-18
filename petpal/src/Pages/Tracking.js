@@ -662,13 +662,15 @@ export default function Tracking() {
   const historyAnalytics = useMemo(() => buildHistoryAnalytics(filteredHistory), [filteredHistory]);
   const historyTimelineEvents = useMemo(() => buildHistoryTimelineEvents(filteredHistory, t, language), [filteredHistory, t, language]);
 
-  const historyMapPath = useMemo(
-    () =>
-      filteredHistory
-        .map((p) => ({ lat: Number(p.lat), lng: Number(p.lng) }))
-        .filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng)),
-    [filteredHistory]
-  );
+  const historyMapPath = useMemo(() => {
+    const fromTimeline = historyTimelineEvents
+      .map((ev) => ({ lat: Number(ev.start.lat), lng: Number(ev.start.lng) }))
+      .filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng));
+    if (fromTimeline.length >= 2) return fromTimeline;
+    return filteredHistory
+      .map((p) => ({ lat: Number(p.lat), lng: Number(p.lng) }))
+      .filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng));
+  }, [historyTimelineEvents, filteredHistory]);
 
   const historyMapMarkers = useMemo(() => {
     if (!historyTimelineEvents.length) return [];
@@ -1098,62 +1100,82 @@ export default function Tracking() {
                     </button>
                   ))}
                 </div>
-                <div className="pp-trackHistoryManual" role="group" aria-label={t('trackingPage.historyManualAria')}>
-                  <div className="pp-trackHistoryManual__row">
-                    <span className="pp-trackHistoryManual__key">{t('trackingPage.historyFromLabel')}</span>
-                    <div className="pp-trackHistoryManual__pair">
-                      <label className="pp-trackHistoryManual__field">
-                        <input
-                          type="date"
-                          value={historyRange.from}
-                          aria-label={t('trackingPage.historyFromDateAria')}
-                          onChange={(e) => setHistoryRange((r) => ({ ...r, preset: 'custom', from: e.target.value }))}
-                        />
+                <div className="pp-trackHistoryRangePickers" role="group" aria-label={t('trackingPage.historyManualAria')}>
+                  <fieldset className="pp-trackHistoryRangeBlock pp-trackHistoryRangeBlock--from">
+                    <legend className="pp-trackHistoryRangeBlock__legend">{t('trackingPage.historyFromLabel')}</legend>
+                    <p className="pp-trackHistoryRangeBlock__hint">{t('trackingPage.historyFromHint')}</p>
+                    <div className="pp-trackHistoryRangeBlock__grid">
+                      <label className="pp-trackHistoryRangeField">
+                        <span className="pp-trackHistoryRangeField__label">{t('trackingPage.historyDateField')}</span>
+                        <span className="pp-trackHistoryRangeField__control">
+                          <input
+                            type="date"
+                            value={historyRange.from}
+                            aria-label={t('trackingPage.historyFromDateAria')}
+                            onChange={(e) => setHistoryRange((r) => ({ ...r, preset: 'custom', from: e.target.value }))}
+                          />
+                        </span>
                       </label>
-                      <label className="pp-trackHistoryManual__field">
-                        <TimeInput24
-                          className="pp-trackHistoryManual__time"
-                          value={historyRange.timeFrom ?? defaultHistoryDayTimes().timeFrom}
-                          aria-label={t('trackingPage.historyFromTimeAria')}
-                          onChange={(next) =>
-                            setHistoryRange((r) => ({
-                              ...r,
-                              preset: 'custom',
-                              timeFrom: next || defaultHistoryDayTimes().timeFrom,
-                            }))
-                          }
-                        />
-                      </label>
-                    </div>
-                  </div>
-                  <div className="pp-trackHistoryManual__row">
-                    <span className="pp-trackHistoryManual__key">{t('trackingPage.historyToLabel')}</span>
-                    <div className="pp-trackHistoryManual__pair">
-                      <label className="pp-trackHistoryManual__field">
-                        <input
-                          type="date"
-                          value={historyRange.to}
-                          aria-label={t('trackingPage.historyToDateAria')}
-                          onChange={(e) => setHistoryRange((r) => ({ ...r, preset: 'custom', to: e.target.value }))}
-                        />
-                      </label>
-                      <label className="pp-trackHistoryManual__field">
-                        <TimeInput24
-                          className="pp-trackHistoryManual__time"
-                          value={historyRange.timeTo ?? defaultHistoryDayTimes().timeTo}
-                          aria-label={t('trackingPage.historyToTimeAria')}
-                          onChange={(next) =>
-                            setHistoryRange((r) => ({
-                              ...r,
-                              preset: 'custom',
-                              timeTo: next || defaultHistoryDayTimes().timeTo,
-                            }))
-                          }
-                        />
+                      <label className="pp-trackHistoryRangeField">
+                        <span className="pp-trackHistoryRangeField__label">{t('trackingPage.historyTimeField')}</span>
+                        <span className="pp-trackHistoryRangeField__control">
+                          <TimeInput24
+                            className="pp-trackHistoryRangeField__time"
+                            value={historyRange.timeFrom ?? defaultHistoryDayTimes().timeFrom}
+                            aria-label={t('trackingPage.historyFromTimeAria')}
+                            onChange={(next) =>
+                              setHistoryRange((r) => ({
+                                ...r,
+                                preset: 'custom',
+                                timeFrom: next || defaultHistoryDayTimes().timeFrom,
+                              }))
+                            }
+                          />
+                        </span>
                       </label>
                     </div>
+                  </fieldset>
+
+                  <div className="pp-trackHistoryRangeArrow" aria-hidden="true">
+                    <span className="pp-trackHistoryRangeArrow__icon">↓</span>
                   </div>
+
+                  <fieldset className="pp-trackHistoryRangeBlock pp-trackHistoryRangeBlock--to">
+                    <legend className="pp-trackHistoryRangeBlock__legend">{t('trackingPage.historyToLabel')}</legend>
+                    <p className="pp-trackHistoryRangeBlock__hint">{t('trackingPage.historyToHint')}</p>
+                    <div className="pp-trackHistoryRangeBlock__grid">
+                      <label className="pp-trackHistoryRangeField">
+                        <span className="pp-trackHistoryRangeField__label">{t('trackingPage.historyDateField')}</span>
+                        <span className="pp-trackHistoryRangeField__control">
+                          <input
+                            type="date"
+                            value={historyRange.to}
+                            aria-label={t('trackingPage.historyToDateAria')}
+                            onChange={(e) => setHistoryRange((r) => ({ ...r, preset: 'custom', to: e.target.value }))}
+                          />
+                        </span>
+                      </label>
+                      <label className="pp-trackHistoryRangeField">
+                        <span className="pp-trackHistoryRangeField__label">{t('trackingPage.historyTimeField')}</span>
+                        <span className="pp-trackHistoryRangeField__control">
+                          <TimeInput24
+                            className="pp-trackHistoryRangeField__time"
+                            value={historyRange.timeTo ?? defaultHistoryDayTimes().timeTo}
+                            aria-label={t('trackingPage.historyToTimeAria')}
+                            onChange={(next) =>
+                              setHistoryRange((r) => ({
+                                ...r,
+                                preset: 'custom',
+                                timeTo: next || defaultHistoryDayTimes().timeTo,
+                              }))
+                            }
+                          />
+                        </span>
+                      </label>
+                    </div>
+                  </fieldset>
                 </div>
+
               </div>
 
               <aside className="pp-card pp-pad pp-trackHistoryTimeline">
