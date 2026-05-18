@@ -65,6 +65,8 @@ function CheckoutSuccessBridge() {
 
 function App() {
   const { initializing } = useAuth();
+  const location = useLocation();
+  const mainAlignsWithNav = location.pathname === '/docs';
 
   if (initializing) {
     return <OpeningScreen subtitle="Checking if you’re logged in…" />;
@@ -74,7 +76,7 @@ function App() {
       <ScrollToTop />
       <TopNav />
       <CheckoutSuccessBridge />
-      <div className="pp-main">
+      <div className={mainAlignsWithNav ? 'pp-main pp-main--alignNav' : 'pp-main'}>
         <Routes>
           <Route path="/" element={<HomeScreen />} />
           <Route path="/discover" element={<DiscoverHome />} />

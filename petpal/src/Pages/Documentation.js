@@ -105,7 +105,7 @@ export default function Documentation() {
           <h1 className="pp-h1" style={{ marginTop: 0 }}>
             {t('docs.pageTitle')}
           </h1>
-          <p className="pp-subtle" style={{ marginBottom: 20, maxWidth: 720 }}>
+          <p className="pp-subtle pp-docsPage__subtitle">
             {t('docs.pageSubtitle')}
           </p>
 

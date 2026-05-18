@@ -4370,7 +4370,59 @@ body.pp-noScroll {
   margin: 0 auto;
 }
 
-/* In-app documentation (/docs) */
+/* Match TopNav width + horizontal padding (max-w-6xl, px-4 sm:px-6 lg:px-8) */
+.pp-main--alignNav {
+  max-width: 72rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+@media (min-width: 640px) {
+  .pp-main--alignNav {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .pp-main--alignNav {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
+
+/* In-app documentation (/docs) — full width between logo and profile */
+.pp-legalDoc.pp-docsPage {
+  max-width: none;
+  margin: 0;
+  width: 100%;
+}
+
+.pp-docsPage__subtitle {
+  margin: 0 0 20px;
+  max-width: none;
+  line-height: 1.6;
+}
+
+.pp-docsPage .pp-legalBody {
+  font-size: 15px;
+  line-height: 1.65;
+}
+
+.pp-docsPage .pp-legalBody p {
+  max-width: none;
+}
+
+.pp-docsPage .pp-pad {
+  padding: 28px 32px 36px;
+}
+
+@media (min-width: 1024px) {
+  .pp-docsPage .pp-pad {
+    padding: 32px 40px 40px;
+  }
+}
+
 .pp-docsPage .pp-docsToc {
   margin-bottom: 24px;
   padding: 14px 16px;
@@ -4430,7 +4482,7 @@ body.pp-noScroll {
 .pp-docsTable {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .pp-docsTable th,
@@ -4515,12 +4567,31 @@ body.pp-noScroll {
 
 .pp-docsApiList li {
   display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 4px 10px;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 4px 12px;
   align-items: baseline;
-  padding: 10px 12px;
+  padding: 12px 14px;
   border-radius: 10px;
   background: rgba(16, 24, 40, 0.03);
+}
+
+@media (min-width: 720px) {
+  .pp-docsApiList li {
+    grid-template-columns: 4rem minmax(12rem, 1fr) minmax(0, 1.4fr);
+  }
+
+  .pp-docsApiList__method {
+    grid-column: 1;
+  }
+
+  .pp-docsApiList code {
+    grid-column: 2;
+  }
+
+  .pp-docsApiList__desc {
+    grid-column: 3;
+    margin-top: 0;
+  }
 }
 
 .pp-docsApiList__method {
