@@ -6,6 +6,7 @@ import IconBattery from '../components/icons/IconBattery';
 import TimeInput24 from '../components/TimeInput24';
 import { formatDateTime24, formatTime24 } from '../formatTime24';
 import PositionMap from '../tracking/PositionMap';
+import { accuracyRadiusMeters } from '../tracking/mapLiveUtils';
 import { usePets } from '../pets/PetsContext';
 import { getLatestPosition, getPositionHistory, getTrackingDataSource, mapsLink } from '../tracking/petpalVendorClient';
 import {
@@ -152,8 +153,35 @@ function pointTime(point) {
   return new Date(iso).getTime();
 }
 
+const LIVE_POLL_MS = 60_000;
+/** Default history window on open: today, last N hours (keeps map point count low). */
+const HISTORY_RECENT_HOURS = 2;
+const HISTORY_FETCH_LIMIT = 500;
+
+function formatHm(date) {
+  const d = date instanceof Date ? date : new Date(date);
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+}
+
 function defaultHistoryDayTimes() {
   return { timeFrom: '00:00', timeTo: '23:59' };
+}
+
+function recentHoursDayTimes(hours = HISTORY_RECENT_HOURS) {
+  const now = new Date();
+  const from = new Date(now.getTime() - hours * HOUR * 1000);
+  return { timeFrom: formatHm(from), timeTo: formatHm(now) };
+}
+
+function combineLocalDateTime(dateStr, timeStr, endOfDay = false) {
+  const m = String(timeStr || '00:00').trim().match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+  const h = m ? Math.min(23, Math.max(0, Number(m[1]) || 0)) : 0;
+  const min = m ? Math.min(59, Math.max(0, Number(m[2]) || 0)) : 0;
+  const sec = m?.[3] != null ? Math.min(59, Math.max(0, Number(m[3]) || 0)) : endOfDay ? 59 : 0;
+  const ms = endOfDay && m?.[3] == null ? 999 : 0;
+  const d = new Date(`${dateStr}T00:00:00`);
+  d.setHours(h, min, sec, ms);
+  return d;
 }
 
 function inDailyLocalTimeWindow(iso, range) {
@@ -192,10 +220,12 @@ function inDailyLocalTimeWindow(iso, range) {
 
 function historyRangeToIsoBounds(range) {
   if (!range?.from || !range?.to) return {};
-  const fromMs = new Date(`${range.from}T00:00:00`).getTime();
-  const toMs = new Date(`${range.to}T23:59:59.999`).getTime();
+  const from = combineLocalDateTime(range.from, range.timeFrom ?? defaultHistoryDayTimes().timeFrom, false);
+  const to = combineLocalDateTime(range.to, range.timeTo ?? defaultHistoryDayTimes().timeTo, true);
+  const fromMs = from.getTime();
+  const toMs = to.getTime();
   if (!Number.isFinite(fromMs) || !Number.isFinite(toMs) || fromMs > toMs) return {};
-  return { from: new Date(fromMs).toISOString(), to: new Date(toMs).toISOString() };
+  return { from: from.toISOString(), to: to.toISOString() };
 }
 
 function filterHistoryPoints(points, range) {
@@ -211,26 +241,25 @@ function filterHistoryPoints(points, range) {
 
 /** Initial / preset date span for the History tab (inclusive). */
 function computeHistoryRangeForPreset(preset) {
-  const times = defaultHistoryDayTimes();
   const today = startOfDay(new Date());
   if (preset === 'yesterday') {
     const y = new Date(today);
     y.setDate(today.getDate() - 1);
     const value = dateInputValue(y);
-    return { preset, from: value, to: value, ...times };
+    return { preset, from: value, to: value, ...defaultHistoryDayTimes() };
   }
-  if (preset === '7d') {
-    const from = new Date(today);
-    from.setDate(today.getDate() - 6);
-    return { preset, from: dateInputValue(from), to: dateInputValue(today), ...times };
-  }
-  if (preset === '30d') {
-    const from = new Date(today);
-    from.setDate(today.getDate() - 29);
-    return { preset, from: dateInputValue(from), to: dateInputValue(today), ...times };
+  if (preset === 'today') {
+    const now = new Date();
+    const from = new Date(now.getTime() - HISTORY_RECENT_HOURS * HOUR * 1000);
+    return {
+      preset: 'today',
+      from: dateInputValue(from),
+      to: dateInputValue(now),
+      ...recentHoursDayTimes(HISTORY_RECENT_HOURS),
+    };
   }
   const value = dateInputValue(today);
-  return { preset: 'today', from: value, to: value, ...times };
+  return { preset: 'today', from: value, to: value, ...recentHoursDayTimes(HISTORY_RECENT_HOURS) };
 }
 
 function buildHistoryAnalytics(points) {
@@ -379,7 +408,7 @@ export default function Tracking() {
   const [historyPoints, setHistoryPoints] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyError, setHistoryError] = useState('');
-  const [historyRange, setHistoryRange] = useState(() => computeHistoryRangeForPreset('7d'));
+  const [historyRange, setHistoryRange] = useState(() => computeHistoryRangeForPreset('today'));
   const [historyReloadTick, setHistoryReloadTick] = useState(0);
   const [historyPlaying, setHistoryPlaying] = useState(false);
   const [historySpeed, setHistorySpeed] = useState(1);
@@ -388,6 +417,7 @@ export default function Tracking() {
   const trustedLiveAnchorRef = useRef(null);
   const lastKnownLiveRef = useRef(null);
   const [liveHistoryFallback, setLiveHistoryFallback] = useState(null);
+  const [liveTrail, setLiveTrail] = useState([]);
 
   const selectedPet = useMemo(() => pets.find((p) => p.id === selectedPetId), [pets, selectedPetId]);
 
@@ -452,6 +482,7 @@ export default function Tracking() {
   useEffect(() => {
     trustedLiveAnchorRef.current = null;
     setLiveHistoryFallback(null);
+    setLiveTrail([]);
   }, [effectiveDeviceId]);
 
   useEffect(() => {
@@ -461,10 +492,9 @@ export default function Tracking() {
 
   useEffect(() => {
     if (!effectiveDeviceId) return;
-    const ms = 12_000;
     const id = window.setInterval(() => {
       void refresh();
-    }, ms);
+    }, LIVE_POLL_MS);
     return () => window.clearInterval(id);
   }, [effectiveDeviceId, refresh]);
 
@@ -474,7 +504,7 @@ export default function Tracking() {
     setHistoryLoading(true);
     setHistoryError('');
     getPositionHistory(effectiveDeviceId, {
-      limit: 20000,
+      limit: HISTORY_FETCH_LIMIT,
       ...historyRangeToIsoBounds(historyRange),
     })
       .then(({ history, calendarMatch }) => {
@@ -603,6 +633,21 @@ export default function Tracking() {
     }
     return null;
   }, [mapPosition, position, liveHistoryFallback, effectiveDeviceId]);
+
+  useEffect(() => {
+    if (trackerTab !== 'live' || !liveMapCoords) return;
+    const { lat, lng } = liveMapCoords;
+    setLiveTrail((prev) => {
+      const last = prev[prev.length - 1];
+      if (last && Math.abs(last.lat - lat) < 1e-6 && Math.abs(last.lng - lng) < 1e-6) return prev;
+      return [...prev, { lat, lng }].slice(-24);
+    });
+  }, [trackerTab, liveMapCoords]);
+
+  const liveMapAccuracyM = useMemo(
+    () => accuracyRadiusMeters(mapPosition || position),
+    [mapPosition, position]
+  );
 
   const filteredHistory = useMemo(() => {
     const filtered = filterHistoryPoints(resolvedHistory, historyRange);
@@ -872,7 +917,15 @@ export default function Tracking() {
               </p>
             ) : null}
             <div className="pp-trackMapFrame">
-              <PositionMap lat={liveMapCoords.lat} lng={liveMapCoords.lng} />
+              <PositionMap
+                liveMode
+                lat={liveMapCoords.lat}
+                lng={liveMapCoords.lng}
+                accuracyM={liveMapAccuracyM}
+                markerLabel={selectedPet?.name || t('trackingPage.liveMarkerDefault')}
+                liveTrail={liveTrail}
+                recenterLabel={t('trackingPage.mapFollowPet')}
+              />
             </div>
             <div className="pp-trackMapMeta">
               <span>
@@ -963,7 +1016,6 @@ export default function Tracking() {
                 [
                   ['today', 'presetToday'],
                   ['yesterday', 'presetYesterday'],
-                  ['7d', 'preset7d'],
                 ]
               ).map(([id, labelKey]) => (
                 <button

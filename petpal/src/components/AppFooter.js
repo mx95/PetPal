@@ -1,5 +1,6 @@
 import React, { useCallback } from 'react';
 import { Link } from 'react-router-dom';
+import { MVP_NAV } from '../config/mvpNav';
 import { useI18n } from '../i18n/I18nContext';
 
 export function AppFooter() {
@@ -22,9 +23,15 @@ export function AppFooter() {
             <Link className="pp-footer__link" to="/docs">
               About us
             </Link>
-            <Link className="pp-footer__link" to="/shop">
-              Pricing
-            </Link>
+            {MVP_NAV.showShop ? (
+              <Link className="pp-footer__link" to="/shop">
+                Pricing
+              </Link>
+            ) : (
+              <Link className="pp-footer__link" to="/docs">
+                {t('nav.docs')}
+              </Link>
+            )}
             <a className="pp-footer__link" href="mailto:support@petpal.app">
               Contact us
             </a>

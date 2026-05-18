@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Link, NavLink, useMatch, useNavigate } from 'react-router-dom';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
 import { useCompany } from '../company/CompanyContext';
 import { useInbox } from '../inbox/InboxContext';
@@ -7,6 +7,7 @@ import { useI18n } from '../i18n/I18nContext';
 import { LanguageSwitcher } from '../i18n/LanguageSwitcher';
 import UserAvatar from './UserAvatar';
 import petpalLogo from '../logo.png';
+import { MVP_NAV } from '../config/mvpNav';
 
 function navItemClassName({ isActive }) {
   return [
@@ -22,7 +23,6 @@ export default function TopNav() {
   const { isApprovedCompany, profile } = useCompany();
   const { unreadCount } = useInbox();
   const { t } = useI18n();
-  const premiumPathMatch = useMatch('/premium/*');
   const navigate = useNavigate();
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const accountMenuRef = useRef(null);
@@ -76,16 +76,18 @@ export default function TopNav() {
         <nav className="hidden min-w-0 flex-1 items-center justify-center gap-1 lg:flex" aria-label="Primary">
           {user ? (
             <>
-              <NavLink
-                to="/premium/lost"
-                className={({ isActive }) =>
-                  navItemClassName({ isActive: isActive || Boolean(premiumPathMatch) })
-                }
-              >
-                {t('nav.premium')}
-              </NavLink>
-              <NavLink className={navItemClassName} to="/community">
-                {t('nav.community')}
+              {MVP_NAV.showPremium ? (
+                <NavLink className={navItemClassName} to="/premium/lost">
+                  {t('nav.premium')}
+                </NavLink>
+              ) : null}
+              {MVP_NAV.showCommunity ? (
+                <NavLink className={navItemClassName} to="/community">
+                  {t('nav.community')}
+                </NavLink>
+              ) : null}
+              <NavLink className={navItemClassName} to="/pets">
+                {t('nav.myPets')}
               </NavLink>
               <NavLink className={navItemClassName} to="/nearby">
                 {t('nav.nearby')}
@@ -93,9 +95,11 @@ export default function TopNav() {
               <NavLink className={navItemClassName} to="/tracking">
                 {t('nav.tracking')}
               </NavLink>
-              <NavLink className={navItemClassName} to="/bookings">
-                {t('nav.bookings')}
-              </NavLink>
+              {MVP_NAV.showBookings ? (
+                <NavLink className={navItemClassName} to="/bookings">
+                  {t('nav.bookings')}
+                </NavLink>
+              ) : null}
               {isApprovedCompany && profile?.bookingEnabled ? (
                 <NavLink className={navItemClassName} to="/provider">
                   {t('nav.provider')}
@@ -122,10 +126,12 @@ export default function TopNav() {
 
               {accountMenuOpen ? (
                 <div className="absolute right-0 top-full mt-3 w-60 rounded-3xl border border-slate-200 bg-white p-2 shadow-lift animate-soft-pop" role="menu" aria-label={t('nav.profile')}>
-                  <Link className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-petpal-ink no-underline transition hover:bg-petpal-soft" to="/shop" role="menuitem" onClick={() => setAccountMenuOpen(false)}>
-                    <span aria-hidden>🛒</span>
-                    <span>{t('nav.shop')}</span>
-                  </Link>
+                  {MVP_NAV.showShop ? (
+                    <Link className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-petpal-ink no-underline transition hover:bg-petpal-soft" to="/shop" role="menuitem" onClick={() => setAccountMenuOpen(false)}>
+                      <span aria-hidden>🛒</span>
+                      <span>{t('nav.shop')}</span>
+                    </Link>
+                  ) : null}
                   <Link
                     className="pp-menuItemWithBadge flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-petpal-ink no-underline transition hover:bg-petpal-soft"
                     to="/inbox"
@@ -146,13 +152,21 @@ export default function TopNav() {
                     <span aria-hidden>👤</span>
                     <span>{t('nav.profile')}</span>
                   </Link>
-                  <Link className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-petpal-ink no-underline transition hover:bg-petpal-soft" to="/dashboard" role="menuitem" onClick={() => setAccountMenuOpen(false)}>
-                    <span aria-hidden>📊</span>
-                    <span>{t('nav.dashboard')}</span>
-                  </Link>
-                  <Link className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-petpal-ink no-underline transition hover:bg-petpal-soft" to="/leaderboard" role="menuitem" onClick={() => setAccountMenuOpen(false)}>
-                    <span aria-hidden>🏆</span>
-                    <span>{t('nav.leaderboard')}</span>
+                  {MVP_NAV.showDashboard ? (
+                    <Link className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-petpal-ink no-underline transition hover:bg-petpal-soft" to="/dashboard" role="menuitem" onClick={() => setAccountMenuOpen(false)}>
+                      <span aria-hidden>📊</span>
+                      <span>{t('nav.dashboard')}</span>
+                    </Link>
+                  ) : null}
+                  {MVP_NAV.showLeaderboard ? (
+                    <Link className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-petpal-ink no-underline transition hover:bg-petpal-soft" to="/leaderboard" role="menuitem" onClick={() => setAccountMenuOpen(false)}>
+                      <span aria-hidden>🏆</span>
+                      <span>{t('nav.leaderboard')}</span>
+                    </Link>
+                  ) : null}
+                  <Link className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-petpal-ink no-underline transition hover:bg-petpal-soft" to="/docs" role="menuitem" onClick={() => setAccountMenuOpen(false)}>
+                    <span aria-hidden>📖</span>
+                    <span>{t('nav.docs')}</span>
                   </Link>
                   <Link className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-petpal-ink no-underline transition hover:bg-petpal-soft" to="/provider?demoBusiness=example_vet" role="menuitem" onClick={() => setAccountMenuOpen(false)}>
                     <span aria-hidden>🏪</span>

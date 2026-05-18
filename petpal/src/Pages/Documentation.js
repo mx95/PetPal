@@ -1,7 +1,13 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { APP_API_CATALOG, APP_ROUTE_CATALOG } from '../config/appRouteCatalog';
 import { useAuth } from '../auth/AuthProvider';
 import { useI18n } from '../i18n/I18nContext';
+import en from '../i18n/locales/en';
+
+function getDeep(obj, dotPath) {
+  return dotPath.split('.').reduce((acc, part) => (acc == null ? undefined : acc[part]), obj);
+}
 
 function ParaBlock({ textKey }) {
   const { t } = useI18n();
@@ -16,25 +22,73 @@ function ParaBlock({ textKey }) {
     ));
 }
 
+function AuthBadge({ auth }) {
+  const { t } = useI18n();
+  const label =
+    auth === 'admin' ? t('docs.routesAuthAdmin') : auth === 'auth' ? t('docs.routesAuthUser') : t('docs.routesAuthPublic');
+  return <span className={`pp-docsBadge pp-docsBadge--${auth}`}>{label}</span>;
+}
+
+/** Prefer active locale; fall back to English strings from en.js when a key is missing. */
+function docStr(t, key) {
+  const v = t(key);
+  if (v && v !== key) return v;
+  const fb = getDeep(en, key);
+  return typeof fb === 'string' ? fb : key;
+}
+
+function RouteTable({ routes }) {
+  const { t } = useI18n();
+  return (
+    <div className="pp-docsTableWrap">
+      <table className="pp-docsTable">
+        <thead>
+          <tr>
+            <th>{t('docs.routesColPath')}</th>
+            <th>{t('docs.routesColPage')}</th>
+            <th>{t('docs.routesColAccess')}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {routes.map((route) => (
+            <tr key={route.path}>
+              <td>
+                <code className="pp-docsCode">{route.path}</code>
+              </td>
+              <td>
+                <strong>{docStr(t, route.labelKey)}</strong>
+                <p className="pp-docsTable__desc">{docStr(t, route.descKey)}</p>
+              </td>
+              <td>
+                <AuthBadge auth={route.auth} />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 /**
- * End-user help: how to use PetPal features after signing in.
+ * In-app reference: routes (including hidden MVP pages) and backend APIs.
  */
 export default function Documentation() {
   const { user } = useAuth();
   const { t } = useI18n();
-  const back = user ? { to: '/dashboard', label: t('docs.backApp') } : { to: '/login', label: t('docs.backLogin') };
+  const back = user ? { to: '/', label: t('docs.backHome') } : { to: '/login', label: t('docs.backLogin') };
+
+  const mvpRoutes = APP_ROUTE_CATALOG.filter((r) => r.mvpNav);
+  const hiddenRoutes = APP_ROUTE_CATALOG.filter((r) => !r.mvpNav);
 
   const toc = [
     { href: '#docs-overview', key: 'docs.toc1' },
-    { href: '#docs-account', key: 'docs.toc2' },
+    { href: '#docs-routes-mvp', key: 'docs.tocRoutesMvp' },
+    { href: '#docs-routes-hidden', key: 'docs.tocRoutesHidden' },
+    { href: '#docs-apis', key: 'docs.tocApis' },
     { href: '#docs-pets', key: 'docs.toc3' },
-    { href: '#docs-dashboard', key: 'docs.toc4' },
-    { href: '#docs-community', key: 'docs.toc5' },
-    { href: '#docs-lost', key: 'docs.toc6' },
-    { href: '#docs-nearby', key: 'docs.toc7' },
     { href: '#docs-tracking', key: 'docs.toc8' },
-    { href: '#docs-stray', key: 'docs.toc9' },
-    { href: '#docs-breeding', key: 'docs.toc10' },
+    { href: '#docs-nearby', key: 'docs.toc7' },
     { href: '#docs-language', key: 'docs.toc11' },
   ];
 
@@ -71,12 +125,43 @@ export default function Documentation() {
           <div className="pp-legalBody">
             <section id="docs-overview">
               <h2>{t('docs.u1Title')}</h2>
-              <ParaBlock textKey="docs.u1Body" />
+              <ParaBlock textKey="docs.u1BodyMvp" />
             </section>
 
-            <section id="docs-account">
-              <h2>{t('docs.u2Title')}</h2>
-              <ParaBlock textKey="docs.u2Body" />
+            <section id="docs-routes-mvp">
+              <h2>{t('docs.routesMvpTitle')}</h2>
+              <p>{t('docs.routesMvpIntro')}</p>
+              <RouteTable routes={mvpRoutes} />
+            </section>
+
+            <section id="docs-routes-hidden">
+              <h2>{t('docs.routesHiddenTitle')}</h2>
+              <p>{t('docs.routesHiddenIntro')}</p>
+              <RouteTable routes={hiddenRoutes} />
+            </section>
+
+            <section id="docs-apis">
+              <h2>{t('docs.apisTitle')}</h2>
+              <p>{t('docs.apisIntro')}</p>
+              {APP_API_CATALOG.map((group) => (
+                <article key={group.id} className="pp-docsApiGroup" id={`docs-api-${group.id}`}>
+                  <h3>{t(group.titleKey)}</h3>
+                  <p>{t(group.introKey)}</p>
+                  <p className="pp-docsApiGroup__base">
+                    <span className="pp-docsApiGroup__baseLabel">{t('docs.apiBaseLabel')}</span>{' '}
+                    <code className="pp-docsCode">{t(group.baseKey)}</code>
+                  </p>
+                  <ul className="pp-docsApiList">
+                    {group.endpoints.map((ep) => (
+                      <li key={`${group.id}-${ep.path}`}>
+                        <span className="pp-docsApiList__method">{ep.method}</span>
+                        <code className="pp-docsCode">{ep.path}</code>
+                        <span className="pp-docsApiList__desc">{docStr(t, ep.descKey)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </article>
+              ))}
             </section>
 
             <section id="docs-pets">
@@ -84,39 +169,14 @@ export default function Documentation() {
               <ParaBlock textKey="docs.u3Body" />
             </section>
 
-            <section id="docs-dashboard">
-              <h2>{t('docs.u4Title')}</h2>
-              <ParaBlock textKey="docs.u4Body" />
-            </section>
-
-            <section id="docs-community">
-              <h2>{t('docs.u5Title')}</h2>
-              <ParaBlock textKey="docs.u5Body" />
-            </section>
-
-            <section id="docs-lost">
-              <h2>{t('docs.u6Title')}</h2>
-              <ParaBlock textKey="docs.u6Body" />
-            </section>
-
-            <section id="docs-nearby">
-              <h2>{t('docs.u7Title')}</h2>
-              <ParaBlock textKey="docs.u7Body" />
-            </section>
-
             <section id="docs-tracking">
               <h2>{t('docs.u8Title')}</h2>
               <ParaBlock textKey="docs.u8Body" />
             </section>
 
-            <section id="docs-stray">
-              <h2>{t('docs.u10Title')}</h2>
-              <ParaBlock textKey="docs.u10Body" />
-            </section>
-
-            <section id="docs-breeding">
-              <h2>{t('docs.u11Title')}</h2>
-              <ParaBlock textKey="docs.u11Body" />
+            <section id="docs-nearby">
+              <h2>{t('docs.u7Title')}</h2>
+              <ParaBlock textKey="docs.u7Body" />
             </section>
 
             <section id="docs-language">

@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { NavLink } from 'react-router-dom';
 import { useMobileDockLayout } from '../hooks/useMobileDockLayout';
 import { useI18n } from '../i18n/I18nContext';
+import { MVP_NAV } from '../config/mvpNav';
 import { useAuth } from '../auth/AuthProvider';
 
 const ICONS = {
@@ -87,7 +88,7 @@ export default function BottomNav() {
   const left = BASE_ITEMS;
   const right = [
     { to: '/nearby', key: 'nearby', labelKey: 'nav.nearby' },
-    { to: '/bookings', key: 'bookings', labelKey: 'bottomNav.bookings' },
+    ...(MVP_NAV.showBookings ? [{ to: '/bookings', key: 'bookings', labelKey: 'bottomNav.bookings' }] : []),
   ];
 
   const Item = ({ item }) => (

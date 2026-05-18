@@ -20,6 +20,7 @@ import Register from './Pages/Register';
 import TermsOfService from './Pages/TermsOfService';
 import Documentation from './Pages/Documentation';
 import HomeScreen from './Pages/HomeScreen';
+import DiscoverHome from './discover/DiscoverHome';
 import PublicPetProfile from './Pages/PublicPetProfile';
 import Profile from './Pages/Profile';
 import ProviderPortal from './Pages/ProviderPortal';
@@ -76,6 +77,7 @@ function App() {
       <div className="pp-main">
         <Routes>
           <Route path="/" element={<HomeScreen />} />
+          <Route path="/discover" element={<DiscoverHome />} />
           <Route path="/pet/:id" element={<PublicPetProfile />} />
           <Route path="/pet" element={<PublicPetProfile />} />
           <Route path="/login" element={<Login />} />
