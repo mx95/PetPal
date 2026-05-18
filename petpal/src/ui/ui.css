@@ -472,6 +472,14 @@
   color: #2a1890;
 }
 
+.pp-pageScroll {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
 .pp-main {
   flex: 1;
   max-width: 1200px;
@@ -3583,7 +3591,15 @@ body.pp-noScroll {
   gap: 10px;
   padding: 14px 16px !important;
   border-radius: 18px;
-  max-width: 720px;
+  max-width: none;
+}
+
+.pp-trackHistorySidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  min-height: 0;
 }
 
 .pp-trackHistoryRangeCard__head {
@@ -3765,7 +3781,7 @@ body.pp-noScroll {
 }
 
 .pp-trackHistoryStats--footer {
-  margin-top: 14px;
+  margin-top: 10px;
 }
 
 .pp-trackHistoryStats article {
@@ -3808,10 +3824,10 @@ body.pp-noScroll {
 
 .pp-trackHistoryLayout {
   display: grid;
-  grid-template-columns: minmax(0, 1.45fr) minmax(280px, 0.55fr);
-  gap: 14px;
+  grid-template-columns: minmax(0, 1.85fr) minmax(260px, 320px);
+  gap: 12px;
   align-items: stretch;
-  min-height: min(calc(100vh - 220px), 780px);
+  min-height: min(calc(100vh - 168px), 860px);
 }
 
 .pp-trackHistoryMap,
@@ -3822,7 +3838,8 @@ body.pp-noScroll {
 .pp-trackHistoryMap {
   display: flex;
   flex-direction: column;
-  min-height: min(calc(100vh - 220px), 780px);
+  min-height: min(calc(100vh - 168px), 860px);
+  padding: 14px 16px !important;
 }
 
 .pp-trackHistoryMap__body {
@@ -3838,7 +3855,7 @@ body.pp-noScroll {
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
   flex-shrink: 0;
 }
 
@@ -3899,6 +3916,11 @@ body.pp-noScroll {
 .pp-trackHistoryFrame--panorama {
   border-radius: 36px 14px 36px 14px;
   clip-path: polygon(0 0, 100% 0, 100% 97%, 99% 100%, 1% 100%, 0 97%);
+}
+
+.pp-positionMap--routeVertices .leaflet-interactive {
+  stroke-linecap: butt !important;
+  stroke-linejoin: miter !important;
 }
 
 .pp-trackHistoryFrame .pp-leaflet-wrap {
@@ -3964,9 +3986,11 @@ body.pp-noScroll {
 .pp-trackHistoryTimeline {
   display: flex;
   flex-direction: column;
-  max-height: min(calc(100vh - 220px), 780px);
-  min-height: min(calc(100vh - 220px), 780px);
+  flex: 1;
+  min-height: 0;
+  max-height: none;
   overflow: hidden;
+  padding: 14px 16px !important;
 }
 
 .pp-trackHistoryTimeline__list {
@@ -3990,18 +4014,23 @@ body.pp-noScroll {
   }
 
   .pp-trackHistoryMap {
-    min-height: 0;
+    min-height: min(52vh, 460px);
+    order: 1;
+  }
+
+  .pp-trackHistorySidebar {
+    order: 2;
   }
 
   .pp-trackHistoryTimeline {
-    max-height: min(52vh, 480px);
-    min-height: 0;
+    max-height: min(42vh, 400px);
+    flex: 1 1 auto;
   }
 
   .pp-trackHistoryFrame--panorama {
     border-radius: 24px;
     clip-path: none;
-    min-height: min(48vh, 420px);
+    min-height: min(44vh, 400px);
   }
 }
 
@@ -7246,7 +7275,17 @@ a.pp-publicPet__metaValue {
 
 @media (max-width: 720px) {
   .pp-footer {
-    padding-bottom: calc(22px + env(safe-area-inset-bottom));
+    flex-shrink: 0;
+    padding: 24px 16px 20px;
+  }
+
+  .pp-footer__inner {
+    max-width: none;
+  }
+
+  .pp-footer__grid {
+    grid-template-columns: 1fr;
+    gap: 22px;
   }
 
   .pp-footer__link,
@@ -7408,7 +7447,7 @@ a.pp-publicPet__metaValue {
     flex-shrink: 0;
   }
 
-  body.pp-mobile-dock .pp-main {
+  body.pp-mobile-dock .pp-pageScroll {
     flex: 1;
     min-height: 0;
     overflow-x: hidden;
@@ -7417,12 +7456,17 @@ a.pp-publicPet__metaValue {
     -webkit-overflow-scrolling: touch;
     padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px));
   }
+
+  body.pp-mobile-dock .pp-main {
+    flex: 0 1 auto;
+    overflow: visible;
+    padding-bottom: 28px;
+  }
 }
 
 /* Mobile-only: show bottom nav, give the page room, lighten the top nav */
 @media (max-width: 720px) {
   .pp-bottomNav { display: block; }
-  .pp-footer { display: none; }
   .pp-nav .pp-navlinks { display: none; }
   .pp-nav--auth .pp-navUtility .pp-langSwitcher { display: none; }
   .pp-nav { padding-top: 12px; padding-bottom: 12px; }
@@ -15387,9 +15431,16 @@ html[data-theme="dark"] .pp-nearby-list > li {
     display: none !important;
   }
 
-  body.pp-mobile-dock .pp-main,
-  .pp-main {
+  body.pp-mobile-dock .pp-pageScroll {
     padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  body.pp-mobile-dock .pp-main {
+    padding-bottom: 28px !important;
+  }
+
+  .pp-main {
+    padding-bottom: 64px;
   }
 }
 

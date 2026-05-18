@@ -660,21 +660,37 @@ export default function Tracking() {
     return resolvedHistory;
   }, [resolvedHistory, historyRange, historyCalendarMatch]);
   const historyAnalytics = useMemo(() => buildHistoryAnalytics(filteredHistory), [filteredHistory]);
-  const historyMarkers = useMemo(() => {
-    if (!filteredHistory.length) return [];
-    return filteredHistory.map((p, idx) => {
-      const kind = idx === 0 ? 'start' : idx === filteredHistory.length - 1 ? 'end' : movementType(p, filteredHistory[idx - 1]);
-      return {
-        id: p.id || `history-${idx}`,
-        pointIndex: idx,
-        lat: p.lat,
-        lng: p.lng,
-        kind,
-        label: `${mapRouteMarkerKindLabel(kind, t)} · ${formatShortTime(pointReceivedIso(p), language)}`,
-      };
-    });
-  }, [filteredHistory, t, language]);
   const historyTimelineEvents = useMemo(() => buildHistoryTimelineEvents(filteredHistory, t, language), [filteredHistory, t, language]);
+
+  const historyMapPath = useMemo(
+    () =>
+      filteredHistory
+        .map((p) => ({ lat: Number(p.lat), lng: Number(p.lng) }))
+        .filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng)),
+    [filteredHistory]
+  );
+
+  const historyMapMarkers = useMemo(() => {
+    if (!historyTimelineEvents.length) return [];
+    const lastIdx = Math.max(0, filteredHistory.length - 1);
+    return historyTimelineEvents.map((ev, i) => {
+      const isLast = i === historyTimelineEvents.length - 1 && ev.endIndex === lastIdx;
+      let kind = ev.type;
+      if (kind === 'start') kind = 'start';
+      else if (isLast && ev.count === 1) kind = 'end';
+      else if (kind === 'rest') kind = 'rest';
+      else if (kind === 'movement') kind = 'movement';
+      else kind = 'walk';
+      return {
+        id: ev.id,
+        pointIndex: ev.startIndex,
+        lat: Number(ev.start.lat),
+        lng: Number(ev.start.lng),
+        kind,
+        label: `${ev.label} · ${ev.timeLabel}`,
+      };
+    }).filter((m) => Number.isFinite(m.lat) && Number.isFinite(m.lng));
+  }, [historyTimelineEvents, filteredHistory.length]);
 
   const historyLoadMeta = useMemo(() => {
     const stored = historyPoints.length;
@@ -997,120 +1013,22 @@ export default function Tracking() {
 
       {trackerTab === 'history' ? (
         <section className="pp-trackHistory">
-          <div className="pp-card pp-pad pp-trackHistoryRangeCard">
-            <div className="pp-trackHistoryRangeCard__head">
-              <h2 className="pp-trackHistoryRangeCard__title">{t('trackingPage.historyTitle')}</h2>
-              <button
-                type="button"
-                className="pp-btn pp-btn--ghost pp-trackHistoryRefreshBtn"
-                disabled={!effectiveDeviceId || historyLoading}
-                onClick={refreshHistory}
-                aria-label={t('trackingPage.btnRefreshHistoryAria')}
-              >
-                {historyLoading ? t('trackingPage.btnRefresh') : t('trackingPage.btnRefreshHistory')}
-              </button>
-            </div>
-            {historyError ? <div className="pp-error pp-trackHistoryError">{historyError}</div> : null}
-            <div className="pp-trackHistoryPresets" role="group" aria-label={t('trackingPage.historyPresetsAria')}>
-              {(
-                [
-                  ['today', 'presetToday'],
-                  ['yesterday', 'presetYesterday'],
-                ]
-              ).map(([id, labelKey]) => (
-                <button
-                  key={id}
-                  type="button"
-                  className={`pp-trackHistoryPresetBtn ${historyRange.preset === id ? 'is-active' : ''}`}
-                  onClick={() => applyHistoryPreset(id)}
-                >
-                  {t(`trackingPage.${labelKey}`)}
-                </button>
-              ))}
-            </div>
-            <div className="pp-trackHistoryManual" role="group" aria-label={t('trackingPage.historyManualAria')}>
-              <div className="pp-trackHistoryManual__row">
-                <span className="pp-trackHistoryManual__key">{t('trackingPage.historyFromLabel')}</span>
-                <div className="pp-trackHistoryManual__pair">
-                  <label className="pp-trackHistoryManual__field">
-                    <input
-                      type="date"
-                      value={historyRange.from}
-                      aria-label={t('trackingPage.historyFromDateAria')}
-                      onChange={(e) => setHistoryRange((r) => ({ ...r, preset: 'custom', from: e.target.value }))}
-                    />
-                  </label>
-                  <label className="pp-trackHistoryManual__field">
-                    <TimeInput24
-                      className="pp-trackHistoryManual__time"
-                      value={historyRange.timeFrom ?? defaultHistoryDayTimes().timeFrom}
-                      aria-label={t('trackingPage.historyFromTimeAria')}
-                      onChange={(next) =>
-                        setHistoryRange((r) => ({
-                          ...r,
-                          preset: 'custom',
-                          timeFrom: next || defaultHistoryDayTimes().timeFrom,
-                        }))
-                      }
-                    />
-                  </label>
-                </div>
-              </div>
-              <div className="pp-trackHistoryManual__row">
-                <span className="pp-trackHistoryManual__key">{t('trackingPage.historyToLabel')}</span>
-                <div className="pp-trackHistoryManual__pair">
-                  <label className="pp-trackHistoryManual__field">
-                    <input
-                      type="date"
-                      value={historyRange.to}
-                      aria-label={t('trackingPage.historyToDateAria')}
-                      onChange={(e) => setHistoryRange((r) => ({ ...r, preset: 'custom', to: e.target.value }))}
-                    />
-                  </label>
-                  <label className="pp-trackHistoryManual__field">
-                    <TimeInput24
-                      className="pp-trackHistoryManual__time"
-                      value={historyRange.timeTo ?? defaultHistoryDayTimes().timeTo}
-                      aria-label={t('trackingPage.historyToTimeAria')}
-                      onChange={(next) =>
-                        setHistoryRange((r) => ({
-                          ...r,
-                          preset: 'custom',
-                          timeTo: next || defaultHistoryDayTimes().timeTo,
-                        }))
-                      }
-                    />
-                  </label>
-                </div>
-              </div>
-            </div>
-          </div>
-
           <div className="pp-trackHistoryLayout">
             <div className="pp-card pp-pad pp-trackHistoryMap">
               <div className="pp-trackHistoryMap__top">
                 <div>
-                  <h3>Route playback</h3>
+                  <h3>{t('trackingPage.historyRouteTitle')}</h3>
                   {historyLoading ? <p className="pp-subtle">{t('trackingPage.historyLoading')}</p> : null}
                 </div>
                 <div className="pp-trackPlayback">
                   <button type="button" disabled={filteredHistory.length < 2} onClick={() => setHistoryPlaying((v) => !v)}>
-                    {historyPlaying ? 'Pause' : 'Play route'}
+                    {historyPlaying ? t('trackingPage.historyPause') : t('trackingPage.historyPlay')}
                   </button>
-                  <select value={historySpeed} onChange={(e) => setHistorySpeed(Number(e.target.value))} aria-label="Playback speed">
+                  <select value={historySpeed} onChange={(e) => setHistorySpeed(Number(e.target.value))} aria-label={t('trackingPage.historySpeedAria')}>
                     <option value={1}>1x</option>
                     <option value={1.5}>1.5x</option>
                     <option value={2}>2x</option>
                   </select>
-                  <button
-                    type="button"
-                    className="pp-btn pp-btn--ghost pp-trackHistoryRefreshBtn"
-                    disabled={!effectiveDeviceId || historyLoading}
-                    onClick={refreshHistory}
-                    aria-label={t('trackingPage.btnRefreshHistoryAria')}
-                  >
-                    {historyLoading ? t('trackingPage.btnRefresh') : t('trackingPage.btnRefreshHistory')}
-                  </button>
                 </div>
               </div>
               {filteredHistory.length ? (
@@ -1118,10 +1036,11 @@ export default function Tracking() {
                   <div className="pp-trackMapFrame pp-trackHistoryFrame pp-trackHistoryFrame--panorama">
                     <PositionMap
                       fill
+                      showRouteVertices
                       lat={filteredHistory[0].lat}
                       lng={filteredHistory[0].lng}
-                      path={filteredHistory.map((p) => ({ lat: p.lat, lng: p.lng }))}
-                      routeMarkers={historyMarkers}
+                      path={historyMapPath}
+                      routeMarkers={historyMapMarkers}
                       playbackPointIndex={filteredHistory.length ? Math.min(historyIndex, filteredHistory.length - 1) : null}
                     />
                   </div>
@@ -1135,64 +1054,146 @@ export default function Tracking() {
                       setHistoryPlaying(false);
                       setHistoryIndex(Number(e.target.value));
                     }}
-                    aria-label="Jump to route timestamp"
+                    aria-label={t('trackingPage.historyScrubAria')}
                   />
                 </div>
               ) : (
                 <div className="pp-trackHistoryEmpty">
                   <div aria-hidden>🐾</div>
-                  <h3>No movement history yet</h3>
-                  <p>{historyError || 'No tracker locations were found for this date range. Once the device sends stored positions, the route will appear here.'}</p>
-                  <button type="button" className="pp-btn pp-btnPrimary" disabled={!effectiveDeviceId || historyLoading} onClick={refreshHistory}>
-                    {historyLoading ? t('trackingPage.btnRefresh') : t('trackingPage.btnRefreshHistory')}
-                  </button>
+                  <h3>{t('trackingPage.historyEmptyTitle')}</h3>
+                  <p>{historyError || t('trackingPage.historyEmptyBody')}</p>
                 </div>
               )}
             </div>
 
-            <aside className="pp-card pp-pad pp-trackHistoryTimeline">
-              <div className="pp-trackHistoryTimeline__head">
-                <h3>Timeline</h3>
-                <span>
-                  {historyRange.from} → {historyRange.to}
-                  {' · '}
-                  {(historyRange.timeFrom ?? defaultHistoryDayTimes().timeFrom).slice(0, 5)}–
-                  {(historyRange.timeTo ?? defaultHistoryDayTimes().timeTo).slice(0, 5)}
-                </span>
-              </div>
-              <div className="pp-trackHistoryTimeline__list">
-                {historyTimelineEvents.map((event) => {
-                  const p = event.start;
-                  const active = historyIndex >= event.startIndex && historyIndex <= event.endIndex;
-                  return (
+            <div className="pp-trackHistorySidebar">
+              <div className="pp-card pp-pad pp-trackHistoryRangeCard">
+                <div className="pp-trackHistoryRangeCard__head">
+                  <h2 className="pp-trackHistoryRangeCard__title">{t('trackingPage.historyTitle')}</h2>
+                  <button
+                    type="button"
+                    className="pp-btn pp-btn--ghost pp-trackHistoryRefreshBtn"
+                    disabled={!effectiveDeviceId || historyLoading}
+                    onClick={refreshHistory}
+                    aria-label={t('trackingPage.btnRefreshHistoryAria')}
+                  >
+                    {historyLoading ? t('trackingPage.btnRefresh') : t('trackingPage.btnRefreshHistory')}
+                  </button>
+                </div>
+                {historyError ? <div className="pp-error pp-trackHistoryError">{historyError}</div> : null}
+                <div className="pp-trackHistoryPresets" role="group" aria-label={t('trackingPage.historyPresetsAria')}>
+                  {(
+                    [
+                      ['today', 'presetToday'],
+                      ['yesterday', 'presetYesterday'],
+                    ]
+                  ).map(([id, labelKey]) => (
                     <button
-                      key={event.id}
+                      key={id}
                       type="button"
-                      className={active ? 'is-active' : ''}
-                      onClick={() => {
-                        setHistoryPlaying(false);
-                        setHistoryIndex(event.startIndex);
-                      }}
+                      className={`pp-trackHistoryPresetBtn ${historyRange.preset === id ? 'is-active' : ''}`}
+                      onClick={() => applyHistoryPreset(id)}
                     >
-                      <span className={`pp-trackHistoryTimeline__dot is-${event.type}`} />
-                      <strong>{event.timeLabel}</strong>
-                      <em>{event.label}</em>
-                      <small>
-                        {p.address || `${p.lat.toFixed(5)}, ${p.lng.toFixed(5)}`}
-                        {event.count > 1
-                          ? ` · ${event.count} reports`
-                          : sanitizeSpeedKmh(p.speed) != null
-                            ? ` · ${sanitizeSpeedKmh(p.speed).toFixed(1)} km/h`
-                            : ''}
-                      </small>
+                      {t(`trackingPage.${labelKey}`)}
                     </button>
-                  );
-                })}
-                {!filteredHistory.length ? (
-                  <p className="pp-subtle">Timeline events will appear after tracker history loads.</p>
-                ) : null}
+                  ))}
+                </div>
+                <div className="pp-trackHistoryManual" role="group" aria-label={t('trackingPage.historyManualAria')}>
+                  <div className="pp-trackHistoryManual__row">
+                    <span className="pp-trackHistoryManual__key">{t('trackingPage.historyFromLabel')}</span>
+                    <div className="pp-trackHistoryManual__pair">
+                      <label className="pp-trackHistoryManual__field">
+                        <input
+                          type="date"
+                          value={historyRange.from}
+                          aria-label={t('trackingPage.historyFromDateAria')}
+                          onChange={(e) => setHistoryRange((r) => ({ ...r, preset: 'custom', from: e.target.value }))}
+                        />
+                      </label>
+                      <label className="pp-trackHistoryManual__field">
+                        <TimeInput24
+                          className="pp-trackHistoryManual__time"
+                          value={historyRange.timeFrom ?? defaultHistoryDayTimes().timeFrom}
+                          aria-label={t('trackingPage.historyFromTimeAria')}
+                          onChange={(next) =>
+                            setHistoryRange((r) => ({
+                              ...r,
+                              preset: 'custom',
+                              timeFrom: next || defaultHistoryDayTimes().timeFrom,
+                            }))
+                          }
+                        />
+                      </label>
+                    </div>
+                  </div>
+                  <div className="pp-trackHistoryManual__row">
+                    <span className="pp-trackHistoryManual__key">{t('trackingPage.historyToLabel')}</span>
+                    <div className="pp-trackHistoryManual__pair">
+                      <label className="pp-trackHistoryManual__field">
+                        <input
+                          type="date"
+                          value={historyRange.to}
+                          aria-label={t('trackingPage.historyToDateAria')}
+                          onChange={(e) => setHistoryRange((r) => ({ ...r, preset: 'custom', to: e.target.value }))}
+                        />
+                      </label>
+                      <label className="pp-trackHistoryManual__field">
+                        <TimeInput24
+                          className="pp-trackHistoryManual__time"
+                          value={historyRange.timeTo ?? defaultHistoryDayTimes().timeTo}
+                          aria-label={t('trackingPage.historyToTimeAria')}
+                          onChange={(next) =>
+                            setHistoryRange((r) => ({
+                              ...r,
+                              preset: 'custom',
+                              timeTo: next || defaultHistoryDayTimes().timeTo,
+                            }))
+                          }
+                        />
+                      </label>
+                    </div>
+                  </div>
+                </div>
               </div>
-            </aside>
+
+              <aside className="pp-card pp-pad pp-trackHistoryTimeline">
+                <div className="pp-trackHistoryTimeline__head">
+                  <h3>{t('trackingPage.historyTimelineTitle')}</h3>
+                </div>
+                <div className="pp-trackHistoryTimeline__list">
+                  {historyTimelineEvents.map((event) => {
+                    const p = event.start;
+                    const active = historyIndex >= event.startIndex && historyIndex <= event.endIndex;
+                    return (
+                      <button
+                        key={event.id}
+                        type="button"
+                        className={active ? 'is-active' : ''}
+                        onClick={() => {
+                          setHistoryPlaying(false);
+                          setHistoryIndex(event.startIndex);
+                        }}
+                      >
+                        <span className={`pp-trackHistoryTimeline__dot is-${event.type}`} />
+                        <strong>{event.timeLabel}</strong>
+                        <em>{event.label}</em>
+                        <small>
+                          {p.address || `${p.lat.toFixed(5)}, ${p.lng.toFixed(5)}`}
+                          {event.count > 1
+                            ? ` · ${event.count} reports`
+                            : sanitizeSpeedKmh(p.speed) != null
+                              ? ` · ${sanitizeSpeedKmh(p.speed).toFixed(1)} km/h`
+                              : ''}
+                        </small>
+                      </button>
+                    );
+                  })}
+                  {!filteredHistory.length ? (
+                    <p className="pp-subtle">{t('trackingPage.historyTimelineEmpty')}</p>
+                  ) : null}
+                </div>
+              </aside>
+            </div>
           </div>
 
           <div className="pp-trackHistoryStats pp-trackHistoryStats--footer" aria-label="Route summary">

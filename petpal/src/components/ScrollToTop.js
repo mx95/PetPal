@@ -6,12 +6,12 @@ export default function ScrollToTop() {
   const { pathname } = useLocation();
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const main = document.querySelector('.pp-main');
-    if (main) {
+    const scrollRoot = document.querySelector('.pp-pageScroll') || document.querySelector('.pp-main');
+    if (scrollRoot) {
       try {
-        main.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+        scrollRoot.scrollTo({ top: 0, left: 0, behavior: 'auto' });
       } catch {
-        main.scrollTop = 0;
+        scrollRoot.scrollTop = 0;
       }
     }
     try {

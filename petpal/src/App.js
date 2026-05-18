@@ -76,8 +76,9 @@ function App() {
       <ScrollToTop />
       <TopNav />
       <CheckoutSuccessBridge />
-      <div className={mainAlignsWithNav ? 'pp-main pp-main--alignNav' : 'pp-main'}>
-        <Routes>
+      <div className="pp-pageScroll">
+        <div className={mainAlignsWithNav ? 'pp-main pp-main--alignNav' : 'pp-main'}>
+          <Routes>
           <Route path="/" element={<HomeScreen />} />
           <Route path="/discover" element={<DiscoverHome />} />
           <Route path="/pet/:id" element={<PublicPetProfile />} />
@@ -258,9 +259,10 @@ function App() {
             }
           />
           <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+          </Routes>
+        </div>
+        <AppFooter />
       </div>
-      <AppFooter />
       <CookieConsent />
       <BottomNav />
     </div>

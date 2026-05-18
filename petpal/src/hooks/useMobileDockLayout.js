@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 const BODY_CLASS = 'pp-mobile-dock';
 
 /**
- * On phones, scroll only `.pp-main` so `position:fixed` bottom nav stays on the screen
+ * On phones, scroll `.pp-pageScroll` (main + footer) so `position:fixed` bottom nav stays on screen
  * when the browser chrome shows/hides (iOS Safari / mobile Chrome).
  */
 export function useMobileDockLayout(enabled) {

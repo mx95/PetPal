@@ -71,7 +71,12 @@ function markerFill(active) {
   return active ? ROUTE_DOT_ACTIVE : ROUTE_DOT;
 }
 
-function leafletDotRadius(kind, active) {
+function leafletDotRadius(kind, active, emphasizeVertices = false) {
+  if (emphasizeVertices) {
+    if (active) return 11;
+    if (kind === 'start' || kind === 'end') return 8;
+    return 7;
+  }
   if (active) return kind === 'start' || kind === 'end' ? 8 : 7;
   if (kind === 'start' || kind === 'end') return 4;
   return 3;
@@ -166,9 +171,21 @@ function MapRecenterButton({ visible, label, onClick }) {
   );
 }
 
-function googleRouteDotIcon(maps, kind, active) {
-  const scale = active ? (kind === 'start' || kind === 'end' ? 7 : 6.5) : kind === 'start' || kind === 'end' ? 4.5 : 3.5;
-  const strokeWeight = active ? 2.5 : 1.25;
+function googleRouteDotIcon(maps, kind, active, emphasizeVertices = false) {
+  const scale = emphasizeVertices
+    ? active
+      ? 10
+      : kind === 'start' || kind === 'end'
+        ? 7
+        : 6
+    : active
+      ? kind === 'start' || kind === 'end'
+        ? 7
+        : 6.5
+      : kind === 'start' || kind === 'end'
+        ? 4.5
+        : 3.5;
+  const strokeWeight = active ? 2.5 : emphasizeVertices ? 2 : 1.25;
   return {
     path: maps.SymbolPath.CIRCLE,
     fillColor: markerFill(active),
@@ -222,6 +239,13 @@ function LeafletLiveLayers({ lat, lng, follow, onUserPan, accuracyM, markerLabel
   );
 }
 
+function normalizeRoutePath(path) {
+  if (!Array.isArray(path)) return [];
+  return path
+    .map((p) => ({ lat: Number(p?.lat), lng: Number(p?.lng) }))
+    .filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng));
+}
+
 function LeafletPositionMap({
   lat,
   lng,
@@ -233,23 +257,38 @@ function LeafletPositionMap({
   markerLabel = '',
   liveTrail = [],
   recenterLabel = 'Follow pet',
+  showRouteVertices = false,
 }) {
   const [followEnabled, setFollowEnabled] = useState(true);
   const z = 16;
-  const hasPath = Array.isArray(path) && path.length > 1;
+  const routePath = useMemo(() => normalizeRoutePath(path), [path]);
+  const hasPath = routePath.length > 1;
   const head =
-    playbackPointIndex != null && path[playbackPointIndex]
-      ? path[playbackPointIndex]
-      : path[0] || { lat, lng };
+    playbackPointIndex != null && routePath[playbackPointIndex]
+      ? routePath[playbackPointIndex]
+      : routePath[0] || { lat, lng };
   const center = head;
   const playbackFollow = hasPath && playbackPointIndex != null;
+
+  const displayMarkers = useMemo(() => {
+    if (routeMarkers.length) return routeMarkers;
+    if (!showRouteVertices || !routePath.length) return [];
+    return routePath.map((p, i) => ({
+      id: `vertex-${i}`,
+      pointIndex: i,
+      lat: p.lat,
+      lng: p.lng,
+      kind: i === 0 ? 'start' : i === routePath.length - 1 ? 'end' : 'walk',
+      label: '',
+    }));
+  }, [routeMarkers, showRouteVertices, routePath]);
 
   useEffect(() => {
     if (liveMode) setFollowEnabled(true);
   }, [liveMode, lat, lng]);
 
   return (
-    <div className={`pp-positionMap${liveMode ? ' pp-positionMap--live' : ''}`}>
+    <div className={`pp-positionMap${liveMode ? ' pp-positionMap--live' : ''}${showRouteVertices ? ' pp-positionMap--routeVertices' : ''}`}>
       {liveMode && !hasPath ? (
         <MapRecenterButton
           visible={!followEnabled}
@@ -258,7 +297,7 @@ function LeafletPositionMap({
         />
       ) : null}
       <MapContainer center={[center.lat, center.lng]} zoom={z} scrollWheelZoom style={{ height: '100%', width: '100%' }}>
-        {hasPath ? <FitRoute path={path} /> : liveMode ? null : <FlyTo lat={lat} lng={lng} />}
+        {hasPath ? <FitRoute path={routePath} /> : liveMode ? null : <FlyTo lat={lat} lng={lng} />}
         {playbackFollow ? (
           <FlyTo lat={head.lat} lng={head.lng} smooth />
         ) : null}
@@ -290,16 +329,30 @@ function LeafletPositionMap({
         {hasPath ? (
           <>
             <LeafletPolyline
-              positions={path.map((p) => [p.lat, p.lng])}
-              pathOptions={{ color: ROUTE_LINE, weight: 2, opacity: 0.88, dashArray: '6 10' }}
+              positions={routePath.map((p) => [p.lat, p.lng])}
+              smoothFactor={0}
+              pathOptions={{
+                color: ROUTE_LINE,
+                weight: showRouteVertices ? 4 : 3,
+                opacity: 0.95,
+                lineCap: 'butt',
+                lineJoin: 'miter',
+              }}
             />
             <LeafletPolyline
-              positions={path.map((p) => [p.lat, p.lng])}
-              pathOptions={{ color: ROUTE_LINE, weight: 8, opacity: 0.12, dashArray: '6 10' }}
+              positions={routePath.map((p) => [p.lat, p.lng])}
+              smoothFactor={0}
+              pathOptions={{
+                color: ROUTE_LINE,
+                weight: showRouteVertices ? 10 : 9,
+                opacity: 0.16,
+                lineCap: 'butt',
+                lineJoin: 'miter',
+              }}
             />
-            {routeMarkers.map((m) => {
+            {displayMarkers.map((m) => {
               const active = playbackPointIndex != null && m.pointIndex === playbackPointIndex;
-              const r = leafletDotRadius(m.kind, active);
+              const r = leafletDotRadius(m.kind, active, showRouteVertices);
               const stroke = leafletDotStroke(active);
               return (
                 <CircleMarker
@@ -385,6 +438,7 @@ function GooglePositionMap({
   markerLabel = '',
   liveTrail = [],
   recenterLabel = 'Follow pet',
+  showRouteVertices = false,
 }) {
   const [authFailed, setAuthFailed] = useState(false);
   const [followEnabled, setFollowEnabled] = useState(true);
@@ -399,15 +453,29 @@ function GooglePositionMap({
     libraries: ['places'],
   });
 
-  const hasPath = Array.isArray(path) && path.length > 1;
+  const routePath = useMemo(() => normalizeRoutePath(path), [path]);
+  const hasPath = routePath.length > 1;
   const head =
-    playbackPointIndex != null && path[playbackPointIndex]
-      ? path[playbackPointIndex]
-      : path[0] || { lat, lng };
+    playbackPointIndex != null && routePath[playbackPointIndex]
+      ? routePath[playbackPointIndex]
+      : routePath[0] || { lat, lng };
   const center = head;
   const smoothPlayback = useAnimatedLatLng(head.lat, head.lng, {
     enabled: hasPath && playbackPointIndex != null,
   });
+
+  const displayMarkers = useMemo(() => {
+    if (routeMarkers.length) return routeMarkers;
+    if (!showRouteVertices || !routePath.length) return [];
+    return routePath.map((p, i) => ({
+      id: `vertex-${i}`,
+      pointIndex: i,
+      lat: p.lat,
+      lng: p.lng,
+      kind: i === 0 ? 'start' : i === routePath.length - 1 ? 'end' : 'walk',
+      label: '',
+    }));
+  }, [routeMarkers, showRouteVertices, routePath]);
 
   if (authFailed || loadError) {
     return (
@@ -423,6 +491,7 @@ function GooglePositionMap({
         markerLabel={markerLabel}
         liveTrail={liveTrail}
         recenterLabel={recenterLabel}
+        showRouteVertices={showRouteVertices}
       />
     );
   }
@@ -441,7 +510,7 @@ function GooglePositionMap({
   const displayLng = hasPath && playbackPointIndex != null ? smoothPlayback.lng : lng;
 
   return (
-    <div className={`pp-positionMap${liveMode ? ' pp-positionMap--live' : ''}`}>
+    <div className={`pp-positionMap${liveMode ? ' pp-positionMap--live' : ''}${showRouteVertices ? ' pp-positionMap--routeVertices' : ''}`}>
       {liveMode && !hasPath ? (
         <MapRecenterButton
           visible={!followEnabled}
@@ -455,7 +524,7 @@ function GooglePositionMap({
         zoom={16}
         options={googleMapOptions}
       >
-        {hasPath ? <GoogleFitRoute path={path} /> : null}
+        {hasPath ? <GoogleFitRoute path={routePath} /> : null}
         {hasPath && playbackPointIndex != null ? (
           <GoogleFollowPan lat={smoothPlayback.lat} lng={smoothPlayback.lng} follow />
         ) : null}
@@ -473,21 +542,40 @@ function GooglePositionMap({
         ) : null}
         {hasPath ? (
           <>
-            <Polyline path={path} options={{ strokeColor: ROUTE_LINE, strokeOpacity: 0.88, strokeWeight: 2, geodesic: true }} />
             <Polyline
-              path={path}
-              options={{ strokeColor: ROUTE_LINE, strokeOpacity: 0.14, strokeWeight: 8, geodesic: true }}
+              key={`route-line-${routePath.length}`}
+              path={routePath}
+              options={{
+                strokeColor: ROUTE_LINE,
+                strokeOpacity: 0.95,
+                strokeWeight: showRouteVertices ? 4 : 3,
+                geodesic: false,
+                zIndex: 10,
+                clickable: false,
+              }}
             />
-            {routeMarkers.map((m) => {
+            <Polyline
+              key={`route-glow-${routePath.length}`}
+              path={routePath}
+              options={{
+                strokeColor: ROUTE_LINE,
+                strokeOpacity: 0.16,
+                strokeWeight: showRouteVertices ? 10 : 9,
+                geodesic: false,
+                zIndex: 9,
+                clickable: false,
+              }}
+            />
+            {displayMarkers.map((m) => {
               const active = playbackPointIndex != null && m.pointIndex === playbackPointIndex;
-              const icon = googleRouteDotIcon(maps, m.kind, active);
+              const icon = googleRouteDotIcon(maps, m.kind, active, showRouteVertices);
               return (
                 <Marker
                   key={`${m.id}-${active ? 'a' : 'i'}`}
                   position={{ lat: m.lat, lng: m.lng }}
                   icon={icon}
                   title={m.label}
-                  zIndex={active ? 4 : 2}
+                  zIndex={active ? 30 : 20}
                 />
               );
             })}
@@ -520,6 +608,7 @@ export default function PositionMap({
   markerLabel = '',
   liveTrail = [],
   recenterLabel = 'Follow pet',
+  showRouteVertices = false,
 }) {
   const key = process.env.REACT_APP_GOOGLE_MAPS_API_KEY?.trim();
   return (
@@ -538,6 +627,7 @@ export default function PositionMap({
           markerLabel={markerLabel}
           liveTrail={liveTrail}
           recenterLabel={recenterLabel}
+          showRouteVertices={showRouteVertices}
         />
       ) : (
         <LeafletPositionMap
@@ -552,6 +642,7 @@ export default function PositionMap({
           markerLabel={markerLabel}
           liveTrail={liveTrail}
           recenterLabel={recenterLabel}
+          showRouteVertices={showRouteVertices}
         />
       )}
     </div>
