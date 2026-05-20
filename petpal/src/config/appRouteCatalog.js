@@ -23,7 +23,7 @@ export const APP_ROUTE_CATALOG = [
   { path: '/dashboard', labelKey: 'docs.route.dashboard.label', descKey: 'docs.route.dashboard.desc', auth: 'auth', mvpNav: false },
   { path: '/community', labelKey: 'docs.route.community.label', descKey: 'docs.route.community.desc', auth: 'auth', mvpNav: false },
   { path: '/leaderboard', labelKey: 'docs.route.leaderboard.label', descKey: 'docs.route.leaderboard.desc', auth: 'auth', mvpNav: false },
-  { path: '/shop', labelKey: 'docs.route.shop.label', descKey: 'docs.route.shop.desc', auth: 'auth', mvpNav: false },
+  { path: '/shop', labelKey: 'docs.route.shop.label', descKey: 'docs.route.shop.desc', auth: 'auth', mvpNav: true },
   { path: '/payment/success', labelKey: 'docs.route.paymentSuccess.label', descKey: 'docs.route.paymentSuccess.desc', auth: 'auth', mvpNav: false },
   { path: '/premium', labelKey: 'docs.route.premium.label', descKey: 'docs.route.premium.desc', auth: 'auth', mvpNav: false },
   { path: '/premium/lost', labelKey: 'docs.route.premiumLost.label', descKey: 'docs.route.premiumLost.desc', auth: 'auth', mvpNav: false },

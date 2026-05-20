@@ -6,6 +6,7 @@ import {
   deletePetMedication,
   formatMedicationFirestoreError,
   subscribePetMedications,
+  updatePetMedication,
 } from '../pets/petMedicationsFirestore';
 import IconMedPill from './icons/IconMedPill';
 import TimeInput24 from './TimeInput24';
@@ -104,6 +105,7 @@ export default function PetMedicationModal({
   const [draftPillCount, setDraftPillCount] = useState(1);
   const [draftDosage, setDraftDosage] = useState('');
   const [draftNotes, setDraftNotes] = useState('');
+  const [editingId, setEditingId] = useState(/** @type {string | null} */ (null));
 
   useEffect(() => {
     if (!open || mode !== 'owner' || !ownerUid || !petId || !isFirebaseConfigured()) {
@@ -153,6 +155,17 @@ export default function PetMedicationModal({
     setDraftPillCount(1);
     setDraftDosage('');
     setDraftNotes('');
+    setEditingId(null);
+  };
+
+  const startEditRow = (r) => {
+    setEditingId(r.id);
+    setDraftName(r.name || '');
+    setDraftTimes(normalizeDraftTimes(r.times ?? r.time));
+    setDraftPillCount(Math.max(1, Number(r.pillCount) || 1));
+    setDraftDosage(r.dosage || '');
+    setDraftNotes(r.notes || '');
+    setErr('');
   };
 
   const buildDraftPayload = () => {
@@ -163,13 +176,17 @@ export default function PetMedicationModal({
     return { name, times, pillCount, dosage: draftDosage.trim(), notes: draftNotes.trim() };
   };
 
-  const addOwnerRow = async () => {
+  const saveOwnerRow = async () => {
     const payload = buildDraftPayload();
     if (!payload || !ownerUid || !petId) return;
     setBusy(true);
     setErr('');
     try {
-      await addPetMedication(ownerUid, petId, { ...payload, source: 'owner' });
+      if (editingId) {
+        await updatePetMedication(ownerUid, petId, editingId, payload);
+      } else {
+        await addPetMedication(ownerUid, petId, { ...payload, source: 'owner' });
+      }
       resetDraft();
     } catch (e) {
       setErr(formatMedicationFirestoreError(e, t));
@@ -184,6 +201,7 @@ export default function PetMedicationModal({
     setErr('');
     try {
       await deletePetMedication(ownerUid, petId, id);
+      if (editingId === id) resetDraft();
     } catch (e) {
       setErr(formatMedicationFirestoreError(e, t));
     } finally {
@@ -292,11 +310,19 @@ export default function PetMedicationModal({
             ) : (
               <ul className="pp-medList">
                 {rows.map((r) => (
-                  <li key={r.id} className="pp-medList__item">
+                  <li
+                    key={r.id}
+                    className={`pp-medList__item${mode === 'owner' && editingId === r.id ? ' pp-medList__item--editing' : ''}`}
+                  >
                     <div className="pp-medList__icon" aria-hidden>
                       <IconMedPill size={18} />
                     </div>
-                    <div className="pp-medList__body">
+                    <button
+                      type="button"
+                      className="pp-medList__body"
+                      disabled={mode === 'owner' && busy}
+                      onClick={() => startEditRow(r)}
+                    >
                       <div className="pp-medList__name">{r.name}</div>
                       <div className="pp-medList__row">
                         <span className="pp-medList__tag">{t('myPets.medsWhenLabel')}</span>
@@ -318,7 +344,7 @@ export default function PetMedicationModal({
                         </div>
                       )}
                       {r.notes ? <p className="pp-medList__notes">{r.notes}</p> : null}
-                    </div>
+                    </button>
                     <button
                       type="button"
                       className="pp-medList__remove"
@@ -338,10 +364,29 @@ export default function PetMedicationModal({
             className="pp-medModal__form"
             onSubmit={(e) => {
               e.preventDefault();
-              if (mode === 'owner') void addOwnerRow();
-              else addVetRowLocal();
+              if (mode === 'owner') void saveOwnerRow();
+              else if (editingId) {
+                const payload = buildDraftPayload();
+                if (!payload) return;
+                setVetRows((prev) =>
+                  prev.map((row) =>
+                    row.id === editingId
+                      ? { ...row, ...payload, time: payload.times[0], source: row.source || 'vet' }
+                      : row
+                  )
+                );
+                resetDraft();
+              } else addVetRowLocal();
             }}
           >
+            {editingId ? (
+              <p className="pp-medModal__editingBanner" role="status">
+                {t('myPets.medsEditing')}
+                <button type="button" className="pp-medModal__editingCancel" onClick={resetDraft}>
+                  {t('myPets.medsCancelEdit')}
+                </button>
+              </p>
+            ) : null}
             <section className="pp-medModal__section">
               <h3 className="pp-medModal__sectionTitle">{t('myPets.medsSectionDetails')}</h3>
               <div className="pp-medModal__fields">
@@ -454,12 +499,12 @@ export default function PetMedicationModal({
             <div className="pp-medModal__actions">
               {mode === 'owner' ? (
                 <button type="submit" className="pp-btn pp-btnPrimary pp-medModal__submit" disabled={busy || !canAdd}>
-                  {t('myPets.medsAddMedication')}
+                  {editingId ? t('myPets.medsSaveChanges') : t('myPets.medsAddMedication')}
                 </button>
               ) : (
                 <>
                   <button type="submit" className="pp-btn pp-btnPrimary pp-medModal__submit" disabled={!canAdd}>
-                    {t('myPets.medsAddMedication')}
+                    {editingId ? t('myPets.medsSaveChanges') : t('myPets.medsAddMedication')}
                   </button>
                   <button
                     type="button"

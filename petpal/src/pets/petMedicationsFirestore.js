@@ -1,4 +1,13 @@
-import { addDoc, collection, deleteDoc, doc, onSnapshot, query, serverTimestamp } from 'firebase/firestore';
+import {
+  addDoc,
+  collection,
+  deleteDoc,
+  doc,
+  onSnapshot,
+  query,
+  serverTimestamp,
+  updateDoc,
+} from 'firebase/firestore';
 import { getDb, isFirebaseConfigured } from '../firebase';
 
 function medicationsCol(uid, petId) {
@@ -102,6 +111,35 @@ export async function addPetMedication(uid, petId, payload) {
     source: payload?.source === 'vet' ? 'vet' : 'owner',
     vetLabel: String(payload?.vetLabel || '').trim().slice(0, 120),
     createdAt: serverTimestamp(),
+  });
+}
+
+/**
+ * @param {string} uid
+ * @param {string} petId
+ * @param {string} medicationId
+ * @param {{
+ *   name?: string,
+ *   times?: string[],
+ *   time?: string,
+ *   pillCount?: number,
+ *   dosage?: string,
+ *   notes?: string,
+ * }} payload
+ */
+export async function updatePetMedication(uid, petId, medicationId, payload) {
+  if (!isFirebaseConfigured() || !uid || !petId || !medicationId) return;
+  const name = String(payload?.name || '').trim().slice(0, 120);
+  if (!name) throw new Error('medication_name_required');
+  const times = normalizeTimes(payload?.times ?? payload?.time);
+  const pillCount = normalizePillCount(payload?.pillCount);
+  await updateDoc(doc(getDb(), 'users', uid, 'pets', petId, 'medications', medicationId), {
+    name,
+    times,
+    pillCount,
+    dosage: String(payload?.dosage || '').trim().slice(0, 120),
+    notes: String(payload?.notes || '').trim().slice(0, 500),
+    updatedAt: serverTimestamp(),
   });
 }
 

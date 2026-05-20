@@ -5,10 +5,15 @@ import { useAuth } from '../auth/AuthProvider';
 import { useCompany } from '../company/CompanyContext';
 import { getDb, isFirebaseConfigured } from '../firebase';
 import { useI18n } from '../i18n/I18nContext';
-import { SHOP_PRODUCTS, formatEur } from '../shop/catalog';
+import {
+  PLUS_SKUS,
+  SHOP_PRODUCTS,
+  TRACKER_ADDON_CENTS,
+  formatEur,
+  formatShopPrice,
+  monthlyFirstPaymentCents,
+} from '../shop/catalog';
 import { startJccCheckout } from '../shop/startJccCheckout';
-
-const PLUS_SKU = 'PETPAL_PLUS_MONTHLY';
 
 export default function Shop() {
   const { t } = useI18n();
@@ -26,8 +31,13 @@ export default function Shop() {
     navigate(q ? `/payment/success?${q}` : '/payment/success?checkout=success', { replace: true });
   }, [checkout, navigate, searchParams]);
 
-  const [plusActive, setPlusActive] = useState(false);
-  const [shopStats, setShopStats] = useState({ combo: 0, total: 0 });
+  const [plusActiveBySku, setPlusActiveBySku] = useState(() =>
+    PLUS_SKUS.reduce((acc, id) => {
+      acc[id] = false;
+      return acc;
+    }, {})
+  );
+  const [monthlyIncludeTracker, setMonthlyIncludeTracker] = useState(false);
 
   useEffect(() => {
     if (!focusSku) return;
@@ -40,34 +50,26 @@ export default function Shop() {
 
   useEffect(() => {
     if (!user || !isFirebaseConfigured()) {
-      setPlusActive(false);
-      setShopStats({ combo: 0, total: 0 });
+      setPlusActiveBySku(PLUS_SKUS.reduce((acc, id) => ({ ...acc, [id]: false }), {}));
       return () => {};
     }
     const db = getDb();
-    const plusDoc = doc(db, 'billingSubscriptions', `${user.uid}_${PLUS_SKU}`);
-    const statsDoc = doc(db, 'shopStats', 'public');
-    const unsubPlus = onSnapshot(
-      plusDoc,
-      (snap) => {
-        setPlusActive(Boolean(snap.exists() && snap.data()?.status === 'active'));
-      },
-      () => setPlusActive(false)
-    );
-    const unsubStats = onSnapshot(
-      statsDoc,
-      (snap) => {
-        const d = snap.data() || {};
-        setShopStats({
-          combo: Math.max(0, Number(d.activeSubscriptionsWithCollar) || 0),
-          total: Math.max(0, Number(d.totalCollarPurchases) || 0),
-        });
-      },
-      () => {}
+    const unsubs = PLUS_SKUS.map((sku) =>
+      onSnapshot(
+        doc(db, 'billingSubscriptions', `${user.uid}_${sku}`),
+        (snap) => {
+          setPlusActiveBySku((prev) => ({
+            ...prev,
+            [sku]: Boolean(snap.exists() && snap.data()?.status === 'active'),
+          }));
+        },
+        () => {
+          setPlusActiveBySku((prev) => ({ ...prev, [sku]: false }));
+        }
+      )
     );
     return () => {
-      unsubPlus();
-      unsubStats();
+      unsubs.forEach((u) => u());
     };
   }, [user]);
 
@@ -81,23 +83,25 @@ export default function Shop() {
   const [err, setErr] = useState('');
 
   const banner = useMemo(() => {
-    if (checkout === 'fail') return { text: 'Payment was not completed. You can try again when you are ready.' };
-    if (checkout === 'error') return { text: 'We could not verify the payment return. If you were charged, contact support with your receipt.' };
+    if (checkout === 'fail') return { text: t('shopPage.checkoutFail') };
+    if (checkout === 'error') return { text: t('shopPage.checkoutError') };
     return null;
-  }, [checkout]);
+  }, [checkout, t]);
+
+  const isPlusSku = (id) => PLUS_SKUS.includes(id);
 
   if (!user) {
     return (
       <div className="pp-pad pp-demoProviderPortal">
         <div className="pp-pageHeader">
           <div className="pp-pageHeader__copy">
-            <div className="pp-badge">PetPal Shop</div>
-            <div className="pp-pageHeader__title">Sign in to shop</div>
-            <div className="pp-pageHeader__subtitle">Subscriptions and hardware checkout require an account.</div>
+            <div className="pp-badge">{t('shopPage.badge')}</div>
+            <div className="pp-pageHeader__title">{t('shopPage.signInTitle')}</div>
+            <div className="pp-pageHeader__subtitle">{t('shopPage.signInSub')}</div>
           </div>
         </div>
         <Link className="pp-btn pp-btn--primary" to="/login">
-          Log in
+          {t('nav.login')}
         </Link>
       </div>
     );
@@ -106,11 +110,11 @@ export default function Shop() {
   if (!isFirebaseConfigured()) {
     return (
       <div className="pp-pad">
-        <div className="pp-badge">PetPal Shop</div>
+        <div className="pp-badge">{t('shopPage.badge')}</div>
         <h1 className="pp-pageHeader__title" style={{ marginTop: 12 }}>
-          Payments need Firebase
+          {t('shopPage.needFirebaseTitle')}
         </h1>
-        <p className="pp-subtle">Configure Firebase in this build to enable secure checkout and subscriptions.</p>
+        <p className="pp-subtle">{t('shopPage.needFirebaseSub')}</p>
       </div>
     );
   }
@@ -121,12 +125,13 @@ export default function Shop() {
     try {
       const saveCard = Boolean(saveCardById[product.id]);
       if (product.recurring && !saveCard) {
-        setErr('Turn on “Save card securely” for monthly plans so JCC can store a binding token for renewals.');
+        setErr(t('shopPage.saveCardRequired'));
         setBusy(null);
         return;
       }
+      const includeTracker = product.id === 'PETPAL_PLUS_MONTHLY' && monthlyIncludeTracker;
       const companyId = product.id === 'STORE_BOOST_MONTHLY' ? user.uid : undefined;
-      await startJccCheckout({ sku: product.id, saveCard, companyId });
+      await startJccCheckout({ sku: product.id, saveCard, companyId, includeTracker });
     } catch (e) {
       setErr(e?.message || String(e));
       setBusy(null);
@@ -137,18 +142,12 @@ export default function Shop() {
     <div className="pp-pad pp-shopPage">
       <header className="pp-pageHeader">
         <div className="pp-pageHeader__copy">
-          <span className="pp-publicHero__eyebrow">PetPal Shop</span>
-          <h1 className="pp-pageHeader__title">Subscriptions &amp; hardware</h1>
-          <p className="pp-pageHeader__sub">
-            Secure card payments via JCC hosted checkout (
-            <a href="https://gateway.jcc.com.cy/developer/" target="_blank" rel="noopener noreferrer">
-              JCC docs
-            </a>
-            ). Your card details never touch our servers; renewals use a gateway-issued token (binding).
-          </p>
+          <span className="pp-publicHero__eyebrow">{t('shopPage.badge')}</span>
+          <h1 className="pp-pageHeader__title">{t('shopPage.title')}</h1>
+          <p className="pp-pageHeader__sub">{t('shopPage.sub')}</p>
         </div>
         <Link className="pp-pageHeader__back" to="/dashboard">
-          Back
+          {t('shopPage.back')}
         </Link>
       </header>
 
@@ -161,66 +160,94 @@ export default function Shop() {
       {err ? <div className="pp-error" style={{ marginTop: 12 }}>{err}</div> : null}
 
       <div className="pp-shopGrid">
-        {SHOP_PRODUCTS.map((p) => (
-          <article
-            key={p.id}
-            ref={(el) => {
-              cardRefs.current[p.id] = el;
-            }}
-            className={`pp-card pp-shopCard${focusSku === p.id ? ' pp-shopCard--focus' : ''}`}
-          >
-            <span className="pp-shopCard__badge">{p.badge}</span>
-            <h2 className="pp-sectionTitle" style={{ margin: '6px 0 4px' }}>
-              {p.title}
-            </h2>
-            <p className="pp-subtle" style={{ marginTop: 0 }}>
-              {p.subtitle}
-            </p>
-            {p.id === PLUS_SKU ? (
-              <p className={`pp-shopCard__status${plusActive ? ' pp-shopCard__status--on' : ''}`}>
-                {plusActive ? t('shopPage.plusBadgeActive') : t('shopPage.plusBadgeInactive')}
-              </p>
-            ) : null}
-            {p.id === 'TRACKER_HARDWARE' ? (
-              <p className="pp-subtle" style={{ marginTop: 0, lineHeight: 1.5 }}>
-                {t('shopPage.collarStatCombo', { combo: shopStats.combo })}
-                <br />
-                {t('shopPage.collarStatTotal', { total: shopStats.total })}
-              </p>
-            ) : null}
-            <div className="pp-shopCard__price">{formatEur(p.amountCents)}</div>
-            {p.id === 'STORE_BOOST_MONTHLY' && !isApprovedCompany ? (
-              <p className="pp-subtle">Approved business accounts only. Apply from your profile flow first.</p>
-            ) : null}
-            <label className="pp-shopSaveRow">
-              <input
-                type="checkbox"
-                checked={Boolean(saveCardById[p.id])}
-                disabled={p.id === PLUS_SKU && plusActive}
-                onChange={(e) => setSaveCardById((prev) => ({ ...prev, [p.id]: e.target.checked }))}
-              />
-              <span>
-                Save card securely for renewals <small>(JCC binding / token)</small>
-              </span>
-            </label>
-            <button
-              type="button"
-              className="pp-btn pp-btn--primary"
-              disabled={
-                Boolean(busy) ||
-                (p.id === 'STORE_BOOST_MONTHLY' && !isApprovedCompany) ||
-                (p.id === PLUS_SKU && plusActive)
-              }
-              onClick={() => void onPay(p)}
+        {SHOP_PRODUCTS.map((p) => {
+          const planActive = isPlusSku(p.id) ? plusActiveBySku[p.id] : false;
+          const isLoading = busy === p.id;
+          const includeTracker = p.id === 'PETPAL_PLUS_MONTHLY' && monthlyIncludeTracker;
+          const dueTodayCents = p.id === 'PETPAL_PLUS_MONTHLY' ? monthlyFirstPaymentCents(includeTracker) : p.amountCents;
+
+          return (
+            <article
+              key={p.id}
+              ref={(el) => {
+                cardRefs.current[p.id] = el;
+              }}
+              className={`pp-card pp-shopCard${focusSku === p.id ? ' pp-shopCard--focus' : ''}${p.id === 'PETPAL_PLUS_YEARLY' ? ' pp-shopCard--featured' : ''}`}
             >
-              {busy === p.id
-                ? 'Starting checkout…'
-                : p.id === PLUS_SKU && plusActive
-                  ? t('shopPage.plusSubscribedCta')
-                  : 'Pay with card'}
-            </button>
-          </article>
-        ))}
+              <span className="pp-shopCard__badge">{p.badge}</span>
+              <h2 className="pp-sectionTitle" style={{ margin: '6px 0 4px' }}>
+                {p.title}
+              </h2>
+              <p className="pp-subtle" style={{ marginTop: 0 }}>
+                {p.subtitle}
+              </p>
+              {isPlusSku(p.id) ? (
+                <p className={`pp-shopCard__status${planActive ? ' pp-shopCard__status--on' : ''}`}>
+                  {planActive ? t('shopPage.plusBadgeActive') : t('shopPage.plusBadgeInactive')}
+                </p>
+              ) : null}
+              {p.id === 'PETPAL_PLUS_MONTHLY' && !planActive ? (
+                <label className="pp-shopTrackerOpt">
+                  <input
+                    type="checkbox"
+                    checked={monthlyIncludeTracker}
+                    disabled={isLoading}
+                    onChange={(e) => setMonthlyIncludeTracker(e.target.checked)}
+                  />
+                  <span>{t('shopPage.monthlyAddTracker', { price: formatEur(TRACKER_ADDON_CENTS) })}</span>
+                </label>
+              ) : null}
+              {p.id === 'PETPAL_PLUS_YEARLY' ? (
+                <p className="pp-shopCard__highlight">{t('shopPage.yearlyTrackerIncluded')}</p>
+              ) : null}
+              <div className="pp-shopCard__price">{formatShopPrice(p)}</div>
+              {p.id === 'PETPAL_PLUS_MONTHLY' && !planActive ? (
+                <p className="pp-shopCard__dueToday">
+                  {t('shopPage.dueToday', { amount: formatEur(dueTodayCents) })}
+                  {includeTracker ? (
+                    <span className="pp-shopCard__dueTodayNote"> {t('shopPage.dueTodayWithTracker')}</span>
+                  ) : null}
+                </p>
+              ) : null}
+              {p.id === 'STORE_BOOST_MONTHLY' && !isApprovedCompany ? (
+                <p className="pp-subtle">{t('shopPage.boostBusinessOnly')}</p>
+              ) : null}
+              <label className="pp-shopSaveRow">
+                <input
+                  type="checkbox"
+                  checked={Boolean(saveCardById[p.id])}
+                  disabled={(isPlusSku(p.id) && planActive) || isLoading}
+                  onChange={(e) => setSaveCardById((prev) => ({ ...prev, [p.id]: e.target.checked }))}
+                />
+                <span>
+                  {t('shopPage.saveCardLabel')} <small>{t('shopPage.saveCardHint')}</small>
+                </span>
+              </label>
+              <button
+                type="button"
+                className={`pp-btn pp-btn--primary pp-shopCard__payBtn${isLoading ? ' pp-shopCard__payBtn--loading' : ''}`}
+                disabled={
+                  Boolean(busy) ||
+                  (p.id === 'STORE_BOOST_MONTHLY' && !isApprovedCompany) ||
+                  (isPlusSku(p.id) && planActive)
+                }
+                aria-busy={isLoading}
+                onClick={() => void onPay(p)}
+              >
+                {isLoading ? (
+                  <>
+                    <span className="pp-shopCard__paySpinner" aria-hidden />
+                    <span>{t('shopPage.checkoutRedirecting')}</span>
+                  </>
+                ) : isPlusSku(p.id) && planActive ? (
+                  t('shopPage.plusSubscribedCta')
+                ) : (
+                  t('shopPage.payCta')
+                )}
+              </button>
+            </article>
+          );
+        })}
       </div>
     </div>
   );

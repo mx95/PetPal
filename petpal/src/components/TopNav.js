@@ -95,6 +95,11 @@ export default function TopNav() {
               <NavLink className={navItemClassName} to="/tracking">
                 {t('nav.tracking')}
               </NavLink>
+              {MVP_NAV.showShop ? (
+                <NavLink className={navItemClassName} to="/shop">
+                  {t('nav.shop')}
+                </NavLink>
+              ) : null}
               {MVP_NAV.showBookings ? (
                 <NavLink className={navItemClassName} to="/bookings">
                   {t('nav.bookings')}

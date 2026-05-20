@@ -5,7 +5,7 @@
 export const MVP_NAV = {
   showPremium: false,
   showCommunity: false,
-  showShop: false,
+  showShop: true,
   showDashboard: false,
   showLeaderboard: false,
   showBookings: false,

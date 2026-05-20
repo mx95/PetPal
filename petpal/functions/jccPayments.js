@@ -126,11 +126,36 @@ function uniqueOrderNumber(prefix) {
   return safe.slice(0, 36);
 }
 
-const SKUS = {
-  PETPAL_PLUS_MONTHLY: { amountCents: 499, currency: '978', title: 'PetPal Plus (monthly)', recurring: true },
-  TRACKER_HARDWARE: { amountCents: 7900, currency: '978', title: 'GPS tracker device', recurring: false },
-  STORE_BOOST_MONTHLY: { amountCents: 999, currency: '978', title: 'Business visibility boost (monthly)', recurring: true },
-};
+const { SKUS, PLUS_SKUS, resolveCheckoutPricing } = require('./shopPricing');
+
+function nextRenewalDate(from, sku) {
+  const next = new Date(from);
+  if (sku === 'PETPAL_PLUS_YEARLY') {
+    next.setFullYear(next.getFullYear() + 1);
+  } else {
+    next.setMonth(next.getMonth() + 1);
+  }
+  return next;
+}
+
+async function grantTrackerEntitlement(db, uid, orderNumber, sourceSku) {
+  await db
+    .collection('users')
+    .doc(uid)
+    .collection('shopEntitlements')
+    .doc('collar')
+    .set(
+      {
+        status: 'active',
+        sku: 'TRACKER_HARDWARE',
+        sourceSku,
+        purchasedAt: admin.firestore.FieldValue.serverTimestamp(),
+        sessionOrderNumber: orderNumber,
+      },
+      { merge: true }
+    );
+  await incrementShopPublicStats(db, { totalCollarPurchases: 1 });
+}
 
 function redirect(res, url) {
   res.set('Cache-Control', 'no-store');
@@ -166,9 +191,17 @@ exports.createJccCheckout = functions.region('europe-west1').https.onCall(async 
     const sku = String(data?.sku || '').trim();
     const saveCard = Boolean(data?.saveCard);
     const companyId = data?.companyId ? String(data.companyId).trim() : '';
+    const includeTracker = Boolean(data?.includeTracker);
 
     const catalog = SKUS[sku];
     if (!catalog) {
+      throw new functions.https.HttpsError('invalid-argument', 'Unknown product.');
+    }
+    if (includeTracker && sku !== 'PETPAL_PLUS_MONTHLY') {
+      throw new functions.https.HttpsError('invalid-argument', 'Tracker add-on is only available with the monthly plan.');
+    }
+    const pricing = resolveCheckoutPricing(sku, includeTracker);
+    if (!pricing) {
       throw new functions.https.HttpsError('invalid-argument', 'Unknown product.');
     }
     if (sku === 'STORE_BOOST_MONTHLY' && companyId !== uid) {
@@ -189,8 +222,10 @@ exports.createJccCheckout = functions.region('europe-west1').https.onCall(async 
       uid,
       sku,
       saveCard,
+      includeTracker: pricing.includeTracker,
       companyId: companyId || null,
-      amountCents: catalog.amountCents,
+      amountCents: pricing.chargeCents,
+      renewalAmountCents: pricing.renewalCents,
       currency: catalog.currency,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
       status: 'pending_register',
@@ -200,11 +235,11 @@ exports.createJccCheckout = functions.region('europe-west1').https.onCall(async 
       userName,
       password,
       orderNumber,
-      amount: String(catalog.amountCents),
+      amount: String(pricing.chargeCents),
       currency: catalog.currency,
       returnUrl: `${returnUrl.replace(/\/$/, '')}?orderNumber=${encodeURIComponent(orderNumber)}`,
       failUrl: `${frontendUrl}/shop?checkout=fail`,
-      description: catalog.title.slice(0, 240),
+      description: pricing.title.slice(0, 240),
       language: 'en',
       clientId: uid,
       jsonParams: JSON.stringify({ backToShopUrl: `${frontendUrl}/shop`, backToShopName: 'Back to PetPal' }),
@@ -239,7 +274,13 @@ exports.createJccCheckout = functions.region('europe-west1').https.onCall(async 
       { merge: true }
     );
 
-    return { formUrl: reg.formUrl, orderNumber, jccOrderId: reg.orderId };
+    return {
+      formUrl: reg.formUrl,
+      orderNumber,
+      jccOrderId: reg.orderId,
+      amountCents: pricing.chargeCents,
+      includeTracker: pricing.includeTracker,
+    };
   } catch (e) {
     if (e instanceof functions.https.HttpsError) throw e;
     const msg = typeof e?.message === 'string' ? e.message : String(e);
@@ -342,8 +383,11 @@ exports.jccPaymentReturn = functions.region('europe-west1').https.onRequest(asyn
   const catalog = SKUS[sku];
   /** Record subscription on successful payment even if JCC did not return a binding yet (UI shows Plus active; renewals need bindingId). */
   if (catalog?.recurring) {
-    const next = new Date();
-    next.setMonth(next.getMonth() + 1);
+    const next = nextRenewalDate(new Date(), sku);
+    const renewalCents =
+      Number.isFinite(Number(session.renewalAmountCents)) && session.renewalAmountCents > 0
+        ? Number(session.renewalAmountCents)
+        : catalog.amountCents;
     await db
       .collection('billingSubscriptions')
       .doc(`${uid}_${sku}`)
@@ -351,7 +395,7 @@ exports.jccPaymentReturn = functions.region('europe-west1').https.onRequest(asyn
         {
           uid,
           sku,
-          amountCents: catalog.amountCents,
+          amountCents: renewalCents,
           currency: catalog.currency,
           bindingId: bindingId || null,
           clientId: uid,
@@ -363,7 +407,17 @@ exports.jccPaymentReturn = functions.region('europe-west1').https.onRequest(asyn
       );
   }
 
-  if (sku === 'PETPAL_PLUS_MONTHLY' && bindingId) {
+  if (session.includeTracker && sku === 'PETPAL_PLUS_MONTHLY') {
+    await grantTrackerEntitlement(db, uid, orderNumber, sku);
+    await incrementShopPublicStats(db, { totalCollarPurchases: 1, activeSubscriptionsWithCollar: 1 });
+  }
+
+  if (sku === 'PETPAL_PLUS_YEARLY') {
+    await grantTrackerEntitlement(db, uid, orderNumber, sku);
+    await incrementShopPublicStats(db, { activeSubscriptionsWithCollar: 1 });
+  }
+
+  if (PLUS_SKUS.has(sku) && bindingId) {
     const collarSnap = await db.collection('users').doc(uid).collection('shopEntitlements').doc('collar').get();
     if (collarSnap.exists && collarSnap.data()?.status === 'active') {
       await incrementShopPublicStats(db, { activeSubscriptionsWithCollar: 1 });
@@ -371,26 +425,17 @@ exports.jccPaymentReturn = functions.region('europe-west1').https.onRequest(asyn
   }
 
   if (sku === 'TRACKER_HARDWARE') {
-    await db
-      .collection('users')
-      .doc(uid)
-      .collection('shopEntitlements')
-      .doc('collar')
-      .set(
-        {
-          status: 'active',
-          sku: 'TRACKER_HARDWARE',
-          purchasedAt: admin.firestore.FieldValue.serverTimestamp(),
-          sessionOrderNumber: orderNumber,
-        },
-        { merge: true }
-      );
-    const plusSnap = await db.collection('billingSubscriptions').doc(`${uid}_PETPAL_PLUS_MONTHLY`).get();
-    const plusD = plusSnap.data();
-    const plusActive = Boolean(plusSnap.exists && plusD?.status === 'active');
-    const bumps = { totalCollarPurchases: 1 };
-    if (plusActive) bumps.activeSubscriptionsWithCollar = 1;
-    await incrementShopPublicStats(db, bumps);
+    await grantTrackerEntitlement(db, uid, orderNumber, sku);
+    let plusActive = false;
+    for (const plusSku of PLUS_SKUS) {
+      const plusSnap = await db.collection('billingSubscriptions').doc(`${uid}_${plusSku}`).get();
+      const plusD = plusSnap.data();
+      if (plusSnap.exists && plusD?.status === 'active') {
+        plusActive = true;
+        break;
+      }
+    }
+    if (plusActive) await incrementShopPublicStats(db, { activeSubscriptionsWithCollar: 1 });
   }
 
   if (sku === 'STORE_BOOST_MONTHLY') {
@@ -416,8 +461,9 @@ exports.jccPaymentReturn = functions.region('europe-west1').https.onRequest(asyn
   await sessionRef.set({ status: 'paid', paidAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
 
   let successQs = `checkout=success&sku=${encodeURIComponent(sku)}`;
-  if (sku === 'PETPAL_PLUS_MONTHLY') {
+  if (PLUS_SKUS.has(sku)) {
     successQs += `&plusBound=${bindingId ? '1' : '0'}`;
+    if (session.includeTracker) successQs += '&includeTracker=1';
   }
   if (sku === 'TRACKER_HARDWARE') {
     const st = await db.collection('shopStats').doc('public').get();
@@ -504,8 +550,7 @@ exports.billingRenewal = functions
           await doc.ref.set({ status: 'past_due' }, { merge: true });
           continue;
         }
-        const next = new Date();
-        next.setMonth(next.getMonth() + 1);
+        const next = nextRenewalDate(new Date(), sku);
         await doc.ref.set(
           {
             status: 'active',

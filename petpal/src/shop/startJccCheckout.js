@@ -1,5 +1,6 @@
 import { getFunctions, httpsCallable, connectFunctionsEmulator } from 'firebase/functions';
 import { getFirebaseApp } from '../firebase';
+import { expectedCheckoutCents, formatEur } from './catalog';
 
 function mapCallableError(err) {
   const code = err?.code || '';
@@ -25,7 +26,7 @@ function mapCallableError(err) {
 
 /**
  * Starts JCC hosted checkout via Cloud Function `createJccCheckout` (register.do → formUrl).
- * @param {{ sku: string, saveCard: boolean, companyId?: string }} opts
+ * @param {{ sku: string, saveCard: boolean, companyId?: string, includeTracker?: boolean }} opts
  */
 export async function startJccCheckout(opts) {
   const app = getFirebaseApp();
@@ -44,6 +45,7 @@ export async function startJccCheckout(opts) {
       sku: opts.sku,
       saveCard: Boolean(opts.saveCard),
       companyId: opts.companyId || undefined,
+      includeTracker: Boolean(opts.includeTracker),
     });
     data = res.data;
   } catch (e) {
@@ -53,5 +55,15 @@ export async function startJccCheckout(opts) {
   if (!formUrl || typeof formUrl !== 'string') {
     throw new Error('Checkout did not return a payment URL. Check createJccCheckout logs and JCC register.do response.');
   }
+
+  const expected = expectedCheckoutCents(opts.sku, opts.includeTracker);
+  const charged = Number(data?.amountCents);
+  if (expected != null && Number.isFinite(charged) && charged !== expected) {
+    throw new Error(
+      `Payment server sent ${formatEur(charged)} but this plan should be ${formatEur(expected)}. ` +
+        'Deploy the latest Cloud Functions (createJccCheckout) — the live server may still be on old €4.99 pricing.'
+    );
+  }
+
   window.location.assign(formUrl);
 }

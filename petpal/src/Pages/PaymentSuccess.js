@@ -4,7 +4,8 @@ import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
 import { getDb, isFirebaseConfigured } from '../firebase';
 import { useI18n } from '../i18n/I18nContext';
-import { checkoutSuccessMessage, PLUS_SKU } from '../shop/checkoutSuccessMessage';
+import { PLUS_SKUS } from '../shop/catalog';
+import { checkoutSuccessMessage } from '../shop/checkoutSuccessMessage';
 
 export default function PaymentSuccess() {
   const { t } = useI18n();
@@ -14,6 +15,7 @@ export default function PaymentSuccess() {
   const orderNumber = searchParams.get('orderNumber');
   const focusSku = searchParams.get('sku');
   const plusBound = searchParams.get('plusBound');
+  const includeTrackerParam = searchParams.get('includeTracker');
   const collarComboParam = searchParams.get('collarCombo');
   const collarTotalParam = searchParams.get('collarTotal');
 
@@ -27,7 +29,8 @@ export default function PaymentSuccess() {
       return () => {};
     }
     const db = getDb();
-    const plusDoc = doc(db, 'billingSubscriptions', `${user.uid}_${PLUS_SKU}`);
+    const plusSku = focusSku && PLUS_SKUS.includes(focusSku) ? focusSku : PLUS_SKUS[0];
+    const plusDoc = doc(db, 'billingSubscriptions', `${user.uid}_${plusSku}`);
     const statsDoc = doc(db, 'shopStats', 'public');
     const unsubPlus = onSnapshot(
       plusDoc,
@@ -49,7 +52,7 @@ export default function PaymentSuccess() {
       unsubPlus();
       unsubStats();
     };
-  }, [user]);
+  }, [user, focusSku]);
 
   const detail = useMemo(
     () =>
@@ -57,11 +60,12 @@ export default function PaymentSuccess() {
         focusSku,
         plusBound,
         plusActive,
+        includeTrackerParam,
         collarComboParam,
         collarTotalParam,
         shopStats,
       }),
-    [t, focusSku, plusBound, plusActive, collarComboParam, collarTotalParam, shopStats]
+    [t, focusSku, plusBound, plusActive, includeTrackerParam, collarComboParam, collarTotalParam, shopStats]
   );
 
   if (!user) {

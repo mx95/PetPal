@@ -789,7 +789,10 @@ select.pp-input:focus {
   font-size: 14px;
   letter-spacing: -0.005em;
 }
-.pp-btn:hover { background: rgba(255, 255, 255, 1); border-color: rgba(91, 55, 255, 0.25); }
+.pp-btn:hover:not(.pp-btn--primary):not(.pp-btnPrimary):not(.pp-book-btn--primary):not(.pp-lb-btn--primary) {
+  background: rgba(255, 255, 255, 1);
+  border-color: rgba(91, 55, 255, 0.25);
+}
 
 .pp-btnPrimary {
   border-color: transparent;
@@ -7649,6 +7652,16 @@ a.pp-publicPet__metaValue {
   color: #fff;
   border-color: transparent;
   box-shadow: 0 18px 55px rgba(91, 55, 255, 0.18);
+}
+
+.pp-btnPrimary:hover,
+.pp-btn--primary:hover,
+.pp-book-btn--primary:hover,
+.pp-lb-btn--primary:hover {
+  background: linear-gradient(135deg, #5126ff 0%, #7a55ff 60%, #5b48ff 100%);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 14px 28px -12px rgba(91, 55, 255, 0.7), 0 1px 0 rgba(255, 255, 255, 0.22) inset;
 }
 
 .pp-feed__row,
@@ -15633,6 +15646,95 @@ html[data-theme="dark"] .pp-nearby-list > li {
   box-shadow: 0 16px 40px -18px rgba(91, 55, 255, 0.45);
 }
 
+.pp-shopCard--featured {
+  border-color: rgba(91, 55, 255, 0.28);
+  background: linear-gradient(160deg, rgba(91, 55, 255, 0.06) 0%, rgba(255, 255, 255, 0.98) 55%);
+}
+
+.pp-shopCard__addon {
+  margin: 0;
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: var(--pp-muted, #64748b);
+}
+
+.pp-shopCard__highlight {
+  margin: 0;
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: #047857;
+}
+
+.pp-shopTrackerOpt {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  margin: 0;
+  padding: 0.65rem 0.75rem;
+  border-radius: 12px;
+  background: rgba(91, 55, 255, 0.06);
+  border: 1px solid rgba(91, 55, 255, 0.14);
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.pp-shopTrackerOpt input {
+  margin-top: 0.15rem;
+  flex-shrink: 0;
+}
+
+.pp-shopCard__dueToday {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: var(--pp-ink, #0f172a);
+}
+
+.pp-shopCard__dueTodayNote {
+  font-weight: 600;
+  color: var(--pp-muted, #64748b);
+}
+
+.pp-shopCard__payBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 48px;
+  width: 100%;
+  color: #fff;
+}
+
+.pp-shopCard__payBtn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #5126ff 0%, #2f6fd4 100%);
+  color: #fff;
+  border-color: transparent;
+}
+
+.pp-shopCard__payBtn--loading {
+  opacity: 1;
+  background: linear-gradient(120deg, #4a2fd4 0%, #2f6fd4 100%);
+  box-shadow: 0 0 0 3px rgba(91, 55, 255, 0.25);
+  cursor: wait;
+}
+
+.pp-shopCard__paySpinner {
+  width: 1.1rem;
+  height: 1.1rem;
+  border: 2.5px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: pp-shopSpin 0.75s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes pp-shopSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .pp-providerBoostCta {
   border-color: rgba(91, 55, 255, 0.22);
   background: linear-gradient(135deg, rgba(91, 55, 255, 0.06), rgba(255, 255, 255, 0.95));
@@ -17170,5 +17272,51 @@ html[data-theme="dark"] .pp-nearbyPartnerCard__name {
 
   .pp-dServiceCard--neutral {
     padding: 10px;
+  }
+}
+
+.pp-medList__body {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+
+.pp-medList__item--editing {
+  outline: 2px solid rgba(91, 55, 255, 0.45);
+  outline-offset: 2px;
+  border-radius: 12px;
+}
+
+.pp-medModal__editingBanner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(91, 55, 255, 0.08);
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.pp-medModal__editingCancel {
+  background: none;
+  border: none;
+  color: var(--pp-lilac, #5b37ff);
+  font-weight: 800;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+@media (max-width: 900px) {
+  .pp-careCal__layout {
+    grid-template-columns: 1fr;
   }
 }
