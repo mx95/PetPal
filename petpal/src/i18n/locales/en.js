@@ -876,6 +876,9 @@ const en = {
       '{onMap} GPS points on map · {stored} stored · {hidden} approximate hidden',
     historyCalendarFallback:
       'No fixes received in this date range — showing the most recently stored points instead.',
+    historyDaysCoverage: 'GPS activity on {active} of {total} days in this range',
+    historyStationaryHint:
+      'No walk route — {count} reports from roughly the same place (circle on map)',
   },
   inbox: {
     eyebrow: 'Messages',

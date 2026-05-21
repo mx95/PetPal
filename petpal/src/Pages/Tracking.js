@@ -16,6 +16,7 @@ import {
   kmBetween,
   pointReceivedIso,
   pointTimestampMs,
+  countDistinctLocations,
   resolveHistoryPositions,
   resolveHistoryRoutePositions,
   sanitizeSpeedKmh,
@@ -268,15 +269,42 @@ function buildHistoryAnalytics(points) {
   };
 }
 
-function formatShortTime(iso, lang) {
+function formatShortTime(iso, lang, withDate = false) {
   if (!iso) return '—';
   try {
     const d = new Date(iso);
     if (Number.isNaN(d.getTime())) return '—';
-    return formatTime24(d, lang);
+    return withDate ? formatDateTime24(d, lang) : formatTime24(d, lang);
   } catch {
     return '—';
   }
+}
+
+function historyLocalDayKey(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function countDaysInRange(range) {
+  if (!range?.from || !range?.to) return 1;
+  const from = new Date(`${range.from}T00:00:00`).getTime();
+  const to = new Date(`${range.to}T00:00:00`).getTime();
+  if (!Number.isFinite(from) || !Number.isFinite(to)) return 1;
+  return Math.max(1, Math.floor((to - from) / 86400000) + 1);
+}
+
+function countDaysWithPoints(points) {
+  const days = new Set();
+  for (const p of points) {
+    const key = historyLocalDayKey(pointReceivedIso(p));
+    if (key) days.add(key);
+  }
+  return days.size;
 }
 
 /** Same-location clusters longer than this use report count only (device timestamps often wrong). */
@@ -313,8 +341,10 @@ function mapRouteMarkerKindLabel(kind, t) {
   return t('trackingPage.timelineWalking');
 }
 
-function buildHistoryTimelineEvents(points, t, lang) {
+function buildHistoryTimelineEvents(points, t, lang, range) {
   const sameLocationKm = 0.03;
+  const multiDay = Boolean(range?.from && range?.to && range.from !== range.to);
+  const showDate = multiDay;
   const events = [];
   let idx = 0;
 
@@ -326,7 +356,9 @@ function buildHistoryTimelineEvents(points, t, lang) {
       const next = points[endIndex + 1];
       const samePlace = kmBetween(start, next) <= sameLocationKm;
       const gapMin = Math.max(0, (pointTime(next) - pointTime(points[endIndex])) / 60000);
-      if (samePlace && gapMin <= STAY_CLUSTER_MAX_GAP_MIN) {
+      const dayBreak =
+        historyLocalDayKey(pointReceivedIso(start)) !== historyLocalDayKey(pointReceivedIso(next));
+      if (samePlace && gapMin <= STAY_CLUSTER_MAX_GAP_MIN && !dayBreak) {
         endIndex += 1;
       } else {
         break;
@@ -368,8 +400,8 @@ function buildHistoryTimelineEvents(points, t, lang) {
       label,
       timeLabel:
         count > 1
-          ? `${formatShortTime(pointReceivedIso(start), lang)} → ${formatShortTime(pointReceivedIso(end), lang)}`
-          : formatShortTime(pointReceivedIso(start), lang),
+          ? `${formatShortTime(pointReceivedIso(start), lang, showDate)} → ${formatShortTime(pointReceivedIso(end), lang, showDate)}`
+          : formatShortTime(pointReceivedIso(start), lang, showDate),
     });
 
     idx = endIndex + 1;
@@ -660,19 +692,30 @@ export default function Tracking() {
   }, [filteredHistory, historyPoints, historyRange]);
   const historyAnalytics = useMemo(() => buildHistoryAnalytics(mapHistoryPoints), [mapHistoryPoints]);
   const historyTimelineEvents = useMemo(
-    () => buildHistoryTimelineEvents(mapHistoryPoints, t, language),
-    [mapHistoryPoints, t, language]
+    () => buildHistoryTimelineEvents(mapHistoryPoints, t, language, historyRange),
+    [mapHistoryPoints, t, language, historyRange]
   );
 
-  const historyMapPath = useMemo(() => {
-    const fromTimeline = historyTimelineEvents
-      .map((ev) => ({ lat: Number(ev.start.lat), lng: Number(ev.start.lng) }))
-      .filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng));
-    if (fromTimeline.length >= 2) return fromTimeline;
-    return mapHistoryPoints
-      .map((p) => ({ lat: Number(p.lat), lng: Number(p.lng) }))
-      .filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng));
-  }, [historyTimelineEvents, mapHistoryPoints]);
+  const historyMapPath = useMemo(
+    () =>
+      mapHistoryPoints
+        .map((p) => ({ lat: Number(p.lat), lng: Number(p.lng) }))
+        .filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng)),
+    [mapHistoryPoints]
+  );
+
+  const historyDistinctPlaces = useMemo(() => countDistinctLocations(mapHistoryPoints), [mapHistoryPoints]);
+
+  const historyStationary = useMemo(
+    () => historyDistinctPlaces <= 1 && mapHistoryPoints.length >= 2,
+    [historyDistinctPlaces, mapHistoryPoints.length]
+  );
+
+  const historyDayCoverage = useMemo(() => {
+    const total = countDaysInRange(historyRange);
+    const active = countDaysWithPoints(mapHistoryPoints);
+    return { total, active };
+  }, [historyRange, mapHistoryPoints]);
 
   const historyMapMarkers = useMemo(() => {
     if (!historyTimelineEvents.length) return [];
@@ -1023,6 +1066,23 @@ export default function Tracking() {
                 <div>
                   <h3>{t('trackingPage.historyRouteTitle')}</h3>
                   {historyLoading ? <p className="pp-subtle">{t('trackingPage.historyLoading')}</p> : null}
+                  {!historyLoading && mapHistoryPoints.length > 0 ? (
+                    <p className="pp-subtle pp-trackHistoryMap__sub">
+                      {[
+                        historyDayCoverage.total > 1
+                          ? t('trackingPage.historyDaysCoverage', {
+                              active: historyDayCoverage.active,
+                              total: historyDayCoverage.total,
+                            })
+                          : null,
+                        historyStationary
+                          ? t('trackingPage.historyStationaryHint', { count: mapHistoryPoints.length })
+                          : null,
+                      ]
+                        .filter(Boolean)
+                        .join(' · ')}
+                    </p>
+                  ) : null}
                 </div>
                 <div className="pp-trackPlayback">
                   <button type="button" disabled={mapHistoryPoints.length < 2} onClick={() => setHistoryPlaying((v) => !v)}>
@@ -1043,9 +1103,10 @@ export default function Tracking() {
                       showRouteVertices
                       lat={mapHistoryPoints[Math.min(historyIndex, mapHistoryPoints.length - 1)]?.lat ?? mapHistoryPoints[0].lat}
                       lng={mapHistoryPoints[Math.min(historyIndex, mapHistoryPoints.length - 1)]?.lng ?? mapHistoryPoints[0].lng}
-                      path={historyMapPath}
+                      path={historyStationary ? [] : historyMapPath}
                       routeMarkers={historyMapMarkers}
                       playbackPointIndex={mapHistoryPoints.length ? Math.min(historyIndex, mapHistoryPoints.length - 1) : null}
+                      accuracyM={historyStationary ? 45 : null}
                     />
                   </div>
                   <input

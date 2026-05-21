@@ -758,6 +758,9 @@ const ru = {
       '{onMap} GPS-точек на карте · {stored} в базе · {hidden} приблизительных скрыто',
     historyCalendarFallback:
       'В этом диапазоне нет полученных точек — показаны последние сохранённые.',
+    historyDaysCoverage: 'GPS-активность за {active} из {total} дней в диапазоне',
+    historyStationaryHint:
+      'Маршрута нет — {count} отчётов примерно с одного места (круг на карте)',
   },
   inbox: {
     eyebrow: 'Сообщения',

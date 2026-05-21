@@ -353,7 +353,13 @@ function LeafletPositionMap({
         />
       ) : null}
       <MapContainer center={[center.lat, center.lng]} zoom={z} scrollWheelZoom style={{ height: '100%', width: '100%' }}>
-        {hasPath ? <FitRoute path={routePath} /> : liveMode ? null : <FlyTo lat={lat} lng={lng} />}
+        {hasPath ? (
+          <FitRoute path={routePath} />
+        ) : accuracyM != null && accuracyM > 0 ? (
+          <FitRoute path={[{ lat, lng }]} />
+        ) : liveMode ? null : (
+          <FlyTo lat={lat} lng={lng} />
+        )}
         {playbackFollow ? (
           <FlyTo lat={head.lat} lng={head.lng} smooth />
         ) : null}
@@ -380,6 +386,18 @@ function LeafletPositionMap({
             accuracyM={accuracyM}
             markerLabel={markerLabel}
             liveTrail={liveTrail}
+          />
+        ) : null}
+        {!hasPath && accuracyM != null && accuracyM > 0 ? (
+          <Circle
+            center={[lat, lng]}
+            radius={accuracyM}
+            pathOptions={{
+              color: LIVE_ACCENT,
+              fillColor: LIVE_ACCENT,
+              fillOpacity: 0.14,
+              weight: 1.5,
+            }}
           />
         ) : null}
         {hasPath ? (
@@ -580,7 +598,11 @@ function GooglePositionMap({
         zoom={16}
         options={googleMapOptions}
       >
-        {hasPath ? <GoogleFitRoute path={routePath} /> : null}
+        {hasPath ? (
+          <GoogleFitRoute path={routePath} />
+        ) : accuracyM != null && accuracyM > 0 ? (
+          <GoogleFitRoute path={[{ lat, lng }]} />
+        ) : null}
         {hasPath && playbackPointIndex != null ? (
           <GoogleFollowPan lat={smoothPlayback.lat} lng={smoothPlayback.lng} follow />
         ) : null}
@@ -594,6 +616,19 @@ function GooglePositionMap({
             maps={maps}
             follow={followEnabled}
             onUserPan={() => setFollowEnabled(false)}
+          />
+        ) : null}
+        {!hasPath && accuracyM != null && accuracyM > 0 ? (
+          <GoogleCircle
+            center={{ lat, lng }}
+            radius={accuracyM}
+            options={{
+              strokeColor: LIVE_ACCENT,
+              strokeOpacity: 0.55,
+              strokeWeight: 1.5,
+              fillColor: LIVE_ACCENT,
+              fillOpacity: 0.14,
+            }}
           />
         ) : null}
         {hasPath ? (

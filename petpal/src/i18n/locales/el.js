@@ -757,6 +757,9 @@ const el = {
       '{onMap} σημεία GPS στον χάρτη · {stored} αποθηκευμένα · {hidden} κατά προσέγγιση κρυμμένα',
     historyCalendarFallback:
       'Δεν λήφθηκαν σημεία σε αυτό το εύρος — εμφανίζονται τα πιο πρόσφατα αποθηκευμένα.',
+    historyDaysCoverage: 'GPS δραστηριότητα σε {active} από {total} ημέρες στο εύρος',
+    historyStationaryHint:
+      'Χωρίς διαδρομή — {count} αναφορές από το ίδιο σημείο (κύκλος στον χάρτη)',
   },
   inbox: {
     eyebrow: 'Μηνύματα',

@@ -4113,6 +4113,14 @@ body.pp-noScroll {
   font-weight: 800;
 }
 
+.pp-trackHistoryMap__sub {
+  margin: 4px 0 0;
+  font-size: 12px;
+  line-height: 1.4;
+  font-weight: 650;
+  max-width: 42ch;
+}
+
 .pp-trackPlayback {
   display: flex;
   gap: 8px;
