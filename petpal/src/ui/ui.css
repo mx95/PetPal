@@ -3737,10 +3737,10 @@ body.pp-noScroll {
 
 .pp-trackHistoryRangeRow {
   display: grid;
-  grid-template-columns: minmax(10.5rem, 1.2fr) minmax(7.25rem, 1fr);
+  grid-template-columns: minmax(9.5rem, 1.25fr) minmax(6.75rem, 1fr);
   gap: 6px 8px;
   align-items: end;
-  padding: 8px 10px;
+  padding: 7px 9px;
   border: 1px solid var(--pp-border);
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.82);
@@ -3799,8 +3799,8 @@ body.pp-noScroll {
   color: var(--pp-text);
   font-weight: 800;
   font-size: 0.8125rem;
-  min-height: 34px;
-  padding: 6px 8px;
+  min-height: 32px;
+  padding: 5px 8px;
 }
 
 .pp-trackHistoryRangeRow__timeInput.pp-timeInput24 {
@@ -3809,9 +3809,14 @@ body.pp-noScroll {
   border: 1px solid rgba(16, 24, 40, 0.12);
   border-radius: 10px;
   background: #fff;
-  padding: 4px 6px;
-  min-height: 34px;
+  padding: 3px 5px;
+  min-height: 32px;
   box-sizing: border-box;
+}
+
+.pp-trackHistoryRangeCard__hint--warn {
+  color: #b45309;
+  font-weight: 700;
 }
 
 .pp-trackHistoryRangeRow__timeInput .pp-timeInput24__select {

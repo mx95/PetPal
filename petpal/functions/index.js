@@ -94,7 +94,10 @@ exports.tracking = functions
 
         // Accept both the Cloud Function route and the tracker HTTP API route.
         const path = (req.path || '').replace(/\/+$/, '');
-        if (path !== '' && path !== '/position' && path !== '/api/app/position') {
+        const isPosition =
+          path === '' || path === '/position' || path === '/api/app/position';
+        const isHistory = path === '/history' || path === '/api/app/history';
+        if (!isPosition && !isHistory) {
           res.status(404).json({ error: 'not_found' });
           return;
         }
@@ -109,13 +112,27 @@ exports.tracking = functions
         const xexunBase = getEnv('XEXUN_HTTP_BASE_URL') || getConfig('xexun.http_base_url');
         if (xexunBase) {
           const base = xexunBase.replace(/\/$/, '');
-          const url = `${base}/api/app/position?deviceId=${encodeURIComponent(deviceId)}`;
+          const qs = new URLSearchParams({ deviceId });
+          if (isHistory) {
+            const limit = req.query.limit;
+            const from = req.query.from;
+            const to = req.query.to;
+            if (limit != null) qs.set('limit', String(limit));
+            if (from) qs.set('from', String(from));
+            if (to) qs.set('to', String(to));
+          }
+          const route = isHistory ? '/api/app/history' : '/api/app/position';
+          const url = `${base}${route}?${qs.toString()}`;
           const r = await fetch(url, { method: 'GET', headers: { Accept: 'application/json' } });
           if (!r.ok) {
             res.status(502).json({ error: 'xexun_server_error', status: r.status });
             return;
           }
           const data = await r.json();
+          if (isHistory) {
+            res.status(200).json(data);
+            return;
+          }
           const normalized = normalizeXexunAppPosition(data);
           if (!normalized) {
             res.status(404).json({ error: 'no_position' });

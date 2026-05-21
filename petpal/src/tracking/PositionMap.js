@@ -101,7 +101,14 @@ function FlyTo({ lat, lng, smooth = true }) {
 function FitRoute({ path }) {
   const map = useMap();
   useEffect(() => {
-    if (!Array.isArray(path) || path.length < 2) return;
+    if (!Array.isArray(path) || path.length === 0) return;
+    if (path.length === 1) {
+      const p = path[0];
+      if (Number.isFinite(p.lat) && Number.isFinite(p.lng)) {
+        map.setView([p.lat, p.lng], 15, { animate: false });
+      }
+      return;
+    }
     const bounds = L.latLngBounds(path.map((p) => [p.lat, p.lng]));
     map.fitBounds(bounds, { padding: [28, 28], maxZoom: 16 });
   }, [path, map]);
@@ -141,7 +148,15 @@ function GoogleFollowPan({ lat, lng, follow }) {
 function GoogleFitRoute({ path }) {
   const map = useGoogleMap();
   useEffect(() => {
-    if (!map || !window.google?.maps || !Array.isArray(path) || path.length < 2) return;
+    if (!map || !window.google?.maps || !Array.isArray(path) || path.length === 0) return;
+    if (path.length === 1) {
+      const p = path[0];
+      if (Number.isFinite(p.lat) && Number.isFinite(p.lng)) {
+        map.setCenter({ lat: p.lat, lng: p.lng });
+        map.setZoom(15);
+      }
+      return;
+    }
     const bounds = new window.google.maps.LatLngBounds();
     path.forEach((p) => bounds.extend({ lat: p.lat, lng: p.lng }));
     map.fitBounds(bounds, 48);

@@ -56,15 +56,20 @@ function toPositionRow(rec) {
 
 function mapHistoryRow(r) {
   const receivedAt = r.received_at ?? r.timestamp ?? null;
+  const source = r.source ?? null;
+  const isLbs = source === "lbs";
   return {
     lat: r.lat != null ? Number(r.lat) : null,
     lng: r.lng != null ? Number(r.lng) : null,
-    source: r.source ?? null,
+    source,
     battery: r.battery ?? null,
     signal: r.signal ?? null,
     timestamp: receivedAt,
     receivedAt,
     deviceTimeUtc: r.device_timestamp ?? null,
+    gpsValid: isLbs ? false : true,
+    warningApproximate: isLbs,
+    accuracy: isLbs ? "lbs" : "high",
   };
 }
 

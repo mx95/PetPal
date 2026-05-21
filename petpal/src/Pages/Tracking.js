@@ -16,6 +16,7 @@ import {
   kmBetween,
   pointReceivedIso,
   pointTimestampMs,
+  resolveHistoryPositions,
   resolveHistoryRoutePositions,
   sanitizeSpeedKmh,
 } from '../tracking/positionFilter';
@@ -398,6 +399,7 @@ export default function Tracking() {
   const [historyPlaying, setHistoryPlaying] = useState(false);
   const [historySpeed, setHistorySpeed] = useState(1);
   const [historyIndex, setHistoryIndex] = useState(0);
+  const [historyCalendarMatch, setHistoryCalendarMatch] = useState(true);
   const trustedLiveAnchorRef = useRef(null);
   const lastKnownLiveRef = useRef(null);
   const [liveHistoryFallback, setLiveHistoryFallback] = useState(null);
@@ -491,9 +493,10 @@ export default function Tracking() {
       limit: HISTORY_FETCH_LIMIT,
       ...historyRangeToIsoBounds(historyRange),
     })
-      .then(({ history }) => {
+      .then(({ history, calendarMatch }) => {
         if (cancelled) return;
         setHistoryPoints(history);
+        setHistoryCalendarMatch(calendarMatch !== false);
         setHistoryIndex(0);
       })
       .catch((e) => {
@@ -632,26 +635,48 @@ export default function Tracking() {
     [mapPosition, position]
   );
 
-  const filteredHistory = useMemo(
-    () => filterHistoryPoints(resolvedHistory, historyRange),
-    [resolvedHistory, historyRange]
+  const filteredHistory = useMemo(() => {
+    const filtered = filterHistoryPoints(resolvedHistory, historyRange);
+    if (filtered.length > 0) return filtered;
+    if (resolvedHistory.length > 0) return resolvedHistory;
+    return filtered;
+  }, [resolvedHistory, historyRange]);
+
+  const historyRangeFallback = useMemo(
+    () => !historyCalendarMatch && historyPoints.length > 0 && filterHistoryPoints(resolvedHistory, historyRange).length === 0,
+    [historyCalendarMatch, historyPoints.length, resolvedHistory, historyRange]
   );
-  const historyAnalytics = useMemo(() => buildHistoryAnalytics(filteredHistory), [filteredHistory]);
-  const historyTimelineEvents = useMemo(() => buildHistoryTimelineEvents(filteredHistory, t, language), [filteredHistory, t, language]);
+
+  const mapHistoryPoints = useMemo(() => {
+    if (filteredHistory.length >= 2) return filteredHistory;
+    const relaxed = resolveHistoryPositions(
+      [...historyPoints].sort((a, b) => (pointTimestampMs(a) ?? 0) - (pointTimestampMs(b) ?? 0))
+    );
+    const relaxedFiltered = filterHistoryPoints(relaxed, historyRange);
+    if (relaxedFiltered.length >= 2) return relaxedFiltered;
+    if (filteredHistory.length > 0) return filteredHistory;
+    if (relaxedFiltered.length > 0) return relaxedFiltered;
+    return [];
+  }, [filteredHistory, historyPoints, historyRange]);
+  const historyAnalytics = useMemo(() => buildHistoryAnalytics(mapHistoryPoints), [mapHistoryPoints]);
+  const historyTimelineEvents = useMemo(
+    () => buildHistoryTimelineEvents(mapHistoryPoints, t, language),
+    [mapHistoryPoints, t, language]
+  );
 
   const historyMapPath = useMemo(() => {
     const fromTimeline = historyTimelineEvents
       .map((ev) => ({ lat: Number(ev.start.lat), lng: Number(ev.start.lng) }))
       .filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng));
     if (fromTimeline.length >= 2) return fromTimeline;
-    return filteredHistory
+    return mapHistoryPoints
       .map((p) => ({ lat: Number(p.lat), lng: Number(p.lng) }))
       .filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng));
-  }, [historyTimelineEvents, filteredHistory]);
+  }, [historyTimelineEvents, mapHistoryPoints]);
 
   const historyMapMarkers = useMemo(() => {
     if (!historyTimelineEvents.length) return [];
-    const lastIdx = Math.max(0, filteredHistory.length - 1);
+    const lastIdx = Math.max(0, mapHistoryPoints.length - 1);
     return historyTimelineEvents.map((ev, i) => {
       const isLast = i === historyTimelineEvents.length - 1 && ev.endIndex === lastIdx;
       let kind = ev.type;
@@ -669,28 +694,28 @@ export default function Tracking() {
         label: `${ev.label} · ${ev.timeLabel}`,
       };
     }).filter((m) => Number.isFinite(m.lat) && Number.isFinite(m.lng));
-  }, [historyTimelineEvents, filteredHistory.length]);
+  }, [historyTimelineEvents, mapHistoryPoints.length]);
 
   const historyLoadMeta = useMemo(() => {
     const stored = historyPoints.length;
-    const onMap = filteredHistory.length;
+    const onMap = mapHistoryPoints.length;
     const approximateHidden = historyPoints.filter((p) => p && !isTrustedGpsFix(p)).length;
     return { stored, onMap, approximateHidden };
-  }, [historyPoints, filteredHistory]);
+  }, [historyPoints, mapHistoryPoints]);
 
   useEffect(() => {
-    if (!historyPlaying || filteredHistory.length < 2) return undefined;
+    if (!historyPlaying || mapHistoryPoints.length < 2) return undefined;
     const id = window.setInterval(() => {
       setHistoryIndex((idx) => {
-        if (idx >= filteredHistory.length - 1) {
+        if (idx >= mapHistoryPoints.length - 1) {
           setHistoryPlaying(false);
-          return filteredHistory.length - 1;
+          return mapHistoryPoints.length - 1;
         }
         return idx + 1;
       });
     }, Math.max(260, 1100 / historySpeed));
     return () => window.clearInterval(id);
-  }, [historyPlaying, filteredHistory.length, historySpeed]);
+  }, [historyPlaying, mapHistoryPoints.length, historySpeed]);
 
   useEffect(() => {
     setHistoryIndex(0);
@@ -1000,7 +1025,7 @@ export default function Tracking() {
                   {historyLoading ? <p className="pp-subtle">{t('trackingPage.historyLoading')}</p> : null}
                 </div>
                 <div className="pp-trackPlayback">
-                  <button type="button" disabled={filteredHistory.length < 2} onClick={() => setHistoryPlaying((v) => !v)}>
+                  <button type="button" disabled={mapHistoryPoints.length < 2} onClick={() => setHistoryPlaying((v) => !v)}>
                     {historyPlaying ? t('trackingPage.historyPause') : t('trackingPage.historyPlay')}
                   </button>
                   <select value={historySpeed} onChange={(e) => setHistorySpeed(Number(e.target.value))} aria-label={t('trackingPage.historySpeedAria')}>
@@ -1010,25 +1035,25 @@ export default function Tracking() {
                   </select>
                 </div>
               </div>
-              {filteredHistory.length ? (
+              {mapHistoryPoints.length ? (
                 <div className="pp-trackHistoryMap__body">
                   <div className="pp-trackMapFrame pp-trackHistoryFrame pp-trackHistoryFrame--panorama">
                     <PositionMap
                       fill
                       showRouteVertices
-                      lat={filteredHistory[0].lat}
-                      lng={filteredHistory[0].lng}
+                      lat={mapHistoryPoints[Math.min(historyIndex, mapHistoryPoints.length - 1)]?.lat ?? mapHistoryPoints[0].lat}
+                      lng={mapHistoryPoints[Math.min(historyIndex, mapHistoryPoints.length - 1)]?.lng ?? mapHistoryPoints[0].lng}
                       path={historyMapPath}
                       routeMarkers={historyMapMarkers}
-                      playbackPointIndex={filteredHistory.length ? Math.min(historyIndex, filteredHistory.length - 1) : null}
+                      playbackPointIndex={mapHistoryPoints.length ? Math.min(historyIndex, mapHistoryPoints.length - 1) : null}
                     />
                   </div>
                   <input
                     className="pp-trackPlaybackRange"
                     type="range"
                     min={0}
-                    max={Math.max(0, filteredHistory.length - 1)}
-                    value={Math.min(historyIndex, Math.max(0, filteredHistory.length - 1))}
+                    max={Math.max(0, mapHistoryPoints.length - 1)}
+                    value={Math.min(historyIndex, Math.max(0, mapHistoryPoints.length - 1))}
                     onChange={(e) => {
                       setHistoryPlaying(false);
                       setHistoryIndex(Number(e.target.value));
@@ -1060,6 +1085,20 @@ export default function Tracking() {
                   </button>
                 </div>
                 {historyError ? <div className="pp-error pp-trackHistoryError">{historyError}</div> : null}
+                {!historyLoading && historyPoints.length > 0 ? (
+                  <p className="pp-trackHistoryRangeCard__hint">
+                    {t('trackingPage.historyPointsSummary', {
+                      onMap: historyLoadMeta.onMap,
+                      stored: historyLoadMeta.stored,
+                      hidden: historyLoadMeta.approximateHidden,
+                    })}
+                  </p>
+                ) : null}
+                {historyRangeFallback ? (
+                  <p className="pp-trackHistoryRangeCard__hint pp-trackHistoryRangeCard__hint--warn">
+                    {t('trackingPage.historyCalendarFallback')}
+                  </p>
+                ) : null}
                 <div className="pp-trackHistoryPresets" role="group" aria-label={t('trackingPage.historyPresetsAria')}>
                   {(
                     [
@@ -1171,7 +1210,7 @@ export default function Tracking() {
                       </button>
                     );
                   })}
-                  {!filteredHistory.length ? (
+                  {!mapHistoryPoints.length ? (
                     <p className="pp-subtle">{t('trackingPage.historyTimelineEmpty')}</p>
                   ) : null}
                 </div>
