@@ -9,7 +9,7 @@ export default function Login() {
   const { t } = useI18n();
   const navigate = useNavigate();
   const location = useLocation();
-  const redirectTo = useMemo(() => location.state?.from || '/dashboard', [location.state]);
+  const redirectTo = useMemo(() => location.state?.from || '/', [location.state]);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

@@ -173,7 +173,7 @@ export default function Register() {
       }
       completeRegistrationTransaction(true);
       trackAuthEvent('register_success_individual');
-      navigate('/dashboard', { replace: true });
+      navigate('/', { replace: true });
     } catch (err) {
       completeRegistrationTransaction(false);
       trackAuthEvent('register_failure', { code: err?.code || 'unknown' });

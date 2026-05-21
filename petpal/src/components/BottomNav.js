@@ -71,6 +71,17 @@ const ICONS = {
       <path d="M10 12h4M10 15h4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
     </svg>
   ),
+  shop: (
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+      <path
+        d="M6 8h14l-1.2 9.5a2 2 0 0 1-2 1.7H9.2a2 2 0 0 1-2-1.7L6 8Z"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinejoin="round"
+      />
+      <path d="M9 8V6.5A2.5 2.5 0 0 1 11.5 4h1A2.5 2.5 0 0 1 15 6.5V8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+    </svg>
+  ),
 };
 
 const BASE_ITEMS = [
@@ -87,6 +98,7 @@ export default function BottomNav() {
 
   const left = BASE_ITEMS;
   const right = [
+    ...(MVP_NAV.showShop ? [{ to: '/shop', key: 'shop', labelKey: 'nav.shop' }] : []),
     { to: '/nearby', key: 'nearby', labelKey: 'nav.nearby' },
     ...(MVP_NAV.showBookings ? [{ to: '/bookings', key: 'bookings', labelKey: 'bottomNav.bookings' }] : []),
   ];

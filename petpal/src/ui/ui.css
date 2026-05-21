@@ -3597,6 +3597,80 @@ body.pp-noScroll {
   max-width: none;
 }
 
+.pp-trackHistoryRangeCard--compact {
+  gap: 6px;
+  padding: 10px 12px !important;
+  border-radius: 14px;
+}
+
+.pp-trackHistoryRangeCard--compact .pp-trackHistoryRangeCard__title {
+  font-size: 0.9rem;
+}
+
+.pp-trackHistoryRangeCard--compact .pp-trackHistoryRefreshBtn {
+  min-height: 28px;
+  padding: 4px 10px;
+  font-size: 11px;
+}
+
+.pp-trackHistoryRangeCard--compact .pp-trackHistoryPresetBtn {
+  padding: 4px 10px;
+  font-size: 0.75rem;
+}
+
+.pp-trackHistoryRangeCard--compact .pp-trackHistoryRangeBlock__hint {
+  display: none;
+}
+
+.pp-trackHistoryRangeCard--compact .pp-trackHistoryRangeBlock {
+  padding: 8px 10px 10px;
+  border-radius: 12px;
+}
+
+.pp-trackHistoryRangeCard--compact .pp-trackHistoryRangeBlock__legend {
+  font-size: 11px;
+  margin-bottom: 6px;
+}
+
+.pp-trackHistoryRangeCard--compact .pp-trackHistoryRangePickers {
+  gap: 6px;
+  margin-top: 0;
+}
+
+@media (min-width: 521px) {
+  .pp-trackHistoryRangeCard--compact .pp-trackHistoryRangePickers {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: start;
+    gap: 6px;
+  }
+
+  .pp-trackHistoryRangeCard--compact .pp-trackHistoryRangeArrow {
+    padding-top: 28px;
+  }
+}
+
+.pp-trackHistoryRangeCard--compact .pp-trackHistoryRangeArrow__icon {
+  width: 22px;
+  height: 22px;
+  font-size: 11px;
+}
+
+.pp-trackHistoryRangeCard--compact .pp-trackHistoryRangeField__label {
+  font-size: 9px;
+}
+
+.pp-trackHistoryRangeCard--compact .pp-trackHistoryRangeField__control {
+  padding: 4px 6px;
+  border-radius: 10px;
+}
+
+.pp-trackHistoryRangeCard--compact .pp-trackHistoryRangeField__control input,
+.pp-trackHistoryRangeCard--compact .pp-trackHistoryRangeField__time .pp-timeInput24__select {
+  font-size: 0.75rem;
+  min-height: 24px;
+}
+
 .pp-trackHistorySidebar {
   display: flex;
   flex-direction: column;

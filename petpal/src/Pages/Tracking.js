@@ -154,23 +154,10 @@ function pointTime(point) {
 }
 
 const LIVE_POLL_MS = 60_000;
-/** Default history window on open: today, last N hours (keeps map point count low). */
-const HISTORY_RECENT_HOURS = 2;
 const HISTORY_FETCH_LIMIT = 500;
-
-function formatHm(date) {
-  const d = date instanceof Date ? date : new Date(date);
-  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-}
 
 function defaultHistoryDayTimes() {
   return { timeFrom: '00:00', timeTo: '23:59' };
-}
-
-function recentHoursDayTimes(hours = HISTORY_RECENT_HOURS) {
-  const now = new Date();
-  const from = new Date(now.getTime() - hours * HOUR * 1000);
-  return { timeFrom: formatHm(from), timeTo: formatHm(now) };
 }
 
 function combineLocalDateTime(dateStr, timeStr, endOfDay = false) {
@@ -229,13 +216,17 @@ function historyRangeToIsoBounds(range) {
 }
 
 function filterHistoryPoints(points, range) {
-  const now = Date.now();
-  const from = range.from ? new Date(`${range.from}T00:00:00`).getTime() : 0;
-  const to = range.to ? new Date(`${range.to}T23:59:59.999`).getTime() : now;
+  const bounds = historyRangeToIsoBounds(range);
+  if (!bounds.from || !bounds.to) return points;
+  const fromMs = new Date(bounds.from).getTime();
+  const toMs = new Date(bounds.to).getTime();
+  if (!Number.isFinite(fromMs) || !Number.isFinite(toMs)) return points;
+  const multiDay = Boolean(range?.from && range?.to && range.from !== range.to);
   return points.filter((p) => {
     const ts = pointTime(p);
-    if (!Number.isFinite(ts) || ts < from || ts > to) return false;
-    return inDailyLocalTimeWindow(pointReceivedIso(p), range);
+    if (!Number.isFinite(ts) || ts < fromMs || ts > toMs) return false;
+    if (multiDay) return inDailyLocalTimeWindow(pointReceivedIso(p), range);
+    return true;
   });
 }
 
@@ -249,17 +240,11 @@ function computeHistoryRangeForPreset(preset) {
     return { preset, from: value, to: value, ...defaultHistoryDayTimes() };
   }
   if (preset === 'today') {
-    const now = new Date();
-    const from = new Date(now.getTime() - HISTORY_RECENT_HOURS * HOUR * 1000);
-    return {
-      preset: 'today',
-      from: dateInputValue(from),
-      to: dateInputValue(now),
-      ...recentHoursDayTimes(HISTORY_RECENT_HOURS),
-    };
+    const value = dateInputValue(today);
+    return { preset, from: value, to: value, ...defaultHistoryDayTimes() };
   }
   const value = dateInputValue(today);
-  return { preset: 'today', from: value, to: value, ...recentHoursDayTimes(HISTORY_RECENT_HOURS) };
+  return { preset: 'today', from: value, to: value, ...defaultHistoryDayTimes() };
 }
 
 function buildHistoryAnalytics(points) {
@@ -413,7 +398,6 @@ export default function Tracking() {
   const [historyPlaying, setHistoryPlaying] = useState(false);
   const [historySpeed, setHistorySpeed] = useState(1);
   const [historyIndex, setHistoryIndex] = useState(0);
-  const [historyCalendarMatch, setHistoryCalendarMatch] = useState(true);
   const trustedLiveAnchorRef = useRef(null);
   const lastKnownLiveRef = useRef(null);
   const [liveHistoryFallback, setLiveHistoryFallback] = useState(null);
@@ -507,10 +491,9 @@ export default function Tracking() {
       limit: HISTORY_FETCH_LIMIT,
       ...historyRangeToIsoBounds(historyRange),
     })
-      .then(({ history, calendarMatch }) => {
+      .then(({ history }) => {
         if (cancelled) return;
         setHistoryPoints(history);
-        setHistoryCalendarMatch(calendarMatch !== false);
         setHistoryIndex(0);
       })
       .catch((e) => {
@@ -649,16 +632,10 @@ export default function Tracking() {
     [mapPosition, position]
   );
 
-  const filteredHistory = useMemo(() => {
-    const filtered = filterHistoryPoints(resolvedHistory, historyRange);
-    if (historyCalendarMatch) {
-      if (filtered.length === 0 && resolvedHistory.length > 0) return resolvedHistory;
-      return filtered;
-    }
-    // Tracker clock mismatch: show points on the selected day when timestamps align; otherwise all loaded fixes.
-    if (filtered.length > 0) return filtered;
-    return resolvedHistory;
-  }, [resolvedHistory, historyRange, historyCalendarMatch]);
+  const filteredHistory = useMemo(
+    () => filterHistoryPoints(resolvedHistory, historyRange),
+    [resolvedHistory, historyRange]
+  );
   const historyAnalytics = useMemo(() => buildHistoryAnalytics(filteredHistory), [filteredHistory]);
   const historyTimelineEvents = useMemo(() => buildHistoryTimelineEvents(filteredHistory, t, language), [filteredHistory, t, language]);
 
@@ -1069,7 +1046,7 @@ export default function Tracking() {
             </div>
 
             <div className="pp-trackHistorySidebar">
-              <div className="pp-card pp-pad pp-trackHistoryRangeCard">
+              <div className="pp-card pp-pad pp-trackHistoryRangeCard pp-trackHistoryRangeCard--compact">
                 <div className="pp-trackHistoryRangeCard__head">
                   <h2 className="pp-trackHistoryRangeCard__title">{t('trackingPage.historyTitle')}</h2>
                   <button
