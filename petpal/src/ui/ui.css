@@ -3665,8 +3665,7 @@ body.pp-noScroll {
   border-radius: 10px;
 }
 
-.pp-trackHistoryRangeCard--compact .pp-trackHistoryRangeField__control input,
-.pp-trackHistoryRangeCard--compact .pp-trackHistoryRangeField__time .pp-timeInput24__select {
+.pp-trackHistoryRangeCard--compact .pp-trackHistoryRangeField__control input {
   font-size: 0.75rem;
   min-height: 24px;
 }
@@ -3855,9 +3854,25 @@ body.pp-noScroll {
   min-height: 28px;
 }
 
+.pp-trackHistoryRangeField--time {
+  grid-column: 1 / -1;
+}
+
 .pp-trackHistoryRangeField__time.pp-timeInput24 {
   min-width: 0;
   width: 100%;
+}
+
+.pp-trackHistoryRangeField__time .pp-timeInput24__select {
+  flex: 1 1 0;
+  min-width: 3.25rem;
+  max-width: none;
+  padding: 2px 1.5rem 2px 6px;
+  font-size: 0.8125rem;
+  text-align: center;
+  text-align-last: center;
+  appearance: auto;
+  -webkit-appearance: menulist;
 }
 
 .pp-timeInput24 {
@@ -3885,10 +3900,6 @@ body.pp-noScroll {
   font-weight: 800;
   color: var(--pp-text);
   flex: 0 0 auto;
-}
-
-.pp-trackHistoryRangeField__time .pp-timeInput24__select {
-  font-size: 0.8125rem;
 }
 
 .pp-field .pp-timeInput24__select,

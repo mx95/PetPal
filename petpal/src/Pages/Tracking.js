@@ -1093,7 +1093,7 @@ export default function Tracking() {
                           />
                         </span>
                       </label>
-                      <label className="pp-trackHistoryRangeField">
+                      <label className="pp-trackHistoryRangeField pp-trackHistoryRangeField--time">
                         <span className="pp-trackHistoryRangeField__label">{t('trackingPage.historyTimeField')}</span>
                         <span className="pp-trackHistoryRangeField__control">
                           <TimeInput24
@@ -1132,7 +1132,7 @@ export default function Tracking() {
                           />
                         </span>
                       </label>
-                      <label className="pp-trackHistoryRangeField">
+                      <label className="pp-trackHistoryRangeField pp-trackHistoryRangeField--time">
                         <span className="pp-trackHistoryRangeField__label">{t('trackingPage.historyTimeField')}</span>
                         <span className="pp-trackHistoryRangeField__control">
                           <TimeInput24
