@@ -3637,25 +3637,6 @@ body.pp-noScroll {
   margin-top: 0;
 }
 
-@media (min-width: 521px) {
-  .pp-trackHistoryRangeCard--compact .pp-trackHistoryRangePickers {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-    align-items: start;
-    gap: 6px;
-  }
-
-  .pp-trackHistoryRangeCard--compact .pp-trackHistoryRangeArrow {
-    padding-top: 28px;
-  }
-}
-
-.pp-trackHistoryRangeCard--compact .pp-trackHistoryRangeArrow__icon {
-  width: 22px;
-  height: 22px;
-  font-size: 11px;
-}
-
 .pp-trackHistoryRangeCard--compact .pp-trackHistoryRangeField__label {
   font-size: 9px;
 }
@@ -3752,6 +3733,108 @@ body.pp-noScroll {
   flex-direction: column;
   gap: 8px;
   margin-top: 4px;
+}
+
+.pp-trackHistoryRangeRow {
+  display: grid;
+  grid-template-columns: minmax(10.5rem, 1.2fr) minmax(7.25rem, 1fr);
+  gap: 6px 8px;
+  align-items: end;
+  padding: 8px 10px;
+  border: 1px solid var(--pp-border);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: var(--pp-shadow-xs);
+  min-width: 0;
+}
+
+.pp-trackHistoryRangeRow--from {
+  border-left: 3px solid #5b37ff;
+}
+
+.pp-trackHistoryRangeRow--to {
+  border-left: 3px solid #2f80ff;
+}
+
+.pp-trackHistoryRangeRow__label {
+  grid-column: 1 / -1;
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1.25;
+  color: var(--pp-text);
+  letter-spacing: -0.02em;
+}
+
+.pp-trackHistoryRangeRow__date,
+.pp-trackHistoryRangeRow__time {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.pp-trackHistoryRangeRow__date {
+  grid-column: 1;
+}
+
+.pp-trackHistoryRangeRow__time {
+  grid-column: 2;
+}
+
+.pp-trackHistoryRangeRow__fieldLabel {
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--pp-text-2);
+}
+
+.pp-trackHistoryRangeRow__dateInput {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  border: 1px solid rgba(16, 24, 40, 0.12);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--pp-text);
+  font-weight: 800;
+  font-size: 0.8125rem;
+  min-height: 34px;
+  padding: 6px 8px;
+}
+
+.pp-trackHistoryRangeRow__timeInput.pp-timeInput24 {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid rgba(16, 24, 40, 0.12);
+  border-radius: 10px;
+  background: #fff;
+  padding: 4px 6px;
+  min-height: 34px;
+  box-sizing: border-box;
+}
+
+.pp-trackHistoryRangeRow__timeInput .pp-timeInput24__select {
+  flex: 1 1 0;
+  min-width: 2.75rem;
+  padding: 2px 1.25rem 2px 4px;
+  font-size: 0.8125rem;
+  font-weight: 800;
+  text-align: center;
+  text-align-last: center;
+  appearance: auto;
+  -webkit-appearance: menulist;
+}
+
+@media (max-width: 360px) {
+  .pp-trackHistoryRangeRow {
+    grid-template-columns: 1fr;
+  }
+
+  .pp-trackHistoryRangeRow__date,
+  .pp-trackHistoryRangeRow__time {
+    grid-column: 1;
+  }
 }
 
 .pp-trackHistoryRangeBlock {
@@ -3975,7 +4058,7 @@ body.pp-noScroll {
 
 .pp-trackHistoryLayout {
   display: grid;
-  grid-template-columns: minmax(0, 1.85fr) minmax(260px, 320px);
+  grid-template-columns: minmax(0, 1.85fr) minmax(280px, 340px);
   gap: 12px;
   align-items: stretch;
   min-height: min(calc(100vh - 168px), 860px);
