@@ -76,13 +76,16 @@ function deviceFromRow(row) {
   if (!row) return null;
   const lat = row.last_lat != null ? Number(row.last_lat) : null;
   const lng = row.last_lng != null ? Number(row.last_lng) : null;
-  const hasLoc = lat != null && lng != null && isPlausibleLatLng(lat, lng);
+  const source = row.source ?? null;
+  const wifiSource = source === "wifi";
+  const hasLoc = !wifiSource && lat != null && lng != null && isPlausibleLatLng(lat, lng);
   return {
     imei: row.imei,
     name: row.name ?? null,
     battery: row.battery ?? null,
     signal: row.signal ?? null,
-    source: row.source ?? null,
+    source,
+    atHomeWifi: wifiSource,
     lastUpdate: row.last_update ?? null,
     location: hasLoc ? { lat, lng } : null,
     gps: hasLoc
@@ -128,7 +131,19 @@ function createSqliteStore({ dbPath }) {
 
     list() {
       const rows = sqlite.listDevices.all();
-      return rows.map(deviceFromRow);
+      const liveByImei = new Map(mem.list().map((d) => [String(d.imei), d]));
+      const seen = new Set();
+      const out = rows.map((row) => {
+        const imei = String(row.imei);
+        seen.add(imei);
+        const live = liveByImei.get(imei);
+        return live || deviceFromRow(row);
+      });
+      for (const d of mem.list()) {
+        const imei = String(d.imei);
+        if (!seen.has(imei)) out.push(d);
+      }
+      return out;
     },
 
     get(imei) {

@@ -673,7 +673,7 @@ export default function Tracking() {
     if (hasValidCoords(position) && isTrustedGpsFix(position)) {
       return { lat: Number(position.lat), lng: Number(position.lng), mode: 'live' };
     }
-  if (position && !isTrustedGpsFix(position)) {
+    if (position?.atHomeWifi) {
       const fallback = pickLastKnownMapCoords(
         effectiveDeviceId,
         liveHistoryFallback,
@@ -681,6 +681,19 @@ export default function Tracking() {
       );
       if (fallback) return fallback;
       return null;
+    }
+    if (position && !isTrustedGpsFix(position) && hasValidCoords(position)) {
+      const fallback = pickLastKnownMapCoords(
+        effectiveDeviceId,
+        liveHistoryFallback,
+        lastKnownLiveRef
+      );
+      if (fallback) return fallback;
+      return {
+        lat: Number(position.lat),
+        lng: Number(position.lng),
+        mode: 'approximate',
+      };
     }
     return pickLastKnownMapCoords(effectiveDeviceId, liveHistoryFallback, lastKnownLiveRef);
   }, [mapPosition, position, liveHistoryFallback, effectiveDeviceId]);
@@ -929,6 +942,7 @@ export default function Tracking() {
   const liveMapBanner = (() => {
     if (!liveMapCoords && position?.atHomeWifi) return t('trackingPage.mapWifiHomeBanner');
     if (!liveMapCoords) return null;
+    if (liveMapCoords.mode === 'approximate') return t('trackingPage.mapApproximateBanner');
     if (liveMapCoords.mode === 'lastKnown' && position?.atHomeWifi) return t('trackingPage.mapWifiHomeBanner');
     if (liveMapCoords.mode === 'lastKnown' && position && !isTrustedGpsFix(position)) {
       return t('trackingPage.mapLastKnownBadFixBanner');
@@ -1124,7 +1138,7 @@ export default function Tracking() {
             </div>
             <div className="pp-trackLiveMap__stage pp-trackLiveMap__stage--empty">
               <div className="pp-trackMapEmpty pp-trackNoSignal">
-                <h3>{t('trackingPage.noLiveSignalTitle')}</h3>
+                <h3>{position?.atHomeWifi ? t('trackingPage.mapWifiHomeTitle') : t('trackingPage.noLiveSignalTitle')}</h3>
                 <button type="button" className="pp-btn pp-btnPrimary" disabled={loading || !effectiveDeviceId} onClick={() => void refresh()}>
                   {t('trackingPage.quickRefresh')}
                 </button>

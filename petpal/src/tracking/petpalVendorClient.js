@@ -159,8 +159,16 @@ function normalizeXexunPosition(json) {
     received: json.received ?? null,
     raw: json.raw ?? null,
   };
-  const hasCoordinates = !Number.isNaN(lat) && !Number.isNaN(lng);
-  if (!hasCoordinates && !diagnostics.received && !diagnostics.raw) return null;
+  const hasCoordinates =
+    !Number.isNaN(lat) && !Number.isNaN(lng) && Number.isFinite(lat) && Number.isFinite(lng);
+  const hasStatusOnly =
+    Boolean(json.atHomeWifi) ||
+    json.source != null ||
+    json.battery != null ||
+    json.receivedAt != null ||
+    json.lastUpdate != null ||
+    json.lastUpdateServer != null;
+  if (!hasCoordinates && !diagnostics.received && !diagnostics.raw && !hasStatusOnly) return null;
   const deviceTime = json.deviceTimeUtc || json.deviceTime || null;
   const serverTime = json.receivedAt || json.lastUpdateServer || json.serverTime || json.lastUpdate || null;
   return {
@@ -173,7 +181,7 @@ function normalizeXexunPosition(json) {
     source: json.source || 'xexun',
     accuracy: json.accuracy || null,
     warningApproximate: Boolean(json.warningApproximate) || json.source === 'lbs' || json.source === 'wifi',
-    atHomeWifi: Boolean(json.atHomeWifi),
+    atHomeWifi: Boolean(json.atHomeWifi) || (json.source === 'wifi' && !hasCoordinates),
     isStale: json.isStale ?? null,
     secondsAgo: json.secondsAgo ?? null,
     deviceTimeLocal: json.deviceTimeLocal || null,
@@ -269,7 +277,9 @@ async function fetchXexunPosition(deviceId) {
   }
 
   const normalized = normalizeXexunPosition(data);
-  if (!normalized) throw new Error('Tracker response had no usable lat/lng (empty or invalid JSON).');
+  if (!normalized) {
+    throw new Error('Tracker response had no usable lat/lng (empty or invalid JSON).');
+  }
   return normalized;
 }
 

@@ -97,6 +97,11 @@ function normalizeIncomingDevice(prev, incoming) {
 function mergeDeviceRecord(prev, incoming) {
   if (!prev) return incoming;
   const merged = { ...incoming };
+  if (!incoming.source && prev?.source) merged.source = prev.source;
+  if (!incoming.atHomeWifi && prev?.atHomeWifi) merged.atHomeWifi = prev.atHomeWifi;
+  if ((!incoming.wifiBssids || incoming.wifiBssids.length === 0) && prev?.wifiBssids?.length) {
+    merged.wifiBssids = prev.wifiBssids;
+  }
   if (incoming.atHomeWifi && !hasValidGps(incoming.location)) {
     merged.location = null;
     merged.gps = {
@@ -105,11 +110,16 @@ function mergeDeviceRecord(prev, incoming) {
       speedKmh: incoming.speed ?? null,
       timestamp: incoming.lastUpdate ?? null,
     };
-  } else if (!hasValidGps(incoming.gps) && hasValidGps(prev.gps)) {
+  } else if (!merged.atHomeWifi && !hasValidGps(incoming.gps) && hasValidGps(prev.gps)) {
     merged.gps = prev.gps;
     if (!incoming.gpsRaw && prev.gpsRaw) merged.gpsRaw = prev.gpsRaw;
   }
-  if ((!incoming.location || !hasValidGps(incoming.location)) && prev.location && hasValidGps(prev.location)) {
+  if (
+    !merged.atHomeWifi &&
+    (!incoming.location || !hasValidGps(incoming.location)) &&
+    prev.location &&
+    hasValidGps(prev.location)
+  ) {
     merged.location = prev.location;
   }
   if (merged.location && (!merged.gps || !hasValidGps(merged.gps))) {
