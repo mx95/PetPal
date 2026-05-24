@@ -24,15 +24,18 @@ function buildPositionPayload(imei, d) {
     if (atHomeWifi) {
       const home = d.homeLocation || null;
       const hasHome = home && isPlausibleLatLng(home.lat, home.lng);
+      const homeLat = hasHome ? Number(home.lat) : null;
+      const homeLng = hasHome ? Number(home.lng) : null;
       return {
         imei,
-        lat: null,
-        lng: null,
-        homeLat: hasHome ? Number(home.lat) : null,
-        homeLng: hasHome ? Number(home.lng) : null,
+        lat: homeLat,
+        lng: homeLng,
+        homeLat,
+        homeLng,
         atHomeWifi: true,
         source: "wifi",
         accuracy: "wifi",
+        locationKind: hasHome ? "home_wifi" : "wifi_status",
         battery: d.battery ?? null,
         signal: d.signal ?? null,
         lastUpdate: receivedAt,

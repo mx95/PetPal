@@ -776,8 +776,11 @@ const en = {
     mapLastKnownBadFixBanner:
       'Collar sent an invalid Wi‑Fi/cell location — showing last known position. Check your router code on the Device tab.',
     mapWifiHomeBanner:
-      'Home Wi‑Fi detected — your pet is likely at home. The map shows your saved home location (not the router code). Set it on the Device tab if the pin is wrong.',
+      'Home Wi‑Fi detected. Tap the button below once to put your home on the map.',
     mapWifiHomeTitle: 'At home on Wi‑Fi',
+    mapOneTapHome: 'Set home on map',
+    mapOneTapHomeBusy: 'Getting location…',
+    mapOneTapHomeLead: 'One tap while you’re at home — no address to type.',
     mapHomeLocationBanner: 'Showing your saved home area on the map',
     mapHomeProvisionalBanner:
       'Approximate home area from Wi‑Fi reports — walk outside once so GPS can save a precise home pin',
@@ -927,8 +930,8 @@ const en = {
       'The router code tells the collar you are home — it does not place the pin on the map. Use the code the collar scans below (often ba:… not 80:… from the sticker). Set the map pin separately under “Home on the map”.',
     devicePanelHomeMapTitle: 'Home on the map',
     devicePanelHomeMapHelp:
-      'While you are at home, save your phone’s location once. The map uses this when the collar reports home Wi‑Fi.',
-    devicePanelHomeUsePhone: 'Use my phone location as home',
+      'One tap while you’re at home. The collar Wi‑Fi report has no map coordinates — this saves where home is for the map.',
+    devicePanelHomeUsePhone: 'Set home on map',
     devicePanelHomeClear: 'Clear saved home',
     devicePanelHomeSaved: 'Home location saved — check the Live map.',
     devicePanelHomeCleared: 'Saved home location removed.',

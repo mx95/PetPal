@@ -8808,6 +8808,30 @@ body,
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
+.pp-trackOneTapHome__lead {
+  margin: 0 0 12px;
+  max-width: 22rem;
+  text-align: center;
+  font-size: 13px;
+}
+
+.pp-trackOneTapHome__btn {
+  margin-bottom: 10px;
+}
+
+.pp-trackOneTapHome__err {
+  margin: 0 0 10px;
+  color: #d92d20;
+  font-size: 12px;
+  text-align: center;
+  max-width: 22rem;
+}
+
+.pp-trackDeviceHome__cta {
+  width: 100%;
+  justify-content: center;
+}
+
 .pp-trackDeviceHome__actions {
   display: flex;
   flex-wrap: wrap;

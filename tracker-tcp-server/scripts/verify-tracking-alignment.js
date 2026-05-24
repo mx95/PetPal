@@ -131,7 +131,16 @@ async function liveChecks() {
     if (pos.status === 200) {
       assert(clientWouldAccept(pos.body), `${imei} /position 200 is client-safe`);
       if (pos.body.source === "wifi" || pos.body.atHomeWifi) {
-        assert(pos.body.lat == null && pos.body.lng == null, `${imei} wifi must not return stale pin`);
+        assert(
+          pos.body.lat == null && pos.body.lng == null,
+          `${imei} wifi without saved home must not return stale live pin`
+        );
+        if (pos.body.locationKind === "home_wifi") {
+          assert(
+            pos.body.lat != null && pos.body.lng != null,
+            `${imei} wifi with saved home returns home lat/lng`
+          );
+        }
       }
     } else if (pos.status === 404) {
       console.log("  (404 — deploy latest tracker-tcp-server and pm2 restart tracker)");

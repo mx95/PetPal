@@ -32,6 +32,7 @@ import {
   saveHomeAnchor,
   clearHomeAnchor,
 } from '../tracking/homeAnchorStorage';
+import { setHomeFromPhone } from '../tracking/setHomeFromPhone';
 
 const LAST_LIVE_PET_KEY = 'petpal_live_selectedPetId';
 const LAST_LIVE_COORDS_KEY = 'petpal_last_live_coords_v1';
@@ -484,6 +485,8 @@ export default function Tracking() {
   const [liveHistoryFallback, setLiveHistoryFallback] = useState(null);
   const [liveTrail, setLiveTrail] = useState([]);
   const [homeAnchorTick, setHomeAnchorTick] = useState(0);
+  const [homeSaving, setHomeSaving] = useState(false);
+  const [homeSaveError, setHomeSaveError] = useState('');
 
   const selectedPet = useMemo(() => pets.find((p) => p.id === selectedPetId), [pets, selectedPetId]);
 
@@ -544,6 +547,25 @@ export default function Tracking() {
       setLoading(false);
     }
   }, [effectiveDeviceId, t]);
+
+  const handleOneTapHome = useCallback(async () => {
+    if (!effectiveDeviceId.trim()) return;
+    setHomeSaveError('');
+    setHomeSaving(true);
+    try {
+      await setHomeFromPhone(effectiveDeviceId);
+      setHomeAnchorTick((n) => n + 1);
+      await refresh();
+    } catch (err) {
+      if (err?.code === 'geo_unsupported') {
+        setHomeSaveError(t('trackingPage.devicePanelHomeGeoUnsupported'));
+      } else {
+        setHomeSaveError(t('trackingPage.devicePanelHomeGeoDenied'));
+      }
+    } finally {
+      setHomeSaving(false);
+    }
+  }, [effectiveDeviceId, refresh, t]);
 
   useEffect(() => {
     trustedLiveAnchorRef.current = null;
@@ -740,6 +762,12 @@ export default function Tracking() {
     }
     return pickLastKnownMapCoords(effectiveDeviceId, liveHistoryFallback, lastKnownLiveRef);
   }, [mapPosition, position, liveHistoryFallback, effectiveDeviceId, homeAnchorTick]);
+
+  const showOneTapHome =
+    Boolean(position?.atHomeWifi) &&
+    !liveMapCoords &&
+    !homeCoordsFromPosition(position) &&
+    !loadHomeAnchor(effectiveDeviceId);
 
   useEffect(() => {
     if (trackerTab !== 'live' || !liveMapCoords) return;
@@ -1184,14 +1212,32 @@ export default function Tracking() {
             <div className="pp-trackLiveMap__stage pp-trackLiveMap__stage--empty">
               <div className="pp-trackMapEmpty pp-trackNoSignal">
                 <h3>{position?.atHomeWifi ? t('trackingPage.mapWifiHomeTitle') : t('trackingPage.noLiveSignalTitle')}</h3>
-                {position?.atHomeWifi && position?.wifiBssids?.length ? (
+                {showOneTapHome ? (
+                  <>
+                    <p className="pp-subtle pp-trackOneTapHome__lead">{t('trackingPage.mapOneTapHomeLead')}</p>
+                    <button
+                      type="button"
+                      className="pp-btn pp-btnPrimary pp-trackOneTapHome__btn"
+                      disabled={homeSaving || !effectiveDeviceId}
+                      onClick={() => void handleOneTapHome()}
+                    >
+                      {homeSaving ? t('trackingPage.mapOneTapHomeBusy') : t('trackingPage.mapOneTapHome')}
+                    </button>
+                    {homeSaveError ? (
+                      <p className="pp-trackOneTapHome__err" role="alert">
+                        {homeSaveError}
+                      </p>
+                    ) : null}
+                  </>
+                ) : null}
+                {position?.atHomeWifi && position?.wifiBssids?.length && !showOneTapHome ? (
                   <p className="pp-subtle pp-trackLiveDetectedBssids">
                     {t('trackingPage.mapWifiDetectedNetworks', {
                       networks: position.wifiBssids.slice(0, 3).join(', '),
                     })}
                   </p>
                 ) : null}
-                <button type="button" className="pp-btn pp-btnPrimary" disabled={loading || !effectiveDeviceId} onClick={() => void refresh()}>
+                <button type="button" className="pp-btn pp-btn--ghost" disabled={loading || !effectiveDeviceId} onClick={() => void refresh()}>
                   {t('trackingPage.quickRefresh')}
                 </button>
               </div>

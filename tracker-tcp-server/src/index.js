@@ -169,6 +169,22 @@ app.get("/api/app/history", (req, res) => {
   res.json({ imei, history, calendarMatch });
 });
 
+app.post("/api/app/home", (req, res) => {
+  const imei = String(req.body?.deviceId || req.body?.imei || "").trim();
+  const lat = req.body?.lat != null ? Number(req.body.lat) : Number.NaN;
+  const lng = req.body?.lng != null ? Number(req.body.lng) : Number.NaN;
+  if (!imei) return res.status(400).json({ error: "missing_deviceId" });
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+    return res.status(400).json({ error: "missing_lat_lng" });
+  }
+  if (typeof store.setHomeLocation !== "function") {
+    return res.status(501).json({ error: "home_location_not_supported" });
+  }
+  const ok = store.setHomeLocation(imei, lat, lng);
+  if (!ok) return res.status(400).json({ error: "invalid_coordinates" });
+  res.json({ ok: true, imei, homeLat: lat, homeLng: lng });
+});
+
 app.get("/devices", (req, res) => {
   res.json(store.list());
 });

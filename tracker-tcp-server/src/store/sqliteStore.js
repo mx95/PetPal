@@ -16,8 +16,15 @@ function toDeviceRow(rec) {
   const last_lng = hasFiniteLatLng(loc) ? Number(loc.lng) : null;
   const isGpsHome =
     rec.source === "gps" && rec.gpsValid !== false && hasFiniteLatLng(loc);
-  const home_lat = isGpsHome ? Number(loc.lat) : null;
-  const home_lng = isGpsHome ? Number(loc.lng) : null;
+  let home_lat = null;
+  let home_lng = null;
+  if (rec.homeLocation && hasFiniteLatLng(rec.homeLocation)) {
+    home_lat = Number(rec.homeLocation.lat);
+    home_lng = Number(rec.homeLocation.lng);
+  } else if (isGpsHome) {
+    home_lat = Number(loc.lat);
+    home_lng = Number(loc.lng);
+  }
 
   return {
     imei,
@@ -293,7 +300,27 @@ function createSqliteStore({ dbPath }) {
         parsed_json: parsedJson ?? null,
         note: note ?? null
       });
-    }
+    },
+
+    setHomeLocation(imei, lat, lng) {
+      if (!isPlausibleLatLng(lat, lng)) return false;
+      const k = String(imei);
+      if (!mem.setHomeLocation(k, lat, lng)) return false;
+      const row = sqlite.getDevice.get(k);
+      sqlite.upsertDevice.run({
+        imei: k,
+        name: row?.name ?? null,
+        last_lat: row?.last_lat ?? null,
+        last_lng: row?.last_lng ?? null,
+        home_lat: Number(lat),
+        home_lng: Number(lng),
+        battery: row?.battery ?? null,
+        signal: row?.signal ?? null,
+        source: row?.source ?? null,
+        last_update: row?.last_update ?? new Date().toISOString(),
+      });
+      return true;
+    },
   };
 }
 

@@ -107,6 +107,9 @@ function mergeDeviceRecord(prev, incoming) {
     merged.wifiBssids = prev.wifiBssids;
   }
   if (!incoming.homeLocation && prev?.homeLocation) merged.homeLocation = prev.homeLocation;
+  if (incoming.homeLocation && hasValidGps(incoming.homeLocation)) {
+    merged.homeLocation = incoming.homeLocation;
+  }
   if (incoming.source === "gps" && incoming.gpsValid !== false && hasValidGps(incoming.location)) {
     merged.homeLocation = { lat: incoming.location.lat, lng: incoming.location.lng };
   }
@@ -217,7 +220,18 @@ function createMemoryStore() {
     },
     getSocket(imei) {
       return socketsByImei.get(String(imei)) || null;
-    }
+    },
+    setHomeLocation(imei, lat, lng) {
+      if (!imei || !isPlausibleLatLng(lat, lng)) return false;
+      const k = String(imei);
+      const prev = devices.get(k) || { imei: k };
+      devices.set(k, {
+        ...prev,
+        imei: k,
+        homeLocation: { lat: Number(lat), lng: Number(lng) },
+      });
+      return true;
+    },
   };
 }
 

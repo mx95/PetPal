@@ -204,6 +204,7 @@ function normalizeXexunPosition(json) {
       : null,
     homeLat: json.homeLat != null ? Number(json.homeLat) : null,
     homeLng: json.homeLng != null ? Number(json.homeLng) : null,
+    locationKind: json.locationKind ?? null,
     diagnostics,
   };
 }
@@ -468,6 +469,30 @@ export async function getPositionHistory(deviceId, opts = {}) {
   if (xexunBase() != null) return fetchXexunHistory(id, opts);
   if (vendorBase() != null) return fetchVendorHistory(id, opts);
   return { history: mockHistory(id), calendarMatch: true };
+}
+
+/** Save home map pin on tracker server (used when collar is on Wi‑Fi — collar does not send lat/lng). */
+export async function saveHomeLocation(deviceId, lat, lng) {
+  const base = xexunBase();
+  if (base == null) return { ok: false, error: 'not_configured' };
+  const imei = String(deviceId || '').trim();
+  if (!imei || !Number.isFinite(Number(lat)) || !Number.isFinite(Number(lng))) {
+    throw new Error('missing_home_coordinates');
+  }
+  const path = '/api/app/home';
+  const url = base === '' ? path : `${base}${path}`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify({ deviceId: imei, lat: Number(lat), lng: Number(lng) }),
+  });
+  const data = await readJsonSafe(res);
+  if (!res.ok) {
+    const err = new Error(data?.error || `save home ${res.status}`);
+    err.status = res.status;
+    throw err;
+  }
+  return data;
 }
 
 export function mapsLink(lat, lng) {

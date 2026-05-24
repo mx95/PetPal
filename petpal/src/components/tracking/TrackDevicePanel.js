@@ -17,7 +17,8 @@ import {
   newWifiNetworkEntry,
   saveWifiNetworks,
 } from '../../tracking/wifiNetworkStorage';
-import { clearHomeAnchor, loadHomeAnchor, saveHomeAnchor } from '../../tracking/homeAnchorStorage';
+import { clearHomeAnchor, loadHomeAnchor } from '../../tracking/homeAnchorStorage';
+import { setHomeFromPhone } from '../../tracking/setHomeFromPhone';
 import IconTrackSource from '../icons/IconTrackSource';
 
 const SIMPLE_MODE_IDS = ['wifi_priority', 'gps_priority'];
@@ -48,28 +49,19 @@ export default function TrackDevicePanel({
 
   const handleSetHomeFromPhone = useCallback(() => {
     if (!imei?.trim()) return;
-    if (!navigator.geolocation) {
-      setError(t('trackingPage.devicePanelHomeGeoUnsupported'));
-      return;
-    }
     setBusy(true);
     setError('');
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const lat = pos.coords.latitude;
-        const lng = pos.coords.longitude;
-        saveHomeAnchor(imei, lat, lng, { source: 'phone' });
+    setHomeFromPhone(imei)
+      .then(() => {
         setHomeAnchor(loadHomeAnchor(imei));
         setStatus(t('trackingPage.devicePanelHomeSaved'));
         onHomeLocationUpdated?.();
-        setBusy(false);
-      },
-      () => {
-        setError(t('trackingPage.devicePanelHomeGeoDenied'));
-        setBusy(false);
-      },
-      { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
-    );
+      })
+      .catch((err) => {
+        if (err?.code === 'geo_unsupported') setError(t('trackingPage.devicePanelHomeGeoUnsupported'));
+        else setError(t('trackingPage.devicePanelHomeGeoDenied'));
+      })
+      .finally(() => setBusy(false));
   }, [imei, onHomeLocationUpdated, t]);
 
   const handleClearHome = useCallback(() => {
@@ -360,11 +352,11 @@ export default function TrackDevicePanel({
               <div className="pp-trackDeviceHome__actions">
                 <button
                   type="button"
-                  className="pp-btn pp-btn--ghost"
+                  className={`pp-btn${homeAnchor ? ' pp-btn--ghost' : ' pp-btnPrimary pp-trackDeviceHome__cta'}`}
                   disabled={busy}
                   onClick={handleSetHomeFromPhone}
                 >
-                  {t('trackingPage.devicePanelHomeUsePhone')}
+                  {busy ? t('trackingPage.mapOneTapHomeBusy') : t('trackingPage.mapOneTapHome')}
                 </button>
                 {homeAnchor ? (
                   <button type="button" className="pp-btn pp-btn--ghost" disabled={busy} onClick={handleClearHome}>
