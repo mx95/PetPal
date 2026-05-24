@@ -1,8 +1,8 @@
+const { isPlausibleLatLng } = require("../geo/coords");
+
 function hasValidGps(gps) {
   if (!gps || gps.lat == null || gps.lng == null) return false;
-  const lat = Number(gps.lat);
-  const lng = Number(gps.lng);
-  return Number.isFinite(lat) && Number.isFinite(lng);
+  return isPlausibleLatLng(gps.lat, gps.lng);
 }
 
 function toBool01(v) {
@@ -44,7 +44,7 @@ function normalizeIncomingDevice(prev, incoming) {
 
   const next = {
     imei,
-    location: Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null,
+    location: isPlausibleLatLng(lat, lng) ? { lat, lng } : null,
     gpsValid: p.gpsValid === true,
     source: p.source || gps.source || null, // "gps" | "lbs"
     accuracy: p.accuracy || null, // "gps" | "wifi" | "lbs" (wifi not implemented yet)

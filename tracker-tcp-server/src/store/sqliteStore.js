@@ -1,11 +1,10 @@
 const { createMemoryStore } = require("./memory");
 const { openSqlite } = require("../db/sqlite");
+const { isPlausibleLatLng } = require("../geo/coords");
 
 function hasFiniteLatLng(obj) {
   if (!obj) return false;
-  const lat = obj.lat != null ? Number(obj.lat) : Number.NaN;
-  const lng = obj.lng != null ? Number(obj.lng) : Number.NaN;
-  return Number.isFinite(lat) && Number.isFinite(lng);
+  return isPlausibleLatLng(obj.lat, obj.lng);
 }
 
 function toDeviceRow(rec) {
@@ -77,6 +76,7 @@ function deviceFromRow(row) {
   if (!row) return null;
   const lat = row.last_lat != null ? Number(row.last_lat) : null;
   const lng = row.last_lng != null ? Number(row.last_lng) : null;
+  const hasLoc = lat != null && lng != null && isPlausibleLatLng(lat, lng);
   return {
     imei: row.imei,
     name: row.name ?? null,
@@ -84,12 +84,10 @@ function deviceFromRow(row) {
     signal: row.signal ?? null,
     source: row.source ?? null,
     lastUpdate: row.last_update ?? null,
-    location:
-      lat != null && lng != null && Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null,
-    gps:
-      lat != null && lng != null && Number.isFinite(lat) && Number.isFinite(lng)
-        ? { lat, lng, speedKmh: null, timestamp: row.last_update ?? null }
-        : { lat: null, lng: null, speedKmh: null, timestamp: row.last_update ?? null }
+    location: hasLoc ? { lat, lng } : null,
+    gps: hasLoc
+      ? { lat, lng, speedKmh: null, timestamp: row.last_update ?? null }
+      : { lat: null, lng: null, speedKmh: null, timestamp: row.last_update ?? null },
   };
 }
 

@@ -23,6 +23,7 @@ import {
   resolveHistoryPositions,
   resolveHistoryRoutePositions,
   sanitizeSpeedKmh,
+  hasPlausibleMapCoords,
 } from '../tracking/positionFilter';
 
 const LAST_LIVE_PET_KEY = 'petpal_live_selectedPetId';
@@ -38,12 +39,7 @@ function loadShowAllHistoryFixes() {
 }
 
 function hasValidCoords(p) {
-  return (
-    p?.lat != null &&
-    p?.lng != null &&
-    Number.isFinite(Number(p.lat)) &&
-    Number.isFinite(Number(p.lng))
-  );
+  return hasPlausibleMapCoords(p);
 }
 
 function loadStoredLastCoords(deviceId) {
@@ -690,6 +686,7 @@ export default function Tracking() {
 
   useEffect(() => {
     if (trackerTab !== 'live' || !liveMapCoords) return;
+    if (!hasPlausibleMapCoords(liveMapCoords)) return;
     const { lat, lng } = liveMapCoords;
     setLiveTrail((prev) => {
       const last = prev[prev.length - 1];

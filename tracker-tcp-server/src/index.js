@@ -121,6 +121,8 @@ app.use(
   })
 );
 
+const { isPlausibleLatLng } = require("./geo/coords");
+
 registerXexunHttpApi(app, store);
 
 /** Live position JSON — freshness and sorting use server receive time, not the collar clock. */
@@ -128,7 +130,7 @@ function buildPositionPayload(imei, d) {
   const loc = d.location || d.gps || {};
   const lat = loc.lat != null ? Number(loc.lat) : Number.NaN;
   const lng = loc.lng != null ? Number(loc.lng) : Number.NaN;
-  if (Number.isNaN(lat) || Number.isNaN(lng)) {
+  if (!isPlausibleLatLng(lat, lng)) {
     return { error: "no_position" };
   }
 

@@ -1,3 +1,14 @@
+/** Collar firmware often sends 0,0 when GPS/LBS has no real fix ("Null Island"). */
+export function hasPlausibleMapCoords(p) {
+  if (!p || p.lat == null || p.lng == null) return false;
+  const lat = Number(p.lat);
+  const lng = Number(p.lng);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return false;
+  if (Math.abs(lat) > 90 || Math.abs(lng) > 180) return false;
+  if (Math.abs(lat) < 0.00001 && Math.abs(lng) < 0.00001) return false;
+  return true;
+}
+
 /** Max plausible speed between fixes (km/h) — filters GPS outliers / bad triangulation jumps. */
 const MAX_PLAUSIBLE_SPEED_KMH = 50;
 /** Hard cap on a single segment length (km). */
@@ -287,6 +298,18 @@ export function applyHeldGpsPosition(position, anchor) {
     lat: Number(position.lat),
     lng: Number(position.lng),
   };
+
+  if (!hasPlausibleMapCoords(pt)) {
+    if (anchor && hasPlausibleMapCoords(anchor)) {
+      return {
+        ...pt,
+        lat: Number(anchor.lat),
+        lng: Number(anchor.lng),
+        positionHeldFromPreviousGps: true,
+      };
+    }
+    return { ...pt, lat: null, lng: null, positionHiddenApproximate: true };
+  }
 
   if (isTrustedFixWithJumpCheck(anchor, pt)) {
     return { ...pt, positionHeldFromPreviousGps: false };

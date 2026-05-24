@@ -18,6 +18,7 @@ function decodeImeiFromBcd(imei8) {
 
 const { crc16ccittFalse, u16be } = require("./crc16x25");
 const { logPrefix } = require("../logging/time");
+const { isPlausibleLatLng, parsedCoordsUsable } = require("../geo/coords");
 
 // Kept for backward-compat in other callers, but 0x20 ACK should derive marker from incoming timestamp (+1).
 const FIXED_REPLY_MARK_0X20 = Buffer.from([0x00, 0x69, 0xfa, 0x2c, 0x26]);
@@ -194,7 +195,7 @@ function parseGpsBlock(block) {
     if (!best || score > best.score) best = { lat, lon, offset: i, score };
   }
 
-  if (best) {
+  if (best && isPlausibleLatLng(best.lat, best.lon)) {
     out.lat = best.lat;
     out.lng = best.lon;
     out._offset = best.offset;
@@ -228,7 +229,7 @@ function isAllFF(buf) {
 
 function detectGpsValidity({ gpsBlock, gpsParsed }) {
   if (!Buffer.isBuffer(gpsBlock) || gpsBlock.length < 20) {
-    return { gpsValid: gpsParsed?.lat != null && gpsParsed?.lng != null, reason: "no_block" };
+    return { gpsValid: parsedCoordsUsable(gpsParsed), reason: "no_block" };
   }
 
   // Common layout: [ts:4][lat:8][lng:8] ... where invalid doubles are FF-filled.
@@ -237,7 +238,7 @@ function detectGpsValidity({ gpsBlock, gpsParsed }) {
     return { gpsValid: false, reason: "latlng_all_ff" };
   }
 
-  const ok = gpsParsed && gpsParsed.lat != null && gpsParsed.lng != null;
+  const ok = gpsParsed && parsedCoordsUsable(gpsParsed);
   return { gpsValid: Boolean(ok), reason: ok ? "parsed" : "unparsed" };
 }
 
@@ -346,15 +347,15 @@ function parseXexunPacket(packet) {
   let gps = null;
   let source = null;
   let accuracy = null;
-  if (gpsValid && gpsParsed && gpsParsed.lat != null && gpsParsed.lng != null) {
+  if (gpsValid && parsedCoordsUsable(gpsParsed)) {
     gps = { ...gpsParsed, source: "gps" };
     source = "gps";
     accuracy = "gps";
-  } else if (wifiParsed && wifiParsed.lat != null && wifiParsed.lng != null) {
+  } else if (parsedCoordsUsable(wifiParsed)) {
     gps = { ...wifiParsed, source: "wifi" };
     source = "wifi";
     accuracy = "wifi";
-  } else if (lbsParsed && lbsParsed.lat != null && lbsParsed.lng != null) {
+  } else if (parsedCoordsUsable(lbsParsed)) {
     gps = { ...lbsParsed, source: "lbs" };
     source = "lbs";
     accuracy = "lbs";
