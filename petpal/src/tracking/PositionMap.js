@@ -30,6 +30,8 @@ import {
 
 import 'leaflet/dist/leaflet.css';
 
+import { trackingUsesGoogleMaps } from './trackingMapProvider';
+
 const defaultIcon = L.icon({
   iconUrl: icon,
   iconRetinaUrl: icon2x,
@@ -910,14 +912,15 @@ export default function PositionMap({
   mapActive = true,
   layoutTick = 0,
 }) {
-  const key = process.env.REACT_APP_GOOGLE_MAPS_API_KEY?.trim();
+  const useGoogle = trackingUsesGoogleMaps();
+  const googleKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY?.trim();
   return (
     <div className={`pp-leaflet-wrap${fill ? ' pp-leaflet-wrap--fill' : ''}${liveMode ? ' pp-leaflet-wrap--live' : ''}`}>
-      {key ? (
+      {useGoogle ? (
         <GooglePositionMap
           lat={lat}
           lng={lng}
-          apiKey={key}
+          apiKey={googleKey}
           path={path}
           routeMarkers={routeMarkers}
           playbackPointIndex={playbackPointIndex}

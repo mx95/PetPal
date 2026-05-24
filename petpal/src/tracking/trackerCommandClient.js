@@ -95,6 +95,15 @@ export async function fetchPendingCommands(imei) {
   return data;
 }
 
+/** @param {string} raw @returns {string} aa:bb:cc:dd:ee:ff while typing */
+export function formatBssidInput(raw) {
+  const hex = String(raw || '')
+    .replace(/[^0-9a-fA-F]/g, '')
+    .slice(0, 12);
+  const parts = hex.match(/.{1,2}/g) || [];
+  return parts.join(':');
+}
+
 /** @param {string} raw @returns {string|null} normalized aa:bb:cc:dd:ee:ff */
 export function normalizeBssid(raw) {
   const s = String(raw || '')

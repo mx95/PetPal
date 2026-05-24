@@ -8642,14 +8642,29 @@ body,
 }
 
 .pp-trackDeviceMode {
+  position: relative;
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  padding: 10px 12px;
+  padding: 12px 14px;
   border-radius: 14px;
   border: 1px solid rgba(91, 55, 255, 0.14);
   background: rgba(248, 250, 252, 0.9);
   cursor: pointer;
+}
+
+.pp-trackDeviceMode__badge {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: #5b37ff;
+  background: rgba(91, 55, 255, 0.12);
 }
 
 .pp-trackDeviceMode.is-active {
@@ -8778,9 +8793,95 @@ body,
   font-size: 11px;
 }
 
+.pp-trackDevicePanel__cta {
+  width: 100%;
+  min-height: 46px;
+  font-size: 15px;
+  font-weight: 750;
+}
+
+.pp-trackDevicePanel__advanced {
+  margin-top: 12px;
+  font-size: 13px;
+}
+
+.pp-trackDevicePanel__advanced > summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: #475467;
+}
+
+.pp-trackDevicePanel__advancedBody {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(91, 55, 255, 0.1);
+}
+
+.pp-trackDevicePanel__gpsOnly {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.pp-trackDevicePanel__gpsOnly span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pp-trackDeviceWifi--simple .pp-trackDeviceWifi__row--stacked {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 14px;
+  background: rgba(91, 55, 255, 0.04);
+  border: 1px solid rgba(91, 55, 255, 0.1);
+}
+
+.pp-trackDeviceWifi__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #344054;
+}
+
+.pp-trackDeviceWifi__field .pp-input--mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  letter-spacing: 0.02em;
+}
+
+.pp-trackDeviceWifi__help {
+  margin-top: 4px;
+  font-size: 13px;
+}
+
+.pp-trackDeviceWifi__help > summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: #5b37ff;
+}
+
+.pp-trackDeviceWifi__help ol {
+  margin: 8px 0 0;
+  padding-left: 1.2rem;
+  color: #475467;
+  line-height: 1.45;
+}
+
+.pp-trackDeviceWifi__help p {
+  margin: 8px 0 0;
+}
+
 @media (min-width: 640px) {
   .pp-trackDeviceModes__grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 

@@ -1,10 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useI18n } from '../../i18n/I18nContext';
-import { TRACKING_MODE_PRESETS } from '../../tracking/trackingModePresets';
 import {
   applyTrackingModePreset,
   applyWifiBssids,
   fetchPendingCommands,
+  formatBssidInput,
   isTrackerCommandsAvailable,
   normalizeBssid,
   queryTrackingMode,
@@ -17,7 +17,7 @@ import {
 } from '../../tracking/wifiNetworkStorage';
 import IconTrackSource from '../icons/IconTrackSource';
 
-const MODE_IDS = ['wifi_priority', 'gps_priority', 'gps_only'];
+const SIMPLE_MODE_IDS = ['wifi_priority', 'gps_priority'];
 
 /**
  * @param {{ imei: string, petName?: string }} props
@@ -38,7 +38,8 @@ export default function TrackDevicePanel({ imei, petName = '' }) {
       setNetworks([]);
       return;
     }
-    setNetworks(loadWifiNetworks(imei));
+    const loaded = loadWifiNetworks(imei);
+    setNetworks(loaded.length ? loaded : [newWifiNetworkEntry()]);
     setModeId('wifi_priority');
     setStatus('');
     setError('');
@@ -68,7 +69,7 @@ export default function TrackDevicePanel({ imei, petName = '' }) {
   }
 
   function removeNetwork(id) {
-    setNetworks((prev) => prev.filter((n) => n.id !== id));
+    setNetworks((prev) => (prev.length <= 1 ? prev : prev.filter((n) => n.id !== id)));
   }
 
   function addNetwork() {
@@ -97,16 +98,13 @@ export default function TrackDevicePanel({ imei, petName = '' }) {
     try {
       saveWifiNetworks(imei, networks);
 
-      const results = [];
-      const modeRes = await applyTrackingModePreset(imei, modeId);
-      results.push(modeRes?.command || 'tk=…');
+      await applyTrackingModePreset(imei, modeId);
 
       if (validBssids.length > 0) {
-        const wifiRes = await applyWifiBssids(imei, validBssids);
-        results.push(wifiRes?.command || 'wifi=…');
+        await applyWifiBssids(imei, validBssids);
       }
 
-      setStatus(t('trackingPage.devicePanelQueued', { commands: results.join(' · ') }));
+      setStatus(t('trackingPage.devicePanelQueuedSimple'));
       await refreshPending();
     } catch (err) {
       if (err?.code === 'TRACKER_API_NOT_CONFIGURED') {
@@ -126,7 +124,7 @@ export default function TrackDevicePanel({ imei, petName = '' }) {
     try {
       await queryTrackingMode(imei);
       await queryWifiBssids(imei);
-      setStatus(t('trackingPage.devicePanelQueryQueued'));
+      setStatus(t('trackingPage.devicePanelQueryQueuedSimple'));
       await refreshPending();
     } catch (err) {
       setError(err?.message || t('trackingPage.devicePanelFailed'));
@@ -134,6 +132,11 @@ export default function TrackDevicePanel({ imei, petName = '' }) {
       setBusy(false);
     }
   }
+
+  const applyLabel =
+    modeId === 'wifi_priority'
+      ? t('trackingPage.devicePanelApplyHome')
+      : t('trackingPage.devicePanelApply');
 
   return (
     <section className="pp-trackDevicePanel" aria-labelledby="pp-trackDevicePanel-title">
@@ -156,8 +159,7 @@ export default function TrackDevicePanel({ imei, petName = '' }) {
         <fieldset className="pp-trackDeviceModes">
           <legend className="pp-trackDeviceModes__legend">{t('trackingPage.devicePanelModeLegend')}</legend>
           <div className="pp-trackDeviceModes__grid">
-            {MODE_IDS.map((id) => {
-              const preset = TRACKING_MODE_PRESETS.find((p) => p.id === id);
+            {SIMPLE_MODE_IDS.map((id) => {
               const active = modeId === id;
               const iconKind = id === 'wifi_priority' ? 'wifi' : 'gps';
               return (
@@ -169,17 +171,15 @@ export default function TrackDevicePanel({ imei, petName = '' }) {
                     checked={active}
                     onChange={() => setModeId(id)}
                   />
+                  {id === 'wifi_priority' ? (
+                    <span className="pp-trackDeviceMode__badge">{t('trackingPage.deviceModeRecommended')}</span>
+                  ) : null}
                   <span className="pp-trackDeviceMode__icon" aria-hidden>
-                    <IconTrackSource kind={iconKind} size={18} />
+                    <IconTrackSource kind={iconKind} size={22} />
                   </span>
                   <span className="pp-trackDeviceMode__copy">
                     <strong>{t(`trackingPage.deviceMode_${id}`)}</strong>
                     <span>{t(`trackingPage.deviceMode_${id}_desc`)}</span>
-                    {preset ? (
-                      <span className="pp-trackDeviceMode__meta">
-                        {t('trackingPage.deviceModeTkHint', { p1: preset.p1 })}
-                      </span>
-                    ) : null}
                   </span>
                 </label>
               );
@@ -187,70 +187,111 @@ export default function TrackDevicePanel({ imei, petName = '' }) {
           </div>
         </fieldset>
 
-        <div className="pp-trackDeviceWifi">
-          <div className="pp-trackDeviceWifi__head">
-            <h3>{t('trackingPage.devicePanelWifiTitle')}</h3>
-            <p className="pp-subtle">{t('trackingPage.devicePanelWifiHelp')}</p>
-          </div>
+        {modeId === 'wifi_priority' ? (
+          <div className="pp-trackDeviceWifi pp-trackDeviceWifi--simple">
+            <div className="pp-trackDeviceWifi__head">
+              <h3>{t('trackingPage.devicePanelWifiTitle')}</h3>
+              <p className="pp-subtle">{t('trackingPage.devicePanelWifiHelpSimple')}</p>
+            </div>
 
-          {networks.length === 0 ? (
-            <p className="pp-subtle pp-trackDeviceWifi__empty">{t('trackingPage.devicePanelWifiEmpty')}</p>
-          ) : (
             <ul className="pp-trackDeviceWifi__list">
-              {networks.map((n) => {
+              {networks.map((n, index) => {
                 const valid = normalizeBssid(n.bssid);
+                const showRemove = networks.length > 1;
                 return (
-                  <li key={n.id} className="pp-trackDeviceWifi__row">
-                    <input
-                      className="pp-input"
-                      type="text"
-                      placeholder={t('trackingPage.devicePanelWifiLabelPh')}
-                      value={n.label}
-                      onChange={(e) => updateNetwork(n.id, { label: e.target.value })}
-                      aria-label={t('trackingPage.devicePanelWifiLabelPh')}
-                    />
-                    <input
-                      className={`pp-input${n.bssid && !valid ? ' pp-input--invalid' : ''}`}
-                      type="text"
-                      placeholder={t('trackingPage.devicePanelWifiBssidPh')}
-                      value={n.bssid}
-                      onChange={(e) => updateNetwork(n.id, { bssid: e.target.value })}
-                      aria-label={t('trackingPage.devicePanelWifiBssidPh')}
-                      spellCheck={false}
-                      autoComplete="off"
-                    />
-                    <button
-                      type="button"
-                      className="pp-btn pp-btn--ghost pp-trackDeviceWifi__remove"
-                      onClick={() => removeNetwork(n.id)}
-                      aria-label={t('trackingPage.devicePanelWifiRemove')}
-                    >
-                      ×
-                    </button>
+                  <li key={n.id} className="pp-trackDeviceWifi__row pp-trackDeviceWifi__row--stacked">
+                    <label className="pp-trackDeviceWifi__field">
+                      <span>{t('trackingPage.devicePanelWifiLabelPh')}</span>
+                      <input
+                        className="pp-input"
+                        type="text"
+                        placeholder={t('trackingPage.devicePanelWifiLabelExample')}
+                        value={n.label}
+                        onChange={(e) => updateNetwork(n.id, { label: e.target.value })}
+                      />
+                    </label>
+                    <label className="pp-trackDeviceWifi__field">
+                      <span>{t('trackingPage.devicePanelWifiRouterCode')}</span>
+                      <input
+                        className={`pp-input pp-input--mono${n.bssid && !valid ? ' pp-input--invalid' : ''}`}
+                        type="text"
+                        inputMode="text"
+                        placeholder="aa:bb:cc:dd:ee:ff"
+                        value={n.bssid}
+                        onChange={(e) => updateNetwork(n.id, { bssid: formatBssidInput(e.target.value) })}
+                        spellCheck={false}
+                        autoComplete="off"
+                        aria-invalid={Boolean(n.bssid && !valid)}
+                      />
+                    </label>
+                    {showRemove ? (
+                      <button
+                        type="button"
+                        className="pp-btn pp-btn--ghost pp-trackDeviceWifi__remove"
+                        onClick={() => removeNetwork(n.id)}
+                      >
+                        {t('trackingPage.devicePanelWifiRemove')}
+                      </button>
+                    ) : null}
+                    {index === 0 ? (
+                      <details className="pp-trackDeviceWifi__help">
+                        <summary>{t('trackingPage.devicePanelWifiHelpToggle')}</summary>
+                        <ol>
+                          <li>{t('trackingPage.devicePanelWifiHelpStep1')}</li>
+                          <li>{t('trackingPage.devicePanelWifiHelpStep2')}</li>
+                          <li>{t('trackingPage.devicePanelWifiHelpStep3')}</li>
+                        </ol>
+                        <p className="pp-subtle">{t('trackingPage.devicePanelWifiHelpNote')}</p>
+                      </details>
+                    ) : null}
                   </li>
                 );
               })}
             </ul>
-          )}
-
-          <button type="button" className="pp-btn pp-btn--ghost" onClick={addNetwork}>
-            {t('trackingPage.devicePanelWifiAdd')}
-          </button>
-        </div>
+          </div>
+        ) : null}
 
         <div className="pp-trackDevicePanel__actions">
-          <button type="submit" className="pp-btn pp-btnPrimary" disabled={busy || !imei?.trim() || !commandsAvailable}>
-            {busy ? t('trackingPage.devicePanelApplying') : t('trackingPage.devicePanelApply')}
-          </button>
           <button
-            type="button"
-            className="pp-btn pp-btn--ghost"
+            type="submit"
+            className="pp-btn pp-btnPrimary pp-trackDevicePanel__cta"
             disabled={busy || !imei?.trim() || !commandsAvailable}
-            onClick={() => void handleQuery()}
           >
-            {t('trackingPage.devicePanelQuery')}
+            {busy ? t('trackingPage.devicePanelApplying') : applyLabel}
           </button>
         </div>
+
+        <details className="pp-trackDevicePanel__advanced">
+          <summary>{t('trackingPage.devicePanelAdvanced')}</summary>
+          <div className="pp-trackDevicePanel__advancedBody">
+            {modeId === 'wifi_priority' ? (
+              <button type="button" className="pp-btn pp-btn--ghost" onClick={addNetwork}>
+                {t('trackingPage.devicePanelWifiAdd')}
+              </button>
+            ) : null}
+
+            <label className="pp-trackDevicePanel__gpsOnly">
+              <input
+                type="checkbox"
+                checked={modeId === 'gps_only'}
+                onChange={(e) => setModeId(e.target.checked ? 'gps_only' : 'gps_priority')}
+              />
+              <span>
+                <strong>{t('trackingPage.deviceMode_gps_only')}</strong>
+                <span className="pp-subtle">{t('trackingPage.deviceMode_gps_only_desc')}</span>
+              </span>
+            </label>
+
+            <button
+              type="button"
+              className="pp-btn pp-btn--ghost"
+              disabled={busy || !imei?.trim() || !commandsAvailable}
+              onClick={() => void handleQuery()}
+            >
+              {t('trackingPage.devicePanelQuery')}
+            </button>
+          </div>
+        </details>
 
         {status ? (
           <p className="pp-trackDevicePanel__status" role="status">
@@ -264,15 +305,8 @@ export default function TrackDevicePanel({ imei, petName = '' }) {
         ) : null}
 
         {pending.length > 0 ? (
-          <div className="pp-trackDevicePanel__pending">
-            <strong>{t('trackingPage.devicePanelPending')}</strong>
-            <ul>
-              {pending.map((cmd, i) => (
-                <li key={`${cmd}-${i}`}>
-                  <code>{cmd}</code>
-                </li>
-              ))}
-            </ul>
+          <div className="pp-trackDevicePanel__pending" role="status">
+            {t('trackingPage.devicePanelPendingSimple')}
           </div>
         ) : null}
 
