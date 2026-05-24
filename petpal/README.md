@@ -60,7 +60,25 @@ Add to `petpal/.env.local` when your vendor server is available:
 | `REACT_APP_PETPAL_VENDOR_BASE_URL` | Full URL, e.g. `https://vendor.example.com`, **or** `same` to call `/api/...` on the same origin (use with a dev proxy). |
 | `REACT_APP_PETPAL_VENDOR_USER` / `REACT_APP_PETPAL_VENDOR_PASS` | Optional **HTTP Basic** auth if your vendor endpoint requires it. |
 
-The **Tracker** page also shows a **map** (Leaflet + OpenStreetMap) after a position loads.
+The **Tracker** page also shows a **map** (Leaflet + OpenStreetMap by default) after a position loads.
+
+### Tracking setup (Wi‑Fi, HTTPS, deploy)
+
+**Read [`../docs/TRACKING_SETUP.md`](../docs/TRACKING_SETUP.md)** for:
+
+- **HTTP vs HTTPS** — Wi‑Fi / Device tab / one-tap home are **off on `http://`** (browser geolocation needs HTTPS)
+- **`REACT_APP_TRACKING_WIFI_ENABLED`** — when to set `1` after you add HTTPS
+- **`REACT_APP_XEXUN_HTTP_BASE_URL=same`** on the Hetzner server
+- Deploy checklist (`npm run build` + `pm2 restart tracker` + hard refresh)
+- Router BSSID vs map home (one tap, no address typing)
+
+Quick env for production on the tracker host (`http://YOUR_IP:5002`):
+
+```env
+REACT_APP_XEXUN_HTTP_BASE_URL=same
+REACT_APP_TRACKING_MAP=osm
+# Wi‑Fi off on http:// by default — do not set REACT_APP_TRACKING_WIFI_ENABLED=1 until HTTPS
+```
 
 ## Tracker backend API use cases
 
@@ -158,6 +176,8 @@ pm2 logs tracker --lines 20
 ```
 
 After restart, logs must show `[db] … position rows on disk`. If you see `PERSIST_TO_SQLITE=0` or `0 position rows` while you expect history, see `tracker-tcp-server/README.md` (PM2 database path).
+
+**Tracking / Wi‑Fi / HTTPS:** see [`docs/TRACKING_SETUP.md`](../docs/TRACKING_SETUP.md) — Wi‑Fi Device tab is off on `http://`; rebuild with `REACT_APP_TRACKING_WIFI_ENABLED=1` only after HTTPS.
 
 Notes:
 

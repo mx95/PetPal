@@ -33,6 +33,7 @@ import {
   clearHomeAnchor,
 } from '../tracking/homeAnchorStorage';
 import { setHomeFromPhone } from '../tracking/setHomeFromPhone';
+import { isTrackingWifiEnabled, stripWifiFromPosition } from '../tracking/trackingWifiFeature';
 
 const LAST_LIVE_PET_KEY = 'petpal_live_selectedPetId';
 const LAST_LIVE_COORDS_KEY = 'petpal_last_live_coords_v1';
@@ -468,6 +469,8 @@ export default function Tracking() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [trackerTab, setTrackerTab] = useState('live');
+  const wifiTrackingEnabled = isTrackingWifiEnabled();
+  const displayPosition = useMemo(() => stripWifiFromPosition(position), [position]);
   const [mapLayoutTick, setMapLayoutTick] = useState(0);
   const location = useLocation();
   const [historyPoints, setHistoryPoints] = useState([]);
@@ -487,6 +490,10 @@ export default function Tracking() {
   const [homeAnchorTick, setHomeAnchorTick] = useState(0);
   const [homeSaving, setHomeSaving] = useState(false);
   const [homeSaveError, setHomeSaveError] = useState('');
+
+  useEffect(() => {
+    if (!wifiTrackingEnabled && trackerTab === 'device') setTrackerTab('live');
+  }, [wifiTrackingEnabled, trackerTab]);
 
   const selectedPet = useMemo(() => pets.find((p) => p.id === selectedPetId), [pets, selectedPetId]);
 
@@ -737,10 +744,10 @@ export default function Tracking() {
     if (hasValidCoords(position) && isTrustedGpsFix(position)) {
       return { lat: Number(position.lat), lng: Number(position.lng), mode: 'live' };
     }
-    if (position?.atHomeWifi) {
+    if (wifiTrackingEnabled && displayPosition?.atHomeWifi) {
       const home = pickHomeMapCoords(
         effectiveDeviceId,
-        position,
+        displayPosition,
         liveHistoryFallback,
         lastKnownLiveRef
       );
@@ -761,12 +768,13 @@ export default function Tracking() {
       };
     }
     return pickLastKnownMapCoords(effectiveDeviceId, liveHistoryFallback, lastKnownLiveRef);
-  }, [mapPosition, position, liveHistoryFallback, effectiveDeviceId, homeAnchorTick]);
+  }, [mapPosition, position, displayPosition, liveHistoryFallback, effectiveDeviceId, homeAnchorTick, wifiTrackingEnabled]);
 
   const showOneTapHome =
-    Boolean(position?.atHomeWifi) &&
+    wifiTrackingEnabled &&
+    Boolean(displayPosition?.atHomeWifi) &&
     !liveMapCoords &&
-    !homeCoordsFromPosition(position) &&
+    !homeCoordsFromPosition(displayPosition) &&
     !loadHomeAnchor(effectiveDeviceId);
 
   useEffect(() => {
@@ -910,7 +918,7 @@ export default function Tracking() {
     setHistoryReloadTick((n) => n + 1);
   }, []);
 
-  const liveSourceKind = useMemo(() => normalizePointSource(position), [position]);
+  const liveSourceKind = useMemo(() => normalizePointSource(displayPosition), [displayPosition]);
 
   const liveSourceLabel = useMemo(() => {
     const key = sourceBadgeMeta(liveSourceKind).kind;
@@ -1012,11 +1020,11 @@ export default function Tracking() {
 
   const signalLive = position != null;
   const liveMapBanner = (() => {
-    if (!liveMapCoords && position?.atHomeWifi) return t('trackingPage.mapWifiHomeBanner');
+    if (!liveMapCoords && displayPosition?.atHomeWifi) return t('trackingPage.mapWifiHomeBanner');
     if (!liveMapCoords) return null;
     if (liveMapCoords.mode === 'home') return t('trackingPage.mapHomeLocationBanner');
     if (liveMapCoords.mode === 'approximate') return t('trackingPage.mapApproximateBanner');
-    if (liveMapCoords.mode === 'lastKnown' && position?.atHomeWifi) return t('trackingPage.mapHomeLocationBanner');
+    if (liveMapCoords.mode === 'lastKnown' && displayPosition?.atHomeWifi) return t('trackingPage.mapHomeLocationBanner');
     if (liveMapCoords.mode === 'lastKnown' && position && !isTrustedGpsFix(position)) {
       return t('trackingPage.mapLastKnownBadFixBanner');
     }
@@ -1093,11 +1101,18 @@ export default function Tracking() {
       </section>
 
       <nav className="pp-trackTabs pp-trackTabs--segment" aria-label="Tracker views">
-        {[
-          ['live', 'Live'],
-          ['device', 'Device'],
-          ['history', 'History'],
-        ].map(([id, label]) => (
+        {(
+          wifiTrackingEnabled
+            ? [
+                ['live', 'Live'],
+                ['device', 'Device'],
+                ['history', 'History'],
+              ]
+            : [
+                ['live', 'Live'],
+                ['history', 'History'],
+              ]
+        ).map(([id, label]) => (
           <button key={id} type="button" className={trackerTab === id ? 'is-active' : ''} onClick={() => setTrackerTab(id)}>
             {label}
           </button>
@@ -1188,13 +1203,15 @@ export default function Tracking() {
         ) : (
           <>
             <div className="pp-trackLiveStatus pp-trackLiveStatus--quiet" role="status">
-              {position?.source ? (
+              {displayPosition?.source || batPct != null ? (
                 <div className="pp-trackLiveStatus__row">
                   <span className={`pp-trackLiveStatus__fresh${signalLive ? ' is-live' : ''}`}>{lastUpdateLabel}</span>
-                  <span className={`pp-trackLiveStatus__source pp-trackLiveStatus__source--${liveSourceKind}`}>
-                    <IconTrackSource kind={liveSourceKind} size={13} />
-                    {liveSourceLabel}
-                  </span>
+                  {displayPosition?.source ? (
+                    <span className={`pp-trackLiveStatus__source pp-trackLiveStatus__source--${liveSourceKind}`}>
+                      <IconTrackSource kind={liveSourceKind} size={13} />
+                      {liveSourceLabel}
+                    </span>
+                  ) : null}
                   {batPct != null ? (
                     <span className="pp-trackLiveStatus__bat">
                       <IconBattery pct={batPct} size={16} />
@@ -1204,14 +1221,14 @@ export default function Tracking() {
                 </div>
               ) : null}
               <p className="pp-trackLiveStatus__alert">
-                {position?.atHomeWifi
+                {displayPosition?.atHomeWifi
                   ? t('trackingPage.mapWifiHomeBanner')
                   : error || t('trackingPage.noLiveSignalBody')}
               </p>
             </div>
             <div className="pp-trackLiveMap__stage pp-trackLiveMap__stage--empty">
               <div className="pp-trackMapEmpty pp-trackNoSignal">
-                <h3>{position?.atHomeWifi ? t('trackingPage.mapWifiHomeTitle') : t('trackingPage.noLiveSignalTitle')}</h3>
+                <h3>{displayPosition?.atHomeWifi ? t('trackingPage.mapWifiHomeTitle') : t('trackingPage.noLiveSignalTitle')}</h3>
                 {showOneTapHome ? (
                   <>
                     <p className="pp-subtle pp-trackOneTapHome__lead">{t('trackingPage.mapOneTapHomeLead')}</p>
@@ -1230,10 +1247,10 @@ export default function Tracking() {
                     ) : null}
                   </>
                 ) : null}
-                {position?.atHomeWifi && position?.wifiBssids?.length && !showOneTapHome ? (
+                {displayPosition?.atHomeWifi && displayPosition?.wifiBssids?.length && !showOneTapHome ? (
                   <p className="pp-subtle pp-trackLiveDetectedBssids">
                     {t('trackingPage.mapWifiDetectedNetworks', {
-                      networks: position.wifiBssids.slice(0, 3).join(', '),
+                      networks: displayPosition.wifiBssids.slice(0, 3).join(', '),
                     })}
                   </p>
                 ) : null}
@@ -1501,7 +1518,7 @@ export default function Tracking() {
           </div>
         </section>
 
-      {trackerTab === 'device' ? (
+      {wifiTrackingEnabled && trackerTab === 'device' ? (
       <section className="pp-card pp-pad pp-trackDeviceCard">
         <h2 className="pp-sectionTitle">{t('trackingPage.sectionPetDevice')}</h2>
         <form className="pp-form pp-trackDeviceForm" onSubmit={saveIdAndLoad}>
@@ -1538,7 +1555,7 @@ export default function Tracking() {
       </section>
       ) : null}
 
-      {trackerTab === 'device' ? (
+      {wifiTrackingEnabled && trackerTab === 'device' ? (
         <TrackDevicePanel
           imei={effectiveDeviceId}
           petName={selectedPet?.name || ''}
@@ -1547,7 +1564,7 @@ export default function Tracking() {
         />
       ) : null}
 
-      {trackerTab === 'device' && hasDiagnostics(position) ? (
+      {wifiTrackingEnabled && trackerTab === 'device' && hasDiagnostics(position) ? (
         <section className="pp-card pp-pad">
           <h2 className="pp-sectionTitle">Everything received from provider</h2>
           <p className="pp-subtle" style={{ marginTop: 0 }}>

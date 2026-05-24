@@ -110,6 +110,18 @@ This service exposes **two API groups**:
 - **Get one device**: `GET /api/app/devices/:imei`
 - **Latest position**: `GET /api/app/position?deviceId=IMEI`
 - **History**: `GET /api/app/history?deviceId=IMEI&limit=…` (optional `from` / `to` as ISO timestamps for a chronological window, up to 20k points; without them, the latest points are returned). Response includes `calendarMatch` (`false` when the server returned a recent trail because nothing fell in the requested window — e.g. device GPS clock wrong vs real dates).
+- **Save home map pin** (for Wi‑Fi-at-home display): `POST /api/app/home` body `{ "deviceId": "IMEI", "lat": number, "lng": number }`
+
+### Position response notes
+
+- **GPS** packets return trusted `lat`/`lng`.
+- **LBS (cell)** returns approximate `lat`/`lng`.
+- **Wi‑Fi** packets from the collar contain **BSSID list only** — not coordinates. When the device is at home Wi‑Fi:
+  - Without saved home: `lat`/`lng` are `null`, `atHomeWifi: true`, `wifiBssids: [...]`.
+  - With saved home (`POST /api/app/home` or GPS-learned `home_lat`/`home_lng` in SQLite): `locationKind: "home_wifi"`, `lat`/`lng` = saved home, `gpsValid: false`.
+- Wi‑Fi/LBS coords from the same packet are **not** mixed (avoids wrong cell-tower pins).
+
+See **`docs/TRACKING_SETUP.md`** for HTTP vs HTTPS, frontend env vars, and deploy checklist.
 
 ### Tracker API (device commands)
 
