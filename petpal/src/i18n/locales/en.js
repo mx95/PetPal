@@ -873,12 +873,23 @@ const en = {
     btnRefreshHistory: 'Refresh history',
     btnRefreshHistoryAria: 'Reload route history from the tracker server',
     historyPointsSummary:
-      '{onMap} GPS points on map · {stored} stored · {hidden} approximate hidden',
+      '{onMap} points on map · {stored} loaded from server · {hidden} cell/Wi‑Fi hidden from GPS route',
+    historyDataSafeNote:
+      'All fixes stay saved on the tracker server — nothing is deleted when the map hides approximate points.',
+    historyShowAllFixes: 'Show all stored fixes on map (include cell / Wi‑Fi)',
     historyCalendarFallback:
       'No fixes received in this date range — showing the most recently stored points instead.',
     historyDaysCoverage: 'GPS activity on {active} of {total} days in this range',
     historyStationaryHint:
       'No walk route — {count} reports from roughly the same place (circle on map)',
+    sourceGps: 'GPS',
+    sourceWifi: 'Wi‑Fi',
+    sourceLbs: 'Cell (LBS)',
+    sourceTooltipGps: 'Location from GPS satellites (most accurate outdoors).',
+    sourceTooltipWifi: 'Location from nearby Wi‑Fi networks (indoor-friendly).',
+    sourceTooltipLbs: 'Location from mobile cell towers (approximate).',
+    wifiTrackingHint:
+      'Wi‑Fi tracking does not use your phone or home internet automatically. The collar must be set to Wi‑Fi priority (tk= mode 3) and programmed with your router’s Wi‑Fi hotspot IDs (BSSID) via the vendor wifi= command. Until that is configured, it falls back to GPS outdoors or cell (LBS) indoors.',
   },
   inbox: {
     eyebrow: 'Messages',

@@ -1,6 +1,6 @@
 import L from 'leaflet';
-import React, { useEffect, useMemo, useState } from 'react';
-import { Circle as GoogleCircle, GoogleMap, Marker, Polyline, useGoogleMap, useJsApiLoader } from '@react-google-maps/api';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Circle as GoogleCircle, GoogleMap, Marker, useGoogleMap, useJsApiLoader } from '@react-google-maps/api';
 import {
   Circle,
   CircleMarker,
@@ -21,6 +21,11 @@ import shadow from 'leaflet/dist/images/marker-shadow.png';
 import { GOOGLE_MAPS_LOADER_ID } from '../config/googleMapsLoaderId';
 import { subscribeGoogleMapsAuthFailure } from '../config/googleMapsAuthFailure';
 import { accuracyRadiusMeters, useAnimatedLatLng } from './mapLiveUtils';
+import {
+  LIVE_MAP_ZOOM,
+  buildGooglePetMarkerIcon,
+  buildLeafletPetMarkerIcon,
+} from './mapPetMarker';
 
 import 'leaflet/dist/leaflet.css';
 
@@ -47,10 +52,12 @@ const googleMapContainerStyle = {
   minHeight: 'min(52vh, 440px)',
 };
 
+const LIVE_MAP_FILL_MIN_HEIGHT = 'min(52vh, 480px)';
+
 const googleMapContainerStyleFill = {
   width: '100%',
   height: '100%',
-  minHeight: '100%',
+  minHeight: LIVE_MAP_FILL_MIN_HEIGHT,
 };
 
 const googleMapOptions = {
@@ -87,6 +94,53 @@ function leafletDotStroke(active) {
   return { weight: 1.25, color: '#ffffff' };
 }
 
+/** Wait until the host has real pixels before mounting Leaflet/Google (fixes blank map after SPA nav). */
+function MapSizeGate({ children, active = true, layoutTick = 0, className = '' }) {
+  const hostRef = useRef(null);
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    const host = hostRef.current;
+    if (!host || !active) {
+      setReady(false);
+      return undefined;
+    }
+
+    let cancelled = false;
+    const measure = () => {
+      if (cancelled) return;
+      const { width, height } = host.getBoundingClientRect();
+      setReady(width >= 48 && height >= 48);
+    };
+
+    measure();
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(measure) : null;
+    ro?.observe(host);
+
+    const timers = [0, 80, 200, 450, 900, 1400].map((ms) => window.setTimeout(measure, ms));
+
+    return () => {
+      cancelled = true;
+      ro?.disconnect();
+      timers.forEach((id) => window.clearTimeout(id));
+    };
+  }, [active, layoutTick]);
+
+  return (
+    <div
+      ref={hostRef}
+      className={`pp-mapSizeGate ${className}`.trim()}
+      style={{ width: '100%', height: '100%', minHeight: LIVE_MAP_FILL_MIN_HEIGHT }}
+    >
+      {ready && active ? children : (
+        <div className="pp-mapLoading" aria-hidden>
+          <span className="pp-mapLoading__pulse" />
+        </div>
+      )}
+    </div>
+  );
+}
+
 function FlyTo({ lat, lng, smooth = true }) {
   const map = useMap();
   useEffect(() => {
@@ -98,29 +152,92 @@ function FlyTo({ lat, lng, smooth = true }) {
   return null;
 }
 
-function FitRoute({ path }) {
+function LeafletInvalidateSize({ active = true }) {
+  const map = useMap();
+  useEffect(() => {
+    if (!active) return undefined;
+    const run = () => {
+      try {
+        map.invalidateSize({ animate: false, pan: false });
+      } catch {
+        /* map may be tearing down */
+      }
+    };
+    run();
+    const raf = requestAnimationFrame(run);
+    const timers = [120, 400, 800, 1200].map((ms) => window.setTimeout(run, ms));
+    window.addEventListener('resize', run);
+
+    const container = map.getContainer?.();
+    let ro;
+    if (container && typeof ResizeObserver !== 'undefined') {
+      ro = new ResizeObserver(() => run());
+      ro.observe(container);
+      if (container.parentElement) ro.observe(container.parentElement);
+    }
+
+    let io;
+    if (container && typeof IntersectionObserver !== 'undefined') {
+      io = new IntersectionObserver((entries) => {
+        if (entries.some((e) => e.isIntersecting)) run();
+      });
+      io.observe(container);
+    }
+
+    return () => {
+      cancelAnimationFrame(raf);
+      timers.forEach((id) => window.clearTimeout(id));
+      window.removeEventListener('resize', run);
+      ro?.disconnect();
+      io?.disconnect();
+    };
+  }, [map, active]);
+  return null;
+}
+
+function GoogleMapResize() {
+  const map = useGoogleMap();
+  useEffect(() => {
+    if (!map || !window.google?.maps?.event) return undefined;
+    const run = () => {
+      window.google.maps.event.trigger(map, 'resize');
+      const c = map.getCenter();
+      if (c) map.setCenter(c);
+    };
+    const raf = requestAnimationFrame(run);
+    window.addEventListener('resize', run);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener('resize', run);
+    };
+  }, [map]);
+  return null;
+}
+
+function FitRoute({ path, zoom = 16 }) {
   const map = useMap();
   useEffect(() => {
     if (!Array.isArray(path) || path.length === 0) return;
     if (path.length === 1) {
       const p = path[0];
       if (Number.isFinite(p.lat) && Number.isFinite(p.lng)) {
-        map.setView([p.lat, p.lng], 15, { animate: false });
+        map.setView([p.lat, p.lng], zoom, { animate: false });
       }
       return;
     }
     const bounds = L.latLngBounds(path.map((p) => [p.lat, p.lng]));
-    map.fitBounds(bounds, { padding: [28, 28], maxZoom: 16 });
-  }, [path, map]);
+    map.fitBounds(bounds, { padding: [28, 28], maxZoom: Math.max(zoom, 16) });
+  }, [path, map, zoom]);
   return null;
 }
 
-function LeafletFollowPan({ lat, lng, follow }) {
+function LeafletFollowPan({ lat, lng, follow, zoom = LIVE_MAP_ZOOM }) {
   const map = useMap();
   useEffect(() => {
     if (!follow || !Number.isFinite(lat) || !Number.isFinite(lng)) return;
-    map.panTo([lat, lng], { animate: true, duration: 0.45 });
-  }, [lat, lng, follow, map]);
+    const targetZoom = Math.max(map.getZoom(), zoom);
+    map.setView([lat, lng], targetZoom, { animate: true, duration: 0.45 });
+  }, [lat, lng, follow, map, zoom]);
   return null;
 }
 
@@ -136,16 +253,17 @@ function LeafletUserPanDetector({ onUserPan }) {
   return null;
 }
 
-function GoogleFollowPan({ lat, lng, follow }) {
+function GoogleFollowPan({ lat, lng, follow, zoom = LIVE_MAP_ZOOM }) {
   const map = useGoogleMap();
   useEffect(() => {
     if (!map || !follow || !Number.isFinite(lat) || !Number.isFinite(lng)) return;
     map.panTo({ lat, lng });
-  }, [map, follow, lat, lng]);
+    if (map.getZoom() < zoom) map.setZoom(zoom);
+  }, [map, follow, lat, lng, zoom]);
   return null;
 }
 
-function GoogleFitRoute({ path }) {
+function GoogleFitRoute({ path, zoom = 16 }) {
   const map = useGoogleMap();
   useEffect(() => {
     if (!map || !window.google?.maps || !Array.isArray(path) || path.length === 0) return;
@@ -153,7 +271,7 @@ function GoogleFitRoute({ path }) {
       const p = path[0];
       if (Number.isFinite(p.lat) && Number.isFinite(p.lng)) {
         map.setCenter({ lat: p.lat, lng: p.lng });
-        map.setZoom(15);
+        map.setZoom(zoom);
       }
       return;
     }
@@ -164,53 +282,76 @@ function GoogleFitRoute({ path }) {
   return null;
 }
 
-/** Native google.maps.Polyline — @react-google-maps/api <Polyline> often fails to render on history routes. */
-function GoogleRoutePolylines({ path, emphasize }) {
+function GoogleNativePolyline({ path, options }) {
   const map = useGoogleMap();
-  const pathKey = useMemo(() => JSON.stringify(path), [path]);
+  const routePath = useMemo(() => normalizeRoutePath(path), [path]);
+  const optionsKey = useMemo(() => JSON.stringify(options || {}), [options]);
 
   useEffect(() => {
-    if (!map || !window.google?.maps) return undefined;
-    let coords;
+    if (!map || !window.google?.maps || routePath.length < 2) return undefined;
+    let opts = {};
     try {
-      coords = JSON.parse(pathKey);
+      opts = JSON.parse(optionsKey);
     } catch {
-      return undefined;
+      opts = {};
     }
-    if (!Array.isArray(coords) || coords.length < 2) return undefined;
+    const line = new window.google.maps.Polyline({ path: routePath, map, ...opts });
+    return () => {
+      line.setMap(null);
+    };
+  }, [map, routePath, optionsKey]);
 
-    const glow = new window.google.maps.Polyline({
-      path: coords,
+  return null;
+}
+
+function GoogleRoutePolylines({ path, emphasize }) {
+  const glowOptions = useMemo(
+    () => ({
       geodesic: false,
       strokeColor: ROUTE_LINE,
       strokeOpacity: 0.18,
       strokeWeight: emphasize ? 10 : 8,
-      map,
-    });
-    const line = new window.google.maps.Polyline({
-      path: coords,
+    }),
+    [emphasize]
+  );
+  const lineOptions = useMemo(
+    () => ({
       geodesic: false,
       strokeColor: ROUTE_LINE,
       strokeOpacity: 1,
       strokeWeight: emphasize ? 5 : 4,
-      map,
-    });
+    }),
+    [emphasize]
+  );
+  return (
+    <>
+      <GoogleNativePolyline path={path} options={glowOptions} />
+      <GoogleNativePolyline path={path} options={lineOptions} />
+    </>
+  );
+}
 
-    return () => {
-      line.setMap(null);
-      glow.setMap(null);
-    };
-  }, [map, pathKey, emphasize]);
-
-  return null;
+function GoogleLiveTrail({ path }) {
+  const options = useMemo(
+    () => ({
+      geodesic: true,
+      strokeColor: LIVE_ACCENT,
+      strokeOpacity: 0.42,
+      strokeWeight: 4,
+    }),
+    []
+  );
+  return <GoogleNativePolyline path={path} options={options} />;
 }
 
 function GoogleUserPanDetector({ onUserPan }) {
   const map = useGoogleMap();
   useEffect(() => {
-    if (!map) return;
+    if (!map || !window.google?.maps?.event) return undefined;
     const drag = map.addListener('dragstart', () => onUserPan?.());
-    return () => drag.remove();
+    return () => {
+      if (drag) window.google.maps.event.removeListener(drag);
+    };
   }, [map, onUserPan]);
   return null;
 }
@@ -263,7 +404,26 @@ function googleLiveMarkerIcon(maps) {
   };
 }
 
-function LeafletLiveLayers({ lat, lng, follow, onUserPan, accuracyM, markerLabel, liveTrail = [] }) {
+function liveAccuracyStyle(sourceKind) {
+  if (sourceKind === 'wifi') {
+    return { color: '#2f80ff', weight: 2, opacity: 0.55, dashArray: '6 6', fillColor: '#2f80ff', fillOpacity: 0.1 };
+  }
+  if (sourceKind === 'lbs') {
+    return { color: '#667085', weight: 2, opacity: 0.45, dashArray: '4 8', fillColor: '#94a3b8', fillOpacity: 0.12 };
+  }
+  return { color: LIVE_ACCENT, weight: 1.5, opacity: 0.4, fillColor: LIVE_ACCENT, fillOpacity: 0.08 };
+}
+
+function LeafletLiveLayers({
+  lat,
+  lng,
+  follow,
+  onUserPan,
+  accuracyM,
+  markerLabel,
+  liveTrail = [],
+  petMarker = null,
+}) {
   const smooth = useAnimatedLatLng(lat, lng, { enabled: true });
 
   const trailPositions = useMemo(
@@ -271,10 +431,22 @@ function LeafletLiveLayers({ lat, lng, follow, onUserPan, accuracyM, markerLabel
     [liveTrail]
   );
 
+  const petIcon = useMemo(() => {
+    if (!petMarker) return livePetIcon;
+    return buildLeafletPetMarkerIcon({
+      photoUrl: petMarker.photoUrl,
+      placeholderEmoji: petMarker.placeholderEmoji,
+      sourceKind: petMarker.sourceKind,
+      name: petMarker.name || markerLabel,
+    });
+  }, [petMarker, markerLabel]);
+
+  const accStyle = liveAccuracyStyle(petMarker?.sourceKind);
+
   return (
     <>
       <LeafletUserPanDetector onUserPan={onUserPan} />
-      <LeafletFollowPan lat={smooth.lat} lng={smooth.lng} follow={follow} />
+      <LeafletFollowPan lat={smooth.lat} lng={smooth.lng} follow={follow} zoom={LIVE_MAP_ZOOM} />
       {trailPositions.length > 1 ? (
         <LeafletPolyline
           positions={trailPositions}
@@ -282,13 +454,9 @@ function LeafletLiveLayers({ lat, lng, follow, onUserPan, accuracyM, markerLabel
         />
       ) : null}
       {accuracyM != null && accuracyM > 0 ? (
-        <Circle
-          center={[smooth.lat, smooth.lng]}
-          radius={accuracyM}
-          pathOptions={{ color: LIVE_ACCENT, weight: 1, opacity: 0.35, fillColor: LIVE_ACCENT, fillOpacity: 0.07 }}
-        />
+        <Circle center={[smooth.lat, smooth.lng]} radius={accuracyM} pathOptions={accStyle} />
       ) : null}
-      <LeafletMarker position={[smooth.lat, smooth.lng]} icon={livePetIcon}>
+      <LeafletMarker position={[smooth.lat, smooth.lng]} icon={petIcon} zIndexOffset={1000}>
         <Popup>{markerLabel || 'Last reported position'}</Popup>
       </LeafletMarker>
     </>
@@ -314,9 +482,12 @@ function LeafletPositionMap({
   liveTrail = [],
   recenterLabel = 'Follow pet',
   showRouteVertices = false,
+  petMarker = null,
+  mapActive = true,
+  layoutTick = 0,
 }) {
   const [followEnabled, setFollowEnabled] = useState(true);
-  const z = 16;
+  const z = liveMode ? LIVE_MAP_ZOOM : 16;
   const routePath = useMemo(() => normalizeRoutePath(path), [path]);
   const hasPath = routePath.length > 1;
   const head =
@@ -352,12 +523,21 @@ function LeafletPositionMap({
           onClick={() => setFollowEnabled(true)}
         />
       ) : null}
-      <MapContainer center={[center.lat, center.lng]} zoom={z} scrollWheelZoom style={{ height: '100%', width: '100%' }}>
+      <MapSizeGate active={mapActive} layoutTick={layoutTick} className="pp-mapSizeGate--fill">
+        <MapContainer
+          center={[center.lat, center.lng]}
+          zoom={z}
+          scrollWheelZoom
+          style={{ height: '100%', width: '100%', minHeight: liveMode ? LIVE_MAP_FILL_MIN_HEIGHT : undefined }}
+        >
+          <LeafletInvalidateSize active={mapActive} />
         {hasPath ? (
           <FitRoute path={routePath} />
         ) : accuracyM != null && accuracyM > 0 ? (
-          <FitRoute path={[{ lat, lng }]} />
-        ) : liveMode ? null : (
+          <FitRoute path={[{ lat, lng }]} zoom={liveMode ? LIVE_MAP_ZOOM : 16} />
+        ) : liveMode ? (
+          <FitRoute path={[{ lat, lng }]} zoom={LIVE_MAP_ZOOM} />
+        ) : (
           <FlyTo lat={lat} lng={lng} />
         )}
         {playbackFollow ? (
@@ -386,6 +566,7 @@ function LeafletPositionMap({
             accuracyM={accuracyM}
             markerLabel={markerLabel}
             liveTrail={liveTrail}
+            petMarker={petMarker}
           />
         ) : null}
         {!hasPath && accuracyM != null && accuracyM > 0 ? (
@@ -451,39 +632,53 @@ function LeafletPositionMap({
             <Popup>{markerLabel || 'Last reported position'}</Popup>
           </LeafletMarker>
         ) : null}
-      </MapContainer>
+        </MapContainer>
+      </MapSizeGate>
     </div>
   );
 }
 
-function GoogleLiveMapInner({ lat, lng, accuracyM, markerLabel, liveTrail, maps, follow, onUserPan }) {
+function GoogleLiveMapInner({
+  lat,
+  lng,
+  accuracyM,
+  markerLabel,
+  liveTrail,
+  maps,
+  follow,
+  onUserPan,
+  petMarker = null,
+}) {
   const smooth = useAnimatedLatLng(lat, lng, { enabled: true });
 
-  const trailPath = useMemo(
-    () => (Array.isArray(liveTrail) && liveTrail.length > 1 ? liveTrail : []),
-    [liveTrail]
-  );
+  const trailPath = useMemo(() => normalizeRoutePath(liveTrail), [liveTrail]);
+
+  const markerIcon = useMemo(() => {
+    if (!petMarker) return googleLiveMarkerIcon(maps);
+    return buildGooglePetMarkerIcon(maps, {
+      photoUrl: petMarker.photoUrl,
+      sourceKind: petMarker.sourceKind,
+    });
+  }, [maps, petMarker]);
+
+  const accStroke =
+    petMarker?.sourceKind === 'wifi' ? '#2f80ff' : petMarker?.sourceKind === 'lbs' ? '#94a3b8' : LIVE_ACCENT;
 
   return (
     <>
       <GoogleUserPanDetector onUserPan={onUserPan} />
-      <GoogleFollowPan lat={smooth.lat} lng={smooth.lng} follow={follow} />
-      {trailPath.length > 1 ? (
-        <Polyline
-          path={trailPath}
-          options={{ strokeColor: LIVE_ACCENT, strokeOpacity: 0.42, strokeWeight: 4, geodesic: true }}
-        />
-      ) : null}
+      <GoogleFollowPan lat={smooth.lat} lng={smooth.lng} follow={follow} zoom={LIVE_MAP_ZOOM} />
+      {trailPath.length > 1 ? <GoogleLiveTrail path={trailPath} /> : null}
       {accuracyM != null && accuracyM > 0 ? (
         <GoogleCircle
           center={{ lat: smooth.lat, lng: smooth.lng }}
           radius={accuracyM}
           options={{
-            strokeColor: LIVE_ACCENT,
-            strokeOpacity: 0.35,
-            strokeWeight: 1,
-            fillColor: LIVE_ACCENT,
-            fillOpacity: 0.08,
+            strokeColor: accStroke,
+            strokeOpacity: 0.5,
+            strokeWeight: 2,
+            fillColor: accStroke,
+            fillOpacity: 0.1,
             clickable: false,
             zIndex: 1,
           }}
@@ -491,7 +686,7 @@ function GoogleLiveMapInner({ lat, lng, accuracyM, markerLabel, liveTrail, maps,
       ) : null}
       <Marker
         position={{ lat: smooth.lat, lng: smooth.lng }}
-        icon={googleLiveMarkerIcon(maps)}
+        icon={markerIcon}
         title={markerLabel || 'Pet location'}
         zIndex={3}
       />
@@ -513,6 +708,9 @@ function GooglePositionMap({
   liveTrail = [],
   recenterLabel = 'Follow pet',
   showRouteVertices = false,
+  petMarker = null,
+  mapActive = true,
+  layoutTick = 0,
 }) {
   const [authFailed, setAuthFailed] = useState(false);
   const [followEnabled, setFollowEnabled] = useState(true);
@@ -566,6 +764,9 @@ function GooglePositionMap({
         liveTrail={liveTrail}
         recenterLabel={recenterLabel}
         showRouteVertices={showRouteVertices}
+        petMarker={petMarker}
+        mapActive={mapActive}
+        layoutTick={layoutTick}
       />
     );
   }
@@ -592,16 +793,20 @@ function GooglePositionMap({
           onClick={() => setFollowEnabled(true)}
         />
       ) : null}
-      <GoogleMap
-        mapContainerStyle={fill ? googleMapContainerStyleFill : googleMapContainerStyle}
-        center={{ lat: displayLat, lng: displayLng }}
-        zoom={16}
-        options={googleMapOptions}
-      >
+      <MapSizeGate active={mapActive} layoutTick={layoutTick} className="pp-mapSizeGate--fill">
+        <GoogleMap
+          mapContainerStyle={fill ? googleMapContainerStyleFill : googleMapContainerStyle}
+          center={{ lat: displayLat, lng: displayLng }}
+          zoom={liveMode && !hasPath ? LIVE_MAP_ZOOM : 16}
+          options={googleMapOptions}
+        >
+          {fill ? <GoogleMapResize /> : null}
         {hasPath ? (
           <GoogleFitRoute path={routePath} />
         ) : accuracyM != null && accuracyM > 0 ? (
-          <GoogleFitRoute path={[{ lat, lng }]} />
+          <GoogleFitRoute path={[{ lat, lng }]} zoom={liveMode ? LIVE_MAP_ZOOM : 16} />
+        ) : liveMode ? (
+          <GoogleFitRoute path={[{ lat, lng }]} zoom={LIVE_MAP_ZOOM} />
         ) : null}
         {hasPath && playbackPointIndex != null ? (
           <GoogleFollowPan lat={smoothPlayback.lat} lng={smoothPlayback.lng} follow />
@@ -616,6 +821,7 @@ function GooglePositionMap({
             maps={maps}
             follow={followEnabled}
             onUserPan={() => setFollowEnabled(false)}
+            petMarker={petMarker}
           />
         ) : null}
         {!hasPath && accuracyM != null && accuracyM > 0 ? (
@@ -651,7 +857,8 @@ function GooglePositionMap({
         ) : !liveMode ? (
           <Marker position={center} title={markerLabel || 'Last reported position'} />
         ) : null}
-      </GoogleMap>
+        </GoogleMap>
+      </MapSizeGate>
     </div>
   );
 }
@@ -677,6 +884,9 @@ export default function PositionMap({
   liveTrail = [],
   recenterLabel = 'Follow pet',
   showRouteVertices = false,
+  petMarker = null,
+  mapActive = true,
+  layoutTick = 0,
 }) {
   const key = process.env.REACT_APP_GOOGLE_MAPS_API_KEY?.trim();
   return (
@@ -696,6 +906,9 @@ export default function PositionMap({
           liveTrail={liveTrail}
           recenterLabel={recenterLabel}
           showRouteVertices={showRouteVertices}
+          petMarker={petMarker}
+          mapActive={mapActive}
+          layoutTick={layoutTick}
         />
       ) : (
         <LeafletPositionMap
@@ -711,6 +924,9 @@ export default function PositionMap({
           liveTrail={liveTrail}
           recenterLabel={recenterLabel}
           showRouteVertices={showRouteVertices}
+          petMarker={petMarker}
+          mapActive={mapActive}
+          layoutTick={layoutTick}
         />
       )}
     </div>

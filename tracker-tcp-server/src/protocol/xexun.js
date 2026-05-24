@@ -67,6 +67,7 @@ function parseDeviceStatusBlock(block) {
 
 const KNOWN_TYPES = new Set([
   0x64, // GPS
+  0x65, // Wi‑Fi positioning (known AP BSSIDs)
   0x67, // LBS / cell positioning (often includes doubles in other packets)
   0x6a, // device status
   0x6c, // wrapper segment (may contain nested TLV)
@@ -319,10 +320,12 @@ function parseXexunPacket(packet) {
 
   let deviceStatusBlock = null;
   let gpsBlock = null;
+  let wifiBlock = null;
   let lbsBlock = null;
   for (const b of blocks) {
     if (b.type === 0x6a) deviceStatusBlock = b.data;
     if (b.type === 0x64) gpsBlock = b.data; // last wins
+    if (b.type === 0x65) wifiBlock = b.data; // last wins
     if (b.type === 0x67) lbsBlock = b.data; // last wins
   }
   if (!lbsBlock) {
@@ -336,6 +339,7 @@ function parseXexunPacket(packet) {
   if (messageId === 0x6a && !deviceStatusBlock) deviceStatusBlock = payload;
 
   const gpsParsed = gpsBlock ? parseGpsBlock(gpsBlock) : null;
+  const wifiParsed = wifiBlock ? parseGpsBlock(wifiBlock) : null;
   const lbsParsed = lbsBlock ? parseGpsBlock(lbsBlock) : null;
   const { gpsValid } = detectGpsValidity({ gpsBlock, gpsParsed });
 
@@ -346,6 +350,10 @@ function parseXexunPacket(packet) {
     gps = { ...gpsParsed, source: "gps" };
     source = "gps";
     accuracy = "gps";
+  } else if (wifiParsed && wifiParsed.lat != null && wifiParsed.lng != null) {
+    gps = { ...wifiParsed, source: "wifi" };
+    source = "wifi";
+    accuracy = "wifi";
   } else if (lbsParsed && lbsParsed.lat != null && lbsParsed.lng != null) {
     gps = { ...lbsParsed, source: "lbs" };
     source = "lbs";
@@ -377,6 +385,7 @@ function parseXexunPacket(packet) {
     batteryTime,
     batteryTimeBytes,
     gpsRaw: gpsBlock ? toHex(gpsBlock) : null,
+    wifiRaw: wifiBlock ? toHex(wifiBlock) : null,
     lbsRaw: lbsBlock ? toHex(lbsBlock) : null,
     gps,
     gpsValid,

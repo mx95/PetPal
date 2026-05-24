@@ -754,12 +754,23 @@ const el = {
     btnRefreshHistory: 'Ανανέωση ιστορικού',
     btnRefreshHistoryAria: 'Επαναφόρτωση ιστορικού διαδρομής από τον διακομιστή',
     historyPointsSummary:
-      '{onMap} σημεία GPS στον χάρτη · {stored} αποθηκευμένα · {hidden} κατά προσέγγιση κρυμμένα',
+      '{onMap} σημεία στον χάρτη · {stored} φορτώθηκαν από τον διακομιστή · {hidden} κεραία/Wi‑Fi κρυμμένα από GPS διαδρομή',
+    historyDataSafeNote:
+      'Όλα τα σημεία παραμένουν στον διακομιστή — τίποτα δεν διαγράφεται όταν ο χάρτης κρύβει κατά προσέγγιση σημεία.',
+    historyShowAllFixes: 'Εμφάνιση όλων των σημείων (συμπ. κεραία / Wi‑Fi)',
     historyCalendarFallback:
       'Δεν λήφθηκαν σημεία σε αυτό το εύρος — εμφανίζονται τα πιο πρόσφατα αποθηκευμένα.',
     historyDaysCoverage: 'GPS δραστηριότητα σε {active} από {total} ημέρες στο εύρος',
     historyStationaryHint:
       'Χωρίς διαδρομή — {count} αναφορές από το ίδιο σημείο (κύκλος στον χάρτη)',
+    sourceGps: 'GPS',
+    sourceWifi: 'Wi‑Fi',
+    sourceLbs: 'Κεραία (LBS)',
+    sourceTooltipGps: 'Θέση από δορυφόρους GPS (πιο ακριβής σε εξωτερικό χώρο).',
+    sourceTooltipWifi: 'Θέση από κοντινά δίκτυα Wi‑Fi.',
+    sourceTooltipLbs: 'Θέση από κεραίες κινητής (κατά προσέγγιση).',
+    wifiTrackingHint:
+      'Η παρακολούθηση Wi‑Fi δεν χρησιμοποιεί αυτόματα το Wi‑Fi του σπιτιού σας. Το κολάρο χρειάζεται λειτουργία Wi‑Fi priority (tk= mode 3) και προγραμματισμένα hotspot IDs (BSSID) μέσω εντολής wifi=. Αλλιώς χρησιμοποιεί GPS ή κεραία (LBS).',
   },
   inbox: {
     eyebrow: 'Μηνύματα',

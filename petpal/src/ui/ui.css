@@ -3814,6 +3814,28 @@ body.pp-noScroll {
   box-sizing: border-box;
 }
 
+.pp-trackHistoryRangeCard__hint--safe {
+  color: #15803d;
+  font-weight: 700;
+}
+
+.pp-trackHistoryShowAll {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 8px 0 0;
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--pp-text-2);
+  cursor: pointer;
+}
+
+.pp-trackHistoryShowAll input {
+  margin-top: 2px;
+  accent-color: #5b37ff;
+  flex-shrink: 0;
+}
+
 .pp-trackHistoryRangeCard__hint--warn {
   color: #b45309;
   font-weight: 700;
@@ -4146,7 +4168,8 @@ body.pp-noScroll {
 
 .pp-trackHistoryFrame {
   flex: 1;
-  min-height: 0;
+  min-height: min(44vh, 420px);
+  height: min(44vh, 420px);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -4180,6 +4203,7 @@ body.pp-noScroll {
   background: transparent;
 }
 
+.pp-trackHistoryFrame .pp-mapSizeGate,
 .pp-trackHistoryFrame .pp-leaflet-wrap--fill,
 .pp-trackHistoryFrame .pp-leaflet-wrap--fill > div,
 .pp-trackHistoryFrame .pp-leaflet-wrap > div,
@@ -17500,4 +17524,271 @@ html[data-theme="dark"] .pp-nearbyPartnerCard__name {
   .pp-careCal__layout {
     grid-template-columns: 1fr;
   }
+}
+
+/* Live map — Tractive-inspired, PetPal colors */
+.pp-trackLiveMap {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pp-trackLiveStatus {
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: #fff;
+  border: 1px solid rgba(91, 55, 255, 0.12);
+  box-shadow: 0 6px 20px rgba(16, 24, 40, 0.05);
+}
+
+.pp-trackLiveStatus--quiet {
+  background: rgba(91, 55, 255, 0.06);
+}
+
+.pp-trackLiveStatus__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+}
+
+.pp-trackLiveStatus__fresh {
+  font-size: 13px;
+  font-weight: 700;
+  color: #475467;
+}
+
+.pp-trackLiveStatus__fresh.is-live {
+  color: #15803d;
+}
+
+.pp-trackLiveStatus__source {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: rgba(91, 55, 255, 0.1);
+  color: #5b37ff;
+  border: 1px solid rgba(91, 55, 255, 0.2);
+}
+
+.pp-trackLiveStatus__source--wifi {
+  background: rgba(47, 128, 255, 0.12);
+  color: #2f80ff;
+  border-color: rgba(47, 128, 255, 0.28);
+}
+
+.pp-trackLiveStatus__source--lbs {
+  background: rgba(102, 112, 133, 0.12);
+  color: #475467;
+  border-color: rgba(102, 112, 133, 0.25);
+}
+
+.pp-trackLiveStatus__bat {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(16, 24, 40, 0.05);
+  font-size: 11px;
+  font-weight: 800;
+  color: #344054;
+}
+
+.pp-trackLiveStatus__alert {
+  margin: 8px 0 0;
+  padding: 7px 10px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.35;
+  color: #5b37ff;
+  background: rgba(91, 55, 255, 0.08);
+}
+
+.pp-trackLiveStatus--quiet .pp-trackLiveStatus__alert {
+  margin: 0;
+  background: transparent;
+  padding: 0;
+  color: #475467;
+  font-weight: 650;
+}
+
+.pp-trackLiveMap__stage {
+  position: relative;
+  border-radius: 20px;
+  overflow: hidden;
+  height: min(52vh, 480px);
+  min-height: min(52vh, 480px);
+  background: #e8ecf4;
+  border: 1px solid rgba(91, 55, 255, 0.12);
+  box-shadow: 0 16px 48px rgba(91, 55, 255, 0.1);
+}
+
+.pp-trackLiveMap__frame {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.pp-trackLiveMap__stage--empty {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  padding: 16px;
+}
+
+.pp-mapSizeGate,
+.pp-mapSizeGate--fill {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  min-height: min(52vh, 480px);
+}
+
+.pp-trackLiveMap__frame .pp-leaflet-wrap,
+.pp-trackLiveMap__frame .pp-leaflet-wrap--fill,
+.pp-trackLiveMap__frame .pp-leaflet-wrap > div,
+.pp-trackLiveMap__frame .pp-positionMap,
+.pp-trackLiveMap__frame .pp-positionMap > div,
+.pp-trackLiveMap__frame .leaflet-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-height: 100% !important;
+  height: 100% !important;
+}
+
+.pp-trackLiveSheet {
+  padding: 12px 14px;
+  border-radius: 18px;
+  background: #fff;
+  border: 1px solid rgba(91, 55, 255, 0.1);
+  box-shadow: 0 8px 24px rgba(16, 24, 40, 0.06);
+}
+
+.pp-trackLiveSheet__coords strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 900;
+  color: #101828;
+  letter-spacing: -0.02em;
+}
+
+.pp-trackLiveSheet__coords .pp-subtle {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+}
+
+.pp-trackLiveSheet__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.pp-mapPetPin-wrap.leaflet-marker-icon {
+  width: 56px !important;
+  height: 68px !important;
+  margin-left: -28px !important;
+  margin-top: -64px !important;
+  background: transparent !important;
+  border: 0 !important;
+}
+
+.pp-mapPetPin {
+  position: relative;
+  width: 56px;
+  height: 68px;
+  overflow: visible;
+}
+
+.pp-mapPetPin__head {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 3px solid #fff;
+  box-shadow: 0 6px 20px rgba(16, 24, 40, 0.28);
+  background: linear-gradient(145deg, #f7f4ff, #e8e0ff);
+  flex-shrink: 0;
+  position: relative;
+}
+
+.pp-mapPetPin__img {
+  width: 48px !important;
+  height: 48px !important;
+  max-width: none !important;
+  min-width: 48px;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+
+.pp-mapPetPin__emoji {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.pp-mapPetPin__badge {
+  position: absolute;
+  top: 0;
+  right: 2px;
+  z-index: 3;
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #101828;
+  border: 2px solid #fff;
+  font-size: 11px;
+  line-height: 1;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  color: #fff;
+}
+
+.pp-mapPetPin__badge svg {
+  display: block;
+}
+
+.pp-iconTrackSource {
+  flex-shrink: 0;
+}
+
+.pp-mapPetPin__badge--gps {
+  background: #5b37ff;
+}
+
+.pp-mapPetPin__badge--wifi {
+  background: #2f80ff;
+}
+
+.pp-mapPetPin__badge--lbs {
+  background: #475467;
+}
+
+.pp-mapPetPin__stem {
+  display: block;
+  width: 0;
+  height: 0;
+  margin: -2px auto 0;
+  border-left: 9px solid transparent;
+  border-right: 9px solid transparent;
+  border-top: 14px solid #fff;
+  filter: drop-shadow(0 3px 4px rgba(16, 24, 40, 0.15));
 }

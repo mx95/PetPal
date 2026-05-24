@@ -152,7 +152,7 @@ function buildPositionPayload(imei, d) {
   const isStale = secondsAgo != null ? secondsAgo > 120 : null;
 
   const source = d.source ?? null;
-  const isApproximate = source === "lbs";
+  const isApproximate = source === "lbs" || source === "wifi";
   const battery = d.battery ?? null;
   const signal = d.signal ?? null;
 
@@ -184,7 +184,12 @@ function buildPositionPayload(imei, d) {
 
   const statusText =
     freshness === "live" ? "Live tracking" : freshness === "recent" ? "Updated recently" : "Last seen a while ago";
-  const accuracyText = source === "gps" ? "Precise GPS location" : "Approximate location";
+  const accuracyText =
+    source === "gps"
+      ? "Precise GPS location"
+      : source === "wifi"
+        ? "Wi‑Fi location"
+        : "Approximate location";
   const movementText = d.moving ? "Moving" : "Not moving";
 
   return {

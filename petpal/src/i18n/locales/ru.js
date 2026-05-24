@@ -755,12 +755,23 @@ const ru = {
     btnRefreshHistory: 'Обновить историю',
     btnRefreshHistoryAria: 'Перезагрузить историю маршрута с сервера трекера',
     historyPointsSummary:
-      '{onMap} GPS-точек на карте · {stored} в базе · {hidden} приблизительных скрыто',
+      '{onMap} точек на карте · {stored} загружено с сервера · {hidden} LBS/Wi‑Fi скрыто с GPS-маршрута',
+    historyDataSafeNote:
+      'Все точки остаются на сервере — при скрытии приблизительных фиксаций данные не удаляются.',
+    historyShowAllFixes: 'Показать все точки (включая LBS / Wi‑Fi)',
     historyCalendarFallback:
       'В этом диапазоне нет полученных точек — показаны последние сохранённые.',
     historyDaysCoverage: 'GPS-активность за {active} из {total} дней в диапазоне',
     historyStationaryHint:
       'Маршрута нет — {count} отчётов примерно с одного места (круг на карте)',
+    sourceGps: 'GPS',
+    sourceWifi: 'Wi‑Fi',
+    sourceLbs: 'Вышки (LBS)',
+    sourceTooltipGps: 'Позиция по спутникам GPS (точнее на улице).',
+    sourceTooltipWifi: 'Позиция по ближайшим сетям Wi‑Fi.',
+    sourceTooltipLbs: 'Позиция по вышкам сотовой связи (приблизительно).',
+    wifiTrackingHint:
+      'Wi‑Fi‑трекинг не использует ваш домашний интернет автоматически. Нужен режим Wi‑Fi priority (tk= mode 3) и BSSID роутера через команду wifi=. Иначе используется GPS или LBS.',
   },
   inbox: {
     eyebrow: 'Сообщения',

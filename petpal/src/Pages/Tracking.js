@@ -1,14 +1,16 @@
 import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useI18n } from '../i18n/I18nContext';
 import PetAvatar from '../components/PetAvatar';
 import IconBattery from '../components/icons/IconBattery';
+import IconTrackSource from '../components/icons/IconTrackSource';
 import TimeInput24 from '../components/TimeInput24';
 import { formatDateTime24, formatTime24 } from '../formatTime24';
 import PositionMap from '../tracking/PositionMap';
 import { accuracyRadiusMeters } from '../tracking/mapLiveUtils';
 import { usePets } from '../pets/PetsContext';
 import { getLatestPosition, getPositionHistory, getTrackingDataSource, mapsLink } from '../tracking/petpalVendorClient';
+import { normalizePointSource, sourceBadgeMeta } from '../tracking/mapPetMarker';
 import {
   anchorFromDisplayedPosition,
   applyHeldGpsPosition,
@@ -24,6 +26,15 @@ import {
 
 const LAST_LIVE_PET_KEY = 'petpal_live_selectedPetId';
 const LAST_LIVE_COORDS_KEY = 'petpal_last_live_coords_v1';
+const HISTORY_SHOW_ALL_KEY = 'petpal_history_show_all_fixes_v1';
+
+function loadShowAllHistoryFixes() {
+  try {
+    return localStorage.getItem(HISTORY_SHOW_ALL_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
 
 function hasValidCoords(p) {
   return (
@@ -44,6 +55,24 @@ function loadStoredLastCoords(deviceId) {
   } catch {
     return null;
   }
+}
+
+function pickLastKnownMapCoords(deviceId, liveHistoryFallback, lastKnownRef) {
+  if (liveHistoryFallback && hasValidCoords(liveHistoryFallback)) {
+    return {
+      lat: Number(liveHistoryFallback.lat),
+      lng: Number(liveHistoryFallback.lng),
+      mode: 'lastKnown',
+      at: liveHistoryFallback.at,
+    };
+  }
+  const stored = loadStoredLastCoords(deviceId);
+  if (stored) return { lat: stored.lat, lng: stored.lng, mode: 'lastKnown' };
+  const cached = lastKnownRef?.current;
+  if (cached?.deviceId === deviceId && hasValidCoords(cached)) {
+    return { lat: Number(cached.lat), lng: Number(cached.lng), mode: 'lastKnown' };
+  }
+  return null;
 }
 
 function saveStoredLastCoords(deviceId, lat, lng) {
@@ -413,7 +442,7 @@ function buildHistoryTimelineEvents(points, t, lang, range) {
 export default function Tracking() {
   const { t, language } = useI18n();
   const fieldId = useId();
-  const { pets, updatePet } = usePets();
+  const { pets, updatePet, getCategory } = usePets();
   const dataSource = getTrackingDataSource();
   void dataSource;
 
@@ -423,6 +452,8 @@ export default function Tracking() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [trackerTab, setTrackerTab] = useState('live');
+  const [mapLayoutTick, setMapLayoutTick] = useState(0);
+  const location = useLocation();
   const [historyPoints, setHistoryPoints] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyError, setHistoryError] = useState('');
@@ -432,6 +463,7 @@ export default function Tracking() {
   const [historySpeed, setHistorySpeed] = useState(1);
   const [historyIndex, setHistoryIndex] = useState(0);
   const [historyCalendarMatch, setHistoryCalendarMatch] = useState(true);
+  const [historyShowAllFixes, setHistoryShowAllFixes] = useState(loadShowAllHistoryFixes);
   const trustedLiveAnchorRef = useRef(null);
   const lastKnownLiveRef = useRef(null);
   const [liveHistoryFallback, setLiveHistoryFallback] = useState(null);
@@ -544,6 +576,14 @@ export default function Tracking() {
     };
   }, [trackerTab, effectiveDeviceId, historyReloadTick, historyRange]);
 
+  useEffect(() => {
+    try {
+      localStorage.setItem(HISTORY_SHOW_ALL_KEY, historyShowAllFixes ? '1' : '0');
+    } catch {
+      /* ignore */
+    }
+  }, [historyShowAllFixes]);
+
   const resolvedHistory = useMemo(() => {
     const sorted = [...historyPoints].sort(
       (a, b) => (pointTimestampMs(a) ?? 0) - (pointTimestampMs(b) ?? 0)
@@ -565,10 +605,15 @@ export default function Tracking() {
     if (!effectiveDeviceId) return;
     let lat;
     let lng;
-    if (hasValidCoords(mapPosition) && !mapPosition.positionHiddenApproximate) {
+    if (
+      hasValidCoords(mapPosition) &&
+      !mapPosition.positionHiddenApproximate &&
+      !mapPosition.positionHeldFromPreviousGps &&
+      isTrustedGpsFix(mapPosition)
+    ) {
       lat = Number(mapPosition.lat);
       lng = Number(mapPosition.lng);
-    } else if (hasValidCoords(position)) {
+    } else if (hasValidCoords(position) && isTrustedGpsFix(position)) {
       lat = Number(position.lat);
       lng = Number(position.lng);
     } else {
@@ -617,39 +662,29 @@ export default function Tracking() {
   }, [trackerTab, effectiveDeviceId, hasImmediateLiveCoords]);
 
   const liveMapCoords = useMemo(() => {
-    if (hasValidCoords(mapPosition) && !mapPosition.positionHiddenApproximate) {
-      return { lat: Number(mapPosition.lat), lng: Number(mapPosition.lng), mode: 'live' };
-    }
     if (hasValidCoords(mapPosition) && mapPosition.positionHeldFromPreviousGps) {
       return { lat: Number(mapPosition.lat), lng: Number(mapPosition.lng), mode: 'lastKnown' };
     }
-    if (hasValidCoords(position)) {
-      const approximate =
-        mapPosition?.positionHiddenApproximate ||
-        position?.warningApproximate ||
-        position?.accuracy === 'low' ||
-        position?.source === 'lbs';
+    if (hasValidCoords(mapPosition) && !mapPosition.positionHiddenApproximate) {
+      return { lat: Number(mapPosition.lat), lng: Number(mapPosition.lng), mode: 'live' };
+    }
+    if (hasValidCoords(position) && !isTrustedGpsFix(position)) {
+      const fallback = pickLastKnownMapCoords(
+        effectiveDeviceId,
+        liveHistoryFallback,
+        lastKnownLiveRef
+      );
+      if (fallback) return fallback;
       return {
         lat: Number(position.lat),
         lng: Number(position.lng),
-        mode: approximate ? 'approximate' : 'live',
+        mode: 'approximate',
       };
     }
-    if (liveHistoryFallback && hasValidCoords(liveHistoryFallback)) {
-      return {
-        lat: liveHistoryFallback.lat,
-        lng: liveHistoryFallback.lng,
-        mode: 'lastKnown',
-        at: liveHistoryFallback.at,
-      };
+    if (hasValidCoords(position)) {
+      return { lat: Number(position.lat), lng: Number(position.lng), mode: 'live' };
     }
-    const stored = loadStoredLastCoords(effectiveDeviceId);
-    if (stored) return { ...stored, mode: 'lastKnown' };
-    const cached = lastKnownLiveRef.current;
-    if (cached?.deviceId === effectiveDeviceId && hasValidCoords(cached)) {
-      return { lat: cached.lat, lng: cached.lng, mode: 'lastKnown' };
-    }
-    return null;
+    return pickLastKnownMapCoords(effectiveDeviceId, liveHistoryFallback, lastKnownLiveRef);
   }, [mapPosition, position, liveHistoryFallback, effectiveDeviceId]);
 
   useEffect(() => {
@@ -662,10 +697,16 @@ export default function Tracking() {
     });
   }, [trackerTab, liveMapCoords]);
 
-  const liveMapAccuracyM = useMemo(
-    () => accuracyRadiusMeters(mapPosition || position),
-    [mapPosition, position]
-  );
+  const liveMapAccuracyM = useMemo(() => {
+    const fix = position;
+    if (fix && !isTrustedGpsFix(fix) && liveMapCoords?.mode === 'lastKnown') {
+      return 72;
+    }
+    if (fix && !isTrustedGpsFix(fix)) {
+      return Math.max(accuracyRadiusMeters(fix) || 0, 180);
+    }
+    return accuracyRadiusMeters(mapPosition || position);
+  }, [mapPosition, position, liveMapCoords]);
 
   const filteredHistory = useMemo(() => {
     const filtered = filterHistoryPoints(resolvedHistory, historyRange);
@@ -680,6 +721,15 @@ export default function Tracking() {
   );
 
   const mapHistoryPoints = useMemo(() => {
+    if (historyShowAllFixes) {
+      const allInRange = filterHistoryPoints(
+        [...historyPoints]
+          .sort((a, b) => (pointTimestampMs(a) ?? 0) - (pointTimestampMs(b) ?? 0))
+          .filter((p) => hasValidCoords(p)),
+        historyRange
+      );
+      if (allInRange.length > 0) return allInRange;
+    }
     if (filteredHistory.length >= 2) return filteredHistory;
     const relaxed = resolveHistoryPositions(
       [...historyPoints].sort((a, b) => (pointTimestampMs(a) ?? 0) - (pointTimestampMs(b) ?? 0))
@@ -689,7 +739,7 @@ export default function Tracking() {
     if (filteredHistory.length > 0) return filteredHistory;
     if (relaxedFiltered.length > 0) return relaxedFiltered;
     return [];
-  }, [filteredHistory, historyPoints, historyRange]);
+  }, [filteredHistory, historyPoints, historyRange, historyShowAllFixes]);
   const historyAnalytics = useMemo(() => buildHistoryAnalytics(mapHistoryPoints), [mapHistoryPoints]);
   const historyTimelineEvents = useMemo(
     () => buildHistoryTimelineEvents(mapHistoryPoints, t, language, historyRange),
@@ -776,6 +826,64 @@ export default function Tracking() {
     setHistoryReloadTick((n) => n + 1);
   }, []);
 
+  const liveSourceKind = useMemo(() => normalizePointSource(position), [position]);
+
+  const liveSourceLabel = useMemo(() => {
+    const key = sourceBadgeMeta(liveSourceKind).kind;
+    if (key === 'wifi') return t('trackingPage.sourceWifi');
+    if (key === 'lbs') return t('trackingPage.sourceLbs');
+    return t('trackingPage.sourceGps');
+  }, [liveSourceKind, t]);
+
+  const liveSourceTooltip = useMemo(() => {
+    if (liveSourceKind === 'wifi') return t('trackingPage.sourceTooltipWifi');
+    if (liveSourceKind === 'lbs') return t('trackingPage.sourceTooltipLbs');
+    return t('trackingPage.sourceTooltipGps');
+  }, [liveSourceKind, t]);
+
+  const liveMapActive = trackerTab === 'live';
+  const historyMapActive = trackerTab === 'history' && mapHistoryPoints.length > 0;
+
+  useEffect(() => {
+    if (!liveMapActive && !historyMapActive) return undefined;
+    const bump = () => setMapLayoutTick((n) => n + 1);
+    const raf = requestAnimationFrame(bump);
+    const t1 = window.setTimeout(bump, 200);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.clearTimeout(t1);
+    };
+  }, [liveMapActive, historyMapActive, location.pathname, effectiveDeviceId]);
+
+  useEffect(() => {
+    const bump = () => setMapLayoutTick((n) => n + 1);
+    const raf = requestAnimationFrame(bump);
+    const t0 = window.setTimeout(bump, 0);
+    const onPageShow = () => bump();
+    const onVis = () => {
+      if (document.visibilityState === 'visible') bump();
+    };
+    window.addEventListener('pageshow', onPageShow);
+    document.addEventListener('visibilitychange', onVis);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.clearTimeout(t0);
+      window.removeEventListener('pageshow', onPageShow);
+      document.removeEventListener('visibilitychange', onVis);
+    };
+  }, []);
+
+  const livePetMarker = useMemo(() => {
+    if (!selectedPet) return null;
+    const cat = getCategory(selectedPet);
+    return {
+      photoUrl: selectedPet.photoUrl || selectedPet.photoDataUrl || '',
+      placeholderEmoji: cat?.emoji || '🐾',
+      sourceKind: liveSourceKind,
+      name: selectedPet.name,
+    };
+  }, [selectedPet, getCategory, liveSourceKind]);
+
   function saveIdAndLoad(e) {
     e?.preventDefault();
     const next = deviceId.trim();
@@ -819,15 +927,10 @@ export default function Tracking() {
 
 
   const signalLive = position != null;
-  const hasCoordinates = liveMapCoords != null;
   const showingLastKnownOnMap = liveMapCoords?.mode === 'lastKnown' || liveMapCoords?.mode === 'approximate';
-  const approx = position?.warningApproximate || position?.accuracy === 'low' || position?.source === 'lbs';
-  const accuracyLabel = approx ? t('trackingPage.accuracyApprox') : t('trackingPage.accuracyHigh');
   const secondsAgo =
     typeof position?.secondsAgo === 'number' && Number.isFinite(position.secondsAgo) ? position.secondsAgo : null;
   const lastUpdateLabel = formatLastSeen(secondsAgo, t);
-
-  const gpsOkVisual = hasCoordinates && !approx && position?.source !== 'lbs' && !position?.warningStale;
 
   const receivedTimeLabel = position?.serverTime
     ? formatTime(position.serverTime, language)
@@ -854,9 +957,6 @@ export default function Tracking() {
       : null;
 
   const displaySpeedKmh = position ? sanitizeSpeedKmh(position.speed) : null;
-  const liveStatusShort =
-    position?.statusText || (signalLive ? t('trackingPage.signalLive') : t('trackingPage.signalQuiet'));
-  const gpsChipLabel = gpsOkVisual ? t('trackingPage.gpsOk') : t('trackingPage.gpsWeak');
   const activityMovement =
     position?.movementText || (position?.isMoving ? t('trackingPage.moving') : t('trackingPage.notMoving'));
 
@@ -908,158 +1008,112 @@ export default function Tracking() {
           </button>
         ))}
       </nav>
-      {selectedPet && trackerTab === 'live' ? (
-        <section className="pp-trackLiveBar" aria-label={selectedPet.name}>
-          <div className="pp-trackLiveBar__row pp-trackLiveBar__row--meta">
-            <PetAvatar pet={selectedPet} size={32} />
-            <div className="pp-trackLiveBar__inline">
-              <span className="pp-trackLiveBar__name">{selectedPet.name}</span>
-              <span className="pp-trackLiveBar__dot" aria-hidden>·</span>
-              <span className={`pp-trackLiveBar__live${signalLive ? ' is-live' : ''}`}>{liveStatusShort}</span>
-              <span className="pp-trackLiveBar__dot" aria-hidden>·</span>
-              <span className="pp-trackLiveBar__updated">{lastUpdateLabel}</span>
-            </div>
-          </div>
-          <div className="pp-trackLiveBar__row pp-trackLiveBar__row--actions">
-            <button
-              type="button"
-              className="pp-trackLocateBtn pp-btn pp-btnPrimary"
-              disabled={loading || !effectiveDeviceId}
-              onClick={() => void refresh()}
-            >
-              {t('trackingPage.btnLocate')}
-            </button>
-            {position ? (
-              <div className="pp-trackLiveBar__quick" aria-label={t('trackingPage.liveQuickStatus')}>
-                <span className={`pp-trackMiniChip ${gpsOkVisual ? 'pp-trackMiniChip--ok' : 'pp-trackMiniChip--warn'}`}>
-                  {gpsOkVisual ? '✓' : '⚠'} {gpsChipLabel}
+      <section
+        className="pp-trackLiveMap"
+        style={{ display: liveMapActive ? 'flex' : 'none' }}
+        aria-hidden={!liveMapActive}
+      >
+        {liveMapCoords ? (
+          <>
+            <div className="pp-trackLiveStatus" role="status" aria-live="polite">
+              <div className="pp-trackLiveStatus__row">
+                <span className={`pp-trackLiveStatus__fresh${signalLive ? ' is-live' : ''}`}>{lastUpdateLabel}</span>
+                <span
+                  className={`pp-trackLiveStatus__source pp-trackLiveStatus__source--${liveSourceKind}`}
+                  title={
+                    position?.source
+                      ? `${liveSourceTooltip} (${String(position.source)})`
+                      : liveSourceTooltip
+                  }
+                >
+                  <IconTrackSource kind={liveSourceKind} size={13} />
+                  {liveSourceLabel}
                 </span>
                 {batPct != null ? (
-                  <span
-                    className="pp-trackMiniChip pp-trackMiniChip--bat"
-                    aria-label={t('trackingPage.batteryPctAria', { pct: batPct })}
-                  >
+                  <span className="pp-trackLiveStatus__bat" aria-label={t('trackingPage.batteryPctAria', { pct: batPct })}>
                     <IconBattery pct={batPct} size={16} />
                     {batPct}%
                   </span>
                 ) : null}
               </div>
-            ) : null}
-          </div>
-        </section>
-      ) : null}
-
-
-      {trackerTab === 'live' ? (
-      <section className="pp-card pp-pad pp-trackMapShell pp-trackMapShell--compact">
-        <div className="pp-trackMapHead pp-trackMapHead--inline">
-          <h2 className="pp-trackMapHead__title">{t('trackingPage.sectionMap')}</h2>
-          {liveMapCoords ? (
-            <a
-              className="pp-trackMapHead__link"
-              href={mapsLink(liveMapCoords.lat, liveMapCoords.lng)}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              {t('trackingPage.openGoogleMaps')}
-            </a>
-          ) : null}
-        </div>
-        {liveMapCoords ? (
-          <>
-            {showingLastKnownOnMap ? (
-              <p className="pp-trackMapLastKnown" role="status">
-                {liveMapCoords.mode === 'approximate'
-                  ? t('trackingPage.mapApproximateBanner')
-                  : t('trackingPage.mapLastKnownBanner')}
-                {liveMapCoords.at
-                  ? ` · ${formatTime(liveMapCoords.at, language)}`
-                  : liveMapCoords.mode === 'lastKnown' && position?.serverTime
-                    ? ` · ${formatTime(position.serverTime, language)}`
-                    : ''}
-              </p>
-            ) : null}
-            <div className="pp-trackMapFrame">
-              <PositionMap
-                liveMode
-                lat={liveMapCoords.lat}
-                lng={liveMapCoords.lng}
-                accuracyM={liveMapAccuracyM}
-                markerLabel={selectedPet?.name || t('trackingPage.liveMarkerDefault')}
-                liveTrail={liveTrail}
-                recenterLabel={t('trackingPage.mapFollowPet')}
-              />
+              {showingLastKnownOnMap ? (
+                <p className="pp-trackLiveStatus__alert">
+                  {liveMapCoords.mode === 'approximate'
+                    ? t('trackingPage.mapApproximateBanner')
+                    : t('trackingPage.mapLastKnownBanner')}
+                </p>
+              ) : null}
             </div>
-            <div className="pp-trackMapMeta">
-              <span>
-                {t('trackingPage.lblLatLng')}: {liveMapCoords.lat.toFixed(5)}, {liveMapCoords.lng.toFixed(5)}
-              </span>
-              {displaySpeedKmh != null ? (
-                <span>
-                  {t('trackingPage.lblSpeed')}: {displaySpeedKmh.toFixed(1)} {t('trackingPage.speedUnitKmh')}
-                </span>
-              ) : null}
-              <span>
-                {t('trackingPage.lblReceivedTime')}: {receivedTimeLabel}
-              </span>
-              <span>
-                {t('trackingPage.lblDeviceTime')}: {deviceTimeLabel}
-              </span>
-              {position ? (
-                <>
-                  <span>
-                    {t('trackingPage.cardGps')}: {gpsChipLabel}
-                    {position?.warningStale ? ` · ${t('trackingPage.warnOffline')}` : ''}
+            <div className="pp-trackLiveMap__stage">
+              <div className="pp-trackLiveMap__frame">
+                <PositionMap
+                  liveMode
+                  fill
+                  mapActive={liveMapActive}
+                  layoutTick={mapLayoutTick}
+                  lat={liveMapCoords.lat}
+                  lng={liveMapCoords.lng}
+                  accuracyM={liveMapAccuracyM}
+                  markerLabel={selectedPet?.name || t('trackingPage.liveMarkerDefault')}
+                  liveTrail={liveTrail}
+                  petMarker={livePetMarker}
+                  recenterLabel={t('trackingPage.mapFollowPet')}
+                />
+              </div>
+            </div>
+            <div className="pp-trackLiveSheet">
+              <div className="pp-trackLiveSheet__coords">
+                <strong>
+                  {liveMapCoords.lat.toFixed(5)}, {liveMapCoords.lng.toFixed(5)}
+                </strong>
+                {displaySpeedKmh != null ? (
+                  <span className="pp-subtle">
+                    {displaySpeedKmh.toFixed(1)} {t('trackingPage.speedUnitKmh')}
                   </span>
-                  <span>{t('trackingPage.accuracyLabel', { value: accuracyLabel })}</span>
-                  {satellitesLabel ? <span>{satellitesLabel}</span> : null}
-                  <span>
-                    {t('trackingPage.healthBattery')}: {batPct != null ? `${batPct}%` : '—'}
-                    {position?.isCharging ? ` · ${t('trackingPage.charging')}` : ''}
-                  </span>
-                  {signalLabel ? (
-                    <span>
-                      {t('trackingPage.healthSignal')}: {signalLabel}
-                    </span>
-                  ) : null}
-                  <span>
-                    {t('trackingPage.activitySteps')}: {position.steps ?? '—'} · {activityMovement}
-                  </span>
-                </>
-              ) : null}
+                ) : null}
+              </div>
+              <div className="pp-trackLiveSheet__actions">
+                <button
+                  type="button"
+                  className="pp-btn pp-btnPrimary"
+                  disabled={loading || !effectiveDeviceId}
+                  onClick={() => void refresh()}
+                >
+                  {t('trackingPage.btnLocate')}
+                </button>
+                <a
+                  className="pp-btn pp-btn--ghost"
+                  href={mapsLink(liveMapCoords.lat, liveMapCoords.lng)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {t('trackingPage.openGoogleMaps')}
+                </a>
+              </div>
             </div>
           </>
         ) : (
-          <div className="pp-trackMapEmpty pp-trackNoSignal">
-            <div className="pp-trackNoSignal__icon" aria-hidden>
-              <svg viewBox="0 0 48 48" width="42" height="42" fill="none">
-                <circle cx="24" cy="24" r="20" fill="currentColor" opacity="0.09" />
-                <path d="M14 26c5-5 15-5 20 0M18 31c3-3 9-3 12 0M22 36h4" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-                <path d="M34 14 14 34" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-              </svg>
+          <>
+            <div className="pp-trackLiveStatus pp-trackLiveStatus--quiet" role="status">
+              <p className="pp-trackLiveStatus__alert">{error || t('trackingPage.noLiveSignalBody')}</p>
             </div>
-            <h3>{t('trackingPage.noLiveSignalTitle')}</h3>
-            <p>{error || t('trackingPage.noLiveSignalBody')}</p>
-            <ul>
-              <li>{t('trackingPage.noLiveSignalTipSim')}</li>
-              <li>{t('trackingPage.noLiveSignalTipImei')}</li>
-              <li>{t('trackingPage.noLiveSignalTipPower')}</li>
-            </ul>
-            <div className="pp-trackNoSignal__actions">
-              <button type="button" className="pp-btn pp-btnPrimary" disabled={loading || !effectiveDeviceId} onClick={() => void refresh()}>
-                {t('trackingPage.quickRefresh')}
-              </button>
-              <Link className="pp-btn pp-btn--ghost" to="/admin/tracker">
-                {t('trackingPage.setupGuide')}
-              </Link>
+            <div className="pp-trackLiveMap__stage pp-trackLiveMap__stage--empty">
+              <div className="pp-trackMapEmpty pp-trackNoSignal">
+                <h3>{t('trackingPage.noLiveSignalTitle')}</h3>
+                <button type="button" className="pp-btn pp-btnPrimary" disabled={loading || !effectiveDeviceId} onClick={() => void refresh()}>
+                  {t('trackingPage.quickRefresh')}
+                </button>
+              </div>
             </div>
-          </div>
+          </>
         )}
       </section>
-      ) : null}
 
-      {trackerTab === 'history' ? (
-        <section className="pp-trackHistory">
+      <section
+        className="pp-trackHistory"
+        style={{ display: trackerTab === 'history' ? 'block' : 'none' }}
+        aria-hidden={trackerTab !== 'history'}
+      >
           <div className="pp-trackHistoryLayout">
             <div className="pp-card pp-pad pp-trackHistoryMap">
               <div className="pp-trackHistoryMap__top">
@@ -1101,6 +1155,8 @@ export default function Tracking() {
                     <PositionMap
                       fill
                       showRouteVertices
+                      mapActive={historyMapActive}
+                      layoutTick={mapLayoutTick}
                       lat={mapHistoryPoints[Math.min(historyIndex, mapHistoryPoints.length - 1)]?.lat ?? mapHistoryPoints[0].lat}
                       lng={mapHistoryPoints[Math.min(historyIndex, mapHistoryPoints.length - 1)]?.lng ?? mapHistoryPoints[0].lng}
                       path={historyStationary ? [] : historyMapPath}
@@ -1147,13 +1203,30 @@ export default function Tracking() {
                 </div>
                 {historyError ? <div className="pp-error pp-trackHistoryError">{historyError}</div> : null}
                 {!historyLoading && historyPoints.length > 0 ? (
-                  <p className="pp-trackHistoryRangeCard__hint">
-                    {t('trackingPage.historyPointsSummary', {
-                      onMap: historyLoadMeta.onMap,
-                      stored: historyLoadMeta.stored,
-                      hidden: historyLoadMeta.approximateHidden,
-                    })}
-                  </p>
+                  <>
+                    <p className="pp-trackHistoryRangeCard__hint pp-trackHistoryRangeCard__hint--safe">
+                      {t('trackingPage.historyDataSafeNote')}
+                    </p>
+                    <p className="pp-trackHistoryRangeCard__hint">
+                      {t('trackingPage.historyPointsSummary', {
+                        onMap: historyLoadMeta.onMap,
+                        stored: historyLoadMeta.stored,
+                        hidden: historyLoadMeta.approximateHidden,
+                      })}
+                    </p>
+                    <label className="pp-trackHistoryShowAll">
+                      <input
+                        type="checkbox"
+                        checked={historyShowAllFixes}
+                        onChange={(e) => {
+                          setHistoryPlaying(false);
+                          setHistoryIndex(0);
+                          setHistoryShowAllFixes(e.target.checked);
+                        }}
+                      />
+                      <span>{t('trackingPage.historyShowAllFixes')}</span>
+                    </label>
+                  </>
                 ) : null}
                 {historyRangeFallback ? (
                   <p className="pp-trackHistoryRangeCard__hint pp-trackHistoryRangeCard__hint--warn">
@@ -1290,11 +1363,13 @@ export default function Tracking() {
             <article><span>•</span><small>Stops</small><strong>{historyAnalytics.stops}</strong></article>
           </div>
         </section>
-      ) : null}
 
       {trackerTab === 'device' ? (
       <section className="pp-card pp-pad pp-trackDeviceCard">
         <h2 className="pp-sectionTitle">{t('trackingPage.sectionPetDevice')}</h2>
+        <p className="pp-subtle pp-trackWifiHint" style={{ marginTop: 0 }}>
+          {t('trackingPage.wifiTrackingHint')}
+        </p>
         <form className="pp-form pp-trackDeviceForm" onSubmit={saveIdAndLoad}>
           <div>
             <label className="pp-label" htmlFor={fieldId}>
