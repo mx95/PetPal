@@ -1139,6 +1139,13 @@ export default function Tracking() {
             <div className="pp-trackLiveMap__stage pp-trackLiveMap__stage--empty">
               <div className="pp-trackMapEmpty pp-trackNoSignal">
                 <h3>{position?.atHomeWifi ? t('trackingPage.mapWifiHomeTitle') : t('trackingPage.noLiveSignalTitle')}</h3>
+                {position?.atHomeWifi && position?.wifiBssids?.length ? (
+                  <p className="pp-subtle pp-trackLiveDetectedBssids">
+                    {t('trackingPage.mapWifiDetectedNetworks', {
+                      networks: position.wifiBssids.slice(0, 3).join(', '),
+                    })}
+                  </p>
+                ) : null}
                 <button type="button" className="pp-btn pp-btnPrimary" disabled={loading || !effectiveDeviceId} onClick={() => void refresh()}>
                   {t('trackingPage.quickRefresh')}
                 </button>
@@ -1441,7 +1448,11 @@ export default function Tracking() {
       ) : null}
 
       {trackerTab === 'device' ? (
-        <TrackDevicePanel imei={effectiveDeviceId} petName={selectedPet?.name || ''} />
+        <TrackDevicePanel
+          imei={effectiveDeviceId}
+          petName={selectedPet?.name || ''}
+          scannedBssids={position?.wifiBssids}
+        />
       ) : null}
 
       {trackerTab === 'device' && hasDiagnostics(position) ? (

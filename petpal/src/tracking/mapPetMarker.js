@@ -10,6 +10,7 @@ export const LIVE_MAP_ZOOM = 17;
  */
 export function normalizePointSource(p) {
   if (!p) return 'gps';
+  if (p.atHomeWifi) return 'wifi';
   const src = String(p.source || '').toLowerCase().trim();
   if (src === 'gps' || p.gpsValid === true) return 'gps';
   if (src === 'wifi' || src === 'wlan' || src === 'wi-fi') return 'wifi';

@@ -102,6 +102,30 @@ function mergeDeviceRecord(prev, incoming) {
   if ((!incoming.wifiBssids || incoming.wifiBssids.length === 0) && prev?.wifiBssids?.length) {
     merged.wifiBssids = prev.wifiBssids;
   }
+  const incomingWifi =
+    incoming.atHomeWifi ||
+    incoming.source === "wifi" ||
+    (Array.isArray(incoming.wifiBssids) && incoming.wifiBssids.length > 0);
+  const prevWifi =
+    prev?.atHomeWifi ||
+    prev?.source === "wifi" ||
+    (Array.isArray(prev?.wifiBssids) && prev.wifiBssids.length > 0);
+  if (
+    !incomingWifi &&
+    prevWifi &&
+    incoming.source === "lbs" &&
+    !hasValidGps(incoming.location)
+  ) {
+    merged.source = "wifi";
+    merged.atHomeWifi = true;
+    merged.location = null;
+    merged.gps = {
+      lat: null,
+      lng: null,
+      speedKmh: incoming.speed ?? prev.speed ?? null,
+      timestamp: incoming.lastUpdate ?? prev.lastUpdate ?? null,
+    };
+  }
   if (incoming.atHomeWifi && !hasValidGps(incoming.location)) {
     merged.location = null;
     merged.gps = {

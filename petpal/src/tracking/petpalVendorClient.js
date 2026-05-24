@@ -199,6 +199,9 @@ function normalizeXexunPosition(json) {
     warningStale: json.warningStale ?? null,
     gpsValid: json.gpsValid === true ? true : json.gpsValid === false ? false : null,
     satellites: json.satellites != null ? Number(json.satellites) : null,
+    wifiBssids: Array.isArray(json.wifiBssids)
+      ? json.wifiBssids.map((s) => String(s).toLowerCase()).filter(Boolean)
+      : null,
     diagnostics,
   };
 }

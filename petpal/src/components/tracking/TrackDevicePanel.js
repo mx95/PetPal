@@ -3,10 +3,12 @@ import { useI18n } from '../../i18n/I18nContext';
 import {
   applyTrackingModePreset,
   applyWifiBssids,
+  bssidSameRouterFamily,
   fetchPendingCommands,
   formatBssidInput,
   isTrackerCommandsAvailable,
   normalizeBssid,
+  pickBestScannedBssid,
   queryTrackingMode,
   queryWifiBssids,
 } from '../../tracking/trackerCommandClient';
@@ -20,9 +22,9 @@ import IconTrackSource from '../icons/IconTrackSource';
 const SIMPLE_MODE_IDS = ['wifi_priority', 'gps_priority'];
 
 /**
- * @param {{ imei: string, petName?: string }} props
+ * @param {{ imei: string, petName?: string, scannedBssids?: string[]|null }} props
  */
-export default function TrackDevicePanel({ imei, petName = '' }) {
+export default function TrackDevicePanel({ imei, petName = '', scannedBssids = null }) {
   const { t } = useI18n();
   const commandsAvailable = isTrackerCommandsAvailable();
 
@@ -49,6 +51,32 @@ export default function TrackDevicePanel({ imei, petName = '' }) {
     () => networks.map((n) => normalizeBssid(n.bssid)).filter(Boolean),
     [networks]
   );
+
+  const detectedList = useMemo(
+    () => (Array.isArray(scannedBssids) ? scannedBssids.map(normalizeBssid).filter(Boolean) : []),
+    [scannedBssids]
+  );
+
+  const primaryUserBssid = validBssids[0] || null;
+  const bssidMismatch = useMemo(() => {
+    if (!primaryUserBssid || detectedList.length === 0) return false;
+    return !detectedList.some(
+      (s) => s === primaryUserBssid || bssidSameRouterFamily(primaryUserBssid, s)
+    );
+  }, [primaryUserBssid, detectedList]);
+
+  const suggestedBssid = useMemo(
+    () => pickBestScannedBssid(primaryUserBssid || '', detectedList),
+    [primaryUserBssid, detectedList]
+  );
+
+  const applySuggestedBssid = useCallback(() => {
+    if (!suggestedBssid || networks.length === 0) return;
+    const firstId = networks[0].id;
+    setNetworks((prev) =>
+      prev.map((n, i) => (i === 0 || n.id === firstId ? { ...n, bssid: suggestedBssid } : n))
+    );
+  }, [suggestedBssid, networks]);
 
   const refreshPending = useCallback(async () => {
     if (!imei || !commandsAvailable) return;
@@ -193,6 +221,30 @@ export default function TrackDevicePanel({ imei, petName = '' }) {
               <h3>{t('trackingPage.devicePanelWifiTitle')}</h3>
               <p className="pp-subtle">{t('trackingPage.devicePanelWifiHelpSimple')}</p>
             </div>
+
+            {detectedList.length > 0 ? (
+              <div className="pp-trackDeviceWifi__detected" role="status">
+                <p className="pp-trackDeviceWifi__detectedTitle">{t('trackingPage.devicePanelWifiDetectedTitle')}</p>
+                <ul className="pp-trackDeviceWifi__detectedList">
+                  {detectedList.map((mac) => (
+                    <li key={mac}>
+                      <code>{mac}</code>
+                      {primaryUserBssid && bssidSameRouterFamily(primaryUserBssid, mac) && mac !== primaryUserBssid ? (
+                        <span className="pp-trackDeviceWifi__detectedTag">{t('trackingPage.devicePanelWifiDetectedMatch')}</span>
+                      ) : null}
+                    </li>
+                  ))}
+                </ul>
+                {bssidMismatch && suggestedBssid ? (
+                  <div className="pp-trackDeviceWifi__detectedFix">
+                    <p className="pp-subtle">{t('trackingPage.devicePanelWifiDetectedMismatch')}</p>
+                    <button type="button" className="pp-btn pp-btn--ghost" onClick={applySuggestedBssid}>
+                      {t('trackingPage.devicePanelWifiUseDetected', { bssid: suggestedBssid })}
+                    </button>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
 
             <ul className="pp-trackDeviceWifi__list">
               {networks.map((n, index) => {

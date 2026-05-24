@@ -778,6 +778,7 @@ const en = {
     mapWifiHomeBanner:
       'Home Wi‑Fi detected — your pet is likely at home. The map needs an outdoor GPS fix for an exact pin (walk outside for a few minutes).',
     mapWifiHomeTitle: 'At home on Wi‑Fi',
+    mapWifiDetectedNetworks: 'Collar sees nearby Wi‑Fi: {networks}',
     noLiveSignalTitle: 'No location stored yet',
     noLiveSignalBody: 'This tracker has not sent coordinates to the server yet.',
     noLiveSignalTipSim: 'Check the SIM card is active',
@@ -920,7 +921,12 @@ const en = {
       'Or on your phone: connect to home Wi‑Fi → Wi‑Fi settings → tap your network → look for MAC address or BSSID.',
     devicePanelWifiHelpStep3: 'Type or paste the code here — we’ll format it for you (looks like aa:bb:cc:dd:ee:ff).',
     devicePanelWifiHelpNote:
-      'Use your main home Wi‑Fi (often 2.4 GHz). The collar does not need your Wi‑Fi password — only this router code.',
+      'Use your main home Wi‑Fi (often 2.4 GHz). The collar does not need your Wi‑Fi password — only this router code. If your router sticker shows 80:… but the collar lists ba:…, use the code from the collar list below (that is the real Wi‑Fi ID).',
+    devicePanelWifiDetectedTitle: 'Networks your collar sees right now',
+    devicePanelWifiDetectedMatch: 'Likely your router',
+    devicePanelWifiDetectedMismatch:
+      'The code you entered does not match what the collar scans. Router stickers often differ from the Wi‑Fi code the collar needs.',
+    devicePanelWifiUseDetected: 'Use detected code {bssid}',
     devicePanelWifiAdd: '+ Add another home Wi‑Fi',
     devicePanelWifiRemove: 'Remove',
     devicePanelApplyHome: 'Set up home tracking',

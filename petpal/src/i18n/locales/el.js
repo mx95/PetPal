@@ -657,6 +657,8 @@ const el = {
     mapLastKnownBadFixBanner:
       'Μη έγκυρη θέση Wi‑Fi/κεραίας — εμφανίζεται η τελευταία γνωστή. Ελέγξτε τον κωδικό router στην καρτέλα Συσκευή.',
     noLiveSignalTitle: 'Δεν υπάρχει αποθηκευμένη θέση ακόμα',
+    mapWifiHomeTitle: 'Στο σπίτι με Wi‑Fi',
+    mapWifiDetectedNetworks: 'Ο ιχνηλάτης βλέπει Wi‑Fi: {networks}',
     noLiveSignalBody: 'Ο ιχνηλάτης δεν έχει στείλει συντεταγμένες στον διακομιστή ακόμα.',
     noLiveSignalTipSim: 'Ελέγξτε ότι η κάρτα SIM είναι ενεργή',
     noLiveSignalTipImei: 'Επιβεβαιώστε ότι το IMEI είναι σωστό',
@@ -797,7 +799,12 @@ const el = {
       'Ή στο κινητό: Wi‑Fi → δίκτυο σπιτιού → MAC address / BSSID.',
     devicePanelWifiHelpStep3: 'Πληκτρολογήστε ή επικολλήστε — θα μορφοποιηθεί (aa:bb:cc:dd:ee:ff).',
     devicePanelWifiHelpNote:
-      'Χρησιμοποιήστε το κύριο Wi‑Fi σπιτιού (συχνά 2,4 GHz). Δεν χρειάζεται κωδικός Wi‑Fi.',
+      'Χρησιμοποιήστε το κύριο Wi‑Fi σπιτιού (συχνά 2,4 GHz). Δεν χρειάζεται κωδικός Wi‑Fi. Αν η αυτοκόλλητη του router δείχνει 80:… αλλά ο ιχνηλάτης δείχνει ba:…, χρησιμοποιήστε τον κωδικό από τη λίστα του ιχνηλάτη.',
+    devicePanelWifiDetectedTitle: 'Δίκτυα που βλέπει ο ιχνηλάτης τώρα',
+    devicePanelWifiDetectedMatch: 'Πιθανό router σας',
+    devicePanelWifiDetectedMismatch:
+      'Ο κωδικός που πληκτρολογήσατε δεν ταιριάζει με αυτά που σκανάρει ο ιχνηλάτης. Η αυτοκόλλητη του router συχνά διαφέρει από τον πραγματικό κωδικό Wi‑Fi.',
+    devicePanelWifiUseDetected: 'Χρήση κωδικού {bssid}',
     devicePanelWifiAdd: '+ Άλλο Wi‑Fi σπιτιού',
     devicePanelWifiRemove: 'Αφαίρεση',
     devicePanelApplyHome: 'Ρύθμιση εντοπισμού σπιτιού',

@@ -658,6 +658,8 @@ const ru = {
     mapLastKnownBadFixBanner:
       'Неверная позиция Wi‑Fi/сети — показана последняя известная. Проверьте код роутера на вкладке «Устройство».',
     noLiveSignalTitle: 'Местоположение ещё не сохранено',
+    mapWifiHomeTitle: 'Дома в Wi‑Fi',
+    mapWifiDetectedNetworks: 'Ошейник видит Wi‑Fi: {networks}',
     noLiveSignalBody: 'Трекер ещё не отправил координаты на сервер.',
     noLiveSignalTipSim: 'Проверьте, что SIM-карта активна',
     noLiveSignalTipImei: 'Убедитесь, что IMEI указан верно',
@@ -798,7 +800,12 @@ const ru = {
       'Или на телефоне: Wi‑Fi → домашняя сеть → MAC address / BSSID.',
     devicePanelWifiHelpStep3: 'Введите или вставьте — формат aa:bb:cc:dd:ee:ff.',
     devicePanelWifiHelpNote:
-      'Используйте основной домашний Wi‑Fi (часто 2,4 ГГц). Пароль Wi‑Fi не нужен.',
+      'Используйте основной домашний Wi‑Fi (часто 2,4 ГГц). Пароль Wi‑Fi не нужен. Если на роутере указано 80:…, а ошейник показывает ba:… — используйте код из списка ошейника.',
+    devicePanelWifiDetectedTitle: 'Сети, которые ошейник видит сейчас',
+    devicePanelWifiDetectedMatch: 'Вероятно ваш роутер',
+    devicePanelWifiDetectedMismatch:
+      'Введённый код не совпадает с тем, что сканирует ошейник. Наклейка на роутере часто отличается от реального Wi‑Fi ID.',
+    devicePanelWifiUseDetected: 'Использовать код {bssid}',
     devicePanelWifiAdd: '+ Добавить ещё Wi‑Fi',
     devicePanelWifiRemove: 'Удалить',
     devicePanelApplyHome: 'Настроить домашнее отслеживание',

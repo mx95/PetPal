@@ -113,3 +113,27 @@ export function normalizeBssid(raw) {
   if (!/^([0-9a-f]{2}:){5}[0-9a-f]{2}$/.test(s)) return null;
   return s;
 }
+
+/** Same router family (sticker MAC vs Wi‑Fi BSSID often differ in 1st/last byte). */
+export function bssidSameRouterFamily(a, b) {
+  const na = normalizeBssid(a);
+  const nb = normalizeBssid(b);
+  if (!na || !nb) return false;
+  if (na === nb) return true;
+  const pa = na.split(':');
+  const pb = nb.split(':');
+  return pa.slice(1, 5).join(':') === pb.slice(1, 5).join(':');
+}
+
+/** @param {string} userBssid @param {string[]} scanned */
+export function pickBestScannedBssid(userBssid, scanned) {
+  const list = (scanned || []).map(normalizeBssid).filter(Boolean);
+  if (!list.length) return null;
+  const user = normalizeBssid(userBssid);
+  if (user && list.includes(user)) return user;
+  if (user) {
+    const family = list.find((s) => bssidSameRouterFamily(user, s));
+    if (family) return family;
+  }
+  return list[0];
+}

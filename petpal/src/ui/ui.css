@@ -8734,6 +8734,60 @@ body,
   font-size: 12px;
 }
 
+.pp-trackDeviceWifi__detected {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.22);
+}
+
+.pp-trackDeviceWifi__detectedTitle {
+  margin: 0 0 6px;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.pp-trackDeviceWifi__detectedList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+}
+
+.pp-trackDeviceWifi__detectedList code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11px;
+}
+
+.pp-trackDeviceWifi__detectedTag {
+  margin-left: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #059669;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.pp-trackDeviceWifi__detectedFix {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-start;
+}
+
+.pp-trackLiveDetectedBssids {
+  margin: 0 0 10px;
+  max-width: 28rem;
+  text-align: center;
+  font-size: 12px;
+  word-break: break-word;
+}
+
 .pp-trackDeviceWifi__list {
   list-style: none;
   margin: 0 0 10px;
