@@ -22,10 +22,14 @@ function buildPositionPayload(imei, d) {
 
   if (!isPlausibleLatLng(lat, lng)) {
     if (atHomeWifi) {
+      const home = d.homeLocation || null;
+      const hasHome = home && isPlausibleLatLng(home.lat, home.lng);
       return {
         imei,
         lat: null,
         lng: null,
+        homeLat: hasHome ? Number(home.lat) : null,
+        homeLng: hasHome ? Number(home.lng) : null,
         atHomeWifi: true,
         source: "wifi",
         accuracy: "wifi",

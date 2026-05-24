@@ -778,6 +778,9 @@ const en = {
     mapWifiHomeBanner:
       'Home Wi‑Fi detected — your pet is likely at home. The map needs an outdoor GPS fix for an exact pin (walk outside for a few minutes).',
     mapWifiHomeTitle: 'At home on Wi‑Fi',
+    mapHomeLocationBanner: 'Showing your saved home area on the map',
+    mapHomeProvisionalBanner:
+      'Approximate home area from Wi‑Fi reports — walk outside once so GPS can save a precise home pin',
     mapWifiDetectedNetworks: 'Collar sees nearby Wi‑Fi: {networks}',
     noLiveSignalTitle: 'No location stored yet',
     noLiveSignalBody: 'This tracker has not sent coordinates to the server yet.',

@@ -99,6 +99,16 @@ function openSqlite(dbPath) {
   } catch {
     /* column exists */
   }
+  try {
+    db.exec(`ALTER TABLE devices ADD COLUMN home_lat REAL`);
+  } catch {
+    /* column exists */
+  }
+  try {
+    db.exec(`ALTER TABLE devices ADD COLUMN home_lng REAL`);
+  } catch {
+    /* column exists */
+  }
   db.exec(`
     UPDATE positions
     SET received_at = timestamp
@@ -110,12 +120,14 @@ function openSqlite(dbPath) {
   `);
 
   const upsertDevice = db.prepare(`
-    INSERT INTO devices (imei, name, last_lat, last_lng, battery, signal, source, last_update)
-    VALUES (@imei, @name, @last_lat, @last_lng, @battery, @signal, @source, @last_update)
+    INSERT INTO devices (imei, name, last_lat, last_lng, home_lat, home_lng, battery, signal, source, last_update)
+    VALUES (@imei, @name, @last_lat, @last_lng, @home_lat, @home_lng, @battery, @signal, @source, @last_update)
     ON CONFLICT(imei) DO UPDATE SET
       name = COALESCE(excluded.name, devices.name),
       last_lat = COALESCE(excluded.last_lat, devices.last_lat),
       last_lng = COALESCE(excluded.last_lng, devices.last_lng),
+      home_lat = COALESCE(excluded.home_lat, devices.home_lat),
+      home_lng = COALESCE(excluded.home_lng, devices.home_lng),
       battery = COALESCE(excluded.battery, devices.battery),
       signal = COALESCE(excluded.signal, devices.signal),
       source = COALESCE(excluded.source, devices.source),
@@ -156,15 +168,23 @@ function openSqlite(dbPath) {
   `);
 
   const listDevices = db.prepare(`
-    SELECT imei, name, last_lat, last_lng, battery, signal, source, last_update
+    SELECT imei, name, last_lat, last_lng, home_lat, home_lng, battery, signal, source, last_update
     FROM devices
     ORDER BY last_update DESC
   `);
 
   const getDevice = db.prepare(`
-    SELECT imei, name, last_lat, last_lng, battery, signal, source, last_update
+    SELECT imei, name, last_lat, last_lng, home_lat, home_lng, battery, signal, source, last_update
     FROM devices
     WHERE imei = ?
+    LIMIT 1
+  `);
+
+  const getLastGpsPosition = db.prepare(`
+    SELECT lat, lng
+    FROM positions
+    WHERE imei = ? AND source = 'gps'
+    ORDER BY id DESC
     LIMIT 1
   `);
 
@@ -217,6 +237,7 @@ function openSqlite(dbPath) {
     listHistoryByImeiInRange,
     listDevices,
     getDevice,
+    getLastGpsPosition,
     insertCommandQueued,
     markLatestCommandSent,
     markLatestCommandAcked,

@@ -658,6 +658,9 @@ const el = {
       'Μη έγκυρη θέση Wi‑Fi/κεραίας — εμφανίζεται η τελευταία γνωστή. Ελέγξτε τον κωδικό router στην καρτέλα Συσκευή.',
     noLiveSignalTitle: 'Δεν υπάρχει αποθηκευμένη θέση ακόμα',
     mapWifiHomeTitle: 'Στο σπίτι με Wi‑Fi',
+    mapHomeLocationBanner: 'Εμφάνιση της αποθηκευμένης περιοχής σπιτιού στον χάρτη',
+    mapHomeProvisionalBanner:
+      'Κατά προσέγγιση περιοχή σπιτιού από αναφορές Wi‑Fi — βγείτε λίγο έξω για ακριβή GPS',
     mapWifiDetectedNetworks: 'Ο ιχνηλάτης βλέπει Wi‑Fi: {networks}',
     noLiveSignalBody: 'Ο ιχνηλάτης δεν έχει στείλει συντεταγμένες στον διακομιστή ακόμα.',
     noLiveSignalTipSim: 'Ελέγξτε ότι η κάρτα SIM είναι ενεργή',

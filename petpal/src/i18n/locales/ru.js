@@ -659,6 +659,9 @@ const ru = {
       'Неверная позиция Wi‑Fi/сети — показана последняя известная. Проверьте код роутера на вкладке «Устройство».',
     noLiveSignalTitle: 'Местоположение ещё не сохранено',
     mapWifiHomeTitle: 'Дома в Wi‑Fi',
+    mapHomeLocationBanner: 'На карте показана сохранённая зона «дома»',
+    mapHomeProvisionalBanner:
+      'Приблизительная зона дома по Wi‑Fi — выйдите на улицу для точной GPS-метки',
     mapWifiDetectedNetworks: 'Ошейник видит Wi‑Fi: {networks}',
     noLiveSignalBody: 'Трекер ещё не отправил координаты на сервер.',
     noLiveSignalTipSim: 'Проверьте, что SIM-карта активна',

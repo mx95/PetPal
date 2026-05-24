@@ -202,6 +202,8 @@ function normalizeXexunPosition(json) {
     wifiBssids: Array.isArray(json.wifiBssids)
       ? json.wifiBssids.map((s) => String(s).toLowerCase()).filter(Boolean)
       : null,
+    homeLat: json.homeLat != null ? Number(json.homeLat) : null,
+    homeLng: json.homeLng != null ? Number(json.homeLng) : null,
     diagnostics,
   };
 }

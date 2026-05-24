@@ -25,6 +25,12 @@ import {
   sanitizeSpeedKmh,
   hasPlausibleMapCoords,
 } from '../tracking/positionFilter';
+import {
+  homeCoordsFromPosition,
+  inferProvisionalHomeFromHistory,
+  loadHomeAnchor,
+  saveHomeAnchor,
+} from '../tracking/homeAnchorStorage';
 
 const LAST_LIVE_PET_KEY = 'petpal_live_selectedPetId';
 const LAST_LIVE_COORDS_KEY = 'petpal_last_live_coords_v1';
@@ -68,6 +74,24 @@ function pickLastKnownMapCoords(deviceId, liveHistoryFallback, lastKnownRef) {
   const cached = lastKnownRef?.current;
   if (cached?.deviceId === deviceId && hasValidCoords(cached)) {
     return { lat: Number(cached.lat), lng: Number(cached.lng), mode: 'lastKnown' };
+  }
+  return null;
+}
+
+/** Map pin when collar reports home Wi‑Fi (saved home area from last GPS). */
+function pickHomeMapCoords(deviceId, position, liveHistoryFallback, lastKnownRef, provisionalHome) {
+  const fromApi = homeCoordsFromPosition(position);
+  if (fromApi) return { lat: fromApi.lat, lng: fromApi.lng, mode: 'home' };
+  const stored = loadHomeAnchor(deviceId);
+  if (stored) return { lat: stored.lat, lng: stored.lng, mode: 'home' };
+  const last = pickLastKnownMapCoords(deviceId, liveHistoryFallback, lastKnownRef);
+  if (last) return { lat: last.lat, lng: last.lng, mode: 'home' };
+  if (provisionalHome && hasPlausibleMapCoords(provisionalHome)) {
+    return {
+      lat: Number(provisionalHome.lat),
+      lng: Number(provisionalHome.lng),
+      mode: 'homeProvisional',
+    };
   }
   return null;
 }
@@ -464,6 +488,7 @@ export default function Tracking() {
   const trustedLiveAnchorRef = useRef(null);
   const lastKnownLiveRef = useRef(null);
   const [liveHistoryFallback, setLiveHistoryFallback] = useState(null);
+  const [provisionalHomeCoords, setProvisionalHomeCoords] = useState(null);
   const [liveTrail, setLiveTrail] = useState([]);
 
   const selectedPet = useMemo(() => pets.find((p) => p.id === selectedPetId), [pets, selectedPetId]);
@@ -618,7 +643,13 @@ export default function Tracking() {
     }
     lastKnownLiveRef.current = { deviceId: effectiveDeviceId, lat, lng };
     saveStoredLastCoords(effectiveDeviceId, lat, lng, { trusted: true });
+    saveHomeAnchor(effectiveDeviceId, lat, lng);
   }, [mapPosition, position, effectiveDeviceId]);
+
+  useEffect(() => {
+    const home = homeCoordsFromPosition(position);
+    if (home && effectiveDeviceId) saveHomeAnchor(effectiveDeviceId, home.lat, home.lng);
+  }, [position?.homeLat, position?.homeLng, effectiveDeviceId]);
 
   const hasImmediateLiveCoords = useMemo(() => {
     if (
@@ -647,14 +678,18 @@ export default function Tracking() {
         );
         for (let i = sorted.length - 1; i >= 0; i--) {
           const p = sorted[i];
-          if (!hasValidCoords(p) || !isTrustedGpsFix(p)) continue;
-          setLiveHistoryFallback({
-            lat: Number(p.lat),
-            lng: Number(p.lng),
-            at: pointReceivedIso(p),
-          });
-          saveStoredLastCoords(effectiveDeviceId, Number(p.lat), Number(p.lng), { trusted: true });
-          return;
+          if (!hasValidCoords(p)) continue;
+          const src = String(p.source || '').toLowerCase();
+          if (isTrustedGpsFix(p) || src === 'gps') {
+            setLiveHistoryFallback({
+              lat: Number(p.lat),
+              lng: Number(p.lng),
+              at: pointReceivedIso(p),
+            });
+            saveStoredLastCoords(effectiveDeviceId, Number(p.lat), Number(p.lng), { trusted: true });
+            saveHomeAnchor(effectiveDeviceId, Number(p.lat), Number(p.lng));
+            return;
+          }
         }
       })
       .catch(() => {});
@@ -662,6 +697,31 @@ export default function Tracking() {
       cancelled = true;
     };
   }, [trackerTab, effectiveDeviceId, hasImmediateLiveCoords]);
+
+  useEffect(() => {
+    if (!position?.atHomeWifi || !effectiveDeviceId.trim()) {
+      setProvisionalHomeCoords(null);
+      return undefined;
+    }
+    if (homeCoordsFromPosition(position) || loadHomeAnchor(effectiveDeviceId)) {
+      setProvisionalHomeCoords(null);
+      return undefined;
+    }
+    let cancelled = false;
+    getPositionHistory(effectiveDeviceId, { limit: 3000 })
+      .then(({ history }) => {
+        if (cancelled || !Array.isArray(history)) return;
+        const inferred = inferProvisionalHomeFromHistory(history);
+        if (inferred) {
+          setProvisionalHomeCoords(inferred);
+          saveHomeAnchor(effectiveDeviceId, inferred.lat, inferred.lng);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [position?.atHomeWifi, position?.homeLat, position?.homeLng, effectiveDeviceId]);
 
   const liveMapCoords = useMemo(() => {
     if (hasValidCoords(mapPosition) && mapPosition.positionHeldFromPreviousGps) {
@@ -674,12 +734,14 @@ export default function Tracking() {
       return { lat: Number(position.lat), lng: Number(position.lng), mode: 'live' };
     }
     if (position?.atHomeWifi) {
-      const fallback = pickLastKnownMapCoords(
+      const home = pickHomeMapCoords(
         effectiveDeviceId,
+        position,
         liveHistoryFallback,
-        lastKnownLiveRef
+        lastKnownLiveRef,
+        provisionalHomeCoords
       );
-      if (fallback) return fallback;
+      if (home) return home;
       return null;
     }
     if (position && !isTrustedGpsFix(position) && hasValidCoords(position)) {
@@ -696,7 +758,7 @@ export default function Tracking() {
       };
     }
     return pickLastKnownMapCoords(effectiveDeviceId, liveHistoryFallback, lastKnownLiveRef);
-  }, [mapPosition, position, liveHistoryFallback, effectiveDeviceId]);
+  }, [mapPosition, position, liveHistoryFallback, provisionalHomeCoords, effectiveDeviceId]);
 
   useEffect(() => {
     if (trackerTab !== 'live' || !liveMapCoords) return;
@@ -710,6 +772,8 @@ export default function Tracking() {
   }, [trackerTab, liveMapCoords]);
 
   const liveMapAccuracyM = useMemo(() => {
+    if (liveMapCoords?.mode === 'homeProvisional') return 420;
+    if (liveMapCoords?.mode === 'home') return 48;
     const fix = position;
     if (fix && !isTrustedGpsFix(fix) && liveMapCoords?.mode === 'lastKnown') {
       return 72;
@@ -942,8 +1006,10 @@ export default function Tracking() {
   const liveMapBanner = (() => {
     if (!liveMapCoords && position?.atHomeWifi) return t('trackingPage.mapWifiHomeBanner');
     if (!liveMapCoords) return null;
+    if (liveMapCoords.mode === 'home') return t('trackingPage.mapHomeLocationBanner');
+    if (liveMapCoords.mode === 'homeProvisional') return t('trackingPage.mapHomeProvisionalBanner');
     if (liveMapCoords.mode === 'approximate') return t('trackingPage.mapApproximateBanner');
-    if (liveMapCoords.mode === 'lastKnown' && position?.atHomeWifi) return t('trackingPage.mapWifiHomeBanner');
+    if (liveMapCoords.mode === 'lastKnown' && position?.atHomeWifi) return t('trackingPage.mapHomeLocationBanner');
     if (liveMapCoords.mode === 'lastKnown' && position && !isTrustedGpsFix(position)) {
       return t('trackingPage.mapLastKnownBadFixBanner');
     }

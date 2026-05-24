@@ -48,6 +48,10 @@ function normalizeIncomingDevice(prev, incoming) {
     atHomeWifi,
     wifiBssids: p.wifiBssids ?? p.gps?.wifiBssids ?? null,
     location: isPlausibleLatLng(lat, lng) ? { lat, lng } : null,
+    homeLocation:
+      p.source === "gps" && p.gpsValid !== false && isPlausibleLatLng(lat, lng)
+        ? { lat, lng }
+        : prev?.homeLocation ?? null,
     gpsValid: p.gpsValid === true,
     source: p.source || gps.source || null, // "gps" | "lbs"
     accuracy: p.accuracy || null, // "gps" | "wifi" | "lbs" (wifi not implemented yet)
@@ -101,6 +105,10 @@ function mergeDeviceRecord(prev, incoming) {
   if (!incoming.atHomeWifi && prev?.atHomeWifi) merged.atHomeWifi = prev.atHomeWifi;
   if ((!incoming.wifiBssids || incoming.wifiBssids.length === 0) && prev?.wifiBssids?.length) {
     merged.wifiBssids = prev.wifiBssids;
+  }
+  if (!incoming.homeLocation && prev?.homeLocation) merged.homeLocation = prev.homeLocation;
+  if (incoming.source === "gps" && incoming.gpsValid !== false && hasValidGps(incoming.location)) {
+    merged.homeLocation = { lat: incoming.location.lat, lng: incoming.location.lng };
   }
   const incomingWifi =
     incoming.atHomeWifi ||

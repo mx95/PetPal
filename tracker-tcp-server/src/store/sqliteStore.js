@@ -14,12 +14,18 @@ function toDeviceRow(rec) {
   const loc = rec.location || rec.gps || null;
   const last_lat = hasFiniteLatLng(loc) ? Number(loc.lat) : null;
   const last_lng = hasFiniteLatLng(loc) ? Number(loc.lng) : null;
+  const isGpsHome =
+    rec.source === "gps" && rec.gpsValid !== false && hasFiniteLatLng(loc);
+  const home_lat = isGpsHome ? Number(loc.lat) : null;
+  const home_lng = isGpsHome ? Number(loc.lng) : null;
 
   return {
     imei,
     name: rec.name ?? null,
     last_lat,
     last_lng,
+    home_lat,
+    home_lng,
     battery: rec.battery ?? null,
     signal: rec.signal ?? null,
     source: rec.source ?? null,
@@ -79,6 +85,12 @@ function deviceFromRow(row) {
   const source = row.source ?? null;
   const wifiSource = source === "wifi";
   const hasLoc = !wifiSource && lat != null && lng != null && isPlausibleLatLng(lat, lng);
+  const homeLat = row.home_lat != null ? Number(row.home_lat) : null;
+  const homeLng = row.home_lng != null ? Number(row.home_lng) : null;
+  const homeLocation =
+    homeLat != null && homeLng != null && isPlausibleLatLng(homeLat, homeLng)
+      ? { lat: homeLat, lng: homeLng }
+      : null;
   return {
     imei: row.imei,
     name: row.name ?? null,
@@ -86,6 +98,7 @@ function deviceFromRow(row) {
     signal: row.signal ?? null,
     source,
     atHomeWifi: wifiSource,
+    homeLocation,
     lastUpdate: row.last_update ?? null,
     location: hasLoc ? { lat, lng } : null,
     gps: hasLoc
@@ -99,6 +112,19 @@ function deviceFromRow(row) {
  * - keep command queues / sockets in memory
  * - persist device snapshots + positions into SQLite
  */
+function attachHomeIfMissing(device, imei, sqlite) {
+  if (!device || device.homeLocation) return;
+  const row = sqlite.getDevice.get(String(imei));
+  if (row?.home_lat != null && row?.home_lng != null && isPlausibleLatLng(row.home_lat, row.home_lng)) {
+    device.homeLocation = { lat: Number(row.home_lat), lng: Number(row.home_lng) };
+    return;
+  }
+  const gps = sqlite.getLastGpsPosition.get(String(imei));
+  if (gps && isPlausibleLatLng(gps.lat, gps.lng)) {
+    device.homeLocation = { lat: Number(gps.lat), lng: Number(gps.lng) };
+  }
+}
+
 function createSqliteStore({ dbPath }) {
   const mem = createMemoryStore();
   const sqlite = openSqlite(dbPath);
@@ -148,9 +174,17 @@ function createSqliteStore({ dbPath }) {
 
     get(imei) {
       const live = mem.get(imei);
-      if (live) return live;
+      if (live) {
+        attachHomeIfMissing(live, imei, sqlite);
+        return live;
+      }
       const row = sqlite.getDevice.get(String(imei));
-      return deviceFromRow(row);
+      const fromRow = deviceFromRow(row);
+      if (fromRow) {
+        attachHomeIfMissing(fromRow, imei, sqlite);
+        return fromRow;
+      }
+      return null;
     },
 
     history(imei, { limit = 100, from = null, to = null } = {}) {
