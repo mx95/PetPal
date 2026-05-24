@@ -773,6 +773,8 @@ const en = {
     sectionMap: 'Map',
     mapLastKnownBanner: 'Showing last known location',
     mapApproximateBanner: 'Showing approximate location (GPS weak)',
+    mapLastKnownBadFixBanner:
+      'Collar sent an invalid Wi‑Fi/cell location — showing last known position. Check your router code on the Device tab.',
     noLiveSignalTitle: 'No location stored yet',
     noLiveSignalBody: 'This tracker has not sent coordinates to the server yet.',
     noLiveSignalTipSim: 'Check the SIM card is active',

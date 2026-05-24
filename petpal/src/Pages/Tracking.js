@@ -24,6 +24,7 @@ import {
   resolveHistoryRoutePositions,
   sanitizeSpeedKmh,
   hasPlausibleMapCoords,
+  isReasonableApproxFix,
 } from '../tracking/positionFilter';
 
 const LAST_LIVE_PET_KEY = 'petpal_live_selectedPetId';
@@ -621,8 +622,14 @@ export default function Tracking() {
   }, [mapPosition, position, effectiveDeviceId]);
 
   const hasImmediateLiveCoords = useMemo(() => {
-    if (hasValidCoords(mapPosition) && !mapPosition.positionHiddenApproximate) return true;
-    if (hasValidCoords(position)) return true;
+    if (
+      hasValidCoords(mapPosition) &&
+      !mapPosition.positionHiddenApproximate &&
+      isTrustedGpsFix(mapPosition)
+    ) {
+      return true;
+    }
+    if (hasValidCoords(position) && isTrustedGpsFix(position)) return true;
     return false;
   }, [mapPosition, position]);
 
@@ -659,27 +666,38 @@ export default function Tracking() {
   }, [trackerTab, effectiveDeviceId, hasImmediateLiveCoords]);
 
   const liveMapCoords = useMemo(() => {
+    const anchor =
+      trustedLiveAnchorRef.current ||
+      loadStoredLastCoords(effectiveDeviceId) ||
+      (liveHistoryFallback && hasValidCoords(liveHistoryFallback) ? liveHistoryFallback : null);
+
     if (hasValidCoords(mapPosition) && mapPosition.positionHeldFromPreviousGps) {
       return { lat: Number(mapPosition.lat), lng: Number(mapPosition.lng), mode: 'lastKnown' };
     }
-    if (hasValidCoords(mapPosition) && !mapPosition.positionHiddenApproximate) {
+    if (hasValidCoords(mapPosition) && !mapPosition.positionHiddenApproximate && isTrustedGpsFix(mapPosition)) {
       return { lat: Number(mapPosition.lat), lng: Number(mapPosition.lng), mode: 'live' };
     }
-    if (hasValidCoords(position) && !isTrustedGpsFix(position)) {
+    if (position && !isTrustedGpsFix(position) && hasValidCoords(position)) {
+      if (isReasonableApproxFix(position, anchor)) {
+        return {
+          lat: Number(position.lat),
+          lng: Number(position.lng),
+          mode: 'approximate',
+        };
+      }
       const fallback = pickLastKnownMapCoords(
         effectiveDeviceId,
         liveHistoryFallback,
         lastKnownLiveRef
       );
       if (fallback) return fallback;
-      return {
-        lat: Number(position.lat),
-        lng: Number(position.lng),
-        mode: 'approximate',
-      };
+      return null;
     }
-    if (hasValidCoords(position)) {
+    if (hasValidCoords(position) && isTrustedGpsFix(position)) {
       return { lat: Number(position.lat), lng: Number(position.lng), mode: 'live' };
+    }
+    if (hasValidCoords(mapPosition) && !mapPosition.positionHiddenApproximate) {
+      return { lat: Number(mapPosition.lat), lng: Number(mapPosition.lng), mode: 'live' };
     }
     return pickLastKnownMapCoords(effectiveDeviceId, liveHistoryFallback, lastKnownLiveRef);
   }, [mapPosition, position, liveHistoryFallback, effectiveDeviceId]);
@@ -925,7 +943,15 @@ export default function Tracking() {
 
 
   const signalLive = position != null;
-  const showingLastKnownOnMap = liveMapCoords?.mode === 'lastKnown' || liveMapCoords?.mode === 'approximate';
+  const liveMapBanner = (() => {
+    if (!liveMapCoords) return null;
+    if (liveMapCoords.mode === 'approximate') return t('trackingPage.mapApproximateBanner');
+    if (liveMapCoords.mode === 'lastKnown' && position && !isTrustedGpsFix(position)) {
+      return t('trackingPage.mapLastKnownBadFixBanner');
+    }
+    if (liveMapCoords.mode === 'lastKnown') return t('trackingPage.mapLastKnownBanner');
+    return null;
+  })();
   const secondsAgo =
     typeof position?.secondsAgo === 'number' && Number.isFinite(position.secondsAgo) ? position.secondsAgo : null;
   const lastUpdateLabel = formatLastSeen(secondsAgo, t);
@@ -1034,11 +1060,9 @@ export default function Tracking() {
                   </span>
                 ) : null}
               </div>
-              {showingLastKnownOnMap ? (
+              {liveMapBanner ? (
                 <p className="pp-trackLiveStatus__alert">
-                  {liveMapCoords.mode === 'approximate'
-                    ? t('trackingPage.mapApproximateBanner')
-                    : t('trackingPage.mapLastKnownBanner')}
+                  {liveMapBanner}
                 </p>
               ) : null}
             </div>

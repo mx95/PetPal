@@ -221,6 +221,29 @@ function parseGpsBlock(block) {
   return out;
 }
 
+/** 0x65 Wi‑Fi block: timestamp + scanned AP BSSIDs (no lat/lng in the block). */
+function parseWifiBlock(block) {
+  const out = { bssids: [] };
+  if (!Buffer.isBuffer(block) || block.length < 5) return out;
+
+  let off = 0;
+  const ts = block.readUInt32BE(0);
+  if (ts >= 1500000000 && ts <= 2200000000) off = 4;
+
+  const count = block.readUInt8(off);
+  off += 1;
+  if (count <= 0 || count > 16) return out;
+
+  for (let i = 0; i < count && off + 6 <= block.length; i++) {
+    const mac = [...block.subarray(off, off + 6)]
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join(":");
+    out.bssids.push(mac);
+    off += 6;
+  }
+  return out;
+}
+
 function isAllFF(buf) {
   if (!Buffer.isBuffer(buf) || buf.length === 0) return false;
   for (const b of buf) if (b !== 0xff) return false;
@@ -340,9 +363,10 @@ function parseXexunPacket(packet) {
   if (messageId === 0x6a && !deviceStatusBlock) deviceStatusBlock = payload;
 
   const gpsParsed = gpsBlock ? parseGpsBlock(gpsBlock) : null;
-  const wifiParsed = wifiBlock ? parseGpsBlock(wifiBlock) : null;
+  const wifiMeta = wifiBlock ? parseWifiBlock(wifiBlock) : null;
   const lbsParsed = lbsBlock ? parseGpsBlock(lbsBlock) : null;
   const { gpsValid } = detectGpsValidity({ gpsBlock, gpsParsed });
+  const hasWifiScan = Boolean(wifiMeta?.bssids?.length);
 
   let gps = null;
   let source = null;
@@ -351,8 +375,13 @@ function parseXexunPacket(packet) {
     gps = { ...gpsParsed, source: "gps" };
     source = "gps";
     accuracy = "gps";
-  } else if (parsedCoordsUsable(wifiParsed)) {
-    gps = { ...wifiParsed, source: "wifi" };
+  } else if (hasWifiScan && parsedCoordsUsable(lbsParsed)) {
+    // Wi‑Fi block lists APs; position comes from LBS/GPS in the same uplink.
+    gps = { ...lbsParsed, source: "wifi", wifiBssids: wifiMeta.bssids };
+    source = "wifi";
+    accuracy = "wifi";
+  } else if (hasWifiScan && parsedCoordsUsable(gpsParsed)) {
+    gps = { ...gpsParsed, source: "wifi", wifiBssids: wifiMeta.bssids };
     source = "wifi";
     accuracy = "wifi";
   } else if (parsedCoordsUsable(lbsParsed)) {
@@ -387,6 +416,7 @@ function parseXexunPacket(packet) {
     batteryTimeBytes,
     gpsRaw: gpsBlock ? toHex(gpsBlock) : null,
     wifiRaw: wifiBlock ? toHex(wifiBlock) : null,
+    wifiBssids: wifiMeta?.bssids?.length ? wifiMeta.bssids : null,
     lbsRaw: lbsBlock ? toHex(lbsBlock) : null,
     gps,
     gpsValid,

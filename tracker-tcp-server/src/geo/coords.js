@@ -5,6 +5,7 @@ function isPlausibleLatLng(lat, lng) {
   if (!Number.isFinite(la) || !Number.isFinite(lo)) return false;
   if (Math.abs(la) > 90 || Math.abs(lo) > 180) return false;
   if (Math.abs(la) < 0.00001 && Math.abs(lo) < 0.00001) return false;
+  if (Math.abs(la) < 0.001 || Math.abs(lo) < 0.001) return false;
   return true;
 }
 

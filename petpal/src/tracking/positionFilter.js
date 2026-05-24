@@ -6,6 +6,8 @@ export function hasPlausibleMapCoords(p) {
   if (!Number.isFinite(lat) || !Number.isFinite(lng)) return false;
   if (Math.abs(lat) > 90 || Math.abs(lng) > 180) return false;
   if (Math.abs(lat) < 0.00001 && Math.abs(lng) < 0.00001) return false;
+  // Partial failures: one axis stuck at 0 while the other looks valid (e.g. 0, 144.78).
+  if (Math.abs(lat) < 0.001 || Math.abs(lng) < 0.001) return false;
   return true;
 }
 
@@ -43,6 +45,19 @@ export function kmBetween(a, b) {
     Math.sin(dLat / 2) ** 2 +
     Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
   return 2 * r * Math.asin(Math.sqrt(h));
+}
+
+/**
+ * Wi‑Fi / LBS may be shown on the live map only when coords look complete and
+ * stay near the last trusted anchor (home region), not random ocean fixes.
+ */
+export function isReasonableApproxFix(point, anchor = null) {
+  if (!hasPlausibleMapCoords(point)) return false;
+  const lat = Math.abs(Number(point.lat));
+  const lng = Math.abs(Number(point.lng));
+  if (lat < 1 || lng < 1) return false;
+  if (!anchor || !hasPlausibleMapCoords(anchor)) return true;
+  return kmBetween(anchor, point) <= 25;
 }
 
 /** When the server received this fix (preferred for history ordering and date filters). */

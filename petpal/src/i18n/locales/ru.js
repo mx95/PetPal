@@ -655,6 +655,8 @@ const ru = {
     sectionMap: 'Карта',
     mapLastKnownBanner: 'Показана последняя известная точка',
     mapApproximateBanner: 'Приблизительное местоположение (слабый GPS)',
+    mapLastKnownBadFixBanner:
+      'Неверная позиция Wi‑Fi/сети — показана последняя известная. Проверьте код роутера на вкладке «Устройство».',
     noLiveSignalTitle: 'Местоположение ещё не сохранено',
     noLiveSignalBody: 'Трекер ещё не отправил координаты на сервер.',
     noLiveSignalTipSim: 'Проверьте, что SIM-карта активна',

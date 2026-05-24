@@ -654,6 +654,8 @@ const el = {
     sectionMap: 'Χάρτης',
     mapLastKnownBanner: 'Εμφάνιση τελευταίας γνωστής θέσης',
     mapApproximateBanner: 'Εμφάνιση κατά προσέγγιση θέσης (αδύναμο GPS)',
+    mapLastKnownBadFixBanner:
+      'Μη έγκυρη θέση Wi‑Fi/κεραίας — εμφανίζεται η τελευταία γνωστή. Ελέγξτε τον κωδικό router στην καρτέλα Συσκευή.',
     noLiveSignalTitle: 'Δεν υπάρχει αποθηκευμένη θέση ακόμα',
     noLiveSignalBody: 'Ο ιχνηλάτης δεν έχει στείλει συντεταγμένες στον διακομιστή ακόμα.',
     noLiveSignalTipSim: 'Ελέγξτε ότι η κάρτα SIM είναι ενεργή',
