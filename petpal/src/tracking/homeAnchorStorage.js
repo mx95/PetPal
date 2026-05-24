@@ -10,21 +10,34 @@ function readAll() {
   }
 }
 
-/** @param {string} imei @returns {{ lat: number, lng: number }|null} */
+/** @returns {{ lat: number, lng: number, source?: string }|null} */
 export function loadHomeAnchor(imei) {
   if (!imei) return null;
   const entry = readAll()[imei];
   if (!entry || !hasPlausibleMapCoords(entry)) return null;
-  return { lat: Number(entry.lat), lng: Number(entry.lng) };
+  if (isLikelyBadCellHomeAnchor(entry)) return null;
+  return { lat: Number(entry.lat), lng: Number(entry.lng), source: entry.source };
 }
 
-/** @param {string} imei @param {number} lat @param {number} lng */
-export function saveHomeAnchor(imei, lat, lng) {
+/** @param {string} imei @param {number} lat @param {number} lng @param {{ source?: string }} [meta] */
+export function saveHomeAnchor(imei, lat, lng, meta = {}) {
   if (!imei || !Number.isFinite(lat) || !Number.isFinite(lng)) return;
   if (!hasPlausibleMapCoords({ lat, lng })) return;
   try {
     const all = readAll();
-    all[imei] = { lat, lng, savedAt: Date.now() };
+    all[imei] = { lat, lng, savedAt: Date.now(), source: meta.source || 'gps' };
+    localStorage.setItem(HOME_ANCHOR_KEY, JSON.stringify(all));
+  } catch {
+    /* ignore */
+  }
+}
+
+/** @param {string} imei */
+export function clearHomeAnchor(imei) {
+  if (!imei) return;
+  try {
+    const all = readAll();
+    delete all[imei];
     localStorage.setItem(HOME_ANCHOR_KEY, JSON.stringify(all));
   } catch {
     /* ignore */
@@ -40,45 +53,12 @@ export function homeCoordsFromPosition(position) {
   return { lat, lng };
 }
 
-/**
- * When a collar has Wi‑Fi reports but no GPS yet, use the dominant map cluster as a coarse home zone.
- * @param {Array<{ lat?: number, lng?: number, source?: string }>} history
- */
-export function inferProvisionalHomeFromHistory(history) {
-  if (!Array.isArray(history) || history.length < 3) return null;
-  const wifiLike = history.filter((p) => {
-    if (!hasPlausibleMapCoords(p)) return false;
-    const src = String(p.source || '').toLowerCase();
-    return src === 'wifi' || src === 'lbs' || src === '';
-  });
-  if (wifiLike.length < 3) return null;
-
-  const clusters = new Map();
-  for (const p of wifiLike) {
-    const key = `${Number(p.lat).toFixed(2)},${Number(p.lng).toFixed(2)}`;
-    const prev = clusters.get(key);
-    if (prev) {
-      prev.n += 1;
-      prev.latSum += Number(p.lat);
-      prev.lngSum += Number(p.lng);
-    } else {
-      clusters.set(key, { n: 1, latSum: Number(p.lat), lngSum: Number(p.lng) });
-    }
-  }
-
-  let best = null;
-  let bestN = 0;
-  for (const c of clusters.values()) {
-    if (c.n > bestN) {
-      bestN = c.n;
-      best = c;
-    }
-  }
-  if (!best || bestN < Math.max(3, Math.floor(wifiLike.length * 0.45))) return null;
-
-  return {
-    lat: best.latSum / best.n,
-    lng: best.lngSum / best.n,
-    provisional: true,
-  };
+/** Drop anchors saved from old cell/Wi‑Fi history (not real home GPS). */
+export function isLikelyBadCellHomeAnchor(anchor) {
+  if (!anchor || !hasPlausibleMapCoords(anchor)) return false;
+  const lat = Number(anchor.lat);
+  const lng = Number(anchor.lng);
+  // Odin history cluster: mislabeled Wi‑Fi + cell tower ~Frenaros (not user's house).
+  if (Math.abs(lat - 35.038345) < 0.002 && Math.abs(lng - 33.907032) < 0.002) return true;
+  return anchor.source === 'history-inferred';
 }

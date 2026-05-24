@@ -17,14 +17,20 @@ import {
   newWifiNetworkEntry,
   saveWifiNetworks,
 } from '../../tracking/wifiNetworkStorage';
+import { clearHomeAnchor, loadHomeAnchor, saveHomeAnchor } from '../../tracking/homeAnchorStorage';
 import IconTrackSource from '../icons/IconTrackSource';
 
 const SIMPLE_MODE_IDS = ['wifi_priority', 'gps_priority'];
 
 /**
- * @param {{ imei: string, petName?: string, scannedBssids?: string[]|null }} props
+ * @param {{ imei: string, petName?: string, scannedBssids?: string[]|null, onHomeLocationUpdated?: () => void }} props
  */
-export default function TrackDevicePanel({ imei, petName = '', scannedBssids = null }) {
+export default function TrackDevicePanel({
+  imei,
+  petName = '',
+  scannedBssids = null,
+  onHomeLocationUpdated,
+}) {
   const { t } = useI18n();
   const commandsAvailable = isTrackerCommandsAvailable();
 
@@ -34,6 +40,45 @@ export default function TrackDevicePanel({ imei, petName = '', scannedBssids = n
   const [status, setStatus] = useState('');
   const [error, setError] = useState('');
   const [pending, setPending] = useState([]);
+  const [homeAnchor, setHomeAnchor] = useState(null);
+
+  useEffect(() => {
+    setHomeAnchor(imei ? loadHomeAnchor(imei) : null);
+  }, [imei]);
+
+  const handleSetHomeFromPhone = useCallback(() => {
+    if (!imei?.trim()) return;
+    if (!navigator.geolocation) {
+      setError(t('trackingPage.devicePanelHomeGeoUnsupported'));
+      return;
+    }
+    setBusy(true);
+    setError('');
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        saveHomeAnchor(imei, lat, lng, { source: 'phone' });
+        setHomeAnchor(loadHomeAnchor(imei));
+        setStatus(t('trackingPage.devicePanelHomeSaved'));
+        onHomeLocationUpdated?.();
+        setBusy(false);
+      },
+      () => {
+        setError(t('trackingPage.devicePanelHomeGeoDenied'));
+        setBusy(false);
+      },
+      { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
+    );
+  }, [imei, onHomeLocationUpdated, t]);
+
+  const handleClearHome = useCallback(() => {
+    if (!imei?.trim()) return;
+    clearHomeAnchor(imei);
+    setHomeAnchor(null);
+    setStatus(t('trackingPage.devicePanelHomeCleared'));
+    onHomeLocationUpdated?.();
+  }, [imei, onHomeLocationUpdated, t]);
 
   useEffect(() => {
     if (!imei) {
@@ -300,6 +345,34 @@ export default function TrackDevicePanel({ imei, petName = '', scannedBssids = n
                 );
               })}
             </ul>
+
+            <div className="pp-trackDeviceHome">
+              <h3>{t('trackingPage.devicePanelHomeMapTitle')}</h3>
+              <p className="pp-subtle">{t('trackingPage.devicePanelHomeMapHelp')}</p>
+              {homeAnchor ? (
+                <p className="pp-trackDeviceHome__saved">
+                  {t('trackingPage.devicePanelHomeSavedCoords', {
+                    lat: homeAnchor.lat.toFixed(5),
+                    lng: homeAnchor.lng.toFixed(5),
+                  })}
+                </p>
+              ) : null}
+              <div className="pp-trackDeviceHome__actions">
+                <button
+                  type="button"
+                  className="pp-btn pp-btn--ghost"
+                  disabled={busy}
+                  onClick={handleSetHomeFromPhone}
+                >
+                  {t('trackingPage.devicePanelHomeUsePhone')}
+                </button>
+                {homeAnchor ? (
+                  <button type="button" className="pp-btn pp-btn--ghost" disabled={busy} onClick={handleClearHome}>
+                    {t('trackingPage.devicePanelHomeClear')}
+                  </button>
+                ) : null}
+              </div>
+            </div>
           </div>
         ) : null}
 

@@ -27,9 +27,10 @@ import {
 } from '../tracking/positionFilter';
 import {
   homeCoordsFromPosition,
-  inferProvisionalHomeFromHistory,
+  isLikelyBadCellHomeAnchor,
   loadHomeAnchor,
   saveHomeAnchor,
+  clearHomeAnchor,
 } from '../tracking/homeAnchorStorage';
 
 const LAST_LIVE_PET_KEY = 'petpal_live_selectedPetId';
@@ -79,20 +80,13 @@ function pickLastKnownMapCoords(deviceId, liveHistoryFallback, lastKnownRef) {
 }
 
 /** Map pin when collar reports home Wi‑Fi (saved home area from last GPS). */
-function pickHomeMapCoords(deviceId, position, liveHistoryFallback, lastKnownRef, provisionalHome) {
+function pickHomeMapCoords(deviceId, position, liveHistoryFallback, lastKnownRef) {
   const fromApi = homeCoordsFromPosition(position);
   if (fromApi) return { lat: fromApi.lat, lng: fromApi.lng, mode: 'home' };
   const stored = loadHomeAnchor(deviceId);
   if (stored) return { lat: stored.lat, lng: stored.lng, mode: 'home' };
   const last = pickLastKnownMapCoords(deviceId, liveHistoryFallback, lastKnownRef);
   if (last) return { lat: last.lat, lng: last.lng, mode: 'home' };
-  if (provisionalHome && hasPlausibleMapCoords(provisionalHome)) {
-    return {
-      lat: Number(provisionalHome.lat),
-      lng: Number(provisionalHome.lng),
-      mode: 'homeProvisional',
-    };
-  }
   return null;
 }
 
@@ -488,8 +482,8 @@ export default function Tracking() {
   const trustedLiveAnchorRef = useRef(null);
   const lastKnownLiveRef = useRef(null);
   const [liveHistoryFallback, setLiveHistoryFallback] = useState(null);
-  const [provisionalHomeCoords, setProvisionalHomeCoords] = useState(null);
   const [liveTrail, setLiveTrail] = useState([]);
+  const [homeAnchorTick, setHomeAnchorTick] = useState(0);
 
   const selectedPet = useMemo(() => pets.find((p) => p.id === selectedPetId), [pets, selectedPetId]);
 
@@ -699,29 +693,17 @@ export default function Tracking() {
   }, [trackerTab, effectiveDeviceId, hasImmediateLiveCoords]);
 
   useEffect(() => {
-    if (!position?.atHomeWifi || !effectiveDeviceId.trim()) {
-      setProvisionalHomeCoords(null);
-      return undefined;
+    if (!effectiveDeviceId) return;
+    try {
+      const all = JSON.parse(localStorage.getItem('petpal_home_anchor_v1') || '{}');
+      const entry = all[effectiveDeviceId];
+      if (entry && isLikelyBadCellHomeAnchor(entry)) {
+        clearHomeAnchor(effectiveDeviceId);
+      }
+    } catch {
+      /* ignore */
     }
-    if (homeCoordsFromPosition(position) || loadHomeAnchor(effectiveDeviceId)) {
-      setProvisionalHomeCoords(null);
-      return undefined;
-    }
-    let cancelled = false;
-    getPositionHistory(effectiveDeviceId, { limit: 3000 })
-      .then(({ history }) => {
-        if (cancelled || !Array.isArray(history)) return;
-        const inferred = inferProvisionalHomeFromHistory(history);
-        if (inferred) {
-          setProvisionalHomeCoords(inferred);
-          saveHomeAnchor(effectiveDeviceId, inferred.lat, inferred.lng);
-        }
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, [position?.atHomeWifi, position?.homeLat, position?.homeLng, effectiveDeviceId]);
+  }, [effectiveDeviceId]);
 
   const liveMapCoords = useMemo(() => {
     if (hasValidCoords(mapPosition) && mapPosition.positionHeldFromPreviousGps) {
@@ -738,8 +720,7 @@ export default function Tracking() {
         effectiveDeviceId,
         position,
         liveHistoryFallback,
-        lastKnownLiveRef,
-        provisionalHomeCoords
+        lastKnownLiveRef
       );
       if (home) return home;
       return null;
@@ -758,7 +739,7 @@ export default function Tracking() {
       };
     }
     return pickLastKnownMapCoords(effectiveDeviceId, liveHistoryFallback, lastKnownLiveRef);
-  }, [mapPosition, position, liveHistoryFallback, provisionalHomeCoords, effectiveDeviceId]);
+  }, [mapPosition, position, liveHistoryFallback, effectiveDeviceId, homeAnchorTick]);
 
   useEffect(() => {
     if (trackerTab !== 'live' || !liveMapCoords) return;
@@ -772,7 +753,6 @@ export default function Tracking() {
   }, [trackerTab, liveMapCoords]);
 
   const liveMapAccuracyM = useMemo(() => {
-    if (liveMapCoords?.mode === 'homeProvisional') return 420;
     if (liveMapCoords?.mode === 'home') return 48;
     const fix = position;
     if (fix && !isTrustedGpsFix(fix) && liveMapCoords?.mode === 'lastKnown') {
@@ -1007,7 +987,6 @@ export default function Tracking() {
     if (!liveMapCoords && position?.atHomeWifi) return t('trackingPage.mapWifiHomeBanner');
     if (!liveMapCoords) return null;
     if (liveMapCoords.mode === 'home') return t('trackingPage.mapHomeLocationBanner');
-    if (liveMapCoords.mode === 'homeProvisional') return t('trackingPage.mapHomeProvisionalBanner');
     if (liveMapCoords.mode === 'approximate') return t('trackingPage.mapApproximateBanner');
     if (liveMapCoords.mode === 'lastKnown' && position?.atHomeWifi) return t('trackingPage.mapHomeLocationBanner');
     if (liveMapCoords.mode === 'lastKnown' && position && !isTrustedGpsFix(position)) {
@@ -1518,6 +1497,7 @@ export default function Tracking() {
           imei={effectiveDeviceId}
           petName={selectedPet?.name || ''}
           scannedBssids={position?.wifiBssids}
+          onHomeLocationUpdated={() => setHomeAnchorTick((n) => n + 1)}
         />
       ) : null}
 

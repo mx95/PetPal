@@ -776,7 +776,7 @@ const en = {
     mapLastKnownBadFixBanner:
       'Collar sent an invalid Wi‑Fi/cell location — showing last known position. Check your router code on the Device tab.',
     mapWifiHomeBanner:
-      'Home Wi‑Fi detected — your pet is likely at home. The map needs an outdoor GPS fix for an exact pin (walk outside for a few minutes).',
+      'Home Wi‑Fi detected — your pet is likely at home. The map shows your saved home location (not the router code). Set it on the Device tab if the pin is wrong.',
     mapWifiHomeTitle: 'At home on Wi‑Fi',
     mapHomeLocationBanner: 'Showing your saved home area on the map',
     mapHomeProvisionalBanner:
@@ -924,7 +924,17 @@ const en = {
       'Or on your phone: connect to home Wi‑Fi → Wi‑Fi settings → tap your network → look for MAC address or BSSID.',
     devicePanelWifiHelpStep3: 'Type or paste the code here — we’ll format it for you (looks like aa:bb:cc:dd:ee:ff).',
     devicePanelWifiHelpNote:
-      'Use your main home Wi‑Fi (often 2.4 GHz). The collar does not need your Wi‑Fi password — only this router code. If your router sticker shows 80:… but the collar lists ba:…, use the code from the collar list below (that is the real Wi‑Fi ID).',
+      'The router code tells the collar you are home — it does not place the pin on the map. Use the code the collar scans below (often ba:… not 80:… from the sticker). Set the map pin separately under “Home on the map”.',
+    devicePanelHomeMapTitle: 'Home on the map',
+    devicePanelHomeMapHelp:
+      'While you are at home, save your phone’s location once. The map uses this when the collar reports home Wi‑Fi.',
+    devicePanelHomeUsePhone: 'Use my phone location as home',
+    devicePanelHomeClear: 'Clear saved home',
+    devicePanelHomeSaved: 'Home location saved — check the Live map.',
+    devicePanelHomeCleared: 'Saved home location removed.',
+    devicePanelHomeSavedCoords: 'Saved home: {lat}, {lng}',
+    devicePanelHomeGeoDenied: 'Could not get phone location — allow location access in your browser.',
+    devicePanelHomeGeoUnsupported: 'Your browser does not support location.',
     devicePanelWifiDetectedTitle: 'Networks your collar sees right now',
     devicePanelWifiDetectedMatch: 'Likely your router',
     devicePanelWifiDetectedMismatch:
