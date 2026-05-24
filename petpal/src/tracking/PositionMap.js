@@ -23,6 +23,7 @@ import { subscribeGoogleMapsAuthFailure } from '../config/googleMapsAuthFailure'
 import { accuracyRadiusMeters, useAnimatedLatLng } from './mapLiveUtils';
 import {
   LIVE_MAP_ZOOM,
+  buildCircularGooglePetIconUrl,
   buildGooglePetMarkerIcon,
   buildLeafletPetMarkerIcon,
 } from './mapPetMarker';
@@ -650,6 +651,26 @@ function GoogleLiveMapInner({
   petMarker = null,
 }) {
   const smooth = useAnimatedLatLng(lat, lng, { enabled: true });
+  const [petIconUrl, setPetIconUrl] = useState(null);
+
+  useEffect(() => {
+    const photo = petMarker?.photoUrl;
+    if (!photo) {
+      setPetIconUrl(null);
+      return undefined;
+    }
+    let cancelled = false;
+    buildCircularGooglePetIconUrl(photo)
+      .then((url) => {
+        if (!cancelled) setPetIconUrl(url);
+      })
+      .catch(() => {
+        if (!cancelled) setPetIconUrl(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [petMarker?.photoUrl]);
 
   const trailPath = useMemo(() => normalizeRoutePath(liveTrail), [liveTrail]);
 
@@ -657,9 +678,10 @@ function GoogleLiveMapInner({
     if (!petMarker) return googleLiveMarkerIcon(maps);
     return buildGooglePetMarkerIcon(maps, {
       photoUrl: petMarker.photoUrl,
+      iconUrl: petIconUrl || undefined,
       sourceKind: petMarker.sourceKind,
     });
-  }, [maps, petMarker]);
+  }, [maps, petMarker, petIconUrl]);
 
   const accStroke =
     petMarker?.sourceKind === 'wifi' ? '#2f80ff' : petMarker?.sourceKind === 'lbs' ? '#94a3b8' : LIVE_ACCENT;

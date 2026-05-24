@@ -67,17 +67,87 @@ export function buildLeafletPetMarkerIcon({ photoUrl, placeholderEmoji, sourceKi
   });
 }
 
+const googlePinCache = new Map();
+
+/**
+ * Render pet photo as a circular pin PNG for Google Maps Marker icons.
+ * @param {string} photoUrl
+ * @param {number} [size]
+ * @returns {Promise<string>} data URL
+ */
+export function buildCircularGooglePetIconUrl(photoUrl, size = 52) {
+  if (!photoUrl) return Promise.reject(new Error('no photo'));
+  const cached = googlePinCache.get(photoUrl);
+  if (cached) return Promise.resolve(cached);
+
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    if (!String(photoUrl).startsWith('data:')) {
+      img.crossOrigin = 'anonymous';
+    }
+    img.onload = () => {
+      try {
+        const w = size;
+        const h = size + 12;
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          reject(new Error('canvas unsupported'));
+          return;
+        }
+        const cx = w / 2;
+        const headR = size / 2 - 2;
+
+        ctx.shadowColor = 'rgba(16, 24, 40, 0.28)';
+        ctx.shadowBlur = 10;
+        ctx.beginPath();
+        ctx.arc(cx, headR, headR, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffffff';
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(cx, headR, headR - 3, 0, Math.PI * 2);
+        ctx.clip();
+        const inner = (headR - 3) * 2;
+        ctx.drawImage(img, cx - inner / 2, headR - inner / 2, inner, inner);
+        ctx.restore();
+
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.moveTo(cx - 9, size - 3);
+        ctx.lineTo(cx + 9, size - 3);
+        ctx.lineTo(cx, h - 1);
+        ctx.closePath();
+        ctx.fill();
+
+        const url = canvas.toDataURL('image/png');
+        googlePinCache.set(photoUrl, url);
+        resolve(url);
+      } catch (e) {
+        reject(e);
+      }
+    };
+    img.onerror = () => reject(new Error('photo load failed'));
+    img.src = photoUrl;
+  });
+}
+
 /**
  * @param {typeof google.maps} maps
- * @param {{ photoUrl?: string, sourceKind?: string }} opts
+ * @param {{ photoUrl?: string, sourceKind?: string, iconUrl?: string }} opts
  */
-export function buildGooglePetMarkerIcon(maps, { photoUrl, sourceKind }) {
+export function buildGooglePetMarkerIcon(maps, { photoUrl, sourceKind, iconUrl }) {
   const badge = sourceBadgeMeta(sourceKind || 'gps');
-  if (photoUrl) {
+  const url = iconUrl || photoUrl;
+  if (url) {
     return {
-      url: photoUrl,
-      scaledSize: new maps.Size(52, 52),
-      anchor: new maps.Point(26, 58),
+      url,
+      scaledSize: new maps.Size(52, 64),
+      anchor: new maps.Point(26, 62),
     };
   }
   const fill =

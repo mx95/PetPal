@@ -7,6 +7,7 @@ import IconTrackSource from '../components/icons/IconTrackSource';
 import TimeInput24 from '../components/TimeInput24';
 import { formatDateTime24, formatTime24 } from '../formatTime24';
 import PositionMap from '../tracking/PositionMap';
+import TrackDevicePanel from '../components/tracking/TrackDevicePanel';
 import { accuracyRadiusMeters } from '../tracking/mapLiveUtils';
 import { usePets } from '../pets/PetsContext';
 import { getLatestPosition, getPositionHistory, getTrackingDataSource, mapsLink } from '../tracking/petpalVendorClient';
@@ -1367,9 +1368,6 @@ export default function Tracking() {
       {trackerTab === 'device' ? (
       <section className="pp-card pp-pad pp-trackDeviceCard">
         <h2 className="pp-sectionTitle">{t('trackingPage.sectionPetDevice')}</h2>
-        <p className="pp-subtle pp-trackWifiHint" style={{ marginTop: 0 }}>
-          {t('trackingPage.wifiTrackingHint')}
-        </p>
         <form className="pp-form pp-trackDeviceForm" onSubmit={saveIdAndLoad}>
           <div>
             <label className="pp-label" htmlFor={fieldId}>
@@ -1402,6 +1400,10 @@ export default function Tracking() {
           </button>
         </form>
       </section>
+      ) : null}
+
+      {trackerTab === 'device' ? (
+        <TrackDevicePanel imei={effectiveDeviceId} petName={selectedPet?.name || ''} />
       ) : null}
 
       {trackerTab === 'device' && hasDiagnostics(position) ? (
