@@ -24,7 +24,6 @@ import {
   resolveHistoryRoutePositions,
   sanitizeSpeedKmh,
   hasPlausibleMapCoords,
-  isReasonableApproxFix,
 } from '../tracking/positionFilter';
 
 const LAST_LIVE_PET_KEY = 'petpal_live_selectedPetId';
@@ -48,7 +47,7 @@ function loadStoredLastCoords(deviceId) {
   try {
     const all = JSON.parse(localStorage.getItem(LAST_LIVE_COORDS_KEY) || '{}');
     const entry = all?.[deviceId];
-    if (!hasValidCoords(entry)) return null;
+    if (!entry?.trusted || !hasPlausibleMapCoords(entry)) return null;
     return { lat: Number(entry.lat), lng: Number(entry.lng) };
   } catch {
     return null;
@@ -73,11 +72,11 @@ function pickLastKnownMapCoords(deviceId, liveHistoryFallback, lastKnownRef) {
   return null;
 }
 
-function saveStoredLastCoords(deviceId, lat, lng) {
-  if (!deviceId || !Number.isFinite(lat) || !Number.isFinite(lng)) return;
+function saveStoredLastCoords(deviceId, lat, lng, { trusted = false } = {}) {
+  if (!deviceId || !Number.isFinite(lat) || !Number.isFinite(lng) || !trusted) return;
   try {
     const all = JSON.parse(localStorage.getItem(LAST_LIVE_COORDS_KEY) || '{}');
-    all[deviceId] = { lat, lng, savedAt: Date.now() };
+    all[deviceId] = { lat, lng, trusted: true, savedAt: Date.now() };
     localStorage.setItem(LAST_LIVE_COORDS_KEY, JSON.stringify(all));
   } catch (_) {}
 }
@@ -618,7 +617,7 @@ export default function Tracking() {
       return;
     }
     lastKnownLiveRef.current = { deviceId: effectiveDeviceId, lat, lng };
-    saveStoredLastCoords(effectiveDeviceId, lat, lng);
+    saveStoredLastCoords(effectiveDeviceId, lat, lng, { trusted: true });
   }, [mapPosition, position, effectiveDeviceId]);
 
   const hasImmediateLiveCoords = useMemo(() => {
@@ -646,16 +645,15 @@ export default function Tracking() {
         const sorted = [...history].sort(
           (a, b) => (pointTimestampMs(a) ?? 0) - (pointTimestampMs(b) ?? 0)
         );
-        const resolved = resolveHistoryRoutePositions(sorted);
-        for (let i = resolved.length - 1; i >= 0; i--) {
-          const p = resolved[i];
-          if (!hasValidCoords(p)) continue;
+        for (let i = sorted.length - 1; i >= 0; i--) {
+          const p = sorted[i];
+          if (!hasValidCoords(p) || !isTrustedGpsFix(p)) continue;
           setLiveHistoryFallback({
             lat: Number(p.lat),
             lng: Number(p.lng),
             at: pointReceivedIso(p),
           });
-          saveStoredLastCoords(effectiveDeviceId, Number(p.lat), Number(p.lng));
+          saveStoredLastCoords(effectiveDeviceId, Number(p.lat), Number(p.lng), { trusted: true });
           return;
         }
       })
@@ -666,25 +664,16 @@ export default function Tracking() {
   }, [trackerTab, effectiveDeviceId, hasImmediateLiveCoords]);
 
   const liveMapCoords = useMemo(() => {
-    const anchor =
-      trustedLiveAnchorRef.current ||
-      loadStoredLastCoords(effectiveDeviceId) ||
-      (liveHistoryFallback && hasValidCoords(liveHistoryFallback) ? liveHistoryFallback : null);
-
     if (hasValidCoords(mapPosition) && mapPosition.positionHeldFromPreviousGps) {
       return { lat: Number(mapPosition.lat), lng: Number(mapPosition.lng), mode: 'lastKnown' };
     }
     if (hasValidCoords(mapPosition) && !mapPosition.positionHiddenApproximate && isTrustedGpsFix(mapPosition)) {
       return { lat: Number(mapPosition.lat), lng: Number(mapPosition.lng), mode: 'live' };
     }
-    if (position && !isTrustedGpsFix(position) && hasValidCoords(position)) {
-      if (isReasonableApproxFix(position, anchor)) {
-        return {
-          lat: Number(position.lat),
-          lng: Number(position.lng),
-          mode: 'approximate',
-        };
-      }
+    if (hasValidCoords(position) && isTrustedGpsFix(position)) {
+      return { lat: Number(position.lat), lng: Number(position.lng), mode: 'live' };
+    }
+  if (position && !isTrustedGpsFix(position)) {
       const fallback = pickLastKnownMapCoords(
         effectiveDeviceId,
         liveHistoryFallback,
@@ -692,12 +681,6 @@ export default function Tracking() {
       );
       if (fallback) return fallback;
       return null;
-    }
-    if (hasValidCoords(position) && isTrustedGpsFix(position)) {
-      return { lat: Number(position.lat), lng: Number(position.lng), mode: 'live' };
-    }
-    if (hasValidCoords(mapPosition) && !mapPosition.positionHiddenApproximate) {
-      return { lat: Number(mapPosition.lat), lng: Number(mapPosition.lng), mode: 'live' };
     }
     return pickLastKnownMapCoords(effectiveDeviceId, liveHistoryFallback, lastKnownLiveRef);
   }, [mapPosition, position, liveHistoryFallback, effectiveDeviceId]);
@@ -944,8 +927,9 @@ export default function Tracking() {
 
   const signalLive = position != null;
   const liveMapBanner = (() => {
+    if (!liveMapCoords && position?.atHomeWifi) return t('trackingPage.mapWifiHomeBanner');
     if (!liveMapCoords) return null;
-    if (liveMapCoords.mode === 'approximate') return t('trackingPage.mapApproximateBanner');
+    if (liveMapCoords.mode === 'lastKnown' && position?.atHomeWifi) return t('trackingPage.mapWifiHomeBanner');
     if (liveMapCoords.mode === 'lastKnown' && position && !isTrustedGpsFix(position)) {
       return t('trackingPage.mapLastKnownBadFixBanner');
     }
@@ -1117,7 +1101,26 @@ export default function Tracking() {
         ) : (
           <>
             <div className="pp-trackLiveStatus pp-trackLiveStatus--quiet" role="status">
-              <p className="pp-trackLiveStatus__alert">{error || t('trackingPage.noLiveSignalBody')}</p>
+              {position?.source ? (
+                <div className="pp-trackLiveStatus__row">
+                  <span className={`pp-trackLiveStatus__fresh${signalLive ? ' is-live' : ''}`}>{lastUpdateLabel}</span>
+                  <span className={`pp-trackLiveStatus__source pp-trackLiveStatus__source--${liveSourceKind}`}>
+                    <IconTrackSource kind={liveSourceKind} size={13} />
+                    {liveSourceLabel}
+                  </span>
+                  {batPct != null ? (
+                    <span className="pp-trackLiveStatus__bat">
+                      <IconBattery pct={batPct} size={16} />
+                      {batPct}%
+                    </span>
+                  ) : null}
+                </div>
+              ) : null}
+              <p className="pp-trackLiveStatus__alert">
+                {position?.atHomeWifi
+                  ? t('trackingPage.mapWifiHomeBanner')
+                  : error || t('trackingPage.noLiveSignalBody')}
+              </p>
             </div>
             <div className="pp-trackLiveMap__stage pp-trackLiveMap__stage--empty">
               <div className="pp-trackMapEmpty pp-trackNoSignal">

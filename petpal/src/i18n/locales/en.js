@@ -775,6 +775,8 @@ const en = {
     mapApproximateBanner: 'Showing approximate location (GPS weak)',
     mapLastKnownBadFixBanner:
       'Collar sent an invalid Wi‑Fi/cell location — showing last known position. Check your router code on the Device tab.',
+    mapWifiHomeBanner:
+      'Home Wi‑Fi detected — your pet is likely at home. The map needs an outdoor GPS fix for an exact pin (walk outside for a few minutes).',
     noLiveSignalTitle: 'No location stored yet',
     noLiveSignalBody: 'This tracker has not sent coordinates to the server yet.',
     noLiveSignalTipSim: 'Check the SIM card is active',

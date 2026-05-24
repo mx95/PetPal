@@ -375,13 +375,10 @@ function parseXexunPacket(packet) {
     gps = { ...gpsParsed, source: "gps" };
     source = "gps";
     accuracy = "gps";
-  } else if (hasWifiScan && parsedCoordsUsable(lbsParsed)) {
-    // Wi‑Fi block lists APs; position comes from LBS/GPS in the same uplink.
-    gps = { ...lbsParsed, source: "wifi", wifiBssids: wifiMeta.bssids };
-    source = "wifi";
-    accuracy = "wifi";
-  } else if (hasWifiScan && parsedCoordsUsable(gpsParsed)) {
-    gps = { ...gpsParsed, source: "wifi", wifiBssids: wifiMeta.bssids };
+  } else if (hasWifiScan) {
+    // Wi‑Fi block = scanned home routers. Do not use LBS/cell coords from the same packet —
+    // those are tower triangulation (often km off), not the pet's real position.
+    gps = { source: "wifi", wifiBssids: wifiMeta.bssids, atHomeWifi: true };
     source = "wifi";
     accuracy = "wifi";
   } else if (parsedCoordsUsable(lbsParsed)) {

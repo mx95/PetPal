@@ -41,9 +41,12 @@ function normalizeIncomingDevice(prev, incoming) {
   const gps = p.gps || {};
   const lat = gps.lat != null ? Number(gps.lat) : Number.NaN;
   const lng = gps.lng != null ? Number(gps.lng) : Number.NaN;
+  const atHomeWifi = p.gps?.atHomeWifi === true;
 
   const next = {
     imei,
+    atHomeWifi,
+    wifiBssids: p.wifiBssids ?? p.gps?.wifiBssids ?? null,
     location: isPlausibleLatLng(lat, lng) ? { lat, lng } : null,
     gpsValid: p.gpsValid === true,
     source: p.source || gps.source || null, // "gps" | "lbs"
@@ -94,7 +97,15 @@ function normalizeIncomingDevice(prev, incoming) {
 function mergeDeviceRecord(prev, incoming) {
   if (!prev) return incoming;
   const merged = { ...incoming };
-  if (!hasValidGps(incoming.gps) && hasValidGps(prev.gps)) {
+  if (incoming.atHomeWifi && !hasValidGps(incoming.location)) {
+    merged.location = null;
+    merged.gps = {
+      lat: null,
+      lng: null,
+      speedKmh: incoming.speed ?? null,
+      timestamp: incoming.lastUpdate ?? null,
+    };
+  } else if (!hasValidGps(incoming.gps) && hasValidGps(prev.gps)) {
     merged.gps = prev.gps;
     if (!incoming.gpsRaw && prev.gpsRaw) merged.gpsRaw = prev.gpsRaw;
   }

@@ -131,6 +131,28 @@ function buildPositionPayload(imei, d) {
   const lat = loc.lat != null ? Number(loc.lat) : Number.NaN;
   const lng = loc.lng != null ? Number(loc.lng) : Number.NaN;
   if (!isPlausibleLatLng(lat, lng)) {
+    if (d.atHomeWifi || (d.source === "wifi" && d.wifiBssids?.length)) {
+      const receivedAt = d.lastUpdate || d.receivedAt || null;
+      const nowMs = Date.now();
+      const baseTs = receivedAt ? Date.parse(receivedAt) : Number.NaN;
+      const secondsAgo = Number.isFinite(baseTs) ? Math.max(0, Math.round((nowMs - baseTs) / 1000)) : null;
+      return {
+        imei,
+        lat: null,
+        lng: null,
+        atHomeWifi: true,
+        source: "wifi",
+        accuracy: "wifi",
+        battery: d.battery ?? null,
+        signal: d.signal ?? null,
+        lastUpdate: receivedAt,
+        receivedAt,
+        secondsAgo,
+        warningApproximate: true,
+        gpsValid: false,
+        wifiBssids: d.wifiBssids ?? null,
+      };
+    }
     return { error: "no_position" };
   }
 
