@@ -1189,6 +1189,8 @@ const en = {
     payCta: 'Pay with card',
     checkoutStarting: 'Starting checkout…',
     yearlyTrackerIncluded: 'FREE GPS tracker included',
+    monthlyAddTrackerTitle: 'Add GPS tracker',
+    monthlyAddTrackerSub: 'Ships separately after checkout',
     monthlyAddTracker: 'Add GPS tracker to this payment ({price})',
     dueToday: 'Due today at checkout: {amount}',
     dueTodayWithTracker: '(subscription + tracker)',

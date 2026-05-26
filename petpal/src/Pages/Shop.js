@@ -174,6 +174,7 @@ export default function Shop() {
               }}
               className={`pp-card pp-shopCard${focusSku === p.id ? ' pp-shopCard--focus' : ''}${p.id === 'PETPAL_PLUS_YEARLY' ? ' pp-shopCard--featured' : ''}`}
             >
+              <div className="pp-shopCard__body">
               <span className="pp-shopCard__badge">{p.badge}</span>
               <h2 className="pp-sectionTitle" style={{ margin: '6px 0 4px' }}>
                 {p.title}
@@ -194,7 +195,14 @@ export default function Shop() {
                     disabled={isLoading}
                     onChange={(e) => setMonthlyIncludeTracker(e.target.checked)}
                   />
-                  <span>{t('shopPage.monthlyAddTracker', { price: formatEur(TRACKER_ADDON_CENTS) })}</span>
+                  <span className="pp-shopTrackerOpt__copy">
+                    <strong>{t('shopPage.monthlyAddTrackerTitle')}</strong>
+                    <small>{t('shopPage.monthlyAddTrackerSub')}</small>
+                  </span>
+                  <span className="pp-shopTrackerOpt__meta">
+                    <span className="pp-shopTrackerOpt__price">+{formatEur(TRACKER_ADDON_CENTS)}</span>
+                    <span className="pp-shopTrackerOpt__switch" aria-hidden />
+                  </span>
                 </label>
               ) : null}
               {p.id === 'PETPAL_PLUS_YEARLY' ? (
@@ -212,6 +220,8 @@ export default function Shop() {
               {p.id === 'STORE_BOOST_MONTHLY' && !isApprovedCompany ? (
                 <p className="pp-subtle">{t('shopPage.boostBusinessOnly')}</p>
               ) : null}
+              </div>
+              <div className="pp-shopCard__foot">
               <label className="pp-shopSaveRow">
                 <input
                   type="checkbox"
@@ -245,6 +255,7 @@ export default function Shop() {
                   t('shopPage.payCta')
                 )}
               </button>
+              </div>
             </article>
           );
         })}

@@ -1,7 +1,7 @@
 import { getApp, getApps, initializeApp } from 'firebase/app';
 import { getAnalytics, isSupported } from 'firebase/analytics';
 import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { getFirestore, initializeFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
 function trimEnv(value) {
@@ -55,7 +55,17 @@ export function getDb() {
     throw new Error('Firebase is not configured');
   }
   if (!db) {
-    db = getFirestore(app);
+    // Dev-only stability: CRA/React 18 HMR + WebChannel can trip Firestore internal assertions
+    // on localhost in some environments. Long-polling avoids that path.
+    const isDev = String(process.env.NODE_ENV) !== 'production';
+    if (isDev) {
+      db = initializeFirestore(app, {
+        experimentalForceLongPolling: true,
+        useFetchStreams: false,
+      });
+    } else {
+      db = getFirestore(app);
+    }
   }
   return db;
 }

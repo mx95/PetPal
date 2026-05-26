@@ -16179,13 +16179,32 @@ html[data-theme="dark"] .pp-nearby-list > li {
   gap: 1.25rem;
   margin-top: 1.25rem;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+  align-items: stretch;
 }
 
 .pp-shopCard {
   padding: 1.25rem 1.35rem;
   display: flex;
   flex-direction: column;
+  gap: 0;
+  height: 100%;
+  min-height: 100%;
+}
+
+.pp-shopCard__body {
+  display: flex;
+  flex-direction: column;
   gap: 0.65rem;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.pp-shopCard__foot {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  padding-top: 0.35rem;
 }
 
 .pp-shopCard__badge {
@@ -16262,21 +16281,102 @@ html[data-theme="dark"] .pp-nearby-list > li {
 
 .pp-shopTrackerOpt {
   display: flex;
-  align-items: flex-start;
-  gap: 0.55rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.85rem;
   margin: 0;
-  padding: 0.65rem 0.75rem;
+  padding: 0.75rem 0.85rem;
   border-radius: 12px;
-  background: rgba(91, 55, 255, 0.06);
+  background: rgba(91, 55, 255, 0.05);
   border: 1px solid rgba(91, 55, 255, 0.14);
-  font-size: 0.88rem;
-  font-weight: 700;
+  font-size: 0.9rem;
+  font-weight: 750;
   cursor: pointer;
 }
 
 .pp-shopTrackerOpt input {
-  margin-top: 0.15rem;
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.pp-shopTrackerOpt__copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.pp-shopTrackerOpt__copy strong {
+  font-weight: 850;
+  color: var(--pp-ink, #0f172a);
+  line-height: 1.15;
+}
+
+.pp-shopTrackerOpt__copy small {
+  font-size: 0.78rem;
+  font-weight: 650;
+  color: var(--pp-muted, #64748b);
+  line-height: 1.2;
+}
+
+.pp-shopTrackerOpt__meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
   flex-shrink: 0;
+}
+
+.pp-shopTrackerOpt__price {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(91, 55, 255, 0.1);
+  border: 1px solid rgba(91, 55, 255, 0.18);
+  font-size: 0.82rem;
+  font-weight: 850;
+  color: rgba(91, 55, 255, 0.95);
+}
+
+.pp-shopTrackerOpt__switch {
+  width: 46px;
+  height: 26px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.55);
+  position: relative;
+  transition: background 150ms ease;
+}
+
+.pp-shopTrackerOpt__switch::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 6px 14px -10px rgba(15, 23, 42, 0.7);
+  transition: transform 150ms ease;
+}
+
+.pp-shopTrackerOpt:has(input:checked) {
+  border-color: rgba(4, 120, 87, 0.22);
+  background: rgba(4, 120, 87, 0.06);
+}
+
+.pp-shopTrackerOpt:has(input:checked) .pp-shopTrackerOpt__switch {
+  background: rgba(4, 120, 87, 0.85);
+}
+
+.pp-shopTrackerOpt:has(input:checked) .pp-shopTrackerOpt__switch::after {
+  transform: translateX(20px);
+}
+
+.pp-shopTrackerOpt:has(input:disabled) {
+  opacity: 0.7;
+  cursor: not-allowed;
 }
 
 .pp-shopCard__dueToday {
