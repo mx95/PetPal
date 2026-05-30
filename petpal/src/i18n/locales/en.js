@@ -944,6 +944,7 @@ const en = {
     devicePanelHomeSavedCoords: 'Saved home: {lat}, {lng}',
     devicePanelHomeGeoDenied: 'Could not get phone location — allow location access in your browser.',
     devicePanelHomeGeoUnsupported: 'Your browser does not support location.',
+    devicePanelHomeNeedsHttps: '“Set home on map” needs HTTPS (or localhost). You can still configure Wi‑Fi and tracking mode below.',
     devicePanelWifiDetectedTitle: 'Networks your collar sees right now',
     devicePanelWifiDetectedMatch: 'Likely your router',
     devicePanelWifiDetectedMismatch:

@@ -1,10 +1,8 @@
 import { getTrackingModePreset, presetToTkBody } from './trackingModePresets';
+import { resolveTrackerHttpBase } from './trackingWifiFeature';
 
 function trackerApiBase() {
-  const raw = process.env.REACT_APP_XEXUN_HTTP_BASE_URL;
-  if (raw == null || raw === '') return null;
-  if (raw === 'same') return '';
-  return String(raw).replace(/\/$/, '');
+  return resolveTrackerHttpBase();
 }
 
 async function readJsonSafe(res) {

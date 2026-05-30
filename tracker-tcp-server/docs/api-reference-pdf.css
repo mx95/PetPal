@@ -1,0 +1,86 @@
+body {
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-size: 10.5pt;
+  line-height: 1.45;
+  color: #1a1a1a;
+}
+
+h1 {
+  font-size: 22pt;
+  margin-top: 0;
+  border-bottom: 2px solid #2d6a4f;
+  padding-bottom: 0.3em;
+}
+
+h2 {
+  font-size: 14pt;
+  margin-top: 1.4em;
+  color: #1b4332;
+  page-break-after: avoid;
+}
+
+h3 {
+  font-size: 11.5pt;
+  margin-top: 1em;
+  page-break-after: avoid;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 9.5pt;
+  margin: 0.8em 0;
+}
+
+th,
+td {
+  border: 1px solid #ccc;
+  padding: 0.35em 0.5em;
+  text-align: left;
+  vertical-align: top;
+}
+
+th {
+  background: #f0f4f1;
+}
+
+code {
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 9pt;
+  background: #f5f5f5;
+  padding: 0.1em 0.25em;
+  border-radius: 3px;
+}
+
+pre {
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  padding: 0.75em;
+  font-size: 8.5pt;
+  overflow-x: auto;
+  page-break-inside: avoid;
+}
+
+pre code {
+  background: none;
+  padding: 0;
+}
+
+a {
+  color: #2d6a4f;
+  text-decoration: none;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid #ddd;
+  margin: 1.5em 0;
+}
+
+blockquote {
+  border-left: 3px solid #95d5b2;
+  margin: 0.8em 0;
+  padding: 0.2em 0.8em;
+  color: #444;
+}

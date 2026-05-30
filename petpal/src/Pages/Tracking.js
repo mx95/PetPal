@@ -35,7 +35,7 @@ import {
   clearHomeAnchor,
 } from '../tracking/homeAnchorStorage';
 import { setHomeFromPhone } from '../tracking/setHomeFromPhone';
-import { isTrackingWifiEnabled, stripWifiFromPosition } from '../tracking/trackingWifiFeature';
+import { isTrackingWifiEnabled, isTrackingGeolocationEnabled, stripWifiFromPosition } from '../tracking/trackingWifiFeature';
 
 const LAST_LIVE_PET_KEY = 'petpal_live_selectedPetId';
 const LAST_LIVE_COORDS_KEY = 'petpal_last_live_coords_v1';
@@ -487,6 +487,7 @@ export default function Tracking() {
   const [error, setError] = useState('');
   const [trackerTab, setTrackerTab] = useState('live');
   const wifiTrackingEnabled = isTrackingWifiEnabled();
+  const geolocationEnabled = isTrackingGeolocationEnabled();
   const displayPosition = useMemo(() => stripWifiFromPosition(position), [position]);
   const [mapLayoutTick, setMapLayoutTick] = useState(0);
   const location = useLocation();
@@ -794,7 +795,7 @@ export default function Tracking() {
   }, [mapPosition, position, displayPosition, liveHistoryFallback, effectiveDeviceId, homeAnchorTick, wifiTrackingEnabled]);
 
   const showOneTapHome =
-    wifiTrackingEnabled &&
+    geolocationEnabled &&
     Boolean(displayPosition?.atHomeWifi) &&
     !liveMapCoords &&
     !homeCoordsFromPosition(displayPosition) &&

@@ -8,6 +8,7 @@
  */
 
 import { pointTimestampMs, sanitizeSpeedKmh } from './positionFilter';
+import { resolveTrackerHttpBase } from './trackingWifiFeature';
 
 function bffBase() {
   const raw = process.env.REACT_APP_TRACKING_BFF_URL;
@@ -24,10 +25,7 @@ function vendorBase() {
 }
 
 function xexunBase() {
-  const raw = process.env.REACT_APP_XEXUN_HTTP_BASE_URL;
-  if (raw == null || raw === '') return null;
-  if (raw === 'same') return '';
-  return String(raw).replace(/\/$/, '');
+  return resolveTrackerHttpBase();
 }
 
 /** @returns {'bff' | 'petpal' | 'xexun' | 'mock'} */

@@ -823,6 +823,7 @@ const ru = {
     devicePanelApplyHome: 'Настроить домашнее отслеживание',
     devicePanelApply: 'Сохранить режим',
     devicePanelApplying: 'Отправка на ошейник…',
+    devicePanelHomeNeedsHttps: '«Указать дом на карте» работает только по HTTPS (или на localhost). Wi‑Fi и режим отслеживания ниже доступны.',
     devicePanelQuery: 'Проверить настройки ошейника',
     devicePanelQueuedSimple:
       'Сохранено! Ошейник обновится при следующем подключении — обычно через несколько минут.',

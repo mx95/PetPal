@@ -10,7 +10,12 @@
   "scripts": {
     "start": "node src/index.js",
     "test": "node --test test/*.test.js",
-    "test:ack": "node scripts/verify-portal-ack-offsets.js && node --test test/providerAck.test.js"
+    "test:ack": "node scripts/verify-portal-ack-offsets.js && node --test test/providerAck.test.js",
+    "docs:pdf": "node scripts/generate-api-docs-pdf.js",
+    "postman:generate": "node scripts/generate-postman-collection.js"
+  },
+  "devDependencies": {
+    "md-to-pdf": "^5.2.4"
   },
   "dependencies": {
     "better-sqlite3": "^12.9.0",

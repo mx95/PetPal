@@ -822,6 +822,7 @@ const el = {
     devicePanelApplyHome: 'Ρύθμιση εντοπισμού σπιτιού',
     devicePanelApply: 'Αποθήκευση λειτουργίας',
     devicePanelApplying: 'Αποστολή στο κολάρο…',
+    devicePanelHomeNeedsHttps: 'Το «Ορισμός σπιτιού στον χάρτη» χρειάζεται HTTPS (ή localhost). Μπορείτε ακόμα να ρυθμίσετε Wi‑Fi και λειτουργία παρακολούθησης.',
     devicePanelQuery: 'Έλεγχος ρυθμίσεων κολαριού',
     devicePanelQueuedSimple:
       'Αποθηκεύτηκε! Το κολάρο θα ενημερωθεί στην επόμενη σύνδεση — συνήθως σε λίγα λεπτά.',

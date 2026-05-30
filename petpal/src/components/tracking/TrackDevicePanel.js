@@ -12,6 +12,7 @@ import {
   queryTrackingMode,
   queryWifiBssids,
 } from '../../tracking/trackerCommandClient';
+import { isTrackingGeolocationEnabled } from '../../tracking/trackingWifiFeature';
 import {
   loadWifiNetworks,
   newWifiNetworkEntry,
@@ -34,6 +35,7 @@ export default function TrackDevicePanel({
 }) {
   const { t } = useI18n();
   const commandsAvailable = isTrackerCommandsAvailable();
+  const geolocationEnabled = isTrackingGeolocationEnabled();
 
   const [modeId, setModeId] = useState('wifi_priority');
   const [networks, setNetworks] = useState([]);
@@ -353,11 +355,15 @@ export default function TrackDevicePanel({
                 <button
                   type="button"
                   className={`pp-btn${homeAnchor ? ' pp-btn--ghost' : ' pp-btnPrimary pp-trackDeviceHome__cta'}`}
-                  disabled={busy}
+                  disabled={busy || !geolocationEnabled}
+                  title={!geolocationEnabled ? t('trackingPage.devicePanelHomeNeedsHttps') : undefined}
                   onClick={handleSetHomeFromPhone}
                 >
                   {busy ? t('trackingPage.mapOneTapHomeBusy') : t('trackingPage.mapOneTapHome')}
                 </button>
+                {!geolocationEnabled ? (
+                  <p className="pp-subtle pp-trackDeviceHome__httpsNote">{t('trackingPage.devicePanelHomeNeedsHttps')}</p>
+                ) : null}
                 {homeAnchor ? (
                   <button type="button" className="pp-btn pp-btn--ghost" disabled={busy} onClick={handleClearHome}>
                     {t('trackingPage.devicePanelHomeClear')}

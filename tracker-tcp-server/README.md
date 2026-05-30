@@ -126,6 +126,9 @@ Parsed positions feed the **same SQLite store** and `/api/app/position` as Xexun
 
 ## HTTP API (production structure)
 
+**Full reference:** [`docs/API_REFERENCE.md`](docs/API_REFERENCE.md) · **PDF:** [`docs/API_REFERENCE.pdf`](docs/API_REFERENCE.pdf) (`npm run docs:pdf`)  
+**Postman:** import [`postman/PetPal-Tracker-API.postman_collection.json`](postman/PetPal-Tracker-API.postman_collection.json) and [`postman/PetPal-Tracker-API.postman_environment.json`](postman/PetPal-Tracker-API.postman_environment.json).
+
 This service exposes **two API groups**:
 
 - **App API** (frontend-safe): `GET /api/app/*`

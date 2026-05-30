@@ -47,17 +47,18 @@ See `petpal/.env.example` for Firebase and other optional vars.
 
 ---
 
-## HTTP vs HTTPS — Wi‑Fi tracking is **off** on `http://`
+## HTTP vs HTTPS — Device tab on `http://` when tracker API is configured
 
-**Your current setup (`http://116.203.209.68:5002`) does not use HTTPS.**
+**Your current setup (`http://116.203.209.68:5002`) uses HTTP.**
 
-Wi‑Fi-related UI is **disabled automatically** when the page is not a [secure context](https://developer.mozilla.org/en-US/docs/Web/Security/Secure_Contexts):
+When **`REACT_APP_XEXUN_HTTP_BASE_URL`** is set at build time (typically `same` on the PM2 host), the **Device** tab is **shown** on HTTP — router BSSID setup and tracking-mode commands use the same-origin tracker API and do not require HTTPS.
 
-- No **Device** tab (router BSSID setup, tracking mode commands)
-- No **Wi‑Fi** badge / “at home on Wi‑Fi” empty states
-- No **one-tap “Set home on map”** (uses browser geolocation, which requires HTTPS except on `localhost`)
+Still **HTTPS-only** (browser secure context):
 
-Tracking still works with **GPS** and **cell (LBS)** on the **Live** and **History** tabs.
+- **One-tap “Set home on map”** (phone geolocation)
+- Optional: force everything off with `REACT_APP_TRACKING_WIFI_ENABLED=0`
+
+Tracking still works with **GPS** and **cell (LBS)** on the **Live** and **History** tabs regardless.
 
 ### When you add HTTPS later
 
@@ -182,7 +183,7 @@ Without saved home, Wi‑Fi responses have `lat`/`lng` null but still include ba
 | --- | --- | --- |
 | Empty map, “no location” | Collar on Wi‑Fi only, no GPS/home saved | Normal on HTTP (Wi‑Fi UI off). Wait for LBS/GPS or enable HTTPS + one-tap home. |
 | Wrong map pin (far away) | Old cell-tower coords | Fixed in current code; hard refresh + redeploy. Do **not** use sticker MAC if collar scans a different BSSID. |
-| No Device tab | HTTP without HTTPS | Expected. Add HTTPS + `REACT_APP_TRACKING_WIFI_ENABLED=1` to enable. |
+| No Device tab | `REACT_APP_XEXUN_HTTP_BASE_URL` not set at build | Set `REACT_APP_XEXUN_HTTP_BASE_URL=same` (or full URL), then `npm run build`. |
 | “Tracker response had no usable lat/lng” | Old frontend | Rebuild `petpal` and hard refresh. |
 | Stale device list vs live | Old server | `git pull`, `pm2 restart tracker`. |
 | History gone after restart | Wrong DB path or `PERSIST_TO_SQLITE=0` | See `tracker-tcp-server/README.md` PM2 section. |
