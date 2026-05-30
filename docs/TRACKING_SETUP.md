@@ -39,9 +39,9 @@ Create **`petpal/.env.local`** for local dev, or set the same variables **on the
 | Variable | Typical value | Notes |
 | --- | --- | --- |
 | `REACT_APP_XEXUN_HTTP_BASE_URL` | `same` | App is served from tracker host on `:5002`. Use full URL if UI and API are on different origins. **Required** for live tracking against your server. |
-| `REACT_APP_TRACKING_MAP` | `osm` | Tracker page map: OpenStreetMap/Leaflet (default). Set `google` only if you want Google on the tracking page. |
+| `REACT_APP_TRACKING_MAP` | *(omit)* | Tracker page uses **Google Maps** when `REACT_APP_GOOGLE_MAPS_API_KEY` is set. Set `osm` only if you prefer OpenStreetMap/Leaflet on the tracking page. |
 | `REACT_APP_TRACKING_WIFI_ENABLED` | *(see below)* | Wi‑Fi home tracking + Device tab + one-tap home. |
-| `REACT_APP_GOOGLE_MAPS_API_KEY` | optional | Used for **Nearby** / Places, not the tracker map when `REACT_APP_TRACKING_MAP=osm`. |
+| `REACT_APP_GOOGLE_MAPS_API_KEY` | optional | Tracker map (when set), **Nearby** / Places, and company place search. |
 
 See `petpal/.env.example` for Firebase and other optional vars.
 

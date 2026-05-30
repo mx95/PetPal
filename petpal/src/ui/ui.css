@@ -3657,6 +3657,11 @@ body.pp-noScroll {
   gap: 10px;
   min-width: 0;
   min-height: 0;
+  max-height: min(calc(100vh - 168px), 680px);
+}
+
+.pp-trackHistoryRangeCard--compact {
+  flex-shrink: 0;
 }
 
 .pp-trackHistoryRangeCard__head {
@@ -4087,8 +4092,8 @@ body.pp-noScroll {
   display: grid;
   grid-template-columns: minmax(0, 1.85fr) minmax(280px, 340px);
   gap: 12px;
-  align-items: stretch;
-  min-height: min(calc(100vh - 168px), 860px);
+  align-items: start;
+  min-height: 0;
 }
 
 .pp-trackHistoryMap,
@@ -4099,7 +4104,7 @@ body.pp-noScroll {
 .pp-trackHistoryMap {
   display: flex;
   flex-direction: column;
-  min-height: min(calc(100vh - 168px), 860px);
+  min-height: 0;
   padding: 14px 16px !important;
 }
 
@@ -4167,9 +4172,9 @@ body.pp-noScroll {
 }
 
 .pp-trackHistoryFrame {
-  flex: 1;
-  min-height: min(44vh, 420px);
-  height: min(44vh, 420px);
+  flex: 0 0 auto;
+  min-height: min(36vh, 340px);
+  height: min(36vh, 340px);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -4256,24 +4261,27 @@ body.pp-noScroll {
 .pp-trackHistoryTimeline {
   display: flex;
   flex-direction: column;
-  flex: 1;
-  min-height: 0;
-  max-height: none;
+  flex: 1 1 auto;
+  min-height: 120px;
+  max-height: min(42vh, 380px);
   overflow: hidden;
   padding: 14px 16px !important;
 }
 
 .pp-trackHistoryTimeline__list {
-  flex: 1;
+  flex: 1 1 auto;
   min-height: 0;
-  overflow: auto;
-  padding-right: 4px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding-right: 6px;
+  scrollbar-gutter: stable;
 }
 
 @media (min-width: 901px) {
   .pp-trackHistoryTimeline {
-    position: static;
-    top: auto;
+    max-height: min(calc(100vh - 320px), 420px);
   }
 }
 
@@ -4284,7 +4292,7 @@ body.pp-noScroll {
   }
 
   .pp-trackHistoryMap {
-    min-height: min(52vh, 460px);
+    min-height: 0;
     order: 1;
   }
 
@@ -4300,7 +4308,8 @@ body.pp-noScroll {
   .pp-trackHistoryFrame--panorama {
     border-radius: 24px;
     clip-path: none;
-    min-height: min(44vh, 400px);
+    min-height: min(34vh, 320px);
+    height: min(34vh, 320px);
   }
 }
 
@@ -4310,6 +4319,7 @@ body.pp-noScroll {
   justify-content: space-between;
   gap: 10px;
   margin-bottom: 10px;
+  flex-shrink: 0;
 }
 
 .pp-trackHistoryTimeline__head span {
@@ -16148,12 +16158,8 @@ html[data-theme="dark"] .pp-nearby-list > li {
   }
 
   .pp-trackHistoryTimeline {
-    max-height: min(38vh, 300px);
-    min-height: 0;
-  }
-
-  .pp-trackHistoryTimeline__list {
-    max-height: min(32vh, 260px);
+    max-height: min(38vh, 320px);
+    min-height: 100px;
   }
 }
 
@@ -18197,6 +18203,15 @@ html[data-theme="dark"] .pp-nearbyPartnerCard__name {
   margin-top: -64px !important;
   background: transparent !important;
   border: 0 !important;
+}
+
+.pp-mapPetPin-wrap--google {
+  width: 56px;
+  height: 68px;
+  background: transparent;
+  border: 0;
+  pointer-events: none;
+  z-index: 3;
 }
 
 .pp-mapPetPin {

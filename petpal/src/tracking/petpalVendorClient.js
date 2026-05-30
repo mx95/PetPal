@@ -7,7 +7,7 @@
  * - Optional third-party vendor API that speaks a common GPS-platform REST shape
  */
 
-import { sanitizeSpeedKmh } from './positionFilter';
+import { pointTimestampMs, sanitizeSpeedKmh } from './positionFilter';
 
 function bffBase() {
   const raw = process.env.REACT_APP_TRACKING_BFF_URL;
@@ -107,6 +107,10 @@ function normalizeHistoryPoint(p, idx = 0) {
     deviceTime,
     address: p.address || null,
   };
+}
+
+function sortHistoryPoints(rows) {
+  return [...rows].sort((a, b) => (pointTimestampMs(a) ?? 0) - (pointTimestampMs(b) ?? 0));
 }
 
 function bffAuthHeaders() {
@@ -354,11 +358,14 @@ async function fetchBffHistory(deviceId, { limit = 240, from, to } = {}) {
   const data = await readJsonSafe(res);
   if (!res.ok) throw new Error(data?.error ? `History returned ${res.status} (${data.error})` : `History returned ${res.status}`);
   const calendarMatch = data?.calendarMatch !== false;
-  const history = (Array.isArray(data?.history) ? data.history : Array.isArray(data) ? data : [])
-    .map(normalizeHistoryPoint)
-    .filter(Boolean)
-    .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
-  return { history, calendarMatch };
+  const totalInRange = Number.isFinite(Number(data?.totalInRange)) ? Number(data.totalInRange) : null;
+  const truncated = Boolean(data?.truncated);
+  const history = sortHistoryPoints(
+    (Array.isArray(data?.history) ? data.history : Array.isArray(data) ? data : [])
+      .map(normalizeHistoryPoint)
+      .filter(Boolean)
+  );
+  return { history, calendarMatch, totalInRange, truncated };
 }
 
 async function fetchXexunHistory(deviceId, { limit = 240, from, to } = {}) {
@@ -378,11 +385,14 @@ async function fetchXexunHistory(deviceId, { limit = 240, from, to } = {}) {
   const data = await readJsonSafe(res);
   if (!res.ok) throw new Error(data?.error ? `Tracker history ${res.status} (${data.error})` : `Tracker history returned ${res.status}`);
   const calendarMatch = data?.calendarMatch !== false;
-  const history = (Array.isArray(data?.history) ? data.history : [])
-    .map(normalizeHistoryPoint)
-    .filter(Boolean)
-    .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
-  return { history, calendarMatch };
+  const totalInRange = Number.isFinite(Number(data?.totalInRange)) ? Number(data.totalInRange) : null;
+  const truncated = Boolean(data?.truncated);
+  const history = sortHistoryPoints(
+    (Array.isArray(data?.history) ? data.history : [])
+      .map(normalizeHistoryPoint)
+      .filter(Boolean)
+  );
+  return { history, calendarMatch, totalInRange, truncated };
 }
 
 async function fetchVendorHistory(deviceId, { limit = 240 } = {}) {
@@ -401,7 +411,7 @@ async function fetchVendorHistory(deviceId, { limit = 240 } = {}) {
     .filter(Boolean)
     .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
     .slice(-limit);
-  return { history, calendarMatch: true };
+  return { history, calendarMatch: true, totalInRange: null, truncated: false };
 }
 
 let mockSeed = { lat: 37.9755, lng: 23.7348 };
@@ -468,7 +478,7 @@ export async function getPositionHistory(deviceId, opts = {}) {
   if (bffBase() != null) return fetchBffHistory(id, opts);
   if (xexunBase() != null) return fetchXexunHistory(id, opts);
   if (vendorBase() != null) return fetchVendorHistory(id, opts);
-  return { history: mockHistory(id), calendarMatch: true };
+  return { history: mockHistory(id), calendarMatch: true, totalInRange: null, truncated: false };
 }
 
 /** Save home map pin on tracker server (used when collar is on Wi‑Fi — collar does not send lat/lng). */

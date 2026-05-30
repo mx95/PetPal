@@ -216,6 +216,19 @@ function createSqliteStore({ dbPath }) {
       return rows.reverse().map(mapHistoryRow);
     },
 
+    countHistoryInRange(imei, { from = null, to = null } = {}) {
+      const fromS = from != null && String(from).trim() !== "" ? String(from).trim() : null;
+      const toS = to != null && String(to).trim() !== "" ? String(to).trim() : null;
+      if (!fromS || !toS || typeof sqlite.countHistoryByImeiInRange?.get !== "function") return null;
+      const row = sqlite.countHistoryByImeiInRange.get({
+        imei: String(imei),
+        from: fromS,
+        to: toS,
+      });
+      const n = Number(row?.count);
+      return Number.isFinite(n) ? n : null;
+    },
+
     enqueueCommand: mem.enqueueCommand,
     dequeueCommand: mem.dequeueCommand,
     pendingCommands: mem.pendingCommands,

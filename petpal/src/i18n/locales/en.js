@@ -859,6 +859,10 @@ const en = {
     historyEmptyTitle: 'No route for these dates',
     historyEmptyBody:
       'No tracker locations were found for this range. Try different dates or refresh once the collar has uploaded stored positions.',
+    historyEmptyApproxOnly:
+      'Fixes were received for this day, but none are GPS-quality yet. Show cell / Wi‑Fi fixes below, or try Yesterday for the last walk route.',
+    historyApproxMapHint:
+      'Approximate cell / Wi‑Fi fix only — GPS route appears when the collar uploads satellite positions',
     historyTimelineTitle: 'Timeline',
     historyTimelineEmpty: 'Events appear here after history loads.',
     presetToday: 'Today',
@@ -894,6 +898,8 @@ const en = {
     historyDaysCoverage: 'GPS activity on {active} of {total} days in this range',
     historyStationaryHint:
       'No walk route — {count} reports from roughly the same place (circle on map)',
+    historyTruncatedHint:
+      'Showing the first {loaded} of {total} fixes in this range — narrow the date or time window to see the full day.',
     sourceGps: 'GPS',
     sourceWifi: 'Wi‑Fi',
     sourceLbs: 'Cell (LBS)',

@@ -1,4 +1,6 @@
 import {
+  buildRouteVertexMarkers,
+  computeRouteFitPath,
   isPlausibleGpsJump,
   kmBetween,
   resolveHistoryRoutePositions,
@@ -34,6 +36,40 @@ describe('resolveTrackerPositions', () => {
     expect(out[1].positionHeldFromPreviousGps).toBe(true);
     expect(out[2].lat).toBe(home.lat);
     expect(out[2].positionHeldFromPreviousGps).toBe(true);
+  });
+});
+
+describe('buildRouteVertexMarkers', () => {
+  it('samples turns and distance steps without listing every redundant fix', () => {
+    const base = Date.parse('2026-05-16T13:00:00.000Z');
+    const iso = (min) => new Date(base + min * 60_000).toISOString();
+    const points = [
+      pt(34.96, 33.12, iso(0)),
+      pt(34.9601, 33.12, iso(1)),
+      pt(34.9602, 33.12, iso(2)),
+      pt(34.9615, 33.121, iso(3)),
+      pt(34.9625, 33.123, iso(4)),
+    ];
+    const markers = buildRouteVertexMarkers(points, { maxVertices: 10, minStepKm: 0.01 });
+    expect(markers.length).toBeGreaterThan(2);
+    expect(markers[0].kind).toBe('start');
+    expect(markers[markers.length - 1].kind).toBe('end');
+  });
+});
+
+describe('computeRouteFitPath', () => {
+  it('ignores far GPS spikes when computing fit bounds', () => {
+    const core = [
+      { lat: 34.96, lng: 33.12 },
+      { lat: 34.961, lng: 33.121 },
+      { lat: 34.962, lng: 33.122 },
+      { lat: 34.963, lng: 33.123 },
+    ];
+    const withSpike = [...core, { lat: 35.05, lng: 33.4 }];
+    const fit = computeRouteFitPath(withSpike);
+    expect(fit.length).toBeGreaterThan(0);
+    const maxLat = Math.max(...fit.map((p) => p.lat));
+    expect(maxLat).toBeLessThan(35.0);
   });
 });
 

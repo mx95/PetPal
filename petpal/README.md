@@ -76,7 +76,8 @@ Quick env for production on the tracker host (`http://YOUR_IP:5002`):
 
 ```env
 REACT_APP_XEXUN_HTTP_BASE_URL=same
-REACT_APP_TRACKING_MAP=osm
+REACT_APP_GOOGLE_MAPS_API_KEY=your-key
+# Optional: REACT_APP_TRACKING_MAP=osm  — force OpenStreetMap on tracker instead of Google
 # Wi‑Fi off on http:// by default — do not set REACT_APP_TRACKING_WIFI_ENABLED=1 until HTTPS
 ```
 

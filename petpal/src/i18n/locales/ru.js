@@ -739,6 +739,10 @@ const ru = {
     historyEmptyTitle: 'Нет маршрута за эти даты',
     historyEmptyBody:
       'Нет точек за выбранный период. Выберите другие даты или обновите, когда ошейник загрузит историю.',
+    historyEmptyApproxOnly:
+      'За этот день есть точки, но не GPS. Включите cell/Wi‑Fi ниже или выберите «Вчера» для последнего маршрута.',
+    historyApproxMapHint:
+      'Только приблизительная cell/Wi‑Fi точка — GPS-маршрут появится после спутниковых данных',
     historyTimelineTitle: 'Хронология',
     historyTimelineEmpty: 'События появятся после загрузки истории.',
     presetToday: 'Сегодня',
@@ -774,6 +778,8 @@ const ru = {
     historyDaysCoverage: 'GPS-активность за {active} из {total} дней в диапазоне',
     historyStationaryHint:
       'Маршрута нет — {count} отчётов примерно с одного места (круг на карте)',
+    historyTruncatedHint:
+      'Показаны первые {loaded} из {total} точек за период — сузьте дату или время, чтобы увидеть весь день.',
     sourceGps: 'GPS',
     sourceWifi: 'Wi‑Fi',
     sourceLbs: 'Вышки (LBS)',

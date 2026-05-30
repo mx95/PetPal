@@ -738,6 +738,10 @@ const el = {
     historyEmptyTitle: 'Δεν υπάρχει διαδρομή για αυτές τις ημερομηνίες',
     historyEmptyBody:
       'Δεν βρέθηκαν θέσεις για αυτό το εύρος. Δοκιμάστε άλλες ημερομηνίες ή ανανεώστε όταν το κολάρο ανέβει ιστορικό.',
+    historyEmptyApproxOnly:
+      'Έγιναν αναφορές σήμερα, αλλά όχι με GPS. Ενεργοποιήστε cell/Wi‑Fi παρακάτω ή δοκιμάστε Χθες για την τελευταία διαδρομή.',
+    historyApproxMapHint:
+      'Μόνο κατά προσέγγιση cell/Wi‑Fi — η διαδρομή GPS εμφανίζεται όταν ανέβουν δορυφορικές θέσεις',
     historyTimelineTitle: 'Χρονολόγιο',
     historyTimelineEmpty: 'Τα γεγονότα εμφανίζονται εδώ μετά τη φόρτωση.',
     presetToday: 'Σήμερα',
@@ -773,6 +777,8 @@ const el = {
     historyDaysCoverage: 'GPS δραστηριότητα σε {active} από {total} ημέρες στο εύρος',
     historyStationaryHint:
       'Χωρίς διαδρομή — {count} αναφορές από το ίδιο σημείο (κύκλος στον χάρτη)',
+    historyTruncatedHint:
+      'Εμφανίζονται τα πρώτα {loaded} από {total} σημεία στο διάστημα — στενέψτε ημερομηνία ή ώρα για ολόκληρη την ημέρα.',
     sourceGps: 'GPS',
     sourceWifi: 'Wi‑Fi',
     sourceLbs: 'Κεραία (LBS)',

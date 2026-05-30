@@ -42,9 +42,10 @@ function escapeAttr(value) {
 }
 
 /**
+ * Shared HTML for pet avatar pins (Leaflet divIcon + Google OverlayView).
  * @param {{ photoUrl?: string, placeholderEmoji?: string, sourceKind?: string, name?: string }} opts
  */
-export function buildLeafletPetMarkerIcon({ photoUrl, placeholderEmoji, sourceKind, name }) {
+export function buildMapPetPinHtml({ photoUrl, placeholderEmoji, sourceKind, name }) {
   const badge = sourceBadgeMeta(sourceKind || 'gps');
   const safeName = escapeAttr(name || 'Pet');
   const photo = photoUrl ? escapeAttr(photoUrl) : '';
@@ -52,16 +53,21 @@ export function buildLeafletPetMarkerIcon({ photoUrl, placeholderEmoji, sourceKi
     ? `<img class="pp-mapPetPin__img" src="${photo}" alt="" decoding="async" width="48" height="48" style="width:48px;height:48px;max-width:none;object-fit:cover;object-position:center;display:block" />`
     : `<span class="pp-mapPetPin__emoji" aria-hidden="true">${escapeHtml(placeholderEmoji || '🐾')}</span>`;
 
-  const html = `
+  return `
     <div class="pp-mapPetPin" role="img" aria-label="${safeName}">
       <span class="pp-mapPetPin__badge pp-mapPetPin__badge--${badge.kind}" title="${badge.kind}">${trackSourceIconSvg(badge.kind, 11)}</span>
       <div class="pp-mapPetPin__head">${inner}</div>
       <span class="pp-mapPetPin__stem" aria-hidden="true"></span>
     </div>`;
+}
 
+/**
+ * @param {{ photoUrl?: string, placeholderEmoji?: string, sourceKind?: string, name?: string }} opts
+ */
+export function buildLeafletPetMarkerIcon(opts) {
   return L.divIcon({
     className: 'pp-mapPetPin-wrap',
-    html,
+    html: buildMapPetPinHtml(opts),
     iconSize: [56, 68],
     iconAnchor: [28, 64],
     popupAnchor: [0, -58],
@@ -76,72 +82,86 @@ const googlePinCache = new Map();
  * @param {number} [size]
  * @returns {Promise<string>} data URL
  */
+function loadImageElement(src, crossOrigin) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    if (crossOrigin) img.crossOrigin = 'anonymous';
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error('photo load failed'));
+    img.src = src;
+  });
+}
+
+async function loadPetPhotoImage(photoUrl) {
+  if (String(photoUrl).startsWith('data:')) {
+    return loadImageElement(photoUrl, false);
+  }
+  try {
+    const res = await fetch(photoUrl, { mode: 'cors', credentials: 'omit' });
+    if (!res.ok) throw new Error('fetch failed');
+    const blob = await res.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    try {
+      return await loadImageElement(blobUrl, false);
+    } finally {
+      URL.revokeObjectURL(blobUrl);
+    }
+  } catch {
+    return loadImageElement(photoUrl, true);
+  }
+}
+
 export function buildCircularGooglePetIconUrl(photoUrl, size = 52) {
   if (!photoUrl) return Promise.reject(new Error('no photo'));
   const cached = googlePinCache.get(photoUrl);
   if (cached) return Promise.resolve(cached);
 
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    if (!String(photoUrl).startsWith('data:')) {
-      img.crossOrigin = 'anonymous';
-    }
-    img.onload = () => {
-      try {
-        const w = size;
-        const h = size + 12;
-        const canvas = document.createElement('canvas');
-        canvas.width = w;
-        canvas.height = h;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) {
-          reject(new Error('canvas unsupported'));
-          return;
-        }
-        const cx = w / 2;
-        const headR = size / 2 - 2;
+  return loadPetPhotoImage(photoUrl).then((img) => {
+    const w = size;
+    const h = size + 12;
+    const canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('canvas unsupported');
+    const cx = w / 2;
+    const headR = size / 2 - 2;
 
-        ctx.shadowColor = 'rgba(16, 24, 40, 0.28)';
-        ctx.shadowBlur = 10;
-        ctx.beginPath();
-        ctx.arc(cx, headR, headR, 0, Math.PI * 2);
-        ctx.fillStyle = '#ffffff';
-        ctx.fill();
-        ctx.shadowBlur = 0;
+    ctx.shadowColor = 'rgba(16, 24, 40, 0.28)';
+    ctx.shadowBlur = 10;
+    ctx.beginPath();
+    ctx.arc(cx, headR, headR, 0, Math.PI * 2);
+    ctx.fillStyle = '#ffffff';
+    ctx.fill();
+    ctx.shadowBlur = 0;
 
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(cx, headR, headR - 3, 0, Math.PI * 2);
-        ctx.clip();
-        const inner = (headR - 3) * 2;
-        ctx.drawImage(img, cx - inner / 2, headR - inner / 2, inner, inner);
-        ctx.restore();
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(cx, headR, headR - 3, 0, Math.PI * 2);
+    ctx.clip();
+    const inner = (headR - 3) * 2;
+    ctx.drawImage(img, cx - inner / 2, headR - inner / 2, inner, inner);
+    ctx.restore();
 
-        ctx.fillStyle = '#ffffff';
-        ctx.beginPath();
-        ctx.moveTo(cx - 9, size - 3);
-        ctx.lineTo(cx + 9, size - 3);
-        ctx.lineTo(cx, h - 1);
-        ctx.closePath();
-        ctx.fill();
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.moveTo(cx - 9, size - 3);
+    ctx.lineTo(cx + 9, size - 3);
+    ctx.lineTo(cx, h - 1);
+    ctx.closePath();
+    ctx.fill();
 
-        const url = canvas.toDataURL('image/png');
-        googlePinCache.set(photoUrl, url);
-        resolve(url);
-      } catch (e) {
-        reject(e);
-      }
-    };
-    img.onerror = () => reject(new Error('photo load failed'));
-    img.src = photoUrl;
+    const url = canvas.toDataURL('image/png');
+    googlePinCache.set(photoUrl, url);
+    return url;
   });
 }
 
 /**
  * @param {typeof google.maps} maps
- * @param {{ photoUrl?: string, sourceKind?: string, iconUrl?: string }} opts
+ * @param {{ photoUrl?: string, placeholderEmoji?: string, sourceKind?: string, iconUrl?: string }} opts
  */
-export function buildGooglePetMarkerIcon(maps, { photoUrl, sourceKind, iconUrl }) {
+export function buildGooglePetMarkerIcon(maps, { photoUrl, placeholderEmoji, sourceKind, iconUrl }) {
   const badge = sourceBadgeMeta(sourceKind || 'gps');
   const url = iconUrl || photoUrl;
   if (url) {
@@ -149,6 +169,20 @@ export function buildGooglePetMarkerIcon(maps, { photoUrl, sourceKind, iconUrl }
       url,
       scaledSize: new maps.Size(52, 64),
       anchor: new maps.Point(26, 62),
+    };
+  }
+  if (placeholderEmoji) {
+    return {
+      path: maps.SymbolPath.CIRCLE,
+      fillColor: '#ffffff',
+      fillOpacity: 1,
+      strokeColor: badge.kind === 'wifi' ? '#2f80ff' : badge.kind === 'lbs' ? '#475467' : '#5b37ff',
+      strokeWeight: 3,
+      scale: 12,
+      label: {
+        text: placeholderEmoji,
+        fontSize: '14px',
+      },
     };
   }
   const fill =

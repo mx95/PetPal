@@ -133,6 +133,123 @@ export function countDistinctLocations(points) {
   return seen.size;
 }
 
+function bearingDeg(a, b) {
+  const lat1 = toRad(Number(a.lat));
+  const lat2 = toRad(Number(b.lat));
+  const dLng = toRad(Number(b.lng) - Number(a.lng));
+  const y = Math.sin(dLng) * Math.cos(lat2);
+  const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLng);
+  return (Math.atan2(y, x) * 180) / Math.PI;
+}
+
+function angleDeltaDeg(a, b) {
+  let d = Math.abs(b - a) % 360;
+  return d > 180 ? 360 - d : d;
+}
+
+/**
+ * Sample route vertices for map dots — keeps turns and distance steps, skips redundant fixes.
+ * @param {Array<{ lat: number, lng: number }>} points
+ * @param {{ maxVertices?: number, minStepKm?: number, minTurnDeg?: number }} [opts]
+ */
+export function buildRouteVertexMarkers(points, opts = {}) {
+  const maxVertices = opts.maxVertices ?? 240;
+  const minStepKm = opts.minStepKm ?? 0.012;
+  const minTurnDeg = opts.minTurnDeg ?? 18;
+
+  if (!Array.isArray(points) || points.length === 0) return [];
+
+  const coords = points
+    .map((p, i) => ({
+      i,
+      lat: Number(p?.lat),
+      lng: Number(p?.lng),
+    }))
+    .filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng));
+
+  if (coords.length === 0) return [];
+  if (coords.length === 1) {
+    return [
+      {
+        id: 'v-0',
+        pointIndex: 0,
+        lat: coords[0].lat,
+        lng: coords[0].lng,
+        kind: 'start',
+        label: '',
+      },
+    ];
+  }
+
+  const picked = [coords[0]];
+
+  for (let idx = 1; idx < coords.length - 1; idx++) {
+    const cur = coords[idx];
+    const last = picked[picked.length - 1];
+    const dist = kmBetween(last, cur);
+    let turn = false;
+    if (picked.length >= 2) {
+      const prev = picked[picked.length - 2];
+      turn = angleDeltaDeg(bearingDeg(prev, last), bearingDeg(last, cur)) >= minTurnDeg;
+    }
+    if (dist >= minStepKm || turn) {
+      picked.push(cur);
+    }
+    if (picked.length >= maxVertices - 1) break;
+  }
+
+  const tail = coords[coords.length - 1];
+  if (picked[picked.length - 1].i !== tail.i) {
+    picked.push(tail);
+  }
+
+  return picked.map((p, idx) => ({
+    id: `v-${p.i}`,
+    pointIndex: p.i,
+    lat: p.lat,
+    lng: p.lng,
+    kind: idx === 0 ? 'start' : idx === picked.length - 1 ? 'end' : 'vertex',
+    label: '',
+  }));
+}
+
+/**
+ * Bounds path for map fit — trims GPS outlier spikes so the view stays on the main trail.
+ * @param {Array<{ lat: number, lng: number }>} path
+ * @param {{ low?: number, high?: number }} [opts] percentile window (0–1)
+ */
+export function computeRouteFitPath(path, opts = {}) {
+  const pts = (Array.isArray(path) ? path : [])
+    .map((p) => ({ lat: Number(p?.lat), lng: Number(p?.lng) }))
+    .filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng));
+  if (pts.length <= 2) return pts;
+
+  const tailTrim = pts.length <= 8 ? 0.2 : pts.length <= 24 ? 0.1 : 0.06;
+  const low = opts.low ?? tailTrim;
+  const high = opts.high ?? 1 - tailTrim;
+
+  const pick = (sorted, q) => {
+    const idx = Math.min(sorted.length - 1, Math.max(0, Math.round((sorted.length - 1) * q)));
+    return sorted[idx];
+  };
+
+  const lats = pts.map((p) => p.lat).sort((a, b) => a - b);
+  const lngs = pts.map((p) => p.lng).sort((a, b) => a - b);
+  const minLat = pick(lats, low);
+  const maxLat = pick(lats, high);
+  const minLng = pick(lngs, low);
+  const maxLng = pick(lngs, high);
+
+  if (minLat === maxLat && minLng === maxLng) return [{ lat: minLat, lng: minLng }];
+
+  return [
+    { lat: minLat, lng: minLng },
+    { lat: minLat, lng: maxLng },
+    { lat: maxLat, lng: minLng },
+    { lat: maxLat, lng: maxLng },
+  ];
+}
+
 function clusterIsCoherent(points, radiusKm = HISTORY_CLUSTER_RADIUS_KM) {
   if (!points.length) return false;
   const anchor = points[0];

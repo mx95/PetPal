@@ -23,8 +23,7 @@ import { subscribeGoogleMapsAuthFailure } from '../config/googleMapsAuthFailure'
 import { accuracyRadiusMeters, useAnimatedLatLng } from './mapLiveUtils';
 import {
   LIVE_MAP_ZOOM,
-  buildCircularGooglePetIconUrl,
-  buildGooglePetMarkerIcon,
+  buildMapPetPinHtml,
   buildLeafletPetMarkerIcon,
 } from './mapPetMarker';
 
@@ -77,18 +76,27 @@ const livePetIcon = L.divIcon({
   iconAnchor: [14, 14],
 });
 
-function markerFill(active) {
-  return active ? ROUTE_DOT_ACTIVE : ROUTE_DOT;
+function markerFill(active, kind = 'walk') {
+  if (active) return ROUTE_DOT_ACTIVE;
+  if (kind === 'start') return '#16a34a';
+  if (kind === 'end') return '#dc2626';
+  if (kind === 'rest') return '#64748b';
+  if (kind === 'movement') return '#ea580c';
+  if (kind === 'vertex') return '#ef4444';
+  return ROUTE_DOT;
 }
 
 function leafletDotRadius(kind, active, emphasizeVertices = false) {
+  if (kind === 'vertex') return active ? 8 : emphasizeVertices ? 5 : 4;
   if (emphasizeVertices) {
     if (active) return 11;
     if (kind === 'start' || kind === 'end') return 8;
+    if (kind === 'rest' || kind === 'movement') return 7;
     return 7;
   }
   if (active) return kind === 'start' || kind === 'end' ? 8 : 7;
   if (kind === 'start' || kind === 'end') return 4;
+  if (kind === 'rest' || kind === 'movement') return 5;
   return 3;
 }
 
@@ -217,20 +225,21 @@ function GoogleMapResize() {
   return null;
 }
 
-function FitRoute({ path, zoom = 16 }) {
+function FitRoute({ path, fitPath, zoom = 16, maxZoom = 17 }) {
   const map = useMap();
+  const boundsPath = fitPath ?? path;
   useEffect(() => {
-    if (!Array.isArray(path) || path.length === 0) return;
-    if (path.length === 1) {
-      const p = path[0];
+    if (!Array.isArray(boundsPath) || boundsPath.length === 0) return;
+    if (boundsPath.length === 1) {
+      const p = boundsPath[0];
       if (Number.isFinite(p.lat) && Number.isFinite(p.lng)) {
-        map.setView([p.lat, p.lng], zoom, { animate: false });
+        map.setView([p.lat, p.lng], Math.min(zoom, maxZoom), { animate: false });
       }
       return;
     }
-    const bounds = L.latLngBounds(path.map((p) => [p.lat, p.lng]));
-    map.fitBounds(bounds, { padding: [28, 28], maxZoom: Math.max(zoom, 16) });
-  }, [path, map, zoom]);
+    const bounds = L.latLngBounds(boundsPath.map((p) => [p.lat, p.lng]));
+    map.fitBounds(bounds, { padding: [24, 24], maxZoom: Math.min(Math.max(zoom, 14), maxZoom) });
+  }, [boundsPath, map, zoom, maxZoom]);
   return null;
 }
 
@@ -266,22 +275,29 @@ function GoogleFollowPan({ lat, lng, follow, zoom = LIVE_MAP_ZOOM }) {
   return null;
 }
 
-function GoogleFitRoute({ path, zoom = 16 }) {
+function GoogleFitRoute({ path, fitPath, zoom = 16, maxZoom = 17 }) {
   const map = useGoogleMap();
+  const boundsPath = fitPath ?? path;
   useEffect(() => {
-    if (!map || !window.google?.maps || !Array.isArray(path) || path.length === 0) return;
-    if (path.length === 1) {
-      const p = path[0];
+    if (!map || !window.google?.maps || !Array.isArray(boundsPath) || boundsPath.length === 0) return;
+    if (boundsPath.length === 1) {
+      const p = boundsPath[0];
       if (Number.isFinite(p.lat) && Number.isFinite(p.lng)) {
         map.setCenter({ lat: p.lat, lng: p.lng });
-        map.setZoom(zoom);
+        map.setZoom(Math.min(zoom, maxZoom));
       }
       return;
     }
     const bounds = new window.google.maps.LatLngBounds();
-    path.forEach((p) => bounds.extend({ lat: p.lat, lng: p.lng }));
-    map.fitBounds(bounds, 48);
-  }, [map, path]);
+    boundsPath.forEach((p) => bounds.extend({ lat: p.lat, lng: p.lng }));
+    map.fitBounds(bounds, 32);
+    const listener = window.google.maps.event.addListenerOnce(map, 'idle', () => {
+      if (map.getZoom() > maxZoom) map.setZoom(maxZoom);
+    });
+    return () => {
+      if (listener) window.google.maps.event.removeListener(listener);
+    };
+  }, [map, boundsPath, zoom, maxZoom]);
   return null;
 }
 
@@ -322,7 +338,7 @@ function GoogleRoutePolylines({ path, emphasize }) {
       geodesic: false,
       strokeColor: ROUTE_LINE,
       strokeOpacity: 1,
-      strokeWeight: emphasize ? 5 : 4,
+      strokeWeight: emphasize ? 3 : 4,
     }),
     [emphasize]
   );
@@ -372,28 +388,57 @@ function MapRecenterButton({ visible, label, onClick }) {
 }
 
 function googleRouteDotIcon(maps, kind, active, emphasizeVertices = false) {
+  if (kind === 'vertex') {
+    return {
+      path: maps.SymbolPath.CIRCLE,
+      fillColor: active ? ROUTE_DOT_ACTIVE : '#ef4444',
+      fillOpacity: active ? 1 : 0.95,
+      strokeColor: '#ffffff',
+      strokeWeight: active ? 2.5 : 1.5,
+      scale: active ? 7 : emphasizeVertices ? 4.5 : 3.5,
+    };
+  }
   const scale = emphasizeVertices
     ? active
       ? 10
       : kind === 'start' || kind === 'end'
         ? 7
-        : 6
+        : kind === 'rest' || kind === 'movement'
+          ? 6.5
+          : 6
     : active
       ? kind === 'start' || kind === 'end'
         ? 7
         : 6.5
       : kind === 'start' || kind === 'end'
         ? 4.5
-        : 3.5;
+        : kind === 'rest' || kind === 'movement'
+          ? 4
+          : 3.5;
   const strokeWeight = active ? 2.5 : emphasizeVertices ? 2 : 1.25;
   return {
     path: maps.SymbolPath.CIRCLE,
-    fillColor: markerFill(active),
+    fillColor: markerFill(active, kind),
     fillOpacity: 1,
     strokeColor: '#ffffff',
     strokeWeight,
     scale,
   };
+}
+
+function googlePlaybackHeadIcon(maps) {
+  return {
+    path: maps.SymbolPath.CIRCLE,
+    fillColor: ROUTE_DOT_ACTIVE,
+    fillOpacity: 1,
+    strokeColor: '#ffffff',
+    strokeWeight: 3,
+    scale: 11,
+  };
+}
+
+function leafletPlaybackHeadRadius() {
+  return 10;
 }
 
 function googleLiveMarkerIcon(maps) {
@@ -477,7 +522,10 @@ function LeafletPositionMap({
   lat,
   lng,
   path = [],
+  fitPath = null,
+  fitMaxZoom = 17,
   routeMarkers = [],
+  routeVertices = [],
   playbackPointIndex = null,
   liveMode = false,
   accuracyM = null,
@@ -494,24 +542,29 @@ function LeafletPositionMap({
   const routePath = useMemo(() => normalizeRoutePath(path), [path]);
   const hasPath = routePath.length > 1;
   const head =
-    playbackPointIndex != null && routePath[playbackPointIndex]
-      ? routePath[playbackPointIndex]
+    playbackPointIndex != null && Number.isFinite(lat) && Number.isFinite(lng)
+      ? { lat, lng }
       : routePath[0] || { lat, lng };
   const center = head;
   const playbackFollow = hasPath && playbackPointIndex != null;
 
-  const displayMarkers = useMemo(() => {
-    if (routeMarkers.length) return routeMarkers;
-    if (!showRouteVertices || !routePath.length) return [];
+  const vertexMarkers = useMemo(() => {
+    if (routeVertices.length) return routeVertices;
+    if (!showRouteVertices || !routePath.length || routeMarkers.length) return [];
     return routePath.map((p, i) => ({
       id: `vertex-${i}`,
       pointIndex: i,
       lat: p.lat,
       lng: p.lng,
-      kind: i === 0 ? 'start' : i === routePath.length - 1 ? 'end' : 'walk',
+      kind: i === 0 ? 'start' : i === routePath.length - 1 ? 'end' : 'vertex',
       label: '',
     }));
-  }, [routeMarkers, showRouteVertices, routePath]);
+  }, [routeVertices, showRouteVertices, routePath, routeMarkers.length]);
+
+  const annotationMarkers = routeMarkers;
+
+  const showPlaybackHead =
+    playbackPointIndex != null && hasPath && Number.isFinite(lat) && Number.isFinite(lng);
 
   useEffect(() => {
     if (liveMode) setFollowEnabled(true);
@@ -535,7 +588,7 @@ function LeafletPositionMap({
         >
           <LeafletInvalidateSize active={mapActive} />
         {hasPath ? (
-          <FitRoute path={routePath} />
+          <FitRoute path={routePath} fitPath={fitPath} maxZoom={fitMaxZoom} />
         ) : accuracyM != null && accuracyM > 0 ? (
           <FitRoute path={[{ lat, lng }]} zoom={liveMode ? LIVE_MAP_ZOOM : 16} />
         ) : liveMode ? (
@@ -591,10 +644,10 @@ function LeafletPositionMap({
               smoothFactor={0}
               pathOptions={{
                 color: ROUTE_LINE,
-                weight: showRouteVertices ? 4 : 3,
+                weight: showRouteVertices ? 3 : 3,
                 opacity: 0.95,
-                lineCap: 'butt',
-                lineJoin: 'miter',
+                lineCap: 'round',
+                lineJoin: 'round',
               }}
             />
             <LeafletPolyline
@@ -602,13 +655,13 @@ function LeafletPositionMap({
               smoothFactor={0}
               pathOptions={{
                 color: ROUTE_LINE,
-                weight: showRouteVertices ? 10 : 9,
-                opacity: 0.16,
-                lineCap: 'butt',
-                lineJoin: 'miter',
+                weight: showRouteVertices ? 8 : 9,
+                opacity: 0.14,
+                lineCap: 'round',
+                lineJoin: 'round',
               }}
             />
-            {displayMarkers.map((m) => {
+            {vertexMarkers.map((m) => {
               const active = playbackPointIndex != null && m.pointIndex === playbackPointIndex;
               const r = leafletDotRadius(m.kind, active, showRouteVertices);
               const stroke = leafletDotStroke(active);
@@ -620,8 +673,26 @@ function LeafletPositionMap({
                   pathOptions={{
                     color: stroke.color,
                     weight: stroke.weight,
-                    fillColor: markerFill(active),
-                    fillOpacity: active ? 1 : 0.92,
+                    fillColor: markerFill(active, m.kind),
+                    fillOpacity: active ? 1 : m.kind === 'vertex' ? 0.92 : 0.95,
+                    opacity: 1,
+                  }}
+                />
+              );
+            })}
+            {annotationMarkers.map((m) => {
+              const r = leafletDotRadius(m.kind, false, showRouteVertices);
+              const stroke = leafletDotStroke(false);
+              return (
+                <CircleMarker
+                  key={m.id}
+                  center={[m.lat, m.lng]}
+                  radius={r + 1}
+                  pathOptions={{
+                    color: stroke.color,
+                    weight: 2,
+                    fillColor: markerFill(false, m.kind),
+                    fillOpacity: 1,
                     opacity: 1,
                   }}
                 >
@@ -629,6 +700,19 @@ function LeafletPositionMap({
                 </CircleMarker>
               );
             })}
+            {showPlaybackHead ? (
+              <CircleMarker
+                center={[lat, lng]}
+                radius={leafletPlaybackHeadRadius()}
+                pathOptions={{
+                  color: '#ffffff',
+                  weight: 3,
+                  fillColor: ROUTE_DOT_ACTIVE,
+                  fillOpacity: 1,
+                  opacity: 1,
+                }}
+              />
+            ) : null}
           </>
         ) : !liveMode ? (
           <LeafletMarker position={[lat, lng]}>
@@ -639,6 +723,73 @@ function LeafletPositionMap({
       </MapSizeGate>
     </div>
   );
+}
+
+function GooglePetPinOverlay({ lat, lng, petMarker, markerLabel }) {
+  const map = useGoogleMap();
+  const overlayRef = useRef(null);
+  const positionRef = useRef({ lat, lng });
+  positionRef.current = { lat, lng };
+
+  const pinHtml = useMemo(
+    () =>
+      buildMapPetPinHtml({
+        photoUrl: petMarker?.photoUrl,
+        placeholderEmoji: petMarker?.placeholderEmoji,
+        sourceKind: petMarker?.sourceKind,
+        name: petMarker?.name || markerLabel,
+      }),
+    [petMarker, markerLabel]
+  );
+
+  useEffect(() => {
+    if (!map || !window.google?.maps || !petMarker) return undefined;
+
+    const gm = window.google.maps;
+
+    class PetPinOverlay extends gm.OverlayView {
+      onAdd() {
+        const div = document.createElement('div');
+        div.className = 'pp-mapPetPin-wrap pp-mapPetPin-wrap--google';
+        div.innerHTML = pinHtml;
+        div.style.position = 'absolute';
+        div.style.pointerEvents = 'none';
+        this.container = div;
+        this.getPanes().overlayMouseTarget.appendChild(div);
+      }
+
+      draw() {
+        if (!this.container) return;
+        const projection = this.getProjection();
+        if (!projection) return;
+        const { lat: la, lng: ln } = positionRef.current;
+        const point = projection.fromLatLngToDivPixel(new gm.LatLng(la, ln));
+        if (!point) return;
+        this.container.style.left = `${point.x - 28}px`;
+        this.container.style.top = `${point.y - 64}px`;
+      }
+
+      onRemove() {
+        this.container?.remove();
+        this.container = null;
+      }
+    }
+
+    const overlay = new PetPinOverlay();
+    overlay.setMap(map);
+    overlayRef.current = overlay;
+
+    return () => {
+      overlay.setMap(null);
+      overlayRef.current = null;
+    };
+  }, [map, petMarker, pinHtml]);
+
+  useEffect(() => {
+    overlayRef.current?.draw();
+  }, [lat, lng, pinHtml]);
+
+  return null;
 }
 
 function GoogleLiveMapInner({
@@ -653,37 +804,13 @@ function GoogleLiveMapInner({
   petMarker = null,
 }) {
   const smooth = useAnimatedLatLng(lat, lng, { enabled: true });
-  const [petIconUrl, setPetIconUrl] = useState(null);
-
-  useEffect(() => {
-    const photo = petMarker?.photoUrl;
-    if (!photo) {
-      setPetIconUrl(null);
-      return undefined;
-    }
-    let cancelled = false;
-    buildCircularGooglePetIconUrl(photo)
-      .then((url) => {
-        if (!cancelled) setPetIconUrl(url);
-      })
-      .catch(() => {
-        if (!cancelled) setPetIconUrl(null);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [petMarker?.photoUrl]);
 
   const trailPath = useMemo(() => normalizeRoutePath(liveTrail), [liveTrail]);
 
-  const markerIcon = useMemo(() => {
-    if (!petMarker) return googleLiveMarkerIcon(maps);
-    return buildGooglePetMarkerIcon(maps, {
-      photoUrl: petMarker.photoUrl,
-      iconUrl: petIconUrl || undefined,
-      sourceKind: petMarker.sourceKind,
-    });
-  }, [maps, petMarker, petIconUrl]);
+  const fallbackIcon = useMemo(() => {
+    if (petMarker) return null;
+    return googleLiveMarkerIcon(maps);
+  }, [maps, petMarker]);
 
   const accStroke =
     petMarker?.sourceKind === 'wifi' ? '#2f80ff' : petMarker?.sourceKind === 'lbs' ? '#94a3b8' : LIVE_ACCENT;
@@ -708,12 +835,21 @@ function GoogleLiveMapInner({
           }}
         />
       ) : null}
-      <Marker
-        position={{ lat: smooth.lat, lng: smooth.lng }}
-        icon={markerIcon}
-        title={markerLabel || 'Pet location'}
-        zIndex={3}
-      />
+      {petMarker ? (
+        <GooglePetPinOverlay
+          lat={smooth.lat}
+          lng={smooth.lng}
+          petMarker={petMarker}
+          markerLabel={markerLabel}
+        />
+      ) : (
+        <Marker
+          position={{ lat: smooth.lat, lng: smooth.lng }}
+          icon={fallbackIcon}
+          title={markerLabel || 'Pet location'}
+          zIndex={3}
+        />
+      )}
     </>
   );
 }
@@ -723,7 +859,10 @@ function GooglePositionMap({
   lng,
   apiKey,
   path = [],
+  fitPath = null,
+  fitMaxZoom = 17,
   routeMarkers = [],
+  routeVertices = [],
   playbackPointIndex = null,
   fill = false,
   liveMode = false,
@@ -752,26 +891,31 @@ function GooglePositionMap({
   const routePath = useMemo(() => normalizeRoutePath(path), [path]);
   const hasPath = routePath.length > 1;
   const head =
-    playbackPointIndex != null && routePath[playbackPointIndex]
-      ? routePath[playbackPointIndex]
+    playbackPointIndex != null && Number.isFinite(lat) && Number.isFinite(lng)
+      ? { lat, lng }
       : routePath[0] || { lat, lng };
   const center = head;
   const smoothPlayback = useAnimatedLatLng(head.lat, head.lng, {
     enabled: hasPath && playbackPointIndex != null,
   });
 
-  const displayMarkers = useMemo(() => {
-    if (routeMarkers.length) return routeMarkers;
-    if (!showRouteVertices || !routePath.length) return [];
+  const vertexMarkers = useMemo(() => {
+    if (routeVertices.length) return routeVertices;
+    if (!showRouteVertices || !routePath.length || routeMarkers.length) return [];
     return routePath.map((p, i) => ({
       id: `vertex-${i}`,
       pointIndex: i,
       lat: p.lat,
       lng: p.lng,
-      kind: i === 0 ? 'start' : i === routePath.length - 1 ? 'end' : 'walk',
+      kind: i === 0 ? 'start' : i === routePath.length - 1 ? 'end' : 'vertex',
       label: '',
     }));
-  }, [routeMarkers, showRouteVertices, routePath]);
+  }, [routeVertices, showRouteVertices, routePath, routeMarkers.length]);
+
+  const annotationMarkers = routeMarkers;
+
+  const showPlaybackHead =
+    playbackPointIndex != null && hasPath && Number.isFinite(lat) && Number.isFinite(lng);
 
   if (authFailed || loadError) {
     return (
@@ -779,7 +923,10 @@ function GooglePositionMap({
         lat={lat}
         lng={lng}
         path={path}
+        fitPath={fitPath}
+        fitMaxZoom={fitMaxZoom}
         routeMarkers={routeMarkers}
+        routeVertices={routeVertices}
         playbackPointIndex={playbackPointIndex}
         fill={fill}
         liveMode={liveMode}
@@ -826,7 +973,7 @@ function GooglePositionMap({
         >
           {fill ? <GoogleMapResize /> : null}
         {hasPath ? (
-          <GoogleFitRoute path={routePath} />
+          <GoogleFitRoute path={routePath} fitPath={fitPath} maxZoom={fitMaxZoom} />
         ) : accuracyM != null && accuracyM > 0 ? (
           <GoogleFitRoute path={[{ lat, lng }]} zoom={liveMode ? LIVE_MAP_ZOOM : 16} />
         ) : liveMode ? (
@@ -864,7 +1011,7 @@ function GooglePositionMap({
         {hasPath ? (
           <>
             <GoogleRoutePolylines path={routePath} emphasize={showRouteVertices} />
-            {displayMarkers.map((m) => {
+            {vertexMarkers.map((m) => {
               const active = playbackPointIndex != null && m.pointIndex === playbackPointIndex;
               const icon = googleRouteDotIcon(maps, m.kind, active, showRouteVertices);
               return (
@@ -872,11 +1019,26 @@ function GooglePositionMap({
                   key={`${m.id}-${active ? 'a' : 'i'}`}
                   position={{ lat: m.lat, lng: m.lng }}
                   icon={icon}
-                  title={m.label}
-                  zIndex={active ? 30 : 20}
+                  zIndex={active ? 28 : 18}
                 />
               );
             })}
+            {annotationMarkers.map((m) => (
+              <Marker
+                key={m.id}
+                position={{ lat: m.lat, lng: m.lng }}
+                icon={googleRouteDotIcon(maps, m.kind, false, showRouteVertices)}
+                title={m.label}
+                zIndex={25}
+              />
+            ))}
+            {showPlaybackHead ? (
+              <Marker
+                position={{ lat, lng }}
+                icon={googlePlaybackHeadIcon(maps)}
+                zIndex={40}
+              />
+            ) : null}
           </>
         ) : !liveMode ? (
           <Marker position={center} title={markerLabel || 'Last reported position'} />
@@ -888,7 +1050,8 @@ function GooglePositionMap({
 }
 
 /**
- * Google Maps when API key is set; otherwise Leaflet + OSM.
+ * Google Maps when REACT_APP_GOOGLE_MAPS_API_KEY is set (default); otherwise Leaflet + OSM.
+ * Set REACT_APP_TRACKING_MAP=osm to force Leaflet even with a Google key.
  * @param {boolean} [liveMode] Smooth marker, follow mode, trail, accuracy ring
  * @param {number|null} [accuracyM] Accuracy circle radius in meters
  * @param {string} [markerLabel] Popup / marker title
@@ -899,7 +1062,10 @@ export default function PositionMap({
   lat,
   lng,
   path = [],
+  fitPath = null,
+  fitMaxZoom = 17,
   routeMarkers = [],
+  routeVertices = [],
   playbackPointIndex = null,
   fill = false,
   liveMode = false,
@@ -922,7 +1088,10 @@ export default function PositionMap({
           lng={lng}
           apiKey={googleKey}
           path={path}
+          fitPath={fitPath}
+          fitMaxZoom={fitMaxZoom}
           routeMarkers={routeMarkers}
+          routeVertices={routeVertices}
           playbackPointIndex={playbackPointIndex}
           fill={fill}
           liveMode={liveMode}
@@ -940,7 +1109,10 @@ export default function PositionMap({
           lat={lat}
           lng={lng}
           path={path}
+          fitPath={fitPath}
+          fitMaxZoom={fitMaxZoom}
           routeMarkers={routeMarkers}
+          routeVertices={routeVertices}
           playbackPointIndex={playbackPointIndex}
           fill={fill}
           liveMode={liveMode}

@@ -167,6 +167,14 @@ function openSqlite(dbPath) {
     LIMIT @limit
   `);
 
+  const countHistoryByImeiInRange = db.prepare(`
+    SELECT COUNT(*) AS count
+    FROM positions
+    WHERE imei = @imei
+      AND COALESCE(received_at, timestamp) >= @from
+      AND COALESCE(received_at, timestamp) <= @to
+  `);
+
   const listDevices = db.prepare(`
     SELECT imei, name, last_lat, last_lng, home_lat, home_lng, battery, signal, source, last_update
     FROM devices
@@ -235,6 +243,7 @@ function openSqlite(dbPath) {
     listHistoryByImei,
     listHistoryByImeiById,
     listHistoryByImeiInRange,
+    countHistoryByImeiInRange,
     listDevices,
     getDevice,
     getLastGpsPosition,
