@@ -45,6 +45,7 @@ function normalizeIncomingDevice(prev, incoming) {
 
   const next = {
     imei,
+    provider: p.provider ?? prev?.provider ?? null,
     atHomeWifi,
     wifiBssids: p.wifiBssids ?? p.gps?.wifiBssids ?? null,
     location: isPlausibleLatLng(lat, lng) ? { lat, lng } : null,

@@ -20,6 +20,8 @@ module.exports = {
         PERSIST_TO_SQLITE: "1",
         SQLITE_PATH: dbFile,
         TCP_PORT: "5001",
+        GPS365_TCP_PORT: "5003",
+        GPS365_TCP_ENABLED: "1",
         HTTP_PORT: "5002",
       },
     },

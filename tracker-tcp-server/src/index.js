@@ -6,12 +6,18 @@ const path = require("path");
 const { createMemoryStore } = require("./store/memory");
 const { createSqliteStore } = require("./store/sqliteStore");
 const { createTcpServer } = require("./tcp/handler");
+const { createG365TcpServer } = require("./tcp/g365Handler");
 const { registerXexunHttpApi } = require("./http/xexunApiRoutes");
+const { registerG365HttpApi } = require("./http/g365ApiRoutes");
 const { logPrefix } = require("./logging/time");
 const { buildPositionPayload } = require("./http/positionPayload");
 
 const TCP_PORT = Number(process.env.TCP_PORT || 5001);
+const GPS365_TCP_PORT = Number(process.env.GPS365_TCP_PORT || 5003);
 const HTTP_PORT = Number(process.env.HTTP_PORT || 5002);
+const GPS365_TCP_ENABLED =
+  String(process.env.GPS365_TCP_ENABLED ?? "1").trim() !== "0" &&
+  String(process.env.GPS365_TCP_ENABLED ?? "1").trim().toLowerCase() !== "false";
 
 /** Always under tracker-tcp-server/data — never depends on PM2 cwd (fixes “empty DB after restart”). */
 const DEFAULT_SQLITE_PATH = path.join(__dirname, "..", "data", "petpal.sqlite");
@@ -58,6 +64,11 @@ function seedSampleDeviceFromEnv() {
 seedSampleDeviceFromEnv();
 
 createTcpServer({ port: TCP_PORT, store });
+if (GPS365_TCP_ENABLED) {
+  createG365TcpServer({ port: GPS365_TCP_PORT, store });
+} else {
+  console.log("[365GPS] GPS365_TCP_ENABLED=0 — 365GPS listener disabled");
+}
 
 const app = express();
 app.use(express.json({ limit: "64kb" }));
@@ -124,6 +135,7 @@ app.use(
 
 
 registerXexunHttpApi(app, store);
+registerG365HttpApi(app, store);
 
 // -----------------------------------------------------------------------------
 // App API (frontend-safe) — keep /devices & /position as legacy, but also expose

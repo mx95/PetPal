@@ -90,8 +90,39 @@ crontab -e
 
 ## Ports
 
-- TCP: `5001` (override with `TCP_PORT`) — **trackers must connect here**
-- HTTP: `5002` (override with `HTTP_PORT`)
+- **Xexun** TCP: `5001` (`TCP_PORT`) — `FC … CF` binary frames
+- **365GPS / Zhongxun** TCP: `5003` (`GPS365_TCP_PORT`) — `7878 … 0D0A` frames (separate listener; do not mix with Xexun on the same port)
+- HTTP: `5002` (`HTTP_PORT`)
+
+Set `GPS365_TCP_ENABLED=0` to disable the 365GPS listener only.
+
+## 365GPS / Zhongxun trackers
+
+These devices use a **different wire format** from Xexun (`7878` header, `0D0A` footer). They must connect to **`GPS365_TCP_PORT` (default 5003)**.
+
+**Full protocol matrix, ACK rules, and HTTP command list:** [`docs/G365_PROTOCOL.md`](docs/G365_PROTOCOL.md)
+
+### What is implemented today
+
+**Location (spec minimum §9):** login, heartbeat, GPS online/offline, status, WiFi/LBS (2G + 4G), time sync — with correct mandatory ACKs.
+
+**Common server commands (HTTP):** server redirect (`0x66`), manual position (`0x80`), upload interval (`0x97`), status/heartbeat intervals (`0x13`), prohibit LBS (`0x33`), restart/shutdown (`0x48`), find device (`0x49`), overspeed limit (`0x86`), phone numbers (`0x40`–`0x43`), expiry date (`0x30`), and **raw hex** for any other PDF command.
+
+**Not implemented:** FTP/voice (`0x51`/`0x65`/`0xAA`), full settings sync reply (`0x57`/`0x58`), server-side LBS geocoding, healthcare-bracelet-only features.
+
+### Quick start
+
+```http
+POST /api/g365/commands/server-redirect
+{ "imei": "123456789012345", "host": "116.203.209.68", "port": 5003 }
+
+POST /api/g365/commands/manual-position
+{ "imei": "123456789012345", "mode": "gps" }
+```
+
+Open firewall: `ufw allow 5003/tcp` (in addition to `5001/tcp` if you use Xexun).
+
+Parsed positions feed the **same SQLite store** and `/api/app/position` as Xexun collars.
 
 ## HTTP API (production structure)
 

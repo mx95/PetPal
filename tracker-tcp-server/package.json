@@ -9,7 +9,7 @@
   "type": "commonjs",
   "scripts": {
     "start": "node src/index.js",
-    "test": "node --test test/",
+    "test": "node --test test/*.test.js",
     "test:ack": "node scripts/verify-portal-ack-offsets.js && node --test test/providerAck.test.js"
   },
   "dependencies": {

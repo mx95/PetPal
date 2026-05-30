@@ -1,0 +1,113 @@
+const test = require("node:test");
+const assert = require("node:assert/strict");
+const {
+  extractFramesFromStream,
+  parseG365Packet,
+  buildG365LoginAck,
+  buildG365TimeAck,
+  buildG365TimestampAck,
+  buildG365AckForParsed,
+  decodeImeiBcd,
+  toHex
+} = require("../src/protocol/g365");
+
+function hex(buf) {
+  return Buffer.from(String(buf).replace(/\s+/g, ""), "hex");
+}
+
+test("g365 — login frame IMEI + ACK", () => {
+  const frame = hex("7878 0A 01 0123456789012345 01 0D0A");
+  const { frames, rest } = extractFramesFromStream(frame);
+  assert.equal(frames.length, 1);
+  assert.equal(rest.length, 0);
+
+  const parsed = parseG365Packet(frames[0]);
+  assert.equal(parsed.imei, "123456789012345");
+  assert.equal(parsed.protocol, 0x01);
+  assert.equal(toHex(buildG365LoginAck()), "787801010D0A");
+
+  const ack = buildG365AckForParsed(parsed, frames[0]);
+  assert.equal(toHex(ack), "787801010D0A");
+});
+
+test("g365 — GPS 0x10 example from spec", () => {
+  // Vendor PDF lists length 0x12; actual frame needs 0x13 (protocol + 18-byte GPS body).
+  const frame = hex("787813100A03170F32179C026B3F3E0C22AD651F34600D0A");
+  const parsed = parseG365Packet(frame, "123456789012345");
+  assert.equal(parsed.protocol, 0x10);
+  assert.equal(parsed.gpsValid, true);
+  assert.ok(parsed.gps.lat > 0);
+  assert.ok(parsed.gps.lng > 0);
+  assert.equal(parsed.gps.speedKmh, 0x1f);
+
+  const ack = buildG365AckForParsed(parsed, frame);
+  assert.equal(toHex(ack), "787800100A03170F32170D0A");
+});
+
+test("g365 — heartbeat needs no ACK", () => {
+  const frame = hex("787801080D0A");
+  const parsed = parseG365Packet(frame, "999000000000001");
+  assert.equal(parsed.protocol, 0x08);
+  assert.equal(parsed.needsAck, false);
+  assert.equal(buildG365AckForParsed(parsed, frame), null);
+});
+
+test("g365 — 0x69 wifi/lbs variable length framing", () => {
+  const frame = hex(
+    "787803691604130318491475905BD30E25001E10BBF7635D14759006E62656" +
+      "0501CC0028660F213228660F1F2828660EA81E286610731428660F20140D0A"
+  );
+  const { frames } = extractFramesFromStream(frame);
+  assert.equal(frames.length, 1);
+
+  const parsed = parseG365Packet(frames[0], "123456789012345");
+  assert.equal(parsed.protocol, 0x69);
+  assert.equal(parsed.wifiBssids.length, 3);
+  assert.equal(parsed.wifiBssids[0], "14:75:90:5B:D3:0E");
+  assert.equal(parsed.source, "wifi");
+
+  const ack = buildG365TimestampAck(0x69, frame.subarray(4, 10));
+  assert.equal(toHex(ack), "787800691604130318490D0A");
+});
+
+test("g365 — 0x13 status echo ACK", () => {
+  const frame = hex("7878071355230803640D0A");
+  const parsed = parseG365Packet(frame, "123456789012345");
+  assert.equal(parsed.deviceStatus.battery, 0x55);
+  assert.equal(parsed.deviceStatus.signal, 0x64);
+  const ack = buildG365AckForParsed(parsed, frame);
+  assert.equal(toHex(ack), toHex(frame));
+});
+
+test("g365 — stream splits mid-frame then completes", () => {
+  const full = hex("787801080D0A787801080D0A");
+  const part1 = full.subarray(0, 4);
+  const part2 = full.subarray(4);
+  const r1 = extractFramesFromStream(part1);
+  assert.equal(r1.frames.length, 0);
+  const r2 = extractFramesFromStream(Buffer.concat([r1.rest, part2]));
+  assert.equal(r2.frames.length, 2);
+});
+
+test("g365 — extended 0x13 status (vendor PDF figure 1)", () => {
+  const frame = hex(
+    "78781613600308585A010000000000000000010017050A11021C0D0A"
+  );
+  const parsed = parseG365Packet(frame, "123456789012345");
+  assert.equal(parsed.statusDetail.variant, "extended");
+  assert.equal(parsed.statusDetail.battery, 0x60);
+  assert.equal(parsed.statusDetail.signal, 0x5a);
+  assert.equal(parsed.statusDetail.charging, true);
+  assert.equal(parsed.statusDetail.steps, 0);
+  assert.equal(parsed.deviceStatus.steps, 0);
+});
+
+test("g365 — time sync ACK uses 2-byte year + GMT bytes", () => {
+  const ack = buildG365TimeAck(new Date(Date.UTC(2016, 6, 5, 5, 55, 24)));
+  assert.equal(toHex(ack), "7878083007E007050537180D0A");
+});
+
+test("g365 — IMEI BCD decode", () => {
+  const imeiBuf = hex("0123456789012345");
+  assert.equal(decodeImeiBcd(imeiBuf), "123456789012345");
+});
