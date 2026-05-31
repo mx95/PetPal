@@ -250,20 +250,22 @@ app.get("/position", (req, res) => {
 //
 const WEB_BUILD_DIR =
   process.env.WEB_BUILD_DIR || path.resolve(__dirname, "..", "..", "petpal", "build");
+const WEB_INDEX_HTML = path.join(WEB_BUILD_DIR, "index.html");
 
-if (fs.existsSync(WEB_BUILD_DIR)) {
+if (fs.existsSync(WEB_INDEX_HTML)) {
   app.use(express.static(WEB_BUILD_DIR));
 } else {
-  console.warn(`[web] build dir not found, skipping static: ${WEB_BUILD_DIR}`);
+  console.warn(
+    `[web] React build not found (${WEB_INDEX_HTML}) — API only. Run: cd petpal && npm run build`
+  );
 }
 
 //
 // ✅ 3. SAFE FALLBACK (NO "*")
 // 
 app.use((req, res) => {
-  const indexHtml = path.join(WEB_BUILD_DIR, "index.html");
-  if (fs.existsSync(indexHtml)) {
-    return res.sendFile(indexHtml);
+  if (fs.existsSync(WEB_INDEX_HTML)) {
+    return res.sendFile(WEB_INDEX_HTML);
   }
   return res.status(404).json({ error: "not_found" });
 });

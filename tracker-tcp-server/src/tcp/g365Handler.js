@@ -3,6 +3,7 @@ const {
   parseG365Packet,
   buildG365AckForParsed,
   buildG365ExpiryDate,
+  buildG365TimeAck,
   extractFramesFromStream,
   toHex
 } = require("../protocol/g365");
@@ -67,15 +68,25 @@ const G365_SEND_EXPIRY_ON_LOGIN =
   String(process.env.G365_SEND_EXPIRY_ON_LOGIN ?? "1").trim() !== "0" &&
   String(process.env.G365_SEND_EXPIRY_ON_LOGIN ?? "1").trim().toLowerCase() !== "false";
 
-function sendG365LoginHandshake(socket, parsed, ack) {
+const G365_SEND_TIME_ON_LOGIN =
+  String(process.env.G365_SEND_TIME_ON_LOGIN ?? "1").trim() !== "0" &&
+  String(process.env.G365_SEND_TIME_ON_LOGIN ?? "1").trim().toLowerCase() !== "false";
+
+function sendG365LoginHandshake(socket, ack) {
   socket.write(ack);
   console.log(`${logPrefix({ dir: "out", tag: "365GPS", at: new Date() })} ACK HEX (login): ${toHex(ack)}`);
-  if (!G365_SEND_EXPIRY_ON_LOGIN || G365_EXPIRY_DATE.length !== 8) return;
-  const expiry = buildG365ExpiryDate(G365_EXPIRY_DATE);
-  socket.write(expiry);
-  console.log(
-    `${logPrefix({ dir: "out", tag: "365GPS", at: new Date() })} EXPIRY HEX (${G365_EXPIRY_DATE}): ${toHex(expiry)}`
-  );
+  if (G365_SEND_EXPIRY_ON_LOGIN && G365_EXPIRY_DATE.length === 8) {
+    const expiry = buildG365ExpiryDate(G365_EXPIRY_DATE);
+    socket.write(expiry);
+    console.log(
+      `${logPrefix({ dir: "out", tag: "365GPS", at: new Date() })} EXPIRY HEX (${G365_EXPIRY_DATE}): ${toHex(expiry)}`
+    );
+  }
+  if (G365_SEND_TIME_ON_LOGIN) {
+    const timeAck = buildG365TimeAck();
+    socket.write(timeAck);
+    console.log(`${logPrefix({ dir: "out", tag: "365GPS", at: new Date() })} TIME SYNC HEX: ${toHex(timeAck)}`);
+  }
 }
 
 function createG365TcpServer({ port, store }) {
@@ -197,7 +208,7 @@ function createG365TcpServer({ port, store }) {
           const ack = buildG365AckForParsed(parsed, frame);
           if (ack) {
             if (parsed.protocol === 0x01) {
-              sendG365LoginHandshake(socket, parsed, ack);
+              sendG365LoginHandshake(socket, ack);
             } else {
               socket.write(ack);
               console.log(`${logPrefix({ dir: "out", tag: "365GPS", at: new Date() })} ACK HEX: ${toHex(ack)}`);

@@ -7,6 +7,7 @@ const {
   buildG365TimeAck,
   buildG365TimestampAck,
   buildG365AckForParsed,
+  buildG365ExpiryDate,
   decodeImeiBcd,
   toHex
 } = require("../src/protocol/g365");
@@ -64,6 +65,11 @@ test("g365 — heartbeat needs no ACK", () => {
   assert.equal(parsed.protocol, 0x08);
   assert.equal(parsed.needsAck, false);
   assert.equal(buildG365AckForParsed(parsed, frame), null);
+});
+
+test("g365 — expiry date uses spec 4-byte format", () => {
+  assert.equal(toHex(buildG365ExpiryDate("20301231")), "78780530203012310D0A");
+  assert.equal(toHex(buildG365ExpiryDate("20221031")), "78780530202210310D0A");
 });
 
 test("g365 — 0x1B wifi/lbs with zero wifi and 3 LBS cells (real device)", () => {

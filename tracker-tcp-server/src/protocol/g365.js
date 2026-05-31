@@ -742,9 +742,22 @@ function buildG365PhoneNumber(protocol, phoneAscii) {
   return buildG365StandardFrame(Number(protocol) & 0xff, Buffer.from(String(phoneAscii), "ascii"));
 }
 
-/** Server → device: send expiry date after login (0x30 with YYYYMMDD ASCII). */
+/** Server → device: expiry date after login (0x30). Spec examples use 4 bytes: 20 YY MM DD. */
 function buildG365ExpiryDate(yyyymmdd) {
-  return buildG365StandardFrame(0x30, Buffer.from(String(yyyymmdd), "ascii"));
+  const s = String(yyyymmdd).replace(/\D/g, "").padStart(8, "0");
+  if (s.length !== 8) throw new Error("expiry YYYYMMDD required");
+  // Spec displays dates as hex byte pairs: 20221031 → 20 22 10 31, 20301231 → 20 30 12 31
+  const payload = Buffer.from([
+    parseInt(s.slice(0, 2), 16),
+    parseInt(s.slice(2, 4), 16),
+    parseInt(s.slice(4, 6), 16),
+    parseInt(s.slice(6, 8), 16),
+  ]);
+  return Buffer.concat([
+    Buffer.from([0x78, 0x78, 0x05, 0x30]),
+    payload,
+    Buffer.from([0x0d, 0x0a])
+  ]);
 }
 
 function buildG365AckForParsed(parsed, frame) {
