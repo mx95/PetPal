@@ -6,6 +6,7 @@ const {
   toHex
 } = require("../protocol/g365");
 const { logPrefix, formatCyprusTime } = require("../logging/time");
+const { DEVICE, logDeviceConnect, logDeviceIdentified, logListenerReady } = require("../logging/deviceLog");
 
 function asciiPreview(buf, max = 160) {
   if (!Buffer.isBuffer(buf) || buf.length === 0) return null;
@@ -38,15 +39,35 @@ function recordTcpInbound(store, socket, event, patch = {}) {
   }
 }
 
+function g365ProtocolLabel(protocol) {
+  const names = {
+    0x01: "login",
+    0x10: "gps",
+    0x11: "gps",
+    0x12: "gps",
+    0x13: "status",
+    0x15: "heartbeat",
+    0x16: "alarm",
+    0x17: "wifi-lbs",
+    0x18: "lbs",
+    0x19: "gps-phone",
+    0x1a: "gps-phone",
+    0x1b: "time-cal",
+    0x30: "expiry",
+    0x80: "cmd-ack",
+    0x81: "cmd-ack",
+  };
+  const hex = `0x${protocol.toString(16).padStart(2, "0")}`;
+  return names[protocol] ? `${hex} (${names[protocol]})` : hex;
+}
+
 function createG365TcpServer({ port, store }) {
   const server = net.createServer((socket) => {
     socket.setKeepAlive(true);
     socket.setNoDelay(true);
     socket._g365Imei = null;
 
-    console.log(
-      `${logPrefix({ dir: "in", tag: "365GPS" })} connection from ${socket.remoteAddress}:${socket.remotePort}`
-    );
+    logDeviceConnect(DEVICE.G365, socket, port);
     recordTcpInbound(store, socket, "connection", { note: "365GPS socket connected" });
 
     let pending = Buffer.alloc(0);
@@ -97,8 +118,11 @@ function createG365TcpServer({ port, store }) {
           receivedAtCyprus: formatCyprusTime(receivedAt),
           receivedAtUtc: receivedAt.toISOString(),
           provider: "g365",
+          deviceType: "365GPS",
+          listenerPort: port,
           imei: imei ?? null,
           protocol: parsed.protocol,
+          protocolLabel: g365ProtocolLabel(parsed.protocol),
           source: parsed.source ?? null,
           gpsValid: parsed.gpsValid ?? null,
           battery: parsed.deviceStatus?.battery ?? null,
@@ -110,7 +134,15 @@ function createG365TcpServer({ port, store }) {
           raw: parsed.rawHex
         };
         console.log(`${logPrefix({ dir: "in", tag: "365GPS", at: receivedAt })} PARSED: ${JSON.stringify(logObj)}`);
+        if (imei) {
+          logDeviceIdentified(DEVICE.G365, {
+            imei,
+            message: `protocol=${g365ProtocolLabel(parsed.protocol)}`,
+            port,
+          });
+        }
         recordTcpInbound(store, socket, "frame_parsed", {
+          provider: "g365",
           imei: imei ?? null,
           messageId: parsed.protocol ?? null,
           byteLength: frame.length,
@@ -147,7 +179,7 @@ function createG365TcpServer({ port, store }) {
     });
   });
 
-  server.listen(port, () => console.log(`365GPS TCP server listening on port ${port}`));
+  server.listen(port, () => logListenerReady(DEVICE.G365, port));
   return server;
 }
 

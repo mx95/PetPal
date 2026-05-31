@@ -69,6 +69,9 @@ if (GPS365_TCP_ENABLED) {
 } else {
   console.log("[365GPS] GPS365_TCP_ENABLED=0 — 365GPS listener disabled");
 }
+console.log(
+  `[tracker] Device listeners: Xexun → TCP ${TCP_PORT} (FC…CF) | 365GPS → TCP ${GPS365_TCP_ENABLED ? GPS365_TCP_PORT : "disabled"} (7878…0D0A) | HTTP API → ${HTTP_PORT}`
+);
 
 const app = express();
 app.use(express.json({ limit: "64kb" }));

@@ -539,13 +539,13 @@ function buildAck({ sequence, imei, timestampBytes, version = 0x03, messageId = 
   ]);
 
   // Keep these for debugging, but label them clearly as server output.
-  console.log(`${logPrefix({ dir: "out" })} ACK TS INCOMING: ${ts.toString("hex").toUpperCase()}`);
+  console.log(`${logPrefix({ dir: "out", tag: "Xexun" })} ACK TS INCOMING: ${ts.toString("hex").toUpperCase()}`);
   console.log(
-    `${logPrefix({ dir: "out" })} ACK TS REPLY (+${offsetSec}): ${replyTs.toString("hex").toUpperCase()}`
+    `${logPrefix({ dir: "out", tag: "Xexun" })} ACK TS REPLY (+${offsetSec}): ${replyTs.toString("hex").toUpperCase()}`
   );
-  console.log(`${logPrefix({ dir: "out" })} CRC INPUT HEX: ${payload.toString("hex").toUpperCase()}`);
-  console.log(`${logPrefix({ dir: "out" })} CRC OUTPUT: ${u16be(crcVal).toString("hex").toUpperCase()}`);
-  console.log(`${logPrefix({ dir: "out" })} ACK FINAL HEX: ${frame.toString("hex").toUpperCase()}`);
+  console.log(`${logPrefix({ dir: "out", tag: "Xexun" })} CRC INPUT HEX: ${payload.toString("hex").toUpperCase()}`);
+  console.log(`${logPrefix({ dir: "out", tag: "Xexun" })} CRC OUTPUT: ${u16be(crcVal).toString("hex").toUpperCase()}`);
+  console.log(`${logPrefix({ dir: "out", tag: "Xexun" })} ACK FINAL HEX: ${frame.toString("hex").toUpperCase()}`);
   return frame;
 }
 

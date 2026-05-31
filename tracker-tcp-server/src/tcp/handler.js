@@ -9,6 +9,7 @@ const {
   parseDeviceStatusBlock
 } = require("../protocol/xexun");
 const { logPrefix, formatCyprusTime } = require("../logging/time");
+const { DEVICE, logDeviceConnect, logDeviceIdentified, logListenerReady } = require("../logging/deviceLog");
 const {
   extractGpsTrackingDurationByte,
   ackOffsetSecondsFor020Ack
@@ -50,7 +51,7 @@ function recordTcpInbound(store, socket, event, patch = {}) {
     event,
     ...patch
   };
-  console.log(`${logPrefix({ dir: "in", tag: "TCP" })} AUDIT ${JSON.stringify(entry)}`);
+  console.log(`${logPrefix({ dir: "in", tag: "Xexun" })} AUDIT ${JSON.stringify({ ...entry, provider: "xexun" })}`);
   if (typeof store.recordTcpInboundRequest === "function") {
     store.recordTcpInboundRequest(entry);
   }
@@ -140,13 +141,13 @@ function sendNextQueuedCommand(socket, imei, store) {
     const seq = store.nextSequence(imei);
     const frame = buildServerCommand021({ imei, commandAscii: cmd, sequence: seq });
     socket.write(frame);
-    console.log(`${logPrefix({ dir: "out" })} 0x21 → ${imei}: ${cmd}`);
-    console.log(`${logPrefix({ dir: "out" })} CMD HEX: ${toHex(frame)}`);
+    console.log(`${logPrefix({ dir: "out", tag: "Xexun" })} 0x21 → ${imei}: ${cmd}`);
+    console.log(`${logPrefix({ dir: "out", tag: "Xexun" })} CMD HEX: ${toHex(frame)}`);
     if (typeof store.markCommandSent === "function") {
       store.markCommandSent({ imei, command: cmd });
     }
   } catch (e) {
-    console.log(`${logPrefix({ dir: "out" })} 0x21 send failed:`, e?.message || String(e));
+    console.log(`${logPrefix({ dir: "out", tag: "Xexun" })} 0x21 send failed:`, e?.message || String(e));
     store.enqueueCommand(imei, cmd, { atFront: true });
   }
 }
@@ -156,15 +157,13 @@ function createTcpServer({ port, store }) {
     socket.setKeepAlive(true);
     socket.setNoDelay(true);
 
-    console.log(
-      `${logPrefix({ dir: "in" })} connection from ${socket.remoteAddress}:${socket.remotePort}`
-    );
-    recordTcpInbound(store, socket, "connection", { note: "socket connected" });
+    logDeviceConnect(DEVICE.XEXUN, socket, port);
+    recordTcpInbound(store, socket, "connection", { note: "Xexun socket connected", provider: "xexun" });
 
     let pending = Buffer.alloc(0);
 
     socket.on("data", (data) => {
-      console.log(`${logPrefix({ dir: "in" })} RAW HEX: ${toHex(data)}`);
+      console.log(`${logPrefix({ dir: "in", tag: "Xexun" })} RAW HEX: ${toHex(data)}`);
       recordTcpInbound(store, socket, "data", {
         byteLength: data.length,
         rawHex: toHex(data),
@@ -179,7 +178,7 @@ function createTcpServer({ port, store }) {
         // Provider misconfig often sends to the wrong port (e.g. HTTP port 5002) or wraps the payload.
         // This makes it obvious in logs.
         console.log(
-          `${logPrefix({ dir: "in" })} Warning: received ${pending.length} bytes with no FC header yet (not an Xexun frame). Check provider port is TCP 5001 and it forwards raw FC…CF.`
+          `${logPrefix({ dir: "in", tag: "Xexun" })} Warning: received ${pending.length} bytes with no FC header yet (not an Xexun frame). Check provider port is TCP 5001 and it forwards raw FC…CF.`
         );
         recordTcpInbound(store, socket, "non_xexun_pending", {
           byteLength: pending.length,
@@ -193,7 +192,7 @@ function createTcpServer({ port, store }) {
         const receivedAt = new Date();
         const crcCheck = isValidCrc(frame);
         if (!crcCheck.ok) {
-          console.log(`${logPrefix({ dir: "in", at: receivedAt })} CRC invalid, ignoring frame: ${toHex(frame)}`);
+          console.log(`${logPrefix({ dir: "in", tag: "Xexun", at: receivedAt })} CRC invalid, ignoring frame: ${toHex(frame)}`);
           recordTcpInbound(store, socket, "frame_crc_invalid", {
             byteLength: frame.length,
             rawHex: toHex(frame),
@@ -205,7 +204,7 @@ function createTcpServer({ port, store }) {
 
         const parsed = parseXexunPacket(frame);
         if (!parsed) {
-          console.log(`${logPrefix({ dir: "in", at: receivedAt })} Unparsed frame: ${toHex(frame)}`);
+          console.log(`${logPrefix({ dir: "in", tag: "Xexun", at: receivedAt })} Unparsed frame: ${toHex(frame)}`);
           recordTcpInbound(store, socket, "frame_unparsed", {
             byteLength: frame.length,
             rawHex: toHex(frame),
@@ -221,6 +220,9 @@ function createTcpServer({ port, store }) {
         // Structured log requested
         const deviceStatus = parsed.deviceStatus || {};
         const logObj = {
+          provider: "xexun",
+          deviceType: "Xexun",
+          listenerPort: port,
           receivedAtCyprus: formatCyprusTime(receivedAt),
           receivedAtUtc: receivedAt.toISOString(),
           imei: parsed.imei,
@@ -246,8 +248,14 @@ function createTcpServer({ port, store }) {
           lng: parsed.gps?.lng ?? null,
           raw: parsed.rawHex
         };
-        console.log(`${logPrefix({ dir: "in", at: receivedAt })} PARSED: ${JSON.stringify(logObj)}`);
+        console.log(`${logPrefix({ dir: "in", tag: "Xexun", at: receivedAt })} PARSED: ${JSON.stringify(logObj)}`);
+        logDeviceIdentified(DEVICE.XEXUN, {
+          imei: parsed.imei,
+          message: `msg=0x${parsed.messageId.toString(16)}`,
+          port,
+        });
         recordTcpInbound(store, socket, "frame_parsed", {
+          provider: "xexun",
           imei: parsed.imei ?? null,
           messageId: parsed.messageId ?? null,
           byteLength: frame.length,
@@ -261,7 +269,7 @@ function createTcpServer({ port, store }) {
           parsed.messageId !== 0x6a
         ) {
           console.log(
-            `${logPrefix({ dir: "in", at: receivedAt })} Warning: unknown messageId=0x${parsed.messageId.toString(16)} (ACKing anyway)`
+            `${logPrefix({ dir: "in", tag: "Xexun", at: receivedAt })} Warning: unknown messageId=0x${parsed.messageId.toString(16)} (ACKing anyway)`
           );
         }
 
@@ -329,7 +337,7 @@ function createTcpServer({ port, store }) {
             }
 
             console.log(
-              `${logPrefix({ dir: "out", at: new Date() })} ACK TS SOURCE ${ackTsSource}: ${timestampBytes
+              `${logPrefix({ dir: "out", tag: "Xexun", at: new Date() })} ACK TS SOURCE ${ackTsSource}: ${timestampBytes
                 .toString("hex")
                 .toUpperCase()}`
             );
@@ -338,7 +346,7 @@ function createTcpServer({ port, store }) {
             const incomingSeq = frame.readUInt8(5);
             if ((incomingSeq & 0xff) !== (parsed.sequence & 0xff)) {
               console.log(
-                `${logPrefix({ dir: "out", at: new Date() })} ACK WARN: frame seq 0x${incomingSeq
+                `${logPrefix({ dir: "out", tag: "Xexun", at: new Date() })} ACK WARN: frame seq 0x${incomingSeq
                   .toString(16)
                   .padStart(2, "0")} !== parsed.sequence 0x${parsed.sequence
                   .toString(16)
@@ -348,12 +356,12 @@ function createTcpServer({ port, store }) {
             const gpsDurByte = extractGpsTrackingDurationByte(rawPayload);
             const offsetSeconds = ackOffsetSecondsFor020Ack(statusRaw, rawPayload);
             console.log(
-              `${logPrefix({ dir: "out", at: new Date() })} ACK offset: trackingSeq=${statusRaw?.trackingSeq ?? "?"}` +
+              `${logPrefix({ dir: "out", tag: "Xexun", at: new Date() })} ACK offset: trackingSeq=${statusRaw?.trackingSeq ?? "?"}` +
                 ` signal=${statusRaw?.signal ?? "?"} gps0x64Last=${gpsDurByte ?? "?"} → +${offsetSeconds}s`
             );
             const ack = buildAck({ sequence: incomingSeq, imei: imei8, timestampBytes, offsetSeconds });
             socket.write(ack);
-            console.log(`${logPrefix({ dir: "out", at: new Date() })} ACK HEX: ${toHex(ack)}`);
+            console.log(`${logPrefix({ dir: "out", tag: "Xexun", at: new Date() })} ACK HEX: ${toHex(ack)}`);
           } else {
             const ack = buildAckFrame({
               version: parsed.version,
@@ -363,34 +371,34 @@ function createTcpServer({ port, store }) {
               fixedReply
             });
             socket.write(ack);
-            console.log(`${logPrefix({ dir: "out", at: new Date() })} ACK HEX: ${toHex(ack)}`);
+            console.log(`${logPrefix({ dir: "out", tag: "Xexun", at: new Date() })} ACK HEX: ${toHex(ack)}`);
           }
 
           // After successful uplink (0x20), push one queued server command (0x21), per Xexun API.
           if (parsed.messageId === 0x20) {
             if (parsed.gpsValid === false && parsed.source === "lbs") {
-              console.log("[TCP] GPS invalid → using LBS fallback");
+              console.log(`${logPrefix({ dir: "in", tag: "Xexun" })} GPS invalid → using LBS fallback`);
             }
             sendNextQueuedCommand(socket, parsed.imei, store);
           }
         } catch (e) {
-          console.log(`${logPrefix({ dir: "out" })} Failed to send ACK:`, e?.message || String(e));
+          console.log(`${logPrefix({ dir: "out", tag: "Xexun" })} Failed to send ACK:`, e?.message || String(e));
         }
       }
     });
 
     socket.on("close", () => {
       store.releaseSocket(socket);
-      console.log(`${logPrefix({ dir: "in" })} connection closed`);
-      recordTcpInbound(store, socket, "close", { note: "socket closed" });
+      console.log(`${logPrefix({ dir: "in", tag: "Xexun" })} connection closed`);
+      recordTcpInbound(store, socket, "close", { note: "Xexun socket closed", provider: "xexun" });
     });
     socket.on("error", (err) => {
-      console.log(`${logPrefix({ dir: "in" })} socket error:`, err.message);
-      recordTcpInbound(store, socket, "error", { note: err.message || String(err) });
+      console.log(`${logPrefix({ dir: "in", tag: "Xexun" })} socket error:`, err.message);
+      recordTcpInbound(store, socket, "error", { note: err.message || String(err), provider: "xexun" });
     });
   });
 
-  server.listen(port, () => console.log(`TCP server listening on port ${port}`));
+  server.listen(port, () => logListenerReady(DEVICE.XEXUN, port));
   return server;
 }
 
