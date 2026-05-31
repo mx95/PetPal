@@ -8,7 +8,51 @@ const {
   toHex
 } = require("../protocol/g365");
 const { logPrefix, formatCyprusTime } = require("../logging/time");
+const { parseG365LbsCellsFromHex } = require("../geo/g365Lbs");
+const { geocodeLbsTowers, LBS_GEOCODE_ENABLED } = require("../geo/lbsGeocode");
 const { DEVICE, logDeviceConnect, logDeviceIdentified, logListenerReady } = require("../logging/deviceLog");
+
+function scheduleG365LbsGeocode(store, imei, parsed) {
+  if (!LBS_GEOCODE_ENABLED || !imei || parsed?.source !== "lbs") return;
+  if (parsed.gps?.lat != null && parsed.gps?.lng != null) return;
+  const towers = parseG365LbsCellsFromHex(parsed.lbsRaw, parsed.protocol);
+  if (!towers) return;
+
+  void geocodeLbsTowers(towers)
+    .then((geo) => {
+      if (!geo) {
+        console.log(
+          `${logPrefix({ dir: "in", tag: "365GPS" })} LBS geocode: no match for ${imei} (MCC ${towers.mcc} MNC ${towers.mnc}, ${towers.cells.length} cells)`
+        );
+        return;
+      }
+      console.log(
+        `${logPrefix({ dir: "in", tag: "365GPS" })} LBS geocoded ${imei}: ${geo.lat}, ${geo.lng} (${geo.provider})`
+      );
+      const ts = parsed.deviceStatus?.timestamp ?? parsed.gps?.timestamp ?? new Date().toISOString();
+      store.upsert(imei, {
+        ...parsed,
+        imei,
+        provider: "g365",
+        source: "lbs",
+        accuracy: "lbs",
+        gpsValid: false,
+        lbsTowerInfo: towers,
+        gps: {
+          lat: geo.lat,
+          lng: geo.lng,
+          source: "lbs",
+          timestamp: ts,
+        },
+      });
+    })
+    .catch((e) => {
+      console.log(
+        `${logPrefix({ dir: "in", tag: "365GPS" })} LBS geocode error for ${imei}:`,
+        e?.message || String(e)
+      );
+    });
+}
 
 function asciiPreview(buf, max = 160) {
   if (!Buffer.isBuffer(buf) || buf.length === 0) return null;
@@ -202,6 +246,7 @@ function createG365TcpServer({ port, store }) {
         if (imei) {
           store.upsert(imei, parsed);
           store.bindSocket(imei, socket);
+          scheduleG365LbsGeocode(store, imei, parsed);
         }
 
         try {
