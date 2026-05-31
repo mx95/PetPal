@@ -30,6 +30,20 @@ test("g365 — login frame IMEI + ACK", () => {
   assert.equal(toHex(ack), "787801010D0A");
 });
 
+test("g365 — login frame with unreliable length byte 0x0D (real device)", () => {
+  const frame = hex("78780D010861261021497967080D0A");
+  const { frames, rest } = extractFramesFromStream(frame);
+  assert.equal(frames.length, 1);
+  assert.equal(rest.length, 0);
+  assert.equal(frames[0].length, 15);
+
+  const parsed = parseG365Packet(frames[0]);
+  assert.equal(parsed.imei, "861261021497967");
+  assert.equal(parsed.protocol, 0x01);
+  assert.equal(parsed.softwareVersion, 0x08);
+  assert.equal(toHex(buildG365AckForParsed(parsed, frames[0])), "787801010D0A");
+});
+
 test("g365 — GPS 0x10 example from spec", () => {
   // Vendor PDF lists length 0x12; actual frame needs 0x13 (protocol + 18-byte GPS body).
   const frame = hex("787813100A03170F32179C026B3F3E0C22AD651F34600D0A");

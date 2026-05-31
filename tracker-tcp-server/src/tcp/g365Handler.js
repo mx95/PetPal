@@ -2,6 +2,7 @@ const net = require("net");
 const {
   parseG365Packet,
   buildG365AckForParsed,
+  buildG365ExpiryDate,
   extractFramesFromStream,
   toHex
 } = require("../protocol/g365");
@@ -61,6 +62,22 @@ function g365ProtocolLabel(protocol) {
   return names[protocol] ? `${hex} (${names[protocol]})` : hex;
 }
 
+const G365_EXPIRY_DATE = String(process.env.G365_EXPIRY_DATE || "20301231").replace(/\D/g, "").slice(0, 8);
+const G365_SEND_EXPIRY_ON_LOGIN =
+  String(process.env.G365_SEND_EXPIRY_ON_LOGIN ?? "1").trim() !== "0" &&
+  String(process.env.G365_SEND_EXPIRY_ON_LOGIN ?? "1").trim().toLowerCase() !== "false";
+
+function sendG365LoginHandshake(socket, parsed, ack) {
+  socket.write(ack);
+  console.log(`${logPrefix({ dir: "out", tag: "365GPS", at: new Date() })} ACK HEX (login): ${toHex(ack)}`);
+  if (!G365_SEND_EXPIRY_ON_LOGIN || G365_EXPIRY_DATE.length !== 8) return;
+  const expiry = buildG365ExpiryDate(G365_EXPIRY_DATE);
+  socket.write(expiry);
+  console.log(
+    `${logPrefix({ dir: "out", tag: "365GPS", at: new Date() })} EXPIRY HEX (${G365_EXPIRY_DATE}): ${toHex(expiry)}`
+  );
+}
+
 function createG365TcpServer({ port, store }) {
   const server = net.createServer((socket) => {
     socket.setKeepAlive(true);
@@ -87,6 +104,13 @@ function createG365TcpServer({ port, store }) {
       if (frames.length === 0 && pending.length > 0 && pending.indexOf(Buffer.from([0x78, 0x78])) === -1) {
         console.log(
           `${logPrefix({ dir: "in", tag: "365GPS" })} Warning: ${pending.length} bytes with no 7878 header (not 365GPS framing).`
+        );
+      }
+
+      if (frames.length === 0 && pending.length >= 6 && pending.readUInt16BE(0) === 0x7878) {
+        const proto = pending.readUInt8(3);
+        console.log(
+          `${logPrefix({ dir: "in", tag: "365GPS" })} Warning: ${pending.length} bytes with 7878 header but no complete frame yet (protocol=0x${proto.toString(16)}). Waiting for more data or check length-byte framing.`
         );
       }
 
@@ -159,8 +183,14 @@ function createG365TcpServer({ port, store }) {
         try {
           const ack = buildG365AckForParsed(parsed, frame);
           if (ack) {
-            socket.write(ack);
-            console.log(`${logPrefix({ dir: "out", tag: "365GPS", at: new Date() })} ACK HEX: ${toHex(ack)}`);
+            if (parsed.protocol === 0x01) {
+              sendG365LoginHandshake(socket, parsed, ack);
+            } else {
+              socket.write(ack);
+              console.log(`${logPrefix({ dir: "out", tag: "365GPS", at: new Date() })} ACK HEX: ${toHex(ack)}`);
+            }
+          } else if (parsed.protocol === 0x01) {
+            console.log(`${logPrefix({ dir: "out", tag: "365GPS" })} Warning: login frame received but no ACK built`);
           }
         } catch (e) {
           console.log(`${logPrefix({ dir: "out", tag: "365GPS" })} Failed to send ACK:`, e?.message || String(e));

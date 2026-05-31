@@ -131,6 +131,32 @@ function tryStandardFrameLength(buf, start) {
   return total - start;
 }
 
+function tryFormatBasedFrameLength(buf, start) {
+  if (buf.length < start + 6) return null;
+  if (buf.readUInt16BE(start) !== HEADER) return null;
+
+  const protocol = buf.readUInt8(start + 3);
+
+  // PDF note: length byte often wrong — parse by fixed layout instead.
+  if (protocol === 0x01) {
+    // Login: 7878 + len + 01 + IMEI(8) + [optional bytes] + 0D0A (typically 15 bytes total).
+    for (let total = 14; total <= 20; total++) {
+      if (buf.length < start + total) break;
+      if (buf.readUInt16BE(start + total - 2) === FOOTER) return total;
+    }
+    return null;
+  }
+
+  // Single-field packets: 7878 01 XX 0D0A (7 bytes) when length byte is also wrong.
+  const singleByteTotal = start + 7;
+  if (buf.length >= singleByteTotal && buf.readUInt16BE(singleByteTotal - 2) === FOOTER) {
+    const contentLen = buf.readUInt8(start + 2);
+    if (contentLen === 0x01) return 7;
+  }
+
+  return null;
+}
+
 function frameLengthAt(buf, start) {
   if (buf.length < start + 4) return null;
   if (buf.readUInt16BE(start) !== HEADER) return null;
@@ -138,7 +164,10 @@ function frameLengthAt(buf, start) {
   const wifiLen = tryWifiLbsFrameLength(buf, start);
   if (wifiLen != null) return wifiLen;
 
-  return tryStandardFrameLength(buf, start);
+  const stdLen = tryStandardFrameLength(buf, start);
+  if (stdLen != null) return stdLen;
+
+  return tryFormatBasedFrameLength(buf, start);
 }
 
 function extractFramesFromStream(buffer) {

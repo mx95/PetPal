@@ -81,6 +81,8 @@ python tracker-tcp-server/scripts/extract-g365-docx.py
 | 4G LBS cell = LAC 4 + CellID 4 + RSSI 1 (9 bytes) | `lbsCellSize()` for `0x18`–`0x1B` |
 | Required server ACKs (device disconnects if missing): `0x01`, `0x10`, `0x11`, `0x13`, `0x17`, `0x69` (+ `0x18`–`0x1B`) | `buildG365AckForParsed()` |
 | Login ACK: `787801010D0A` (or `787801440D0A` reject) | `buildG365LoginAck()` |
+| After login: server sends expiry `7878 0430 YYYYMMDD 0D0A` (length byte may differ) | `buildG365ExpiryDate()` on login in `g365Handler.js` |
+| Length byte often wrong for login/heartbeat — parse by data format, not length | `tryFormatBasedFrameLength()` |
 | GPS/WiFi ACK: `787800` + protocol + 6-byte device time + `0D0A` | `buildG365TimestampAck()` |
 | Status ACK: echo received frame | `buildG365EchoFrame()` |
 | Time sync reply: GMT+0, 2-byte year BE + month/day/hour/min/sec bytes | `buildG365TimeAck()` |
