@@ -291,7 +291,8 @@ function parseWifiLbsBody(body, protocol) {
   }
 
   let alarmFlags = null;
-  if (o < body.length && body.readUInt16BE(o) !== FOOTER) {
+  if (o < body.length) {
+    // Optional alarm byte before wire footer (footer is not part of `body`).
     alarmFlags = body.readUInt8(o);
   }
 

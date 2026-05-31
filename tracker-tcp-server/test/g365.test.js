@@ -66,6 +66,23 @@ test("g365 — heartbeat needs no ACK", () => {
   assert.equal(buildG365AckForParsed(parsed, frame), null);
 });
 
+test("g365 — 0x1B wifi/lbs with zero wifi and 3 LBS cells (real device)", () => {
+  const frame = hex(
+    "7878001B2605310801270301180A0000015507B89829720000015507B89829720000015507B8982972000D0A"
+  );
+  const { frames } = extractFramesFromStream(frame);
+  assert.equal(frames.length, 1);
+
+  const parsed = parseG365Packet(frames[0], "861261021497967");
+  assert.equal(parsed.protocol, 0x1b);
+  assert.equal(parsed.source, "lbs");
+  assert.equal(parsed.imei, "861261021497967");
+  assert.ok(parsed.lbsRaw);
+
+  const ack = buildG365AckForParsed(parsed, frames[0]);
+  assert.equal(toHex(ack), "7878001B2605310801270D0A");
+});
+
 test("g365 — 0x69 wifi/lbs variable length framing", () => {
   const frame = hex(
     "787803691604130318491475905BD30E25001E10BBF7635D14759006E62656" +

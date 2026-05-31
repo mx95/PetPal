@@ -116,7 +116,20 @@ function createG365TcpServer({ port, store }) {
 
       for (const frame of frames) {
         const receivedAt = new Date();
-        const parsed = parseG365Packet(frame, socket._g365Imei);
+        let parsed;
+        try {
+          parsed = parseG365Packet(frame, socket._g365Imei);
+        } catch (e) {
+          console.log(
+            `${logPrefix({ dir: "in", tag: "365GPS", at: receivedAt })} Parse error: ${e?.message || String(e)} frame=${toHex(frame)}`
+          );
+          recordTcpInbound(store, socket, "frame_parse_error", {
+            byteLength: frame.length,
+            rawHex: toHex(frame),
+            note: e?.message || String(e)
+          });
+          continue;
+        }
         if (!parsed) {
           console.log(`${logPrefix({ dir: "in", tag: "365GPS", at: receivedAt })} Unparsed frame: ${toHex(frame)}`);
           recordTcpInbound(store, socket, "frame_unparsed", {
