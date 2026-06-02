@@ -535,10 +535,12 @@ function parseG365Packet(frame, sessionImei = null) {
   }
 
   if (protocol === 0x81 || protocol === 0x82 || protocol === 0x83) {
+    const chargingEvent = protocol === 0x81 ? "complete" : protocol === 0x82 ? "connected" : "disconnected";
     return {
       ...base,
       needsAck: false,
-      chargingEvent: protocol === 0x81 ? "complete" : protocol === 0x82 ? "connected" : "disconnected"
+      chargingEvent,
+      deviceStatus: { chargingStatus: protocol === 0x82 ? 1 : 0 }
     };
   }
 

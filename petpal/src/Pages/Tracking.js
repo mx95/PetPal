@@ -158,6 +158,24 @@ function batteryFillStyle(pct) {
   return { width: `${n}%`, background: fill };
 }
 
+function TrackBatteryBadge({ pct, isCharging, t }) {
+  if (pct == null) return null;
+  return (
+    <span
+      className={`pp-trackLiveStatus__bat${isCharging ? ' is-charging' : ''}`}
+      aria-label={
+        isCharging
+          ? t('trackingPage.batteryChargingAria', { pct })
+          : t('trackingPage.batteryPctAria', { pct })
+      }
+    >
+      <IconBattery pct={pct} size={16} />
+      {pct}%
+      {isCharging ? <span className="pp-trackLiveStatus__charging">{t('trackingPage.charging')}</span> : null}
+    </span>
+  );
+}
+
 function hasDiagnostics(position) {
   return Boolean(position?.diagnostics?.received || position?.diagnostics?.raw);
 }
@@ -1101,6 +1119,7 @@ export default function Tracking() {
       : '—';
 
   const batPct = position?.battery != null ? Math.min(100, Math.max(0, Number(position.battery))) : null;
+  const isCharging = position?.isCharging === true;
 
   const signalLabel =
     position?.signal != null && Number.isFinite(Number(position.signal))
@@ -1194,12 +1213,7 @@ export default function Tracking() {
                   <IconTrackSource kind={liveSourceKind} size={13} />
                   {liveSourceLabel}
                 </span>
-                {batPct != null ? (
-                  <span className="pp-trackLiveStatus__bat" aria-label={t('trackingPage.batteryPctAria', { pct: batPct })}>
-                    <IconBattery pct={batPct} size={16} />
-                    {batPct}%
-                  </span>
-                ) : null}
+                {batPct != null ? <TrackBatteryBadge pct={batPct} isCharging={isCharging} t={t} /> : null}
               </div>
               {liveMapBanner ? (
                 <p className="pp-trackLiveStatus__alert">
@@ -1267,12 +1281,7 @@ export default function Tracking() {
                       {liveSourceLabel}
                     </span>
                   ) : null}
-                  {batPct != null ? (
-                    <span className="pp-trackLiveStatus__bat">
-                      <IconBattery pct={batPct} size={16} />
-                      {batPct}%
-                    </span>
-                  ) : null}
+                  {batPct != null ? <TrackBatteryBadge pct={batPct} isCharging={isCharging} t={t} /> : null}
                 </div>
               ) : null}
               <p className="pp-trackLiveStatus__alert">

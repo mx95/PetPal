@@ -1,5 +1,38 @@
 const { isPlausibleLatLng } = require("../geo/coords");
 
+function batteryStatusLabel(battery) {
+  return typeof battery === "number" && Number.isFinite(battery)
+    ? battery > 70
+      ? "good"
+      : battery > 30
+        ? "medium"
+        : "low"
+    : null;
+}
+
+function signalStatusLabel(signal) {
+  return typeof signal === "number" && Number.isFinite(signal)
+    ? signal > 12
+      ? "strong"
+      : signal > 6
+        ? "medium"
+        : "weak"
+    : null;
+}
+
+function statusFields(d) {
+  const battery = d.battery ?? null;
+  const signal = d.signal ?? null;
+  return {
+    battery,
+    batteryStatus: batteryStatusLabel(battery),
+    signal,
+    signalStatus: signalStatusLabel(signal),
+    isCharging: d.charging === true,
+    steps: d.steps ?? null,
+  };
+}
+
 /** Live position JSON — freshness and sorting use server receive time, not the collar clock. */
 function buildPositionPayload(imei, d) {
   const loc = d.location || d.gps || {};
@@ -36,8 +69,7 @@ function buildPositionPayload(imei, d) {
         source: "wifi",
         accuracy: "wifi",
         locationKind: hasHome ? "home_wifi" : "wifi_status",
-        battery: d.battery ?? null,
-        signal: d.signal ?? null,
+        ...statusFields(d),
         lastUpdate: receivedAt,
         receivedAt,
         secondsAgo,
@@ -46,15 +78,14 @@ function buildPositionPayload(imei, d) {
         wifiBssids: d.wifiBssids ?? null,
       };
     }
-    if (d.battery != null || d.signal != null || d.source) {
+    if (d.battery != null || d.signal != null || d.source || d.charging != null) {
       return {
         imei,
         lat: null,
         lng: null,
         source: d.source ?? null,
         accuracy: d.source === "gps" ? "high" : "low",
-        battery: d.battery ?? null,
-        signal: d.signal ?? null,
+        ...statusFields(d),
         lastUpdate: receivedAt,
         receivedAt,
         secondsAgo,
@@ -81,25 +112,11 @@ function buildPositionPayload(imei, d) {
 
   const source = d.source ?? null;
   const isApproximate = source === "lbs" || source === "wifi";
-  const battery = d.battery ?? null;
-  const signal = d.signal ?? null;
-
-  const batteryStatus =
-    typeof battery === "number" && Number.isFinite(battery)
-      ? battery > 70
-        ? "good"
-        : battery > 30
-          ? "medium"
-          : "low"
-      : null;
-  const signalStatus =
-    typeof signal === "number" && Number.isFinite(signal)
-      ? signal > 12
-        ? "strong"
-        : signal > 6
-          ? "medium"
-          : "weak"
-      : null;
+  const status = statusFields(d);
+  const battery = status.battery;
+  const signal = status.signal;
+  const batteryStatus = status.batteryStatus;
+  const signalStatus = status.signalStatus;
 
   const freshness =
     typeof secondsAgo === "number"
@@ -126,8 +143,8 @@ function buildPositionPayload(imei, d) {
     batteryStatus,
     signal,
     signalStatus,
-    isCharging: d.charging === true,
-    steps: d.steps ?? null,
+    isCharging: status.isCharging,
+    steps: status.steps,
     isMoving: d.moving === true,
     lastUpdate: receivedAt,
     receivedAt,

@@ -11,6 +11,15 @@ function toBool01(v) {
   return null;
 }
 
+function resolveCharging(parsed, deviceStatus) {
+  const ds = deviceStatus || {};
+  if (parsed?.chargingEvent === "connected") return true;
+  if (parsed?.chargingEvent === "complete" || parsed?.chargingEvent === "disconnected") return false;
+  const fromStatus = toBool01(ds.chargingStatus);
+  if (fromStatus != null) return fromStatus;
+  return toBool01(parsed?.statusDetail?.charging);
+}
+
 function makeJsonSafe(value) {
   if (Buffer.isBuffer(value)) return toHexString(value);
   if (Array.isArray(value)) return value.map(makeJsonSafe);
@@ -58,11 +67,11 @@ function normalizeIncomingDevice(prev, incoming) {
     accuracy: p.accuracy || null, // "gps" | "wifi" | "lbs" (wifi not implemented yet)
     satellites: p.satellites ?? gps.satellites ?? null,
 
-    battery: ds.battery ?? null,
-    signal: ds.signal ?? p.signal ?? null,
-    steps: ds.steps ?? null,
+    battery: ds.battery ?? p.statusDetail?.battery ?? null,
+    signal: ds.signal ?? p.signal ?? p.statusDetail?.signal ?? null,
+    steps: ds.steps ?? p.statusDetail?.steps ?? null,
     moving: toBool01(ds.movement),
-    charging: toBool01(ds.chargingStatus),
+    charging: resolveCharging(p, ds),
 
     speed: gps.speedKmh != null ? Number(gps.speedKmh) : null,
     lastUpdate: p.receivedAt || new Date().toISOString(),
@@ -161,6 +170,10 @@ function mergeDeviceRecord(prev, incoming) {
   if (merged.location && (!merged.gps || !hasValidGps(merged.gps))) {
     merged.gps = { lat: merged.location.lat, lng: merged.location.lng, speedKmh: merged.speed ?? null, timestamp: merged.lastUpdate ?? null };
   }
+  if (incoming.battery == null && prev?.battery != null) merged.battery = prev.battery;
+  if (incoming.signal == null && prev?.signal != null) merged.signal = prev.signal;
+  if (incoming.charging == null && prev?.charging != null) merged.charging = prev.charging;
+  if (incoming.steps == null && prev?.steps != null) merged.steps = prev.steps;
   return merged;
 }
 

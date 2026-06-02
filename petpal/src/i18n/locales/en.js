@@ -818,6 +818,7 @@ const en = {
     accuracyLabel: 'Accuracy: {value}',
     accuracyMeterLabel: 'Estimated location quality',
     batteryPctAria: 'Battery {pct} percent',
+    batteryChargingAria: 'Battery {pct} percent, charging',
     lastUpdateSeconds: 'Last update {seconds}s ago',
     lastUpdateMinutes: 'Last update {minutes} min ago',
     lastUpdateHours: 'Last update {hours}h ago',

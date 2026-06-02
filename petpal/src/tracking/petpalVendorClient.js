@@ -167,6 +167,8 @@ function normalizeXexunPosition(json) {
     Boolean(json.atHomeWifi) ||
     json.source != null ||
     json.battery != null ||
+    json.isCharging === true ||
+    json.charging === true ||
     json.receivedAt != null ||
     json.lastUpdate != null ||
     json.lastUpdateServer != null;
@@ -195,7 +197,12 @@ function normalizeXexunPosition(json) {
     batteryStatus: json.batteryStatus ?? null,
     signal: json.signal ?? null,
     signalStatus: json.signalStatus ?? null,
-    isCharging: json.isCharging ?? null,
+    isCharging:
+      json.isCharging === true || json.charging === true
+        ? true
+        : json.isCharging === false || json.charging === false
+          ? false
+          : null,
     steps: json.steps ?? null,
     isMoving: json.isMoving ?? null,
     warningStale: json.warningStale ?? null,
@@ -306,6 +313,9 @@ async function fetchXexunDevice(deviceId) {
     ...json,
     lat: json.location?.lat ?? json.gps?.lat ?? null,
     lng: json.location?.lng ?? json.gps?.lng ?? null,
+    battery: json.battery ?? null,
+    signal: json.signal ?? null,
+    charging: json.charging ?? null,
     deviceTimeUtc: json.gps?.timestamp ?? null,
     lastUpdateServer: json.lastUpdate ?? null,
     received: json.received ?? null,

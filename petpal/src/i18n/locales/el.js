@@ -697,6 +697,7 @@ const el = {
     accuracyLabel: 'Ακρίβεια: {value}',
     accuracyMeterLabel: 'Εκτιμώμενη ποιότητα θέσης',
     batteryPctAria: 'Μπαταρία {pct} τοις εκατό',
+    batteryChargingAria: 'Μπαταρία {pct} τοις εκατό, φόρτιση',
     lastUpdateSeconds: 'Τελευταία ενημέρωση πριν {seconds}δ',
     lastUpdateMinutes: 'Τελευταία ενημέρωση πριν {minutes} λεπτά',
     lastUpdateHours: 'Τελευταία ενημέρωση πριν {hours} ώρες',

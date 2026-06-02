@@ -96,32 +96,106 @@ Implementation: `petpal/src/tracking/trackingWifiFeature.js`.
 | --- | --- | --- |
 | **GPS** | Accurate lat/lng outdoors | Yes — trusted pin |
 | **LBS (cell)** | Approximate lat/lng | Yes — large accuracy circle |
-| **Wi‑Fi packet** | Router IDs (BSSIDs) only — **no coordinates** | No live GPS from Wi‑Fi alone |
+| **Wi‑Fi packet** | Router IDs (`wifiBssids`) only — **no coordinates** | Home pin only if you saved home lat/lng |
 
-The server marks `atHomeWifi: true` when the collar scans home routers. That is **status**, not a map location.
+The server marks `atHomeWifi: true` when the collar scans nearby routers. That is **status**, not a street address.
 
 Old mislabeled history (Wi‑Fi rows with cell-tower coordinates) is **not** used for the live map pin.
 
 ---
 
-## Wi‑Fi home setup (HTTPS only)
+## What is `wifiBssids`?
 
-When Wi‑Fi tracking is enabled:
+**BSSID** = the unique hardware ID (MAC address) of a Wi‑Fi router or access point, e.g. `14:75:90:5b:d3:0e`.
 
-### 1. Router code (BSSID) — tells the **collar** you are home
+**`wifiBssids`** = the list of those IDs the **collar heard** during its last Wi‑Fi scan. Example from the API:
 
-- Not a street address.
-- Use the code the **collar scans**, often `ba:af:ca:8c:22:b1`, not always the sticker `80:AF:CA:…`.
-- Device tab → enter code → **Set up home tracking**.
+```json
+"wifiBssids": ["14:75:90:5b:d3:0e", "ba:af:ca:8c:22:b1", "a4:2b:8c:01:23:45"]
+```
 
-### 2. Home on the map — tells the **app** where to draw the pin
+| Fact | Detail |
+| --- | --- |
+| **What it is** | Fingerprints of nearby routers — not lat/lng |
+| **Who creates it** | The collar scans the air; the server stores what it uploads |
+| **What it is not** | Your home address, router password, or Wi‑Fi network name (SSID) |
+| **Why it matters** | Lets the app know the pet is **in a Wi‑Fi-rich area** (often at home) |
+| **Map pin** | Appears only if you also saved **home coordinates** (`POST /api/app/home` or one-tap home) |
 
-- **One tap:** Live or Device tab → **Set home on map** while at home (allow browser location).
-- **Or:** first outdoor **GPS fix** from the collar saves home automatically.
-- No manual address entry.
+Think of it like: the collar says *“I can see these routers”* and the app says *“when I see Wi‑Fi like that, draw the pin at the home location I saved.”*
 
-API: `POST /api/app/home` with `{ "deviceId": "IMEI", "lat": …, "lng": … }`  
-When home is saved and collar is on Wi‑Fi, `GET /position` returns `locationKind: "home_wifi"` with `lat`/`lng` = saved home.
+The sticker on your router may show `80:AF:CA:…` while the collar reports `ba:af:ca:…` — same device, different radio interface. **Trust what appears in server logs / `GET /position`**, not the label.
+
+365GPS packets include up to **8** BSSIDs (minimum **3** visible networks before a full Wi‑Fi fix per vendor spec). Each entry is 6 bytes BSSID + signal strength (RSSI).
+
+---
+
+## Wi‑Fi home setup
+
+Wi‑Fi tracking needs **two separate things**:
+
+1. **Collar detects Wi‑Fi** → sends `wifiBssids` (and `atHomeWifi: true`).
+2. **You save home on the map** → server knows where to draw the pin.
+
+Without (1): you may only get LBS/GPS. Without (2): API returns `wifiBssids` but `lat`/`lng` stay null.
+
+One-tap **Set home on map** requires **HTTPS** or `localhost` (browser geolocation). Saving home via **`POST /api/app/home`** works on HTTP too.
+
+### Xexun collar (TCP port **5001**)
+
+Uses the app **Device** tab:
+
+1. **Router code (BSSID)** — programs the collar via `wifi=` command (`POST /api/tracker/commands/wifi`).
+2. **Home on the map** — one-tap home or `POST /api/app/home`.
+
+Tracking mode presets (`tk=` — Wi‑Fi priority / GPS priority / GPS only) are **Xexun only**.
+
+### 365GPS collar (TCP port **5003**)
+
+**Do not** use Device tab BSSID / `wifi=` / `tk=` — those commands are ignored by 365GPS.
+
+The 365GPS collar **auto-scans** nearby Wi‑Fi and sends packets **`0x69`** or **`0x18`** when it finds enough routers (typically **3+** on **2.4 GHz**). No manual MAC programming in PetPal.
+
+**Step 1 — Save home coordinates**
+
+App: Tracking → **Set home on map** (HTTPS), or API:
+
+```bash
+curl -X POST http://YOUR_IP:5002/api/app/home \
+  -H "Content-Type: application/json" \
+  -d '{"deviceId":"861261021497967","lat":34.985,"lng":33.845}'
+```
+
+**Step 2 — Trigger a Wi‑Fi scan** (collar must be online on port 5003)
+
+```bash
+curl -X POST http://YOUR_IP:5002/api/g365/commands/manual-position \
+  -H "Content-Type: application/json" \
+  -d '{"imei":"861261021497967","mode":"wifi"}'
+```
+
+**Step 3 — Verify in logs**
+
+```bash
+pm2 logs tracker --lines 40 | grep 365GPS
+```
+
+Look for `"source":"wifi"` and `"wifiBssids":[…]` in `PARSED` JSON. Protocol `105` (`0x69`) = online Wi‑Fi+LBS packet.
+
+If you only see `0x1b` with `"wifiBssids":null`, the collar sees cell towers but **not enough Wi‑Fi APs** — move closer to the router, enable **2.4 GHz**, or wait for neighbor networks to be visible.
+
+**Success response** (`GET /position?deviceId=…`):
+
+```json
+{
+  "atHomeWifi": true,
+  "source": "wifi",
+  "locationKind": "home_wifi",
+  "lat": 34.985,
+  "lng": 33.845,
+  "wifiBssids": ["14:75:90:5b:d3:0e"]
+}
+```
 
 ---
 
@@ -131,7 +205,7 @@ One process (`tracker`) on port **5002** serves:
 
 - Static PetPal SPA (`petpal/build/`)
 - HTTP API (`/api/app/*`, `/position`, …)
-- TCP ingest on **5001** (separate port — collars connect here)
+- TCP ingest: **5001** (Xexun), **5003** (365GPS) — collars connect on separate ports
 
 First-time PM2:
 
@@ -183,6 +257,9 @@ Without saved home, Wi‑Fi responses have `lat`/`lng` null but still include ba
 | --- | --- | --- |
 | Empty map, “no location” | Collar on Wi‑Fi only, no GPS/home saved | Normal on HTTP (Wi‑Fi UI off). Wait for LBS/GPS or enable HTTPS + one-tap home. |
 | Wrong map pin (far away) | Old cell-tower coords | Fixed in current code; hard refresh + redeploy. Do **not** use sticker MAC if collar scans a different BSSID. |
+| 365GPS: always `source: lbs`, no `wifiBssids` | Not enough visible Wi‑Fi APs | Enable 2.4 GHz; `POST /api/g365/commands/manual-position` with `"mode":"wifi"`; need ~3 networks in range. |
+| 365GPS: `wifiBssids` but no map pin | Home not saved | `POST /api/app/home` or one-tap home (HTTPS). |
+| Used Device tab BSSID on 365GPS | Xexun-only command | Use auto-scan + home save flow above; port **5003**. |
 | No Device tab | `REACT_APP_XEXUN_HTTP_BASE_URL` not set at build | Set `REACT_APP_XEXUN_HTTP_BASE_URL=same` (or full URL), then `npm run build`. |
 | “Tracker response had no usable lat/lng” | Old frontend | Rebuild `petpal` and hard refresh. |
 | Stale device list vs live | Old server | `git pull`, `pm2 restart tracker`. |
@@ -208,5 +285,6 @@ yarn start
 ## Related docs
 
 - `tracker-tcp-server/README.md` — TCP protocol, PM2, SQLite backup, command API
+- `tracker-tcp-server/docs/G365_PROTOCOL.md` — 365GPS Wi‑Fi/LBS packet formats (`0x69`, `0x18`, `0x1b`)
 - `petpal/README.md` — Firebase, Capacitor, deploy commands
 - `petpal/.env.example` — all env vars with short comments

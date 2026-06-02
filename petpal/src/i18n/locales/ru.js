@@ -698,6 +698,7 @@ const ru = {
     accuracyLabel: 'Точность: {value}',
     accuracyMeterLabel: 'Оценка качества координат',
     batteryPctAria: 'Батарея {pct} процентов',
+    batteryChargingAria: 'Батарея {pct} процентов, зарядка',
     lastUpdateSeconds: 'Обновлено {seconds}с назад',
     lastUpdateMinutes: 'Обновлено {minutes} мин назад',
     lastUpdateHours: 'Обновлено {hours} ч назад',

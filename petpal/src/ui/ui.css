@@ -18098,6 +18098,18 @@ html[data-theme="dark"] .pp-nearbyPartnerCard__name {
   color: #344054;
 }
 
+.pp-trackLiveStatus__bat.is-charging {
+  background: rgba(34, 197, 94, 0.12);
+  color: #027a48;
+}
+
+.pp-trackLiveStatus__charging {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
 .pp-trackLiveStatus__alert {
   margin: 8px 0 0;
   padding: 7px 10px;
