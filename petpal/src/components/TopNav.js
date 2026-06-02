@@ -131,12 +131,6 @@ export default function TopNav() {
 
               {accountMenuOpen ? (
                 <div className="absolute right-0 top-full mt-3 w-60 rounded-3xl border border-slate-200 bg-white p-2 shadow-lift animate-soft-pop" role="menu" aria-label={t('nav.profile')}>
-                  {MVP_NAV.showShop ? (
-                    <Link className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-petpal-ink no-underline transition hover:bg-petpal-soft" to="/shop" role="menuitem" onClick={() => setAccountMenuOpen(false)}>
-                      <span aria-hidden>🛒</span>
-                      <span>{t('nav.shop')}</span>
-                    </Link>
-                  ) : null}
                   <Link
                     className="pp-menuItemWithBadge flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-petpal-ink no-underline transition hover:bg-petpal-soft"
                     to="/inbox"
@@ -153,33 +147,13 @@ export default function TopNav() {
                     </span>
                     <span>{t('nav.inbox')}</span>
                   </Link>
-                  <Link className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-petpal-ink no-underline transition hover:bg-petpal-soft" to="/profile" role="menuitem" onClick={() => setAccountMenuOpen(false)}>
-                    <span aria-hidden>👤</span>
-                    <span>{t('nav.profile')}</span>
-                  </Link>
-                  {MVP_NAV.showDashboard ? (
-                    <Link className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-petpal-ink no-underline transition hover:bg-petpal-soft" to="/dashboard" role="menuitem" onClick={() => setAccountMenuOpen(false)}>
-                      <span aria-hidden>📊</span>
-                      <span>{t('nav.dashboard')}</span>
-                    </Link>
-                  ) : null}
-                  {MVP_NAV.showLeaderboard ? (
-                    <Link className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-petpal-ink no-underline transition hover:bg-petpal-soft" to="/leaderboard" role="menuitem" onClick={() => setAccountMenuOpen(false)}>
-                      <span aria-hidden>🏆</span>
-                      <span>{t('nav.leaderboard')}</span>
-                    </Link>
-                  ) : null}
-                  <Link className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-petpal-ink no-underline transition hover:bg-petpal-soft" to="/docs" role="menuitem" onClick={() => setAccountMenuOpen(false)}>
-                    <span aria-hidden>📖</span>
-                    <span>{t('nav.docs')}</span>
-                  </Link>
-                  <Link className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-petpal-ink no-underline transition hover:bg-petpal-soft" to="/provider?demoBusiness=example_vet" role="menuitem" onClick={() => setAccountMenuOpen(false)}>
-                    <span aria-hidden>🏪</span>
-                    <span>Business demos</span>
-                  </Link>
                   <Link className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-petpal-ink no-underline transition hover:bg-petpal-soft" to="/pets" role="menuitem" onClick={() => setAccountMenuOpen(false)}>
-                    <span aria-hidden>🐾</span>
+                    <span aria-hidden>&#128062;</span>
                     <span>{t('nav.myPets')}</span>
+                  </Link>
+                  <Link className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-petpal-ink no-underline transition hover:bg-petpal-soft" to="/profile" role="menuitem" onClick={() => setAccountMenuOpen(false)}>
+                    <span aria-hidden>&#128100;</span>
+                    <span>{t('nav.profile')}</span>
                   </Link>
                   <button type="button" className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-bold text-red-600 transition hover:bg-red-50" role="menuitem" onClick={handleSignOut}>
                     <span aria-hidden>↩️</span>

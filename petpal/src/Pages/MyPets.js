@@ -82,6 +82,7 @@ export default function MyPets() {
   const [name, setName] = useState('');
   const [addDeviceId, setAddDeviceId] = useState('');
   const [breed, setBreed] = useState('');
+  const [gender, setGender] = useState('male');
   const [microchipNo, setMicrochipNo] = useState('');
   const [dateOfBirth, setDateOfBirth] = useState('');
   const [colorScheme, setColorScheme] = useState('');
@@ -98,6 +99,7 @@ export default function MyPets() {
   const [editCategoryId, setEditCategoryId] = useState('dog');
   const [editDevice, setEditDevice] = useState('');
   const [editBreed, setEditBreed] = useState('');
+  const [editGender, setEditGender] = useState('male');
   const [editDateOfBirth, setEditDateOfBirth] = useState('');
   const [editMicrochipNo, setEditMicrochipNo] = useState('');
   const [editColorScheme, setEditColorScheme] = useState('');
@@ -115,6 +117,14 @@ export default function MyPets() {
   const editPhotoInputId = useId();
   const addPhotoRef = useRef(null);
   const editPhotoRef = useRef(null);
+  const editingPet = useMemo(() => pets.find((p) => p.id === editingId) || null, [pets, editingId]);
+  const genderOptions = useMemo(
+    () => [
+      ['male', t('petPublic.male')],
+      ['female', t('petPublic.female')],
+    ],
+    [t]
+  );
 
   const filteredPets = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -177,21 +187,24 @@ export default function MyPets() {
   }, [location.hash]);
 
   useEffect(() => {
-    if (!addPetDrawerOpen) return;
+    if (!addPetDrawerOpen && !editingId) return;
     const onKey = (e) => {
-      if (e.key === 'Escape') setAddPetDrawerOpen(false);
+      if (e.key === 'Escape') {
+        setAddPetDrawerOpen(false);
+        setEditingId(null);
+      }
     };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, [addPetDrawerOpen]);
+  }, [addPetDrawerOpen, editingId]);
 
   useEffect(() => {
     // Prevent iOS/Android "page drag" behind the modal.
     const cls = 'pp-noScroll';
-    if (addPetDrawerOpen) document.body.classList.add(cls);
+    if (addPetDrawerOpen || editingId) document.body.classList.add(cls);
     else document.body.classList.remove(cls);
     return () => document.body.classList.remove(cls);
-  }, [addPetDrawerOpen]);
+  }, [addPetDrawerOpen, editingId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -253,6 +266,7 @@ export default function MyPets() {
     const createdPetId = await addPet({
       name: name.trim(),
       categoryId,
+      gender,
       trackingDeviceId: addDeviceId.trim() || null,
       breed,
       microchipNo,
@@ -289,6 +303,7 @@ export default function MyPets() {
     }
     setName('');
     setBreed('');
+    setGender('male');
     setMicrochipNo('');
     setDateOfBirth('');
     setAddDeviceId('');
@@ -307,6 +322,7 @@ export default function MyPets() {
     setEditCategoryId(p.categoryId);
     setEditDevice(p.trackingDeviceId || '');
     setEditBreed(p.breed || '');
+    setEditGender(p.gender === 'female' ? 'female' : 'male');
     setEditDateOfBirth(p.dateOfBirth || '');
     setEditMicrochipNo(p.microchipNo || '');
     setEditColorScheme(p.colorScheme || '');
@@ -355,6 +371,7 @@ export default function MyPets() {
     updatePet(editingId, {
       name: editName,
       categoryId: editCategoryId,
+      gender: editGender,
       trackingDeviceId: editDevice.trim() || null,
       breed: editBreed,
       dateOfBirth: editDateOfBirth,
@@ -462,175 +479,7 @@ export default function MyPets() {
             <ul className="pp-petList">
               {filteredPets.map((p) => (
                 <li key={p.id} className="pp-petList__item">
-                  {editingId === p.id ? (
-                    <form className="pp-form" onSubmit={saveEdit}>
-                      <div className="pp-modalGrid2">
-                        <div>
-                          <div className="pp-label">Category *</div>
-                          <PrettySelect value={editCategoryId} onChange={(e) => setEditCategoryId(e.target.value)}>
-                            {PET_CATEGORIES.map((c) => (
-                              <option key={c.id} value={c.id}>
-                                {c.emoji} {t(`categories.${c.id}`)}
-                              </option>
-                            ))}
-                          </PrettySelect>
-                        </div>
-                        <div>
-                          <div className="pp-label">Name *</div>
-                          <input className="pp-input" value={editName} onChange={(e) => setEditName(e.target.value)} required />
-                        </div>
-                      </div>
-
-                      <div className="pp-modalGrid2">
-                        <div>
-                          <div className="pp-label">Breed *</div>
-                          <input className="pp-input" value={editBreed} onChange={(e) => setEditBreed(e.target.value)} required />
-                        </div>
-                        <div>
-                          <div className="pp-label">Date of birth *</div>
-                          <input
-                            className="pp-input"
-                            type="date"
-                            value={editDateOfBirth}
-                            onChange={(e) => setEditDateOfBirth(e.target.value)}
-                            required
-                          />
-                        </div>
-                      </div>
-
-                      <div className="pp-modalGrid2">
-                        <div>
-                          <div className="pp-label">Color *</div>
-                          <input
-                            className="pp-input"
-                            value={editColorScheme}
-                            onChange={(e) => setEditColorScheme(e.target.value)}
-                            maxLength={120}
-                            placeholder={t('myPets.colorPh')}
-                            required
-                          />
-                        </div>
-                        <div>
-                          <div className="pp-label">Identifying Marks</div>
-                          <input
-                            className="pp-input"
-                            value={editIdentifyingMarks}
-                            onChange={(e) => setEditIdentifyingMarks(e.target.value)}
-                          />
-                        </div>
-                      </div>
-
-                      <div className="pp-modalGrid2">
-                        <div>
-                          <div className="pp-label">GPS device ID</div>
-                          <div className="pp-row" style={{ alignItems: 'stretch', gap: 8, flexWrap: 'wrap' }}>
-                            <input
-                              className="pp-input"
-                              style={{ flex: '1 1 160px', minWidth: 0 }}
-                              value={editDevice}
-                              onChange={(e) => setEditDevice(e.target.value)}
-                              placeholder={t('myPets.deviceIdPh')}
-                              inputMode="numeric"
-                            />
-                            <ImeiQrScannerButton onImei={onScanImeiEdit} disabled={editPhotoBusy} />
-                          </div>
-                        </div>
-                        <div>
-                          <div className="pp-label">Microchip No.</div>
-                          <input className="pp-input" value={editMicrochipNo} onChange={(e) => setEditMicrochipNo(e.target.value)} />
-                        </div>
-                      </div>
-
-                      <div>
-                        <div className="pp-label">Medical notes</div>
-                        <textarea
-                          className="pp-input"
-                          value={editDescription}
-                          onChange={(e) => setEditDescription(e.target.value)}
-                          maxLength={2000}
-                          style={{ minHeight: 72, resize: 'vertical' }}
-                          placeholder={t('myPets.shortNotes')}
-                        />
-                      </div>
-
-                      <div>
-                        <div className="pp-label">Friendly with</div>
-                        <p className="pp-subtle" style={{ fontSize: 12, marginTop: 0, marginBottom: 6 }}>
-                          Select where this pet is comfortable and social.
-                        </p>
-                        <div className="pp-row" style={{ gap: 8, flexWrap: 'wrap' }}>
-                          {[
-                            ['dogs', 'Dogs'],
-                            ['cats', 'Cats'],
-                            ['people', 'People'],
-                            ['children', 'Children'],
-                          ].map(([key, label]) => (
-                            <label key={key} className="pp-chipCheck">
-                              <input
-                                type="checkbox"
-                                checked={editFriendlyWith[key]}
-                                onChange={(e) => setEditFriendlyWith((s) => ({ ...s, [key]: e.target.checked }))}
-                              />
-                              <span>{label}</span>
-                            </label>
-                          ))}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="pp-label">{t('myPets.profilePhoto')}</div>
-                        <div className="pp-row" style={{ alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-                          {p.photoUrl || p.photoDataUrl ? (
-                            <img
-                              src={p.photoUrl || p.photoDataUrl}
-                              alt=""
-                              className="pp-petAvatar"
-                              style={{ width: 56, height: 56 }}
-                            />
-                          ) : (
-                            <div
-                              className="pp-petAvatar pp-petAvatar--placeholder"
-                              style={{ width: 56, height: 56, fontSize: 28 }}
-                              aria-hidden
-                            >
-                              {getCategory(p).emoji}
-                            </div>
-                          )}
-                          <div style={{ flex: '1 1 200px' }}>
-                            <input
-                              id={editPhotoInputId}
-                              ref={editPhotoRef}
-                              type="file"
-                              accept="image/*"
-                              className="pp-input"
-                              style={{ fontSize: 14 }}
-                            />
-                            {p.photoUrl || p.photoDataUrl ? (
-                              <button
-                                type="button"
-                                className="pp-link"
-                                style={{ display: 'block', marginTop: 6, padding: 0, fontSize: 12 }}
-                                onClick={async () => {
-                                  await deletePetPhoto({ photoStoragePath: p.photoStoragePath, photoUrl: p.photoUrl });
-                                  updatePet(editingId, { photoUrl: null, photoStoragePath: null, photoDataUrl: null });
-                                }}
-                              >
-                                {t('myPets.removePhoto')}
-                              </button>
-                            ) : null}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="pp-row" style={{ gap: 8 }}>
-                        <button type="submit" className="pp-btn pp-btnPrimary" disabled={editPhotoBusy}>
-                          {editPhotoBusy ? t('myPets.processing') : t('common.save')}
-                        </button>
-                        <button type="button" className="pp-btn" onClick={() => setEditingId(null)}>
-                          {t('common.cancel')}
-                        </button>
-                      </div>
-                    </form>
-                  ) : (
-                    <>
+                  <>
                       <div className="pp-petList__row" style={{ alignItems: 'flex-start', justifyContent: 'space-between' }}>
                         <div style={{ display: 'flex', gap: 12, flex: 1, minWidth: 0 }}>
                           <button
@@ -736,8 +585,7 @@ export default function MyPets() {
                           <IconMedPill />
                         </button>
                       </div>
-                    </>
-                  )}
+                  </>
                 </li>
               ))}
             </ul>
@@ -803,12 +651,22 @@ export default function MyPets() {
                   <input className="pp-input" value={breed} onChange={(e) => setBreed(e.target.value)} required />
                 </div>
                 <div>
-                  <div className="pp-label">Date of birth *</div>
-                  <input className="pp-input" type="date" value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)} required />
+                  <div className="pp-label">Gender</div>
+                  <PrettySelect value={gender} onChange={(e) => setGender(e.target.value)}>
+                    {genderOptions.map(([value, label]) => (
+                      <option key={value} value={value}>
+                        {label}
+                      </option>
+                    ))}
+                  </PrettySelect>
                 </div>
               </div>
 
               <div className="pp-modalGrid2">
+                <div>
+                  <div className="pp-label">Date of birth *</div>
+                  <input className="pp-input" type="date" value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)} required />
+                </div>
                 <div>
                   <div className="pp-label">Color *</div>
                   <input
@@ -927,6 +785,191 @@ export default function MyPets() {
                   disabled={!name.trim() || !breed.trim() || !dateOfBirth || !colorScheme.trim() || addPhotoBusy}
                 >
                   {addPhotoBusy ? t('myPets.processing') : t('myPets.addPet')}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      ) : null}
+
+      {editingPet ? (
+        <div className="pp-modalWrap" role="dialog" aria-modal="true" aria-labelledby="edit-pet-title">
+          <button
+            type="button"
+            className="pp-modalBackdrop"
+            aria-label={t('common.cancel')}
+            onClick={() => setEditingId(null)}
+          />
+          <div className="pp-modalCard pp-modalCard--petEdit">
+            <div className="pp-modalHead">
+              <div>
+                <h2 id="edit-pet-title" className="pp-sectionTitle" style={{ margin: 0 }}>
+                  {t('myPets.edit')} {editingPet.name || ''}
+                </h2>
+                <p className="pp-subtle" style={{ margin: '6px 0 0' }}>
+                  Update pet details, tracker ID, and profile picture.
+                </p>
+              </div>
+              <button
+                type="button"
+                className="pp-btn"
+                onClick={() => setEditingId(null)}
+                aria-label={t('common.cancel')}
+                title={t('common.cancel')}
+              >
+                ✕
+              </button>
+            </div>
+
+            <form className="pp-form pp-modalForm" onSubmit={saveEdit}>
+              <div className="pp-modalGrid2">
+                <div>
+                  <div className="pp-label">Category *</div>
+                  <PrettySelect value={editCategoryId} onChange={(e) => setEditCategoryId(e.target.value)}>
+                    {PET_CATEGORIES.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.emoji} {t(`categories.${c.id}`)}
+                      </option>
+                    ))}
+                  </PrettySelect>
+                </div>
+                <div>
+                  <div className="pp-label">Name *</div>
+                  <input
+                    className="pp-input"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    placeholder={t('myPets.namePh')}
+                    autoComplete="off"
+                    autoFocus
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="pp-modalGrid2">
+                <div>
+                  <div className="pp-label">Breed *</div>
+                  <input className="pp-input" value={editBreed} onChange={(e) => setEditBreed(e.target.value)} required />
+                </div>
+                <div>
+                  <div className="pp-label">Gender</div>
+                  <PrettySelect value={editGender} onChange={(e) => setEditGender(e.target.value)}>
+                    {genderOptions.map(([value, label]) => (
+                      <option key={value} value={value}>
+                        {label}
+                      </option>
+                    ))}
+                  </PrettySelect>
+                </div>
+              </div>
+
+              <div className="pp-modalGrid2">
+                <div>
+                  <div className="pp-label">Date of birth *</div>
+                  <input className="pp-input" type="date" value={editDateOfBirth} onChange={(e) => setEditDateOfBirth(e.target.value)} required />
+                </div>
+                <div>
+                  <div className="pp-label">Color *</div>
+                  <input
+                    className="pp-input"
+                    value={editColorScheme}
+                    onChange={(e) => setEditColorScheme(e.target.value)}
+                    maxLength={120}
+                    placeholder={t('myPets.colorPh')}
+                    autoComplete="off"
+                    required
+                  />
+                </div>
+                <div>
+                  <div className="pp-label">Identifying Marks</div>
+                  <input className="pp-input" value={editIdentifyingMarks} onChange={(e) => setEditIdentifyingMarks(e.target.value)} />
+                </div>
+              </div>
+
+              <div className="pp-modalGrid2">
+                <div>
+                  <div className="pp-label">GPS device ID</div>
+                  <div className="pp-row" style={{ alignItems: 'stretch', gap: 8, flexWrap: 'wrap' }}>
+                    <input
+                      className="pp-input"
+                      style={{ flex: '1 1 160px', minWidth: 0 }}
+                      value={editDevice}
+                      onChange={(e) => setEditDevice(e.target.value)}
+                      placeholder={t('myPets.deviceIdPh')}
+                      autoComplete="off"
+                      inputMode="numeric"
+                    />
+                    <ImeiQrScannerButton onImei={onScanImeiEdit} disabled={editPhotoBusy} />
+                  </div>
+                </div>
+                <div>
+                  <div className="pp-label">Microchip No.</div>
+                  <input className="pp-input" value={editMicrochipNo} onChange={(e) => setEditMicrochipNo(e.target.value)} />
+                </div>
+              </div>
+
+              <div>
+                <div className="pp-label">Description</div>
+                <textarea
+                  className="pp-input"
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
+                  maxLength={2000}
+                  style={{ minHeight: 80, resize: 'vertical' }}
+                />
+              </div>
+
+              <div>
+                <div className="pp-label">Friendly with</div>
+                <p className="pp-subtle" style={{ fontSize: 12, marginTop: 0, marginBottom: 6 }}>
+                  Select where this pet is comfortable and social.
+                </p>
+                <div className="pp-row" style={{ gap: 8, flexWrap: 'wrap' }}>
+                  {[
+                    ['dogs', 'Dogs'],
+                    ['cats', 'Cats'],
+                    ['people', 'People'],
+                    ['children', 'Children'],
+                  ].map(([key, label]) => (
+                    <label key={key} className="pp-chipCheck">
+                      <input
+                        type="checkbox"
+                        checked={editFriendlyWith[key]}
+                        onChange={(e) => setEditFriendlyWith((s) => ({ ...s, [key]: e.target.checked }))}
+                      />
+                      <span>{label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <div className="pp-label">{t('myPets.photo')}</div>
+                <input
+                  id={editPhotoInputId}
+                  ref={editPhotoRef}
+                  type="file"
+                  accept="image/*"
+                  className="pp-input"
+                  style={{ fontSize: 14 }}
+                />
+              </div>
+
+              <p className="pp-subtle" style={{ fontSize: 12, marginTop: 4, marginBottom: 0 }}>
+                {t('myPets.photoHint')}
+              </p>
+
+              <div className="pp-modalActions">
+                <button type="button" className="pp-btn" onClick={() => setEditingId(null)}>
+                  {t('common.cancel')}
+                </button>
+                <button
+                  type="submit"
+                  className="pp-btn pp-btnPrimary"
+                  disabled={!editName.trim() || !editBreed.trim() || !editDateOfBirth || !editColorScheme.trim() || editPhotoBusy}
+                >
+                  {editPhotoBusy ? t('myPets.processing') : t('myPets.save')}
                 </button>
               </div>
             </form>
