@@ -732,6 +732,7 @@ const ru = {
     notMoving: 'Не движется',
     historyEyebrow: 'История трекера',
     historyTitle: 'Даты',
+    historyDeviceHint: 'Маршрут для tracker {imei}',
     historyRouteTitle: 'Карта маршрута',
     historyPlay: 'Воспроизвести',
     historyPause: 'Пауза',

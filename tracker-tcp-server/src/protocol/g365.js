@@ -154,7 +154,56 @@ function tryFormatBasedFrameLength(buf, start) {
     if (contentLen === 0x01) return 7;
   }
 
+  // Basic status 0x13: length byte is often 0x07 but frame is 11 bytes (5-byte status body).
+  if (protocol === 0x13) {
+    const basicTotal = start + 11;
+    if (buf.length >= basicTotal && buf.readUInt16BE(basicTotal - 2) === FOOTER) {
+      return 11;
+    }
+  }
+
+  // GPS 0x10/0x11 fallback: only when standard length byte does not match footer
+  // (some pet collars omit altitude/alarm bytes from the length count).
+  if (protocol === 0x10 || protocol === 0x11) {
+    if (!g365ContentMatchesLengthByte(buf, start)) {
+      for (let total = 24; total <= 28; total++) {
+        if (buf.length >= start + total && buf.readUInt16BE(start + total - 2) === FOOTER) {
+          return total;
+        }
+      }
+    }
+  }
+
   return null;
+}
+
+/** Content bytes for standard 7878 frames when the length byte matches the wire footer. */
+function g365StandardContentEnd(frame, start = 0) {
+  const contentLen = frame.readUInt8(start + 2);
+  return start + 3 + contentLen;
+}
+
+function g365ContentMatchesLengthByte(frame, start = 0) {
+  const end = g365StandardContentEnd(frame, start);
+  return end + 2 <= frame.length && frame.readUInt16BE(end) === FOOTER;
+}
+
+/**
+ * Slice protocol + payload. Prefer the length byte (365GPS spec / most trackers);
+ * fall back to wire footer only when the length byte does not match (some pet collars).
+ */
+function g365ContentSlice(frame, start = 0) {
+  if (g365ContentMatchesLengthByte(frame, start)) {
+    return frame.subarray(start + 3, g365StandardContentEnd(frame, start));
+  }
+  return frame.subarray(start + 3, frame.length - 2);
+}
+
+/** Accept coords when positioned flag is set, or extended-body firmware with satellites. */
+function g365CoordsAccepted(gps, payloadLength) {
+  if (!parsedCoordsUsable(gps)) return false;
+  if (gps.gpsValid) return true;
+  return payloadLength > 18 && gps.satellites != null && gps.satellites > 0;
 }
 
 function frameLengthAt(buf, start) {
@@ -361,9 +410,11 @@ function parseG365Packet(frame, sessionImei = null) {
     content = frame.subarray(2, frame.length - 2);
     dateTime6 = frame.subarray(4, 10);
   } else {
-    const contentLen = frame.readUInt8(2);
     protocol = frame.readUInt8(3);
-    content = frame.subarray(3, 3 + contentLen);
+    content =
+      protocol === 0x10 || protocol === 0x11
+        ? g365ContentSlice(frame)
+        : frame.subarray(3, g365StandardContentEnd(frame));
     const payload = content.subarray(1);
     if (protocol === 0x10 || protocol === 0x11) {
       dateTime6 = payload.subarray(0, 6);
@@ -401,7 +452,7 @@ function parseG365Packet(frame, sessionImei = null) {
     const payload = content.subarray(1);
     const gps = parseG365GpsBody(payload, protocol);
     if (!gps) return { ...base, needsAck: true, dateTime6 };
-    const coordsOk = parsedCoordsUsable(gps) && gps.gpsValid;
+    const coordsOk = g365CoordsAccepted(gps, payload.length);
     return {
       ...base,
       needsAck: true,

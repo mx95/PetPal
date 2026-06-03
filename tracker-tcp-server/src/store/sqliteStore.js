@@ -136,14 +136,15 @@ function createSqliteStore({ dbPath }) {
   const mem = createMemoryStore();
   const sqlite = openSqlite(dbPath);
 
-  function persistFromMemory(imei) {
+  function persistFromMemory(imei, { recordPosition = false } = {}) {
     const rec = mem.get(imei);
     if (!rec) return;
 
-    const dRow = toDeviceRow(rec);
+    const dRow = toDeviceRow({ ...rec, imei: String(imei) });
     if (dRow) sqlite.upsertDevice.run(dRow);
 
-    const pRow = toPositionRow(rec);
+    if (!recordPosition) return;
+    const pRow = toPositionRow({ ...rec, imei: String(imei) });
     if (pRow) sqlite.insertPosition.run(pRow);
   }
 
@@ -158,8 +159,8 @@ function createSqliteStore({ dbPath }) {
     },
 
     upsert(imei, data) {
-      mem.upsert(imei, data);
-      persistFromMemory(imei);
+      const recordPosition = mem.upsert(imei, data);
+      persistFromMemory(imei, { recordPosition });
     },
 
     list() {
@@ -333,6 +334,10 @@ function createSqliteStore({ dbPath }) {
         last_update: row?.last_update ?? new Date().toISOString(),
       });
       return true;
+    },
+
+    close() {
+      sqlite.db.close();
     },
   };
 }

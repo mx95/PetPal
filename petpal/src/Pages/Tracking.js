@@ -535,15 +535,34 @@ export default function Tracking() {
 
   const selectedPet = useMemo(() => pets.find((p) => p.id === selectedPetId), [pets, selectedPetId]);
 
-  /** Typed IMEI wins; otherwise use value saved on the pet (avoids empty requests if the field was cleared). */
-  const effectiveDeviceId = useMemo(
-    () => (deviceId.trim() || selectedPet?.trackingDeviceId?.trim() || ''),
-    [deviceId, selectedPet?.trackingDeviceId]
-  );
-
   const savedDeviceIdTrimmed = useMemo(() => (selectedPet?.trackingDeviceId || '').trim(), [selectedPet?.trackingDeviceId]);
 
   const imeiDirty = savedDeviceIdTrimmed !== deviceId.trim();
+
+  /** Saved pet IMEI unless the user is actively editing the field for this pet. */
+  const effectiveDeviceId = useMemo(() => {
+    const saved = selectedPet?.trackingDeviceId?.trim() || '';
+    const typed = deviceId.trim();
+    if (imeiDirty && typed) return typed;
+    return saved || typed;
+  }, [deviceId, selectedPet?.trackingDeviceId, imeiDirty]);
+
+  const selectPetForTracking = useCallback((pet) => {
+    if (!pet?.id) return;
+    setSelectedPetId(pet.id);
+    setDeviceId(pet.trackingDeviceId || '');
+    setPosition(null);
+    setError('');
+    trustedLiveAnchorRef.current = null;
+    setLiveHistoryFallback(null);
+    setLiveTrail([]);
+    setHistoryPoints([]);
+    setHistoryIndex(0);
+    setHistoryError('');
+    setHistoryCalendarMatch(true);
+    setHistoryTotalInRange(null);
+    setHistoryTruncated(false);
+  }, []);
 
   useEffect(() => {
     if (pets.length === 0) {
@@ -616,6 +635,12 @@ export default function Tracking() {
     trustedLiveAnchorRef.current = null;
     setLiveHistoryFallback(null);
     setLiveTrail([]);
+    setHistoryPoints([]);
+    setHistoryIndex(0);
+    setHistoryError('');
+    setHistoryCalendarMatch(true);
+    setHistoryTotalInRange(null);
+    setHistoryTruncated(false);
   }, [effectiveDeviceId]);
 
   useEffect(() => {
@@ -842,12 +867,10 @@ export default function Tracking() {
     return accuracyRadiusMeters(mapPosition || position);
   }, [mapPosition, position, liveMapCoords]);
 
-  const filteredHistory = useMemo(() => {
-    const filtered = filterHistoryPoints(resolvedHistory, historyRange);
-    if (filtered.length > 0) return filtered;
-    if (resolvedHistory.length > 0) return resolvedHistory;
-    return filtered;
-  }, [resolvedHistory, historyRange]);
+  const filteredHistory = useMemo(
+    () => filterHistoryPoints(resolvedHistory, historyRange),
+    [resolvedHistory, historyRange]
+  );
 
   const historyRangeFallback = useMemo(
     () => !historyCalendarMatch && historyPoints.length > 0 && filterHistoryPoints(resolvedHistory, historyRange).length === 0,
@@ -1160,7 +1183,7 @@ export default function Tracking() {
               key={p.id}
               type="button"
               className={`pp-trackPetCard ${selectedPetId === p.id ? 'pp-trackPetCard--on' : ''}`}
-              onClick={() => setSelectedPetId(p.id)}
+              onClick={() => selectPetForTracking(p)}
             >
               <PetAvatar pet={p} size={36} />
               <span className="pp-trackPetCard__name">{p.name}</span>
@@ -1337,6 +1360,13 @@ export default function Tracking() {
               <div className="pp-trackHistoryMap__top">
                 <div>
                   <h3>{t('trackingPage.historyRouteTitle')}</h3>
+                  {effectiveDeviceId ? (
+                    <p className="pp-subtle pp-trackHistoryMap__device">
+                      {selectedPet
+                        ? `${selectedPet.name} · ${t('trackingPage.historyDeviceHint', { imei: effectiveDeviceId })}`
+                        : t('trackingPage.historyDeviceHint', { imei: effectiveDeviceId })}
+                    </p>
+                  ) : null}
                   {historyLoading ? <p className="pp-subtle">{t('trackingPage.historyLoading')}</p> : null}
                   {!historyLoading && mapHistoryPoints.length > 0 ? (
                     <p className="pp-subtle pp-trackHistoryMap__sub">

@@ -45,10 +45,10 @@ test("g365 — login frame with unreliable length byte 0x0D (real device)", () =
   assert.equal(toHex(buildG365AckForParsed(parsed, frames[0])), "787801010D0A");
 });
 
-test("g365 — GPS 0x10 example from spec", () => {
+test("g365 — GPS 0x10 example from spec (861261021497967-style standard length)", () => {
   // Vendor PDF lists length 0x12; actual frame needs 0x13 (protocol + 18-byte GPS body).
   const frame = hex("787813100A03170F32179C026B3F3E0C22AD651F34600D0A");
-  const parsed = parseG365Packet(frame, "123456789012345");
+  const parsed = parseG365Packet(frame, "861261021497967");
   assert.equal(parsed.protocol, 0x10);
   assert.equal(parsed.gpsValid, true);
   assert.ok(parsed.gps.lat > 0);
@@ -114,6 +114,35 @@ test("g365 — 0x13 status echo ACK", () => {
   assert.equal(parsed.deviceStatus.signal, 0x64);
   const ack = buildG365AckForParsed(parsed, frame);
   assert.equal(toHex(ack), toHex(frame));
+});
+
+test("g365 — basic 0x13 status with wrong length byte 0x07 (real device)", () => {
+  const frame = hex("787807136409032C3E0D0A");
+  const { frames, rest } = extractFramesFromStream(frame);
+  assert.equal(frames.length, 1);
+  assert.equal(rest.length, 0);
+  assert.equal(frames[0].length, 11);
+
+  const parsed = parseG365Packet(frames[0], "861991080050311");
+  assert.equal(parsed.protocol, 0x13);
+  assert.equal(parsed.deviceStatus.battery, 0x64);
+  assert.equal(parsed.deviceStatus.signal, 0x3e);
+});
+
+test("g365 — GPS 0x10 with short length byte 0x14 (861991080050311 pet collar)", () => {
+  const frame = hex("787814101A0603161C039A03C0E3C603A193CE001400002F0D0A");
+  const { frames, rest } = extractFramesFromStream(frame);
+  assert.equal(frames.length, 1);
+  assert.equal(rest.length, 0);
+  assert.equal(frames[0].length, 26);
+
+  const parsed = parseG365Packet(frames[0], "861991080050311");
+  assert.equal(parsed.protocol, 0x10);
+  assert.equal(parsed.source, "gps");
+  assert.equal(parsed.gpsValid, true);
+  assert.ok(parsed.gps.lat > 34 && parsed.gps.lat < 36);
+  assert.ok(parsed.gps.lng > 32 && parsed.gps.lng < 35);
+  assert.equal(parsed.gps.satellites, 10);
 });
 
 test("g365 — stream splits mid-frame then completes", () => {

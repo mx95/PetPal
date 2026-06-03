@@ -246,7 +246,12 @@ function createG365TcpServer({ port, store }) {
         });
 
         if (imei) {
-          store.upsert(imei, parsed);
+          store.upsert(imei, {
+            ...parsed,
+            imei,
+            provider: "g365",
+            receivedAt: receivedAt.toISOString(),
+          });
           store.bindSocket(imei, socket);
           scheduleG365LbsGeocode(store, imei, parsed);
         }

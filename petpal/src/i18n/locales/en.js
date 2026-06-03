@@ -852,6 +852,7 @@ const en = {
     notMoving: 'Not moving',
     historyEyebrow: 'Tracker history',
     historyTitle: 'Dates',
+    historyDeviceHint: 'Route for tracker {imei}',
     historyRouteTitle: 'Route map',
     historyPlay: 'Play route',
     historyPause: 'Pause',

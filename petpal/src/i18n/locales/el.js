@@ -731,6 +731,7 @@ const el = {
     notMoving: 'Χωρίς κίνηση',
     historyEyebrow: 'Ιστορικό tracker',
     historyTitle: 'Ημερομηνίες',
+    historyDeviceHint: 'Διαδρομή για tracker {imei}',
     historyRouteTitle: 'Χάρτης διαδρομής',
     historyPlay: 'Αναπαραγωγή',
     historyPause: 'Παύση',

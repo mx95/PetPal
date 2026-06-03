@@ -186,13 +186,6 @@ app.get("/api/app/history", (req, res) => {
       history.length > 0 &&
       totalInRange > history.length;
   }
-  if (from && to && Array.isArray(history) && history.length === 0) {
-    const lim = Math.min(10000, Number.isFinite(limit) && limit > 0 ? Math.floor(limit) : 5000);
-    history = store.history(imei, { limit: lim });
-    calendarMatch = false;
-    totalInRange = null;
-    truncated = false;
-  }
   res.json({ imei, history, calendarMatch, totalInRange, truncated });
 });
 

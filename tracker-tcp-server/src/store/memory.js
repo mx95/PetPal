@@ -36,14 +36,27 @@ function toHexString(buf) {
   return Buffer.isBuffer(buf) ? buf.toString("hex").toUpperCase() : null;
 }
 
-function normalizeIncomingDevice(prev, incoming) {
+function incomingHasNewLocationFix(p) {
+  if (!p || typeof p !== "object") return false;
+  const gps = p.gps || {};
+  const loc = p.location || null;
+  const lat = gps.lat != null ? Number(gps.lat) : loc?.lat != null ? Number(loc.lat) : Number.NaN;
+  const lng = gps.lng != null ? Number(gps.lng) : loc?.lng != null ? Number(loc.lng) : Number.NaN;
+  return isPlausibleLatLng(lat, lng);
+}
+
+function normalizeIncomingDevice(prev, incoming, canonicalImei = null) {
   // Back-compat: allow pre-shaped records (seed fixtures).
   if (incoming && incoming.location && typeof incoming === "object") {
-    return mergeDeviceRecord(prev, incoming);
+    return mergeDeviceRecord(prev, {
+      ...incoming,
+      imei: canonicalImei || incoming.imei || prev?.imei || null,
+      _recordPosition: incomingHasNewLocationFix(incoming),
+    });
   }
 
   const p = incoming && typeof incoming === "object" ? incoming : {};
-  const imei = String(p.imei || prev?.imei || "").trim();
+  const imei = String(canonicalImei || p.imei || prev?.imei || "").trim();
   if (!imei) return mergeDeviceRecord(prev, incoming);
 
   const ds = p.deviceStatus || {};
@@ -100,6 +113,7 @@ function normalizeIncomingDevice(prev, incoming) {
   next.gps = next.location
     ? { lat: next.location.lat, lng: next.location.lng, speedKmh: next.speed, timestamp: ds.timestamp ?? gps.timestamp ?? null }
     : { lat: null, lng: null, speedKmh: next.speed, timestamp: ds.timestamp ?? gps.timestamp ?? null };
+  next._recordPosition = incomingHasNewLocationFix(p);
 
   return mergeDeviceRecord(prev, next);
 }
@@ -185,11 +199,15 @@ function createMemoryStore() {
 
   return {
     upsert(imei, data) {
-      if (!imei) return;
+      if (!imei) return false;
       const key = String(imei);
       const prev = devices.get(key);
-      const normalized = normalizeIncomingDevice(prev, data);
+      const normalized = normalizeIncomingDevice(prev, data, key);
+      const recordPosition = Boolean(normalized._recordPosition);
+      delete normalized._recordPosition;
+      normalized.imei = key;
       devices.set(key, normalized);
+      return recordPosition;
     },
     list() {
       return Array.from(devices.values());
