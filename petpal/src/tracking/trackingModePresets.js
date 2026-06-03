@@ -47,6 +47,19 @@ export function getTrackingModePreset(id) {
   return TRACKING_MODE_PRESETS.find((p) => p.id === id);
 }
 
+/** Xexun tk= bodies keyed by the same battery plan ids as 365GPS collars. */
+export const XEXUN_BATTERY_PLANS = {
+  long_life: { p1: 1, p2: 600, p3: 2, p4: 3600, p5: 0, p6: 0, p7: 20 },
+  balanced: { p1: 1, p2: 300, p3: 2, p4: 3600, p5: 0, p6: 0, p7: 20 },
+  regular: { p1: 1, p2: 180, p3: 2, p4: 3600, p5: 0, p6: 0, p7: 20 },
+  active: { p1: 1, p2: 60, p3: 2, p4: 3600, p5: 0, p6: 0, p7: 20 },
+};
+
+/** @param {string} planId */
+export function getXexunBatteryPlan(planId) {
+  return XEXUN_BATTERY_PLANS[planId] ?? null;
+}
+
 /** @param {TrackingModePreset} preset */
 export function presetToTkBody(preset) {
   return {

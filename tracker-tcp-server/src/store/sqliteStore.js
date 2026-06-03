@@ -36,6 +36,7 @@ function toDeviceRow(rec) {
     battery: rec.battery ?? null,
     signal: rec.signal ?? null,
     source: rec.source ?? null,
+    provider: rec.provider ?? null,
     last_update: rec.lastUpdate ?? rec.receivedAt ?? null
   };
 }
@@ -104,6 +105,7 @@ function deviceFromRow(row) {
     battery: row.battery ?? null,
     signal: row.signal ?? null,
     source,
+    provider: row.provider ?? null,
     atHomeWifi: wifiSource,
     homeLocation,
     lastUpdate: row.last_update ?? null,

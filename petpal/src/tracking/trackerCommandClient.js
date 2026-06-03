@@ -1,4 +1,4 @@
-import { getTrackingModePreset, presetToTkBody } from './trackingModePresets';
+import { getTrackingModePreset, getXexunBatteryPlan, presetToTkBody } from './trackingModePresets';
 import { resolveTrackerHttpBase } from './trackingWifiFeature';
 
 function trackerApiBase() {
@@ -53,6 +53,16 @@ export async function applyTrackingModePreset(imei, presetId) {
   return postTrackerCommand('/api/tracker/commands/tracking', {
     imei: String(imei).trim(),
     ...presetToTkBody(preset),
+  });
+}
+
+/** @param {string} imei @param {string} planId long_life|balanced|regular|active */
+export async function applyXexunBatteryPlan(imei, planId) {
+  const plan = getXexunBatteryPlan(planId);
+  if (!plan) throw new Error('invalid_preset');
+  return postTrackerCommand('/api/tracker/commands/tracking', {
+    imei: String(imei).trim(),
+    ...plan,
   });
 }
 

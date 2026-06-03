@@ -273,7 +273,7 @@ function createTcpServer({ port, store }) {
           );
         }
 
-        store.upsert(parsed.imei, parsed);
+        store.upsert(parsed.imei, { ...parsed, provider: "xexun" });
         store.bindSocket(parsed.imei, socket);
         if (parsed.messageId === 0x21 && typeof store.markLatestCommandAcked === "function") {
           store.markLatestCommandAcked({ imei: parsed.imei });

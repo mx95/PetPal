@@ -12,6 +12,24 @@ const { registerG365HttpApi } = require("./http/g365ApiRoutes");
 const { logPrefix } = require("./logging/time");
 const { buildPositionPayload } = require("./http/positionPayload");
 
+function inferDeviceProvider(d) {
+  if (!d || typeof d !== "object") return null;
+  if (d.provider === "g365" || d.provider === "xexun") return d.provider;
+  if (d.protocol != null && Number.isFinite(Number(d.protocol))) return "g365";
+  const raw = String(d.raw || d.rawHex || d.received || "")
+    .replace(/\s+/g, "")
+    .toUpperCase();
+  if (raw.startsWith("FC")) return "xexun";
+  if (raw.startsWith("7878")) return "g365";
+  return null;
+}
+
+function withProvider(d) {
+  if (!d) return d;
+  const provider = inferDeviceProvider(d);
+  return provider && d.provider !== provider ? { ...d, provider } : d;
+}
+
 const TCP_PORT = Number(process.env.TCP_PORT || 5001);
 const GPS365_TCP_PORT = Number(process.env.GPS365_TCP_PORT || 5003);
 const HTTP_PORT = Number(process.env.HTTP_PORT || 5002);
@@ -152,7 +170,7 @@ app.get("/api/app/devices", (req, res) => {
 app.get("/api/app/devices/:imei", (req, res) => {
   const d = store.get(req.params.imei);
   if (!d) return res.status(404).json({ error: "not_found" });
-  res.json(d);
+  res.json(withProvider(d));
 });
 
 app.get("/api/app/position", (req, res) => {
@@ -160,7 +178,7 @@ app.get("/api/app/position", (req, res) => {
   if (!imei) return res.status(400).json({ error: "missing_deviceId" });
   const d = store.get(imei);
   if (!d) return res.status(404).json({ error: "not_found" });
-  const payload = buildPositionPayload(imei, d);
+  const payload = buildPositionPayload(imei, withProvider(d));
   if (payload.error === "no_position") return res.status(404).json({ error: "no_position" });
   res.json(payload);
 });

@@ -109,6 +109,11 @@ function openSqlite(dbPath) {
   } catch {
     /* column exists */
   }
+  try {
+    db.exec(`ALTER TABLE devices ADD COLUMN provider TEXT`);
+  } catch {
+    /* column exists */
+  }
   db.exec(`
     UPDATE positions
     SET received_at = timestamp
@@ -120,8 +125,8 @@ function openSqlite(dbPath) {
   `);
 
   const upsertDevice = db.prepare(`
-    INSERT INTO devices (imei, name, last_lat, last_lng, home_lat, home_lng, battery, signal, source, last_update)
-    VALUES (@imei, @name, @last_lat, @last_lng, @home_lat, @home_lng, @battery, @signal, @source, @last_update)
+    INSERT INTO devices (imei, name, last_lat, last_lng, home_lat, home_lng, battery, signal, source, provider, last_update)
+    VALUES (@imei, @name, @last_lat, @last_lng, @home_lat, @home_lng, @battery, @signal, @source, @provider, @last_update)
     ON CONFLICT(imei) DO UPDATE SET
       name = COALESCE(excluded.name, devices.name),
       last_lat = COALESCE(excluded.last_lat, devices.last_lat),
@@ -131,6 +136,7 @@ function openSqlite(dbPath) {
       battery = COALESCE(excluded.battery, devices.battery),
       signal = COALESCE(excluded.signal, devices.signal),
       source = COALESCE(excluded.source, devices.source),
+      provider = COALESCE(excluded.provider, devices.provider),
       last_update = COALESCE(excluded.last_update, devices.last_update)
   `);
 
@@ -176,13 +182,13 @@ function openSqlite(dbPath) {
   `);
 
   const listDevices = db.prepare(`
-    SELECT imei, name, last_lat, last_lng, home_lat, home_lng, battery, signal, source, last_update
+    SELECT imei, name, last_lat, last_lng, home_lat, home_lng, battery, signal, source, provider, last_update
     FROM devices
     ORDER BY last_update DESC
   `);
 
   const getDevice = db.prepare(`
-    SELECT imei, name, last_lat, last_lng, home_lat, home_lng, battery, signal, source, last_update
+    SELECT imei, name, last_lat, last_lng, home_lat, home_lng, battery, signal, source, provider, last_update
     FROM devices
     WHERE imei = ?
     LIMIT 1
