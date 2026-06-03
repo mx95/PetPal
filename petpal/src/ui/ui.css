@@ -18271,6 +18271,9 @@ html[data-theme="dark"] .pp-nearbyPartnerCard__name {
   background: linear-gradient(145deg, #f7f4ff, #e8e0ff);
   flex-shrink: 0;
   position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .pp-mapPetPin__img {
@@ -18284,8 +18287,11 @@ html[data-theme="dark"] .pp-nearbyPartnerCard__name {
 }
 
 .pp-mapPetPin__emoji {
-  font-size: 22px;
+  font-size: 24px;
   line-height: 1;
+  display: block;
+  text-align: center;
+  user-select: none;
 }
 
 .pp-mapPetPin__badge {
