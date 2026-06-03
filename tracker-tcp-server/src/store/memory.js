@@ -127,6 +127,12 @@ function mergeDeviceRecord(prev, incoming) {
   const merged = { ...incoming };
   if (!incoming.source && prev?.source) merged.source = prev.source;
   if (!incoming.atHomeWifi && prev?.atHomeWifi) merged.atHomeWifi = prev.atHomeWifi;
+  if (
+    (incoming.source === "gps" || incoming.source === "lbs") &&
+    hasValidGps(incoming.location)
+  ) {
+    merged.atHomeWifi = false;
+  }
   if ((!incoming.wifiBssids || incoming.wifiBssids.length === 0) && prev?.wifiBssids?.length) {
     merged.wifiBssids = prev.wifiBssids;
   }
@@ -137,14 +143,8 @@ function mergeDeviceRecord(prev, incoming) {
   if (incoming.source === "gps" && incoming.gpsValid !== false && hasValidGps(incoming.location)) {
     merged.homeLocation = { lat: incoming.location.lat, lng: incoming.location.lng };
   }
-  const incomingWifi =
-    incoming.atHomeWifi ||
-    incoming.source === "wifi" ||
-    (Array.isArray(incoming.wifiBssids) && incoming.wifiBssids.length > 0);
-  const prevWifi =
-    prev?.atHomeWifi ||
-    prev?.source === "wifi" ||
-    (Array.isArray(prev?.wifiBssids) && prev.wifiBssids.length > 0);
+  const incomingWifi = incoming.atHomeWifi || incoming.source === "wifi";
+  const prevWifi = prev?.atHomeWifi || prev?.source === "wifi";
   if (
     !incomingWifi &&
     prevWifi &&

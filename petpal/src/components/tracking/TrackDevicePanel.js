@@ -1,153 +1,140 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useI18n } from '../../i18n/I18nContext';
 import {
-  applyTrackingModePreset,
-  applyWifiBssids,
-  bssidSameRouterFamily,
-  fetchPendingCommands,
-  formatBssidInput,
-  isTrackerCommandsAvailable,
-  normalizeBssid,
-  pickBestScannedBssid,
-  queryTrackingMode,
-  queryWifiBssids,
-} from '../../tracking/trackerCommandClient';
-import { isTrackingGeolocationEnabled } from '../../tracking/trackingWifiFeature';
+  requestG365ManualPosition,
+  restartG365,
+  setG365StatusInterval,
+  setG365UploadInterval,
+  startG365Find,
+} from '../../tracking/g365CommandClient';
 import {
-  loadWifiNetworks,
-  newWifiNetworkEntry,
-  saveWifiNetworks,
-} from '../../tracking/wifiNetworkStorage';
-import { clearHomeAnchor, loadHomeAnchor } from '../../tracking/homeAnchorStorage';
-import { setHomeFromPhone } from '../../tracking/setHomeFromPhone';
+  applyTrackingModePreset,
+  fetchPendingCommands,
+  isTrackerCommandsAvailable,
+  queryTrackingMode,
+} from '../../tracking/trackerCommandClient';
 import IconTrackSource from '../icons/IconTrackSource';
 
-const SIMPLE_MODE_IDS = ['wifi_priority', 'gps_priority'];
+const XEXUN_MAIN_MODE = 'gps_priority';
+const XEXUN_ADVANCED_MODES = ['gps_only'];
+
+const G365_UPLOAD_PRESETS = [
+  { id: '60', seconds: 60 },
+  { id: '180', seconds: 180 },
+  { id: '300', seconds: 300 },
+  { id: '600', seconds: 600 },
+];
+
+const G365_STATUS_PRESETS = [
+  { id: '3', minutes: 3 },
+  { id: '5', minutes: 5 },
+  { id: '10', minutes: 10 },
+];
+
+/** User-facing plans — maps to upload + status intervals on the collar. */
+const G365_BATTERY_PLANS = [
+  { id: 'long_life', uploadSeconds: 600, statusMinutes: 10, batteryTier: 5 },
+  { id: 'balanced', uploadSeconds: 300, statusMinutes: 5, batteryTier: 4, recommended: true },
+  { id: 'regular', uploadSeconds: 180, statusMinutes: 5, batteryTier: 3 },
+  { id: 'active', uploadSeconds: 60, statusMinutes: 3, batteryTier: 2 },
+];
+
+function findG365Plan(uploadSeconds, statusMinutes) {
+  return G365_BATTERY_PLANS.find(
+    (p) => p.uploadSeconds === uploadSeconds && p.statusMinutes === statusMinutes
+  );
+}
+
+function commandErrorMessage(err, t) {
+  if (err?.code === 'TRACKER_API_NOT_CONFIGURED') return t('trackingPage.devicePanelNoApi');
+  if (err?.code === 'device_offline') return t('trackingPage.devicePanelG365Offline');
+  return err?.message || t('trackingPage.devicePanelFailed');
+}
+
+function BatteryUseMeter({ tier, label }) {
+  return (
+    <span className="pp-trackDeviceBattery" aria-label={label}>
+      <span className="pp-trackDeviceBattery__label">{label}</span>
+      <span className="pp-trackDeviceBattery__bars" aria-hidden>
+        {[1, 2, 3, 4, 5].map((n) => (
+          <span
+            key={n}
+            className={`pp-trackDeviceBattery__bar${n <= tier ? ' is-on' : ''}`}
+          />
+        ))}
+      </span>
+    </span>
+  );
+}
 
 /**
- * @param {{ imei: string, petName?: string, scannedBssids?: string[]|null, onHomeLocationUpdated?: () => void }} props
+ * @param {{ imei: string, petName?: string, provider?: string|null }} props
  */
-export default function TrackDevicePanel({
-  imei,
-  petName = '',
-  scannedBssids = null,
-  onHomeLocationUpdated,
-}) {
+export default function TrackDevicePanel({ imei, petName = '', provider = null }) {
   const { t } = useI18n();
   const commandsAvailable = isTrackerCommandsAvailable();
-  const geolocationEnabled = isTrackingGeolocationEnabled();
+  const isG365 = provider === 'g365';
 
-  const [modeId, setModeId] = useState('wifi_priority');
-  const [networks, setNetworks] = useState([]);
+  const [modeId, setModeId] = useState(XEXUN_MAIN_MODE);
+  const [planId, setPlanId] = useState('balanced');
+  const [uploadSeconds, setUploadSeconds] = useState(300);
+  const [statusMinutes, setStatusMinutes] = useState(5);
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState('');
   const [error, setError] = useState('');
   const [pending, setPending] = useState([]);
-  const [homeAnchor, setHomeAnchor] = useState(null);
 
-  useEffect(() => {
-    setHomeAnchor(imei ? loadHomeAnchor(imei) : null);
-  }, [imei]);
-
-  const handleSetHomeFromPhone = useCallback(() => {
-    if (!imei?.trim()) return;
-    setBusy(true);
-    setError('');
-    setHomeFromPhone(imei)
-      .then(() => {
-        setHomeAnchor(loadHomeAnchor(imei));
-        setStatus(t('trackingPage.devicePanelHomeSaved'));
-        onHomeLocationUpdated?.();
-      })
-      .catch((err) => {
-        if (err?.code === 'geo_unsupported') setError(t('trackingPage.devicePanelHomeGeoUnsupported'));
-        else setError(t('trackingPage.devicePanelHomeGeoDenied'));
-      })
-      .finally(() => setBusy(false));
-  }, [imei, onHomeLocationUpdated, t]);
-
-  const handleClearHome = useCallback(() => {
-    if (!imei?.trim()) return;
-    clearHomeAnchor(imei);
-    setHomeAnchor(null);
-    setStatus(t('trackingPage.devicePanelHomeCleared'));
-    onHomeLocationUpdated?.();
-  }, [imei, onHomeLocationUpdated, t]);
-
-  useEffect(() => {
-    if (!imei) {
-      setNetworks([]);
-      return;
-    }
-    const loaded = loadWifiNetworks(imei);
-    setNetworks(loaded.length ? loaded : [newWifiNetworkEntry()]);
-    setModeId('wifi_priority');
-    setStatus('');
-    setError('');
-  }, [imei]);
-
-  const validBssids = useMemo(
-    () => networks.map((n) => normalizeBssid(n.bssid)).filter(Boolean),
-    [networks]
+  const activePlan = useMemo(
+    () => findG365Plan(uploadSeconds, statusMinutes),
+    [uploadSeconds, statusMinutes]
   );
-
-  const detectedList = useMemo(
-    () => (Array.isArray(scannedBssids) ? scannedBssids.map(normalizeBssid).filter(Boolean) : []),
-    [scannedBssids]
-  );
-
-  const primaryUserBssid = validBssids[0] || null;
-  const bssidMismatch = useMemo(() => {
-    if (!primaryUserBssid || detectedList.length === 0) return false;
-    return !detectedList.some(
-      (s) => s === primaryUserBssid || bssidSameRouterFamily(primaryUserBssid, s)
-    );
-  }, [primaryUserBssid, detectedList]);
-
-  const suggestedBssid = useMemo(
-    () => pickBestScannedBssid(primaryUserBssid || '', detectedList),
-    [primaryUserBssid, detectedList]
-  );
-
-  const applySuggestedBssid = useCallback(() => {
-    if (!suggestedBssid || networks.length === 0) return;
-    const firstId = networks[0].id;
-    setNetworks((prev) =>
-      prev.map((n, i) => (i === 0 || n.id === firstId ? { ...n, bssid: suggestedBssid } : n))
-    );
-  }, [suggestedBssid, networks]);
 
   const refreshPending = useCallback(async () => {
-    if (!imei || !commandsAvailable) return;
+    if (!imei || !commandsAvailable || isG365) return;
     try {
       const data = await fetchPendingCommands(imei);
       setPending(Array.isArray(data?.pending) ? data.pending : []);
     } catch {
       setPending([]);
     }
-  }, [imei, commandsAvailable]);
+  }, [imei, commandsAvailable, isG365]);
 
   useEffect(() => {
     void refreshPending();
   }, [refreshPending]);
 
-  function updateNetwork(id, patch) {
-    setNetworks((prev) => prev.map((n) => (n.id === id ? { ...n, ...patch } : n)));
+  useEffect(() => {
+    setModeId(XEXUN_MAIN_MODE);
+    setPlanId('balanced');
+    setUploadSeconds(300);
+    setStatusMinutes(5);
+    setStatus('');
+    setError('');
+  }, [imei, provider]);
+
+  function selectG365Plan(id) {
+    const plan = G365_BATTERY_PLANS.find((p) => p.id === id);
+    if (!plan) return;
+    setPlanId(id);
+    setUploadSeconds(plan.uploadSeconds);
+    setStatusMinutes(plan.statusMinutes);
   }
 
-  function removeNetwork(id) {
-    setNetworks((prev) => (prev.length <= 1 ? prev : prev.filter((n) => n.id !== id)));
+  function handleAdvancedUpload(seconds) {
+    setUploadSeconds(seconds);
+    const match = findG365Plan(seconds, statusMinutes);
+    setPlanId(match?.id ?? 'custom');
   }
 
-  function addNetwork() {
-    setNetworks((prev) => [...prev, newWifiNetworkEntry()]);
+  function handleAdvancedStatus(minutes) {
+    setStatusMinutes(minutes);
+    const match = findG365Plan(uploadSeconds, minutes);
+    setPlanId(match?.id ?? 'custom');
   }
 
-  async function handleApply(e) {
-    e.preventDefault();
+  async function runCommand(fn) {
     setError('');
     setStatus('');
-
     if (!imei?.trim()) {
       setError(t('trackingPage.devicePanelNeedImei'));
       return;
@@ -156,54 +143,41 @@ export default function TrackDevicePanel({
       setError(t('trackingPage.devicePanelNoApi'));
       return;
     }
-    if (modeId === 'wifi_priority' && validBssids.length === 0) {
-      setError(t('trackingPage.devicePanelNeedWifi'));
-      return;
-    }
-
     setBusy(true);
     try {
-      saveWifiNetworks(imei, networks);
+      await fn();
+    } catch (err) {
+      setError(commandErrorMessage(err, t));
+    } finally {
+      setBusy(false);
+    }
+  }
 
+  async function handleXexunApply(e) {
+    e.preventDefault();
+    await runCommand(async () => {
       await applyTrackingModePreset(imei, modeId);
-
-      if (validBssids.length > 0) {
-        await applyWifiBssids(imei, validBssids);
-      }
-
       setStatus(t('trackingPage.devicePanelQueuedSimple'));
       await refreshPending();
-    } catch (err) {
-      if (err?.code === 'TRACKER_API_NOT_CONFIGURED') {
-        setError(t('trackingPage.devicePanelNoApi'));
-      } else {
-        setError(err?.message || t('trackingPage.devicePanelFailed'));
-      }
-    } finally {
-      setBusy(false);
-    }
+    });
   }
 
-  async function handleQuery() {
-    if (!imei?.trim() || !commandsAvailable) return;
-    setBusy(true);
-    setError('');
-    try {
+  async function handleXexunQuery() {
+    await runCommand(async () => {
       await queryTrackingMode(imei);
-      await queryWifiBssids(imei);
       setStatus(t('trackingPage.devicePanelQueryQueuedSimple'));
       await refreshPending();
-    } catch (err) {
-      setError(err?.message || t('trackingPage.devicePanelFailed'));
-    } finally {
-      setBusy(false);
-    }
+    });
   }
 
-  const applyLabel =
-    modeId === 'wifi_priority'
-      ? t('trackingPage.devicePanelApplyHome')
-      : t('trackingPage.devicePanelApply');
+  async function handleG365SaveIntervals(e) {
+    e.preventDefault();
+    await runCommand(async () => {
+      await setG365UploadInterval(imei, uploadSeconds);
+      await setG365StatusInterval(imei, statusMinutes);
+      setStatus(t('trackingPage.devicePanelPresetSaved'));
+    });
+  }
 
   return (
     <section className="pp-trackDevicePanel" aria-labelledby="pp-trackDevicePanel-title">
@@ -222,219 +196,250 @@ export default function TrackDevicePanel({
         </div>
       ) : null}
 
-      <form className="pp-trackDevicePanel__form" onSubmit={handleApply}>
-        <fieldset className="pp-trackDeviceModes">
-          <legend className="pp-trackDeviceModes__legend">{t('trackingPage.devicePanelModeLegend')}</legend>
-          <div className="pp-trackDeviceModes__grid">
-            {SIMPLE_MODE_IDS.map((id) => {
-              const active = modeId === id;
-              const iconKind = id === 'wifi_priority' ? 'wifi' : 'gps';
-              return (
-                <label key={id} className={`pp-trackDeviceMode${active ? ' is-active' : ''}`}>
-                  <input
-                    type="radio"
-                    name="trackingMode"
-                    value={id}
-                    checked={active}
-                    onChange={() => setModeId(id)}
-                  />
-                  {id === 'wifi_priority' ? (
-                    <span className="pp-trackDeviceMode__badge">{t('trackingPage.deviceModeRecommended')}</span>
-                  ) : null}
-                  <span className="pp-trackDeviceMode__icon" aria-hidden>
-                    <IconTrackSource kind={iconKind} size={22} />
-                  </span>
-                  <span className="pp-trackDeviceMode__copy">
-                    <strong>{t(`trackingPage.deviceMode_${id}`)}</strong>
-                    <span>{t(`trackingPage.deviceMode_${id}_desc`)}</span>
-                  </span>
-                </label>
-              );
-            })}
-          </div>
-        </fieldset>
-
-        {modeId === 'wifi_priority' ? (
-          <div className="pp-trackDeviceWifi pp-trackDeviceWifi--simple">
-            <div className="pp-trackDeviceWifi__head">
-              <h3>{t('trackingPage.devicePanelWifiTitle')}</h3>
-              <p className="pp-subtle">{t('trackingPage.devicePanelWifiHelpSimple')}</p>
-            </div>
-
-            {detectedList.length > 0 ? (
-              <div className="pp-trackDeviceWifi__detected" role="status">
-                <p className="pp-trackDeviceWifi__detectedTitle">{t('trackingPage.devicePanelWifiDetectedTitle')}</p>
-                <ul className="pp-trackDeviceWifi__detectedList">
-                  {detectedList.map((mac) => (
-                    <li key={mac}>
-                      <code>{mac}</code>
-                      {primaryUserBssid && bssidSameRouterFamily(primaryUserBssid, mac) && mac !== primaryUserBssid ? (
-                        <span className="pp-trackDeviceWifi__detectedTag">{t('trackingPage.devicePanelWifiDetectedMatch')}</span>
-                      ) : null}
-                    </li>
-                  ))}
-                </ul>
-                {bssidMismatch && suggestedBssid ? (
-                  <div className="pp-trackDeviceWifi__detectedFix">
-                    <p className="pp-subtle">{t('trackingPage.devicePanelWifiDetectedMismatch')}</p>
-                    <button type="button" className="pp-btn pp-btn--ghost" onClick={applySuggestedBssid}>
-                      {t('trackingPage.devicePanelWifiUseDetected', { bssid: suggestedBssid })}
-                    </button>
-                  </div>
-                ) : null}
-              </div>
-            ) : null}
-
-            <ul className="pp-trackDeviceWifi__list">
-              {networks.map((n, index) => {
-                const valid = normalizeBssid(n.bssid);
-                const showRemove = networks.length > 1;
+      {isG365 ? (
+        <form className="pp-trackDevicePanel__form" onSubmit={(e) => void handleG365SaveIntervals(e)}>
+          <fieldset className="pp-trackDeviceModes">
+            <legend className="pp-trackDeviceModes__legend">{t('trackingPage.devicePanelBatteryLegend')}</legend>
+            <p className="pp-subtle pp-trackDevicePanel__hint">{t('trackingPage.devicePanelBatteryHint')}</p>
+            <div className="pp-trackDeviceModes__grid">
+              {G365_BATTERY_PLANS.map((plan) => {
+                const selected = planId === plan.id || (planId === 'custom' && activePlan?.id === plan.id);
                 return (
-                  <li key={n.id} className="pp-trackDeviceWifi__row pp-trackDeviceWifi__row--stacked">
-                    <label className="pp-trackDeviceWifi__field">
-                      <span>{t('trackingPage.devicePanelWifiLabelPh')}</span>
-                      <input
-                        className="pp-input"
-                        type="text"
-                        placeholder={t('trackingPage.devicePanelWifiLabelExample')}
-                        value={n.label}
-                        onChange={(e) => updateNetwork(n.id, { label: e.target.value })}
-                      />
-                    </label>
-                    <label className="pp-trackDeviceWifi__field">
-                      <span>{t('trackingPage.devicePanelWifiRouterCode')}</span>
-                      <input
-                        className={`pp-input pp-input--mono${n.bssid && !valid ? ' pp-input--invalid' : ''}`}
-                        type="text"
-                        inputMode="text"
-                        placeholder="aa:bb:cc:dd:ee:ff"
-                        value={n.bssid}
-                        onChange={(e) => updateNetwork(n.id, { bssid: formatBssidInput(e.target.value) })}
-                        spellCheck={false}
-                        autoComplete="off"
-                        aria-invalid={Boolean(n.bssid && !valid)}
-                      />
-                    </label>
-                    {showRemove ? (
-                      <button
-                        type="button"
-                        className="pp-btn pp-btn--ghost pp-trackDeviceWifi__remove"
-                        onClick={() => removeNetwork(n.id)}
-                      >
-                        {t('trackingPage.devicePanelWifiRemove')}
-                      </button>
+                  <label
+                    key={plan.id}
+                    className={`pp-trackDeviceMode pp-trackDevicePlan${selected ? ' is-active' : ''}`}
+                  >
+                    <input
+                      type="radio"
+                      name="g365Plan"
+                      checked={selected}
+                      onChange={() => selectG365Plan(plan.id)}
+                    />
+                    {plan.recommended ? (
+                      <span className="pp-trackDeviceMode__badge">{t('trackingPage.devicePanelBatteryRecommended')}</span>
                     ) : null}
-                    {index === 0 ? (
-                      <details className="pp-trackDeviceWifi__help">
-                        <summary>{t('trackingPage.devicePanelWifiHelpToggle')}</summary>
-                        <ol>
-                          <li>{t('trackingPage.devicePanelWifiHelpStep1')}</li>
-                          <li>{t('trackingPage.devicePanelWifiHelpStep2')}</li>
-                          <li>{t('trackingPage.devicePanelWifiHelpStep3')}</li>
-                        </ol>
-                        <p className="pp-subtle">{t('trackingPage.devicePanelWifiHelpNote')}</p>
-                      </details>
-                    ) : null}
-                  </li>
+                    <span className="pp-trackDeviceMode__copy">
+                      <strong>{t(`trackingPage.devicePanelPlan_${plan.id}`)}</strong>
+                      <span>{t(`trackingPage.devicePanelPlan_${plan.id}_desc`)}</span>
+                      <BatteryUseMeter
+                        tier={plan.batteryTier}
+                        label={t(`trackingPage.devicePanelBatteryTier_${plan.batteryTier}`)}
+                      />
+                    </span>
+                  </label>
                 );
               })}
-            </ul>
-
-            <div className="pp-trackDeviceHome">
-              <h3>{t('trackingPage.devicePanelHomeMapTitle')}</h3>
-              <p className="pp-subtle">{t('trackingPage.devicePanelHomeMapHelp')}</p>
-              {homeAnchor ? (
-                <p className="pp-trackDeviceHome__saved">
-                  {t('trackingPage.devicePanelHomeSavedCoords', {
-                    lat: homeAnchor.lat.toFixed(5),
-                    lng: homeAnchor.lng.toFixed(5),
-                  })}
-                </p>
-              ) : null}
-              <div className="pp-trackDeviceHome__actions">
-                <button
-                  type="button"
-                  className={`pp-btn${homeAnchor ? ' pp-btn--ghost' : ' pp-btnPrimary pp-trackDeviceHome__cta'}`}
-                  disabled={busy || !geolocationEnabled}
-                  title={!geolocationEnabled ? t('trackingPage.devicePanelHomeNeedsHttps') : undefined}
-                  onClick={handleSetHomeFromPhone}
-                >
-                  {busy ? t('trackingPage.mapOneTapHomeBusy') : t('trackingPage.mapOneTapHome')}
-                </button>
-                {!geolocationEnabled ? (
-                  <p className="pp-subtle pp-trackDeviceHome__httpsNote">{t('trackingPage.devicePanelHomeNeedsHttps')}</p>
-                ) : null}
-                {homeAnchor ? (
-                  <button type="button" className="pp-btn pp-btn--ghost" disabled={busy} onClick={handleClearHome}>
-                    {t('trackingPage.devicePanelHomeClear')}
-                  </button>
-                ) : null}
-              </div>
             </div>
-          </div>
-        ) : null}
+          </fieldset>
 
-        <div className="pp-trackDevicePanel__actions">
-          <button
-            type="submit"
-            className="pp-btn pp-btnPrimary pp-trackDevicePanel__cta"
-            disabled={busy || !imei?.trim() || !commandsAvailable}
-          >
-            {busy ? t('trackingPage.devicePanelApplying') : applyLabel}
-          </button>
-        </div>
-
-        <details className="pp-trackDevicePanel__advanced">
-          <summary>{t('trackingPage.devicePanelAdvanced')}</summary>
-          <div className="pp-trackDevicePanel__advancedBody">
-            {modeId === 'wifi_priority' ? (
-              <button type="button" className="pp-btn pp-btn--ghost" onClick={addNetwork}>
-                {t('trackingPage.devicePanelWifiAdd')}
-              </button>
-            ) : null}
-
-            <label className="pp-trackDevicePanel__gpsOnly">
-              <input
-                type="checkbox"
-                checked={modeId === 'gps_only'}
-                onChange={(e) => setModeId(e.target.checked ? 'gps_only' : 'gps_priority')}
-              />
-              <span>
-                <strong>{t('trackingPage.deviceMode_gps_only')}</strong>
-                <span className="pp-subtle">{t('trackingPage.deviceMode_gps_only_desc')}</span>
-              </span>
-            </label>
-
+          <div className="pp-trackDevicePanel__actions">
             <button
-              type="button"
-              className="pp-btn pp-btn--ghost"
+              type="submit"
+              className="pp-btn pp-btnPrimary pp-trackDevicePanel__cta"
               disabled={busy || !imei?.trim() || !commandsAvailable}
-              onClick={() => void handleQuery()}
             >
-              {t('trackingPage.devicePanelQuery')}
+              {busy ? t('trackingPage.devicePanelApplying') : t('trackingPage.devicePanelApplyPreset')}
             </button>
           </div>
-        </details>
 
-        {status ? (
-          <p className="pp-trackDevicePanel__status" role="status">
-            {status}
-          </p>
-        ) : null}
-        {error ? (
-          <p className="pp-error pp-trackDevicePanel__error" role="alert">
-            {error}
-          </p>
-        ) : null}
+          <fieldset className="pp-trackDeviceG365Group">
+            <legend className="pp-trackDeviceModes__legend">{t('trackingPage.devicePanelQuickLegend')}</legend>
+            <div className="pp-trackDeviceG365Actions">
+              <button
+                type="button"
+                className="pp-btn pp-btn--ghost"
+                disabled={busy || !imei?.trim() || !commandsAvailable}
+                onClick={() =>
+                  void runCommand(async () => {
+                    await requestG365ManualPosition(imei, 'gps');
+                    setStatus(t('trackingPage.devicePanelG365LocateSent'));
+                  })
+                }
+              >
+                {t('trackingPage.devicePanelG365Locate')}
+              </button>
+              <button
+                type="button"
+                className="pp-btn pp-btn--ghost"
+                disabled={busy || !imei?.trim() || !commandsAvailable}
+                onClick={() =>
+                  void runCommand(async () => {
+                    await startG365Find(imei);
+                    setStatus(t('trackingPage.devicePanelG365FindSent'));
+                  })
+                }
+              >
+                {t('trackingPage.devicePanelG365Find')}
+              </button>
+            </div>
+          </fieldset>
 
-        {pending.length > 0 ? (
-          <div className="pp-trackDevicePanel__pending" role="status">
-            {t('trackingPage.devicePanelPendingSimple')}
+          <details className="pp-trackDevicePanel__advanced">
+            <summary>{t('trackingPage.devicePanelAdvanced')}</summary>
+            <div className="pp-trackDevicePanel__advancedBody">
+              <p className="pp-subtle">{t('trackingPage.devicePanelAdvancedIntervalsHint')}</p>
+
+              <fieldset className="pp-trackDeviceG365Group">
+                <legend className="pp-trackDeviceModes__legend">{t('trackingPage.devicePanelG365UploadLegend')}</legend>
+                <div className="pp-trackDeviceG365Presets">
+                  {G365_UPLOAD_PRESETS.map(({ id, seconds }) => (
+                    <label
+                      key={id}
+                      className={`pp-trackDeviceG365Preset${uploadSeconds === seconds ? ' is-active' : ''}`}
+                    >
+                      <input
+                        type="radio"
+                        name="g365Upload"
+                        checked={uploadSeconds === seconds}
+                        onChange={() => handleAdvancedUpload(seconds)}
+                      />
+                      {t(`trackingPage.devicePanelG365Upload_${id}`)}
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+
+              <fieldset className="pp-trackDeviceG365Group">
+                <legend className="pp-trackDeviceModes__legend">{t('trackingPage.devicePanelG365StatusLegend')}</legend>
+                <div className="pp-trackDeviceG365Presets">
+                  {G365_STATUS_PRESETS.map(({ id, minutes }) => (
+                    <label
+                      key={id}
+                      className={`pp-trackDeviceG365Preset${statusMinutes === minutes ? ' is-active' : ''}`}
+                    >
+                      <input
+                        type="radio"
+                        name="g365Status"
+                        checked={statusMinutes === minutes}
+                        onChange={() => handleAdvancedStatus(minutes)}
+                      />
+                      {t(`trackingPage.devicePanelG365Status_${id}`)}
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+
+              <button
+                type="button"
+                className="pp-btn pp-btn--ghost"
+                disabled={busy || !imei?.trim() || !commandsAvailable}
+                onClick={() =>
+                  void runCommand(async () => {
+                    await restartG365(imei);
+                    setStatus(t('trackingPage.devicePanelG365RestartSent'));
+                  })
+                }
+              >
+                {t('trackingPage.devicePanelG365Restart')}
+              </button>
+
+              <p className="pp-subtle pp-trackDevicePanel__foot">{t('trackingPage.devicePanelG365Foot')}</p>
+            </div>
+          </details>
+        </form>
+      ) : (
+        <form className="pp-trackDevicePanel__form" onSubmit={(e) => void handleXexunApply(e)}>
+          <fieldset className="pp-trackDeviceModes">
+            <legend className="pp-trackDeviceModes__legend">{t('trackingPage.devicePanelTrackingLegend')}</legend>
+            <div className="pp-trackDeviceModes__grid">
+              <label
+                className={`pp-trackDeviceMode${modeId === XEXUN_MAIN_MODE ? ' is-active' : ''}`}
+              >
+                <input
+                  type="radio"
+                  name="trackingMode"
+                  value={XEXUN_MAIN_MODE}
+                  checked={modeId === XEXUN_MAIN_MODE}
+                  onChange={() => setModeId(XEXUN_MAIN_MODE)}
+                />
+                <span className="pp-trackDeviceMode__badge">{t('trackingPage.devicePanelBatteryRecommended')}</span>
+                <span className="pp-trackDeviceMode__icon" aria-hidden>
+                  <IconTrackSource kind="gps" size={22} />
+                </span>
+                <span className="pp-trackDeviceMode__copy">
+                  <strong>{t('trackingPage.deviceMode_gps_priority')}</strong>
+                  <span>{t('trackingPage.deviceMode_gps_priority_desc')}</span>
+                  <BatteryUseMeter
+                    tier={4}
+                    label={t('trackingPage.devicePanelBatteryTier_4')}
+                  />
+                </span>
+              </label>
+            </div>
+          </fieldset>
+
+          <div className="pp-trackDevicePanel__actions">
+            <button
+              type="submit"
+              className="pp-btn pp-btnPrimary pp-trackDevicePanel__cta"
+              disabled={busy || !imei?.trim() || !commandsAvailable}
+            >
+              {busy ? t('trackingPage.devicePanelApplying') : t('trackingPage.devicePanelApply')}
+            </button>
           </div>
-        ) : null}
 
-        <p className="pp-subtle pp-trackDevicePanel__foot">{t('trackingPage.devicePanelFoot')}</p>
-      </form>
+          <details className="pp-trackDevicePanel__advanced">
+            <summary>{t('trackingPage.devicePanelAdvanced')}</summary>
+            <div className="pp-trackDevicePanel__advancedBody">
+              <p className="pp-subtle">{t('trackingPage.devicePanelAdvancedTrackingHint')}</p>
+              <fieldset className="pp-trackDeviceModes pp-trackDeviceModes--compact">
+                <legend className="pp-trackDeviceModes__legend">{t('trackingPage.devicePanelModeLegend')}</legend>
+                <div className="pp-trackDeviceModes__grid">
+                  {XEXUN_ADVANCED_MODES.map((id) => {
+                    const active = modeId === id;
+                    return (
+                      <label key={id} className={`pp-trackDeviceMode${active ? ' is-active' : ''}`}>
+                        <input
+                          type="radio"
+                          name="trackingModeAdvanced"
+                          value={id}
+                          checked={active}
+                          onChange={() => setModeId(id)}
+                        />
+                        <span className="pp-trackDeviceMode__icon" aria-hidden>
+                          <IconTrackSource kind="gps" size={22} />
+                        </span>
+                        <span className="pp-trackDeviceMode__copy">
+                          <strong>{t(`trackingPage.deviceMode_${id}`)}</strong>
+                          <span>{t(`trackingPage.deviceMode_${id}_desc`)}</span>
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </fieldset>
+
+              <button
+                type="button"
+                className="pp-btn pp-btn--ghost"
+                disabled={busy || !imei?.trim() || !commandsAvailable}
+                onClick={() => void handleXexunQuery()}
+              >
+                {t('trackingPage.devicePanelQuery')}
+              </button>
+            </div>
+          </details>
+
+          {pending.length > 0 ? (
+            <div className="pp-trackDevicePanel__pending" role="status">
+              {t('trackingPage.devicePanelPendingSimple')}
+            </div>
+          ) : null}
+
+          <p className="pp-subtle pp-trackDevicePanel__foot">{t('trackingPage.devicePanelXexunFoot')}</p>
+        </form>
+      )}
+
+      {status ? (
+        <p className="pp-trackDevicePanel__status" role="status">
+          {status}
+        </p>
+      ) : null}
+      {error ? (
+        <p className="pp-error pp-trackDevicePanel__error" role="alert">
+          {error}
+        </p>
+      ) : null}
     </section>
   );
 }

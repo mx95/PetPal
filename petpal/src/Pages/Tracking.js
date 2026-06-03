@@ -35,7 +35,7 @@ import {
   clearHomeAnchor,
 } from '../tracking/homeAnchorStorage';
 import { setHomeFromPhone } from '../tracking/setHomeFromPhone';
-import { isTrackingWifiEnabled, isTrackingGeolocationEnabled, stripWifiFromPosition } from '../tracking/trackingWifiFeature';
+import { isTrackingWifiEnabled, isTrackingGeolocationEnabled, stripWifiFromPosition, resolveTrackerHttpBase } from '../tracking/trackingWifiFeature';
 
 const LAST_LIVE_PET_KEY = 'petpal_live_selectedPetId';
 const LAST_LIVE_COORDS_KEY = 'petpal_last_live_coords_v1';
@@ -174,10 +174,6 @@ function TrackBatteryBadge({ pct, isCharging, t }) {
       {isCharging ? <span className="pp-trackLiveStatus__charging">{t('trackingPage.charging')}</span> : null}
     </span>
   );
-}
-
-function hasDiagnostics(position) {
-  return Boolean(position?.diagnostics?.received || position?.diagnostics?.raw);
 }
 
 function accuracyMeterStyle(position) {
@@ -523,11 +519,13 @@ export default function Tracking() {
   const [historyShowAllFixes, setHistoryShowAllFixes] = useState(loadShowAllHistoryFixes);
   const trustedLiveAnchorRef = useRef(null);
   const lastKnownLiveRef = useRef(null);
+  const refreshSeqRef = useRef(0);
   const [liveHistoryFallback, setLiveHistoryFallback] = useState(null);
   const [liveTrail, setLiveTrail] = useState([]);
   const [homeAnchorTick, setHomeAnchorTick] = useState(0);
   const [homeSaving, setHomeSaving] = useState(false);
   const [homeSaveError, setHomeSaveError] = useState('');
+  const [deviceProvider, setDeviceProvider] = useState(null);
 
   useEffect(() => {
     if (!wifiTrackingEnabled && trackerTab === 'device') setTrackerTab('live');
@@ -547,13 +545,43 @@ export default function Tracking() {
     return saved || typed;
   }, [deviceId, selectedPet?.trackingDeviceId, imeiDirty]);
 
+  useEffect(() => {
+    const imei = effectiveDeviceId.trim();
+    if (position?.provider && position?.imei === imei) {
+      setDeviceProvider(position.provider);
+      return;
+    }
+    const base = resolveTrackerHttpBase();
+    if (!base || !imei) {
+      setDeviceProvider(null);
+      return;
+    }
+    const path = `/api/app/devices/${encodeURIComponent(imei)}`;
+    const url = base === '' ? path : `${base}${path}`;
+    let cancelled = false;
+    fetch(url, { headers: { Accept: 'application/json' } })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!cancelled) setDeviceProvider(data?.provider ?? null);
+      })
+      .catch(() => {
+        if (!cancelled) setDeviceProvider(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [position?.provider, position?.imei, effectiveDeviceId]);
+
   const selectPetForTracking = useCallback((pet) => {
     if (!pet?.id) return;
     setSelectedPetId(pet.id);
     setDeviceId(pet.trackingDeviceId || '');
+    setDeviceProvider(null);
     setPosition(null);
     setError('');
+    refreshSeqRef.current += 1;
     trustedLiveAnchorRef.current = null;
+    lastKnownLiveRef.current = null;
     setLiveHistoryFallback(null);
     setLiveTrail([]);
     setHistoryPoints([]);
@@ -596,19 +624,25 @@ export default function Tracking() {
   }, [selectedPetId, pets]);
 
   const refresh = useCallback(async () => {
+    const requestedId = effectiveDeviceId.trim();
+    if (!requestedId) return;
+    const seq = refreshSeqRef.current + 1;
+    refreshSeqRef.current = seq;
     setError('');
     setLoading(true);
     try {
-      const p = await getLatestPosition(effectiveDeviceId);
+      const p = await getLatestPosition(requestedId);
+      if (refreshSeqRef.current !== seq) return;
       setPosition(p);
     } catch (e) {
+      if (refreshSeqRef.current !== seq) return;
       const msg = e?.message || t('trackingPage.errLoadPosition');
       setError(msg);
       if (e?.status === 404 || /not checked in|not seen on tracker|Missing IMEI/i.test(msg)) {
         setPosition(null);
       }
     } finally {
-      setLoading(false);
+      if (refreshSeqRef.current === seq) setLoading(false);
     }
   }, [effectiveDeviceId, t]);
 
@@ -1692,34 +1726,10 @@ export default function Tracking() {
         <TrackDevicePanel
           imei={effectiveDeviceId}
           petName={selectedPet?.name || ''}
-          scannedBssids={position?.wifiBssids}
-          onHomeLocationUpdated={() => setHomeAnchorTick((n) => n + 1)}
+          provider={position?.provider ?? deviceProvider ?? null}
         />
       ) : null}
 
-      {wifiTrackingEnabled && trackerTab === 'device' && hasDiagnostics(position) ? (
-        <section className="pp-card pp-pad">
-          <h2 className="pp-sectionTitle">Everything received from provider</h2>
-          <p className="pp-subtle" style={{ marginTop: 0 }}>
-            Latest raw tracker payload and parsed fields kept by the TCP server.
-          </p>
-          <pre
-            style={{
-              margin: 0,
-              overflow: 'auto',
-              maxHeight: 360,
-              padding: 12,
-              borderRadius: 12,
-              background: '#0f172a',
-              color: '#e2e8f0',
-              fontSize: 12,
-              lineHeight: 1.45,
-            }}
-          >
-            {JSON.stringify(position.diagnostics, null, 2)}
-          </pre>
-        </section>
-      ) : null}
     </div>
   );
 }

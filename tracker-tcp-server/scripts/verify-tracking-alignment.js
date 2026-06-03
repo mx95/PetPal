@@ -65,6 +65,20 @@ const gps = {
 const pGps = buildPositionPayload(ADONIS, gps);
 assert(pGps.lat === 34.968, "GPS coords returned");
 
+const gpsWithStaleWifi = {
+  imei: "861261021497967",
+  source: "gps",
+  gpsValid: true,
+  location: { lat: 34.72, lng: 33.08 },
+  wifiBssids: ["14:75:90:5B:D3:0E"],
+  atHomeWifi: false,
+  battery: 65,
+  lastUpdate: new Date().toISOString(),
+};
+const pGpsWifi = buildPositionPayload("861261021497967", gpsWithStaleWifi);
+assert(pGpsWifi.lat === 34.72, "GPS coords kept when stale wifiBssids present");
+assert(pGpsWifi.atHomeWifi !== true, "stale wifiBssids alone must not force atHomeWifi");
+
 console.log("\n=== Unit: memory merge (wifi must not restore stale GPS) ===\n");
 
 const mem = createMemoryStore();

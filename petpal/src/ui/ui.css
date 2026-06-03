@@ -8932,7 +8932,101 @@ body,
 
 .pp-trackDevicePanel__foot {
   margin: 12px 0 0;
+  font-size: 12px;
+}
+
+.pp-trackDevicePanel__providerNote {
+  margin: 0 0 14px;
+  font-size: 13px;
+}
+
+.pp-trackDevicePanel__hint {
+  margin: 0 0 12px;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.pp-trackDeviceBattery {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.pp-trackDeviceBattery__label {
   font-size: 11px;
+  font-weight: 650;
+  color: #667085;
+  letter-spacing: 0.01em;
+}
+
+.pp-trackDeviceBattery__bars {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 12px;
+}
+
+.pp-trackDeviceBattery__bar {
+  width: 6px;
+  height: 6px;
+  border-radius: 2px;
+  background: rgba(102, 112, 133, 0.2);
+}
+
+.pp-trackDeviceBattery__bar.is-on {
+  background: linear-gradient(180deg, #12b76a 0%, #039855 100%);
+}
+
+.pp-trackDevicePlan .pp-trackDeviceMode__copy > span {
+  color: #667085;
+}
+
+.pp-trackDeviceModes--compact .pp-trackDeviceMode {
+  padding: 12px;
+}
+
+.pp-trackDeviceG365Group {
+  margin: 0 0 16px;
+  padding: 0;
+  border: 0;
+}
+
+.pp-trackDeviceG365Presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pp-trackDeviceG365Preset {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(91, 55, 255, 0.18);
+  background: #fff;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.pp-trackDeviceG365Preset.is-active {
+  border-color: #5b37ff;
+  background: rgba(91, 55, 255, 0.08);
+  font-weight: 700;
+}
+
+.pp-trackDeviceG365Preset input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.pp-trackDeviceG365Actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .pp-trackDevicePanel__cta {

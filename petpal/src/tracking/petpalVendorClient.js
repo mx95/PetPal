@@ -214,6 +214,8 @@ function normalizeXexunPosition(json) {
     homeLat: json.homeLat != null ? Number(json.homeLat) : null,
     homeLng: json.homeLng != null ? Number(json.homeLng) : null,
     locationKind: json.locationKind ?? null,
+    provider: json.provider ?? null,
+    imei: json.imei != null ? String(json.imei) : null,
     diagnostics,
   };
 }

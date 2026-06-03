@@ -52,3 +52,37 @@ test("memory store — 365GPS charging disconnect clears flag", () => {
   assert.equal(rec.battery, 90);
   assert.equal(rec.charging, false);
 });
+
+test("memory store — GPS fix clears stale atHomeWifi and returns coords with wifiBssids", () => {
+  const store = createMemoryStore();
+  const imei = "861261021497967";
+
+  store.upsert(imei, {
+    imei,
+    provider: "g365",
+    source: "wifi",
+    atHomeWifi: true,
+    wifiBssids: ["14:75:90:5B:D3:0E"],
+    receivedAt: new Date().toISOString(),
+    homeLocation: { lat: 34.71, lng: 33.07 },
+  });
+
+  store.upsert(imei, {
+    imei,
+    provider: "g365",
+    source: "gps",
+    gpsValid: true,
+    location: { lat: 34.72, lng: 33.08 },
+    receivedAt: new Date().toISOString(),
+  });
+
+  const rec = store.get(imei);
+  assert.equal(rec.atHomeWifi, false);
+  assert.equal(rec.location?.lat, 34.72);
+  assert.ok(Array.isArray(rec.wifiBssids) && rec.wifiBssids.length > 0);
+
+  const payload = buildPositionPayload(imei, rec);
+  assert.equal(payload.lat, 34.72);
+  assert.equal(payload.lng, 33.08);
+  assert.equal(payload.source, "gps");
+});

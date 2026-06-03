@@ -43,13 +43,10 @@ function buildPositionPayload(imei, d) {
   const baseTs = receivedAt ? Date.parse(receivedAt) : Number.NaN;
   const secondsAgo = Number.isFinite(baseTs) ? Math.max(0, Math.round((nowMs - baseTs) / 1000)) : null;
 
-  const atHomeWifi = Boolean(
-    d.atHomeWifi ||
-      d.source === "wifi" ||
-      (Array.isArray(d.wifiBssids) && d.wifiBssids.length > 0)
-  );
+  const atHomeWifi = Boolean(d.atHomeWifi || d.source === "wifi");
 
-  const useCoords = isPlausibleLatLng(rawLat, rawLng) && !atHomeWifi && d.source !== "wifi";
+  const useCoords =
+    isPlausibleLatLng(rawLat, rawLng) && d.source !== "wifi" && !d.atHomeWifi;
   const lat = useCoords ? rawLat : Number.NaN;
   const lng = useCoords ? rawLng : Number.NaN;
 
@@ -61,6 +58,7 @@ function buildPositionPayload(imei, d) {
       const homeLng = hasHome ? Number(home.lng) : null;
       return {
         imei,
+        provider: d.provider ?? null,
         lat: homeLat,
         lng: homeLng,
         homeLat,
@@ -81,6 +79,7 @@ function buildPositionPayload(imei, d) {
     if (d.battery != null || d.signal != null || d.source || d.charging != null) {
       return {
         imei,
+        provider: d.provider ?? null,
         lat: null,
         lng: null,
         source: d.source ?? null,
@@ -135,6 +134,7 @@ function buildPositionPayload(imei, d) {
 
   return {
     imei,
+    provider: d.provider ?? null,
     lat,
     lng,
     source,
