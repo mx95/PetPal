@@ -50,7 +50,8 @@ const en = {
     welcome: {
       eyebrow: 'PetPal',
       heroImageAlt: 'Illustration of pets with a gentle GPS path suggesting live tracking',
-      headlineNamed: 'Hi {name} — good to see you.',
+      headlineNamed: 'Hi {name}',
+      headlineSub: 'Good to see you.',
       leadSignedIn: 'Everything for your pets in one warm, calm place. Open what you need — walks, maps, or a quick check-in.',
       value1Title: 'Know they’re safe',
       value1Desc: 'See your pet on the map when their collar is linked — peace of mind in one glance.',

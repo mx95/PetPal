@@ -6031,13 +6031,23 @@ body.pp-noScroll {
 }
 
 .pp-homeWelcome__title {
-  margin: 0 0 14px;
+  margin: 0 0 8px;
   font-size: clamp(1.75rem, 4.2vw, 2.5rem);
   font-weight: 850;
   line-height: 1.1;
   letter-spacing: -0.035em;
   color: #0f172a;
   max-width: 16ch;
+}
+
+.pp-homeWelcome__headlineSub {
+  margin: 0 0 14px;
+  font-size: clamp(1.125rem, 2.5vw, 1.35rem);
+  font-weight: 650;
+  line-height: 1.35;
+  letter-spacing: -0.02em;
+  color: #334155;
+  max-width: 28ch;
 }
 
 @media (max-width: 820px) {
@@ -6214,6 +6224,10 @@ body.pp-noScroll {
 
 html[data-theme='dark'] .pp-homeWelcome__title {
   color: #f1f5f9;
+}
+
+html[data-theme='dark'] .pp-homeWelcome__headlineSub {
+  color: #cbd5e1;
 }
 
 html[data-theme='dark'] .pp-homeWelcome__lead,

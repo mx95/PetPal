@@ -68,6 +68,9 @@ export default function HomeScreen() {
           <h1 id="home-hero-title" className="pp-homeWelcome__title">
             {user && firstName ? t('home.welcome.headlineNamed', { name: firstName }) : t('home.publicHero.headline')}
           </h1>
+          {user && firstName ? (
+            <p className="pp-homeWelcome__headlineSub">{t('home.welcome.headlineSub')}</p>
+          ) : null}
           <p className="pp-homeWelcome__lead">
             {user ? t('home.welcome.leadSignedIn') : t('home.publicHero.sub')}
           </p>

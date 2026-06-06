@@ -51,7 +51,8 @@ const el = {
     welcome: {
       eyebrow: 'PetPal',
       heroImageAlt: 'Εικονογράφηση κατοικιδίων με απαλή γραμμή GPS που υποδηλώνει ζωντανή παρακολούθηση',
-      headlineNamed: 'Γεια {name} — καλώς ήρθες πάλι.',
+      headlineNamed: 'Γεια {name}',
+      headlineSub: 'Καλώς ήρθες πάλι.',
       leadSignedIn: 'Ήρεμη αφετηρία. Άνοιξε ό,τι χρειάζεσαι — χωρίς θόρυβο.',
       value1Title: 'Ξέρετε ότι είναι ασφαλή',
       value1Desc: 'Ζωντανός χάρτης με GPS κολάρο — ηρεμία με μια ματιά.',
