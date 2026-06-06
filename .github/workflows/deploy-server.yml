@@ -1,0 +1,60 @@
+# Push to main → SSH to Hetzner, pull, build SPA, restart PM2 tracker.
+#
+# One-time setup (GitHub repo → Settings → Secrets and variables → Actions):
+#   DEPLOY_HOST      e.g. 116.203.209.68
+#   DEPLOY_USER      e.g. root
+#   DEPLOY_SSH_KEY   private key (PEM) that can SSH as DEPLOY_USER
+# Optional:
+#   DEPLOY_PORT      default 22
+#   DEPLOY_PATH      default /root/PetPal
+#
+# One-time setup on the server:
+#   1. Clone repo: git clone https://github.com/mx95/PetPal.git ~/PetPal
+#   2. petpal/.env.local with Firebase keys + REACT_APP_XEXUN_HTTP_BASE_URL=same
+#   3. cd tracker-tcp-server && pm2 start ecosystem.config.cjs && pm2 save
+#   4. Add the GitHub Actions public key to ~/.ssh/authorized_keys
+#
+# Firebase Cloud Functions (contact form, shop, etc.) are NOT on this server —
+# deploy those separately: firebase deploy --only functions:...
+
+name: Deploy server
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: Branch to deploy
+        required: false
+        default: main
+
+concurrency:
+  group: deploy-server
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          command_timeout: 20m
+          script: |
+            set -euo pipefail
+            PETPAL_ROOT="${{ secrets.DEPLOY_PATH }}"
+            if [ -z "$PETPAL_ROOT" ]; then PETPAL_ROOT="/root/PetPal"; fi
+            export PETPAL_ROOT
+            export DEPLOY_BRANCH="${{ github.event.inputs.branch || github.ref_name }}"
+            export SKIP_GIT=1
+            cd "$PETPAL_ROOT"
+            git fetch origin "$DEPLOY_BRANCH"
+            git checkout "$DEPLOY_BRANCH"
+            git reset --hard "origin/$DEPLOY_BRANCH"
+            bash scripts/deploy-server.sh
