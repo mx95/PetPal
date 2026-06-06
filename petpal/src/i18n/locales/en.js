@@ -1093,6 +1093,7 @@ const en = {
       pet_hotel: { label: 'Pet hotel & boarding', desc: 'Boarding, overnight stays' },
       grooming: { label: 'Grooming', desc: 'Salons & bath' },
       daycare: { label: 'Daycare', desc: 'Pet daycare & play' },
+      trainer: { label: 'Pet Trainers', desc: 'Dog, pet & horse training' },
       pet_cafe: { label: 'Pet café & events', desc: 'Cafes, meetups, events' },
       more: { label: 'All pet services', desc: 'Broader local search' },
     },

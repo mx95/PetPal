@@ -1,4 +1,4 @@
-# Push to main → SSH to Hetzner, pull, build SPA, restart PM2 tracker.
+# Push to main → SSH to Hetzner, pull, build SPA, reload PM2 tracker.
 #
 # One-time setup (GitHub repo → Settings → Secrets and variables → Actions):
 #   DEPLOY_HOST      e.g. 116.203.209.68
@@ -52,9 +52,4 @@ jobs:
             if [ -z "$PETPAL_ROOT" ]; then PETPAL_ROOT="/root/PetPal"; fi
             export PETPAL_ROOT
             export DEPLOY_BRANCH="${{ github.event.inputs.branch || github.ref_name }}"
-            export SKIP_GIT=1
-            cd "$PETPAL_ROOT"
-            git fetch origin "$DEPLOY_BRANCH"
-            git checkout "$DEPLOY_BRANCH"
-            git reset --hard "origin/$DEPLOY_BRANCH"
-            bash scripts/deploy-server.sh
+            bash "$PETPAL_ROOT/scripts/deploy-server.sh"

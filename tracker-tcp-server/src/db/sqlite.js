@@ -8,7 +8,10 @@ function ensureDirForFile(filePath) {
 }
 
 function openSqlite(dbPath) {
-  const fullPath = path.isAbsolute(dbPath) ? dbPath : path.resolve(process.cwd(), dbPath);
+  const resolved = path.isAbsolute(dbPath)
+    ? dbPath
+    : path.resolve(path.join(__dirname, ".."), dbPath);
+  const fullPath = resolved;
   ensureDirForFile(fullPath);
 
   const db = new Database(fullPath);

@@ -5,8 +5,9 @@ node_modules/
 ngrok/
 *.zip
 
-# Tracker TCP server
+# Tracker TCP server — live GPS database (never commit)
 tracker-tcp-server/node_modules/
 tracker-tcp-server/data/*.sqlite
 tracker-tcp-server/data/*.sqlite-*
 tracker-tcp-server/data/backups/
+# Production DB lives outside the repo on the server (/var/lib/petpal/petpal.sqlite)

@@ -39,7 +39,7 @@ const GPS365_TCP_ENABLED =
   String(process.env.GPS365_TCP_ENABLED ?? "1").trim() !== "0" &&
   String(process.env.GPS365_TCP_ENABLED ?? "1").trim().toLowerCase() !== "false";
 
-/** Always under tracker-tcp-server/data — never depends on PM2 cwd (fixes “empty DB after restart”). */
+/** Production path is set in ecosystem.config.cjs (/var/lib/petpal). Local dev default: */
 const DEFAULT_SQLITE_PATH = path.join(__dirname, "..", "data", "petpal.sqlite");
 const SQLITE_PATH = process.env.SQLITE_PATH || DEFAULT_SQLITE_PATH;
 const PERSIST_TO_SQLITE = String(process.env.PERSIST_TO_SQLITE || "1") !== "0";

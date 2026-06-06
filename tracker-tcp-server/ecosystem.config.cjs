@@ -4,11 +4,19 @@
  *   cd ~/PetPal/tracker-tcp-server
  *   pm2 start ecosystem.config.cjs
  *   pm2 save
+ *
+ * GPS history is stored OUTSIDE the git repo (/var/lib/petpal) so deploy git reset
+ * cannot overwrite the live database.
  */
+const fs = require("fs");
 const path = require("path");
 
 const serverRoot = __dirname;
-const dbFile = path.join(serverRoot, "data", "petpal.sqlite");
+const dbFile = process.env.PETPAL_TRACKER_DB || "/var/lib/petpal/petpal.sqlite";
+const dbDir = path.dirname(dbFile);
+if (!fs.existsSync(dbDir)) {
+  fs.mkdirSync(dbDir, { recursive: true });
+}
 
 module.exports = {
   apps: [

@@ -40,6 +40,11 @@ export const NEARBY_CATEGORIES = [
     keyword: 'pet daycare',
   },
   {
+    id: 'trainer',
+    icon: '🎓',
+    keyword: 'dog trainer pet trainer horse trainer',
+  },
+  {
     id: 'pet_cafe',
     icon: '☕',
     keyword: 'pet friendly cafe',
