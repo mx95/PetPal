@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { sendPasswordResetEmail, signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../firebase';
 import { mapAuthError, normalizeEmail, trackAuthEvent } from '../auth/authUtils';
 import { useI18n } from '../i18n/I18nContext';
@@ -15,10 +15,8 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [resetting, setResetting] = useState(false);
   const [cooldownUntil, setCooldownUntil] = useState(0);
   const [error, setError] = useState('');
-  const [info, setInfo] = useState('');
 
   const normalizedEmail = normalizeEmail(email);
   const emailIsValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail);
@@ -30,7 +28,6 @@ export default function Login() {
     e.preventDefault();
     if (submitting || isCoolingDown) return;
     setError('');
-    setInfo('');
     if (!auth) {
       setError(t('auth.errors.firebaseNotConfigured'));
       return;
@@ -46,32 +43,6 @@ export default function Login() {
       setError(mapAuthError(err, t, 'login'));
     } finally {
       setSubmitting(false);
-    }
-  }
-
-  async function onResetPassword() {
-    if (resetting || submitting || isCoolingDown) return;
-    setError('');
-    setInfo('');
-    if (!auth) {
-      setError(t('auth.errors.firebaseNotConfigured'));
-      return;
-    }
-    if (!emailIsValid) {
-      setError(t('login.enterEmailForReset'));
-      return;
-    }
-    setResetting(true);
-    try {
-      await sendPasswordResetEmail(auth, normalizedEmail);
-      setInfo(t('login.resetSent'));
-      trackAuthEvent('password_reset_sent');
-    } catch (err) {
-      if (err?.code === 'auth/too-many-requests') setCooldownUntil(Date.now() + 30_000);
-      trackAuthEvent('password_reset_failed', { code: err?.code || 'unknown' });
-      setError(mapAuthError(err, t, 'login'));
-    } finally {
-      setResetting(false);
     }
   }
 
@@ -166,17 +137,11 @@ export default function Login() {
 
               {error ? <div className="pp-error" role="alert">{error}</div> : null}
               {isCoolingDown ? <div className="pp-subtle">{t('login.cooldown', { sec: cooldownLeftSec })}</div> : null}
-              {info ? <div className="pp-subtle pp-authInfo" role="status" aria-live="polite">{info}</div> : null}
 
               <div className="pp-authRow">
-                <button
-                  type="button"
-                  className="pp-authTextBtn"
-                  onClick={onResetPassword}
-                  disabled={resetting || submitting || isCoolingDown}
-                >
-                  {resetting ? t('login.sendingReset') : t('login.forgotPassword')}
-                </button>
+                <Link className="pp-authTextBtn" to="/forgot-password">
+                  {t('login.forgotPassword')}
+                </Link>
               </div>
 
               <button className="pp-btn pp-btnPrimary pp-btn--lg" disabled={submitting || !formIsValid || isCoolingDown}>

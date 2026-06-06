@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { LegalPageShell } from '../components/LegalPageShell';
+import { BRAND } from '../config/brand';
 
 export default function TermsOfService() {
   return (
@@ -9,7 +10,7 @@ export default function TermsOfService() {
         <h2>1. Agreement</h2>
         <p>
           These Terms of Service (“<strong>Terms</strong>”) govern your access to and use of the PetPal web application
-          and related services (the “<strong>Service</strong>”) operated by [Your company name], [address, Cyprus]
+          and related services (the “<strong>Service</strong>”) operated by {BRAND.legalName}, {BRAND.address}
           (“<strong>we</strong>”, “<strong>us</strong>”). By creating an account or using the Service, you agree to
           these Terms and our{' '}
           <Link to="/privacy" className="pp-link" style={{ display: 'inline', padding: 0 }}>
@@ -87,7 +88,7 @@ export default function TermsOfService() {
           If we offer paid plans, pricing, billing, renewal, and cancellation will be described at the point of
           purchase and in separate terms if required by law (including your EU/EEA consumer rights, such as
           pre-contractual information and withdrawal where applicable to distance contracts). Until such features are
-          live, this section is a placeholder to be completed with your exact commercial terms and payment provider
+          live, this section will be updated with our exact commercial terms and payment provider
           details.
         </p>
       </section>

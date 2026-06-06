@@ -18,40 +18,42 @@ export function AppFooter() {
             <p className="pp-footer__desc">{t('footer.brandDesc')}</p>
           </section>
 
-          <nav className="pp-footer__col" aria-label="Company">
-            <h4 className="pp-footer__title">Company</h4>
+          <nav className="pp-footer__col" aria-label={t('footer.company')}>
+            <h4 className="pp-footer__title">{t('footer.company')}</h4>
             <Link className="pp-footer__link" to="/docs">
-              About us
+              {t('footer.about')}
             </Link>
             {MVP_NAV.showShop ? (
               <Link className="pp-footer__link" to="/shop">
-                Pricing
+                {t('footer.pricing')}
               </Link>
             ) : (
               <Link className="pp-footer__link" to="/docs">
                 {t('nav.docs')}
               </Link>
             )}
-            <a className="pp-footer__link" href="mailto:support@petpal.app">
-              Contact us
-            </a>
+            <Link className="pp-footer__link" to="/contact">
+              {t('footer.contact')}
+            </Link>
           </nav>
 
-          <nav className="pp-footer__col" aria-label="Legal">
-            <h4 className="pp-footer__title">Legal</h4>
+          <nav className="pp-footer__col" aria-label={t('footer.legal')}>
+            <h4 className="pp-footer__title">{t('footer.legal')}</h4>
             <Link className="pp-footer__link" to="/privacy">
-              Privacy Policy
+              {t('footer.privacyPolicy')}
             </Link>
             <Link className="pp-footer__link" to="/terms">
-              Terms &amp; Conditions
+              {t('footer.terms')}
             </Link>
             <button type="button" className="pp-footer__link pp-footer__linkBtn" onClick={reopenCookieSettings}>
-              Cookie settings
+              {t('footer.cookieSettings')}
             </button>
           </nav>
         </div>
 
-        <p className="pp-footer__note">© {new Date().getFullYear()} PetPal. {t('footer.rightsAndByline')}</p>
+        <p className="pp-footer__note">
+          © {new Date().getFullYear()} PetPal. {t('footer.rightsAndByline')}
+        </p>
       </div>
     </footer>
   );

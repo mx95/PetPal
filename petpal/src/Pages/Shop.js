@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
 import { useCompany } from '../company/CompanyContext';
@@ -53,23 +53,31 @@ export default function Shop() {
       setPlusActiveBySku(PLUS_SKUS.reduce((acc, id) => ({ ...acc, [id]: false }), {}));
       return () => {};
     }
-    const db = getDb();
-    const unsubs = PLUS_SKUS.map((sku) =>
-      onSnapshot(
-        doc(db, 'billingSubscriptions', `${user.uid}_${sku}`),
-        (snap) => {
-          setPlusActiveBySku((prev) => ({
-            ...prev,
-            [sku]: Boolean(snap.exists() && snap.data()?.status === 'active'),
-          }));
-        },
-        () => {
-          setPlusActiveBySku((prev) => ({ ...prev, [sku]: false }));
+    let cancelled = false;
+    async function loadPlans() {
+      try {
+        const db = getDb();
+        const next = {};
+        await Promise.all(
+          PLUS_SKUS.map(async (sku) => {
+            try {
+              const snap = await getDoc(doc(db, 'billingSubscriptions', `${user.uid}_${sku}`));
+              next[sku] = Boolean(snap.exists() && snap.data()?.status === 'active');
+            } catch {
+              next[sku] = false;
+            }
+          })
+        );
+        if (!cancelled) setPlusActiveBySku(next);
+      } catch {
+        if (!cancelled) {
+          setPlusActiveBySku(PLUS_SKUS.reduce((acc, id) => ({ ...acc, [id]: false }), {}));
         }
-      )
-    );
+      }
+    }
+    void loadPlans();
     return () => {
-      unsubs.forEach((u) => u());
+      cancelled = true;
     };
   }, [user]);
 
@@ -89,6 +97,17 @@ export default function Shop() {
   }, [checkout, t]);
 
   const isPlusSku = (id) => PLUS_SKUS.includes(id);
+
+  function productCopy(product) {
+    if (product.id === 'TRACKER_HARDWARE') {
+      return {
+        title: t('shopPage.trackerOnlyTitle'),
+        subtitle: t('shopPage.trackerOnlySub'),
+        badge: t('shopPage.trackerOnlyBadge'),
+      };
+    }
+    return { title: product.title, subtitle: product.subtitle, badge: product.badge };
+  }
 
   if (!user) {
     return (
@@ -165,6 +184,7 @@ export default function Shop() {
           const isLoading = busy === p.id;
           const includeTracker = p.id === 'PETPAL_PLUS_MONTHLY' && monthlyIncludeTracker;
           const dueTodayCents = p.id === 'PETPAL_PLUS_MONTHLY' ? monthlyFirstPaymentCents(includeTracker) : p.amountCents;
+          const copy = productCopy(p);
 
           return (
             <article
@@ -172,15 +192,15 @@ export default function Shop() {
               ref={(el) => {
                 cardRefs.current[p.id] = el;
               }}
-              className={`pp-card pp-shopCard${focusSku === p.id ? ' pp-shopCard--focus' : ''}${p.id === 'PETPAL_PLUS_YEARLY' ? ' pp-shopCard--featured' : ''}`}
+              className={`pp-card pp-shopCard${focusSku === p.id ? ' pp-shopCard--focus' : ''}${p.id === 'PETPAL_PLUS_YEARLY' ? ' pp-shopCard--featured' : ''}${p.id === 'TRACKER_HARDWARE' ? ' pp-shopCard--hardware' : ''}`}
             >
               <div className="pp-shopCard__body">
-              <span className="pp-shopCard__badge">{p.badge}</span>
+              <span className="pp-shopCard__badge">{copy.badge}</span>
               <h2 className="pp-sectionTitle" style={{ margin: '6px 0 4px' }}>
-                {p.title}
+                {copy.title}
               </h2>
               <p className="pp-subtle" style={{ marginTop: 0 }}>
-                {p.subtitle}
+                {copy.subtitle}
               </p>
               {isPlusSku(p.id) ? (
                 <p className={`pp-shopCard__status${planActive ? ' pp-shopCard__status--on' : ''}`}>
@@ -226,7 +246,7 @@ export default function Shop() {
                 <input
                   type="checkbox"
                   checked={Boolean(saveCardById[p.id])}
-                  disabled={(isPlusSku(p.id) && planActive) || isLoading}
+                  disabled={(isPlusSku(p.id) && planActive) || isLoading || !p.recurring}
                   onChange={(e) => setSaveCardById((prev) => ({ ...prev, [p.id]: e.target.checked }))}
                 />
                 <span>

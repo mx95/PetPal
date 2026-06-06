@@ -7724,7 +7724,7 @@ a.pp-publicPet__metaValue {
 }
 
 /* Mobile dock: scroll main column only so fixed nav stays put */
-@media (max-width: 720px) {
+@media (max-width: 1023px) {
   body.pp-mobile-dock {
     height: 100%;
     height: 100dvh;
@@ -7771,9 +7771,12 @@ a.pp-publicPet__metaValue {
   }
 }
 
-/* Mobile-only: show bottom nav, give the page room, lighten the top nav */
-@media (max-width: 720px) {
+/* Phones & tablets: show bottom nav, give the page room */
+@media (max-width: 1023px) {
   .pp-bottomNav { display: block; }
+}
+
+@media (max-width: 720px) {
   .pp-nav .pp-navlinks { display: none; }
   .pp-nav--auth .pp-navUtility .pp-langSwitcher { display: none; }
   .pp-nav { padding-top: 12px; padding-bottom: 12px; }
@@ -8003,7 +8006,12 @@ a.pp-publicPet__metaValue {
   .pp-activityHub__hero,
   .pp-nearby-page > .pp-row:first-child {
     border-radius: 24px;
-    padding: 22px;
+    padding: 22px 20px;
+  }
+
+  .pp-shopPage .pp-pageHeader {
+    padding: 24px 22px !important;
+    gap: 18px;
   }
 }
 
@@ -8265,6 +8273,12 @@ body,
 
 .pp-main {
   padding-bottom: calc(76px + env(safe-area-inset-bottom));
+}
+
+@media (max-width: 1023px) {
+  .pp-main {
+    padding-bottom: calc(92px + env(safe-area-inset-bottom));
+  }
 }
 
 @media (max-width: 720px) {
@@ -10008,7 +10022,6 @@ select.pp-bookConfirmField__control {
   justify-content: space-between;
   gap: 16px;
   flex-wrap: wrap;
-  padding: 4px;
 }
 .pp-pageHeader__copy { display: flex; flex-direction: column; gap: 6px; max-width: 720px; }
 .pp-pageHeader__title {
@@ -14092,7 +14105,11 @@ body:has(.pp-book-modalRoot) .pp-bottomNav {
   .pp-premiumHero,
   .pp-providerHero {
     border-radius: 22px;
-    padding: 14px 16px !important;
+    padding: 18px 20px !important;
+  }
+
+  .pp-shopPage .pp-pageHeader {
+    padding: 24px 22px !important;
   }
 
   .pp-sectionTitle,
@@ -18445,4 +18462,386 @@ html[data-theme="dark"] .pp-nearbyPartnerCard__name {
   border-right: 9px solid transparent;
   border-top: 14px solid #fff;
   filter: drop-shadow(0 3px 4px rgba(16, 24, 40, 0.15));
+}
+
+/* ============================================================ */
+/*   Mobile nav drawer + production mobile polish                */
+/* ============================================================ */
+
+.pp-topNavMenuBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid rgba(91, 55, 255, 0.14);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #344054;
+  cursor: pointer;
+}
+
+.pp-topNavMenuBtn:focus-visible {
+  outline: 2px solid #5b37ff;
+  outline-offset: 2px;
+}
+
+.pp-topNavMenuBtn__bars {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 18px;
+}
+
+.pp-topNavMenuBtn__bars span {
+  display: block;
+  height: 2px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.pp-mobileNav {
+  position: fixed;
+  inset: 0;
+  z-index: 10050;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.pp-mobileNav__backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  padding: 0;
+  background: rgba(16, 24, 40, 0.42);
+  cursor: pointer;
+}
+
+.pp-mobileNav__panel {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 320px);
+  max-width: 88vw;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  box-shadow: -12px 0 40px rgba(16, 24, 40, 0.14);
+  padding: calc(12px + env(safe-area-inset-top, 0px)) 16px calc(16px + env(safe-area-inset-bottom, 0px));
+}
+
+.pp-mobileNav__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.pp-mobileNav__title {
+  font-size: 15px;
+  font-weight: 800;
+  color: #101828;
+}
+
+.pp-mobileNav__close {
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 12px;
+  background: rgba(91, 55, 255, 0.08);
+  color: #344054;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.pp-mobileNav__body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.pp-mobileNav__links {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pp-mobileNav__link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 48px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #344054;
+  text-decoration: none;
+}
+
+.pp-mobileNav__link.is-active,
+.pp-mobileNav__link:hover {
+  background: rgba(91, 55, 255, 0.08);
+  color: #5b37ff;
+}
+
+.pp-mobileNav__badge {
+  min-width: 22px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: #5b37ff;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.pp-mobileNav__signOut {
+  margin-top: auto;
+  min-height: 48px;
+  padding: 12px 14px;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 14px;
+  background: #fff;
+  color: #dc2626;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.pp-legalBack {
+  display: inline-block;
+  margin-bottom: 16px;
+}
+
+.pp-legalTitle {
+  margin-top: 0;
+}
+
+.pp-legalUpdated {
+  margin-bottom: 24px;
+}
+
+.pp-community-petStrip {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding: 4px 2px 12px;
+  margin-bottom: 8px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.pp-community-petStrip::-webkit-scrollbar {
+  display: none;
+}
+
+.pp-community-petStrip__item {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 64px;
+}
+
+.pp-community-petStrip__avatar {
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 2px solid rgba(91, 55, 255, 0.35);
+  background: rgba(91, 55, 255, 0.06);
+  font-size: 22px;
+}
+
+.pp-community-petStrip__label {
+  max-width: 72px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #475467;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .pp-grid {
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  .pp-card.pp-pad {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .pp-book-layout {
+    gap: 14px;
+  }
+
+  .pp-book-sidebar {
+    position: static;
+  }
+
+  .pp-topNavUtilityCluster {
+    gap: 6px;
+  }
+
+  img,
+  video,
+  svg {
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+/* Home — heart icon for “Build healthy habits” */
+.pp-homeWelcome__valueIcon--heart {
+  background: linear-gradient(145deg, #ffe4ec, #ffd6e0);
+  color: #e11d48;
+}
+
+.pp-homeWelcome__heartIcon {
+  display: block;
+}
+
+@media (max-width: 640px) {
+  .pp-homeWelcome__values {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .pp-homeWelcome__value {
+    padding: 14px 16px;
+  }
+
+  .pp-homeWelcome__feature {
+    padding: 14px 16px;
+    min-height: 72px;
+  }
+
+  .pp-homeWelcome__ctaRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .pp-homeWelcome__ctaRow .pp-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* Auth — forgot password narrow layout */
+.pp-authPage--narrow {
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.pp-authBackLink {
+  display: inline-block;
+  margin-bottom: 12px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.pp-authSuccess {
+  display: grid;
+  gap: 12px;
+}
+
+/* Contact page */
+.pp-contactPage {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.pp-contactPage__header {
+  margin-bottom: 20px;
+}
+
+.pp-contactPage__grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 640px) {
+  .pp-contactPage__grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.pp-input--textarea {
+  min-height: 140px;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.pp-contactPage__success {
+  text-align: center;
+  display: grid;
+  gap: 12px;
+  justify-items: center;
+}
+
+.pp-contactPage__successIcon {
+  font-size: 2rem;
+}
+
+.pp-shopCard--hardware {
+  border-color: rgba(91, 55, 255, 0.2);
+}
+
+/* Shop page — comfortable inset without changing card/gradient design */
+.pp-shopPage.pp-pad {
+  padding: clamp(18px, 4vw, 28px);
+  max-width: 1080px;
+  margin-inline: auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.pp-shopPage .pp-pageHeader {
+  padding: clamp(28px, 5vw, 44px) clamp(24px, 4.5vw, 40px);
+  margin-bottom: clamp(18px, 3vw, 28px);
+  gap: 20px;
+}
+
+.pp-shopPage .pp-pageHeader__copy {
+  gap: 10px;
+  min-width: 0;
+  flex: 1 1 12rem;
+}
+
+.pp-shopPage .pp-pageHeader__copy .pp-publicHero__eyebrow {
+  margin-bottom: 6px;
+}
+
+.pp-shopPage .pp-pageHeader__title {
+  padding-right: 0.25rem;
+}
+
+.pp-shopPage .pp-pageHeader__sub {
+  line-height: 1.55;
+  max-width: 36ch;
+}
+
+.pp-shopPage .pp-pageHeader__back {
+  padding: 10px 16px;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.pp-shopPage .pp-shopGrid {
+  margin-top: clamp(16px, 3vw, 24px);
+  gap: clamp(16px, 3vw, 22px);
 }

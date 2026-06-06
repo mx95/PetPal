@@ -22,6 +22,9 @@ const ru = {
     bookings: 'Запись',
     shop: 'Магазин',
     provider: 'Провайдер',
+    tagline: 'Центр заботы',
+    menu: 'Меню',
+    getStarted: 'Начать',
   },
   home: {
     badge: 'Обзор',
@@ -58,7 +61,7 @@ const ru = {
       value3Title: 'Ваш pet-мир рядом',
       value3Desc: 'Ветеринары, грумеры, записи и сообщество — в одном месте.',
       featuresTitle: 'Что умеет PetPal',
-      featuresSub: 'Основные разделы MVP — у каждого своя задача.',
+      featuresSub: 'Простые инструменты для повседневной заботы — у каждого своя задача.',
       ctaTrack: 'Открыть трекер',
       docsLink: 'Все страницы и API →',
       stayLine: 'Для обычных владельцев — бесплатный старт, без лишнего шума.',
@@ -329,17 +332,30 @@ const ru = {
   },
   footer: {
     legal: 'Право',
+    company: 'Компания',
+    about: 'О нас',
+    pricing: 'Цены',
+    contact: 'Связаться',
     privacy: 'Конфиденциальность',
-    terms: 'Условия',
+    privacyPolicy: 'Политика конфиденциальности',
+    terms: 'Условия использования',
     cookies: 'Cookie',
     cookieSettings: 'Настройки cookie',
     brandDesc:
       'Поддерживаем семьи с питомцами надёжными инструментами заботы и проверенными местными сервисами.',
     rightsAndByline: 'Все права защищены · Создано с ❤️ любящими владельцами питомцев.',
-    note:
-      'ЕС/ЕЭЗ: информация для прозрачности. Замените шаблоны в юр. разделах на данные вашей организации.',
   },
-  app: { loadingTracker: 'Загрузка трекера…' },
+  legal: {
+    disclaimer:
+      'Информация ниже предоставлена для прозрачности (в т.ч. GDPR ЕС). Это не юридическая консультация.',
+    backHome: '← На главную',
+    backLogin: '← К входу',
+    lastUpdated: 'Обновлено:',
+  },
+  app: {
+    loadingTracker: 'Загрузка трекера…',
+    checkingSession: 'Проверка входа…',
+  },
   requireAuth: { loading: 'Загрузка…' },
   auth: {
     errors: {
@@ -790,7 +806,7 @@ const ru = {
     sourceTooltipLbs: 'Позиция по вышкам сотовой связи (приблизительно).',
     wifiTrackingHint:
       'Wi‑Fi‑трекинг не использует домашний интернет автоматически.',
-    devicePanelTitle: 'Настройки ошейника',
+    devicePanelTitle: 'Батарея и частота обновлений',
     devicePanelIntro:
       'Выберите, как часто ошейник обновляет данные и сколько расходует батарею. Настройки применятся при следующем подключении.',
     devicePanelIntroNamed:
@@ -861,6 +877,14 @@ const ru = {
     devicePanelNeedWifi: 'Введите код роутера — см. «Где найти код роутера?».',
     devicePanelNoApi: 'Не настроен REACT_APP_XEXUN_HTTP_BASE_URL.',
     devicePanelFailed: 'Не удалось отправить команду.',
+    devicePanelGpsposIntro:
+      'Этот ошейник отправляет данные на облачную GPS-платформу (gpspos), а не напрямую на PetPal по TCP.',
+    devicePanelGpsposSync: 'Обновить из облака',
+    devicePanelGpsposSyncing: 'Обновление…',
+    devicePanelGpsposSynced: 'Позиция обновлена из облака.',
+    devicePanelGpsposFoot: 'Настройте GPSPOS_* на tracker-сервере — docs/GPSPOS_SETUP.md.',
+    devicePanelGpsposDisabled: 'Синхронизация с облаком отключена на сервере.',
+    devicePanelGpsposNoPosition: 'На платформе пока нет позиции.',
     devicePanelXexunFoot: 'Держите ошейник заряженным и иногда выводите на улицу для GPS.',
     devicePanelG365Note:
       'Если карта устарела, нажмите «Найти на карте сейчас» ниже.',

@@ -55,10 +55,11 @@ export function getDb() {
     throw new Error('Firebase is not configured');
   }
   if (!db) {
-    // Dev-only stability: CRA/React 18 HMR + WebChannel can trip Firestore internal assertions
-    // on localhost in some environments. Long-polling avoids that path.
-    const isDev = String(process.env.NODE_ENV) !== 'production';
-    if (isDev) {
+    const preferLongPolling =
+      String(process.env.NODE_ENV) !== 'production' ||
+      (typeof window !== 'undefined' &&
+        (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'));
+    if (preferLongPolling) {
       db = initializeFirestore(app, {
         experimentalForceLongPolling: true,
         useFetchStreams: false,

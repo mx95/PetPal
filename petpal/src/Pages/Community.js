@@ -11,7 +11,6 @@ import { useI18n } from '../i18n/I18nContext';
 import { useCommunity } from '../social/CommunityContext';
 import { lostListingToFeedPost, strayListingToFeedPost } from '../social/communityFeedNormalize';
 import { WalkPostEmbed } from '../social/walkPostEmbed';
-import { communityPosts, lostPetDemoFeedPosts, storyRingUsers } from '../data/communityMock';
 import { fileToSmallVideoDataUrl, MAX_COMMUNITY_VIDEO_BYTES } from '../social/communityVideo';
 import { useStrayListings } from '../stray/useStrayListings';
 import { filesToResizedDataUrls } from '../walk/walkPhotos';
@@ -74,7 +73,7 @@ function PostCard({ post, taggedPet, authorLetter }) {
     >
       {post.boosted ? (
         <div className="pp-post__boostBadge" role="status">
-          Promoted{post.boostPaymentPending ? ' (payment pending)' : ''}
+          {post.boostPaymentPending ? t('community.postPromotedPending') : t('community.postPromoted')}
         </div>
       ) : null}
       <header className="pp-post__head pp-post__head--card">
@@ -356,28 +355,7 @@ export default function Community() {
         sortAt: typeof p.sortAt === 'number' ? p.sortAt : 0,
       });
     });
-    communityPosts.forEach((m) => {
-      communityPieces.push({
-        ...m,
-        isUser: false,
-        feedKind: m.feedKind || 'community',
-        sortAt: typeof m.sortAt === 'number' ? m.sortAt : 0,
-      });
-    });
-
-    let lostMerged = [];
-    const lostPieces = activeListings.map((lo) => lostListingToFeedPost(lo, displayName, t));
-    if (lostPieces.length > 0) lostMerged = lostPieces;
-    else {
-      lostMerged = lostPetDemoFeedPosts.map((d) => ({
-        ...d,
-        isUser: false,
-        feedKind: 'lostPet',
-        sortAt: typeof d.sortAt === 'number' ? d.sortAt : 0,
-        isDemoLost: true,
-        timeLabel: t('community.feedBadgeDemo'),
-      }));
-    }
+    const lostMerged = activeListings.map((lo) => lostListingToFeedPost(lo, displayName, t));
 
     const strayPieces = strayFeedRows.map((row) => strayListingToFeedPost(row, t));
 
@@ -929,40 +907,24 @@ export default function Community() {
         </div>
       )}
 
-      <div className="pp-col-12">
-        <div className="pp-community-stories" aria-label="Stories">
-          {pets.map((p) => (
-            <button
-              key={p.id}
-              type="button"
-              className="pp-story-ring pp-story-ring--you"
-              style={{ '--ring': '#5b37ff' }}
-            >
-              <span className="pp-story-ring__inner" aria-hidden>
-                {p.photoDataUrl ? (
-                  <img src={p.photoDataUrl} alt="" className="pp-story-ring__photo" width={40} height={40} />
-                ) : (
-                  getCategory(p).emoji
-                )}
-              </span>
-              <span className="pp-story-ring__label">{p.name}</span>
-            </button>
-          ))}
-          {storyRingUsers.map((s) => (
-            <button
-              key={s.id}
-              type="button"
-              className={`pp-story-ring ${s.isYou ? 'pp-story-ring--you' : ''}`}
-              style={{ '--ring': s.accent }}
-            >
-              <span className="pp-story-ring__inner" aria-hidden>
-                {s.isYou ? 'You' : s.label[0]}
-              </span>
-              <span className="pp-story-ring__label">{s.label}</span>
-            </button>
-          ))}
+      {pets.length > 0 ? (
+        <div className="pp-col-12">
+          <div className="pp-community-petStrip" aria-label={t('community.yourPetsStrip')} role="list">
+            {pets.map((p) => (
+              <div key={p.id} className="pp-community-petStrip__item" role="listitem">
+                <span className="pp-community-petStrip__avatar" aria-hidden>
+                  {p.photoDataUrl ? (
+                    <img src={p.photoDataUrl} alt="" className="pp-story-ring__photo" width={40} height={40} />
+                  ) : (
+                    getCategory(p).emoji
+                  )}
+                </span>
+                <span className="pp-community-petStrip__label">{p.name}</span>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      ) : null}
 
       <div className="pp-col-12">
         <div className="pp-community-feedToolbar pp-card pp-pad" style={{ marginBottom: 12 }}>

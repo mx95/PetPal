@@ -18,10 +18,25 @@ const ALL_FEATURES = [
 const FEATURES = ALL_FEATURES.filter((f) => f.mvp !== false);
 
 const VALUE_PILLARS = [
-  { key: 'value1', icon: '🛡️' },
-  { key: 'value2', icon: '✨' },
-  { key: 'value3', icon: '🌍' },
+  { key: 'value1', icon: 'shield' },
+  { key: 'value2', icon: 'heart' },
+  { key: 'value3', icon: 'globe' },
 ];
+
+function ValuePillarIcon({ type }) {
+  if (type === 'heart') {
+    return (
+      <svg className="pp-homeWelcome__heartIcon" viewBox="0 0 24 24" width="22" height="22" aria-hidden>
+        <path
+          fill="currentColor"
+          d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+        />
+      </svg>
+    );
+  }
+  if (type === 'shield') return '🛡️';
+  return '🌍';
+}
 
 function displayName(user) {
   const n = String(user?.displayName || '').trim();
@@ -70,9 +85,9 @@ export default function HomeScreen() {
               <Link className="pp-btn pp-btnPrimary" to="/pets">
                 {t('home.welcome.ctaPets')}
               </Link>
-            <Link className="pp-btn pp-btn--ghost" to="/tracking">
-              {t('home.welcome.ctaTrack')}
-            </Link>
+              <Link className="pp-btn pp-btn--ghost" to="/tracking">
+                {t('home.welcome.ctaTrack')}
+              </Link>
             </div>
           )}
           <p className="pp-homeWelcome__trust">{user ? t('home.welcome.stayLine') : t('home.publicHero.trustLine')}</p>
@@ -82,8 +97,8 @@ export default function HomeScreen() {
       <ul className="pp-homeWelcome__values" role="list">
         {VALUE_PILLARS.map(({ key, icon }) => (
           <li key={key} className="pp-homeWelcome__value">
-            <span className="pp-homeWelcome__valueIcon" aria-hidden>
-              {icon}
+            <span className={`pp-homeWelcome__valueIcon${icon === 'heart' ? ' pp-homeWelcome__valueIcon--heart' : ''}`} aria-hidden>
+              <ValuePillarIcon type={icon} />
             </span>
             <div>
               <strong>{t(`home.welcome.${key}Title`)}</strong>
@@ -117,20 +132,6 @@ export default function HomeScreen() {
           ))}
         </ul>
       </section>
-
-      <footer className="pp-homeWelcome__foot">
-        <Link className="pp-homeWelcome__footLink" to="/discover">
-          {t('home.welcome.discoverLink')}
-        </Link>
-        {user && MVP_NAV.showPremium ? (
-          <Link className="pp-homeWelcome__footLink pp-homeWelcome__footLink--muted" to="/premium">
-            {t('home.welcome.premiumLink')}
-          </Link>
-        ) : null}
-        <Link className="pp-homeWelcome__footLink pp-homeWelcome__footLink--muted" to="/docs">
-          {t('home.welcome.docsLink')}
-        </Link>
-      </footer>
     </div>
   );
 }

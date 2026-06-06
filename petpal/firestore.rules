@@ -205,6 +205,12 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Contact form submissions — written by Cloud Functions only.
+    match /contactMessages/{messageId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
     // Public profile docs used by NFC/QR pages (sanitized fields only).
     match /publicPets/{publicId} {
       allow read: if true;

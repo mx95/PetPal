@@ -10,7 +10,7 @@ export function useMobileDockLayout(enabled) {
   useEffect(() => {
     if (!enabled) return undefined;
 
-    const mq = window.matchMedia('(max-width: 720px)');
+    const mq = window.matchMedia('(max-width: 1023px)');
     const sync = () => {
       if (mq.matches) document.body.classList.add(BODY_CLASS);
       else document.body.classList.remove(BODY_CLASS);

@@ -22,6 +22,9 @@ const el = {
     bookings: 'Κρατήσεις',
     shop: 'Κατάστημα',
     provider: 'Πάροχος',
+    tagline: 'Κέντρο φροντίδας',
+    menu: 'Μενού',
+    getStarted: 'Ξεκινήστε',
   },
   home: {
     badge: 'Επισκόπηση',
@@ -57,7 +60,7 @@ const el = {
       value3Title: 'Ο τοπικός κόσμος του κατοικιδίου',
       value3Desc: 'Κτηνίατροι, groomers, κρατήσεις και κοινότητα — όλα σε ένα μέρος.',
       featuresTitle: 'Τι προσφέρει η εφαρμογή',
-      featuresSub: 'Βασικές ενότητες MVP — καθεμία με έναν σκοπό.',
+      featuresSub: 'Απλά εργαλεία για την καθημερινή φροντίδα — το καθένα με έναν σκοπό.',
       ctaTrack: 'Άνοιγμα tracker',
       docsLink: 'Όλες οι σελίδες & APIs →',
       stayLine: 'Για καθημερινούς φροντιστές — δωρεάν εκκίνηση, χωρίς clutter.',
@@ -328,17 +331,30 @@ const el = {
   },
   footer: {
     legal: 'Νομικά',
+    company: 'Εταιρεία',
+    about: 'Σχετικά με εμάς',
+    pricing: 'Τιμές',
+    contact: 'Επικοινωνία',
     privacy: 'Απόρρητο',
-    terms: 'Όροι',
+    privacyPolicy: 'Πολιτική απορρήτου',
+    terms: 'Όροι & προϋποθέσεις',
     cookies: 'Cookies',
     cookieSettings: 'Ρυθμίσεις cookies',
     brandDesc:
       'Στηρίζουμε τις οικογένειες με κατοικίδια με αξιόπιστα εργαλεία φροντίδας και έμπιστους τοπικούς πόρους.',
     rightsAndByline: 'Με επιφύλαξη παντός δικαιώματος · Δημιουργήθηκε με ❤️ από ανθρώπους που αγαπούν τα κατοικίδια.',
-    note:
-      'ΕΕ/ΕΟΧ: πληροφορίες για διαφάνεια. Αντικαταστήστε placeholder στα νομικά κείμενα με τα στοιχεία της οντότητάς σας.',
   },
-  app: { loadingTracker: 'Φόρτωση παρακολούθησης…' },
+  legal: {
+    disclaimer:
+      'Οι πληροφορίες παρακάτω παρέχονται για διαφάνεια (συμπεριλ. GDPR ΕΕ). Δεν αποτελούν νομική συμβουλή.',
+    backHome: '← Πίσω στην αρχική',
+    backLogin: '← Πίσω στη σύνδεση',
+    lastUpdated: 'Τελευταία ενημέρωση:',
+  },
+  app: {
+    loadingTracker: 'Φόρτωση παρακολούθησης…',
+    checkingSession: 'Έλεγχος σύνδεσης…',
+  },
   requireAuth: { loading: 'Φόρτωση…' },
   auth: {
     errors: {
@@ -789,7 +805,7 @@ const el = {
     sourceTooltipLbs: 'Θέση από κεραίες κινητής (κατά προσέγγιση).',
     wifiTrackingHint:
       'Η παρακολούθηση Wi‑Fi δεν χρησιμοποιεί αυτόματα το Wi‑Fi του σπιτιού σας.',
-    devicePanelTitle: 'Ρυθμίσεις κολάρου',
+    devicePanelTitle: 'Μπαταρία & συχνότητα ενημέρωσης',
     devicePanelIntro:
       'Επιλέξτε πόσο συχνά ενημερώνεται το κολάρο και πόση μπαταρία χρησιμοποιεί. Οι ρυθμίσεις εφαρμόζονται στην επόμενη σύνδεση.',
     devicePanelIntroNamed:
@@ -860,6 +876,14 @@ const el = {
     devicePanelNeedWifi: 'Εισάγετε τον κωδικό router — δείτε «Πού βρίσκω τον κωδικό».',
     devicePanelNoApi: 'Δεν έχει ρυθμιστεί REACT_APP_XEXUN_HTTP_BASE_URL.',
     devicePanelFailed: 'Αποτυχία αποστολής εντολής.',
+    devicePanelGpsposIntro:
+      'Αυτό το κολάρο στέλνει δεδομένα σε cloud πλατφόρμα GPS (gpspos), όχι απευθείας στο PetPal μέσω TCP.',
+    devicePanelGpsposSync: 'Ανανέωση από cloud',
+    devicePanelGpsposSyncing: 'Ανανέωση…',
+    devicePanelGpsposSynced: 'Η θέση ενημερώθηκε από το cloud.',
+    devicePanelGpsposFoot: 'Ρυθμίστε GPSPOS_* στον tracker server — docs/GPSPOS_SETUP.md.',
+    devicePanelGpsposDisabled: 'Το cloud sync είναι απενεργοποιημένο στον server.',
+    devicePanelGpsposNoPosition: 'Δεν υπάρχει θέση στην πλατφόρμα ακόμα.',
     devicePanelXexunFoot: 'Κρατήστε το κολάρο φορτισμένο και δώστε του περιστασιακά χρόνο έξω για GPS.',
     devicePanelG365Note:
       'Αν ο χάρτης φαίνεται παλιός, χρησιμοποιήστε «Εντοπισμός στον χάρτη τώρα» παρακάτω.',

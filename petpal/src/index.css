@@ -13,6 +13,7 @@ html {
 body {
   margin: 0;
   max-width: 100%;
+  overflow-x: hidden;
   font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
   color: #101828;
@@ -29,6 +30,26 @@ input,
 select,
 textarea {
   font: inherit;
+}
+
+@media (max-width: 768px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+
+  .pp-btn,
+  .pp-btnPrimary,
+  button.pp-btn {
+    min-height: 44px;
+  }
+
+  a.pp-footer__link,
+  .pp-bottomNav__item,
+  .pp-mobileNav__link {
+    min-height: 44px;
+  }
 }
 
 ::selection {

@@ -9,12 +9,14 @@ const { createTcpServer } = require("./tcp/handler");
 const { createG365TcpServer } = require("./tcp/g365Handler");
 const { registerXexunHttpApi } = require("./http/xexunApiRoutes");
 const { registerG365HttpApi } = require("./http/g365ApiRoutes");
+const { registerGpsposHttpApi } = require("./http/gpsposApiRoutes");
 const { logPrefix } = require("./logging/time");
 const { buildPositionPayload } = require("./http/positionPayload");
 
 function inferDeviceProvider(d) {
   if (!d || typeof d !== "object") return null;
-  if (d.provider === "g365" || d.provider === "xexun") return d.provider;
+  if (d.provider === "g365" || d.provider === "xexun" || d.provider === "gpspos") return d.provider;
+  if (d.gpspos && typeof d.gpspos === "object") return "gpspos";
   if (d.protocol != null && Number.isFinite(Number(d.protocol))) return "g365";
   const raw = String(d.raw || d.rawHex || d.received || "")
     .replace(/\s+/g, "")
@@ -87,8 +89,12 @@ if (GPS365_TCP_ENABLED) {
 } else {
   console.log("[365GPS] GPS365_TCP_ENABLED=0 — 365GPS listener disabled");
 }
+const GPSPOS_ENABLED =
+  String(process.env.GPSPOS_ENABLED ?? "0").trim() !== "0" &&
+  String(process.env.GPSPOS_ENABLED ?? "0").trim().toLowerCase() !== "false";
+
 console.log(
-  `[tracker] Device listeners: Xexun → TCP ${TCP_PORT} (FC…CF) | 365GPS → TCP ${GPS365_TCP_ENABLED ? GPS365_TCP_PORT : "disabled"} (7878…0D0A) | HTTP API → ${HTTP_PORT}`
+  `[tracker] Device listeners: Xexun → TCP ${TCP_PORT} (FC…CF) | 365GPS → TCP ${GPS365_TCP_ENABLED ? GPS365_TCP_PORT : "disabled"} (7878…0D0A) | gpspos cloud → ${GPSPOS_ENABLED ? "enabled" : "disabled"} | HTTP API → ${HTTP_PORT}`
 );
 
 const app = express();
@@ -157,6 +163,7 @@ app.use(
 
 registerXexunHttpApi(app, store);
 registerG365HttpApi(app, store);
+registerGpsposHttpApi(app, store);
 
 // -----------------------------------------------------------------------------
 // App API (frontend-safe) — keep /devices & /position as legacy, but also expose

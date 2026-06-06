@@ -9,6 +9,8 @@ import CookiePolicy from './Pages/CookiePolicy';
 import Dashboard from './Pages/Dashboard';
 import Leaderboard from './Pages/Leaderboard';
 import Login from './Pages/Login';
+import ForgotPassword from './Pages/ForgotPassword';
+import Contact from './Pages/Contact';
 import PrivacyPolicy from './Pages/PrivacyPolicy';
 import LostPetAlerts from './Pages/LostPetAlerts';
 import StrayAdoption from './Pages/StrayAdoption';
@@ -68,8 +70,10 @@ function App() {
   const location = useLocation();
   const mainAlignsWithNav = location.pathname === '/docs';
 
+  const { t } = useI18n();
+
   if (initializing) {
-    return <OpeningScreen subtitle="Checking if you’re logged in…" />;
+    return <OpeningScreen subtitle={t('app.checkingSession')} />;
   }
   return (
     <div className="pp-shell">
@@ -84,6 +88,8 @@ function App() {
           <Route path="/pet/:id" element={<PublicPetProfile />} />
           <Route path="/pet" element={<PublicPetProfile />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/contact" element={<Contact />} />
           <Route path="/register" element={<Register />} />
           <Route
             path="/company/apply"

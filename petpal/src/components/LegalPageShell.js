@@ -1,30 +1,26 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
+import { useI18n } from '../i18n/I18nContext';
 
-/**
- * Wrapper for regulatory pages. Replace ORGANISATION placeholders in each page with your legal entity details.
- */
 export function LegalPageShell({ title, lastUpdated, children }) {
   const { user } = useAuth();
-  const back = user ? { to: '/dashboard', label: '← Back to app' } : { to: '/login', label: '← Back to login' };
+  const { t } = useI18n();
+  const back = user
+    ? { to: '/', label: t('legal.backHome') }
+    : { to: '/login', label: t('legal.backLogin') };
+
   return (
     <div className="pp-grid">
       <div className="pp-col-12">
         <div className="pp-card pp-pad pp-legalDoc">
-          <p className="pp-legalDisclaimer">
-            The information below is provided to help meet common transparency expectations (including EU GDPR).
-            It does <strong>not</strong> constitute legal advice. Have a qualified lawyer review and adapt it for your
-            entity, product, and data flows before relying on it.
-          </p>
-          <Link className="pp-link" to={back.to} style={{ display: 'inline-block', marginBottom: 16 }}>
+          <p className="pp-legalDisclaimer">{t('legal.disclaimer')}</p>
+          <Link className="pp-link pp-legalBack" to={back.to}>
             {back.label}
           </Link>
-          <h1 className="pp-h1" style={{ marginTop: 0 }}>
-            {title}
-          </h1>
-          <p className="pp-subtle" style={{ marginBottom: 24 }}>
-            <strong>Last updated:</strong> {lastUpdated}
+          <h1 className="pp-h1 pp-legalTitle">{title}</h1>
+          <p className="pp-subtle pp-legalUpdated">
+            <strong>{t('legal.lastUpdated')}</strong> {lastUpdated}
           </p>
           <div className="pp-legalBody">{children}</div>
         </div>

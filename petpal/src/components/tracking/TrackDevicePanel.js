@@ -14,8 +14,12 @@ import {
   isTrackerCommandsAvailable,
   queryTrackingMode,
 } from '../../tracking/trackerCommandClient';
-import { resolveTrackerHttpBase } from '../../tracking/trackingWifiFeature';
+import {
+  isGpsposSyncAvailable,
+  syncGpsposPosition,
+} from '../../tracking/gpsposCommandClient';
 import IconTrackSource from '../icons/IconTrackSource';
+import { resolveTrackerHttpBase } from '../../tracking/trackingWifiFeature';
 
 const XEXUN_ADVANCED_MODES = ['gps_only'];
 
@@ -47,7 +51,7 @@ function findBatteryPlan(uploadSeconds, statusMinutes) {
 }
 
 function normalizeProvider(value) {
-  if (value === 'g365' || value === 'xexun') return value;
+  if (value === 'g365' || value === 'xexun' || value === 'gpspos') return value;
   return null;
 }
 
@@ -69,6 +73,8 @@ async function fetchDeviceProvider(imei) {
 function commandErrorMessage(err, t) {
   if (err?.code === 'TRACKER_API_NOT_CONFIGURED') return t('trackingPage.devicePanelNoApi');
   if (err?.code === 'device_offline') return t('trackingPage.devicePanelG365Offline');
+  if (err?.code === 'gpspos_disabled') return t('trackingPage.devicePanelGpsposDisabled');
+  if (err?.code === 'no_position') return t('trackingPage.devicePanelGpsposNoPosition');
   return err?.message || t('trackingPage.devicePanelFailed');
 }
 
@@ -106,7 +112,9 @@ export default function TrackDevicePanel({ imei, petName = '', provider = null }
   const [error, setError] = useState('');
   const [pending, setPending] = useState([]);
 
-  const isG365 = resolvedProvider !== 'xexun';
+  const isGpspos = resolvedProvider === 'gpspos';
+  const isG365 = resolvedProvider === 'g365';
+  const isXexun = resolvedProvider === 'xexun';
   const activePlan = useMemo(
     () => findBatteryPlan(uploadSeconds, statusMinutes),
     [uploadSeconds, statusMinutes]
@@ -128,14 +136,14 @@ export default function TrackDevicePanel({ imei, petName = '', provider = null }
   }, [propProvider, imei]);
 
   const refreshPending = useCallback(async () => {
-    if (!imei || !commandsAvailable || isG365) return;
+    if (!imei || !commandsAvailable || !isXexun) return;
     try {
       const data = await fetchPendingCommands(imei);
       setPending(Array.isArray(data?.pending) ? data.pending : []);
     } catch {
       setPending([]);
     }
-  }, [imei, commandsAvailable, isG365]);
+  }, [imei, commandsAvailable, isXexun]);
 
   useEffect(() => {
     void refreshPending();
@@ -192,13 +200,22 @@ export default function TrackDevicePanel({ imei, petName = '', provider = null }
   }
 
   async function resolveProviderForSave() {
-    if (resolvedProvider === 'g365' || resolvedProvider === 'xexun') return resolvedProvider;
+    if (resolvedProvider === 'g365' || resolvedProvider === 'xexun' || resolvedProvider === 'gpspos') {
+      return resolvedProvider;
+    }
     const fetched = await fetchDeviceProvider(imei);
     if (fetched) {
       setResolvedProvider(fetched);
       return fetched;
     }
     return 'g365';
+  }
+
+  async function handleGpsposSync() {
+    await runCommand(async () => {
+      await syncGpsposPosition(imei);
+      setStatus(t('trackingPage.devicePanelGpsposSynced'));
+    });
   }
 
   async function handleSavePlan(e) {
@@ -234,22 +251,27 @@ export default function TrackDevicePanel({ imei, petName = '', provider = null }
   }
 
   return (
-    <section className="pp-trackDevicePanel" aria-labelledby="pp-trackDevicePanel-title">
-      <h2 id="pp-trackDevicePanel-title" className="pp-sectionTitle">
-        {t('trackingPage.devicePanelTitle')}
-      </h2>
-      <p className="pp-subtle pp-trackDevicePanel__intro">
-        {petName
-          ? t('trackingPage.devicePanelIntroNamed', { name: petName })
-          : t('trackingPage.devicePanelIntro')}
-      </p>
-
-      {!commandsAvailable ? (
+    <section className="pp-trackDevicePanel" aria-label={t('trackingPage.devicePanelBatteryLegend')}>
+      {!commandsAvailable && !isGpsposSyncAvailable() ? (
         <div className="pp-trackDevicePanel__warn" role="status">
           {t('trackingPage.devicePanelNoApi')}
         </div>
       ) : null}
 
+      {isGpspos ? (
+        <div className="pp-trackDevicePanel__cloud">
+          <p className="pp-subtle">{t('trackingPage.devicePanelGpsposIntro')}</p>
+          <button
+            type="button"
+            className="pp-btn pp-btnPrimary pp-trackDevicePanel__cta"
+            disabled={busy || !imei?.trim() || !isGpsposSyncAvailable()}
+            onClick={() => void handleGpsposSync()}
+          >
+            {busy ? t('trackingPage.devicePanelGpsposSyncing') : t('trackingPage.devicePanelGpsposSync')}
+          </button>
+          <p className="pp-subtle pp-trackDevicePanel__foot">{t('trackingPage.devicePanelGpsposFoot')}</p>
+        </div>
+      ) : (
       <form className="pp-trackDevicePanel__form" onSubmit={(e) => void handleSavePlan(e)}>
         <fieldset className="pp-trackDeviceModes">
           <legend className="pp-trackDeviceModes__legend">{t('trackingPage.devicePanelBatteryLegend')}</legend>
@@ -459,6 +481,7 @@ export default function TrackDevicePanel({ imei, petName = '', provider = null }
           </div>
         </details>
       </form>
+      )}
 
       {status ? (
         <p className="pp-trackDevicePanel__status" role="status">

@@ -51,7 +51,10 @@ function normalizeIncomingDevice(prev, incoming, canonicalImei = null) {
     return mergeDeviceRecord(prev, {
       ...incoming,
       imei: canonicalImei || incoming.imei || prev?.imei || null,
-      _recordPosition: incomingHasNewLocationFix(incoming),
+      _recordPosition:
+        incoming._recordPosition !== undefined
+          ? Boolean(incoming._recordPosition)
+          : incomingHasNewLocationFix(incoming),
     });
   }
 

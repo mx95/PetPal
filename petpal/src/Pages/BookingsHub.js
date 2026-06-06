@@ -14,7 +14,6 @@ import {
 import { ServiceTabs } from '../bookings/components/ServiceTabs';
 import { ProviderCard } from '../bookings/components/ProviderCard';
 import { BookingModal } from '../bookings/components/BookingModal';
-import { DEMO_PROVIDERS } from '../bookings/demoBookingData';
 import { formatDateTime24 } from '../formatTime24';
 import { appleCalendarDataUrl, buildCalendarEvent, googleCalendarUrl } from '../bookings/calendarLinks';
 import { AppCard, EmptyState, PageContainer, SectionHeader, SkeletonCard } from '../components/ui';
@@ -68,7 +67,7 @@ function BrowseProviders() {
     []
   );
 
-  const sourceRows = rows.length ? rows : DEMO_PROVIDERS;
+  const sourceRows = rows;
 
   const filtered = useMemo(() => {
     return sourceRows.filter(
@@ -115,7 +114,7 @@ function BrowseProviders() {
     () => [
       { id: 'vet', emoji: '🐾', label: t('bookingsHub.tabVet') },
       { id: 'hotel', emoji: '🏨', label: t('bookingsHub.tabHotel') },
-      { id: 'bath', emoji: '🛁', label: 'Bath' },
+      { id: 'bath', emoji: '🛁', label: t('bookingsHub.tabBath') },
       { id: 'saloon', emoji: '✂️', label: t('bookingsHub.tabGroom') },
     ],
     [t]
@@ -160,7 +159,6 @@ function BrowseProviders() {
   };
 
   const showEmpty = sorted.length === 0;
-  const showDemoHint = rows.length === 0;
   const hasAdvancedFiltersActive = ratingFilter !== 'any' || (userLoc && distanceFilter !== 'any');
 
   return (
@@ -256,8 +254,8 @@ function BrowseProviders() {
             {recommended.length ? (
               <section className="pp-sponsoredRail">
                 <div className="pp-sponsoredRail__head">
-                  <span>Recommended</span>
-                  <small>Boosted businesses, curated softly</small>
+                  <span>{t('bookingsHub.recommendedTitle')}</span>
+                  <small>{t('bookingsHub.recommendedSub')}</small>
                 </div>
                 <div className="pp-sponsoredRail__row">
                   {recommended.map(({ p, km }) => (
@@ -274,9 +272,6 @@ function BrowseProviders() {
           </>
         )}
 
-        {showDemoHint && !showEmpty ? (
-          <p className="pp-book-footnote">{t('bookingsHub.demoNote')}</p>
-        ) : null}
       </div>
 
       <BookingModal

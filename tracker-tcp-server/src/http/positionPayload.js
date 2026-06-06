@@ -77,11 +77,13 @@ function buildPositionPayload(imei, d) {
       };
     }
     if (d.battery != null || d.signal != null || d.source || d.charging != null) {
+      const approxCoords =
+        isPlausibleLatLng(rawLat, rawLng) && (d.source === "lbs" || d.source === "wifi");
       return {
         imei,
         provider: d.provider ?? null,
-        lat: null,
-        lng: null,
+        lat: approxCoords ? rawLat : null,
+        lng: approxCoords ? rawLng : null,
         source: d.source ?? null,
         accuracy: d.source === "gps" ? "high" : "low",
         ...statusFields(d),
@@ -89,7 +91,7 @@ function buildPositionPayload(imei, d) {
         receivedAt,
         secondsAgo,
         warningApproximate: d.source === "lbs" || d.source === "wifi",
-        gpsValid: false,
+        gpsValid: d.gpsValid === true,
       };
     }
     return { error: "no_position" };

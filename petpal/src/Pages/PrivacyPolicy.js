@@ -1,21 +1,26 @@
 import React from 'react';
 import { LegalPageShell } from '../components/LegalPageShell';
+import { BRAND } from '../config/brand';
 
-/** Replace bracketed placeholders with your real company / contact details before production. */
 export default function PrivacyPolicy() {
   return (
     <LegalPageShell title="Privacy policy" lastUpdated={new Date().toISOString().slice(0, 10)}>
       <section>
         <h2>1. Who we are</h2>
         <p>
-          <strong>Data controller:</strong> [Your company name e.g. PetPal Services Ltd], registered in the Republic
-          of Cyprus, with registered address at [Your full business address, Cyprus] (“<strong>we</strong>”, “
-          <strong>us</strong>”, “<strong>our</strong>”).
+          <strong>Data controller:</strong> {BRAND.legalName}, registered in the Republic of Cyprus, with registered
+          address at {BRAND.address} (“<strong>we</strong>”, “<strong>us</strong>”, “<strong>our</strong>”).
         </p>
         <p>
-          <strong>Contact (general):</strong> [contact@yourdomain.com]
+          <strong>Contact (general):</strong>{' '}
+          <a href={`mailto:${BRAND.contactEmail}`} className="pp-link">
+            {BRAND.contactEmail}
+          </a>
           <br />
-          <strong>Contact (data protection / privacy):</strong> [privacy@yourdomain.com]
+          <strong>Contact (data protection / privacy):</strong>{' '}
+          <a href={`mailto:${BRAND.privacyEmail}`} className="pp-link">
+            {BRAND.privacyEmail}
+          </a>
         </p>
         <p>
           If we appoint a Data Protection Officer (DPO), their contact details will be added here. Under current EU
