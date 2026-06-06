@@ -108,11 +108,9 @@ export default function TopNav() {
           <span className="pp-logoMark flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white shadow-soft transition-transform duration-300 group-hover:scale-105">
             <img className="h-10 w-10 rounded-2xl" src={petpalLogo} alt="" />
           </span>
-          <span className="hidden min-w-0 sm:block">
-            <span className="block text-lg font-black tracking-[-0.04em] text-petpal-ink">{BRAND.appName}</span>
-            <span className="block text-[11px] font-bold uppercase tracking-[0.18em] text-petpal-muted">
-              {t('nav.tagline')}
-            </span>
+          <span className="pp-topNavBrand min-w-0">
+            <span className="pp-topNavBrand__name">{BRAND.appName}</span>
+            <span className="pp-topNavBrand__tag">{t('nav.tagline')}</span>
           </span>
         </Link>
 

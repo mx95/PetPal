@@ -13,6 +13,7 @@ import { useSuggestedWalks } from '../walk/useSuggestedWalks';
 import { formatTime24 } from '../formatTime24';
 import LifetimeAchievements from '../components/LifetimeAchievements';
 import { formatDateTime24 } from '../formatTime24';
+import { MVP_NAV } from '../config/mvpNav';
 
 const WEEKLY_GOAL_KM = 18;
 const DAILY_MISSIONS_HUB = 3;
@@ -673,22 +674,26 @@ export default function Dashboard() {
             </div>
             <span className="pp-actionCard__arrow" aria-hidden>→</span>
           </Link>
-          <Link className="pp-actionCard pp-actionCard--breeding" to="/community">
-            <span className="pp-actionCard__icon" aria-hidden>🐾</span>
-            <div className="pp-actionCard__body">
-              <span className="pp-actionCard__title">{t('dashboard.exploreCommunityTitle')}</span>
-              <span className="pp-actionCard__desc">{t('dashboard.exploreCommunityDesc')}</span>
-            </div>
-            <span className="pp-actionCard__arrow" aria-hidden>→</span>
-          </Link>
-          <Link className="pp-actionCard pp-actionCard--lost" to="/premium/lost">
-            <span className="pp-actionCard__icon" aria-hidden>🚨</span>
-            <div className="pp-actionCard__body">
-              <span className="pp-actionCard__title">{t('dashboard.exploreLostTitle')}</span>
-              <span className="pp-actionCard__desc">{t('dashboard.exploreLostDesc')}</span>
-            </div>
-            <span className="pp-actionCard__arrow" aria-hidden>→</span>
-          </Link>
+          {MVP_NAV.showCommunity ? (
+            <Link className="pp-actionCard pp-actionCard--breeding" to="/community">
+              <span className="pp-actionCard__icon" aria-hidden>🐾</span>
+              <div className="pp-actionCard__body">
+                <span className="pp-actionCard__title">{t('dashboard.exploreCommunityTitle')}</span>
+                <span className="pp-actionCard__desc">{t('dashboard.exploreCommunityDesc')}</span>
+              </div>
+              <span className="pp-actionCard__arrow" aria-hidden>→</span>
+            </Link>
+          ) : null}
+          {MVP_NAV.showPremium ? (
+            <Link className="pp-actionCard pp-actionCard--lost" to="/premium/lost">
+              <span className="pp-actionCard__icon" aria-hidden>🚨</span>
+              <div className="pp-actionCard__body">
+                <span className="pp-actionCard__title">{t('dashboard.exploreLostTitle')}</span>
+                <span className="pp-actionCard__desc">{t('dashboard.exploreLostDesc')}</span>
+              </div>
+              <span className="pp-actionCard__arrow" aria-hidden>→</span>
+            </Link>
+          ) : null}
         </div>
       </section>
     </div>

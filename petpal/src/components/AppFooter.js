@@ -18,37 +18,43 @@ export function AppFooter() {
             <p className="pp-footer__desc">{t('footer.brandDesc')}</p>
           </section>
 
-          <nav className="pp-footer__col" aria-label={t('footer.company')}>
-            <h4 className="pp-footer__title">{t('footer.company')}</h4>
-            <Link className="pp-footer__link" to="/docs">
-              {t('footer.about')}
-            </Link>
-            {MVP_NAV.showShop ? (
-              <Link className="pp-footer__link" to="/shop">
-                {t('footer.pricing')}
-              </Link>
-            ) : (
+          <div className="pp-footer__linkCols">
+            <nav className="pp-footer__col pp-footer__col--compact" aria-label={t('footer.company')}>
+              <h4 className="pp-footer__title">{t('footer.company')}</h4>
               <Link className="pp-footer__link" to="/docs">
-                {t('nav.docs')}
+                {t('footer.about')}
               </Link>
-            )}
-            <Link className="pp-footer__link" to="/contact">
-              {t('footer.contact')}
-            </Link>
-          </nav>
+              {MVP_NAV.showShop ? (
+                <Link className="pp-footer__link" to="/shop">
+                  {t('footer.pricing')}
+                </Link>
+              ) : (
+                <Link className="pp-footer__link" to="/docs">
+                  {t('nav.docs')}
+                </Link>
+              )}
+            </nav>
 
-          <nav className="pp-footer__col" aria-label={t('footer.legal')}>
-            <h4 className="pp-footer__title">{t('footer.legal')}</h4>
-            <Link className="pp-footer__link" to="/privacy">
-              {t('footer.privacyPolicy')}
-            </Link>
-            <Link className="pp-footer__link" to="/terms">
-              {t('footer.terms')}
-            </Link>
-            <button type="button" className="pp-footer__link pp-footer__linkBtn" onClick={reopenCookieSettings}>
-              {t('footer.cookieSettings')}
-            </button>
-          </nav>
+            <nav className="pp-footer__col pp-footer__col--compact" aria-label={t('footer.contact')}>
+              <h4 className="pp-footer__title">{t('footer.contact')}</h4>
+              <Link className="pp-footer__link" to="/contact">
+                {t('footer.contact')}
+              </Link>
+            </nav>
+
+            <nav className="pp-footer__col pp-footer__col--compact pp-footer__col--legal" aria-label={t('footer.legal')}>
+              <h4 className="pp-footer__title">{t('footer.legal')}</h4>
+              <Link className="pp-footer__link" to="/privacy">
+                {t('footer.privacyPolicy')}
+              </Link>
+              <Link className="pp-footer__link" to="/terms">
+                {t('footer.terms')}
+              </Link>
+              <button type="button" className="pp-footer__link pp-footer__linkBtn" onClick={reopenCookieSettings}>
+                {t('footer.cookieSettings')}
+              </button>
+            </nav>
+          </div>
         </div>
 
         <p className="pp-footer__note">

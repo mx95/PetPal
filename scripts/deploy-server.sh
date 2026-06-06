@@ -141,13 +141,11 @@ if ! command -v pm2 >/dev/null 2>&1; then
   die "pm2 not found — install with: npm i -g pm2"
 fi
 
-log "Reloading pm2:$PM2_APP from ecosystem.config.cjs (DB: $TRACKER_DB)"
+log "Starting pm2:$PM2_APP from ecosystem.config.cjs (DB: $TRACKER_DB)"
 cd "$TRACKER_DIR"
-if pm2 describe "$PM2_APP" >/dev/null 2>&1; then
-  pm2 reload ecosystem.config.cjs --only "$PM2_APP" --update-env
-else
-  pm2 start ecosystem.config.cjs
-fi
+# reload alone can keep stale SQLITE_PATH — delete+start ensures ecosystem env is applied
+pm2 delete "$PM2_APP" 2>/dev/null || true
+pm2 start ecosystem.config.cjs
 pm2 save
 
 log "Waiting for HTTP :$HTTP_PORT"

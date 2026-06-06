@@ -393,41 +393,20 @@ export default function MyPets() {
   return (
     <div className="pp-grid">
       <div className="pp-col-12">
-        <div>
-          <div>
-            <h1 className="pp-h1" style={{ marginTop: 10 }}>
-              {t('myPets.title')}
-            </h1>
-            <p className="pp-subtle" style={{ marginTop: 6 }}>
-              {t('myPets.intro')}
-            </p>
-          </div>
+        <div className="pp-myPetsHeader">
+          <h1 className="pp-h1 pp-myPetsHeader__title">{t('myPets.title')}</h1>
         </div>
-        <div className="pp-row" style={{ marginTop: 12 }}>
-          <div className="pp-row" style={{ gap: 8, flexWrap: 'wrap' }}>
-            <div className="pp-petSearchBox">
-              <IconSearch />
-              <input
-                className="pp-input"
-                style={{
-                  border: 0,
-                  boxShadow: 'none',
-                  padding: '6px 0 7px',
-                  minWidth: 140,
-                  background: 'transparent',
-                  borderRadius: 0,
-                  fontWeight: 400,
-                  letterSpacing: 'normal',
-                  textTransform: 'none',
-                  lineHeight: 'normal',
-                  height: 'auto',
-                  fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif',
-                }}
-                placeholder="Search pets"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-            </div>
+        <div className="pp-myPetsToolbar">
+          <div className="pp-petSearchBox pp-myPetsToolbar__search">
+            <IconSearch />
+            <input
+              className="pp-input pp-myPetsToolbar__searchInput"
+              placeholder="Search pets"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+          <div className="pp-myPetsToolbar__actions">
             <input
               ref={importRef}
               type="file"
@@ -457,16 +436,15 @@ export default function MyPets() {
             >
               <IconDownload />
             </button>
+            <button
+              id="add-pet-open"
+              type="button"
+              className="pp-btn pp-btnPrimary pp-myPetsToolbar__addBtn"
+              onClick={() => setAddPetDrawerOpen(true)}
+            >
+              + {t('myPets.addTitle')}
+            </button>
           </div>
-          <button
-            id="add-pet-open"
-            type="button"
-            className="pp-btn pp-btnPrimary"
-            onClick={() => setAddPetDrawerOpen(true)}
-            style={{ marginLeft: 'auto' }}
-          >
-            + {t('myPets.addTitle')}
-          </button>
         </div>
       </div>
 

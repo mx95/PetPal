@@ -63,17 +63,25 @@ export default function HomeScreen() {
           />
           <div className="pp-homeWelcome__heroFade" />
         </div>
-        <div className="pp-homeWelcome__bannerCopy">
-          <p className="pp-homeWelcome__eyebrow">{t('home.welcome.eyebrow')}</p>
-          <h1 id="home-hero-title" className="pp-homeWelcome__title">
-            {user && firstName ? t('home.welcome.headlineNamed', { name: firstName }) : t('home.publicHero.headline')}
-          </h1>
-          {user && firstName ? (
-            <p className="pp-homeWelcome__headlineSub">{t('home.welcome.headlineSub')}</p>
-          ) : null}
-          <p className="pp-homeWelcome__lead">
-            {user ? t('home.welcome.leadSignedIn') : t('home.publicHero.sub')}
-          </p>
+        <div className="pp-homeWelcome__bannerOverlay">
+          <div className="pp-homeWelcome__bannerCopy">
+            <div className="pp-homeWelcome__bannerGreeting">
+              <p className="pp-homeWelcome__eyebrow">{t('home.welcome.eyebrow')}</p>
+              <h1 id="home-hero-title" className="pp-homeWelcome__title">
+                {user && firstName ? t('home.welcome.headlineNamed', { name: firstName }) : t('home.publicHero.headline')}
+              </h1>
+            </div>
+            <div className="pp-homeWelcome__bannerBody">
+              {user && firstName ? (
+                <p className="pp-homeWelcome__headlineSub">{t('home.welcome.headlineSub')}</p>
+              ) : null}
+              <p className="pp-homeWelcome__lead">
+                {user ? t('home.welcome.leadSignedIn') : t('home.publicHero.sub')}
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="pp-homeWelcome__bannerActions">
           {!user ? (
             <div className="pp-homeWelcome__ctaRow">
               <Link className="pp-btn pp-btnPrimary" to="/register">

@@ -490,12 +490,11 @@ function buildHistoryTimelineEvents(points, t, lang, range) {
 export default function Tracking() {
   const { t, language } = useI18n();
   const fieldId = useId();
-  const { pets, updatePet, getCategory } = usePets();
+  const { pets, getCategory } = usePets();
   const dataSource = getTrackingDataSource();
   void dataSource;
 
   const [selectedPetId, setSelectedPetId] = useState('');
-  const [deviceId, setDeviceId] = useState('');
   const [position, setPosition] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -535,15 +534,7 @@ export default function Tracking() {
 
   const savedDeviceIdTrimmed = useMemo(() => (selectedPet?.trackingDeviceId || '').trim(), [selectedPet?.trackingDeviceId]);
 
-  const imeiDirty = savedDeviceIdTrimmed !== deviceId.trim();
-
-  /** Saved pet IMEI unless the user is actively editing the field for this pet. */
-  const effectiveDeviceId = useMemo(() => {
-    const saved = selectedPet?.trackingDeviceId?.trim() || '';
-    const typed = deviceId.trim();
-    if (imeiDirty && typed) return typed;
-    return saved || typed;
-  }, [deviceId, selectedPet?.trackingDeviceId, imeiDirty]);
+  const effectiveDeviceId = savedDeviceIdTrimmed;
 
   useEffect(() => {
     const imei = effectiveDeviceId.trim();
@@ -575,7 +566,6 @@ export default function Tracking() {
   const selectPetForTracking = useCallback((pet) => {
     if (!pet?.id) return;
     setSelectedPetId(pet.id);
-    setDeviceId(pet.trackingDeviceId || '');
     setDeviceProvider(null);
     setPosition(null);
     setError('');
@@ -614,15 +604,6 @@ export default function Tracking() {
     } catch (_) {}
   }, [selectedPetId]);
 
-  useEffect(() => {
-    if (!selectedPetId) {
-      setDeviceId('');
-      return;
-    }
-    const p = pets.find((x) => x.id === selectedPetId);
-    setDeviceId(p?.trackingDeviceId || '');
-  }, [selectedPetId, pets]);
-
   const refresh = useCallback(async () => {
     const requestedId = effectiveDeviceId.trim();
     if (!requestedId) return;
@@ -637,9 +618,11 @@ export default function Tracking() {
     } catch (e) {
       if (refreshSeqRef.current !== seq) return;
       const msg = e?.message || t('trackingPage.errLoadPosition');
-      setError(msg);
       if (e?.status === 404 || /not checked in|not seen on tracker|Missing IMEI/i.test(msg)) {
         setPosition(null);
+        setError(t('trackingPage.deviceNotConfigured'));
+      } else {
+        setError(msg);
       }
     } finally {
       if (refreshSeqRef.current === seq) setLoading(false);
@@ -1106,23 +1089,20 @@ export default function Tracking() {
     };
   }, [selectedPet, getCategory, liveSourceKind]);
 
-  function saveIdAndLoad(e) {
+  function refreshDevice(e) {
     e?.preventDefault();
-    const next = deviceId.trim();
-    const prev = savedDeviceIdTrimmed;
-
-    if (prev && next && next !== prev) {
-      if (!window.confirm(t('trackingPage.imeiConfirmChange', { from: prev, to: next }))) return;
-    }
-    if (prev && !next) {
-      if (!window.confirm(t('trackingPage.imeiConfirmClear'))) return;
-    }
-
-    if (selectedPetId) {
-      updatePet(selectedPetId, { trackingDeviceId: next || null });
-    }
     void refresh();
   }
+
+  const copyDeviceId = useCallback(async () => {
+    const id = effectiveDeviceId.trim();
+    if (!id) return;
+    try {
+      await navigator.clipboard.writeText(id);
+    } catch (_) {
+      /* read-only field remains selectable as fallback */
+    }
+  }, [effectiveDeviceId]);
 
   if (pets.length === 0) {
     return (
@@ -1688,35 +1668,39 @@ export default function Tracking() {
       {wifiTrackingEnabled && trackerTab === 'device' ? (
       <section className="pp-card pp-pad pp-trackDeviceCard">
         <h2 className="pp-sectionTitle">{t('trackingPage.sectionPetDevice')}</h2>
-        <form className="pp-form pp-trackDeviceForm" onSubmit={saveIdAndLoad}>
+        <form className="pp-form pp-trackDeviceForm" onSubmit={refreshDevice}>
           <div>
             <label className="pp-label" htmlFor={fieldId}>
               {t('trackingPage.deviceIdLabel')}
             </label>
-            <input
-              id={fieldId}
-              className="pp-input"
-              value={deviceId}
-              onChange={(e) => setDeviceId(e.target.value)}
-              placeholder={t('trackingPage.deviceIdPh')}
-              inputMode="numeric"
-              autoComplete="off"
-            />
-          </div>
-          {imeiDirty && selectedPet ? (
-            <div className="pp-trackImeiWarn" role="status">
-              {t('trackingPage.imeiChangeWarn', { name: selectedPet.name })}
+            <div className="pp-row pp-trackImeiField">
+              <input
+                id={fieldId}
+                className="pp-input pp-trackImeiField__value"
+                value={effectiveDeviceId}
+                readOnly
+                placeholder={t('trackingPage.deviceIdPh')}
+                inputMode="numeric"
+                autoComplete="off"
+              />
+              <button
+                type="button"
+                className="pp-btn pp-trackImeiField__copy"
+                disabled={!effectiveDeviceId}
+                onClick={() => void copyDeviceId()}
+              >
+                {t('trackingPage.copyImei')}
+              </button>
             </div>
-          ) : null}
+          </div>
           {selectedPet ? (
             <p className="pp-subtle pp-trackImeiFoot" style={{ margin: 0 }}>
-              {t('trackingPage.persistHintSaving', { name: selectedPet.name })}{' '}
               <Link to="/pets">{t('trackingPage.editImeiOnMyPets')}</Link>
             </p>
           ) : null}
           {!position && error ? <div className="pp-error">{error}</div> : null}
           <button className="pp-btn pp-btnPrimary" type="submit" disabled={loading || !effectiveDeviceId}>
-            {loading ? t('trackingPage.btnRefresh') : t('trackingPage.btnSaveLoad')}
+            {loading ? t('trackingPage.btnRefresh') : t('trackingPage.btnRefreshLabel')}
           </button>
         </form>
       </section>

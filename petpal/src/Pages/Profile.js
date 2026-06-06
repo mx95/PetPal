@@ -13,6 +13,7 @@ import { getDb, isFirebaseConfigured } from '../firebase';
 import UserAvatar from '../components/UserAvatar';
 import { useToast } from '../components/Toast';
 import { getEffectiveProfilePhotoUrl, removeUserProfilePhoto, saveUserProfilePhoto } from '../profile/userProfilePhoto';
+import { MVP_NAV } from '../config/mvpNav';
 
 const ICONS = {
   pets: '🐾',
@@ -232,7 +233,7 @@ export default function Profile() {
 
   const items = [
     { key: 'pets', to: '/pets', icon: ICONS.pets, accent: 'pets' },
-    { key: 'bookings', to: '/bookings', icon: ICONS.docs, accent: 'docs' },
+    ...(MVP_NAV.showBookings ? [{ key: 'bookings', to: '/bookings', icon: ICONS.docs, accent: 'docs' }] : []),
     ...(isApprovedCompany && profile?.bookingEnabled
       ? [{ key: 'provider', to: '/provider', icon: ICONS.business, accent: 'business' }]
       : []),

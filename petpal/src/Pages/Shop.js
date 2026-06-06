@@ -114,7 +114,6 @@ export default function Shop() {
       <div className="pp-pad pp-demoProviderPortal">
         <div className="pp-pageHeader">
           <div className="pp-pageHeader__copy">
-            <div className="pp-badge">{t('shopPage.badge')}</div>
             <div className="pp-pageHeader__title">{t('shopPage.signInTitle')}</div>
             <div className="pp-pageHeader__subtitle">{t('shopPage.signInSub')}</div>
           </div>
@@ -129,8 +128,7 @@ export default function Shop() {
   if (!isFirebaseConfigured()) {
     return (
       <div className="pp-pad">
-        <div className="pp-badge">{t('shopPage.badge')}</div>
-        <h1 className="pp-pageHeader__title" style={{ marginTop: 12 }}>
+        <h1 className="pp-pageHeader__title">
           {t('shopPage.needFirebaseTitle')}
         </h1>
         <p className="pp-subtle">{t('shopPage.needFirebaseSub')}</p>
@@ -161,7 +159,6 @@ export default function Shop() {
     <div className="pp-pad pp-shopPage">
       <header className="pp-pageHeader">
         <div className="pp-pageHeader__copy">
-          <span className="pp-publicHero__eyebrow">{t('shopPage.badge')}</span>
           <h1 className="pp-pageHeader__title">{t('shopPage.title')}</h1>
           <p className="pp-pageHeader__sub">{t('shopPage.sub')}</p>
         </div>

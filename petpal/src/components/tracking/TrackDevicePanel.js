@@ -275,7 +275,6 @@ export default function TrackDevicePanel({ imei, petName = '', provider = null }
       <form className="pp-trackDevicePanel__form" onSubmit={(e) => void handleSavePlan(e)}>
         <fieldset className="pp-trackDeviceModes">
           <legend className="pp-trackDeviceModes__legend">{t('trackingPage.devicePanelBatteryLegend')}</legend>
-          <p className="pp-subtle pp-trackDevicePanel__hint">{t('trackingPage.devicePanelBatteryHint')}</p>
           <div className="pp-trackDeviceModes__grid pp-trackDeviceModes__grid--plans">
             {BATTERY_PLANS.map((plan) => {
               const selected =
