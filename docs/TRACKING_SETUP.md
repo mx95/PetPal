@@ -285,6 +285,9 @@ yarn start
 ## Related docs
 
 - `tracker-tcp-server/README.md` — TCP protocol, PM2, SQLite backup, command API
+- `tracker-tcp-server/docs/API_REFERENCE.md` — **all HTTP endpoints & capabilities matrix**
 - `tracker-tcp-server/docs/G365_PROTOCOL.md` — 365GPS Wi‑Fi/LBS packet formats (`0x69`, `0x18`, `0x1b`)
+- `tracker-tcp-server/docs/GPSPOS_SETUP.md` — gpspos.net cloud collars
+- `docs/DOMAIN_SETUP.md` — **petpal.com.cy** DNS, nginx, Let's Encrypt
 - `petpal/README.md` — Firebase, Capacitor, deploy commands
 - `petpal/.env.example` — all env vars with short comments

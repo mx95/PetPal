@@ -16,6 +16,106 @@ Technical reference for **tracker-tcp-server** (Express on port **5002**). Colla
 
 - `GET /api` — Xexun command API index
 - `GET /api/g365` — 365GPS command API index
+- `GET /api/gpspos` — gpspos.net cloud sync API index
+
+---
+
+## Capabilities & APIs by device type
+
+PetPal supports **three collar backends**. The web app uses **`/api/app/*`** for maps; device-specific commands use the paths below.
+
+| Capability | Xexun (TCP **5001**) | 365GPS (TCP **5003**) | gpspos cloud |
+|------------|----------------------|------------------------|--------------|
+| Live map / latest fix | `GET /api/app/position?deviceId=` | same | same (after cloud sync) |
+| Route history | `GET /api/app/history?deviceId=` | same | same (import via sync/history) |
+| Save home pin (Wi‑Fi map) | `POST /api/app/home` | same | same |
+| List devices | `GET /api/app/devices` | same | same |
+| Battery / signal on map | From TCP uplink | From TCP uplink | From platform poll |
+| Redirect collar to your server | `POST /commands/ip-transfer` | `POST /api/g365/commands/server-redirect` | N/A (stays on gpspos.net) |
+| Upload interval / battery plans | `POST /commands/tracking` (`tk=…`) | `POST /api/g365/commands/upload-interval` | Platform app only |
+| Ring / find collar | — | `POST /api/g365/commands/find` | Platform app only |
+| Manual locate now | — | `POST /api/g365/commands/manual-position` | — |
+| Restart collar | `POST /commands/restart` | `POST /api/g365/commands/power` | — |
+| Wi‑Fi router BSSID setup | `POST /commands/wifi` | Auto-scan (no BSSID command) | — |
+| Pull fix from cloud | — | — | `POST /api/gpspos/sync` |
+| Import cloud history | — | — | `POST /api/gpspos/sync/history` |
+| PetPal Device tab UI | Battery plans + Xexun commands | G365 quick actions | **Refresh from cloud** only |
+
+**Provider** is stored per device (`xexun`, `g365`, `gpspos`) and returned on `/api/app/devices/:imei`.
+
+### PetPal app features (all providers)
+
+| Feature | API |
+|---------|-----|
+| Live tracking map | `GET /api/app/position?deviceId={imei}` |
+| History tab | `GET /api/app/history?deviceId={imei}&from=&to=&limit=` |
+| One-tap / saved home | `POST /api/app/home` `{ deviceId, lat, lng }` |
+| Device list | `GET /api/app/devices` |
+
+### Xexun-only commands
+
+Base paths: **`/commands/*`** and **`/api/tracker/commands/*`** (identical).
+
+| Action | Method & path | Body (JSON) |
+|--------|---------------|-------------|
+| Queue raw command | `POST …/queue` | `{ imei, command }` |
+| Set server IP:port | `POST …/ip-transfer` | `{ imei, host, port? }` |
+| Query server IP | `POST …/ip/query` | `{ imei }` |
+| Set APN | `POST …/apn` | `{ imei, apn }` |
+| Tracking mode / intervals | `POST …/tracking` | `{ imei, tk }` or `{ imei, p1…p7 }` |
+| Query tracking | `POST …/tracking/query` | `{ imei }` |
+| Power off | `POST …/power-off` | `{ imei }` |
+| Restart | `POST …/restart` | `{ imei }` |
+| On-screen message | `POST …/message` | `{ imei, text }` |
+| Timezone | `POST …/timezone` | `{ imei, tz }` |
+| BLE / Wi‑Fi BSSID list | `POST …/ble` / `POST …/wifi` | `{ imei, bssid_list }` or `{ query:true }` or `{ clear:true }` |
+| Pending queue | `GET …/pending/:imei` | — |
+
+Commands are sent on the collar’s **next TCP uplink** to port **5001**.
+
+### 365GPS-only commands
+
+Index: **`GET /api/g365`**. Requires active TCP session on port **5003**.
+
+| Action | Path |
+|--------|------|
+| Redirect server | `POST /api/g365/commands/server-redirect` |
+| Request fix (GPS / Wi‑Fi) | `POST /api/g365/commands/manual-position` |
+| Upload interval | `POST /api/g365/commands/upload-interval` |
+| Status interval | `POST /api/g365/commands/status-interval` |
+| Heartbeat interval | `POST /api/g365/commands/heartbeat-interval` |
+| Disable LBS | `POST /api/g365/commands/prohibit-lbs` |
+| Restart / shutdown | `POST /api/g365/commands/power` |
+| Ring collar | `POST /api/g365/commands/find` |
+| Overspeed alert | `POST /api/g365/commands/overspeed` |
+| SOS / phone numbers | `POST /api/g365/commands/phone` |
+| Raw hex frame | `POST /api/g365/commands/raw` |
+
+Wire format: [G365_PROTOCOL.md](./G365_PROTOCOL.md).
+
+### gpspos cloud-only
+
+Collars report to **gpspos.net**; PetPal **polls** the platform. Setup: [GPSPOS_SETUP.md](./GPSPOS_SETUP.md).
+
+| Action | Method & path | Body |
+|--------|---------------|------|
+| API index + env help | `GET /api/gpspos` | — |
+| Sync latest fix | `POST /api/gpspos/sync` | `{ imei }` |
+| Import track history | `POST /api/gpspos/sync/history` | `{ imei, fromUnix, toUnix }` |
+| Vendor-style position array | `GET /api/positions?deviceId=` | — |
+
+**Platform vendor API** (external, not your server): `Proc_Login`, `Proc_GetCarInfo`, `Proc_GetLastPosition`, `Proc_GetTrack` on `GPSPOS_API_URL`.
+
+**Environment:**
+
+| Variable | Purpose |
+|----------|---------|
+| `GPSPOS_ENABLED` | `1` to enable |
+| `GPSPOS_API_URL` | e.g. `https://www.gpspos.net/AppJson.asp` |
+| `GPSPOS_USER` / `GPSPOS_PASSWORD` | Platform account |
+| `GPSPOS_DEVICE_IDS` | Comma-separated IMEIs to auto-poll |
+| `GPSPOS_IMEI_MAP` | `fullImei:platformId` when IDs differ |
+| `GPSPOS_POLL_INTERVAL_SEC` | Poll interval (`0` = manual sync only) |
 
 ---
 
@@ -284,6 +384,31 @@ Sends binary frames **immediately** on the device’s active TCP session on **po
 
 ---
 
+## gpspos cloud API (`/api/gpspos/*`)
+
+For collars on **gpspos.net** (no direct TCP to PetPal). Full setup: [GPSPOS_SETUP.md](./GPSPOS_SETUP.md).
+
+**Index:** `GET /api/gpspos`
+
+| Method | Path | Body | Description |
+|--------|------|------|-------------|
+| GET | `/api/gpspos` | — | Service info, env vars, command list |
+| POST | `/api/gpspos/sync` | `{ imei }` or `{ deviceId }` | Pull latest fix from cloud into SQLite |
+| POST | `/api/gpspos/sync/history` | `{ imei, fromUnix, toUnix }` | Import track points (UTC unix seconds) |
+| GET | `/api/positions?deviceId=` | — | Vendor-compatible array (legacy) |
+
+**Success sync (200):** `{ ok, imei, platformImei, device, position }` — same shape as `/api/app/position` inside `position`.
+
+| Error | Meaning |
+|-------|---------|
+| `503 gpspos_disabled` | `GPSPOS_ENABLED=0` or missing credentials |
+| `404 no_position` | Device unknown on platform or never reported |
+| `502 gpspos_sync_failed` | Login/API/network failure |
+
+After sync, use **`GET /api/app/position?deviceId=`** from the PetPal app.
+
+---
+
 ## Environment variables
 
 | Variable | Default | Purpose |
@@ -296,6 +421,12 @@ Sends binary frames **immediately** on the device’s active TCP session on **po
 | `SQLITE_PATH` | `data/petpal.sqlite` | Database file (absolute path recommended in PM2) |
 | `WEB_BUILD_DIR` | `../../petpal/build` | React build served as static files |
 | `HTTP_CORS_ORIGIN` | `*` | Comma-separated origins or `*` |
+| `GPSPOS_ENABLED` | `0` | Set `1` for gpspos.net cloud collars |
+| `GPSPOS_API_URL` | — | e.g. `https://www.gpspos.net/AppJson.asp` |
+| `GPSPOS_USER` / `GPSPOS_PASSWORD` | — | Platform login |
+| `GPSPOS_DEVICE_IDS` | — | IMEIs to poll (comma-separated) |
+| `GPSPOS_IMEI_MAP` | — | `storeImei:platformId` pairs |
+| `GPSPOS_POLL_INTERVAL_SEC` | `60` | Cloud poll interval; `0` = manual only |
 | `SEED_DEVICE_IMEI` | — | Optional demo device |
 | `SEED_DEVICE_LAT` / `SEED_DEVICE_LNG` | — | With seed IMEI |
 
@@ -338,4 +469,6 @@ Set collection variables `host`, `imei`, and run **Discovery → GET /api/g365**
 
 - [../README.md](../README.md) — PM2, backups, ports
 - [G365_PROTOCOL.md](./G365_PROTOCOL.md) — 365GPS wire format
+- [GPSPOS_SETUP.md](./GPSPOS_SETUP.md) — gpspos.net cloud collars
 - [../../docs/TRACKING_SETUP.md](../../docs/TRACKING_SETUP.md) — Frontend env, HTTPS, Wi‑Fi UI
+- [../../docs/DOMAIN_SETUP.md](../../docs/DOMAIN_SETUP.md) — **petpal.com.cy** DNS, nginx, HTTPS
