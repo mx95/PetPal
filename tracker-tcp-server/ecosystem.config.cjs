@@ -35,7 +35,7 @@ module.exports = {
         GPSPOS_API_URL: "https://www.gpspos.net/AppJson.asp",
         GPSPOS_USER: "Sotiris",
         GPSPOS_PASSWORD: "1234",
-        GPSPOS_DEVICE_IDS: "861397052428990",
+        GPSPOS_DEVICE_IDS: "861397052428990,868022030670736,868022030670793",
         GPSPOS_IMEI_MAP: "861397052428990:9705242899",
         GPSPOS_POLL_INTERVAL_SEC: "60",
         // Set a strong secret; same value as REACT_APP_TRACKER_ADMIN_TOKEN in petpal build

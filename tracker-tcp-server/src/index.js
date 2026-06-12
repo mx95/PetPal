@@ -302,8 +302,25 @@ const WEB_BUILD_DIR =
   process.env.WEB_BUILD_DIR || path.resolve(__dirname, "..", "..", "petpal", "build");
 const WEB_INDEX_HTML = path.join(WEB_BUILD_DIR, "index.html");
 
+/** Rewrite legacy http:// tracker API calls to same-origin (HTTPS mixed-content safety). */
+const TRACKER_FETCH_SHIM = `<script id="petpal-tracker-fetch-shim">(function(){var h=String(window.location.hostname||"").toLowerCase();if(!window.isSecureContext||h!=="petpal.com.cy"&&h!=="www.petpal.com.cy")return;var legacy=["http://116.203.209.68:5002","http://127.0.0.1:5002"];var f=window.fetch;window.fetch=function(i,n){var u=typeof i==="string"?i:i&&i.url;if(typeof u!=="string")return f.call(this,i,n);for(var k=0;k<legacy.length;k++){var b=legacy[k];if(u.indexOf(b)===0){u=u.slice(b.length)||"/";break;}}if(u!==(typeof i==="string"?i:i.url)){i=typeof i==="string"?u:new Request(u,i);}return f.call(this,i,n);};})();</script>`;
+
+function sendSpaIndex(_req, res) {
+  try {
+    let html = fs.readFileSync(WEB_INDEX_HTML, "utf8");
+    if (!html.includes("petpal-tracker-fetch-shim")) {
+      html = html.replace("</head>", `${TRACKER_FETCH_SHIM}</head>`);
+    }
+    res.type("html").send(html);
+  } catch (err) {
+    console.warn(`[web] Failed to read ${WEB_INDEX_HTML}: ${err.message || err}`);
+    res.sendFile(WEB_INDEX_HTML);
+  }
+}
+
 if (fs.existsSync(WEB_INDEX_HTML)) {
-  app.use(express.static(WEB_BUILD_DIR));
+  app.get(["/", "/index.html"], sendSpaIndex);
+  app.use(express.static(WEB_BUILD_DIR, { index: false }));
 } else {
   console.warn(
     `[web] React build not found (${WEB_INDEX_HTML}) — API only. Run: cd petpal && npm run build`
@@ -315,7 +332,7 @@ if (fs.existsSync(WEB_INDEX_HTML)) {
 // 
 app.use((req, res) => {
   if (fs.existsSync(WEB_INDEX_HTML)) {
-    return res.sendFile(WEB_INDEX_HTML);
+    return sendSpaIndex(req, res);
   }
   return res.status(404).json({ error: "not_found" });
 });

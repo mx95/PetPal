@@ -2,16 +2,31 @@
  * Resolve tracker-tcp-server HTTP base URL for same-origin API calls.
  * @returns {string|null} '' = same origin; absolute URL; null = not configured
  */
+function sameOriginTrackerApi() {
+  if (typeof window === 'undefined') return false;
+  const port = window.location.port || (window.location.protocol === 'https:' ? '443' : '80');
+  if (port === '5002') return true;
+  // nginx proxies petpal.com.cy → tracker HTTP API on :5002
+  const host = String(window.location.hostname || '').toLowerCase();
+  if (window.isSecureContext && (host === 'petpal.com.cy' || host === 'www.petpal.com.cy')) {
+    return true;
+  }
+  return false;
+}
+
 export function resolveTrackerHttpBase() {
   const raw = process.env.REACT_APP_XEXUN_HTTP_BASE_URL;
   if (raw != null && String(raw).trim() !== '') {
     if (raw === 'same') return '';
-    return String(raw).replace(/\/$/, '');
+    const configured = String(raw).replace(/\/$/, '');
+    // HTTPS pages cannot call plain HTTP tracker hosts (mixed content).
+    if (typeof window !== 'undefined' && window.isSecureContext && /^http:\/\//i.test(configured)) {
+      if (sameOriginTrackerApi()) return '';
+      return null;
+    }
+    return configured;
   }
-  if (typeof window !== 'undefined') {
-    const port = window.location.port || (window.location.protocol === 'https:' ? '443' : '80');
-    if (port === '5002') return '';
-  }
+  if (sameOriginTrackerApi()) return '';
   return null;
 }
 

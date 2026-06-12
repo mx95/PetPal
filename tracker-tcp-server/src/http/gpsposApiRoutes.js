@@ -47,6 +47,19 @@ async function syncGpsposLastPosition(store, client, requestedImei, { imeiMap = 
   });
 
   store.upsert(storeImei, mapped);
+  if (typeof store.updateDeviceConfig === "function") {
+    const cfg = store.getDeviceConfig?.(storeImei);
+    const pollEnabled =
+      Number(cfg?.gpspos_poll_enabled) === 1 || cfg?.provider_override === "gpspos";
+    if (!pollEnabled) {
+      const defaultInterval = Math.max(15, Number(process.env.GPSPOS_POLL_INTERVAL_SEC || 60) || 60);
+      store.updateDeviceConfig(storeImei, {
+        provider_override: "gpspos",
+        gpspos_poll_enabled: 1,
+        gpspos_poll_interval_sec: defaultInterval,
+      });
+    }
+  }
   const saved = store.get(storeImei);
   const payload = buildPositionPayload(storeImei, saved);
   return { imei: storeImei, platformImei, device: saved, position: payload };

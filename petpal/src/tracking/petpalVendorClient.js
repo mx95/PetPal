@@ -218,6 +218,8 @@ function normalizeXexunPosition(json) {
     locationKind: json.locationKind ?? null,
     provider: json.provider ?? null,
     imei: json.imei != null ? String(json.imei) : null,
+    platformOnline: json.platformOnline === true,
+    cloudSyncedAt: json.cloudSyncedAt || null,
     diagnostics,
   };
 }
@@ -510,7 +512,24 @@ export async function getLatestPositionWithSync(deviceId, opts = {}) {
   }
 
   try {
-    return await getLatestPosition(id);
+    const pos = await getLatestPosition(id);
+    if (
+      provider !== 'xexun' &&
+      provider !== 'g365' &&
+      pos?.provider === 'gpspos' &&
+      isGpsposSyncAvailable() &&
+      provider !== 'gpspos'
+    ) {
+      try {
+        await syncGpsposPosition(id);
+        return await getLatestPosition(id);
+      } catch (e) {
+        if (e?.code !== 'no_position' && e?.code !== 'gpspos_disabled') {
+          throw e;
+        }
+      }
+    }
+    return pos;
   } catch (e) {
     const retryable =
       isGpsposSyncAvailable() &&

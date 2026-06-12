@@ -90,6 +90,35 @@ test("gpspos — shouldRecordPosition skips duplicate nTime", () => {
   assert.equal(shouldRecordPosition(prev, second), false);
 });
 
+test("gpspos — shouldRecordPosition records LBS fixes with new nTime", () => {
+  const prev = mapGpsposPositionToDeviceRecord({
+    strTEID: "868022030670736",
+    nTime: "1781095962",
+    dbLon: "33.37",
+    dbLat: "35.15",
+    nTEState: "4341888",
+    nGSMSignal: "31",
+    nGPSSignal: "0",
+  });
+  const next = mapGpsposPositionToDeviceRecord({
+    strTEID: "868022030670736",
+    nTime: "1781096000",
+    dbLon: "33.38",
+    dbLat: "35.16",
+    nTEState: "4341888",
+    nGSMSignal: "31",
+    nGPSSignal: "0",
+  });
+  assert.equal(next.gpsValid, false);
+  assert.equal(shouldRecordPosition(prev, next), true);
+});
+
+test("gpspos — platform online from GPRS / GSM signal", () => {
+  const { inferGpsposPlatformOnline } = require("../src/protocol/gpspos");
+  assert.equal(inferGpsposPlatformOnline(4341888, 31), true);
+  assert.equal(inferGpsposPlatformOnline(0, 2), false);
+});
+
 test("gpspos — battery byte from nTEState", () => {
   assert.equal(batteryFromTeState(0x00550000), 85);
   assert.equal(batteryFromTeState(0x00ff0000), null);

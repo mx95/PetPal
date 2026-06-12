@@ -672,6 +672,11 @@ export default function Tracking() {
   }, [effectiveDeviceId, refresh]);
 
   useEffect(() => {
+    if (!effectiveDeviceId.trim() || deviceProvider !== 'gpspos') return;
+    void refresh();
+  }, [deviceProvider, effectiveDeviceId, refresh]);
+
+  useEffect(() => {
     if (!effectiveDeviceId) return;
     const id = window.setInterval(() => {
       void refresh();
@@ -1119,7 +1124,7 @@ export default function Tracking() {
   }
 
 
-  const signalLive = position != null;
+  const signalLive = position != null && (position.platformOnline || !position.warningStale);
   const liveMapBanner = (() => {
     if (!liveMapCoords && displayPosition?.atHomeWifi) return t('trackingPage.mapWifiHomeBanner');
     if (!liveMapCoords) return null;

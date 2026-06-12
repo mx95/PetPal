@@ -68,6 +68,15 @@ function batteryFromTeState(nTEState) {
   return byte3 >= 0 && byte3 <= 100 ? byte3 : null;
 }
 
+/** True when gpspos platform reports GPRS/cellular link (may differ from last GPS fix time). */
+function inferGpsposPlatformOnline(nTEState, gsmSignal) {
+  if (!Number.isFinite(nTEState)) return null;
+  const gprsConnected = (nTEState & 0x10) !== 0;
+  const gsm = Number(gsmSignal);
+  const strongGsm = Number.isFinite(gsm) && gsm > 6;
+  return gprsConnected || strongGsm;
+}
+
 function unixSecondsToIso(value) {
   const n = Number(value);
   if (!Number.isFinite(n) || n <= 0) return null;
@@ -93,6 +102,7 @@ function mapGpsposPositionToDeviceRecord(rec, opts = {}) {
   const deviceTime = unixSecondsToIso(nTime);
   const receivedAt = opts.receivedAt || new Date().toISOString();
   const source = hasCoords ? (Number(rec.nGPSSignal) > 0 ? "gps" : "lbs") : null;
+  const platformOnline = inferGpsposPlatformOnline(nTEState, rec.nGSMSignal);
 
   const record = {
     imei,
@@ -101,6 +111,7 @@ function mapGpsposPositionToDeviceRecord(rec, opts = {}) {
     lastUpdate: deviceTime || receivedAt,
     source: hasCoords ? source || "gps" : source,
     gpsValid: hasCoords && source === "gps",
+    platformOnline: platformOnline === true,
     location: hasCoords ? { lat, lng } : null,
     gps: hasCoords
       ? {
@@ -151,7 +162,7 @@ function resolveStoreImei(platformImei, mapping = {}) {
 }
 
 function shouldRecordPosition(prev, nextRecord) {
-  if (!nextRecord.location || !nextRecord.gpsValid) return false;
+  if (!nextRecord.location) return false;
   const nextTime = nextRecord.gpspos?.nTime;
   const prevTime = prev?.gpspos?.nTime;
   if (Number.isFinite(nextTime) && Number.isFinite(prevTime) && nextTime === prevTime) {
@@ -272,6 +283,7 @@ module.exports = {
   recordToObject,
   mapGpsposPositionToDeviceRecord,
   inferSourceFromTeState,
+  inferGpsposPlatformOnline,
   batteryFromTeState,
   resolvePlatformImei,
   resolveStoreImei,

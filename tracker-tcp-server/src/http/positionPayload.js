@@ -38,10 +38,13 @@ function buildPositionPayload(imei, d) {
   const loc = d.location || d.gps || {};
   const rawLat = loc.lat != null ? Number(loc.lat) : Number.NaN;
   const rawLng = loc.lng != null ? Number(loc.lng) : Number.NaN;
-  const receivedAt = d.lastUpdate || d.receivedAt || null;
+  const deviceFixTime = d.gps?.timestamp || null;
+  const cloudSyncedAt = d.receivedAt || null;
+  const receivedAt = deviceFixTime || d.lastUpdate || cloudSyncedAt || null;
   const nowMs = Date.now();
   const baseTs = receivedAt ? Date.parse(receivedAt) : Number.NaN;
   const secondsAgo = Number.isFinite(baseTs) ? Math.max(0, Math.round((nowMs - baseTs) / 1000)) : null;
+  const platformOnline = d.platformOnline === true;
 
   const atHomeWifi = Boolean(d.atHomeWifi || d.source === "wifi");
 
@@ -129,7 +132,13 @@ function buildPositionPayload(imei, d) {
       : null;
 
   const statusText =
-    freshness === "live" ? "Live tracking" : freshness === "recent" ? "Updated recently" : "Last seen a while ago";
+    d.provider === "gpspos" && platformOnline && freshness === "stale" && isPlausibleLatLng(lat, lng)
+      ? "Connected — last location from collar"
+      : freshness === "live"
+        ? "Live tracking"
+        : freshness === "recent"
+          ? "Updated recently"
+          : "Last seen a while ago";
   const accuracyText =
     source === "gps" ? "Precise GPS location" : source === "wifi" ? "Wi‑Fi location" : "Approximate location";
   const movementText = d.moving ? "Moving" : "Not moving";
@@ -156,7 +165,9 @@ function buildPositionPayload(imei, d) {
     accuracyText,
     movementText,
     warningApproximate: isApproximate,
-    warningStale: freshness === "stale",
+    warningStale: freshness === "stale" && !platformOnline,
+    platformOnline,
+    cloudSyncedAt,
     gpsValid: d.gpsValid === true,
     satellites: d.satellites ?? null,
     speed: d.speed != null ? Number(d.speed) : null,
