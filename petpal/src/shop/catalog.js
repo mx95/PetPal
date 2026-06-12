@@ -3,23 +3,37 @@
 /** Mirror functions/shopPricing.js + shop-pricing.json */
 export const PLUS_MONTHLY_CENTS = 699;
 export const PLUS_YEARLY_CENTS = 8499;
-export const TRACKER_ADDON_CENTS = 4000;
+export const TRACKER_ADDON_CENTS = 3999;
+export const NFC_TAG_ADDON_CENTS = 999;
 
 export const PLUS_SKUS = ['PETPAL_PLUS_MONTHLY', 'PETPAL_PLUS_YEARLY'];
+export const HARDWARE_SKUS = ['TRACKER_HARDWARE', 'NFC_TAG_HARDWARE'];
 
-/** @param {boolean} [includeTracker] */
-export function monthlyFirstPaymentCents(includeTracker = false) {
-  return PLUS_MONTHLY_CENTS + (includeTracker ? TRACKER_ADDON_CENTS : 0);
+/**
+ * @param {{ includeTracker?: boolean, includeNfc?: boolean } | boolean} [opts]
+ */
+export function monthlyFirstPaymentCents(opts = {}) {
+  const options = typeof opts === 'boolean' ? { includeTracker: opts } : opts;
+  const includeTracker = Boolean(options.includeTracker);
+  const includeNfc = Boolean(options.includeNfc);
+  return (
+    PLUS_MONTHLY_CENTS +
+    (includeTracker ? TRACKER_ADDON_CENTS : 0) +
+    (includeNfc ? NFC_TAG_ADDON_CENTS : 0)
+  );
 }
 
 /**
  * Must match Cloud Function createJccCheckout (shopPricing.js).
  * @param {string} sku
- * @param {boolean} [includeTracker]
+ * @param {{ includeTracker?: boolean, includeNfc?: boolean } | boolean} [opts]
  */
-export function expectedCheckoutCents(sku, includeTracker = false) {
-  if (sku === 'PETPAL_PLUS_MONTHLY') return monthlyFirstPaymentCents(includeTracker);
+export function expectedCheckoutCents(sku, opts = {}) {
+  const options = typeof opts === 'boolean' ? { includeTracker: opts } : opts;
+  if (sku === 'PETPAL_PLUS_MONTHLY') return monthlyFirstPaymentCents(options);
   if (sku === 'PETPAL_PLUS_YEARLY') return PLUS_YEARLY_CENTS;
+  if (sku === 'TRACKER_HARDWARE') return TRACKER_ADDON_CENTS;
+  if (sku === 'NFC_TAG_HARDWARE') return NFC_TAG_ADDON_CENTS;
   if (sku === 'STORE_BOOST_MONTHLY') return 999;
   return null;
 }
@@ -29,7 +43,8 @@ export const SHOP_PRODUCTS = [
   {
     id: 'PETPAL_PLUS_MONTHLY',
     title: 'Monthly',
-    subtitle: 'PetPal Plus billed every month. Optionally add a GPS tracker to your first payment.',
+    subtitle:
+      'PetPal Plus billed every month. Optionally add a GPS tracker or NFC tag to your first payment.',
     amountCents: PLUS_MONTHLY_CENTS,
     currency: '978',
     recurring: true,
@@ -38,11 +53,29 @@ export const SHOP_PRODUCTS = [
   {
     id: 'PETPAL_PLUS_YEARLY',
     title: 'Yearly',
-    subtitle: 'PetPal Plus for 12 months — FREE GPS tracker included with this plan.',
+    subtitle: 'PetPal Plus for 12 months — FREE GPS tracker and NFC tag included with this plan.',
     amountCents: PLUS_YEARLY_CENTS,
     currency: '978',
     recurring: true,
-    badge: 'Free tracker',
+    badge: 'Free tracker + NFC',
+  },
+  {
+    id: 'TRACKER_HARDWARE',
+    title: 'GPS tracker',
+    subtitle: 'One PetPal GPS tracker — no subscription required to order.',
+    amountCents: TRACKER_ADDON_CENTS,
+    currency: '978',
+    recurring: false,
+    badge: 'Hardware',
+  },
+  {
+    id: 'NFC_TAG_HARDWARE',
+    title: 'NFC tag',
+    subtitle: 'Tap-to-open pet profile tag — no subscription required to order.',
+    amountCents: NFC_TAG_ADDON_CENTS,
+    currency: '978',
+    recurring: false,
+    badge: 'Hardware',
   },
 ];
 

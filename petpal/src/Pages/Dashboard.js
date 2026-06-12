@@ -13,24 +13,13 @@ import { useSuggestedWalks } from '../walk/useSuggestedWalks';
 import { formatTime24 } from '../formatTime24';
 import LifetimeAchievements from '../components/LifetimeAchievements';
 import { formatDateTime24 } from '../formatTime24';
-import { MVP_NAV } from '../config/mvpNav';
 
 const WEEKLY_GOAL_KM = 18;
 const DAILY_MISSIONS_HUB = 3;
 const PACK_HUB_MAX = 4;
-const PET_ACH_HUB = 2;
 
 function km(n) {
   return `${Number(n || 0).toFixed(1)} km`;
-}
-
-function ProgressMicro({ value01 }) {
-  const pct = Math.round(Math.min(1, Math.max(0, value01)) * 100);
-  return (
-    <div className="pp-microBar" aria-label={`${pct}%`}>
-      <div className="pp-microBar__fill" style={{ width: `${pct}%` }} />
-    </div>
-  );
 }
 
 /**
@@ -49,9 +38,6 @@ export default function Dashboard() {
     DAILY_MISSIONS,
     isDailyDone,
     completeDaily,
-    petProgressPercent,
-    trackingAchievementDefs,
-    walkAchievementDefs,
     walkLog,
     walkSessions,
     walkTotals,
@@ -230,9 +216,6 @@ export default function Dashboard() {
     }
   };
 
-  const greetingName =
-    user?.displayName?.trim() || (user?.email ? user.email.split('@')[0] : '') || '';
-
   const dailyPrimary = useMemo(() => DAILY_MISSIONS.slice(0, DAILY_MISSIONS_HUB), [DAILY_MISSIONS]);
   const dailyExtra = useMemo(() => DAILY_MISSIONS.slice(DAILY_MISSIONS_HUB), [DAILY_MISSIONS]);
 
@@ -270,22 +253,6 @@ export default function Dashboard() {
 
   return (
     <div className="pp-feed pp-activityHub">
-      <header className="pp-pageHeader">
-        <div className="pp-pageHeader__copy">
-          <span className="pp-publicHero__eyebrow" style={{ display: 'inline-block', width: 'fit-content' }}>
-            {t('activityHub.badge')}
-          </span>
-          <h1 className="pp-pageHeader__title">{t('activityHub.title')}</h1>
-          <p className="pp-pageHeader__sub">{t('activityHub.sub')}</p>
-          {greetingName ? (
-            <span className="pp-activityHub__greet">{t('home.dashboardHero.hello', { name: greetingName })}</span>
-          ) : null}
-        </div>
-        <Link className="pp-pageHeader__back" to="/profile">
-          {t('activityHub.profileCta')}
-        </Link>
-      </header>
-
       {/* 1. Hero */}
       <section aria-label={t('home.feed.petCardAria')} className="pp-activityHub__block">
         {pets.length ? (
@@ -329,35 +296,6 @@ export default function Dashboard() {
                 );
               })}
             </div>
-            <div className="pp-hubHeroActions">
-              <a href="#pp-walk-input-anchor" className="pp-btn pp-btnPrimary">
-                {t('home.dashboardHero.logWalkCta')}
-              </a>
-              <Link className="pp-btn pp-btn--ghost" to="/tracking">
-                {t('home.feed.quickTrack')}
-              </Link>
-              <Link className="pp-btn pp-btn--ghost" to="/pets">
-                {t('activityHub.viewHistory')}
-              </Link>
-            </div>
-            {pets.length > 1 ? (
-              <div className="pp-feed__petDots" role="tablist" aria-label={t('home.feed.switchPet')}>
-                {pets.map((p, i) => (
-                  <button
-                    key={p.id}
-                    type="button"
-                    role="tab"
-                    aria-selected={i === petIdx % pets.length}
-                    className={`pp-feed__petDot ${i === petIdx % pets.length ? 'pp-feed__petDot--on' : ''}`}
-                    onClick={() => {
-                      setPetIdx(i);
-                      scrollSlideIntoView(i);
-                    }}
-                    aria-label={p.name}
-                  />
-                ))}
-              </div>
-            ) : null}
           </>
         ) : (
           <div className="pp-card pp-pad pp-activityHub__emptyPet">
@@ -616,86 +554,11 @@ export default function Dashboard() {
         ) : null}
       </section>
 
-      {/* Per-pet tracks (accordion) */}
-      {pets.length > 0 ? (
-        <section className="pp-activityHub__block">
-          <details className="pp-hubAccordion">
-            <summary className="pp-hubAccordion__sum">{t('activityHub.petTracksTitle')}</summary>
-            <p className="pp-subtle" style={{ marginBottom: 12 }}>
-              {t('activityHub.petTracksSub')}
-            </p>
-            <p className="pp-subtle pp-activityHub__petGoalsHint">{t('activityHub.petGoalsHubHint')}</p>
-            {pets.map((p) => (
-              <details key={p.id} className="pp-hubAccordion pp-hubAccordion--nested">
-                <summary className="pp-hubAccordion__sum">
-                  <PetAvatar pet={p} size={28} /> {p.name}
-                </summary>
-                <div className="pp-petAchGrid pp-petAchGrid--hub">
-                  <div className="pp-achSection pp-achSection--track">
-                    <div className="pp-achSection__label">📡 GPS</div>
-                    {trackingAchievementDefs.slice(0, PET_ACH_HUB).map((a) => (
-                      <div key={a.key} className="pp-achLine pp-achLine--compact">
-                        <div style={{ fontWeight: 700, fontSize: 13 }}>{a.label}</div>
-                        <ProgressMicro value01={petProgressPercent(p.id, 'track', a.key)} />
-                      </div>
-                    ))}
-                  </div>
-                  <div className="pp-achSection pp-achSection--walk">
-                    <div className="pp-achSection__label">🚶 Walks</div>
-                    {walkAchievementDefs.slice(0, PET_ACH_HUB).map((a) => (
-                      <div key={a.key} className="pp-achLine pp-achLine--compact">
-                        <div style={{ fontWeight: 700, fontSize: 13 }}>{a.label}</div>
-                        <ProgressMicro value01={petProgressPercent(p.id, 'walk', a.key)} />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </details>
-            ))}
-          </details>
-        </section>
-      ) : null}
-
       {/* 6. Achievements */}
       <LifetimeAchievements variant="hub" />
 
       {/* 7. Leaderboard peek */}
       <HubLeaderboardPeek />
-
-      {/* Explore */}
-      <section className="pp-activityHub__block">
-        <h2 className="pp-feed__sectionTitle">{t('dashboard.exploreTitle')}</h2>
-        <div className="pp-actionGrid">
-          <Link className="pp-actionCard pp-actionCard--pets" to="/nearby">
-            <span className="pp-actionCard__icon" aria-hidden>📍</span>
-            <div className="pp-actionCard__body">
-              <span className="pp-actionCard__title">{t('dashboard.exploreNearbyTitle')}</span>
-              <span className="pp-actionCard__desc">{t('dashboard.exploreNearbyDesc')}</span>
-            </div>
-            <span className="pp-actionCard__arrow" aria-hidden>→</span>
-          </Link>
-          {MVP_NAV.showCommunity ? (
-            <Link className="pp-actionCard pp-actionCard--breeding" to="/community">
-              <span className="pp-actionCard__icon" aria-hidden>🐾</span>
-              <div className="pp-actionCard__body">
-                <span className="pp-actionCard__title">{t('dashboard.exploreCommunityTitle')}</span>
-                <span className="pp-actionCard__desc">{t('dashboard.exploreCommunityDesc')}</span>
-              </div>
-              <span className="pp-actionCard__arrow" aria-hidden>→</span>
-            </Link>
-          ) : null}
-          {MVP_NAV.showPremium ? (
-            <Link className="pp-actionCard pp-actionCard--lost" to="/premium/lost">
-              <span className="pp-actionCard__icon" aria-hidden>🚨</span>
-              <div className="pp-actionCard__body">
-                <span className="pp-actionCard__title">{t('dashboard.exploreLostTitle')}</span>
-                <span className="pp-actionCard__desc">{t('dashboard.exploreLostDesc')}</span>
-              </div>
-              <span className="pp-actionCard__arrow" aria-hidden>→</span>
-            </Link>
-          ) : null}
-        </div>
-      </section>
     </div>
   );
 }

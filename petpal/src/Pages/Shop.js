@@ -6,6 +6,7 @@ import { useCompany } from '../company/CompanyContext';
 import { getDb, isFirebaseConfigured } from '../firebase';
 import { useI18n } from '../i18n/I18nContext';
 import {
+  NFC_TAG_ADDON_CENTS,
   PLUS_SKUS,
   SHOP_PRODUCTS,
   TRACKER_ADDON_CENTS,
@@ -38,6 +39,7 @@ export default function Shop() {
     }, {})
   );
   const [monthlyIncludeTracker, setMonthlyIncludeTracker] = useState(false);
+  const [monthlyIncludeNfc, setMonthlyIncludeNfc] = useState(false);
 
   useEffect(() => {
     if (!focusSku) return;
@@ -98,6 +100,11 @@ export default function Shop() {
 
   const isPlusSku = (id) => PLUS_SKUS.includes(id);
 
+  const monthlyAddonOpts = useMemo(
+    () => ({ includeTracker: monthlyIncludeTracker, includeNfc: monthlyIncludeNfc }),
+    [monthlyIncludeTracker, monthlyIncludeNfc]
+  );
+
   if (!user) {
     return (
       <div className="pp-pad pp-demoProviderPortal">
@@ -136,8 +143,9 @@ export default function Shop() {
         return;
       }
       const includeTracker = product.id === 'PETPAL_PLUS_MONTHLY' && monthlyIncludeTracker;
+      const includeNfc = product.id === 'PETPAL_PLUS_MONTHLY' && monthlyIncludeNfc;
       const companyId = product.id === 'STORE_BOOST_MONTHLY' ? user.uid : undefined;
-      await startJccCheckout({ sku: product.id, saveCard, companyId, includeTracker });
+      await startJccCheckout({ sku: product.id, saveCard, companyId, includeTracker, includeNfc });
     } catch (e) {
       setErr(e?.message || String(e));
       setBusy(null);
@@ -146,16 +154,6 @@ export default function Shop() {
 
   return (
     <div className="pp-pad pp-shopPage">
-      <header className="pp-pageHeader">
-        <div className="pp-pageHeader__copy">
-          <h1 className="pp-pageHeader__title">{t('shopPage.title')}</h1>
-          <p className="pp-pageHeader__sub">{t('shopPage.sub')}</p>
-        </div>
-        <Link className="pp-pageHeader__back" to="/dashboard">
-          {t('shopPage.back')}
-        </Link>
-      </header>
-
       {banner ? (
         <div className="pp-shopBanner pp-shopBanner--warn" role="status">
           {banner.text}
@@ -168,8 +166,9 @@ export default function Shop() {
         {SHOP_PRODUCTS.map((p) => {
           const planActive = isPlusSku(p.id) ? plusActiveBySku[p.id] : false;
           const isLoading = busy === p.id;
-          const includeTracker = p.id === 'PETPAL_PLUS_MONTHLY' && monthlyIncludeTracker;
-          const dueTodayCents = p.id === 'PETPAL_PLUS_MONTHLY' ? monthlyFirstPaymentCents(includeTracker) : p.amountCents;
+          const dueTodayCents =
+            p.id === 'PETPAL_PLUS_MONTHLY' ? monthlyFirstPaymentCents(monthlyAddonOpts) : p.amountCents;
+          const hasMonthlyAddons = monthlyIncludeTracker || monthlyIncludeNfc;
 
           return (
             <article
@@ -193,32 +192,50 @@ export default function Shop() {
                 </p>
               ) : null}
               {p.id === 'PETPAL_PLUS_MONTHLY' && !planActive ? (
-                <label className="pp-shopTrackerOpt">
-                  <input
-                    type="checkbox"
-                    checked={monthlyIncludeTracker}
-                    disabled={isLoading}
-                    onChange={(e) => setMonthlyIncludeTracker(e.target.checked)}
-                  />
-                  <span className="pp-shopTrackerOpt__copy">
-                    <strong>{t('shopPage.monthlyAddTrackerTitle')}</strong>
-                    <small>{t('shopPage.monthlyAddTrackerSub')}</small>
-                  </span>
-                  <span className="pp-shopTrackerOpt__meta">
-                    <span className="pp-shopTrackerOpt__price">+{formatEur(TRACKER_ADDON_CENTS)}</span>
-                    <span className="pp-shopTrackerOpt__switch" aria-hidden />
-                  </span>
-                </label>
+                <div className="pp-shopAddons">
+                  <label className="pp-shopTrackerOpt">
+                    <input
+                      type="checkbox"
+                      checked={monthlyIncludeTracker}
+                      disabled={isLoading}
+                      onChange={(e) => setMonthlyIncludeTracker(e.target.checked)}
+                    />
+                    <span className="pp-shopTrackerOpt__copy">
+                      <strong>{t('shopPage.monthlyAddTrackerTitle')}</strong>
+                      <small>{t('shopPage.monthlyAddTrackerSub')}</small>
+                    </span>
+                    <span className="pp-shopTrackerOpt__meta">
+                      <span className="pp-shopTrackerOpt__price">+{formatEur(TRACKER_ADDON_CENTS)}</span>
+                      <span className="pp-shopTrackerOpt__switch" aria-hidden />
+                    </span>
+                  </label>
+                  <label className="pp-shopTrackerOpt">
+                    <input
+                      type="checkbox"
+                      checked={monthlyIncludeNfc}
+                      disabled={isLoading}
+                      onChange={(e) => setMonthlyIncludeNfc(e.target.checked)}
+                    />
+                    <span className="pp-shopTrackerOpt__copy">
+                      <strong>{t('shopPage.monthlyAddNfcTitle')}</strong>
+                      <small>{t('shopPage.monthlyAddNfcSub')}</small>
+                    </span>
+                    <span className="pp-shopTrackerOpt__meta">
+                      <span className="pp-shopTrackerOpt__price">+{formatEur(NFC_TAG_ADDON_CENTS)}</span>
+                      <span className="pp-shopTrackerOpt__switch" aria-hidden />
+                    </span>
+                  </label>
+                </div>
               ) : null}
               {p.id === 'PETPAL_PLUS_YEARLY' ? (
-                <p className="pp-shopCard__highlight">{t('shopPage.yearlyTrackerIncluded')}</p>
+                <p className="pp-shopCard__highlight">{t('shopPage.yearlyHardwareIncluded')}</p>
               ) : null}
               <div className="pp-shopCard__price">{formatShopPrice(p)}</div>
               {p.id === 'PETPAL_PLUS_MONTHLY' && !planActive ? (
                 <p className="pp-shopCard__dueToday">
                   {t('shopPage.dueToday', { amount: formatEur(dueTodayCents) })}
-                  {includeTracker ? (
-                    <span className="pp-shopCard__dueTodayNote"> {t('shopPage.dueTodayWithTracker')}</span>
+                  {hasMonthlyAddons ? (
+                    <span className="pp-shopCard__dueTodayNote"> {t('shopPage.dueTodayWithAddons')}</span>
                   ) : null}
                 </p>
               ) : null}

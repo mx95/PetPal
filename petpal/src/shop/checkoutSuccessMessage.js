@@ -7,19 +7,33 @@ import { PLUS_SKUS } from './catalog';
  *   plusBound: string | null,
  *   plusActive: boolean,
  *   includeTrackerParam: string | null,
+ *   includeNfcParam: string | null,
  *   collarComboParam: string | null,
  *   collarTotalParam: string | null,
  *   shopStats: { combo: number, total: number },
  * }} p
  */
 export function checkoutSuccessMessage(t, p) {
-  const { focusSku, plusBound, plusActive, includeTrackerParam, collarComboParam, collarTotalParam, shopStats } = p;
+  const {
+    focusSku,
+    plusBound,
+    plusActive,
+    includeTrackerParam,
+    includeNfcParam,
+    collarComboParam,
+    collarTotalParam,
+    shopStats,
+  } = p;
   if (focusSku && PLUS_SKUS.includes(focusSku)) {
     if (focusSku === 'PETPAL_PLUS_YEARLY') {
       return t('shopPage.successPlusYearly');
     }
-    if (focusSku === 'PETPAL_PLUS_MONTHLY' && includeTrackerParam === '1') {
-      return t('shopPage.successPlusMonthlyTracker');
+    if (focusSku === 'PETPAL_PLUS_MONTHLY') {
+      const hasTracker = includeTrackerParam === '1';
+      const hasNfc = includeNfcParam === '1';
+      if (hasTracker && hasNfc) return t('shopPage.successPlusMonthlyBoth');
+      if (hasTracker) return t('shopPage.successPlusMonthlyTracker');
+      if (hasNfc) return t('shopPage.successPlusMonthlyNfc');
     }
     if (plusBound === '1' || (plusBound !== '0' && plusActive)) {
       return t('shopPage.successPlusActive');
@@ -32,6 +46,9 @@ export function checkoutSuccessMessage(t, p) {
     const combo = Number.isFinite(comboRaw) ? comboRaw : shopStats.combo;
     const total = Number.isFinite(totalRaw) ? totalRaw : shopStats.total;
     return t('shopPage.successCollar', { combo, total });
+  }
+  if (focusSku === 'NFC_TAG_HARDWARE') {
+    return t('shopPage.successNfc');
   }
   if (focusSku === 'STORE_BOOST_MONTHLY') {
     return t('shopPage.successBoost');

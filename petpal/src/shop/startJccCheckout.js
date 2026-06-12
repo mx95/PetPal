@@ -26,7 +26,7 @@ function mapCallableError(err) {
 
 /**
  * Starts JCC hosted checkout via Cloud Function `createJccCheckout` (register.do → formUrl).
- * @param {{ sku: string, saveCard: boolean, companyId?: string, includeTracker?: boolean }} opts
+ * @param {{ sku: string, saveCard: boolean, companyId?: string, includeTracker?: boolean, includeNfc?: boolean }} opts
  */
 export async function startJccCheckout(opts) {
   const app = getFirebaseApp();
@@ -46,6 +46,7 @@ export async function startJccCheckout(opts) {
       saveCard: Boolean(opts.saveCard),
       companyId: opts.companyId || undefined,
       includeTracker: Boolean(opts.includeTracker),
+      includeNfc: Boolean(opts.includeNfc),
     });
     data = res.data;
   } catch (e) {
@@ -56,7 +57,10 @@ export async function startJccCheckout(opts) {
     throw new Error('Checkout did not return a payment URL. Check createJccCheckout logs and JCC register.do response.');
   }
 
-  const expected = expectedCheckoutCents(opts.sku, opts.includeTracker);
+  const expected = expectedCheckoutCents(opts.sku, {
+    includeTracker: opts.includeTracker,
+    includeNfc: opts.includeNfc,
+  });
   const charged = Number(data?.amountCents);
   if (expected != null && Number.isFinite(charged) && charged !== expected) {
     throw new Error(

@@ -16,6 +16,7 @@ export default function PaymentSuccess() {
   const focusSku = searchParams.get('sku');
   const plusBound = searchParams.get('plusBound');
   const includeTrackerParam = searchParams.get('includeTracker');
+  const includeNfcParam = searchParams.get('includeNfc');
   const collarComboParam = searchParams.get('collarCombo');
   const collarTotalParam = searchParams.get('collarTotal');
 
@@ -61,11 +62,12 @@ export default function PaymentSuccess() {
         plusBound,
         plusActive,
         includeTrackerParam,
+        includeNfcParam,
         collarComboParam,
         collarTotalParam,
         shopStats,
       }),
-    [t, focusSku, plusBound, plusActive, includeTrackerParam, collarComboParam, collarTotalParam, shopStats]
+    [t, focusSku, plusBound, plusActive, includeTrackerParam, includeNfcParam, collarComboParam, collarTotalParam, shopStats]
   );
 
   if (!user) {

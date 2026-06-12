@@ -254,17 +254,6 @@ function NearbyMap({ apiKey }) {
 
   return (
     <div className="pp-nearby-page">
-      <div className="pp-nearbyHeader">
-        <div>
-          <h1 className="pp-nearbyHeader__title">
-            {t('nearbyPage.title')}
-          </h1>
-        </div>
-        <Link className="pp-link" to="/dashboard">
-          {t('common.backDashboard')}
-        </Link>
-      </div>
-
       {petpalPartners.length ? (
         <section className="pp-sponsoredRail pp-nearbyPartners" aria-label="PetPal recommended businesses">
           <div className="pp-sponsoredRail__head">

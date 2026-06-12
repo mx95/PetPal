@@ -1176,20 +1176,6 @@ export default function Tracking() {
 
   return (
     <div className="pp-feed pp-tracker-page">
-      <header className="pp-pageHeader">
-        <div className="pp-pageHeader__copy">
-          <span className="pp-publicHero__eyebrow" style={{ display: 'inline-block', width: 'fit-content' }}>
-            {t('trackingPage.badgePetpal')}
-          </span>
-          <h1 className="pp-pageHeader__title">
-            {selectedPet ? t('trackingPage.titleWithPet', { name: selectedPet.name }) : t('trackingPage.title')}
-          </h1>
-        </div>
-        <Link className="pp-pageHeader__back" to="/dashboard">
-          {t('common.backDashboard')}
-        </Link>
-      </header>
-
       <section className="pp-trackPetStrip" aria-label={t('trackingPage.petSelectLabel')}>
         <div className="pp-trackPetScroll">
           {pets.map((p) => (

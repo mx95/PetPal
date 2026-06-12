@@ -157,6 +157,24 @@ async function grantTrackerEntitlement(db, uid, orderNumber, sourceSku) {
   await incrementShopPublicStats(db, { totalCollarPurchases: 1 });
 }
 
+async function grantNfcEntitlement(db, uid, orderNumber, sourceSku) {
+  await db
+    .collection('users')
+    .doc(uid)
+    .collection('shopEntitlements')
+    .doc('nfcTag')
+    .set(
+      {
+        status: 'active',
+        sku: 'NFC_TAG_HARDWARE',
+        sourceSku,
+        purchasedAt: admin.firestore.FieldValue.serverTimestamp(),
+        sessionOrderNumber: orderNumber,
+      },
+      { merge: true }
+    );
+}
+
 function redirect(res, url) {
   res.set('Cache-Control', 'no-store');
   res.redirect(302, url);
@@ -192,15 +210,16 @@ exports.createJccCheckout = functions.region('europe-west1').https.onCall(async 
     const saveCard = Boolean(data?.saveCard);
     const companyId = data?.companyId ? String(data.companyId).trim() : '';
     const includeTracker = Boolean(data?.includeTracker);
+    const includeNfc = Boolean(data?.includeNfc);
 
     const catalog = SKUS[sku];
     if (!catalog) {
       throw new functions.https.HttpsError('invalid-argument', 'Unknown product.');
     }
-    if (includeTracker && sku !== 'PETPAL_PLUS_MONTHLY') {
-      throw new functions.https.HttpsError('invalid-argument', 'Tracker add-on is only available with the monthly plan.');
+    if ((includeTracker || includeNfc) && sku !== 'PETPAL_PLUS_MONTHLY') {
+      throw new functions.https.HttpsError('invalid-argument', 'Hardware add-ons are only available with the monthly plan.');
     }
-    const pricing = resolveCheckoutPricing(sku, includeTracker);
+    const pricing = resolveCheckoutPricing(sku, { includeTracker, includeNfc });
     if (!pricing) {
       throw new functions.https.HttpsError('invalid-argument', 'Unknown product.');
     }
@@ -223,6 +242,7 @@ exports.createJccCheckout = functions.region('europe-west1').https.onCall(async 
       sku,
       saveCard,
       includeTracker: pricing.includeTracker,
+      includeNfc: pricing.includeNfc,
       companyId: companyId || null,
       amountCents: pricing.chargeCents,
       renewalAmountCents: pricing.renewalCents,
@@ -280,6 +300,7 @@ exports.createJccCheckout = functions.region('europe-west1').https.onCall(async 
       jccOrderId: reg.orderId,
       amountCents: pricing.chargeCents,
       includeTracker: pricing.includeTracker,
+      includeNfc: pricing.includeNfc,
     };
   } catch (e) {
     if (e instanceof functions.https.HttpsError) throw e;
@@ -412,8 +433,13 @@ exports.jccPaymentReturn = functions.region('europe-west1').https.onRequest(asyn
     await incrementShopPublicStats(db, { totalCollarPurchases: 1, activeSubscriptionsWithCollar: 1 });
   }
 
+  if (session.includeNfc && sku === 'PETPAL_PLUS_MONTHLY') {
+    await grantNfcEntitlement(db, uid, orderNumber, sku);
+  }
+
   if (sku === 'PETPAL_PLUS_YEARLY') {
     await grantTrackerEntitlement(db, uid, orderNumber, sku);
+    await grantNfcEntitlement(db, uid, orderNumber, sku);
     await incrementShopPublicStats(db, { activeSubscriptionsWithCollar: 1 });
   }
 
@@ -436,6 +462,10 @@ exports.jccPaymentReturn = functions.region('europe-west1').https.onRequest(asyn
       }
     }
     if (plusActive) await incrementShopPublicStats(db, { activeSubscriptionsWithCollar: 1 });
+  }
+
+  if (sku === 'NFC_TAG_HARDWARE') {
+    await grantNfcEntitlement(db, uid, orderNumber, sku);
   }
 
   if (sku === 'STORE_BOOST_MONTHLY') {
@@ -464,6 +494,7 @@ exports.jccPaymentReturn = functions.region('europe-west1').https.onRequest(asyn
   if (PLUS_SKUS.has(sku)) {
     successQs += `&plusBound=${bindingId ? '1' : '0'}`;
     if (session.includeTracker) successQs += '&includeTracker=1';
+    if (session.includeNfc) successQs += '&includeNfc=1';
   }
   if (sku === 'TRACKER_HARDWARE') {
     const st = await db.collection('shopStats').doc('public').get();

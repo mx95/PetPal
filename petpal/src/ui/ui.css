@@ -16680,6 +16680,13 @@ html[data-theme="dark"] .pp-nearby-list > li {
   color: #047857;
 }
 
+.pp-shopAddons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 12px 0 4px;
+}
+
 .pp-shopTrackerOpt {
   display: flex;
   align-items: center;
