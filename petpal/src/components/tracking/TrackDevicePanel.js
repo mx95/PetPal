@@ -55,7 +55,7 @@ function normalizeProvider(value) {
   return null;
 }
 
-async function fetchDeviceProvider(imei) {
+async function fetchDeviceMeta(imei) {
   const base = resolveTrackerHttpBase();
   if (!base || !imei?.trim()) return null;
   const path = `/api/app/devices/${encodeURIComponent(String(imei).trim())}`;
@@ -64,10 +64,21 @@ async function fetchDeviceProvider(imei) {
     const res = await fetch(url, { headers: { Accept: 'application/json' } });
     if (!res.ok) return null;
     const data = await res.json();
-    return normalizeProvider(data?.provider);
+    return {
+      provider: normalizeProvider(data?.provider),
+      deviceConfig: data?.deviceConfig ?? null,
+    };
   } catch {
     return null;
   }
+}
+
+function formatPollInterval(sec) {
+  const n = Number(sec);
+  if (!Number.isFinite(n) || n <= 0) return '';
+  if (n < 60) return `${n}s`;
+  if (n < 3600) return `${Math.round(n / 60)} min`;
+  return `${Math.round(n / 3600)} h`;
 }
 
 function commandErrorMessage(err, t) {
@@ -103,6 +114,7 @@ export default function TrackDevicePanel({ imei, petName = '', provider = null }
   const propProvider = normalizeProvider(provider);
 
   const [resolvedProvider, setResolvedProvider] = useState(propProvider);
+  const [deviceConfig, setDeviceConfig] = useState(null);
   const [modeId, setModeId] = useState('gps_only');
   const [planId, setPlanId] = useState('balanced');
   const [uploadSeconds, setUploadSeconds] = useState(300);
@@ -127,13 +139,26 @@ export default function TrackDevicePanel({ imei, petName = '', provider = null }
   useEffect(() => {
     if (propProvider || !imei?.trim()) return;
     let cancelled = false;
-    void fetchDeviceProvider(imei).then((next) => {
-      if (!cancelled && next) setResolvedProvider(next);
+    void fetchDeviceMeta(imei).then((meta) => {
+      if (cancelled || !meta) return;
+      if (meta.provider) setResolvedProvider(meta.provider);
+      if (meta.deviceConfig) setDeviceConfig(meta.deviceConfig);
     });
     return () => {
       cancelled = true;
     };
   }, [propProvider, imei]);
+
+  useEffect(() => {
+    if (!isGpspos || !imei?.trim()) return;
+    let cancelled = false;
+    void fetchDeviceMeta(imei).then((meta) => {
+      if (!cancelled && meta?.deviceConfig) setDeviceConfig(meta.deviceConfig);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [isGpspos, imei]);
 
   const refreshPending = useCallback(async () => {
     if (!imei || !commandsAvailable || !isXexun) return;
@@ -203,10 +228,10 @@ export default function TrackDevicePanel({ imei, petName = '', provider = null }
     if (resolvedProvider === 'g365' || resolvedProvider === 'xexun' || resolvedProvider === 'gpspos') {
       return resolvedProvider;
     }
-    const fetched = await fetchDeviceProvider(imei);
-    if (fetched) {
-      setResolvedProvider(fetched);
-      return fetched;
+    const fetched = await fetchDeviceMeta(imei);
+    if (fetched?.provider) {
+      setResolvedProvider(fetched.provider);
+      return fetched.provider;
     }
     return 'g365';
   }
@@ -261,6 +286,15 @@ export default function TrackDevicePanel({ imei, petName = '', provider = null }
       {isGpspos ? (
         <div className="pp-trackDevicePanel__cloud">
           <p className="pp-subtle">{t('trackingPage.devicePanelGpsposIntro')}</p>
+          {deviceConfig?.gpsposPollEnabled && deviceConfig?.gpsposPollIntervalSec ? (
+            <p className="pp-subtle">
+              {t('trackingPage.devicePanelGpsposPollActive', {
+                interval: formatPollInterval(deviceConfig.gpsposPollIntervalSec),
+              })}
+            </p>
+          ) : (
+            <p className="pp-subtle">{t('trackingPage.devicePanelGpsposPollManual')}</p>
+          )}
           <button
             type="button"
             className="pp-btn pp-btnPrimary pp-trackDevicePanel__cta"

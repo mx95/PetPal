@@ -10,25 +10,14 @@ const { createG365TcpServer } = require("./tcp/g365Handler");
 const { registerXexunHttpApi } = require("./http/xexunApiRoutes");
 const { registerG365HttpApi } = require("./http/g365ApiRoutes");
 const { registerGpsposHttpApi } = require("./http/gpsposApiRoutes");
+const { registerAdminDeviceRoutes } = require("./http/adminDeviceRoutes");
 const { logPrefix } = require("./logging/time");
 const { buildPositionPayload } = require("./http/positionPayload");
-
-function inferDeviceProvider(d) {
-  if (!d || typeof d !== "object") return null;
-  if (d.provider === "g365" || d.provider === "xexun" || d.provider === "gpspos") return d.provider;
-  if (d.gpspos && typeof d.gpspos === "object") return "gpspos";
-  if (d.protocol != null && Number.isFinite(Number(d.protocol))) return "g365";
-  const raw = String(d.raw || d.rawHex || d.received || "")
-    .replace(/\s+/g, "")
-    .toUpperCase();
-  if (raw.startsWith("FC")) return "xexun";
-  if (raw.startsWith("7878")) return "g365";
-  return null;
-}
+const { inferDeviceProvider } = require("./deviceProvider");
 
 function withProvider(d) {
   if (!d) return d;
-  const provider = inferDeviceProvider(d);
+  const provider = d.provider || inferDeviceProvider(d);
   return provider && d.provider !== provider ? { ...d, provider } : d;
 }
 
@@ -155,8 +144,8 @@ function corsOrigin() {
 app.use(
   cors({
     origin: corsOrigin(),
-    methods: ["GET", "POST", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"]
+    methods: ["GET", "POST", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-PetPal-Admin-Token", "X-PetPal-Admin"],
   })
 );
 
@@ -164,6 +153,7 @@ app.use(
 registerXexunHttpApi(app, store);
 registerG365HttpApi(app, store);
 registerGpsposHttpApi(app, store);
+registerAdminDeviceRoutes(app, store);
 
 // -----------------------------------------------------------------------------
 // App API (frontend-safe) — keep /devices & /position as legacy, but also expose
@@ -171,7 +161,7 @@ registerGpsposHttpApi(app, store);
 // -----------------------------------------------------------------------------
 
 app.get("/api/app/devices", (req, res) => {
-  res.json(store.list());
+  res.json(store.list().map((d) => withProvider(d)));
 });
 
 app.get("/api/app/devices/:imei", (req, res) => {

@@ -41,7 +41,7 @@ PetPal supports **three collar backends**. The web app uses **`/api/app/*`** for
 | Import cloud history | — | — | `POST /api/gpspos/sync/history` |
 | PetPal Device tab UI | Battery plans + Xexun commands | G365 quick actions | **Refresh from cloud** only |
 
-**Provider** is stored per device (`xexun`, `g365`, `gpspos`) and returned on `/api/app/devices/:imei`.
+**Provider** is stored per device (`xexun`, `g365`, `gpspos`) and returned on `/api/app/devices/:imei`. Admins can **override** provider and GPSPOS poll settings via **`/api/admin/devices`** (see [TRACKER_TYPES.md](./TRACKER_TYPES.md)).
 
 ### PetPal app features (all providers)
 
@@ -115,7 +115,21 @@ Collars report to **gpspos.net**; PetPal **polls** the platform. Setup: [GPSPOS_
 | `GPSPOS_USER` / `GPSPOS_PASSWORD` | Platform account |
 | `GPSPOS_DEVICE_IDS` | Comma-separated IMEIs to auto-poll |
 | `GPSPOS_IMEI_MAP` | `fullImei:platformId` when IDs differ |
-| `GPSPOS_POLL_INTERVAL_SEC` | Poll interval (`0` = manual sync only) |
+| `GPSPOS_POLL_INTERVAL_SEC` | Default poll interval when per-device not set (`0` = manual only) |
+
+### Admin device registry
+
+Protected by **`X-PetPal-Admin-Token`** header (must match env **`TRACKER_ADMIN_TOKEN`**).
+
+| Action | Method & path | Body |
+|--------|---------------|------|
+| List devices + config | `GET /api/admin/devices` | — |
+| Read one IMEI | `GET /api/admin/devices/:imei` | — |
+| Update config | `PATCH /api/admin/devices/:imei` | `{ providerOverride, gpsposPlatformImei, gpsposPollEnabled, gpsposPollIntervalSec }` |
+
+PetPal admin UI: **`/admin/devices`**. Requires `REACT_APP_TRACKER_ADMIN_TOKEN` in the React build.
+
+Per-device GPSPOS polling replaces a single global interval when `gpsposPollEnabled` is true or `providerOverride` is `gpspos`.
 
 ---
 

@@ -1,6 +1,7 @@
 const { createMemoryStore } = require("./memory");
 const { openSqlite } = require("../db/sqlite");
 const { isPlausibleLatLng } = require("../geo/coords");
+const { effectiveProvider } = require("../deviceProvider");
 
 function hasFiniteLatLng(obj) {
   if (!obj) return false;
@@ -83,6 +84,28 @@ function mapHistoryRow(r) {
     gpsValid: isApprox ? false : true,
     warningApproximate: isApprox,
     accuracy: source === "wifi" ? "wifi" : source === "lbs" ? "lbs" : "high",
+  };
+}
+
+function deviceConfigFromRow(row) {
+  if (!row) return null;
+  return {
+    providerOverride: row.provider_override ?? null,
+    gpsposPlatformImei: row.gpspos_platform_imei ?? null,
+    gpsposPollIntervalSec:
+      row.gpspos_poll_interval_sec != null ? Number(row.gpspos_poll_interval_sec) : null,
+    gpsposPollEnabled: Boolean(Number(row.gpspos_poll_enabled)),
+  };
+}
+
+function enrichDevice(device, row) {
+  if (!device) return null;
+  const config = deviceConfigFromRow(row);
+  const provider = effectiveProvider(device, row?.provider_override);
+  return {
+    ...device,
+    provider,
+    deviceConfig: config,
   };
 }
 
@@ -173,26 +196,30 @@ function createSqliteStore({ dbPath }) {
         const imei = String(row.imei);
         seen.add(imei);
         const live = liveByImei.get(imei);
-        return live || deviceFromRow(row);
+        const base = live || deviceFromRow(row);
+        return enrichDevice(base, row);
       });
       for (const d of mem.list()) {
         const imei = String(d.imei);
-        if (!seen.has(imei)) out.push(d);
+        if (!seen.has(imei)) {
+          const row = sqlite.getDevice.get(imei);
+          out.push(enrichDevice(d, row));
+        }
       }
       return out;
     },
 
     get(imei) {
       const live = mem.get(imei);
+      const row = sqlite.getDevice.get(String(imei));
       if (live) {
         attachHomeIfMissing(live, imei, sqlite);
-        return live;
+        return enrichDevice(live, row);
       }
-      const row = sqlite.getDevice.get(String(imei));
       const fromRow = deviceFromRow(row);
       if (fromRow) {
         attachHomeIfMissing(fromRow, imei, sqlite);
-        return fromRow;
+        return enrichDevice(fromRow, row);
       }
       return null;
     },
@@ -333,9 +360,45 @@ function createSqliteStore({ dbPath }) {
         battery: row?.battery ?? null,
         signal: row?.signal ?? null,
         source: row?.source ?? null,
+        provider: row?.provider ?? null,
         last_update: row?.last_update ?? new Date().toISOString(),
       });
       return true;
+    },
+
+    getDeviceConfig(imei) {
+      return sqlite.getDevice.get(String(imei)) || null;
+    },
+
+    listDeviceConfigs() {
+      return sqlite.listDevices.all();
+    },
+
+    listGpsposPollTargets() {
+      return sqlite.listGpsposPollTargets.all();
+    },
+
+    updateDeviceConfig(imei, patch) {
+      const k = String(imei);
+      sqlite.ensureDevice.run(k);
+      const current = sqlite.getDevice.get(k) || {};
+      sqlite.updateDeviceConfig.run({
+        imei: k,
+        provider_override:
+          patch.provider_override !== undefined ? patch.provider_override : current.provider_override ?? null,
+        gpspos_platform_imei:
+          patch.gpspos_platform_imei !== undefined
+            ? patch.gpspos_platform_imei
+            : current.gpspos_platform_imei ?? null,
+        gpspos_poll_interval_sec:
+          patch.gpspos_poll_interval_sec !== undefined
+            ? patch.gpspos_poll_interval_sec
+            : current.gpspos_poll_interval_sec ?? null,
+        gpspos_poll_enabled:
+          patch.gpspos_poll_enabled !== undefined
+            ? patch.gpspos_poll_enabled
+            : current.gpspos_poll_enabled ?? 0,
+      });
     },
 
     close() {

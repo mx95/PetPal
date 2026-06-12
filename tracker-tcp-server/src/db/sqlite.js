@@ -117,6 +117,26 @@ function openSqlite(dbPath) {
   } catch {
     /* column exists */
   }
+  try {
+    db.exec(`ALTER TABLE devices ADD COLUMN provider_override TEXT`);
+  } catch {
+    /* column exists */
+  }
+  try {
+    db.exec(`ALTER TABLE devices ADD COLUMN gpspos_platform_imei TEXT`);
+  } catch {
+    /* column exists */
+  }
+  try {
+    db.exec(`ALTER TABLE devices ADD COLUMN gpspos_poll_interval_sec INTEGER`);
+  } catch {
+    /* column exists */
+  }
+  try {
+    db.exec(`ALTER TABLE devices ADD COLUMN gpspos_poll_enabled INTEGER NOT NULL DEFAULT 0`);
+  } catch {
+    /* column exists */
+  }
   db.exec(`
     UPDATE positions
     SET received_at = timestamp
@@ -184,17 +204,42 @@ function openSqlite(dbPath) {
       AND COALESCE(received_at, timestamp) <= @to
   `);
 
+  const deviceSelectCols = `
+    imei, name, last_lat, last_lng, home_lat, home_lng, battery, signal, source, provider, last_update,
+    provider_override, gpspos_platform_imei, gpspos_poll_interval_sec, gpspos_poll_enabled
+  `;
+
   const listDevices = db.prepare(`
-    SELECT imei, name, last_lat, last_lng, home_lat, home_lng, battery, signal, source, provider, last_update
+    SELECT ${deviceSelectCols}
     FROM devices
     ORDER BY last_update DESC
   `);
 
   const getDevice = db.prepare(`
-    SELECT imei, name, last_lat, last_lng, home_lat, home_lng, battery, signal, source, provider, last_update
+    SELECT ${deviceSelectCols}
     FROM devices
     WHERE imei = ?
     LIMIT 1
+  `);
+
+  const ensureDevice = db.prepare(`
+    INSERT INTO devices (imei) VALUES (?)
+    ON CONFLICT(imei) DO NOTHING
+  `);
+
+  const updateDeviceConfig = db.prepare(`
+    UPDATE devices SET
+      provider_override = @provider_override,
+      gpspos_platform_imei = @gpspos_platform_imei,
+      gpspos_poll_interval_sec = @gpspos_poll_interval_sec,
+      gpspos_poll_enabled = @gpspos_poll_enabled
+    WHERE imei = @imei
+  `);
+
+  const listGpsposPollTargets = db.prepare(`
+    SELECT imei, gpspos_platform_imei, gpspos_poll_interval_sec, provider_override, gpspos_poll_enabled
+    FROM devices
+    WHERE gpspos_poll_enabled = 1 OR provider_override = 'gpspos'
   `);
 
   const getLastGpsPosition = db.prepare(`
@@ -255,6 +300,9 @@ function openSqlite(dbPath) {
     countHistoryByImeiInRange,
     listDevices,
     getDevice,
+    ensureDevice,
+    updateDeviceConfig,
+    listGpsposPollTargets,
     getLastGpsPosition,
     insertCommandQueued,
     markLatestCommandSent,

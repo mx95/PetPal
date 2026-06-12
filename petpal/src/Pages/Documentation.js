@@ -86,6 +86,7 @@ export default function Documentation() {
     { href: '#docs-routes-mvp', key: 'docs.tocRoutesMvp' },
     { href: '#docs-routes-hidden', key: 'docs.tocRoutesHidden' },
     { href: '#docs-apis', key: 'docs.tocApis' },
+    { href: '#docs-trackers', key: 'docs.tocTrackers' },
     { href: '#docs-pets', key: 'docs.toc3' },
     { href: '#docs-tracking', key: 'docs.toc8' },
     { href: '#docs-nearby', key: 'docs.toc7' },
@@ -162,6 +163,17 @@ export default function Documentation() {
                   </ul>
                 </article>
               ))}
+            </section>
+
+            <section id="docs-trackers">
+              <h2>{t('docs.trackersTitle')}</h2>
+              <p>{t('docs.trackersIntro')}</p>
+              <h3>{t('docs.trackersXexunTitle')}</h3>
+              <ParaBlock textKey="docs.trackersXexunBody" />
+              <h3>{t('docs.trackersG365Title')}</h3>
+              <ParaBlock textKey="docs.trackersG365Body" />
+              <h3>{t('docs.trackersGpsposTitle')}</h3>
+              <ParaBlock textKey="docs.trackersGpsposBody" />
             </section>
 
             <section id="docs-pets">

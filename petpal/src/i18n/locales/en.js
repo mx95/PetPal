@@ -1026,6 +1026,8 @@ const en = {
     devicePanelGpsposSynced: 'Location updated from the cloud. Check the Live tab.',
     devicePanelGpsposFoot:
       'This collar syncs from the gpspos cloud. Tap refresh anytime, or ask your admin to enable automatic polling.',
+    devicePanelGpsposPollActive: 'Server polls the cloud every {interval}.',
+    devicePanelGpsposPollManual: 'Automatic polling is off — use Refresh or ask your admin.',
     devicePanelGpsposDisabled:
       'Cloud sync is disabled on the tracker server. Set GPSPOS_ENABLED=1 and restart the server.',
     devicePanelGpsposNoPosition:
@@ -1636,6 +1638,7 @@ const en = {
     tocRoutesMvp: 'MVP routes (in navigation)',
     tocRoutesHidden: 'Hidden / direct URL routes',
     tocApis: 'Available APIs',
+    tocTrackers: 'Tracker types (Xexun / 365GPS / GPSPOS)',
     routesMvpTitle: 'MVP routes (shown in navigation)',
     routesMvpIntro:
       'These pages are linked from the home screen, bottom bar, and top navigation during the first public release.',
@@ -1661,6 +1664,8 @@ const en = {
       home: { label: 'Home', desc: 'Welcome screen with feature overview.' },
       discover: { label: 'Discover feed', desc: 'Local tips, offers, and sponsored cards (/discover).' },
       login: { label: 'Log in', desc: 'Email/password sign-in (Firebase Auth).' },
+      forgotPassword: { label: 'Forgot password', desc: 'Request a password reset email.' },
+      contact: { label: 'Contact us', desc: 'Send a message to the PetPal team.' },
       register: { label: 'Register', desc: 'Create a new account.' },
       pets: { label: 'My pets', desc: 'Add and edit pets, photos, meds, collar IMEI.' },
       tracking: { label: 'Tracker', desc: 'Live map and route history for GPS collars.' },
@@ -1686,7 +1691,8 @@ const en = {
       strayRedirect: { label: '/stray-adoption redirect', desc: 'Redirects to /premium/stray.' },
       admin: { label: 'Admin hub', desc: 'Staff tools entry (admin role).' },
       adminCompanies: { label: 'Company approvals', desc: 'Review business applications.' },
-      adminTracker: { label: 'Tracker setup', desc: 'Collar / IMEI admin utilities.' },
+      adminTracker: { label: 'Tracker setup (ip-transfer)', desc: 'Queue Xexun ip-transfer to point a collar at your server.' },
+      adminDevices: { label: 'Device registry', desc: 'Admin: IMEI → tracker logic + GPSPOS poll interval.' },
       adminBroadcast: { label: 'Admin broadcast', desc: 'Send messages to users.' },
       docs: { label: 'Documentation', desc: 'This page — routes and APIs.' },
       privacy: { label: 'Privacy policy', desc: 'Legal privacy text.' },
@@ -1712,6 +1718,24 @@ const en = {
         tracking: 'Body { tk } or { p1..p7 } — upload interval / mode.',
         queue: 'Body { imei, command } — raw command string.',
         apn: 'Body { imei, apn } — cellular APN.',
+      },
+      trackerAdmin: {
+        title: 'Tracker admin — device registry',
+        intro:
+          'PetPal admins assign each IMEI to Xexun, 365GPS, or GPSPOS and configure GPSPOS poll intervals. Header X-PetPal-Admin-Token must match TRACKER_ADMIN_TOKEN on the server. UI: /admin/devices.',
+        base: 'https://your-server:5002/api/admin',
+        list: 'List all devices with provider override and GPSPOS poll settings.',
+        one: 'Read config for one IMEI.',
+        patch:
+          'Body { providerOverride: auto|xexun|g365|gpspos, gpsposPlatformImei?, gpsposPollEnabled?, gpsposPollIntervalSec? }.',
+      },
+      trackerGpspos: {
+        title: 'gpspos.net cloud sync',
+        intro: 'Pulls fixes from the gpspos.net platform into SQLite. Auto-poll uses per-device settings from /api/admin/devices.',
+        base: 'https://your-server:5002/api/gpspos',
+        index: 'Service index and environment help.',
+        sync: 'POST { imei } — fetch latest platform position.',
+        history: 'POST { imei, fromUnix, toUnix } — import track into history.',
       },
       bff: {
         title: 'Optional tracking BFF',
@@ -1754,7 +1778,19 @@ const en = {
       'Nearby shows a map and categories (parks, vets, shops, etc.). Pick a category, then use Search this area after you move the map, or Search near me for results around your location.\n\nIf the map says an API key is missing or places fail to load, maps search must be enabled by whoever runs this PetPal site—try again later or contact support.',
     u8Title: 'Live GPS tracker map',
     u8Body:
-      'If your collar or tag uses a supported tracking service, enter the device id from your supplier’s instructions—either on Tracker or inside each pet’s edit screen.\n\nWhen your organisation has connected the backend, Tracker shows the last known position on a map. If you only see placeholder or demo coordinates, tracking may still be being set up.',
+      'Link a collar IMEI on My pets, then open Tracker for the live map and history.\n\nPetPal supports three backends — your admin assigns the correct one per IMEI at /admin/devices:\n\n• Xexun — collar connects to your server on TCP port 5001 (FC…CF frames). Device tab sends battery plans and tracking commands on the next uplink.\n\n• 365GPS — TCP port 5003 (7878…0D0A). Device tab sets upload/status intervals, manual locate, and find-collar actions.\n\n• GPSPOS — collar stays on gpspos.net; your server polls the cloud on a schedule you choose (30s–1h). Device tab shows Refresh from cloud; the map updates when polling runs or after manual refresh.\n\nIf the map shows demo or stale data, confirm the IMEI, provider assignment, and that the tracker server is reachable (REACT_APP_XEXUN_HTTP_BASE_URL).',
+    trackersTitle: 'Tracker types — how each logic works',
+    trackersIntro:
+      'All three providers share the same read APIs (/api/app/position, /api/app/history). Commands and polling differ. Full server reference: tracker-tcp-server/docs/TRACKER_TYPES.md.',
+    trackersXexunTitle: 'Xexun (TCP ingest)',
+    trackersXexunBody:
+      'Collars push binary frames starting with FC to TCP port 5001. The server parses GPS, LBS, Wi‑Fi home, battery, and queues downlink text commands (0x21) on the next uplink.\n\nUse /admin/tracker to queue ip-transfer when onboarding a collar. Device tab: battery plans (tk= presets), GPS-only mode, Wi‑Fi BSSID home pin.\n\nObserved provider: xexun when raw hex starts with FC or after first TCP login.',
+    trackersG365Title: '365GPS (TCP ingest)',
+    trackersG365Body:
+      'Collars use 7878…0D0A frames on TCP port 5003. Upload interval and status heartbeat are changed with /api/g365/commands/* while the collar is online.\n\nDevice tab: Long life / Balanced / Regular / Active presets map to upload + status intervals; quick actions for manual GPS fix, ring, and restart.\n\nObserved provider: g365 when protocol field is set or raw starts with 7878.',
+    trackersGpsposTitle: 'GPSPOS (cloud poll)',
+    trackersGpsposBody:
+      'The physical collar reports to gpspos.net, not your TCP ports. PetPal logs into the platform API and pulls Proc_GetLastPosition on a timer.\n\nAt /admin/devices set provider to GPSPOS, optional platform ID (when the 15-digit IMEI differs from the platform login id), enable polling, and pick interval (30s to 1h).\n\nDevice tab: Refresh from cloud triggers POST /api/gpspos/sync immediately. History import: POST /api/gpspos/sync/history with Unix time range.',
     u10Title: 'Stray adoption board',
     u10Body:
       'Premium → Stray adoption is where you post animals you found as strays (not your own missing pet—that stays under Lost pet). Shelters and adopters using PetPal see the same cloud board.\n\nAfter Firebase is configured, stray listings sync for everyone. Mark your own post as adopted when homed, or withdraw it when no longer needed.',

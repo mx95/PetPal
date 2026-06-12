@@ -77,26 +77,115 @@ async function syncGpsposHistory(store, client, requestedImei, { fromUnix, toUni
   return { imei: storeImei, platformImei, imported, total: parsed.records.length };
 }
 
+function buildImeiMapForDevice(store, storeImei, envMap = {}) {
+  const map = { ...envMap };
+  if (typeof store?.getDeviceConfig === "function") {
+    const row = store.getDeviceConfig(storeImei);
+    const platform = row?.gpspos_platform_imei;
+    if (platform) map[String(storeImei)] = String(platform);
+  }
+  return map;
+}
+
+function collectPollTargets(store, config) {
+  const defaultInterval = Math.max(15, config.pollIntervalSec || 60);
+  const targets = new Map();
+
+  if (typeof store?.listGpsposPollTargets === "function") {
+    for (const row of store.listGpsposPollTargets()) {
+      const imei = String(row.imei || "").trim();
+      if (!imei) continue;
+      const enabled = Number(row.gpspos_poll_enabled) === 1 || row.provider_override === "gpspos";
+      if (!enabled) continue;
+      targets.set(imei, {
+        intervalSec: Math.max(15, Number(row.gpspos_poll_interval_sec) || defaultInterval),
+        platformImei: row.gpspos_platform_imei ?? null,
+      });
+    }
+  }
+
+  for (const imei of config.deviceIds) {
+    const k = String(imei).trim();
+    if (!k || targets.has(k)) continue;
+    targets.set(k, { intervalSec: defaultInterval, platformImei: null });
+  }
+
+  return targets;
+}
+
 function startGpsposPoller(store, client, config) {
   if (!client || !config.enabled) return null;
-  const ids = config.deviceIds;
-  if (!ids.length || !config.pollIntervalSec) return null;
 
-  const tick = async () => {
-    for (const imei of ids) {
+  const defaultInterval = Math.max(15, config.pollIntervalSec || 60);
+  const state = new Map();
+
+  async function pollOne(imei, meta) {
+    const imeiMap = buildImeiMapForDevice(store, imei, config.imeiMap);
+    if (meta.platformImei) imeiMap[imei] = meta.platformImei;
+    await syncGpsposLastPosition(store, client, imei, { imeiMap });
+    console.log(`${logPrefix({ dir: "in", tag: "gpspos" })} polled ${imei}`);
+  }
+
+  function scheduleDevice(imei, meta, { immediate = false } = {}) {
+    const sec = Math.max(15, meta.intervalSec || defaultInterval);
+    const prev = state.get(imei);
+    if (
+      prev &&
+      prev.intervalSec === sec &&
+      prev.platformImei === meta.platformImei &&
+      !immediate
+    ) {
+      return;
+    }
+    if (prev) clearTimeout(prev.timer);
+
+    const run = async () => {
       try {
-        await syncGpsposLastPosition(store, client, imei, { imeiMap: config.imeiMap });
-        console.log(`${logPrefix({ dir: "in", tag: "gpspos" })} polled ${imei}`);
+        await pollOne(imei, meta);
       } catch (err) {
         console.warn(
           `${logPrefix({ dir: "in", tag: "gpspos" })} poll ${imei} failed: ${err.message || err}`
         );
       }
-    }
-  };
+      const current = state.get(imei);
+      if (current) current.timer = setTimeout(run, sec * 1000);
+    };
 
-  tick();
-  return setInterval(tick, config.pollIntervalSec * 1000);
+    state.set(imei, {
+      intervalSec: sec,
+      platformImei: meta.platformImei,
+      timer: setTimeout(run, immediate ? 500 : sec * 1000),
+    });
+  }
+
+  function refreshSchedules() {
+    const targets = collectPollTargets(store, config);
+    for (const [imei, st] of state) {
+      if (!targets.has(imei)) {
+        clearTimeout(st.timer);
+        state.delete(imei);
+      }
+    }
+    for (const [imei, meta] of targets) {
+      scheduleDevice(imei, meta);
+    }
+  }
+
+  refreshSchedules();
+  const configTimer = setInterval(refreshSchedules, 60000);
+
+  const count = collectPollTargets(store, config).size;
+  if (count) {
+    console.log(`[gpspos] per-device polling for ${count} device(s) (default ${defaultInterval}s)`);
+  }
+
+  return {
+    stop() {
+      clearInterval(configTimer);
+      for (const st of state.values()) clearTimeout(st.timer);
+      state.clear();
+    },
+  };
 }
 
 /**
@@ -149,7 +238,8 @@ function registerGpsposHttpApi(app, store, opts = {}) {
     if (!imei) return res.status(400).json({ error: "missing_imei" });
 
     try {
-      const result = await syncGpsposLastPosition(store, client, imei, { imeiMap: config.imeiMap });
+      const imeiMap = buildImeiMapForDevice(store, imei, config.imeiMap);
+      const result = await syncGpsposLastPosition(store, client, imei, { imeiMap });
       return res.json({ ok: true, ...result });
     } catch (err) {
       if (err.code === "no_position") return res.status(404).json({ error: "no_position" });
@@ -171,10 +261,11 @@ function registerGpsposHttpApi(app, store, opts = {}) {
     }
 
     try {
+      const imeiMap = buildImeiMapForDevice(store, imei, config.imeiMap);
       const result = await syncGpsposHistory(store, client, imei, {
         fromUnix,
         toUnix,
-        imeiMap: config.imeiMap,
+        imeiMap,
       });
       return res.json({ ok: true, ...result });
     } catch (err) {
@@ -207,12 +298,10 @@ function registerGpsposHttpApi(app, store, opts = {}) {
   });
 
   const poller = startGpsposPoller(store, client, config);
-  if (poller) {
-    console.log(
-      `[gpspos] polling ${config.deviceIds.length} device(s) every ${config.pollIntervalSec}s`
-    );
+  if (poller && collectPollTargets(store, config).size) {
+    /* logged inside startGpsposPoller */
   } else if (config.enabled && client) {
-    console.log("[gpspos] enabled — sync via POST /api/gpspos/sync or set GPSPOS_DEVICE_IDS + poll interval");
+    console.log("[gpspos] enabled — sync via POST /api/gpspos/sync or enable poll in /admin/devices");
   }
 
   return { client, config, poller };
@@ -225,4 +314,6 @@ module.exports = {
   syncGpsposHistory,
   startGpsposPoller,
   resolveStoreImei,
+  buildImeiMapForDevice,
+  collectPollTargets,
 };

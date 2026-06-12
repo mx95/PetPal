@@ -36,6 +36,7 @@ import CompanyApply from './Pages/CompanyApply';
 import AdminCompanyQueue from './Pages/AdminCompanyQueue';
 import AdminHub from './Pages/AdminHub';
 import AdminTrackerSetup from './Pages/AdminTrackerSetup';
+import AdminDeviceRegistry from './Pages/AdminDeviceRegistry';
 import AdminBroadcast from './Pages/AdminBroadcast';
 import Inbox from './Pages/Inbox';
 import { useI18n } from './i18n/I18nContext';
@@ -120,6 +121,14 @@ function App() {
             element={
               <RequireAuth>
                 <AdminTrackerSetup />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/admin/devices"
+            element={
+              <RequireAuth>
+                <AdminDeviceRegistry />
               </RequireAuth>
             }
           />

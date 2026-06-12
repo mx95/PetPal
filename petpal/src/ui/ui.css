@@ -19092,3 +19092,43 @@ html[data-theme="dark"] .pp-nearbyPartnerCard__name {
   margin-top: clamp(16px, 3vw, 24px);
   gap: clamp(16px, 3vw, 22px);
 }
+
+.pp-adminDeviceList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.pp-adminDeviceCard {
+  border: 1px solid var(--pp-border, rgba(0, 0, 0, 0.08));
+  border-radius: 12px;
+  padding: 16px;
+  background: var(--pp-surface, #fff);
+}
+
+.pp-adminDeviceCard__head {
+  margin-bottom: 12px;
+}
+
+.pp-adminDeviceCard__meta {
+  margin-top: 6px;
+  font-size: 0.9rem;
+}
+
+.pp-adminDeviceCard__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.pp-adminDeviceCard__actions {
+  margin-top: 12px;
+}
+
+.pp-field--checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+}

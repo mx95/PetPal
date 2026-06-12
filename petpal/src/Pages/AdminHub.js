@@ -73,6 +73,12 @@ export default function AdminHub() {
             desc="Switch a collar to your server by queueing an ip-transfer command."
           />
           <AdminActionCard
+            to="/admin/devices"
+            icon="🛰️"
+            title="Device registry"
+            desc="Assign IMEI → Xexun / 365GPS / GPSPOS and set GPSPOS poll interval."
+          />
+          <AdminActionCard
             to="/admin/broadcast"
             icon="📬"
             title="Broadcast inbox"
