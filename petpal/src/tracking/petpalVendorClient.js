@@ -501,7 +501,10 @@ export async function getLatestPositionWithSync(deviceId, opts = {}) {
     provider = meta?.provider ?? null;
   }
 
-  if (provider === 'gpspos' && isGpsposSyncAvailable()) {
+  const shouldSyncGpspos =
+    isGpsposSyncAvailable() && provider !== 'xexun' && provider !== 'g365';
+
+  if (shouldSyncGpspos) {
     try {
       await syncGpsposPosition(id);
     } catch (e) {

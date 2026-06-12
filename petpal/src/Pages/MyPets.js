@@ -13,6 +13,7 @@ import { useToast } from '../components/Toast';
 import ImeiQrScannerButton from '../components/ImeiQrScannerButton';
 import PetMedicationModal from '../components/PetMedicationModal';
 import IconMedPill from '../components/icons/IconMedPill';
+import { linkPetTrackerImei } from '../tracking/linkPetTrackerImei';
 
 function IconPencil() {
   return (
@@ -316,6 +317,10 @@ export default function MyPets() {
     setCategoryId('dog');
     if (addPhotoRef.current) addPhotoRef.current.value = '';
     setAddPetDrawerOpen(false);
+    const newImei = addDeviceId.trim();
+    if (createdPetId && newImei) {
+      void linkPetTrackerImei(newImei).catch(() => {});
+    }
   }
 
   function startEdit(p) {
@@ -392,6 +397,12 @@ export default function MyPets() {
         ? { photoUrl: photoPatch.photoUrl, photoStoragePath: photoPatch.photoStoragePath, photoDataUrl: null }
         : {}),
     });
+    const linkedImei = editGpsEnabled ? editDevice.trim() : '';
+    if (linkedImei && linkedImei !== prevImei) {
+      void linkPetTrackerImei(linkedImei)
+        .then(() => show(t('myPets.trackerLinked'), { kind: 'success' }))
+        .catch(() => show(t('myPets.trackerLinkFailed'), { kind: 'error' }));
+    }
     setEditingId(null);
     if (editPhotoRef.current) editPhotoRef.current.value = '';
   }

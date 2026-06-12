@@ -499,6 +499,8 @@ const el = {
       'Δεν ξεκίνησε η κάμερα. Επιτρέψτε δικαιώματα, χρησιμοποιήστε HTTPS ή πληκτρολογήστε το IMEI.',
     scanQrErrorNoImei: 'Δεν βρέθηκε 15ψήφιο IMEI σε αυτό το QR.',
     scanQrSuccess: 'Το IMEI συμπληρώθηκε από το QR.',
+    trackerLinked: 'Ο tracker συνδέθηκε — η τελευταία θέση θα εμφανιστεί στην καρτέλα Tracker.',
+    trackerLinkFailed: 'Αποτυχία σύνδεσης με τον server. Ανοίξτε Tracker και πατήστε refresh.',
     profilePhoto: 'Φωτογραφία',
     removePhoto: 'Αφαίρεση φωτογραφίας',
     save: 'Αποθήκευση',

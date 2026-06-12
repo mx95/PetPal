@@ -641,6 +641,8 @@ const en = {
     scanQrErrorCamera: 'Could not start the camera. Allow permission in the browser, use HTTPS, or type the IMEI.',
     scanQrErrorNoImei: 'No 15-digit IMEI found in that QR code.',
     scanQrSuccess: 'IMEI filled in from QR.',
+    trackerLinked: 'Tracker linked — latest location will appear on the Tracker tab.',
+    trackerLinkFailed: 'Could not reach the tracker server. Open Tracker and tap refresh.',
     profilePhoto: 'Profile photo',
     removePhoto: 'Remove current photo',
     save: 'Save',

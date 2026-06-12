@@ -656,6 +656,11 @@ export default function Tracking() {
 
   useEffect(() => {
     trustedLiveAnchorRef.current = null;
+    lastKnownLiveRef.current = null;
+    setPosition(null);
+    setError('');
+    setDeviceProvider(null);
+    refreshSeqRef.current += 1;
     setLiveHistoryFallback(null);
     setLiveTrail([]);
     setHistoryPoints([]);
