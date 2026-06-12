@@ -60,6 +60,28 @@ export function getXexunBatteryPlan(planId) {
   return XEXUN_BATTERY_PLANS[planId] ?? null;
 }
 
+/** GPSPOS cloud poll interval (seconds) — same cadence as 365GPS upload presets. */
+export const GPSPOS_POLL_BY_PLAN = {
+  long_life: 600,
+  balanced: 300,
+  regular: 180,
+  active: 60,
+};
+
+/** @param {string} planId */
+export function getGpsposPollSeconds(planId) {
+  const n = GPSPOS_POLL_BY_PLAN[planId];
+  return Number.isFinite(n) ? n : null;
+}
+
+/** @param {number} uploadSeconds */
+export function gpsposPlanIdForUploadSeconds(uploadSeconds) {
+  const n = Number(uploadSeconds);
+  if (!Number.isFinite(n)) return null;
+  const hit = Object.entries(GPSPOS_POLL_BY_PLAN).find(([, sec]) => sec === n);
+  return hit ? hit[0] : null;
+}
+
 /** @param {TrackingModePreset} preset */
 export function presetToTkBody(preset) {
   return {

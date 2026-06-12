@@ -16687,6 +16687,13 @@ html[data-theme="dark"] .pp-nearby-list > li {
   margin: 12px 0 4px;
 }
 
+.pp-petFeatureOpts {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 4px 0 12px;
+}
+
 .pp-shopTrackerOpt {
   display: flex;
   align-items: center;

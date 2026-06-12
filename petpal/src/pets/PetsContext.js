@@ -142,7 +142,9 @@ export function PetsProvider({ children }) {
             }
           : {}),
       };
-      if (Object.prototype.hasOwnProperty.call(normalized, 'trackingDeviceId')) {
+      if (Object.prototype.hasOwnProperty.call(patch, 'linkedTracker')) {
+        normalized.linkedTracker = Boolean(patch.linkedTracker);
+      } else if (Object.prototype.hasOwnProperty.call(normalized, 'trackingDeviceId')) {
         normalized.linkedTracker = Boolean(normalized.trackingDeviceId);
       }
       if (Object.prototype.hasOwnProperty.call(patch, 'nfcTag')) {

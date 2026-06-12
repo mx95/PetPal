@@ -488,6 +488,10 @@ const ru = {
     noPets: 'Пока пусто — добавьте слева.',
     deviceId: 'ID устройства или IMEI (необяз.)',
     deviceIdPh: 'ID устройства или IMEI для карты',
+    gpsEnabledTitle: 'GPS-трекер',
+    gpsEnabledSub: 'Показывать питомца на карте Live, когда указан IMEI ошейника.',
+    nfcEnabledTitle: 'NFC-метка',
+    nfcEnabledSub: 'Профиль открывается при касании NFC-метки на ошейнике.',
     scanQr: 'Сканировать QR',
     scanQrClose: 'Закрыть',
     scanQrHint:

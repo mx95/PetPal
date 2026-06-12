@@ -9,6 +9,8 @@
 
 import { pointTimestampMs, sanitizeSpeedKmh } from './positionFilter';
 import { resolveTrackerHttpBase } from './trackingWifiFeature';
+import { syncGpsposPosition, isGpsposSyncAvailable } from './gpsposCommandClient';
+import { fetchDeviceMeta } from './deviceMetaClient';
 
 function bffBase() {
   const raw = process.env.REACT_APP_TRACKING_BFF_URL;
@@ -480,6 +482,45 @@ export async function getLatestPosition(deviceId) {
   if (xexunBase() != null) return fetchXexunPosition(id);
   if (vendorBase() != null) return fetchVendorPosition(id);
   return mockPosition(id);
+}
+
+/**
+ * For GPSPOS collars, pull from the cloud platform first, then read the cached fix from the tracker server.
+ * @param {string|number} deviceId
+ * @param {{ provider?: string|null }} [opts]
+ */
+export async function getLatestPositionWithSync(deviceId, opts = {}) {
+  const id = String(deviceId || '').trim();
+  if (!id) return getLatestPosition(deviceId);
+
+  let provider = opts.provider ?? null;
+  if (!provider && resolveTrackerHttpBase()) {
+    const meta = await fetchDeviceMeta(id);
+    provider = meta?.provider ?? null;
+  }
+
+  if (provider === 'gpspos' && isGpsposSyncAvailable()) {
+    try {
+      await syncGpsposPosition(id);
+    } catch (e) {
+      if (e?.code !== 'no_position' && e?.code !== 'gpspos_disabled') {
+        throw e;
+      }
+    }
+  }
+
+  try {
+    return await getLatestPosition(id);
+  } catch (e) {
+    const retryable =
+      isGpsposSyncAvailable() &&
+      provider !== 'xexun' &&
+      provider !== 'g365' &&
+      (e?.status === 404 || /not_found|no_position|No GPS fix/i.test(String(e?.message || '')));
+    if (!retryable) throw e;
+    await syncGpsposPosition(id);
+    return getLatestPosition(id);
+  }
 }
 
 export async function getPositionHistory(deviceId, opts = {}) {

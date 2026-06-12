@@ -631,6 +631,10 @@ const en = {
     noPets: 'No pets yet — add one on the left.',
     deviceId: 'Device ID or IMEI (optional)',
     deviceIdPh: 'Device ID or collar IMEI for live map',
+    gpsEnabledTitle: 'GPS tracker',
+    gpsEnabledSub: 'Show this pet on the Live map when a collar IMEI is linked.',
+    nfcEnabledTitle: 'NFC tag',
+    nfcEnabledSub: 'Pet profile opens when someone taps your NFC collar tag.',
     scanQr: 'Scan QR',
     scanQrClose: 'Close',
     scanQrHint: 'Allow camera access, then point at the IMEI QR on your tracker (HTTPS or localhost required).',
@@ -1021,7 +1025,11 @@ const en = {
       'Tracker command API is not configured. Set REACT_APP_XEXUN_HTTP_BASE_URL to your server (e.g. http://YOUR_IP:5002) and rebuild the app.',
     devicePanelFailed: 'Could not send command. Check the server and IMEI.',
     devicePanelGpsposIntro:
-      'This collar reports to a cloud GPS platform (gpspos-style API), not directly to PetPal over TCP. Refresh pulls the latest fix from that platform into PetPal.',
+      'This collar reports to a cloud GPS platform (gpspos-style API), not directly to PetPal over TCP. Choose a plan below — PetPal pulls from the cloud on that schedule.',
+    devicePanelGpsposPlanLegend: 'Cloud refresh plan',
+    devicePanelGpsposApplyPlan: 'Save plan & refresh',
+    devicePanelUnknownProvider:
+      'Could not detect this collar type yet. Confirm the IMEI at /admin/devices or wait for the first cloud sync.',
     devicePanelGpsposSync: 'Refresh from cloud',
     devicePanelGpsposSyncing: 'Refreshing…',
     devicePanelGpsposSynced: 'Location updated from the cloud. Check the Live tab.',

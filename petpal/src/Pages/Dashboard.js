@@ -16,7 +16,6 @@ import { formatDateTime24 } from '../formatTime24';
 
 const WEEKLY_GOAL_KM = 18;
 const DAILY_MISSIONS_HUB = 3;
-const PACK_HUB_MAX = 4;
 
 function km(n) {
   return `${Number(n || 0).toFixed(1)} km`;
@@ -29,7 +28,7 @@ function km(n) {
 export default function Dashboard() {
   const { t, language } = useI18n();
   const { user } = useAuth();
-  const { pets, getCategory } = usePets();
+  const { pets } = usePets();
   const {
     ownerXp,
     level,
@@ -516,41 +515,6 @@ export default function Dashboard() {
             </label>
             <input id={morePhotosId} type="file" accept="image/*" multiple className="pp-visuallyHidden" onChange={onAddMorePhotos} disabled={walkLogBusy} />
           </div>
-        ) : null}
-      </section>
-
-      {/* Pack strip */}
-      <section className="pp-card pp-pad pp-hubPack">
-        <div className="pp-hubPack__head">
-          <h2 className="pp-sectionTitle" style={{ margin: 0 }}>{t('activityHub.packTitle')}</h2>
-          <Link className="pp-link" to="/pets" style={{ padding: '4px 0' }}>
-            {t('activityHub.packLinkPets')}
-          </Link>
-        </div>
-        {pets.length === 0 ? (
-          <p className="pp-subtle">
-            <Link className="pp-link" to="/pets#add-pet">{t('dashboard.addFirst')}</Link>{' '}
-            {t('dashboard.toUnlock')}
-          </p>
-        ) : (
-          <ul className="pp-hubPackList">
-            {pets.slice(0, PACK_HUB_MAX).map((p) => (
-              <li key={p.id} className="pp-hubPackList__item">
-                <PetAvatar pet={p} size={40} />
-                <div className="pp-hubPackList__meta">
-                  <span className="pp-hubPackList__name">{p.name}</span>
-                  <span className="pp-hubPackList__sub">{getCategory(p).label}</span>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-        {pets.length > PACK_HUB_MAX ? (
-          <p className="pp-subtle pp-activityHub__packMore">
-            <Link className="pp-link" to="/pets" style={{ padding: 0 }}>
-              {t('activityHub.packMorePets', { n: pets.length - PACK_HUB_MAX })}
-            </Link>
-          </p>
         ) : null}
       </section>
 

@@ -487,6 +487,10 @@ const el = {
     noPets: 'Δεν υπάρχουν ακόμα — προσθέστε αριστερά.',
     deviceId: 'Αναγνωριστικό συσκευής ή IMEI (προαιρ.)',
     deviceIdPh: 'ID συσκευής ή IMEI για χάρτη',
+    gpsEnabledTitle: 'GPS tracker',
+    gpsEnabledSub: 'Εμφάνιση στον ζωντανό χάρτη όταν συνδέεται IMEI κολάρου.',
+    nfcEnabledTitle: 'NFC tag',
+    nfcEnabledSub: 'Το προφίλ ανοίγει όταν κάποιος αγγίξει το NFC tag στο κολάρο.',
     scanQr: 'Σάρωση QR',
     scanQrClose: 'Κλείσιμο',
     scanQrHint:

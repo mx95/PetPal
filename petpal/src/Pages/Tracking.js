@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useI18n } from '../i18n/I18nContext';
 import PetAvatar from '../components/PetAvatar';
@@ -10,7 +10,7 @@ import PositionMap from '../tracking/PositionMap';
 import TrackDevicePanel from '../components/tracking/TrackDevicePanel';
 import { accuracyRadiusMeters } from '../tracking/mapLiveUtils';
 import { usePets } from '../pets/PetsContext';
-import { getLatestPosition, getPositionHistory, getTrackingDataSource, mapsLink } from '../tracking/petpalVendorClient';
+import { getLatestPositionWithSync, getPositionHistory, getTrackingDataSource, mapsLink } from '../tracking/petpalVendorClient';
 import { normalizePointSource, sourceBadgeMeta } from '../tracking/mapPetMarker';
 import {
   anchorFromDisplayedPosition,
@@ -489,7 +489,6 @@ function buildHistoryTimelineEvents(points, t, lang, range) {
 
 export default function Tracking() {
   const { t, language } = useI18n();
-  const fieldId = useId();
   const { pets, getCategory } = usePets();
   const dataSource = getTrackingDataSource();
   void dataSource;
@@ -612,13 +611,20 @@ export default function Tracking() {
     setError('');
     setLoading(true);
     try {
-      const p = await getLatestPosition(requestedId);
+      const p = await getLatestPositionWithSync(requestedId, { provider: deviceProvider });
       if (refreshSeqRef.current !== seq) return;
       setPosition(p);
     } catch (e) {
       if (refreshSeqRef.current !== seq) return;
       const msg = e?.message || t('trackingPage.errLoadPosition');
-      if (e?.status === 404 || /not checked in|not seen on tracker|Missing IMEI/i.test(msg)) {
+      if (e?.code === 'no_position' || /no_position|No GPS fix stored|no usable lat/i.test(msg)) {
+        setPosition(null);
+        setError(
+          deviceProvider === 'gpspos'
+            ? t('trackingPage.devicePanelGpsposNoPosition')
+            : t('trackingPage.noLiveSignalBody')
+        );
+      } else if (e?.status === 404 || /not checked in|not seen on tracker|Missing IMEI/i.test(msg)) {
         setPosition(null);
         setError(t('trackingPage.deviceNotConfigured'));
       } else {
@@ -627,7 +633,7 @@ export default function Tracking() {
     } finally {
       if (refreshSeqRef.current === seq) setLoading(false);
     }
-  }, [effectiveDeviceId, t]);
+  }, [effectiveDeviceId, deviceProvider, t]);
 
   const handleOneTapHome = useCallback(async () => {
     if (!effectiveDeviceId.trim()) return;
@@ -1088,21 +1094,6 @@ export default function Tracking() {
       name: selectedPet.name,
     };
   }, [selectedPet, getCategory, liveSourceKind]);
-
-  function refreshDevice(e) {
-    e?.preventDefault();
-    void refresh();
-  }
-
-  const copyDeviceId = useCallback(async () => {
-    const id = effectiveDeviceId.trim();
-    if (!id) return;
-    try {
-      await navigator.clipboard.writeText(id);
-    } catch (_) {
-      /* read-only field remains selectable as fallback */
-    }
-  }, [effectiveDeviceId]);
 
   if (pets.length === 0) {
     return (
@@ -1650,47 +1641,6 @@ export default function Tracking() {
             <article><span>•</span><small>Stops</small><strong>{historyAnalytics.stops}</strong></article>
           </div>
         </section>
-
-      {wifiTrackingEnabled && trackerTab === 'device' ? (
-      <section className="pp-card pp-pad pp-trackDeviceCard">
-        <h2 className="pp-sectionTitle">{t('trackingPage.sectionPetDevice')}</h2>
-        <form className="pp-form pp-trackDeviceForm" onSubmit={refreshDevice}>
-          <div>
-            <label className="pp-label" htmlFor={fieldId}>
-              {t('trackingPage.deviceIdLabel')}
-            </label>
-            <div className="pp-row pp-trackImeiField">
-              <input
-                id={fieldId}
-                className="pp-input pp-trackImeiField__value"
-                value={effectiveDeviceId}
-                readOnly
-                placeholder={t('trackingPage.deviceIdPh')}
-                inputMode="numeric"
-                autoComplete="off"
-              />
-              <button
-                type="button"
-                className="pp-btn pp-trackImeiField__copy"
-                disabled={!effectiveDeviceId}
-                onClick={() => void copyDeviceId()}
-              >
-                {t('trackingPage.copyImei')}
-              </button>
-            </div>
-          </div>
-          {selectedPet ? (
-            <p className="pp-subtle pp-trackImeiFoot" style={{ margin: 0 }}>
-              <Link to="/pets">{t('trackingPage.editImeiOnMyPets')}</Link>
-            </p>
-          ) : null}
-          {!position && error ? <div className="pp-error">{error}</div> : null}
-          <button className="pp-btn pp-btnPrimary" type="submit" disabled={loading || !effectiveDeviceId}>
-            {loading ? t('trackingPage.btnRefresh') : t('trackingPage.btnRefreshLabel')}
-          </button>
-        </form>
-      </section>
-      ) : null}
 
       {wifiTrackingEnabled && trackerTab === 'device' ? (
         <TrackDevicePanel

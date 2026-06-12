@@ -220,6 +220,48 @@ app.post("/api/app/home", (req, res) => {
   res.json({ ok: true, imei, homeLat: lat, homeLng: lng });
 });
 
+const GPSPOS_PLAN_POLL_SEC = {
+  long_life: 600,
+  balanced: 300,
+  regular: 180,
+  active: 60,
+};
+
+app.patch("/api/app/devices/:imei/gpspos-plan", (req, res) => {
+  const imei = String(req.params.imei || "").trim();
+  if (!/^\d{10,20}$/.test(imei)) {
+    return res.status(400).json({ error: "invalid_imei" });
+  }
+  if (typeof store.updateDeviceConfig !== "function") {
+    return res.status(501).json({ error: "sqlite_required" });
+  }
+
+  const body = req.body || {};
+  const planId = String(body.planId || "").trim();
+  let intervalSec = Number(body.gpsposPollIntervalSec ?? body.uploadSeconds);
+  if (planId && GPSPOS_PLAN_POLL_SEC[planId] != null) {
+    intervalSec = GPSPOS_PLAN_POLL_SEC[planId];
+  }
+  if (!Number.isFinite(intervalSec) || intervalSec < 15 || intervalSec > 86400) {
+    return res.status(400).json({ error: "invalid_poll_interval", hint: "15–86400 seconds" });
+  }
+
+  store.updateDeviceConfig(imei, {
+    provider_override: "gpspos",
+    gpspos_poll_enabled: 1,
+    gpspos_poll_interval_sec: Math.floor(intervalSec),
+  });
+
+  const device = store.get(imei);
+  res.json({
+    ok: true,
+    imei,
+    planId: planId || null,
+    gpsposPollIntervalSec: Math.floor(intervalSec),
+    device,
+  });
+});
+
 app.get("/devices", (req, res) => {
   res.json(store.list());
 });

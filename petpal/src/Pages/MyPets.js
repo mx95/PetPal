@@ -98,6 +98,8 @@ export default function MyPets() {
   const [editName, setEditName] = useState('');
   const [editCategoryId, setEditCategoryId] = useState('dog');
   const [editDevice, setEditDevice] = useState('');
+  const [editGpsEnabled, setEditGpsEnabled] = useState(false);
+  const [editNfcEnabled, setEditNfcEnabled] = useState(false);
   const [editBreed, setEditBreed] = useState('');
   const [editGender, setEditGender] = useState('male');
   const [editDateOfBirth, setEditDateOfBirth] = useState('');
@@ -321,6 +323,8 @@ export default function MyPets() {
     setEditName(p.name);
     setEditCategoryId(p.categoryId);
     setEditDevice(p.trackingDeviceId || '');
+    setEditGpsEnabled(Boolean(p.linkedTracker ?? p.trackingDeviceId));
+    setEditNfcEnabled(Boolean(p.nfcTag));
     setEditBreed(p.breed || '');
     setEditGender(p.gender === 'female' ? 'female' : 'male');
     setEditDateOfBirth(p.dateOfBirth || '');
@@ -343,7 +347,7 @@ export default function MyPets() {
     if (!editingId) return;
     const currentPet = pets.find((p) => p.id === editingId);
     const prevImei = (currentPet?.trackingDeviceId || '').trim();
-    const nextImei = editDevice.trim();
+    const nextImei = editGpsEnabled ? editDevice.trim() : '';
     if (prevImei && nextImei && nextImei !== prevImei) {
       if (!window.confirm(t('trackingPage.imeiConfirmChange', { from: prevImei, to: nextImei }))) return;
     }
@@ -372,7 +376,9 @@ export default function MyPets() {
       name: editName,
       categoryId: editCategoryId,
       gender: editGender,
-      trackingDeviceId: editDevice.trim() || null,
+      linkedTracker: editGpsEnabled,
+      nfcTag: editNfcEnabled,
+      trackingDeviceId: editGpsEnabled ? editDevice.trim() || null : null,
       breed: editBreed,
       dateOfBirth: editDateOfBirth,
       microchipNo: editMicrochipNo,
@@ -865,9 +871,40 @@ export default function MyPets() {
                 </div>
               </div>
 
-              <div className="pp-modalGrid2">
+              <div className="pp-petFeatureOpts">
+                <label className="pp-shopTrackerOpt">
+                  <input
+                    type="checkbox"
+                    checked={editGpsEnabled}
+                    onChange={(e) => setEditGpsEnabled(e.target.checked)}
+                  />
+                  <span className="pp-shopTrackerOpt__copy">
+                    <strong>{t('myPets.gpsEnabledTitle')}</strong>
+                    <small>{t('myPets.gpsEnabledSub')}</small>
+                  </span>
+                  <span className="pp-shopTrackerOpt__meta">
+                    <span className="pp-shopTrackerOpt__switch" aria-hidden />
+                  </span>
+                </label>
+                <label className="pp-shopTrackerOpt">
+                  <input
+                    type="checkbox"
+                    checked={editNfcEnabled}
+                    onChange={(e) => setEditNfcEnabled(e.target.checked)}
+                  />
+                  <span className="pp-shopTrackerOpt__copy">
+                    <strong>{t('myPets.nfcEnabledTitle')}</strong>
+                    <small>{t('myPets.nfcEnabledSub')}</small>
+                  </span>
+                  <span className="pp-shopTrackerOpt__meta">
+                    <span className="pp-shopTrackerOpt__switch" aria-hidden />
+                  </span>
+                </label>
+              </div>
+
+              {editGpsEnabled ? (
                 <div>
-                  <div className="pp-label">GPS device ID</div>
+                  <div className="pp-label">{t('myPets.deviceId')}</div>
                   <div className="pp-row" style={{ alignItems: 'stretch', gap: 8, flexWrap: 'wrap' }}>
                     <input
                       className="pp-input"
@@ -881,6 +918,9 @@ export default function MyPets() {
                     <ImeiQrScannerButton onImei={onScanImeiEdit} disabled={editPhotoBusy} />
                   </div>
                 </div>
+              ) : null}
+
+              <div className="pp-modalGrid2">
                 <div>
                   <div className="pp-label">Microchip No.</div>
                   <input className="pp-input" value={editMicrochipNo} onChange={(e) => setEditMicrochipNo(e.target.value)} />

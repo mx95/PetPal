@@ -1,40 +1,21 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useI18n } from '../../i18n/I18nContext';
 import {
   requestG365ManualPosition,
-  restartG365,
   setG365StatusInterval,
   setG365UploadInterval,
   startG365Find,
 } from '../../tracking/g365CommandClient';
 import {
-  applyTrackingModePreset,
   applyXexunBatteryPlan,
-  fetchPendingCommands,
   isTrackerCommandsAvailable,
-  queryTrackingMode,
 } from '../../tracking/trackerCommandClient';
 import {
   isGpsposSyncAvailable,
+  saveGpsposBatteryPlan,
   syncGpsposPosition,
 } from '../../tracking/gpsposCommandClient';
-import IconTrackSource from '../icons/IconTrackSource';
-import { resolveTrackerHttpBase } from '../../tracking/trackingWifiFeature';
-
-const XEXUN_ADVANCED_MODES = ['gps_only'];
-
-const G365_UPLOAD_PRESETS = [
-  { id: '60', seconds: 60 },
-  { id: '180', seconds: 180 },
-  { id: '300', seconds: 300 },
-  { id: '600', seconds: 600 },
-];
-
-const G365_STATUS_PRESETS = [
-  { id: '3', minutes: 3 },
-  { id: '5', minutes: 5 },
-  { id: '10', minutes: 10 },
-];
+import { fetchDeviceMeta, normalizeProvider } from '../../tracking/deviceMetaClient';
 
 /** User-facing plans — maps to upload + status intervals on 365GPS collars. */
 const BATTERY_PLANS = [
@@ -50,27 +31,10 @@ function findBatteryPlan(uploadSeconds, statusMinutes) {
   );
 }
 
-function normalizeProvider(value) {
-  if (value === 'g365' || value === 'xexun' || value === 'gpspos') return value;
-  return null;
-}
-
-async function fetchDeviceMeta(imei) {
-  const base = resolveTrackerHttpBase();
-  if (!base || !imei?.trim()) return null;
-  const path = `/api/app/devices/${encodeURIComponent(String(imei).trim())}`;
-  const url = base === '' ? path : `${base}${path}`;
-  try {
-    const res = await fetch(url, { headers: { Accept: 'application/json' } });
-    if (!res.ok) return null;
-    const data = await res.json();
-    return {
-      provider: normalizeProvider(data?.provider),
-      deviceConfig: data?.deviceConfig ?? null,
-    };
-  } catch {
-    return null;
-  }
+function findBatteryPlanByUpload(uploadSeconds) {
+  const n = Number(uploadSeconds);
+  if (!Number.isFinite(n)) return null;
+  return BATTERY_PLANS.find((p) => p.uploadSeconds === n) ?? null;
 }
 
 function formatPollInterval(sec) {
@@ -86,6 +50,7 @@ function commandErrorMessage(err, t) {
   if (err?.code === 'device_offline') return t('trackingPage.devicePanelG365Offline');
   if (err?.code === 'gpspos_disabled') return t('trackingPage.devicePanelGpsposDisabled');
   if (err?.code === 'no_position') return t('trackingPage.devicePanelGpsposNoPosition');
+  if (err?.code === 'unknown_provider') return t('trackingPage.devicePanelUnknownProvider');
   return err?.message || t('trackingPage.devicePanelFailed');
 }
 
@@ -115,18 +80,15 @@ export default function TrackDevicePanel({ imei, petName = '', provider = null }
 
   const [resolvedProvider, setResolvedProvider] = useState(propProvider);
   const [deviceConfig, setDeviceConfig] = useState(null);
-  const [modeId, setModeId] = useState('gps_only');
   const [planId, setPlanId] = useState('balanced');
   const [uploadSeconds, setUploadSeconds] = useState(300);
   const [statusMinutes, setStatusMinutes] = useState(5);
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState('');
   const [error, setError] = useState('');
-  const [pending, setPending] = useState([]);
 
   const isGpspos = resolvedProvider === 'gpspos';
   const isG365 = resolvedProvider === 'g365';
-  const isXexun = resolvedProvider === 'xexun';
   const activePlan = useMemo(
     () => findBatteryPlan(uploadSeconds, statusMinutes),
     [uploadSeconds, statusMinutes]
@@ -160,25 +122,19 @@ export default function TrackDevicePanel({ imei, petName = '', provider = null }
     };
   }, [isGpspos, imei]);
 
-  const refreshPending = useCallback(async () => {
-    if (!imei || !commandsAvailable || !isXexun) return;
-    try {
-      const data = await fetchPendingCommands(imei);
-      setPending(Array.isArray(data?.pending) ? data.pending : []);
-    } catch {
-      setPending([]);
-    }
-  }, [imei, commandsAvailable, isXexun]);
-
   useEffect(() => {
-    void refreshPending();
-  }, [refreshPending]);
+    if (!isGpspos || !deviceConfig?.gpsposPollIntervalSec) return;
+    const plan = findBatteryPlanByUpload(deviceConfig.gpsposPollIntervalSec);
+    if (!plan) return;
+    setPlanId(plan.id);
+    setUploadSeconds(plan.uploadSeconds);
+    setStatusMinutes(plan.statusMinutes);
+  }, [isGpspos, deviceConfig?.gpsposPollIntervalSec]);
 
   useEffect(() => {
     setPlanId('balanced');
     setUploadSeconds(300);
     setStatusMinutes(5);
-    setModeId('gps_only');
     setStatus('');
     setError('');
   }, [imei, resolvedProvider]);
@@ -189,18 +145,6 @@ export default function TrackDevicePanel({ imei, petName = '', provider = null }
     setPlanId(id);
     setUploadSeconds(plan.uploadSeconds);
     setStatusMinutes(plan.statusMinutes);
-  }
-
-  function handleAdvancedUpload(seconds) {
-    setUploadSeconds(seconds);
-    const match = findBatteryPlan(seconds, statusMinutes);
-    setPlanId(match?.id ?? 'custom');
-  }
-
-  function handleAdvancedStatus(minutes) {
-    setStatusMinutes(minutes);
-    const match = findBatteryPlan(uploadSeconds, minutes);
-    setPlanId(match?.id ?? 'custom');
   }
 
   async function runCommand(fn) {
@@ -233,7 +177,7 @@ export default function TrackDevicePanel({ imei, petName = '', provider = null }
       setResolvedProvider(fetched.provider);
       return fetched.provider;
     }
-    return 'g365';
+    return null;
   }
 
   async function handleGpsposSync() {
@@ -248,30 +192,29 @@ export default function TrackDevicePanel({ imei, petName = '', provider = null }
     await runCommand(async () => {
       const collarProvider = await resolveProviderForSave();
       const selectedPlanId = activePlan?.id ?? planId;
+      if (collarProvider === 'gpspos') {
+        await saveGpsposBatteryPlan(imei, {
+          planId: selectedPlanId,
+          gpsposPollIntervalSec: uploadSeconds,
+        });
+        await syncGpsposPosition(imei);
+        const meta = await fetchDeviceMeta(imei);
+        if (meta?.deviceConfig) setDeviceConfig(meta.deviceConfig);
+        setStatus(t('trackingPage.devicePanelGpsposSynced'));
+        return;
+      }
+      if (!collarProvider) {
+        const err = new Error(t('trackingPage.devicePanelUnknownProvider'));
+        err.code = 'unknown_provider';
+        throw err;
+      }
       if (collarProvider === 'xexun') {
         await applyXexunBatteryPlan(imei, selectedPlanId);
-        await refreshPending();
       } else {
         await setG365UploadInterval(imei, uploadSeconds);
         await setG365StatusInterval(imei, statusMinutes);
       }
       setStatus(t('trackingPage.devicePanelPresetSaved'));
-    });
-  }
-
-  async function handleXexunQuery() {
-    await runCommand(async () => {
-      await queryTrackingMode(imei);
-      setStatus(t('trackingPage.devicePanelQueryQueuedSimple'));
-      await refreshPending();
-    });
-  }
-
-  async function handleXexunAdvancedApply() {
-    await runCommand(async () => {
-      await applyTrackingModePreset(imei, modeId);
-      setStatus(t('trackingPage.devicePanelQueuedSimple'));
-      await refreshPending();
     });
   }
 
@@ -284,31 +227,16 @@ export default function TrackDevicePanel({ imei, petName = '', provider = null }
       ) : null}
 
       {isGpspos ? (
-        <div className="pp-trackDevicePanel__cloud">
-          <p className="pp-subtle">{t('trackingPage.devicePanelGpsposIntro')}</p>
-          {deviceConfig?.gpsposPollEnabled && deviceConfig?.gpsposPollIntervalSec ? (
-            <p className="pp-subtle">
-              {t('trackingPage.devicePanelGpsposPollActive', {
-                interval: formatPollInterval(deviceConfig.gpsposPollIntervalSec),
-              })}
-            </p>
-          ) : (
-            <p className="pp-subtle">{t('trackingPage.devicePanelGpsposPollManual')}</p>
-          )}
-          <button
-            type="button"
-            className="pp-btn pp-btnPrimary pp-trackDevicePanel__cta"
-            disabled={busy || !imei?.trim() || !isGpsposSyncAvailable()}
-            onClick={() => void handleGpsposSync()}
-          >
-            {busy ? t('trackingPage.devicePanelGpsposSyncing') : t('trackingPage.devicePanelGpsposSync')}
-          </button>
-          <p className="pp-subtle pp-trackDevicePanel__foot">{t('trackingPage.devicePanelGpsposFoot')}</p>
-        </div>
-      ) : (
+        <p className="pp-subtle">{t('trackingPage.devicePanelGpsposIntro')}</p>
+      ) : null}
+
       <form className="pp-trackDevicePanel__form" onSubmit={(e) => void handleSavePlan(e)}>
         <fieldset className="pp-trackDeviceModes">
-          <legend className="pp-trackDeviceModes__legend">{t('trackingPage.devicePanelBatteryLegend')}</legend>
+          <legend className="pp-trackDeviceModes__legend">
+            {isGpspos
+              ? t('trackingPage.devicePanelGpsposPlanLegend')
+              : t('trackingPage.devicePanelBatteryLegend')}
+          </legend>
           <div className="pp-trackDeviceModes__grid pp-trackDeviceModes__grid--plans">
             {BATTERY_PLANS.map((plan) => {
               const selected =
@@ -347,11 +275,42 @@ export default function TrackDevicePanel({ imei, petName = '', provider = null }
           <button
             type="submit"
             className="pp-btn pp-btnPrimary pp-trackDevicePanel__cta"
-            disabled={busy || !imei?.trim() || !commandsAvailable}
+            disabled={busy || !imei?.trim() || (!isGpspos && !commandsAvailable)}
           >
-            {busy ? t('trackingPage.devicePanelApplying') : t('trackingPage.devicePanelApplyPreset')}
+            {busy
+              ? isGpspos
+                ? t('trackingPage.devicePanelGpsposSyncing')
+                : t('trackingPage.devicePanelApplying')
+              : isGpspos
+                ? t('trackingPage.devicePanelGpsposApplyPlan')
+                : t('trackingPage.devicePanelApplyPreset')}
           </button>
+          {isGpspos ? (
+            <button
+              type="button"
+              className="pp-btn pp-btn--ghost pp-trackDevicePanel__cta"
+              disabled={busy || !imei?.trim() || !isGpsposSyncAvailable()}
+              onClick={() => void handleGpsposSync()}
+            >
+              {busy ? t('trackingPage.devicePanelGpsposSyncing') : t('trackingPage.devicePanelGpsposSync')}
+            </button>
+          ) : null}
         </div>
+
+        {isGpspos ? (
+          <div className="pp-trackDevicePanel__cloud">
+            {deviceConfig?.gpsposPollEnabled && deviceConfig?.gpsposPollIntervalSec ? (
+              <p className="pp-subtle">
+                {t('trackingPage.devicePanelGpsposPollActive', {
+                  interval: formatPollInterval(deviceConfig.gpsposPollIntervalSec),
+                })}
+              </p>
+            ) : (
+              <p className="pp-subtle">{t('trackingPage.devicePanelGpsposPollManual')}</p>
+            )}
+            <p className="pp-subtle pp-trackDevicePanel__foot">{t('trackingPage.devicePanelGpsposFoot')}</p>
+          </div>
+        ) : null}
 
         {isG365 ? (
           <fieldset className="pp-trackDeviceG365Group">
@@ -386,135 +345,7 @@ export default function TrackDevicePanel({ imei, petName = '', provider = null }
             </div>
           </fieldset>
         ) : null}
-
-        <details className="pp-trackDevicePanel__advanced">
-          <summary>{t('trackingPage.devicePanelAdvanced')}</summary>
-          <div className="pp-trackDevicePanel__advancedBody">
-            {isG365 ? (
-              <>
-                <p className="pp-subtle">{t('trackingPage.devicePanelAdvancedIntervalsHint')}</p>
-
-                <fieldset className="pp-trackDeviceG365Group">
-                  <legend className="pp-trackDeviceModes__legend">
-                    {t('trackingPage.devicePanelG365UploadLegend')}
-                  </legend>
-                  <div className="pp-trackDeviceG365Presets">
-                    {G365_UPLOAD_PRESETS.map(({ id, seconds }) => (
-                      <label
-                        key={id}
-                        className={`pp-trackDeviceG365Preset${uploadSeconds === seconds ? ' is-active' : ''}`}
-                      >
-                        <input
-                          type="radio"
-                          name="g365Upload"
-                          checked={uploadSeconds === seconds}
-                          onChange={() => handleAdvancedUpload(seconds)}
-                        />
-                        {t(`trackingPage.devicePanelG365Upload_${id}`)}
-                      </label>
-                    ))}
-                  </div>
-                </fieldset>
-
-                <fieldset className="pp-trackDeviceG365Group">
-                  <legend className="pp-trackDeviceModes__legend">
-                    {t('trackingPage.devicePanelG365StatusLegend')}
-                  </legend>
-                  <div className="pp-trackDeviceG365Presets">
-                    {G365_STATUS_PRESETS.map(({ id, minutes }) => (
-                      <label
-                        key={id}
-                        className={`pp-trackDeviceG365Preset${statusMinutes === minutes ? ' is-active' : ''}`}
-                      >
-                        <input
-                          type="radio"
-                          name="g365Status"
-                          checked={statusMinutes === minutes}
-                          onChange={() => handleAdvancedStatus(minutes)}
-                        />
-                        {t(`trackingPage.devicePanelG365Status_${id}`)}
-                      </label>
-                    ))}
-                  </div>
-                </fieldset>
-
-                <button
-                  type="button"
-                  className="pp-btn pp-btn--ghost"
-                  disabled={busy || !imei?.trim() || !commandsAvailable}
-                  onClick={() =>
-                    void runCommand(async () => {
-                      await restartG365(imei);
-                      setStatus(t('trackingPage.devicePanelG365RestartSent'));
-                    })
-                  }
-                >
-                  {t('trackingPage.devicePanelG365Restart')}
-                </button>
-
-                <p className="pp-subtle pp-trackDevicePanel__foot">{t('trackingPage.devicePanelG365Foot')}</p>
-              </>
-            ) : (
-              <>
-                <p className="pp-subtle">{t('trackingPage.devicePanelAdvancedTrackingHint')}</p>
-                <fieldset className="pp-trackDeviceModes pp-trackDeviceModes--compact">
-                  <legend className="pp-trackDeviceModes__legend">{t('trackingPage.devicePanelModeLegend')}</legend>
-                  <div className="pp-trackDeviceModes__grid">
-                    {XEXUN_ADVANCED_MODES.map((id) => {
-                      const active = modeId === id;
-                      return (
-                        <label key={id} className={`pp-trackDeviceMode${active ? ' is-active' : ''}`}>
-                          <input
-                            type="radio"
-                            name="trackingModeAdvanced"
-                            value={id}
-                            checked={active}
-                            onChange={() => setModeId(id)}
-                          />
-                          <span className="pp-trackDeviceMode__icon" aria-hidden>
-                            <IconTrackSource kind="gps" size={22} />
-                          </span>
-                          <span className="pp-trackDeviceMode__copy">
-                            <strong>{t(`trackingPage.deviceMode_${id}`)}</strong>
-                            <span>{t(`trackingPage.deviceMode_${id}_desc`)}</span>
-                          </span>
-                        </label>
-                      );
-                    })}
-                  </div>
-                </fieldset>
-
-                <button
-                  type="button"
-                  className="pp-btn pp-btn--ghost"
-                  disabled={busy || !imei?.trim() || !commandsAvailable}
-                  onClick={() => void handleXexunAdvancedApply()}
-                >
-                  {t('trackingPage.devicePanelApply')}
-                </button>
-
-                <button
-                  type="button"
-                  className="pp-btn pp-btn--ghost"
-                  disabled={busy || !imei?.trim() || !commandsAvailable}
-                  onClick={() => void handleXexunQuery()}
-                >
-                  {t('trackingPage.devicePanelQuery')}
-                </button>
-
-                {pending.length > 0 ? (
-                  <div className="pp-trackDevicePanel__pending" role="status">
-                    {t('trackingPage.devicePanelPendingSimple')}
-                  </div>
-                ) : null}
-
-                <p className="pp-subtle pp-trackDevicePanel__foot">{t('trackingPage.devicePanelXexunFoot')}</p>
-              </>
-            )}
-          </div>
-        </details>
       </form>
-      )}
 
       {status ? (
         <p className="pp-trackDevicePanel__status" role="status">
