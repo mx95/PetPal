@@ -1264,10 +1264,6 @@ video {
   line-height: 2.5rem;
 }
 
-.text-\[11px\] {
-  font-size: 11px;
-}
-
 .text-base {
   font-size: 1rem;
   line-height: 1.5rem;
@@ -1681,10 +1677,6 @@ video {
     margin-bottom: 2rem;
   }
 
-  .sm\:block {
-    display: block;
-  }
-
   .sm\:inline-flex {
     display: inline-flex;
   }
@@ -1770,10 +1762,6 @@ video {
 @media (min-width: 1024px) {
   .lg\:flex {
     display: flex;
-  }
-
-  .lg\:hidden {
-    display: none;
   }
 
   .lg\:grid-cols-\[1fr_260px\] {

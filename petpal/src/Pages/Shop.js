@@ -98,17 +98,6 @@ export default function Shop() {
 
   const isPlusSku = (id) => PLUS_SKUS.includes(id);
 
-  function productCopy(product) {
-    if (product.id === 'TRACKER_HARDWARE') {
-      return {
-        title: t('shopPage.trackerOnlyTitle'),
-        subtitle: t('shopPage.trackerOnlySub'),
-        badge: t('shopPage.trackerOnlyBadge'),
-      };
-    }
-    return { title: product.title, subtitle: product.subtitle, badge: product.badge };
-  }
-
   if (!user) {
     return (
       <div className="pp-pad pp-demoProviderPortal">
@@ -181,7 +170,6 @@ export default function Shop() {
           const isLoading = busy === p.id;
           const includeTracker = p.id === 'PETPAL_PLUS_MONTHLY' && monthlyIncludeTracker;
           const dueTodayCents = p.id === 'PETPAL_PLUS_MONTHLY' ? monthlyFirstPaymentCents(includeTracker) : p.amountCents;
-          const copy = productCopy(p);
 
           return (
             <article
@@ -189,15 +177,15 @@ export default function Shop() {
               ref={(el) => {
                 cardRefs.current[p.id] = el;
               }}
-              className={`pp-card pp-shopCard${focusSku === p.id ? ' pp-shopCard--focus' : ''}${p.id === 'PETPAL_PLUS_YEARLY' ? ' pp-shopCard--featured' : ''}${p.id === 'TRACKER_HARDWARE' ? ' pp-shopCard--hardware' : ''}`}
+              className={`pp-card pp-shopCard${focusSku === p.id ? ' pp-shopCard--focus' : ''}${p.id === 'PETPAL_PLUS_YEARLY' ? ' pp-shopCard--featured' : ''}`}
             >
               <div className="pp-shopCard__body">
-              <span className="pp-shopCard__badge">{copy.badge}</span>
+              <span className="pp-shopCard__badge">{p.badge}</span>
               <h2 className="pp-sectionTitle" style={{ margin: '6px 0 4px' }}>
-                {copy.title}
+                {p.title}
               </h2>
               <p className="pp-subtle" style={{ marginTop: 0 }}>
-                {copy.subtitle}
+                {p.subtitle}
               </p>
               {isPlusSku(p.id) ? (
                 <p className={`pp-shopCard__status${planActive ? ' pp-shopCard__status--on' : ''}`}>

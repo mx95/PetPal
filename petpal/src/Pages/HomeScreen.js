@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
 import { MVP_NAV } from '../config/mvpNav';
 import { useI18n } from '../i18n/I18nContext';
@@ -38,18 +38,13 @@ function ValuePillarIcon({ type }) {
   return '🌍';
 }
 
-function displayName(user) {
-  const n = String(user?.displayName || '').trim();
-  if (n) return n.split(' ')[0];
-  const email = String(user?.email || '').trim();
-  if (email.includes('@')) return email.split('@')[0];
-  return null;
-}
-
 export default function HomeScreen() {
   const { t } = useI18n();
   const { user } = useAuth();
-  const firstName = displayName(user);
+
+  if (user) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   return (
     <div className="pp-homeWelcome">
@@ -68,40 +63,24 @@ export default function HomeScreen() {
             <div className="pp-homeWelcome__bannerGreeting">
               <p className="pp-homeWelcome__eyebrow">{t('home.welcome.eyebrow')}</p>
               <h1 id="home-hero-title" className="pp-homeWelcome__title">
-                {user && firstName ? t('home.welcome.headlineNamed', { name: firstName }) : t('home.publicHero.headline')}
+                {t('home.publicHero.headline')}
               </h1>
             </div>
             <div className="pp-homeWelcome__bannerBody">
-              {user && firstName ? (
-                <p className="pp-homeWelcome__headlineSub">{t('home.welcome.headlineSub')}</p>
-              ) : null}
-              <p className="pp-homeWelcome__lead">
-                {user ? t('home.welcome.leadSignedIn') : t('home.publicHero.sub')}
-              </p>
+              <p className="pp-homeWelcome__lead">{t('home.publicHero.sub')}</p>
             </div>
           </div>
         </div>
         <div className="pp-homeWelcome__bannerActions">
-          {!user ? (
-            <div className="pp-homeWelcome__ctaRow">
-              <Link className="pp-btn pp-btnPrimary" to="/register">
-                {t('home.publicHero.ctaPrimary')}
-              </Link>
-              <Link className="pp-btn pp-btn--ghost" to="/login">
-                {t('home.publicHero.ctaSecondary')}
-              </Link>
-            </div>
-          ) : (
-            <div className="pp-homeWelcome__ctaRow">
-              <Link className="pp-btn pp-btnPrimary" to="/pets">
-                {t('home.welcome.ctaPets')}
-              </Link>
-              <Link className="pp-btn pp-btn--ghost" to="/tracking">
-                {t('home.welcome.ctaTrack')}
-              </Link>
-            </div>
-          )}
-          <p className="pp-homeWelcome__trust">{user ? t('home.welcome.stayLine') : t('home.publicHero.trustLine')}</p>
+          <div className="pp-homeWelcome__ctaRow">
+            <Link className="pp-btn pp-btnPrimary" to="/register">
+              {t('home.publicHero.ctaPrimary')}
+            </Link>
+            <Link className="pp-btn pp-btn--ghost" to="/login">
+              {t('home.publicHero.ctaSecondary')}
+            </Link>
+          </div>
+          <p className="pp-homeWelcome__trust">{t('home.publicHero.trustLine')}</p>
         </div>
       </section>
 

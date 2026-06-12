@@ -104,13 +104,13 @@ export default function TopNav() {
   return (
     <header className="pp-topNav sticky top-0 z-40 border-b border-white/70 bg-white/75 backdrop-blur-2xl">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
-        <Link className="group flex min-w-0 items-center gap-3 no-underline" to="/" aria-label={t('nav.home')}>
+        <Link className="group flex min-w-0 items-center gap-3 no-underline" to={user ? '/dashboard' : '/'} aria-label={t('nav.home')}>
           <span className="pp-logoMark flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white shadow-soft transition-transform duration-300 group-hover:scale-105">
             <img className="h-10 w-10 rounded-2xl" src={petpalLogo} alt="" />
           </span>
           <span className="pp-topNavBrand min-w-0">
             <span className="pp-topNavBrand__name">{BRAND.appName}</span>
-            <span className="pp-topNavBrand__tag">{t('nav.tagline')}</span>
+            <span className="pp-topNavBrand__tag">{BRAND.tagline}</span>
           </span>
         </Link>
 

@@ -298,6 +298,7 @@ const en = {
   bottomNav: {
     aria: 'Primary',
     home: 'Home',
+    activity: 'Activity',
     pets: 'Pets',
     tracking: 'Live',
     community: 'Pack',
@@ -1249,8 +1250,8 @@ const en = {
   },
   shopPage: {
     badge: 'PetPal Shop',
-    title: 'Collars & plans',
-    sub: 'Order a GPS collar on its own, or choose a plan that fits your pack.',
+    title: 'Subscriptions',
+    sub: 'Choose monthly or yearly PetPal Plus. Add a GPS collar to your first monthly payment if you like.',
     back: 'Back',
     signInTitle: 'Sign in to shop',
     signInSub: 'Create an account to order a collar or plan.',

@@ -180,6 +180,7 @@ const el = {
   bottomNav: {
     aria: 'Πλοήγηση',
     home: 'Αρχική',
+    activity: 'Δραστηριότητα',
     pets: 'Κατοικίδια',
     tracking: 'GPS',
     community: 'Παρέα',

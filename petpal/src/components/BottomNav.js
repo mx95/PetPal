@@ -85,7 +85,7 @@ const ICONS = {
 };
 
 const BASE_ITEMS = [
-  { to: '/', end: true, key: 'home', labelKey: 'bottomNav.home' },
+  { to: '/dashboard', key: 'home', labelKey: 'bottomNav.activity' },
   { to: '/pets', key: 'pets', labelKey: 'bottomNav.pets' },
 ];
 
@@ -107,7 +107,7 @@ export default function BottomNav() {
     <NavLink
       key={item.key}
       to={item.to}
-      end={item.end}
+      end={item.end ?? false}
       className={({ isActive }) => `pp-bottomNav__item ${isActive ? 'pp-bottomNav__item--on' : ''}`}
       aria-label={t(item.labelKey)}
       title={t(item.labelKey)}

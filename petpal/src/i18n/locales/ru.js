@@ -181,6 +181,7 @@ const ru = {
   bottomNav: {
     aria: 'Навигация',
     home: 'Главная',
+    activity: 'Активность',
     pets: 'Питомцы',
     tracking: 'GPS',
     community: 'Стая',

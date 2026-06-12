@@ -20,7 +20,6 @@ export function monthlyFirstPaymentCents(includeTracker = false) {
 export function expectedCheckoutCents(sku, includeTracker = false) {
   if (sku === 'PETPAL_PLUS_MONTHLY') return monthlyFirstPaymentCents(includeTracker);
   if (sku === 'PETPAL_PLUS_YEARLY') return PLUS_YEARLY_CENTS;
-  if (sku === 'TRACKER_HARDWARE') return TRACKER_ADDON_CENTS;
   if (sku === 'STORE_BOOST_MONTHLY') return 999;
   return null;
 }
@@ -45,15 +44,6 @@ export const SHOP_PRODUCTS = [
     recurring: true,
     badge: 'Free tracker',
   },
-  {
-    id: 'TRACKER_HARDWARE',
-    title: 'GPS tracker only',
-    subtitle: 'Order a PetPal GPS collar on its own — no subscription required to buy.',
-    amountCents: TRACKER_ADDON_CENTS,
-    currency: '978',
-    recurring: false,
-    badge: 'Hardware',
-  },
 ];
 
 export function formatEur(amountCents) {
@@ -65,6 +55,5 @@ export function formatEur(amountCents) {
 export function formatShopPrice(product) {
   if (product.id === 'PETPAL_PLUS_MONTHLY') return `${formatEur(product.amountCents)}/mo`;
   if (product.id === 'PETPAL_PLUS_YEARLY') return `${formatEur(product.amountCents)}/year`;
-  if (product.id === 'TRACKER_HARDWARE') return formatEur(product.amountCents);
   return formatEur(product.amountCents);
 }
