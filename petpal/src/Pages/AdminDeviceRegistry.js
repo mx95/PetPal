@@ -4,6 +4,7 @@ import { useAuth } from '../auth/AuthProvider';
 import { useCompany } from '../company/CompanyContext';
 import {
   GPSPOS_POLL_PRESETS,
+  PROTOCOL_OPTIONS,
   PROVIDER_OPTIONS,
   isTrackerAdminApiAvailable,
   listAdminDevices,
@@ -11,11 +12,8 @@ import {
 } from '../tracking/adminDeviceApi';
 
 function providerLabel(id) {
-  if (id === 'auto') return 'Auto (from last ingest)';
-  if (id === 'xexun') return 'Xexun (TCP FC…CF)';
-  if (id === 'g365') return '365GPS (TCP 7878…)';
-  if (id === 'gpspos') return 'GPSPOS (cloud poll)';
-  return id;
+  const opt = PROVIDER_OPTIONS.find((p) => p.id === id);
+  return opt?.label || id;
 }
 
 function formatInterval(sec) {
@@ -36,8 +34,10 @@ export default function AdminDeviceRegistry() {
   const [err, setErr] = useState('');
   const [ok, setOk] = useState('');
   const [busyImei, setBusyImei] = useState('');
+  const [search, setSearch] = useState('');
 
   const [newImei, setNewImei] = useState('');
+  const [newProtocol, setNewProtocol] = useState('g365');
   const [drafts, setDrafts] = useState({});
 
   const apiReady = useMemo(() => isTrackerAdminApiAvailable(), []);
@@ -63,14 +63,19 @@ export default function AdminDeviceRegistry() {
     void load();
   }, [load]);
 
+  const filteredDevices = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    const list = [...devices].sort((a, b) => String(a.imei).localeCompare(String(b.imei)));
+    if (!q) return list;
+    return list.filter((d) => String(d.imei || '').includes(q));
+  }, [devices, search]);
+
   function draftFor(device) {
     const imei = device.imei;
     if (drafts[imei]) return drafts[imei];
     const override = device.providerOverride;
     const providerId =
-      override === 'xexun' || override === 'g365' || override === 'gpspos'
-        ? override
-        : 'auto';
+      override === 'g365' || override === 'gpspos' ? override : 'auto';
     return {
       providerId,
       gpsposPlatformImei: device.gpsposPlatformImei || '',
@@ -109,9 +114,7 @@ export default function AdminDeviceRegistry() {
       if (data?.device) {
         setDevices((prev) => {
           const next = prev.filter((d) => d.imei !== imei);
-          return [...next, data.device].sort((a, b) =>
-            String(b.lastUpdate || '').localeCompare(String(a.lastUpdate || ''))
-          );
+          return [...next, data.device].sort((a, b) => String(a.imei).localeCompare(String(b.imei)));
         });
       }
       setDrafts((prev) => {
@@ -119,7 +122,7 @@ export default function AdminDeviceRegistry() {
         delete copy[imei];
         return copy;
       });
-      setOk(`Saved ${imei}.`);
+      setOk(`Saved ${imei}. Link the same IMEI on My pets for users to see it in Tracker.`);
     } catch (e) {
       setErr(e?.message || 'Save failed.');
     } finally {
@@ -134,18 +137,26 @@ export default function AdminDeviceRegistry() {
       setErr('Enter a valid IMEI (10–20 digits).');
       return;
     }
+    const protocolOpt = PROTOCOL_OPTIONS.find((p) => p.id === newProtocol);
+    if (!protocolOpt) {
+      setErr('Choose a protocol.');
+      return;
+    }
+
     setBusyImei(imei);
     setErr('');
     setOk('');
     try {
       await patchAdminDevice(imei, {
-        providerOverride: null,
-        gpsposPollEnabled: false,
+        providerOverride: protocolOpt.value,
+        gpsposPollEnabled: protocolOpt.value === 'gpspos',
         gpsposPollIntervalSec: defaults.gpsposPollIntervalSec ?? 60,
       });
       setNewImei('');
       await load();
-      setOk(`Added ${imei}. Configure provider and polling below.`);
+      setOk(
+        `Added ${imei} as ${protocolOpt.label}. Users must also enter this IMEI on My pets → edit pet → GPS device.`
+      );
     } catch (e) {
       setErr(e?.message || 'Could not add device.');
     } finally {
@@ -177,9 +188,9 @@ export default function AdminDeviceRegistry() {
               Device registry
             </h1>
             <p className="pp-subtle" style={{ maxWidth: 760 }}>
-              Assign each collar IMEI to a tracker logic (Xexun TCP, 365GPS TCP, or GPSPOS cloud). For GPSPOS
-              devices, enable automatic polling and choose how often the server pulls the latest fix from
-              gpspos.net.
+              View every IMEI on the tracker server, register new collars, and assign <strong>365GPS</strong> or{' '}
+              <strong>GPSPOS</strong>. After saving here, link the same IMEI on each pet under My pets so it appears in
+              Tracker.
             </p>
           </div>
           <Link className="pp-link" to="/admin">
@@ -192,10 +203,9 @@ export default function AdminDeviceRegistry() {
         <div className="pp-col-12">
           <div className="pp-card pp-pad">
             <p className="pp-error">
-              Tracker admin API is not configured. Set{' '}
-              <code>REACT_APP_XEXUN_HTTP_BASE_URL</code> (or <code>same</code>) and{' '}
-              <code>REACT_APP_TRACKER_ADMIN_TOKEN</code> on the server, matching{' '}
-              <code>TRACKER_ADMIN_TOKEN</code> in the tracker PM2 env, then rebuild the app.
+              Tracker admin API is not configured. Set <code>REACT_APP_XEXUN_HTTP_BASE_URL</code> (or{' '}
+              <code>same</code>) and <code>REACT_APP_TRACKER_ADMIN_TOKEN</code> matching server{' '}
+              <code>TRACKER_ADMIN_TOKEN</code>, then rebuild the app.
             </p>
           </div>
         </div>
@@ -206,17 +216,37 @@ export default function AdminDeviceRegistry() {
           <h2 className="pp-h2" style={{ marginTop: 0 }}>
             Add IMEI
           </h2>
-          <form className="pp-row pp-row--wrap" style={{ gap: 12, alignItems: 'flex-end' }} onSubmit={(e) => void addDevice(e)}>
-            <label className="pp-field" style={{ flex: '1 1 220px' }}>
+          <form
+            className="pp-adminDeviceCard__grid"
+            style={{ alignItems: 'flex-end' }}
+            onSubmit={(e) => void addDevice(e)}
+          >
+            <label className="pp-field">
               <span className="pp-field__label">IMEI</span>
               <input
                 className="pp-input"
                 inputMode="numeric"
                 value={newImei}
                 onChange={(e) => setNewImei(e.target.value)}
-                placeholder="861397052428990"
+                placeholder="861261021497967"
                 disabled={!apiReady || Boolean(busyImei)}
+                list="admin-imei-suggestions"
               />
+            </label>
+            <label className="pp-field">
+              <span className="pp-field__label">Protocol</span>
+              <select
+                className="pp-input"
+                value={newProtocol}
+                onChange={(e) => setNewProtocol(e.target.value)}
+                disabled={!apiReady || Boolean(busyImei)}
+              >
+                {PROTOCOL_OPTIONS.map((opt) => (
+                  <option key={opt.id} value={opt.id}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
             </label>
             <button type="submit" className="pp-btn pp-btnPrimary" disabled={!apiReady || Boolean(busyImei)}>
               Add device
@@ -242,19 +272,36 @@ export default function AdminDeviceRegistry() {
 
       <div className="pp-col-12">
         <div className="pp-card pp-pad">
-          <h2 className="pp-h2" style={{ marginTop: 0 }}>
-            Registered devices
-          </h2>
+          <div className="pp-row" style={{ justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+            <h2 className="pp-h2" style={{ margin: 0 }}>
+              All devices ({devices.length})
+            </h2>
+            <label className="pp-field" style={{ margin: 0, minWidth: 220 }}>
+              <span className="pp-field__label">Search IMEI</span>
+              <input
+                className="pp-input"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="861261…"
+                disabled={loading}
+              />
+            </label>
+          </div>
+
           {loading ? <p className="pp-subtle">Loading…</p> : null}
           {!loading && devices.length === 0 ? (
             <p className="pp-subtle">No devices yet. Add an IMEI above or wait for a collar to check in.</p>
           ) : null}
+          {!loading && devices.length > 0 && filteredDevices.length === 0 ? (
+            <p className="pp-subtle">No IMEI matches your search.</p>
+          ) : null}
 
           <div className="pp-adminDeviceList">
-            {devices.map((device) => {
+            {filteredDevices.map((device) => {
               const draft = draftFor(device);
               const isGpspos = draft.providerId === 'gpspos';
               const saving = busyImei === device.imei;
+              const hasFix = Boolean(device.lastUpdate);
               return (
                 <article key={device.imei} className="pp-adminDeviceCard">
                   <header className="pp-adminDeviceCard__head">
@@ -263,17 +310,17 @@ export default function AdminDeviceRegistry() {
                       {device.name ? <span className="pp-subtle"> — {device.name}</span> : null}
                     </div>
                     <div className="pp-adminDeviceCard__meta pp-subtle">
-                      Effective: <strong>{device.effectiveProvider || 'unknown'}</strong>
+                      Protocol: <strong>{device.effectiveProvider || 'unknown'}</strong>
                       {device.observedProvider && device.observedProvider !== device.effectiveProvider ? (
                         <span> (observed: {device.observedProvider})</span>
                       ) : null}
-                      {device.lastUpdate ? <span> · Last update {device.lastUpdate}</span> : null}
+                      <span> · {hasFix ? `Last fix ${device.lastUpdate}` : 'No position yet'}</span>
                     </div>
                   </header>
 
                   <div className="pp-adminDeviceCard__grid">
                     <label className="pp-field">
-                      <span className="pp-field__label">Tracker logic</span>
+                      <span className="pp-field__label">Protocol</span>
                       <select
                         className="pp-input"
                         value={draft.providerId}
@@ -296,7 +343,7 @@ export default function AdminDeviceRegistry() {
                             className="pp-input"
                             value={draft.gpsposPlatformImei}
                             onChange={(e) => updateDraft(device.imei, { gpsposPlatformImei: e.target.value })}
-                            placeholder="9705242899 if different from IMEI suffix"
+                            placeholder="If different from IMEI suffix"
                             disabled={saving}
                           />
                         </label>

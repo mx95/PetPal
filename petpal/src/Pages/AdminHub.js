@@ -67,16 +67,10 @@ export default function AdminHub() {
             desc="Review pending venue applications."
           />
           <AdminActionCard
-            to="/admin/tracker"
-            icon="📡"
-            title="Tracker setup (ip-transfer)"
-            desc="Switch a collar to your server by queueing an ip-transfer command."
-          />
-          <AdminActionCard
             to="/admin/devices"
             icon="🛰️"
             title="Device registry"
-            desc="Assign IMEI → Xexun / 365GPS / GPSPOS and set GPSPOS poll interval."
+            desc="View all IMEIs, add collars, assign 365GPS or GPSPOS protocol."
           />
           <AdminActionCard
             to="/admin/broadcast"

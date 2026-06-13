@@ -14,6 +14,7 @@ import ImeiQrScannerButton from '../components/ImeiQrScannerButton';
 import PetMedicationModal from '../components/PetMedicationModal';
 import IconMedPill from '../components/icons/IconMedPill';
 import { linkPetTrackerImei } from '../tracking/linkPetTrackerImei';
+import { fetchRegisteredTrackerImeis } from '../tracking/registeredDeviceClient';
 
 function IconPencil() {
   return (
@@ -105,6 +106,17 @@ export default function MyPets() {
   const [editGender, setEditGender] = useState('male');
   const [editDateOfBirth, setEditDateOfBirth] = useState('');
   const [editMicrochipNo, setEditMicrochipNo] = useState('');
+  const [registeredImeis, setRegisteredImeis] = useState([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void fetchRegisteredTrackerImeis().then((rows) => {
+      if (!cancelled) setRegisteredImeis(rows);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
   const [editColorScheme, setEditColorScheme] = useState('');
   const [editIdentifyingMarks, setEditIdentifyingMarks] = useState('');
   const [editDescription, setEditDescription] = useState('');
@@ -692,6 +704,7 @@ export default function MyPets() {
                       placeholder={t('myPets.deviceIdPh')}
                       autoComplete="off"
                       inputMode="numeric"
+                      list="registered-tracker-imeis"
                     />
                     <ImeiQrScannerButton onImei={onScanImeiAdd} disabled={addPhotoBusy} />
                   </div>
@@ -925,6 +938,7 @@ export default function MyPets() {
                       placeholder={t('myPets.deviceIdPh')}
                       autoComplete="off"
                       inputMode="numeric"
+                      list="registered-tracker-imeis"
                     />
                     <ImeiQrScannerButton onImei={onScanImeiEdit} disabled={editPhotoBusy} />
                   </div>
@@ -1056,6 +1070,11 @@ export default function MyPets() {
           </div>
         </div>
       ) : null}
+      <datalist id="registered-tracker-imeis">
+        {registeredImeis.map((imei) => (
+          <option key={imei} value={imei} />
+        ))}
+      </datalist>
     </div>
   );
 }

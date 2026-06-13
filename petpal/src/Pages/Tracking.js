@@ -11,6 +11,7 @@ import TrackDevicePanel from '../components/tracking/TrackDevicePanel';
 import { accuracyRadiusMeters } from '../tracking/mapLiveUtils';
 import { usePets } from '../pets/PetsContext';
 import { getLatestPositionWithSync, getPositionHistory, getTrackingDataSource, mapsLink } from '../tracking/petpalVendorClient';
+import { fetchDeviceMeta } from '../tracking/deviceMetaClient';
 import { normalizePointSource, sourceBadgeMeta } from '../tracking/mapPetMarker';
 import {
   anchorFromDisplayedPosition,
@@ -622,11 +623,25 @@ export default function Tracking() {
         setError(
           deviceProvider === 'gpspos'
             ? t('trackingPage.devicePanelGpsposNoPosition')
-            : t('trackingPage.noLiveSignalBody')
+            : deviceProvider === 'g365'
+              ? t('trackingPage.waitingG365')
+              : t('trackingPage.noLiveSignalBody')
         );
       } else if (e?.status === 404 || /not checked in|not seen on tracker|Missing IMEI/i.test(msg)) {
         setPosition(null);
-        setError(t('trackingPage.deviceNotConfigured'));
+        const meta = await fetchDeviceMeta(requestedId);
+        if (meta?.provider) {
+          setDeviceProvider(meta.provider);
+          setError(
+            meta.provider === 'g365'
+              ? t('trackingPage.waitingG365')
+              : meta.provider === 'gpspos'
+                ? t('trackingPage.devicePanelGpsposNoPosition')
+                : t('trackingPage.waitingRegistered')
+          );
+        } else {
+          setError(t('trackingPage.deviceNotConfigured'));
+        }
       } else {
         setError(msg);
       }

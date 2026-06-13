@@ -502,7 +502,7 @@ export async function getLatestPositionWithSync(deviceId, opts = {}) {
   }
 
   const shouldSyncGpspos =
-    isGpsposSyncAvailable() && provider !== 'xexun' && provider !== 'g365';
+    isGpsposSyncAvailable() && provider !== 'g365';
 
   if (shouldSyncGpspos) {
     try {
@@ -517,7 +517,6 @@ export async function getLatestPositionWithSync(deviceId, opts = {}) {
   try {
     const pos = await getLatestPosition(id);
     if (
-      provider !== 'xexun' &&
       provider !== 'g365' &&
       pos?.provider === 'gpspos' &&
       isGpsposSyncAvailable() &&
@@ -536,7 +535,6 @@ export async function getLatestPositionWithSync(deviceId, opts = {}) {
   } catch (e) {
     const retryable =
       isGpsposSyncAvailable() &&
-      provider !== 'xexun' &&
       provider !== 'g365' &&
       (e?.status === 404 || /not_found|no_position|No GPS fix/i.test(String(e?.message || '')));
     if (!retryable) throw e;

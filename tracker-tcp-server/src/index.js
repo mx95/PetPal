@@ -5,9 +5,7 @@ const path = require("path");
 
 const { createMemoryStore } = require("./store/memory");
 const { createSqliteStore } = require("./store/sqliteStore");
-const { createTcpServer } = require("./tcp/handler");
 const { createG365TcpServer } = require("./tcp/g365Handler");
-const { registerXexunHttpApi } = require("./http/xexunApiRoutes");
 const { registerG365HttpApi } = require("./http/g365ApiRoutes");
 const { registerGpsposHttpApi } = require("./http/gpsposApiRoutes");
 const { registerAdminDeviceRoutes } = require("./http/adminDeviceRoutes");
@@ -21,7 +19,6 @@ function withProvider(d) {
   return provider && d.provider !== provider ? { ...d, provider } : d;
 }
 
-const TCP_PORT = Number(process.env.TCP_PORT || 5001);
 const GPS365_TCP_PORT = Number(process.env.GPS365_TCP_PORT || 5003);
 const HTTP_PORT = Number(process.env.HTTP_PORT || 5002);
 const GPS365_TCP_ENABLED =
@@ -72,7 +69,6 @@ function seedSampleDeviceFromEnv() {
 
 seedSampleDeviceFromEnv();
 
-createTcpServer({ port: TCP_PORT, store });
 if (GPS365_TCP_ENABLED) {
   createG365TcpServer({ port: GPS365_TCP_PORT, store });
 } else {
@@ -83,7 +79,7 @@ const GPSPOS_ENABLED =
   String(process.env.GPSPOS_ENABLED ?? "0").trim().toLowerCase() !== "false";
 
 console.log(
-  `[tracker] Device listeners: Xexun → TCP ${TCP_PORT} (FC…CF) | 365GPS → TCP ${GPS365_TCP_ENABLED ? GPS365_TCP_PORT : "disabled"} (7878…0D0A) | gpspos cloud → ${GPSPOS_ENABLED ? "enabled" : "disabled"} | HTTP API → ${HTTP_PORT}`
+  `[tracker] Device listeners: 365GPS → TCP ${GPS365_TCP_ENABLED ? GPS365_TCP_PORT : "disabled"} (7878…0D0A) | gpspos cloud → ${GPSPOS_ENABLED ? "enabled" : "disabled"} | HTTP API → ${HTTP_PORT}`
 );
 
 const app = express();
@@ -150,7 +146,6 @@ app.use(
 );
 
 
-registerXexunHttpApi(app, store);
 registerG365HttpApi(app, store);
 registerGpsposHttpApi(app, store);
 registerAdminDeviceRoutes(app, store);
@@ -165,9 +160,20 @@ app.get("/api/app/devices", (req, res) => {
 });
 
 app.get("/api/app/devices/:imei", (req, res) => {
-  const d = store.get(req.params.imei);
-  if (!d) return res.status(404).json({ error: "not_found" });
-  res.json(withProvider(d));
+  const imei = String(req.params.imei || "").trim();
+  const d = store.get(imei);
+  if (!d) {
+    return res.status(404).json({
+      error: "not_found",
+      hint: "Register this IMEI in Admin → Device registry, or wait for the collar to check in.",
+    });
+  }
+  const out = withProvider(d);
+  res.json({
+    ...out,
+    registered: true,
+    hasPosition: Boolean(out?.location || out?.gps?.lat != null || out?.gps?.lng != null),
+  });
 });
 
 app.get("/api/app/position", (req, res) => {

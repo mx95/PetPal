@@ -20,7 +20,7 @@ export async function linkPetTrackerImei(imei) {
     /* ignore */
   }
 
-  if (provider === 'xexun' || provider === 'g365') {
+  if (provider === 'g365') {
     return { ok: true, provider };
   }
 

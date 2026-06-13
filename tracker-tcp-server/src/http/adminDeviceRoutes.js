@@ -5,7 +5,7 @@
 const { logPrefix } = require("../logging/time");
 const { effectiveProvider, inferDeviceProvider } = require("../deviceProvider");
 
-const VALID_PROVIDERS = new Set(["xexun", "g365", "gpspos"]);
+const VALID_PROVIDERS = new Set(["g365", "gpspos"]);
 
 function requireTrackerAdmin(req, res, next) {
   const expected = String(process.env.TRACKER_ADMIN_TOKEN || "").trim();

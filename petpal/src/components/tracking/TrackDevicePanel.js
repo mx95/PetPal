@@ -7,7 +7,6 @@ import {
   startG365Find,
 } from '../../tracking/g365CommandClient';
 import {
-  applyXexunBatteryPlan,
   isTrackerCommandsAvailable,
 } from '../../tracking/trackerCommandClient';
 import {
@@ -169,7 +168,7 @@ export default function TrackDevicePanel({ imei, petName = '', provider = null }
   }
 
   async function resolveProviderForSave() {
-    if (resolvedProvider === 'g365' || resolvedProvider === 'xexun' || resolvedProvider === 'gpspos') {
+    if (resolvedProvider === 'g365' || resolvedProvider === 'gpspos') {
       return resolvedProvider;
     }
     const fetched = await fetchDeviceMeta(imei);
@@ -208,12 +207,8 @@ export default function TrackDevicePanel({ imei, petName = '', provider = null }
         err.code = 'unknown_provider';
         throw err;
       }
-      if (collarProvider === 'xexun') {
-        await applyXexunBatteryPlan(imei, selectedPlanId);
-      } else {
-        await setG365UploadInterval(imei, uploadSeconds);
-        await setG365StatusInterval(imei, statusMinutes);
-      }
+      await setG365UploadInterval(imei, uploadSeconds);
+      await setG365StatusInterval(imei, statusMinutes);
       setStatus(t('trackingPage.devicePanelPresetSaved'));
     });
   }

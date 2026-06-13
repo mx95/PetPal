@@ -35,7 +35,6 @@ import './ui/ui.css';
 import CompanyApply from './Pages/CompanyApply';
 import AdminCompanyQueue from './Pages/AdminCompanyQueue';
 import AdminHub from './Pages/AdminHub';
-import AdminTrackerSetup from './Pages/AdminTrackerSetup';
 import AdminDeviceRegistry from './Pages/AdminDeviceRegistry';
 import AdminBroadcast from './Pages/AdminBroadcast';
 import Inbox from './Pages/Inbox';
@@ -120,7 +119,7 @@ function App() {
             path="/admin/tracker"
             element={
               <RequireAuth>
-                <AdminTrackerSetup />
+                <Navigate to="/admin/devices" replace />
               </RequireAuth>
             }
           />

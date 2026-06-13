@@ -84,9 +84,13 @@ export const GPSPOS_POLL_PRESETS = [
   { id: '3600', seconds: 3600 },
 ];
 
+/** Protocol choices for admin registry (Xexun removed). */
+export const PROTOCOL_OPTIONS = [
+  { id: 'g365', value: 'g365', label: '365GPS (TCP 7878…)' },
+  { id: 'gpspos', value: 'gpspos', label: 'GPSPOS (cloud poll)' },
+];
+
 export const PROVIDER_OPTIONS = [
-  { id: 'auto', value: null },
-  { id: 'xexun', value: 'xexun' },
-  { id: 'g365', value: 'g365' },
-  { id: 'gpspos', value: 'gpspos' },
+  { id: 'auto', value: null, label: 'Auto (from last ingest)' },
+  ...PROTOCOL_OPTIONS,
 ];
