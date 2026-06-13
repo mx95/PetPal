@@ -18,6 +18,31 @@ if (!fs.existsSync(dbDir)) {
   fs.mkdirSync(dbDir, { recursive: true });
 }
 
+/** Server-only secrets (outside git): TRACKER_ADMIN_TOKEN, etc. */
+function loadEnvFile(filePath) {
+  if (!fs.existsSync(filePath)) return {};
+  const out = {};
+  for (const line of fs.readFileSync(filePath, "utf8").split("\n")) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) continue;
+    const eq = trimmed.indexOf("=");
+    if (eq <= 0) continue;
+    const key = trimmed.slice(0, eq).trim();
+    let val = trimmed.slice(eq + 1).trim();
+    if (
+      (val.startsWith('"') && val.endsWith('"')) ||
+      (val.startsWith("'") && val.endsWith("'"))
+    ) {
+      val = val.slice(1, -1);
+    }
+    out[key] = val;
+  }
+  return out;
+}
+
+const adminEnvFile = process.env.PETPAL_ADMIN_ENV || "/var/lib/petpal/tracker-admin.env";
+const adminEnv = loadEnvFile(adminEnvFile);
+
 module.exports = {
   apps: [
     {
@@ -38,8 +63,7 @@ module.exports = {
         GPSPOS_DEVICE_IDS: "861397052428990,868022030670736,868022030670793",
         GPSPOS_IMEI_MAP: "861397052428990:9705242899",
         GPSPOS_POLL_INTERVAL_SEC: "60",
-        // Set a strong secret; same value as REACT_APP_TRACKER_ADMIN_TOKEN in petpal build
-        // TRACKER_ADMIN_TOKEN: "change-me",
+        ...adminEnv,
       },
     },
   ],
