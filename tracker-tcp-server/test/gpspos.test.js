@@ -124,6 +124,22 @@ test("gpspos — battery byte from nTEState", () => {
   assert.equal(batteryFromTeState(0x00ff0000), null);
 });
 
+test("gpspos — wifi source from nTEState byte2 bit 0x10", () => {
+  const row = {
+    strTEID: "868022030670736",
+    nTime: "1781096000",
+    dbLon: "33.38",
+    dbLat: "35.16",
+    nTEState: "4096",
+    nGSMSignal: "31",
+    nGPSSignal: "0",
+  };
+  const mapped = mapGpsposPositionToDeviceRecord(row);
+  assert.equal(mapped.source, "wifi");
+  assert.equal(mapped.accuracy, "wifi");
+  assert.equal(mapped.gpsValid, false);
+});
+
 test("gpspos — charging from nTEState external power bit", () => {
   const { chargingFromTeState } = require("../src/protocol/gpspos");
   assert.equal(chargingFromTeState(4341888), true);

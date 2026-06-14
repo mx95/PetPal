@@ -281,16 +281,6 @@ export default function TrackDevicePanel({ imei, petName = '', provider = null }
                 ? t('trackingPage.devicePanelGpsposApplyPlan')
                 : t('trackingPage.devicePanelApplyPreset')}
           </button>
-          {isGpspos ? (
-            <button
-              type="button"
-              className="pp-btn pp-btn--ghost pp-trackDevicePanel__cta"
-              disabled={busy || !imei?.trim() || !isGpsposSyncAvailable()}
-              onClick={() => void handleGpsposSync()}
-            >
-              {busy ? t('trackingPage.devicePanelGpsposSyncing') : t('trackingPage.devicePanelGpsposSync')}
-            </button>
-          ) : null}
         </div>
 
         {isGpspos ? (
@@ -331,6 +321,19 @@ export default function TrackDevicePanel({ imei, petName = '', provider = null }
                 disabled={busy || !imei?.trim() || !commandsAvailable}
                 onClick={() =>
                   void runCommand(async () => {
+                    await requestG365ManualPosition(imei, 'wifi');
+                    setStatus(t('trackingPage.devicePanelG365WifiLocateSent'));
+                  })
+                }
+              >
+                {t('trackingPage.devicePanelG365WifiLocate')}
+              </button>
+              <button
+                type="button"
+                className="pp-btn pp-btn--ghost"
+                disabled={busy || !imei?.trim() || !commandsAvailable}
+                onClick={() =>
+                  void runCommand(async () => {
                     await startG365Find(imei);
                     setStatus(t('trackingPage.devicePanelG365FindSent'));
                   })
@@ -339,6 +342,36 @@ export default function TrackDevicePanel({ imei, petName = '', provider = null }
                 {t('trackingPage.devicePanelG365Find')}
               </button>
             </div>
+          </fieldset>
+        ) : null}
+
+        {isGpspos ? (
+          <fieldset className="pp-trackDeviceG365Group">
+            <legend className="pp-trackDeviceModes__legend">{t('trackingPage.devicePanelQuickLegend')}</legend>
+            <div className="pp-trackDeviceG365Actions">
+              <button
+                type="button"
+                className="pp-btn pp-btn--ghost"
+                disabled={busy || !imei?.trim() || !isGpsposSyncAvailable()}
+                onClick={() => void handleGpsposSync()}
+              >
+                {busy ? t('trackingPage.devicePanelGpsposSyncing') : t('trackingPage.devicePanelG365Locate')}
+              </button>
+              <button
+                type="button"
+                className="pp-btn pp-btn--ghost"
+                disabled={busy || !imei?.trim() || !isGpsposSyncAvailable()}
+                onClick={() =>
+                  void runCommand(async () => {
+                    await syncGpsposPosition(imei);
+                    setStatus(t('trackingPage.devicePanelGpsposWifiLocateSent'));
+                  })
+                }
+              >
+                {t('trackingPage.devicePanelG365WifiLocate')}
+              </button>
+            </div>
+            <p className="pp-subtle pp-trackDevicePanel__foot">{t('trackingPage.devicePanelGpsposWifiHint')}</p>
           </fieldset>
         ) : null}
       </form>
@@ -354,7 +387,7 @@ export default function TrackDevicePanel({ imei, petName = '', provider = null }
         </p>
       ) : null}
 
-      {resolvedProvider === 'g365' || resolvedProvider === 'gpspos' ? (
+      {resolvedProvider === 'g365' ? (
         <TrackDeviceAdvanced
           imei={imei}
           provider={resolvedProvider}

@@ -1020,10 +1020,12 @@ const en = {
     devicePanelG365SaveIntervals: 'Save intervals',
     devicePanelG365ActionsLegend: 'Quick actions',
     devicePanelG365Locate: 'Find on map now',
+    devicePanelG365WifiLocate: 'Wi‑Fi locate',
     devicePanelG365Find: 'Ring collar',
     devicePanelG365Restart: 'Restart collar',
     devicePanelG365IntervalsSent: 'Intervals sent — the collar applies them on its next connection.',
     devicePanelG365LocateSent: 'Locate request sent — check the Live map within a minute.',
+    devicePanelG365WifiLocateSent: 'Wi‑Fi locate sent — check the Live map within a minute.',
     devicePanelG365FindSent: 'Ring command sent.',
     devicePanelG365RestartSent: 'Restart command sent.',
     devicePanelG365Offline:
@@ -1043,6 +1045,8 @@ const en = {
     devicePanelGpsposSync: 'Refresh from cloud',
     devicePanelGpsposSyncing: 'Refreshing…',
     devicePanelGpsposSynced: 'Location updated from the cloud. Check the Live tab.',
+    devicePanelGpsposWifiLocateSent: 'Cloud refresh done — if the collar used Wi‑Fi, the map will show a Wi‑Fi fix.',
+    devicePanelGpsposWifiHint: 'Indoors, the collar often reports Wi‑Fi scans to the cloud. Use Wi‑Fi locate to pull the latest fix.',
     devicePanelGpsposFoot:
       'This collar syncs from the gpspos cloud. Tap refresh anytime, or ask your admin to enable automatic polling.',
     devicePanelGpsposPollActive: 'Server polls the cloud every {interval}.',
@@ -1051,7 +1055,7 @@ const en = {
       'Cloud sync is disabled on the tracker server. Set GPSPOS_ENABLED=1 and restart the server.',
     devicePanelGpsposNoPosition:
       'No location on the platform yet. Check the device is online on the manufacturer portal and the IMEI matches.',
-    deviceAdvancedLegend: 'Advanced options & capabilities',
+    deviceAdvancedLegend: 'More options',
     capConnection: 'Connection',
     capUplink: 'What the collar sends',
     capDownlink: 'Commands available',

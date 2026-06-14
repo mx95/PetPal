@@ -89,6 +89,13 @@ function unixSecondsToIso(value) {
   return new Date(n * 1000).toISOString();
 }
 
+function resolveGpsposSource(rec, nTEState, hasCoords) {
+  if (!hasCoords) return null;
+  const fromTe = inferSourceFromTeState(nTEState);
+  if (fromTe === "wifi" || fromTe === "lbs") return fromTe;
+  return Number(rec.nGPSSignal) > 0 ? "gps" : "lbs";
+}
+
 /**
  * Map Proc_GetLastPosition / Proc_GetTrack row to PetPal store shape.
  * @param {object} rec parsed field map from platform
@@ -107,7 +114,7 @@ function mapGpsposPositionToDeviceRecord(rec, opts = {}) {
   const locationInvalid = !hasCoords && flagInvalid;
   const deviceTime = unixSecondsToIso(nTime);
   const receivedAt = opts.receivedAt || new Date().toISOString();
-  const source = hasCoords ? (Number(rec.nGPSSignal) > 0 ? "gps" : "lbs") : null;
+  const source = resolveGpsposSource(rec, nTEState, hasCoords);
   const platformOnline = inferGpsposPlatformOnline(nTEState, rec.nGSMSignal);
 
   const record = {
@@ -117,6 +124,7 @@ function mapGpsposPositionToDeviceRecord(rec, opts = {}) {
     lastUpdate: deviceTime || receivedAt,
     source: hasCoords ? source || "gps" : source,
     gpsValid: hasCoords && source === "gps",
+    accuracy: hasCoords ? (source === "gps" ? "gps" : source === "wifi" ? "wifi" : "lbs") : null,
     platformOnline: platformOnline === true,
     location: hasCoords ? { lat, lng } : null,
     gps: hasCoords
@@ -293,6 +301,7 @@ module.exports = {
   inferGpsposPlatformOnline,
   batteryFromTeState,
   chargingFromTeState,
+  resolveGpsposSource,
   resolvePlatformImei,
   resolveStoreImei,
   shouldRecordPosition,
