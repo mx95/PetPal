@@ -90,6 +90,7 @@ function normalizeIncomingDevice(prev, incoming, canonicalImei = null) {
     charging: resolveCharging(p, ds),
 
     speed: gps.speedKmh != null ? Number(gps.speedKmh) : null,
+    receivedAt: p.receivedAt || new Date().toISOString(),
     lastUpdate: p.receivedAt || new Date().toISOString(),
 
     raw: {
@@ -185,7 +186,12 @@ function mergeDeviceRecord(prev, incoming) {
     merged.location = prev.location;
   }
   if (merged.location && (!merged.gps || !hasValidGps(merged.gps))) {
-    merged.gps = { lat: merged.location.lat, lng: merged.location.lng, speedKmh: merged.speed ?? null, timestamp: merged.lastUpdate ?? null };
+    merged.gps = {
+      lat: merged.location.lat,
+      lng: merged.location.lng,
+      speedKmh: merged.speed ?? null,
+      timestamp: incoming.gps?.timestamp ?? prev?.gps?.timestamp ?? null,
+    };
   }
   if (incoming.battery == null && prev?.battery != null) merged.battery = prev.battery;
   if (incoming.signal == null && prev?.signal != null) merged.signal = prev.signal;

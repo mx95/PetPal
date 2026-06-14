@@ -38,7 +38,7 @@ function toDeviceRow(rec) {
     signal: rec.signal ?? null,
     source: rec.source ?? null,
     provider: rec.provider ?? null,
-    last_update: rec.lastUpdate ?? rec.receivedAt ?? null
+    last_update: rec.receivedAt ?? rec.lastUpdate ?? null
   };
 }
 
@@ -49,7 +49,9 @@ function toPositionRow(rec) {
   const loc = rec.location || rec.gps || null;
   if (!hasFiniteLatLng(loc)) return null;
 
-  const receivedAt = String(rec.lastUpdate || rec.receivedAt || new Date().toISOString());
+  const serverReceivedAt = String(
+    rec.receivedAt || rec.lastUpdate || new Date().toISOString()
+  );
   const deviceIso = rec.gps?.timestamp || rec.deviceStatus?.timestamp || null;
   const deviceMs = deviceIso ? Date.parse(deviceIso) : Number.NaN;
   const device_timestamp =
@@ -62,8 +64,8 @@ function toPositionRow(rec) {
     source: rec.source ?? null,
     battery: rec.battery ?? null,
     signal: rec.signal ?? null,
-    timestamp: receivedAt,
-    received_at: receivedAt,
+    timestamp: serverReceivedAt,
+    received_at: serverReceivedAt,
     device_timestamp,
   };
 }
