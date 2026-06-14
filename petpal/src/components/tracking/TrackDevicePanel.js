@@ -15,6 +15,7 @@ import {
   syncGpsposPosition,
 } from '../../tracking/gpsposCommandClient';
 import { fetchDeviceMeta, normalizeProvider } from '../../tracking/deviceMetaClient';
+import TrackDeviceAdvanced from './TrackDeviceAdvanced';
 
 /** User-facing plans — maps to upload + status intervals on 365GPS collars. */
 const BATTERY_PLANS = [
@@ -351,6 +352,15 @@ export default function TrackDevicePanel({ imei, petName = '', provider = null }
         <p className="pp-error pp-trackDevicePanel__error" role="alert">
           {error}
         </p>
+      ) : null}
+
+      {resolvedProvider === 'g365' || resolvedProvider === 'gpspos' ? (
+        <TrackDeviceAdvanced
+          imei={imei}
+          provider={resolvedProvider}
+          onStatus={setStatus}
+          onError={setError}
+        />
       ) : null}
     </section>
   );

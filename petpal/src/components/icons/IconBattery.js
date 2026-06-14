@@ -1,12 +1,12 @@
 import React from 'react';
 
 /** Horizontal battery with fill level (0–100). */
-export default function IconBattery({ pct = 100, size = 18, className = '' }) {
+export default function IconBattery({ pct = 100, size = 18, className = '', charging = false }) {
   const level = Math.max(0, Math.min(100, Number(pct) || 0));
   const fillW = 12 * (level / 100);
   return (
     <svg
-      className={`pp-iconBattery ${className}`.trim()}
+      className={`pp-iconBattery${charging ? ' pp-iconBattery--charging' : ''} ${className}`.trim()}
       viewBox="0 0 22 12"
       width={size}
       height={Math.round(size * (12 / 22))}

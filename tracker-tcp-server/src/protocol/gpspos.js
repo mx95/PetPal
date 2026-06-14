@@ -68,6 +68,12 @@ function batteryFromTeState(nTEState) {
   return byte3 >= 0 && byte3 <= 100 ? byte3 : null;
 }
 
+/** GPSPOS API: nTEState byte2 bit6 (0x4000) = external power / charger connected. */
+function chargingFromTeState(nTEState) {
+  if (!Number.isFinite(nTEState)) return null;
+  return (nTEState & 0x4000) !== 0;
+}
+
 /** True when gpspos platform reports GPRS/cellular link (may differ from last GPS fix time). */
 function inferGpsposPlatformOnline(nTEState, gsmSignal) {
   if (!Number.isFinite(nTEState)) return null;
@@ -128,6 +134,7 @@ function mapGpsposPositionToDeviceRecord(rec, opts = {}) {
     heading: Number.isFinite(Number(rec.nDirection)) ? Number(rec.nDirection) : null,
     moving: Number(rec.nSpeed) > 0,
     battery: batteryFromTeState(nTEState),
+    charging: chargingFromTeState(nTEState),
     gpspos: {
       platformImei,
       nTime: Number.isFinite(nTime) ? nTime : null,
@@ -285,6 +292,7 @@ module.exports = {
   inferSourceFromTeState,
   inferGpsposPlatformOnline,
   batteryFromTeState,
+  chargingFromTeState,
   resolvePlatformImei,
   resolveStoreImei,
   shouldRecordPosition,

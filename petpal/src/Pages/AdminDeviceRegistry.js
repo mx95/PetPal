@@ -10,6 +10,7 @@ import {
   listAdminDevices,
   patchAdminDevice,
 } from '../tracking/adminDeviceApi';
+import { fetchImeiPetLinks } from '../tracking/imeiPetLinks';
 
 function providerLabel(id) {
   const opt = PROVIDER_OPTIONS.find((p) => p.id === id);
@@ -39,6 +40,8 @@ export default function AdminDeviceRegistry() {
   const [newImei, setNewImei] = useState('');
   const [newProtocol, setNewProtocol] = useState('g365');
   const [drafts, setDrafts] = useState({});
+  const [petLinks, setPetLinks] = useState({});
+  const [petLinksLoading, setPetLinksLoading] = useState(false);
 
   const apiReady = useMemo(() => isTrackerAdminApiAvailable(), []);
 
@@ -62,6 +65,28 @@ export default function AdminDeviceRegistry() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    if (!devices.length) {
+      setPetLinks({});
+      return;
+    }
+    let cancelled = false;
+    setPetLinksLoading(true);
+    void fetchImeiPetLinks(devices.map((d) => d.imei))
+      .then((map) => {
+        if (!cancelled) setPetLinks(map);
+      })
+      .catch(() => {
+        if (!cancelled) setPetLinks({});
+      })
+      .finally(() => {
+        if (!cancelled) setPetLinksLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [devices]);
 
   const filteredDevices = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -315,6 +340,33 @@ export default function AdminDeviceRegistry() {
                         <span> (observed: {device.observedProvider})</span>
                       ) : null}
                       <span> · {hasFix ? `Last fix ${device.lastUpdate}` : 'No position yet'}</span>
+                    </div>
+                    <div className="pp-adminDeviceCard__owner">
+                      {petLinksLoading ? (
+                        <span className="pp-subtle">Checking app links…</span>
+                      ) : petLinks[device.imei]?.length ? (
+                        petLinks[device.imei].map((link) => (
+                          <div key={`${link.uid}-${link.petId}`} className="pp-adminDeviceCard__ownerRow">
+                            <span className="pp-adminDeviceCard__ownerBadge">Linked in app</span>
+                            <span>
+                              {link.petName ? `${link.petName} · ` : ''}
+                              <code>{link.uid}</code>
+                              {link.email ? (
+                                <>
+                                  {' · '}
+                                  <a className="pp-link" href={`mailto:${link.email}`}>
+                                    {link.email}
+                                  </a>
+                                </>
+                              ) : (
+                                <span className="pp-subtle"> · no email on profile</span>
+                              )}
+                            </span>
+                          </div>
+                        ))
+                      ) : (
+                        <span className="pp-subtle">Not linked to any user — assign on My pets.</span>
+                      )}
                     </div>
                   </header>
 

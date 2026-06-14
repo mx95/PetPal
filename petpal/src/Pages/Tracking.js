@@ -150,6 +150,33 @@ function formatLastSeen(secondsAgo, t) {
   return t('trackingPage.lastUpdateMonthsLong', { months: Math.max(12, months) });
 }
 
+function TrackTabIcon({ tabId }) {
+  const common = { width: 15, height: 15, viewBox: '0 0 16 16', fill: 'none', 'aria-hidden': true };
+  if (tabId === 'live') {
+    return (
+      <svg {...common}>
+        <circle cx="8" cy="8" r="5.5" stroke="currentColor" strokeWidth="1.5" />
+        <circle cx="8" cy="8" r="2" fill="currentColor" />
+      </svg>
+    );
+  }
+  if (tabId === 'device') {
+    return (
+      <svg {...common}>
+        <rect x="3.5" y="2.5" width="9" height="11" rx="1.8" stroke="currentColor" strokeWidth="1.5" />
+        <path d="M6.2 12.2h3.6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        <circle cx="8" cy="5.2" r="1.1" fill="currentColor" />
+      </svg>
+    );
+  }
+  return (
+    <svg {...common}>
+      <circle cx="8" cy="8" r="5.5" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M8 4.8V8l2.4 1.4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 function batteryFillStyle(pct) {
   const n = Math.min(100, Math.max(0, pct));
   let fill;
@@ -170,9 +197,8 @@ function TrackBatteryBadge({ pct, isCharging, t }) {
           : t('trackingPage.batteryPctAria', { pct })
       }
     >
-      <IconBattery pct={pct} size={16} />
-      {pct}%
-      {isCharging ? <span className="pp-trackLiveStatus__charging">{t('trackingPage.charging')}</span> : null}
+      <IconBattery pct={pct} size={16} charging={isCharging} />
+      {isCharging ? t('trackingPage.batteryPctCharging', { pct }) : `${pct}%`}
     </span>
   );
 }
@@ -1213,21 +1239,28 @@ export default function Tracking() {
         </div>
       </section>
 
-      <nav className="pp-trackTabs pp-trackTabs--segment" aria-label="Tracker views">
+      <nav className="pp-trackTabs pp-trackTabs--segment" aria-label={t('trackingPage.tabsAria')}>
         {(
           wifiTrackingEnabled
             ? [
-                ['live', 'Live'],
-                ['device', 'Device'],
-                ['history', 'History'],
+                ['live', t('trackingPage.tabLive')],
+                ['device', t('trackingPage.tabDevice')],
+                ['history', t('trackingPage.tabHistory')],
               ]
             : [
-                ['live', 'Live'],
-                ['history', 'History'],
+                ['live', t('trackingPage.tabLive')],
+                ['history', t('trackingPage.tabHistory')],
               ]
         ).map(([id, label]) => (
-          <button key={id} type="button" className={trackerTab === id ? 'is-active' : ''} onClick={() => setTrackerTab(id)}>
-            {label}
+          <button
+            key={id}
+            type="button"
+            data-tab={id}
+            className={`pp-trackTab pp-trackTab--${id}${trackerTab === id ? ' is-active' : ''}`}
+            onClick={() => setTrackerTab(id)}
+          >
+            <TrackTabIcon tabId={id} />
+            <span className="pp-trackTab__label">{label}</span>
           </button>
         ))}
       </nav>

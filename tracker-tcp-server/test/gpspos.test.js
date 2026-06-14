@@ -123,3 +123,11 @@ test("gpspos — battery byte from nTEState", () => {
   assert.equal(batteryFromTeState(0x00550000), 85);
   assert.equal(batteryFromTeState(0x00ff0000), null);
 });
+
+test("gpspos — charging from nTEState external power bit", () => {
+  const { chargingFromTeState } = require("../src/protocol/gpspos");
+  assert.equal(chargingFromTeState(4341888), true);
+  assert.equal(chargingFromTeState(0x4000), true);
+  assert.equal(chargingFromTeState(0), false);
+  assert.equal(chargingFromTeState(Number.NaN), null);
+});

@@ -9187,6 +9187,135 @@ body,
   font-size: 12px;
 }
 
+.pp-trackDeviceAdvanced {
+  margin-top: 16px;
+  border: 1px solid rgba(16, 24, 40, 0.08);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.72);
+  overflow: hidden;
+}
+
+.pp-trackDeviceAdvanced__summary {
+  cursor: pointer;
+  padding: 12px 14px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #344054;
+  list-style: none;
+}
+
+.pp-trackDeviceAdvanced__summary::-webkit-details-marker {
+  display: none;
+}
+
+.pp-trackDeviceAdvanced__body {
+  padding: 0 14px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pp-trackDeviceAdvanced__connection {
+  margin: 0;
+  font-size: 12px;
+  color: #475467;
+}
+
+.pp-trackDeviceAdvanced__block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pp-trackDeviceAdvanced__heading {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #667085;
+}
+
+.pp-trackDeviceAdvanced__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pp-trackDeviceAdvanced__list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #344054;
+}
+
+.pp-trackDeviceAdvanced__list--muted li {
+  color: #667085;
+}
+
+.pp-trackDeviceAdvanced__itemLabel {
+  flex: 1 1 auto;
+}
+
+.pp-trackDeviceAdvanced__badge {
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(16, 24, 40, 0.06);
+  color: #667085;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.pp-trackDeviceAdvanced__badge--app {
+  background: rgba(91, 55, 255, 0.12);
+  color: #4c1d95;
+}
+
+.pp-trackDeviceAdvanced__actions {
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+
+.pp-trackDeviceAdvanced__foot {
+  margin: 0;
+}
+
+.pp-adminDeviceCard__owner {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pp-adminDeviceCard__ownerRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.pp-adminDeviceCard__ownerBadge {
+  display: inline-flex;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(21, 128, 61, 0.12);
+  color: #15803d;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
 .pp-trackDevicePanel__providerNote {
   margin: 0 0 14px;
   font-size: 13px;
@@ -9729,9 +9858,34 @@ html[data-theme="dark"] .pp-trackLiveStats__line {
   color: #94a3b8;
 }
 
-html[data-theme="dark"] .pp-trackTabs--segment button.is-active {
-  background: rgba(91, 55, 255, 0.22);
-  color: #c4b5fd;
+html[data-theme="dark"] .pp-trackTabs--segment .pp-trackTab--live.is-active {
+  background: rgba(91, 55, 255, 0.24);
+  color: #ddd6fe;
+  border-color: rgba(167, 139, 250, 0.28);
+}
+
+html[data-theme="dark"] .pp-trackTabs--segment .pp-trackTab--device.is-active {
+  background: rgba(47, 128, 255, 0.22);
+  color: #bfdbfe;
+  border-color: rgba(96, 165, 250, 0.28);
+}
+
+html[data-theme="dark"] .pp-trackTabs--segment .pp-trackTab--history.is-active {
+  background: rgba(234, 88, 12, 0.22);
+  color: #fdba74;
+  border-color: rgba(251, 146, 60, 0.28);
+}
+
+html[data-theme="dark"] .pp-trackTab--live {
+  color: #a78bfa;
+}
+
+html[data-theme="dark"] .pp-trackTab--device {
+  color: #60a5fa;
+}
+
+html[data-theme="dark"] .pp-trackTab--history {
+  color: #fb923c;
 }
 
 html[data-theme="dark"] .pp-trackTabs,
@@ -12444,26 +12598,75 @@ select.pp-bookConfirmField__control {
 /* Segmented tabs */
 .pp-trackTabs--segment {
   top: 58px;
-  padding: 3px;
-  gap: 2px;
-  border-radius: 12px;
+  justify-content: center;
+  width: 100%;
+  max-width: 420px;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 4px;
+  gap: 4px;
+  border-radius: 14px;
   background: rgba(255, 255, 255, 0.72);
   backdrop-filter: blur(14px);
   border: 1px solid rgba(16, 24, 40, 0.08);
   box-shadow: 0 2px 10px rgba(16, 24, 40, 0.04);
 }
 
-.pp-trackTabs--segment button {
-  padding: 7px 14px;
+.pp-trackTabs--segment .pp-trackTab {
+  flex: 1 1 0;
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 10px;
   font-size: 13px;
-  font-weight: 750;
-  border-radius: 9px;
+  font-weight: 800;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: transparent;
+  transition: background 160ms ease, color 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
 }
 
-.pp-trackTabs--segment button.is-active {
-  background: rgba(91, 55, 255, 0.12);
-  color: #4c31d8;
-  box-shadow: inset 0 0 0 1px rgba(91, 55, 255, 0.2);
+.pp-trackTab__label {
+  line-height: 1;
+}
+
+.pp-trackTab--live {
+  color: #6941c6;
+}
+
+.pp-trackTab--device {
+  color: #175cd3;
+}
+
+.pp-trackTab--history {
+  color: #c2410c;
+}
+
+.pp-trackTabs--segment .pp-trackTab--live.is-active {
+  background: rgba(91, 55, 255, 0.14);
+  color: #4c1d95;
+  border-color: rgba(91, 55, 255, 0.22);
+  box-shadow: 0 4px 14px -8px rgba(91, 55, 255, 0.55);
+}
+
+.pp-trackTabs--segment .pp-trackTab--device.is-active {
+  background: rgba(47, 128, 255, 0.14);
+  color: #1849a9;
+  border-color: rgba(47, 128, 255, 0.22);
+  box-shadow: 0 4px 14px -8px rgba(47, 128, 255, 0.45);
+}
+
+.pp-trackTabs--segment .pp-trackTab--history.is-active {
+  background: rgba(234, 88, 12, 0.14);
+  color: #9a3412;
+  border-color: rgba(234, 88, 12, 0.22);
+  box-shadow: 0 4px 14px -8px rgba(234, 88, 12, 0.45);
+}
+
+.pp-trackTabs--segment .pp-trackTab:not(.is-active):hover {
+  background: rgba(16, 24, 40, 0.04);
 }
 
 /* Compact live status bar */
