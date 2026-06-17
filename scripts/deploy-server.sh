@@ -164,4 +164,12 @@ fi
 
 positions_after="$(count_positions "$TRACKER_DB")"
 log "Deploy OK — tracker DB: $TRACKER_DB ($positions_after position rows)"
+
+if [ -f "$TRACKER_DIR/scripts/purge-flipped-latitude-positions.js" ]; then
+  log "Purging sign-flipped southern-latitude history rows"
+  SQLITE_PATH="$TRACKER_DB" node "$TRACKER_DIR/scripts/purge-flipped-latitude-positions.js" || true
+  positions_after="$(count_positions "$TRACKER_DB")"
+  log "Tracker DB after purge: $positions_after position rows"
+fi
+
 log "Tip: hard-refresh the browser (Ctrl+F5) to load the new JS bundle."

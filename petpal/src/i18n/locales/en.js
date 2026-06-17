@@ -827,10 +827,9 @@ const en = {
     mapFollowPet: 'Follow pet',
     liveMarkerDefault: 'Pet location',
     sectionMap: 'Map',
-    mapLastKnownBanner: 'Showing last known location',
-    mapApproximateBanner: 'Showing approximate location (GPS weak)',
-    mapLastKnownBadFixBanner:
-      'Collar sent an invalid Wi‑Fi/cell location — showing last known position. Check your router code on the Device tab.',
+    mapLastKnownBanner: 'Using last known location',
+    mapApproximateBanner: 'Using last known location',
+    mapLastKnownBadFixBanner: 'Using last known location',
     mapWifiHomeBanner:
       'Home Wi‑Fi detected. Tap the button below once to put your home on the map.',
     mapWifiHomeTitle: 'At home on Wi‑Fi',
@@ -1007,7 +1006,7 @@ const en = {
     devicePanelXexunFoot:
       'Keep the collar charged and give it occasional outdoor time so GPS can lock on.',
     devicePanelG365Note:
-      'If the map looks stale, use “Find on map now” below.',
+      'If the map looks stale, use “Find on map now” below. For indoor Wi‑Fi, add your router code in the home Wi‑Fi section.',
     devicePanelG365UploadLegend: 'Location update interval',
     devicePanelG365Upload_60: 'Every 1 min',
     devicePanelG365Upload_180: 'Every 3 min',
@@ -1049,7 +1048,30 @@ const en = {
     devicePanelGpsposWifiHint: 'Indoors, the collar often reports Wi‑Fi scans to the cloud. Use Wi‑Fi locate to pull the latest fix.',
     devicePanelXexunLocateSent: 'GPS priority mode sent — check the Live map on the next collar upload.',
     devicePanelXexunWifiLocateSent: 'Wi‑Fi priority mode sent — the collar will use home Wi‑Fi when in range. Check Live within a minute.',
-    devicePanelXexunWifiHint: 'Add your router Wi‑Fi (BSSID) under home Wi‑Fi on the Live tab so the collar can match indoors.',
+    devicePanelXexunWifiHint: 'Add your router code in the home Wi‑Fi section below, then use Wi‑Fi locate.',
+    devicePanelG365WifiHint:
+      'Add your home router code below. If the sticker on your router differs from what the collar scans, pick the code from the collar’s list.',
+    devicePanelWifiTitle: 'Home Wi‑Fi',
+    devicePanelWifiHelpSimple: 'Give it a name and the code from your router. You only do this once.',
+    devicePanelWifiLabelPh: 'Nickname (optional)',
+    devicePanelWifiLabelExample: 'Home',
+    devicePanelWifiRouterCode: 'Router code',
+    devicePanelWifiHelpToggle: 'Where do I find the router code?',
+    devicePanelWifiHelpStep1: 'Turn over your router or check the sticker — look for MAC or BSSID.',
+    devicePanelWifiHelpStep2: 'Or on your phone: Wi‑Fi → home network → MAC address / BSSID.',
+    devicePanelWifiHelpStep3: 'Type or paste — it will format as aa:bb:cc:dd:ee:ff.',
+    devicePanelWifiHelpNote:
+      'Use your main home Wi‑Fi (often 2.4 GHz). No Wi‑Fi password needed. If the router sticker shows 80:… but the collar lists ba:…, use the code from the collar’s scan list.',
+    devicePanelWifiDetectedTitle: 'Networks the collar sees right now',
+    devicePanelWifiDetectedMatch: 'Likely your router',
+    devicePanelWifiDetectedMismatch:
+      'The code you entered does not match what the collar scans. Router stickers often differ from the live Wi‑Fi ID.',
+    devicePanelWifiUseDetected: 'Use code {bssid}',
+    devicePanelWifiAdd: '+ Add another home Wi‑Fi',
+    devicePanelWifiRemove: 'Remove',
+    devicePanelWifiSave: 'Save home Wi‑Fi',
+    devicePanelWifiSavedLocal: 'Router code saved on this device.',
+    devicePanelNeedWifi: 'Enter your router code — see “Where do I find the router code”.',
     devicePanelGpsposFoot:
       'This collar syncs from the gpspos cloud. Tap refresh anytime, or ask your admin to enable automatic polling.',
     devicePanelGpsposPollActive: 'Server polls the cloud every {interval}.',

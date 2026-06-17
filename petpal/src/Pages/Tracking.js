@@ -1175,12 +1175,10 @@ export default function Tracking() {
     if (!liveMapCoords && displayPosition?.atHomeWifi) return t('trackingPage.mapWifiHomeBanner');
     if (!liveMapCoords) return null;
     if (liveMapCoords.mode === 'home') return t('trackingPage.mapHomeLocationBanner');
-    if (liveMapCoords.mode === 'approximate') return t('trackingPage.mapApproximateBanner');
     if (liveMapCoords.mode === 'lastKnown' && displayPosition?.atHomeWifi) return t('trackingPage.mapHomeLocationBanner');
-    if (liveMapCoords.mode === 'lastKnown' && position && !isTrustedGpsFix(position)) {
-      return t('trackingPage.mapLastKnownBadFixBanner');
+    if (liveMapCoords.mode === 'lastKnown' || liveMapCoords.mode === 'approximate') {
+      return t('trackingPage.mapLastKnownBanner');
     }
-    if (liveMapCoords.mode === 'lastKnown') return t('trackingPage.mapLastKnownBanner');
     return null;
   })();
   const secondsAgo =
@@ -1382,13 +1380,6 @@ export default function Tracking() {
                       </p>
                     ) : null}
                   </>
-                ) : null}
-                {displayPosition?.atHomeWifi && displayPosition?.wifiBssids?.length && !showOneTapHome ? (
-                  <p className="pp-subtle pp-trackLiveDetectedBssids">
-                    {t('trackingPage.mapWifiDetectedNetworks', {
-                      networks: displayPosition.wifiBssids.slice(0, 3).join(', '),
-                    })}
-                  </p>
                 ) : null}
                 <button type="button" className="pp-btn pp-btn--ghost" disabled={loading || !effectiveDeviceId} onClick={() => void refresh()}>
                   {t('trackingPage.quickRefresh')}
@@ -1705,6 +1696,7 @@ export default function Tracking() {
           imei={effectiveDeviceId}
           petName={selectedPet?.name || ''}
           provider={position?.provider ?? deviceProvider ?? null}
+          scannedBssids={displayPosition?.wifiBssids ?? null}
         />
       ) : null}
 

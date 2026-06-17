@@ -20,6 +20,7 @@ import { fetchDeviceMeta, normalizeProvider } from '../../tracking/deviceMetaCli
 import { loadDevicePlan, saveDevicePlan } from '../../tracking/devicePlanStorage';
 import { loadWifiNetworks } from '../../tracking/wifiNetworkStorage';
 import TrackDeviceAdvanced from './TrackDeviceAdvanced';
+import TrackDeviceWifi from './TrackDeviceWifi';
 
 /** User-facing plans — maps to upload + status intervals on 365GPS collars. */
 const BATTERY_PLANS = [
@@ -82,9 +83,9 @@ function applyBatteryPlanToState(plan, setters) {
 }
 
 /**
- * @param {{ imei: string, petName?: string, provider?: string|null }} props
+ * @param {{ imei: string, petName?: string, provider?: string|null, scannedBssids?: string[]|null }} props
  */
-export default function TrackDevicePanel({ imei, petName = '', provider = null }) {
+export default function TrackDevicePanel({ imei, petName = '', provider = null, scannedBssids = null }) {
   const { t } = useI18n();
   const commandsAvailable = isTrackerCommandsAvailable();
   const propProvider = normalizeProvider(provider);
@@ -337,10 +338,6 @@ export default function TrackDevicePanel({ imei, petName = '', provider = null }
         </div>
       ) : null}
 
-      {isGpspos ? (
-        <p className="pp-subtle">{t('trackingPage.devicePanelGpsposIntro')}</p>
-      ) : null}
-
       <form className="pp-trackDevicePanel__form" onSubmit={(e) => void handleSavePlan(e)}>
         <fieldset className="pp-trackDeviceModes">
           <legend className="pp-trackDeviceModes__legend">
@@ -454,11 +451,16 @@ export default function TrackDevicePanel({ imei, petName = '', provider = null }
             {isGpspos ? (
               <p className="pp-subtle pp-trackDevicePanel__foot">{t('trackingPage.devicePanelGpsposWifiHint')}</p>
             ) : null}
-            {isXexun ? (
-              <p className="pp-subtle pp-trackDevicePanel__foot">{t('trackingPage.devicePanelXexunWifiHint')}</p>
-            ) : null}
           </fieldset>
         ) : null}
+
+        <TrackDeviceWifi
+          imei={imei}
+          provider={resolvedProvider}
+          scannedBssids={scannedBssids}
+          onStatus={setStatus}
+          onError={setError}
+        />
       </form>
 
       {status ? (
