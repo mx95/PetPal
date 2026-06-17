@@ -98,9 +98,9 @@ export default function BottomNav() {
 
   const left = BASE_ITEMS;
   const right = [
-    ...(MVP_NAV.showShop ? [{ to: '/shop', key: 'shop', labelKey: 'nav.shop' }] : []),
     { to: '/nearby', key: 'nearby', labelKey: 'nav.nearby' },
     ...(MVP_NAV.showBookings ? [{ to: '/bookings', key: 'bookings', labelKey: 'bottomNav.bookings' }] : []),
+    ...(MVP_NAV.showShop ? [{ to: '/shop', key: 'shop', labelKey: 'nav.shop' }] : []),
   ];
 
   const Item = ({ item }) => (

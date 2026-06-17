@@ -129,6 +129,15 @@ test("g365 — basic 0x13 status with wrong length byte 0x07 (real device)", () 
   assert.equal(parsed.deviceStatus.signal, 0x3e);
 });
 
+test("g365 — course status bits per vendor PDF (heading LSB must not flip latitude)", () => {
+  // Course 0x15 0x00: bit0=1 is heading, bit2=1 is north — old parser treated bit0 as south flip.
+  const frame = hex("787814101A0603161C039A03C0E3C603A193CE001500002F0D0A");
+  const parsed = parseG365Packet(frame, "861261021001678");
+  assert.equal(parsed.protocol, 0x10);
+  assert.ok(parsed.gps.lat > 34 && parsed.gps.lat < 36, `expected north lat, got ${parsed.gps.lat}`);
+  assert.ok(parsed.gps.lng > 32 && parsed.gps.lng < 35);
+});
+
 test("g365 — GPS 0x10 with short length byte 0x14 (861991080050311 pet collar)", () => {
   const frame = hex("787814101A0603161C039A03C0E3C603A193CE001400002F0D0A");
   const { frames, rest } = extractFramesFromStream(frame);

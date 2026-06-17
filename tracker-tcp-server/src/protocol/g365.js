@@ -244,11 +244,13 @@ function extractFramesFromStream(buffer) {
 function parseG365CourseStatus(twoBytes) {
   const b0 = twoBytes.readUInt8(0);
   const b1 = twoBytes.readUInt8(1);
+  // Vendor PDF: bits 7–5 reserved; bit4 GPS fix; bit3 E/W long; bit2 N/S lat; bits1–0 + byte2 = course.
+  // 0 = South lat / East long / not positioned; 1 = North lat / West long / positioned.
   return {
-    gpsPositioned: ((b0 >> 2) & 1) === 1,
-    westLongitude: ((b0 >> 1) & 1) === 1,
-    southLatitude: (b0 & 1) === 1,
-    courseDeg: ((b0 & 0x03) << 8) | b1
+    gpsPositioned: ((b0 >> 4) & 1) === 1,
+    westLongitude: ((b0 >> 3) & 1) === 1,
+    southLatitude: ((b0 >> 2) & 1) === 0,
+    courseDeg: ((b0 & 0x03) << 8) | b1,
   };
 }
 
