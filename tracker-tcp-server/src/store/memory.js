@@ -17,7 +17,12 @@ function resolveCharging(parsed, deviceStatus) {
   if (parsed?.chargingEvent === "complete" || parsed?.chargingEvent === "disconnected") return false;
   const fromStatus = toBool01(ds.chargingStatus);
   if (fromStatus != null) return fromStatus;
-  return toBool01(parsed?.statusDetail?.charging);
+  const detail = parsed?.statusDetail;
+  if (detail?.charging === true) return true;
+  if (detail?.charging === false) return false;
+  const proto = parsed?.protocol ?? parsed?.messageId;
+  if (proto === 0x13) return false;
+  return null;
 }
 
 function makeJsonSafe(value) {
@@ -195,7 +200,15 @@ function mergeDeviceRecord(prev, incoming) {
   }
   if (incoming.battery == null && prev?.battery != null) merged.battery = prev.battery;
   if (incoming.signal == null && prev?.signal != null) merged.signal = prev.signal;
-  if (incoming.charging == null && prev?.charging != null) merged.charging = prev.charging;
+  if (incoming.charging == null && prev?.charging != null) {
+    const msgId = incoming.raw?.messageId;
+    const keepChargingOn = new Set([0x10, 0x11, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x69]);
+    if (keepChargingOn.has(msgId)) {
+      merged.charging = prev.charging;
+    } else if (msgId === 0x13) {
+      merged.charging = false;
+    }
+  }
   if (incoming.steps == null && prev?.steps != null) merged.steps = prev.steps;
   return merged;
 }

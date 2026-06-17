@@ -140,10 +140,10 @@ test("gpspos — wifi source from nTEState byte2 bit 0x10", () => {
   assert.equal(mapped.gpsValid, false);
 });
 
-test("gpspos — charging from nTEState external power bit", () => {
+test("gpspos — charging not inferred from nTEState (cloud API unreliable)", () => {
   const { chargingFromTeState } = require("../src/protocol/gpspos");
-  assert.equal(chargingFromTeState(4341888), true);
-  assert.equal(chargingFromTeState(0x4000), true);
-  assert.equal(chargingFromTeState(0), false);
+  assert.equal(chargingFromTeState(4341888), null);
+  assert.equal(chargingFromTeState(0x4000), null);
+  assert.equal(chargingFromTeState(0), null);
   assert.equal(chargingFromTeState(Number.NaN), null);
 });

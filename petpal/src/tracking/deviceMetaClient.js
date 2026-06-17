@@ -1,7 +1,7 @@
 import { resolveTrackerHttpBase } from './trackingWifiFeature';
 
 function normalizeProvider(value) {
-  if (value === 'g365' || value === 'gpspos') return value;
+  if (value === 'g365' || value === 'gpspos' || value === 'xexun') return value;
   return null;
 }
 

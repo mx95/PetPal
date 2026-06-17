@@ -7,6 +7,8 @@ import {
   startG365Find,
 } from '../../tracking/g365CommandClient';
 import {
+  applyTrackingModePreset,
+  applyWifiBssids,
   isTrackerCommandsAvailable,
 } from '../../tracking/trackerCommandClient';
 import {
@@ -16,6 +18,7 @@ import {
 } from '../../tracking/gpsposCommandClient';
 import { fetchDeviceMeta, normalizeProvider } from '../../tracking/deviceMetaClient';
 import { loadDevicePlan, saveDevicePlan } from '../../tracking/devicePlanStorage';
+import { loadWifiNetworks } from '../../tracking/wifiNetworkStorage';
 import TrackDeviceAdvanced from './TrackDeviceAdvanced';
 
 /** User-facing plans — maps to upload + status intervals on 365GPS collars. */
@@ -97,6 +100,11 @@ export default function TrackDevicePanel({ imei, petName = '', provider = null }
 
   const isGpspos = resolvedProvider === 'gpspos';
   const isG365 = resolvedProvider === 'g365';
+  const isXexun = resolvedProvider === 'xexun';
+  const showQuickActions =
+    (isG365 && commandsAvailable) ||
+    (isGpspos && isGpsposSyncAvailable()) ||
+    (isXexun && commandsAvailable);
   const activePlan = useMemo(
     () => findBatteryPlan(uploadSeconds, statusMinutes),
     [uploadSeconds, statusMinutes]
@@ -219,6 +227,65 @@ export default function TrackDevicePanel({ imei, petName = '', provider = null }
       return fetched.provider;
     }
     return null;
+  }
+
+  async function handleGpsLocate() {
+    if (isGpspos) {
+      await handleGpsposSync();
+      return;
+    }
+    await runCommand(async () => {
+      if (isG365) {
+        await requestG365ManualPosition(imei, 'gps');
+        setStatus(t('trackingPage.devicePanelG365LocateSent'));
+        return;
+      }
+      if (isXexun) {
+        await applyTrackingModePreset(imei, 'gps_priority');
+        setStatus(t('trackingPage.devicePanelXexunLocateSent'));
+      }
+    });
+  }
+
+  async function handleWifiLocate() {
+    if (isGpspos) {
+      setError('');
+      setStatus('');
+      if (!imei?.trim()) {
+        setError(t('trackingPage.devicePanelNeedImei'));
+        return;
+      }
+      if (!isGpsposSyncAvailable()) {
+        setError(t('trackingPage.devicePanelNoApi'));
+        return;
+      }
+      setBusy(true);
+      try {
+        await syncGpsposPosition(imei);
+        setStatus(t('trackingPage.devicePanelGpsposWifiLocateSent'));
+      } catch (err) {
+        setError(commandErrorMessage(err, t));
+      } finally {
+        setBusy(false);
+      }
+      return;
+    }
+    await runCommand(async () => {
+      if (isG365) {
+        await requestG365ManualPosition(imei, 'wifi');
+        setStatus(t('trackingPage.devicePanelG365WifiLocateSent'));
+        return;
+      }
+      if (isXexun) {
+        await applyTrackingModePreset(imei, 'wifi_priority');
+        const networks = loadWifiNetworks(imei);
+        const bssids = networks.map((n) => n.bssid).filter(Boolean);
+        if (bssids.length) {
+          await applyWifiBssids(imei, bssids);
+        }
+        setStatus(t('trackingPage.devicePanelXexunWifiLocateSent'));
+      }
+    });
   }
 
   async function handleGpsposSync() {
@@ -346,80 +413,50 @@ export default function TrackDevicePanel({ imei, petName = '', provider = null }
           </div>
         ) : null}
 
-        {isG365 ? (
+        {showQuickActions ? (
           <fieldset className="pp-trackDeviceG365Group">
             <legend className="pp-trackDeviceModes__legend">{t('trackingPage.devicePanelQuickLegend')}</legend>
             <div className="pp-trackDeviceG365Actions">
               <button
                 type="button"
                 className="pp-btn pp-btn--ghost"
-                disabled={busy || !imei?.trim() || !commandsAvailable}
-                onClick={() =>
-                  void runCommand(async () => {
-                    await requestG365ManualPosition(imei, 'gps');
-                    setStatus(t('trackingPage.devicePanelG365LocateSent'));
-                  })
-                }
+                disabled={busy || !imei?.trim()}
+                onClick={() => void handleGpsLocate()}
               >
-                {t('trackingPage.devicePanelG365Locate')}
+                {isGpspos && busy
+                  ? t('trackingPage.devicePanelGpsposSyncing')
+                  : t('trackingPage.devicePanelG365Locate')}
               </button>
               <button
                 type="button"
                 className="pp-btn pp-btn--ghost"
-                disabled={busy || !imei?.trim() || !commandsAvailable}
-                onClick={() =>
-                  void runCommand(async () => {
-                    await requestG365ManualPosition(imei, 'wifi');
-                    setStatus(t('trackingPage.devicePanelG365WifiLocateSent'));
-                  })
-                }
+                disabled={busy || !imei?.trim()}
+                onClick={() => void handleWifiLocate()}
               >
                 {t('trackingPage.devicePanelG365WifiLocate')}
               </button>
-              <button
-                type="button"
-                className="pp-btn pp-btn--ghost"
-                disabled={busy || !imei?.trim() || !commandsAvailable}
-                onClick={() =>
-                  void runCommand(async () => {
-                    await startG365Find(imei);
-                    setStatus(t('trackingPage.devicePanelG365FindSent'));
-                  })
-                }
-              >
-                {t('trackingPage.devicePanelG365Find')}
-              </button>
+              {isG365 ? (
+                <button
+                  type="button"
+                  className="pp-btn pp-btn--ghost"
+                  disabled={busy || !imei?.trim() || !commandsAvailable}
+                  onClick={() =>
+                    void runCommand(async () => {
+                      await startG365Find(imei);
+                      setStatus(t('trackingPage.devicePanelG365FindSent'));
+                    })
+                  }
+                >
+                  {t('trackingPage.devicePanelG365Find')}
+                </button>
+              ) : null}
             </div>
-          </fieldset>
-        ) : null}
-
-        {isGpspos ? (
-          <fieldset className="pp-trackDeviceG365Group">
-            <legend className="pp-trackDeviceModes__legend">{t('trackingPage.devicePanelQuickLegend')}</legend>
-            <div className="pp-trackDeviceG365Actions">
-              <button
-                type="button"
-                className="pp-btn pp-btn--ghost"
-                disabled={busy || !imei?.trim() || !isGpsposSyncAvailable()}
-                onClick={() => void handleGpsposSync()}
-              >
-                {busy ? t('trackingPage.devicePanelGpsposSyncing') : t('trackingPage.devicePanelG365Locate')}
-              </button>
-              <button
-                type="button"
-                className="pp-btn pp-btn--ghost"
-                disabled={busy || !imei?.trim() || !isGpsposSyncAvailable()}
-                onClick={() =>
-                  void runCommand(async () => {
-                    await syncGpsposPosition(imei);
-                    setStatus(t('trackingPage.devicePanelGpsposWifiLocateSent'));
-                  })
-                }
-              >
-                {t('trackingPage.devicePanelG365WifiLocate')}
-              </button>
-            </div>
-            <p className="pp-subtle pp-trackDevicePanel__foot">{t('trackingPage.devicePanelGpsposWifiHint')}</p>
+            {isGpspos ? (
+              <p className="pp-subtle pp-trackDevicePanel__foot">{t('trackingPage.devicePanelGpsposWifiHint')}</p>
+            ) : null}
+            {isXexun ? (
+              <p className="pp-subtle pp-trackDevicePanel__foot">{t('trackingPage.devicePanelXexunWifiHint')}</p>
+            ) : null}
           </fieldset>
         ) : null}
       </form>

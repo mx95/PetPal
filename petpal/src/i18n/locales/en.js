@@ -1047,6 +1047,9 @@ const en = {
     devicePanelGpsposSynced: 'Location updated from the cloud. Check the Live tab.',
     devicePanelGpsposWifiLocateSent: 'Cloud refresh done — if the collar used Wi‑Fi, the map will show a Wi‑Fi fix.',
     devicePanelGpsposWifiHint: 'Indoors, the collar often reports Wi‑Fi scans to the cloud. Use Wi‑Fi locate to pull the latest fix.',
+    devicePanelXexunLocateSent: 'GPS priority mode sent — check the Live map on the next collar upload.',
+    devicePanelXexunWifiLocateSent: 'Wi‑Fi priority mode sent — the collar will use home Wi‑Fi when in range. Check Live within a minute.',
+    devicePanelXexunWifiHint: 'Add your router Wi‑Fi (BSSID) under home Wi‑Fi on the Live tab so the collar can match indoors.',
     devicePanelGpsposFoot:
       'This collar syncs from the gpspos cloud. Tap refresh anytime, or ask your admin to enable automatic polling.',
     devicePanelGpsposPollActive: 'Server polls the cloud every {interval}.',

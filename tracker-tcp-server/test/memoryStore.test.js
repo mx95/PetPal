@@ -34,6 +34,21 @@ test("memory store — 365GPS status battery preserved on charging event", () =>
   assert.equal(payload.error, undefined);
 });
 
+test("memory store — 365GPS status 0x13 clears stale charging flag", () => {
+  const { createMemoryStore } = require("../src/store/memory");
+  const { parseG365Packet } = require("../src/protocol/g365");
+  const store = createMemoryStore();
+  const imei = "861261021001678";
+  const chargingParsed = parseG365Packet(Buffer.from("787801820D0A", "hex"), imei);
+  store.upsert(imei, { ...chargingParsed, imei, provider: "g365", receivedAt: new Date().toISOString() });
+  assert.equal(store.get(imei).charging, true);
+
+  const statusFrame = Buffer.from("78781613500803006100000000000014F1018FEC0B0906242B0D0A", "hex");
+  const statusParsed = parseG365Packet(statusFrame, imei);
+  store.upsert(imei, { ...statusParsed, imei, provider: "g365", receivedAt: new Date().toISOString() });
+  assert.equal(store.get(imei).charging, false);
+});
+
 test("memory store — 365GPS charging disconnect clears flag", () => {
   const store = createMemoryStore();
   const imei = "861991080050311";

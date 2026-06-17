@@ -68,10 +68,10 @@ function batteryFromTeState(nTEState) {
   return byte3 >= 0 && byte3 <= 100 ? byte3 : null;
 }
 
-/** GPSPOS API: nTEState byte2 bit6 (0x4000) = external power / charger connected. */
+/** GPSPOS cloud API does not expose a reliable charger flag on nTEState (0x4000 matches byte1=0x40 on most online units). */
 function chargingFromTeState(nTEState) {
-  if (!Number.isFinite(nTEState)) return null;
-  return (nTEState & 0x4000) !== 0;
+  void nTEState;
+  return null;
 }
 
 /** True when gpspos platform reports GPRS/cellular link (may differ from last GPS fix time). */

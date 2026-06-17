@@ -73,6 +73,8 @@ Live/history maps use `/api/app/position` and `/api/app/history` like other devi
 
 Position invalid when `nTEState & 0x80`. Coordinates are WGS84 degrees; some maps in China apply extra correction.
 
+Charging status is **not** shown for GPSPOS cloud collars — the platform `nTEState` field does not expose a reliable external-power bit for these devices. Use the collar LED or manufacturer app for charge state.
+
 ## 6. Troubleshooting
 
 | Symptom | Check |
