@@ -33,6 +33,15 @@ const PERSIST_TO_SQLITE = String(process.env.PERSIST_TO_SQLITE || "1") !== "0";
 const store = PERSIST_TO_SQLITE ? createSqliteStore({ dbPath: SQLITE_PATH }) : createMemoryStore();
 if (PERSIST_TO_SQLITE) {
   console.log(`[db] SQLite enabled at ${store.sqlitePath}`);
+  try {
+    const { purgeFlippedLatitudePositions } = require("../scripts/purge-flipped-latitude-positions");
+    const { deleted, byImei } = purgeFlippedLatitudePositions(store.sqlitePath);
+    if (deleted > 0) {
+      console.log(`[db] Purged ${deleted} sign-flipped latitude row(s):`, byImei);
+    }
+  } catch (err) {
+    console.warn("[db] Flipped-latitude purge skipped:", err.message || err);
+  }
   if (typeof store.countPositions === "function") {
     const n = store.countPositions();
     console.log(`[db] ${n} position rows on disk (persists across pm2 restart)`);

@@ -141,6 +141,11 @@ if ! command -v pm2 >/dev/null 2>&1; then
   die "pm2 not found — install with: npm i -g pm2"
 fi
 
+if [ -f "$TRACKER_DIR/scripts/purge-flipped-latitude-positions.js" ]; then
+  log "Purging sign-flipped southern-latitude history rows"
+  (cd "$TRACKER_DIR" && SQLITE_PATH="$TRACKER_DB" node scripts/purge-flipped-latitude-positions.js)
+fi
+
 log "Starting pm2:$PM2_APP from ecosystem.config.cjs (DB: $TRACKER_DB)"
 cd "$TRACKER_DIR"
 # reload alone can keep stale SQLITE_PATH — delete+start ensures ecosystem env is applied
@@ -164,12 +169,4 @@ fi
 
 positions_after="$(count_positions "$TRACKER_DB")"
 log "Deploy OK — tracker DB: $TRACKER_DB ($positions_after position rows)"
-
-if [ -f "$TRACKER_DIR/scripts/purge-flipped-latitude-positions.js" ]; then
-  log "Purging sign-flipped southern-latitude history rows"
-  SQLITE_PATH="$TRACKER_DB" node "$TRACKER_DIR/scripts/purge-flipped-latitude-positions.js" || true
-  positions_after="$(count_positions "$TRACKER_DB")"
-  log "Tracker DB after purge: $positions_after position rows"
-fi
-
 log "Tip: hard-refresh the browser (Ctrl+F5) to load the new JS bundle."
