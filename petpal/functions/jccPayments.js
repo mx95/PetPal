@@ -139,21 +139,27 @@ function nextRenewalDate(from, sku) {
 }
 
 async function grantTrackerEntitlement(db, uid, orderNumber, sourceSku) {
-  await db
-    .collection('users')
-    .doc(uid)
-    .collection('shopEntitlements')
-    .doc('collar')
-    .set(
+  const ref = db.collection('users').doc(uid).collection('shopEntitlements').doc('collar');
+  await db.runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    const cur = snap.data() || {};
+    const prevQty = Number(cur.quantity);
+    const baseQty =
+      Number.isFinite(prevQty) && prevQty > 0 ? prevQty : cur.status === 'active' ? 1 : 0;
+    tx.set(
+      ref,
       {
         status: 'active',
+        quantity: baseQty + 1,
         sku: 'TRACKER_HARDWARE',
         sourceSku,
         purchasedAt: admin.firestore.FieldValue.serverTimestamp(),
+        lastPurchaseAt: admin.firestore.FieldValue.serverTimestamp(),
         sessionOrderNumber: orderNumber,
       },
       { merge: true }
     );
+  });
   await incrementShopPublicStats(db, { totalCollarPurchases: 1 });
 }
 

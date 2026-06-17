@@ -62,7 +62,7 @@ export const SHOP_PRODUCTS = [
   {
     id: 'TRACKER_HARDWARE',
     title: 'GPS tracker',
-    subtitle: 'One PetPal GPS tracker — no subscription required to order.',
+    subtitle: 'One GPS tracker device. Live tracking needs PetPal Plus — use monthly plan + tracker add-on.',
     amountCents: TRACKER_ADDON_CENTS,
     currency: '978',
     recurring: false,

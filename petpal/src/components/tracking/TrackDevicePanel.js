@@ -15,6 +15,7 @@ import {
   syncGpsposPosition,
 } from '../../tracking/gpsposCommandClient';
 import { fetchDeviceMeta, normalizeProvider } from '../../tracking/deviceMetaClient';
+import { loadDevicePlan, saveDevicePlan } from '../../tracking/devicePlanStorage';
 import TrackDeviceAdvanced from './TrackDeviceAdvanced';
 
 /** User-facing plans — maps to upload + status intervals on 365GPS collars. */
@@ -70,6 +71,13 @@ function BatteryUseMeter({ tier, label }) {
   );
 }
 
+function applyBatteryPlanToState(plan, setters) {
+  if (!plan) return;
+  setters.setPlanId(plan.id);
+  setters.setUploadSeconds(plan.uploadSeconds);
+  setters.setStatusMinutes(plan.statusMinutes);
+}
+
 /**
  * @param {{ imei: string, petName?: string, provider?: string|null }} props
  */
@@ -93,6 +101,10 @@ export default function TrackDevicePanel({ imei, petName = '', provider = null }
     () => findBatteryPlan(uploadSeconds, statusMinutes),
     [uploadSeconds, statusMinutes]
   );
+
+  function applyBatteryPlanState(plan) {
+    applyBatteryPlanToState(plan, { setPlanId, setUploadSeconds, setStatusMinutes });
+  }
 
   useEffect(() => {
     setResolvedProvider(propProvider);
@@ -123,28 +135,57 @@ export default function TrackDevicePanel({ imei, petName = '', provider = null }
   }, [isGpspos, imei]);
 
   useEffect(() => {
-    if (!isGpspos || !deviceConfig?.gpsposPollIntervalSec) return;
-    const plan = findBatteryPlanByUpload(deviceConfig.gpsposPollIntervalSec);
-    if (!plan) return;
-    setPlanId(plan.id);
-    setUploadSeconds(plan.uploadSeconds);
-    setStatusMinutes(plan.statusMinutes);
-  }, [isGpspos, deviceConfig?.gpsposPollIntervalSec]);
-
-  useEffect(() => {
-    setPlanId('balanced');
-    setUploadSeconds(300);
-    setStatusMinutes(5);
+    if (!imei?.trim()) return;
     setStatus('');
     setError('');
-  }, [imei, resolvedProvider]);
+
+    const stored = loadDevicePlan(imei);
+    if (stored) {
+      const plan = BATTERY_PLANS.find((p) => p.id === stored.planId) || findBatteryPlan(stored.uploadSeconds, stored.statusMinutes);
+      if (plan) applyBatteryPlanState(plan);
+      else {
+        setPlanId(stored.planId);
+        setUploadSeconds(stored.uploadSeconds);
+        setStatusMinutes(stored.statusMinutes);
+      }
+    } else {
+      applyBatteryPlanState(BATTERY_PLANS.find((p) => p.id === 'balanced'));
+    }
+
+    let cancelled = false;
+    void fetchDeviceMeta(imei).then((meta) => {
+      if (cancelled || !meta) return;
+      if (meta.provider) setResolvedProvider(meta.provider);
+      if (meta.deviceConfig) setDeviceConfig(meta.deviceConfig);
+      const pollSec = meta.deviceConfig?.gpsposPollIntervalSec;
+      if (pollSec) {
+        const serverPlan = findBatteryPlanByUpload(pollSec);
+        if (serverPlan) {
+          applyBatteryPlanState(serverPlan);
+          saveDevicePlan(imei, {
+            planId: serverPlan.id,
+            uploadSeconds: serverPlan.uploadSeconds,
+            statusMinutes: serverPlan.statusMinutes,
+          });
+        }
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [imei]);
 
   function selectBatteryPlan(id) {
     const plan = BATTERY_PLANS.find((p) => p.id === id);
     if (!plan) return;
-    setPlanId(id);
-    setUploadSeconds(plan.uploadSeconds);
-    setStatusMinutes(plan.statusMinutes);
+    applyBatteryPlanState(plan);
+    if (imei?.trim()) {
+      saveDevicePlan(imei, {
+        planId: plan.id,
+        uploadSeconds: plan.uploadSeconds,
+        statusMinutes: plan.statusMinutes,
+      });
+    }
   }
 
   async function runCommand(fn) {
@@ -192,6 +233,11 @@ export default function TrackDevicePanel({ imei, petName = '', provider = null }
     await runCommand(async () => {
       const collarProvider = await resolveProviderForSave();
       const selectedPlanId = activePlan?.id ?? planId;
+      const planSnapshot = {
+        planId: selectedPlanId,
+        uploadSeconds,
+        statusMinutes,
+      };
       if (collarProvider === 'gpspos') {
         await saveGpsposBatteryPlan(imei, {
           planId: selectedPlanId,
@@ -200,6 +246,7 @@ export default function TrackDevicePanel({ imei, petName = '', provider = null }
         await syncGpsposPosition(imei);
         const meta = await fetchDeviceMeta(imei);
         if (meta?.deviceConfig) setDeviceConfig(meta.deviceConfig);
+        saveDevicePlan(imei, planSnapshot);
         setStatus(t('trackingPage.devicePanelGpsposSynced'));
         return;
       }
@@ -210,6 +257,7 @@ export default function TrackDevicePanel({ imei, petName = '', provider = null }
       }
       await setG365UploadInterval(imei, uploadSeconds);
       await setG365StatusInterval(imei, statusMinutes);
+      saveDevicePlan(imei, planSnapshot);
       setStatus(t('trackingPage.devicePanelPresetSaved'));
     });
   }
