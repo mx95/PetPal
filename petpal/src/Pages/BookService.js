@@ -24,7 +24,16 @@ import {
   resolveCatalogServiceId,
 } from '../bookings/bookingCatalog';
 import { BookingSchedulePicker } from '../bookings/components/BookingSchedulePicker';
-import { isFirebaseConfigured } from '../firebase';
+import {
+  buildAddonsSnapshot,
+  formatCombinedPrice,
+  getCatalogAddons,
+  resolveAddonsByIds,
+  sumAddonDuration,
+} from '../bookings/bookingAddons';
+import { isFirebaseConfigured, getDb } from '../firebase';
+import { doc, getDoc } from 'firebase/firestore';
+import { sendBookingConfirmationEmail } from '../bookings/sendBookingEmail';
 import { formatTime24 } from '../formatTime24';
 import { categoryEmoji } from '../pets/petCategories';
 import { subscribePets } from '../pets/petsFirestore';
@@ -42,6 +51,53 @@ function saveLocalBooking(row) {
 
 function isCatalogSlotId(slotId) {
   return String(slotId || '').startsWith('slot_');
+}
+
+async function resolveBusinessEmail(companyId, catalogProvider) {
+  if (catalogProvider?.email) return String(catalogProvider.email).trim();
+  if (!isFirebaseConfigured()) return '';
+  try {
+    const snap = await getDoc(doc(getDb(), 'companies', companyId));
+    if (snap.exists()) return String(snap.data()?.publicEmail || '').trim();
+  } catch {
+    /* ignore */
+  }
+  return '';
+}
+
+async function notifyBookingByEmail({
+  user,
+  bookingId,
+  companyId,
+  catalogProvider,
+  providerName,
+  providerAddress,
+  serviceName,
+  resolvedDuration,
+  resolvedPrice,
+  selectedAddons,
+  slot,
+  pet,
+  t,
+}) {
+  const customerEmail = String(user?.email || '').trim();
+  if (!customerEmail) return;
+  const businessEmail = await resolveBusinessEmail(companyId, catalogProvider);
+  const whenIso =
+    slot?.startAtIso || slot?.startAt?.toDate?.()?.toISOString?.() || new Date().toISOString();
+  void sendBookingConfirmationEmail({
+    bookingId,
+    customerEmail,
+    businessEmail,
+    providerName,
+    serviceName,
+    petName: pet?.name || 'Pet',
+    whenIso,
+    durationMin: resolvedDuration,
+    price: resolvedPrice || '',
+    address: providerAddress || '',
+    addons: (selectedAddons || []).map((a) => t(a.nameKey)),
+  });
 }
 
 function toLocalInputValue(d) {
@@ -172,6 +228,7 @@ export default function BookService({ embedded = false }) {
   const [petId, setPetId] = useState('');
   const [service, setService] = useState(null);
   const [variantId, setVariantId] = useState('');
+  const [selectedAddonIds, setSelectedAddonIds] = useState([]);
   const [stepIndex, setStepIndex] = useState(0);
   const [slots, setSlots] = useState([]);
   const [slotId, setSlotId] = useState('');
@@ -189,31 +246,46 @@ export default function BookService({ embedded = false }) {
 
   const coatVariants = useMemo(() => resolveServiceVariants(service), [service]);
   const showCoatStep = coatVariants.length > 0 && isCoatVariantService(service);
-  const wizardSteps = useMemo(
-    () =>
-      showCoatStep
-        ? [
-            t('bookConfirm.stepPet'),
-            t('bookConfirm.stepCoat'),
-            t('bookConfirm.stepSchedule'),
-            t('bookConfirm.stepReview'),
-          ]
-        : [t('bookConfirm.stepPet'), t('bookConfirm.stepSchedule'), t('bookConfirm.stepReview')],
-    [showCoatStep, t]
+  const addonOptions = useMemo(() => getCatalogAddons(companyId), [companyId]);
+  const showServicesStep = addonOptions.length > 0;
+  const selectedAddons = useMemo(
+    () => resolveAddonsByIds(companyId, selectedAddonIds),
+    [companyId, selectedAddonIds]
   );
 
-  const stepKey = showCoatStep
-    ? (['pet', 'coat', 'schedule', 'review'][stepIndex] || 'pet')
-    : (['pet', 'schedule', 'review'][stepIndex] || 'pet');
+  const stepKeys = useMemo(() => {
+    const keys = ['pet'];
+    if (showServicesStep) keys.push('services');
+    if (showCoatStep) keys.push('coat');
+    keys.push('schedule', 'review');
+    return keys;
+  }, [showServicesStep, showCoatStep]);
 
-  const resolvedDuration = useMemo(
+  const wizardSteps = useMemo(
+    () =>
+      stepKeys.map((key) => {
+        if (key === 'pet') return t('bookConfirm.stepPet');
+        if (key === 'services') return t('bookConfirm.stepServices');
+        if (key === 'coat') return t('bookConfirm.stepCoat');
+        if (key === 'schedule') return t('bookConfirm.stepSchedule');
+        return t('bookConfirm.stepReview');
+      }),
+    [stepKeys, t]
+  );
+
+  const stepKey = stepKeys[stepIndex] || 'pet';
+
+  const baseDuration = useMemo(
     () => resolveBookingDuration(service, variantId),
     [service, variantId]
   );
-  const resolvedPrice = useMemo(
-    () => resolveBookingPrice(service, variantId),
-    [service, variantId]
-  );
+  const addonDuration = useMemo(() => sumAddonDuration(selectedAddons), [selectedAddons]);
+  const resolvedDuration = baseDuration + addonDuration;
+  const resolvedPrice = useMemo(() => {
+    const variantPrice = resolveBookingPrice(service, variantId);
+    const parts = [variantPrice || service?.price, ...selectedAddons.map((a) => a.price)].filter(Boolean);
+    return formatCombinedPrice(...parts);
+  }, [service, variantId, selectedAddons]);
 
   useEffect(() => subscribePets(uid, setPets), [uid]);
 
@@ -369,8 +441,15 @@ export default function BookService({ embedded = false }) {
   const providerAddress = routeState?.providerAddress || catalogProvider?.address || '';
   const serviceName = service?.name || routeState?.serviceName || t('bookConfirm.serviceFallback');
 
+  function toggleAddon(addonId) {
+    setSelectedAddonIds((prev) =>
+      prev.includes(addonId) ? prev.filter((id) => id !== addonId) : [...prev, addonId]
+    );
+  }
+
   function canProceed() {
     if (stepKey === 'pet') return Boolean(petId);
+    if (stepKey === 'services') return selectedAddonIds.length > 0;
     if (stepKey === 'coat') return Boolean(variantId);
     if (stepKey === 'schedule') return Boolean(slotId);
     return true;
@@ -392,12 +471,14 @@ export default function BookService({ embedded = false }) {
       const pet = selectedPet;
       const slot = slots.find((s) => s.id === slotId) || null;
       const variantSnapshot = buildVariantSnapshot(service, variantId, t);
+      const addonsSnapshot = buildAddonsSnapshot(selectedAddons, t);
       const serviceSnapshot = service
         ? {
             name: service.name,
             type: service.type || null,
             durationMin: resolvedDuration,
             price: resolvedPrice || null,
+            addons: addonsSnapshot,
           }
         : null;
 
@@ -417,6 +498,7 @@ export default function BookService({ embedded = false }) {
           petSnapshot: { name: pet?.name || '', categoryId: pet?.categoryId || 'dog' },
           variantId: variantId || null,
           variantSnapshot,
+          addonsSnapshot,
           serviceSnapshot,
           providerName,
           providerAddress,
@@ -432,6 +514,21 @@ export default function BookService({ embedded = false }) {
         };
         saveLocalBooking(row);
         setConfirmedBooking(row);
+        void notifyBookingByEmail({
+          user,
+          bookingId,
+          companyId,
+          catalogProvider,
+          providerName,
+          providerAddress,
+          serviceName,
+          resolvedDuration,
+          resolvedPrice,
+          selectedAddons,
+          slot,
+          pet,
+          t,
+        });
         setBusy(false);
         return;
       }
@@ -445,6 +542,7 @@ export default function BookService({ embedded = false }) {
         petSnapshot: { name: pet?.name || '', categoryId: pet?.categoryId || 'dog' },
         variantId: variantId || null,
         variantSnapshot,
+        addonsSnapshot,
         serviceSnapshot,
       });
       setConfirmedBooking({
@@ -458,6 +556,7 @@ export default function BookService({ embedded = false }) {
         petSnapshot: { name: pet?.name || 'Pet', categoryId: pet?.categoryId || 'dog' },
         variantId: variantId || null,
         variantSnapshot,
+        addonsSnapshot,
         serviceSnapshot,
         providerName,
         providerAddress,
@@ -469,6 +568,21 @@ export default function BookService({ embedded = false }) {
         startAtIso: slot?.startAtIso || slot?.startAt?.toDate?.()?.toISOString?.(),
         endAtIso: slot?.endAtIso || slot?.endAt?.toDate?.()?.toISOString?.(),
         status: 'booked',
+      });
+      void notifyBookingByEmail({
+        user,
+        bookingId,
+        companyId,
+        catalogProvider,
+        providerName,
+        providerAddress,
+        serviceName,
+        resolvedDuration,
+        resolvedPrice,
+        selectedAddons,
+        slot,
+        pet,
+        t,
       });
       setBusy(false);
     } catch (e) {
@@ -507,9 +621,9 @@ export default function BookService({ embedded = false }) {
         <h1 className="pp-bookConfirmPage__title">
           {confirmedBooking ? t('bookConfirm.successTitle') : t('bookConfirm.title')}
         </h1>
-        <p className="pp-bookConfirmPage__lead">
-          {confirmedBooking ? t('bookConfirm.successLead') : t('bookConfirm.subtitle')}
-        </p>
+        {confirmedBooking ? (
+          <p className="pp-bookConfirmPage__lead">{t('bookConfirm.successLead')}</p>
+        ) : null}
         {!confirmedBooking ? (
           <p className="pp-bookConfirmPage__serviceLine">
             <strong>{serviceName}</strong>
@@ -543,6 +657,16 @@ export default function BookService({ embedded = false }) {
                 <div className="pp-bookConfirmPass__row">
                   <dt>{t('bookConfirm.variantLabel')}</dt>
                   <dd>{confirmedBooking.variantSnapshot.label}</dd>
+                </div>
+              ) : null}
+              {confirmedBooking.addonsSnapshot?.length || confirmedBooking.serviceSnapshot?.addons?.length ? (
+                <div className="pp-bookConfirmPass__row">
+                  <dt>{t('bookConfirm.addonsLabel')}</dt>
+                  <dd>
+                    {(confirmedBooking.addonsSnapshot || confirmedBooking.serviceSnapshot?.addons || [])
+                      .map((a) => a.name)
+                      .join(', ')}
+                  </dd>
                 </div>
               ) : null}
               <div className="pp-bookConfirmPass__row">
@@ -653,6 +777,42 @@ export default function BookService({ embedded = false }) {
               </>
             ) : null}
 
+            {stepKey === 'services' ? (
+              <>
+                <h2 className="pp-bookWizardPanel__title">{t('bookConfirm.servicesStepTitle')}</h2>
+                <p className="pp-bookWizardPanel__lead">{t('bookConfirm.servicesStepLead')}</p>
+                <ul className="pp-bookAddonPick">
+                  {addonOptions.map((addon) => {
+                    const active = selectedAddonIds.includes(addon.id);
+                    return (
+                      <li key={addon.id}>
+                        <button
+                          type="button"
+                          className={`pp-bookAddonPick__card${active ? ' is-active' : ''}`}
+                          aria-pressed={active}
+                          onClick={() => toggleAddon(addon.id)}
+                        >
+                          <span className="pp-bookAddonPick__emoji" aria-hidden>
+                            {addon.emoji || '✓'}
+                          </span>
+                          <span className="pp-bookAddonPick__body">
+                            <span className="pp-bookAddonPick__name">{t(addon.nameKey)}</span>
+                            <span className="pp-bookAddonPick__meta">
+                              {t('bookConfirm.mins', { n: addon.durationMin })}
+                              {addon.price ? ` · ${addon.price}` : ''}
+                            </span>
+                          </span>
+                          <span className="pp-bookAddonPick__check" aria-hidden>
+                            {active ? '✓' : ''}
+                          </span>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </>
+            ) : null}
+
             {stepKey === 'coat' ? (
               <>
                 <h2 className="pp-bookWizardPanel__title">{t('bookConfirm.coatStepTitle')}</h2>
@@ -688,12 +848,15 @@ export default function BookService({ embedded = false }) {
                     ? t('bookConfirm.scheduleStepLead', { pet: selectedPet.name })
                     : t('bookConfirm.scheduleStepLeadGeneric')}
                 </p>
-                {selectedVariant ? (
+                {selectedVariant || selectedAddons.length ? (
                   <p className="pp-bookWizardPanel__hint">
-                    {t('bookConfirm.scheduleDurationHint', {
-                      variant: t(selectedVariant.labelKey),
-                      mins: resolvedDuration,
-                    })}
+                    {selectedVariant ? `${t(selectedVariant.labelKey)} coat` : null}
+                    {selectedVariant && selectedAddons.length ? ' · ' : null}
+                    {selectedAddons.length
+                      ? selectedAddons.map((a) => t(a.nameKey)).join(', ')
+                      : null}
+                    {' · '}
+                    {t('bookConfirm.scheduleDurationHintMins', { mins: resolvedDuration })}
                   </p>
                 ) : null}
                 <BookingSchedulePicker
@@ -725,6 +888,12 @@ export default function BookService({ embedded = false }) {
                     <dt>{t('bookConfirm.serviceLabel')}</dt>
                     <dd>{serviceName}</dd>
                   </div>
+                  {selectedAddons.length ? (
+                    <div className="pp-bookReviewRows__row">
+                      <dt>{t('bookConfirm.addonsLabel')}</dt>
+                      <dd>{selectedAddons.map((a) => t(a.nameKey)).join(', ')}</dd>
+                    </div>
+                  ) : null}
                   {selectedVariant ? (
                     <div className="pp-bookReviewRows__row">
                       <dt>{t('bookConfirm.variantLabel')}</dt>

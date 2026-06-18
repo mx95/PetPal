@@ -3,19 +3,16 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
 import { useI18n } from '../i18n/I18nContext';
 import { useGame } from '../game/GameContext';
-import PetAvatar from '../components/PetAvatar';
 import PetCard from '../components/PetCard';
 import HubLeaderboardPeek from '../components/HubLeaderboardPeek';
 import { usePets } from '../pets/PetsContext';
-import { MAX_PHOTOS_PER_WALK_SESSION } from '../walk/walkPhotos';
 import { walkStreakDays, kmTodayForPetFromSessions, latestWalkSessionForPet } from '../walk/walkStats';
-import { useSuggestedWalks } from '../walk/useSuggestedWalks';
-import { formatTime24 } from '../formatTime24';
+import { useAutoGpsWalks } from '../walk/useAutoGpsWalks';
+import { MAX_PHOTOS_PER_WALK_SESSION } from '../walk/walkPhotos';
 import LifetimeAchievements from '../components/LifetimeAchievements';
 import { formatDateTime24 } from '../formatTime24';
 
 const WEEKLY_GOAL_KM = 18;
-const DAILY_MISSIONS_HUB = 3;
 
 function km(n) {
   return `${Number(n || 0).toFixed(1)} km`;
@@ -41,7 +38,6 @@ export default function Dashboard() {
     walkSessions,
     walkTotals,
     addWalkKm,
-    dismissSuggestedWalk,
     dismissedGpsWalkKeys,
     latestWalk,
     addPhotosToLatestWalk,
@@ -55,7 +51,6 @@ export default function Dashboard() {
   const [walkInput, setWalkInput] = useState('');
   const [walkLogBusy, setWalkLogBusy] = useState(false);
   const [walkPhotoMsg, setWalkPhotoMsg] = useState('');
-  const [suggestionBusyKey, setSuggestionBusyKey] = useState('');
   const [petIdx, setPetIdx] = useState(0);
   const carouselRef = useRef(null);
   const scrollSyncRaf = useRef(null);
@@ -127,8 +122,29 @@ export default function Dashboard() {
     [walkSessions, pet?.id, petsCount, walkTotals.day]
   );
 
+  const trackerDeviceId = pet?.trackingDeviceId?.trim?.() || '';
+  const {
+    gpsTodayKm,
+    gpsWeekKm,
+    autoLoggedToday,
+    loading: gpsMetricsLoading,
+    error: gpsMetricsError,
+    refresh: refreshGpsMetrics,
+  } = useAutoGpsWalks({
+    deviceId: trackerDeviceId,
+    petId: pet?.id,
+    walkSessions,
+    dismissedGpsWalkKeys,
+    addWalkKm,
+  });
+
+  const displayTodayKm = trackerDeviceId ? Math.max(todayKm, gpsTodayKm) : todayKm;
+  const displayWeekKm = trackerDeviceId ? Math.max(walkTotals.week || 0, gpsWeekKm) : walkTotals.week || 0;
+  const weeklyPct = Math.min(100, Math.round((Math.max(0, displayWeekKm) / WEEKLY_GOAL_KM) * 100));
+  const levelPct = Math.max(2, Math.min(100, (levelXp / Math.max(1, nextMax)) * 100));
+
   const statusKey =
-    todayKm > 0
+    displayTodayKm > 0
       ? 'active'
       : streakDays > 0 && latestWalkPet?.createdAt
         ? 'lastSeen'
@@ -137,44 +153,10 @@ export default function Dashboard() {
           : 'noWalkToday';
   const statusValue =
     statusKey === 'active'
-      ? `${(Math.round(todayKm * 10) / 10).toFixed(1)} km`
+      ? `${(Math.round(displayTodayKm * 10) / 10).toFixed(1)} km`
       : statusKey === 'lastSeen' && latestWalkPet?.createdAt
         ? formatDateTime24(new Date(latestWalkPet.createdAt), language)
         : '';
-
-  const weeklyPct = Math.min(100, Math.round((Math.max(0, walkTotals.week) / WEEKLY_GOAL_KM) * 100));
-  const levelPct = Math.max(2, Math.min(100, (levelXp / Math.max(1, nextMax)) * 100));
-
-  const trackerDeviceId = pet?.trackingDeviceId?.trim?.() || '';
-  const { suggestions: suggestedWalks, loading: suggestionsLoading, error: suggestionsError, refresh: refreshSuggestions } =
-    useSuggestedWalks({
-      deviceId: trackerDeviceId,
-      petId: pet?.id,
-      walkSessions,
-      dismissedGpsWalkKeys,
-    });
-
-  const onAcceptSuggestion = async (s) => {
-    if (!s?.gpsKey || suggestionBusyKey) return;
-    setWalkPhotoMsg('');
-    setSuggestionBusyKey(s.gpsKey);
-    try {
-      const ok = await addWalkKm(s.distanceKm, null, pet?.id, {
-        source: 'gps',
-        gpsKey: s.gpsKey,
-        startedAt: s.startAt,
-        endedAt: s.endAt,
-      });
-      if (ok) setWalkPhotoMsg(t('activityHub.suggestedWalkLogged', { km: s.distanceKm.toFixed(1) }));
-    } finally {
-      setSuggestionBusyKey('');
-    }
-  };
-
-  const onDismissSuggestion = (s) => {
-    if (!s?.gpsKey) return;
-    dismissSuggestedWalk(s.gpsKey);
-  };
 
   const onLogWalk = async (e) => {
     e.preventDefault();
@@ -215,13 +197,10 @@ export default function Dashboard() {
     }
   };
 
-  const dailyPrimary = useMemo(() => DAILY_MISSIONS.slice(0, DAILY_MISSIONS_HUB), [DAILY_MISSIONS]);
-  const dailyExtra = useMemo(() => DAILY_MISSIONS.slice(DAILY_MISSIONS_HUB), [DAILY_MISSIONS]);
-
   const renderMission = (m) => {
     const done = isDailyDone(m.id);
     const needKm = m.minWalkKmToday;
-    const dayKm = walkTotals.day;
+    const dayKm = displayTodayKm;
     const walkMet = needKm == null || dayKm >= needKm;
     return (
       <div key={m.id} className={`pp-hubMission ${done ? 'pp-hubMission--done' : ''}`}>
@@ -316,12 +295,12 @@ export default function Dashboard() {
         <div className="pp-hubSnapGrid">
           <div className="pp-hubSnap pp-hubSnap--today">
             <span className="pp-hubSnap__label">{t('activityHub.snapshotToday')}</span>
-            <span className="pp-hubSnap__value">{km(walkTotals.day)}</span>
-            <span className="pp-hubSnap__hint">📍</span>
+            <span className="pp-hubSnap__value">{km(displayTodayKm)}</span>
+            <span className="pp-hubSnap__hint">{trackerDeviceId ? t('activityHub.gpsTracked') : '📍'}</span>
           </div>
           <div className="pp-hubSnap pp-hubSnap--week">
             <span className="pp-hubSnap__label">{t('activityHub.snapshotWeek')}</span>
-            <span className="pp-hubSnap__value">{km(walkTotals.week)}</span>
+            <span className="pp-hubSnap__value">{km(displayWeekKm)}</span>
             <span className="pp-hubSnap__hint">{t('activityHub.weekGoalTiny', { n: WEEKLY_GOAL_KM })}</span>
           </div>
           <div className="pp-hubSnap pp-hubSnap--streak">
@@ -344,7 +323,7 @@ export default function Dashboard() {
           <div className="pp-hubGoal__row">
             <span>{t('activityHub.weeklyGoalLabel')}</span>
             <span className="pp-hubGoal__nums">
-              {km(walkTotals.week)} / {WEEKLY_GOAL_KM} km
+              {km(displayWeekKm)} / {WEEKLY_GOAL_KM} km
             </span>
           </div>
           <div className="pp-levelBar pp-hubGoal__bar" aria-hidden>
@@ -375,86 +354,48 @@ export default function Dashboard() {
         <p className="pp-subtle" style={{ marginBottom: 12 }}>
           {t('activityHub.dailySub')}
         </p>
-        <div className="pp-hubMissionGrid">{dailyPrimary.map((m) => renderMission(m))}</div>
-        {dailyExtra.length ? (
-          <details className="pp-hubMissionFold">
-            <summary className="pp-hubMissionFold__sum">{t('activityHub.dailyShowMore', { n: DAILY_MISSIONS.length })}</summary>
-            <div className="pp-hubMissionGrid pp-hubMissionGrid--extra">{dailyExtra.map((m) => renderMission(m))}</div>
-          </details>
-        ) : null}
+        <div className="pp-hubMissionGrid">{DAILY_MISSIONS.map((m) => renderMission(m))}</div>
       </section>
 
       {/* 5. Walk log */}
       <section className="pp-card pp-pad pp-hubWalkCard" id="pp-walk-input-anchor">
         <h2 className="pp-sectionTitle">{t('activityHub.walkTitle')}</h2>
         <p className="pp-subtle" style={{ marginBottom: 12 }}>
-          {t('activityHub.walkSub')}
+          {trackerDeviceId ? t('activityHub.walkSubAuto') : t('activityHub.walkSub')}
         </p>
 
         {trackerDeviceId ? (
           <div className="pp-suggestedWalks" style={{ marginBottom: 16 }}>
             <div className="pp-suggestedWalks__head">
-              <h3 className="pp-suggestedWalks__title">{t('activityHub.suggestedWalksTitle')}</h3>
+              <h3 className="pp-suggestedWalks__title">{t('activityHub.autoWalkTitle')}</h3>
               <button
                 type="button"
                 className="pp-link pp-suggestedWalks__refresh"
-                disabled={suggestionsLoading}
-                onClick={() => void refreshSuggestions()}
+                disabled={gpsMetricsLoading}
+                onClick={() => void refreshGpsMetrics()}
               >
-                {suggestionsLoading ? t('activityHub.suggestedWalksLoading') : t('activityHub.suggestedWalksRefresh')}
+                {gpsMetricsLoading ? t('activityHub.suggestedWalksLoading') : t('activityHub.suggestedWalksRefresh')}
               </button>
             </div>
-            <p className="pp-subtle pp-suggestedWalks__sub">{t('activityHub.suggestedWalksSub')}</p>
-            {suggestionsError ? (
-              <p className="pp-subtle pp-suggestedWalks__err">{suggestionsError}</p>
-            ) : null}
-            {!suggestionsLoading && suggestedWalks.length === 0 && !suggestionsError ? (
-              <p className="pp-subtle pp-suggestedWalks__empty">{t('activityHub.suggestedWalksEmpty')}</p>
-            ) : null}
-            {suggestedWalks.length > 0 ? (
-              <ul className="pp-suggestedWalks__list">
-                {suggestedWalks.map((s) => {
-                  const timeLabel = `${formatTime24(new Date(s.startAt), language)} – ${formatTime24(new Date(s.endAt), language)}`;
-                  const busy = suggestionBusyKey === s.gpsKey;
-                  return (
-                    <li key={s.gpsKey} className="pp-suggestedWalk">
-                      <div className="pp-suggestedWalk__body">
-                        <span className="pp-suggestedWalk__km">{s.distanceKm.toFixed(1)} km</span>
-                        <span className="pp-suggestedWalk__meta">
-                          {timeLabel}
-                          {' · '}
-                          {t('activityHub.suggestedWalkDuration', { min: s.durationMin })}
-                        </span>
-                      </div>
-                      <div className="pp-suggestedWalk__actions">
-                        <button
-                          type="button"
-                          className="pp-btn pp-btnPrimary"
-                          disabled={busy || walkLogBusy}
-                          onClick={() => void onAcceptSuggestion(s)}
-                        >
-                          {busy ? t('activityHub.saving') : t('activityHub.suggestedWalkAdd')}
-                        </button>
-                        <button
-                          type="button"
-                          className="pp-btn pp-btn--ghost"
-                          disabled={busy}
-                          onClick={() => onDismissSuggestion(s)}
-                        >
-                          {t('activityHub.suggestedWalkDismiss')}
-                        </button>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
+            <p className="pp-subtle pp-suggestedWalks__sub">{t('activityHub.autoWalkSub')}</p>
+            {gpsMetricsError ? <p className="pp-subtle pp-suggestedWalks__err">{gpsMetricsError}</p> : null}
+            {!gpsMetricsLoading ? (
+              <p className="pp-subtle pp-suggestedWalks__empty">
+                {autoLoggedToday > 0
+                  ? t('activityHub.autoWalkLogged', { n: autoLoggedToday, km: displayTodayKm.toFixed(1) })
+                  : displayTodayKm > 0
+                    ? t('activityHub.autoWalkTodayKm', { km: displayTodayKm.toFixed(1) })
+                    : t('activityHub.autoWalkWaiting')}
+              </p>
             ) : null}
           </div>
-        ) : (
+        ) : null}
+
+        {!trackerDeviceId ? (
           <p className="pp-subtle pp-suggestedWalks__hint" style={{ marginBottom: 14 }}>
             {t('activityHub.suggestedWalksNoTracker')}
           </p>
-        )}
+        ) : null}
 
         <details className="pp-hubManualWalk">
           <summary className="pp-hubManualWalk__sum">{t('activityHub.manualWalkToggle')}</summary>

@@ -2404,6 +2404,9 @@ select.pp-input:focus {
   max-width: 580px;
   width: min(100%, 580px);
   max-height: min(90dvh, 880px);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
   animation: ppMedModalIn 280ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
@@ -2486,8 +2489,21 @@ select.pp-input:focus {
   overflow-x: hidden;
   overflow-y: auto;
   flex: 1 1 auto;
-  padding: 16px 22px 22px;
+  min-height: 0;
+  padding: 16px 22px 12px;
   -webkit-overflow-scrolling: touch;
+}
+
+.pp-medModal__footer {
+  flex-shrink: 0;
+  padding: 12px 22px calc(14px + env(safe-area-inset-bottom));
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 -8px 24px rgba(15, 23, 42, 0.06);
+}
+
+.pp-medModal__footer .pp-medModal__actions {
+  padding-top: 0;
 }
 
 .pp-medModal__error {
@@ -2806,6 +2822,11 @@ select.pp-input:focus {
 html[data-theme="dark"] .pp-medModal__card {
   background: var(--pp-surface, #1a2234);
   border-color: rgba(255, 255, 255, 0.08);
+}
+
+html[data-theme="dark"] .pp-medModal__footer {
+  background: rgba(15, 23, 42, 0.98);
+  border-top-color: rgba(255, 255, 255, 0.08);
 }
 
 html[data-theme="dark"] .pp-medModal__header {
@@ -12213,13 +12234,34 @@ select.pp-bookConfirmField__control {
 
 .pp-hubMissionGrid {
   display: grid;
-  gap: 12px;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-@media (min-width: 640px) {
+@media (min-width: 480px) {
   .pp-hubMissionGrid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
+}
+
+.pp-hubMission {
+  padding: 10px 12px;
+  min-height: 0;
+}
+
+.pp-hubMission__label {
+  font-size: 13px;
+  line-height: 1.25;
+}
+
+.pp-hubMission__xp {
+  font-size: 12px;
+}
+
+.pp-hubMission .pp-btn {
+  font-size: 12px;
+  padding: 6px 10px;
+  min-height: 34px;
 }
 
 .pp-hubMissionGrid--extra {
@@ -19541,6 +19583,108 @@ html[data-theme="dark"] .pp-nearbyPartnerCard__name {
 
 .pp-bookSchedulePick__duration {
   margin: 4px 0 8px;
+}
+
+.pp-bookSchedulePick--compact .pp-book-slotGrid--premium {
+  flex-wrap: wrap;
+  overflow-x: visible;
+  gap: 8px;
+  padding: 4px 0 8px;
+}
+
+.pp-bookSchedulePick--compact .pp-book-slot--rich {
+  min-width: 96px;
+  max-width: none;
+  flex: 1 1 calc(25% - 8px);
+  padding: 8px 10px;
+  border-radius: 14px;
+  gap: 2px;
+}
+
+.pp-bookSchedulePick--compact .pp-book-slot--rich strong {
+  font-size: 13px;
+}
+
+.pp-bookSchedulePick--compact .pp-book-slot--rich span {
+  font-size: 11px;
+}
+
+.pp-bookSchedulePick--compact .pp-book-slot--rich small {
+  display: none;
+}
+
+.pp-bookAddonPick {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr));
+  gap: 10px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.pp-bookAddonPick__card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 14px 16px;
+  border: 1.5px solid rgba(16, 24, 40, 0.1);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.92);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 180ms ease, box-shadow 180ms ease, background 180ms ease;
+}
+
+.pp-bookAddonPick__card.is-active {
+  border-color: rgba(91, 55, 255, 0.42);
+  background: linear-gradient(135deg, rgba(91, 55, 255, 0.1), rgba(47, 128, 255, 0.06));
+  box-shadow: 0 6px 18px -10px rgba(91, 55, 255, 0.45);
+}
+
+.pp-bookAddonPick__emoji {
+  font-size: 22px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.pp-bookAddonPick__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.pp-bookAddonPick__name {
+  font-weight: 800;
+  color: #101828;
+  font-size: 15px;
+}
+
+.pp-bookAddonPick__meta {
+  font-size: 13px;
+  font-weight: 700;
+  color: #667085;
+}
+
+.pp-bookAddonPick__check {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  border: 2px solid rgba(91, 55, 255, 0.35);
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 900;
+  color: #5b37ff;
+  flex-shrink: 0;
+}
+
+.pp-bookAddonPick__card.is-active .pp-bookAddonPick__check {
+  background: #5b37ff;
+  border-color: #5b37ff;
+  color: #fff;
 }
 
 .pp-field--checkbox {

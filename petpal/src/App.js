@@ -41,6 +41,7 @@ import { useI18n } from './i18n/I18nContext';
 import ScrollToTop from './components/ScrollToTop';
 import BottomNav from './components/BottomNav';
 import TopNav from './components/TopNav';
+import { MedicationReminderHost } from './components/MedicationReminderHost';
 import { OpeningScreen } from './components/OpeningScreen';
 
 /** JCC / gateway sometimes lands users on `/` or `/dashboard` with `?checkout=success` — normalize to the success screen. */
@@ -70,6 +71,7 @@ function App() {
   return (
     <div className="pp-shell">
       <ScrollToTop />
+      <MedicationReminderHost />
       <TopNav />
       <CheckoutSuccessBridge />
       <div className="pp-pageScroll">

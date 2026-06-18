@@ -47,6 +47,7 @@ export function isCatalogProvider(providerId) {
 const GROOMING_PROVIDER = {
   id: GROOMING_PROVIDER_ID,
   displayName: 'Fluffy Cuts Grooming & Pet Shop',
+  email: 'bookings@fluffycuts.petpal.app',
   address: '45 Sunset Ave, Kifisia',
   phone: '+30 210 111 1111',
   providerTypes: { vet: false, bath: true, saloon: true, hotel: false },
@@ -62,6 +63,7 @@ const GROOMING_PROVIDER = {
 const VET_PROVIDER = {
   id: VET_PROVIDER_ID,
   displayName: 'Paws & Care Vet Clinic',
+  email: 'appointments@paws-care.petpal.app',
   address: '12 Makarios Ave, Limassol',
   phone: '+357 25 000 000',
   providerTypes: { vet: true, bath: false, saloon: false, hotel: false },

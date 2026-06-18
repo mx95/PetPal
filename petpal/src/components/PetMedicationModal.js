@@ -361,6 +361,7 @@ export default function PetMedicationModal({
           </section>
 
           <form
+            id="pp-med-form"
             className="pp-medModal__form"
             onSubmit={(e) => {
               e.preventDefault();
@@ -495,32 +496,44 @@ export default function PetMedicationModal({
                 />
               </label>
             </section>
+          </form>
+        </div>
 
-            <div className="pp-medModal__actions">
-              {mode === 'owner' ? (
-                <button type="submit" className="pp-btn pp-btnPrimary pp-medModal__submit" disabled={busy || !canAdd}>
+        <div className="pp-medModal__footer">
+          <div className="pp-medModal__actions">
+            {mode === 'owner' ? (
+              <button
+                type="submit"
+                form="pp-med-form"
+                className="pp-btn pp-btnPrimary pp-medModal__submit"
+                disabled={busy || !canAdd}
+              >
+                {editingId ? t('myPets.medsSaveChanges') : t('myPets.medsAddMedication')}
+              </button>
+            ) : (
+              <>
+                <button
+                  type="submit"
+                  form="pp-med-form"
+                  className="pp-btn pp-btnPrimary pp-medModal__submit"
+                  disabled={!canAdd}
+                >
                   {editingId ? t('myPets.medsSaveChanges') : t('myPets.medsAddMedication')}
                 </button>
-              ) : (
-                <>
-                  <button type="submit" className="pp-btn pp-btnPrimary pp-medModal__submit" disabled={!canAdd}>
-                    {editingId ? t('myPets.medsSaveChanges') : t('myPets.medsAddMedication')}
-                  </button>
-                  <button
-                    type="button"
-                    className="pp-btn pp-btnPrimary pp-medModal__submit"
-                    disabled={busy}
-                    onClick={() => void saveVet()}
-                  >
-                    {t('common.save')}
-                  </button>
-                </>
-              )}
-              <button type="button" className="pp-btn pp-btn--ghost pp-medModal__cancel" onClick={onClose}>
-                {t('common.cancel')}
-              </button>
-            </div>
-          </form>
+                <button
+                  type="button"
+                  className="pp-btn pp-btnPrimary pp-medModal__submit"
+                  disabled={busy}
+                  onClick={() => void saveVet()}
+                >
+                  {t('common.save')}
+                </button>
+              </>
+            )}
+            <button type="button" className="pp-btn pp-btn--ghost pp-medModal__cancel" onClick={onClose}>
+              {t('common.cancel')}
+            </button>
+          </div>
         </div>
       </div>
     </div>

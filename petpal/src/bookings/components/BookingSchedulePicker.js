@@ -104,7 +104,7 @@ export function BookingSchedulePicker({
   }, [uniqueSlots]);
 
   return (
-    <div className="pp-bookSchedulePick">
+    <div className="pp-bookSchedulePick pp-bookSchedulePick--compact">
       <div className="pp-book-field pp-book-calendar">
         <div className="pp-book-calendar__head">
           <span className="pp-book-field__label">{t('bookingsHub.modalPickDate')}</span>
