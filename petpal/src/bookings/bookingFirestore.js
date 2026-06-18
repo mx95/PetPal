@@ -181,6 +181,22 @@ export function subscribeCustomerBookings(uid, onNext, onError) {
   );
 }
 
+/** Admin-only: live feed of recent bookings across all customers and providers. */
+export function subscribeAllBookings(onNext, onError) {
+  if (!isFirebaseConfigured()) {
+    onNext([]);
+    return () => {};
+  }
+  const q = query(bookingsCol(), orderBy('startAt', 'desc'), limit(200));
+  return onSnapshot(
+    q,
+    (snap) => {
+      onNext(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+    },
+    (err) => (onError ? onError(err) : undefined)
+  );
+}
+
 export async function updateBookingStatus(bookingId, patch) {
   if (!isFirebaseConfigured() || !bookingId) return;
   await updateDoc(doc(getDb(), 'bookings', bookingId), { ...patch, updatedAt: serverTimestamp() });

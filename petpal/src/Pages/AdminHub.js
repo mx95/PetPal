@@ -78,6 +78,12 @@ export default function AdminHub() {
             title="Broadcast inbox"
             desc="Send a message to every user’s profile inbox."
           />
+          <AdminActionCard
+            to="/admin/bookings"
+            icon="📅"
+            title="All bookings"
+            desc="View every appointment across customers and providers for support."
+          />
         </div>
       </div>
     </div>
