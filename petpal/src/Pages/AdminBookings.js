@@ -4,6 +4,7 @@ import { useAuth } from '../auth/AuthProvider';
 import { useCompany } from '../company/CompanyContext';
 import { subscribeAllBookings } from '../bookings/bookingFirestore';
 import { formatDateTime24 } from '../formatTime24';
+import { PrettySelect } from '../components/PrettySelect';
 
 function bookingWhen(b) {
   if (b.startAt?.toDate) return formatDateTime24(b.startAt.toDate());
@@ -132,12 +133,16 @@ export default function AdminBookings() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
-            <select className="pp-input" style={{ flex: '0 0 auto' }} value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+            <PrettySelect
+              style={{ flex: '0 0 auto', minWidth: 148 }}
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
               <option value="all">All statuses</option>
               <option value="booked">Booked</option>
               <option value="completed">Completed</option>
               <option value="cancelled">Cancelled</option>
-            </select>
+            </PrettySelect>
           </div>
 
           {err ? <div className="pp-error">{err}</div> : null}
