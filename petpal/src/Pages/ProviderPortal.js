@@ -4,10 +4,12 @@ import { useAuth } from '../auth/AuthProvider';
 import { useCompany } from '../company/CompanyContext';
 import {
   createAvailabilitySlot,
+  blockSlotsForTimeOff,
   setSlotStatus,
   subscribeCompanyAvailability,
   subscribeCompanyServices,
   subscribeProviderBookings,
+  swapBookingSlot,
   updateBookingStatus,
   upsertCompanyService,
 } from '../bookings/bookingFirestore';
@@ -325,10 +327,10 @@ function ProviderStats({ business }) {
 
 function ProviderTabs({ tab, setTab }) {
   const tabs = [
-    ['services', 'Services'],
-    ['availability', 'Availability'],
     ['bookings', 'Bookings'],
-    ['clientPets', 'Client pets'],
+    ['availability', 'Availability'],
+    ['customers', 'Customers'],
+    ['services', 'Services'],
   ];
   return (
     <div className="pp-providerTabs" role="tablist" aria-label="Provider sections">
@@ -483,7 +485,7 @@ export default function ProviderPortal() {
   const demoBusinesses = useMemo(() => getDemoBusinessAccounts(), []);
   const demoBusiness = useMemo(() => getDemoBusinessAccount(demoBusinessId), [demoBusinessId]);
 
-  const [tab, setTab] = useState('services'); // services|availability|bookings|clientPets
+  const [tab, setTab] = useState('bookings'); // bookings|availability|customers|services
   const [publishErr, setPublishErr] = useState('');
   const [publishBusy, setPublishBusy] = useState(false);
   const [publish, setPublish] = useState(() => ({
@@ -665,12 +667,12 @@ export default function ProviderPortal() {
       <ProviderTabs tab={tab} setTab={setTab} />
 
       <div className="pp-providerTabContent">
-        {tab === 'services' ? <Services companyId={companyId} /> : null}
-        {tab === 'availability' ? <Availability companyId={companyId} /> : null}
         {tab === 'bookings' ? <Bookings companyId={companyId} /> : null}
-        {tab === 'clientPets' ? (
-          <ClientPets companyId={companyId} clinicLabel={publish.displayName || profile?.businessName || ''} />
+        {tab === 'availability' ? <Availability companyId={companyId} /> : null}
+        {tab === 'customers' ? (
+          <Customers companyId={companyId} clinicLabel={publish.displayName || profile?.businessName || ''} />
         ) : null}
+        {tab === 'services' ? <Services companyId={companyId} /> : null}
       </div>
     </div>
   );
@@ -861,10 +863,12 @@ function Availability({ companyId }) {
   const [services, setServices] = useState([]);
   const [slots, setSlots] = useState([]);
   const [err, setErr] = useState('');
+  const [busy, setBusy] = useState(false);
   const [serviceId, setServiceId] = useState('');
   const [date, setDate] = useState('');
   const [start, setStart] = useState('10:00');
   const [end, setEnd] = useState('10:30');
+  const [timeOffDate, setTimeOffDate] = useState('');
 
   useEffect(() => subscribeCompanyServices(companyId, setServices, (e) => setErr(e?.message || 'failed')), [companyId]);
   useEffect(
@@ -888,6 +892,33 @@ function Availability({ companyId }) {
     }
   };
 
+  const onBlockDayOff = async () => {
+    if (!timeOffDate) return;
+    setErr('');
+    setBusy(true);
+    try {
+      const openOnDay = slots.filter((s) => {
+        const d = slotDate(s);
+        if (!d) return false;
+        const key = dateKey(d);
+        return key === timeOffDate && (s.status || 'open') === 'open';
+      });
+      if (!openOnDay.length) {
+        setErr('No open slots on that date to block.');
+        return;
+      }
+      await blockSlotsForTimeOff(
+        companyId,
+        openOnDay.map((s) => s.id)
+      );
+      setTimeOffDate('');
+    } catch (e2) {
+      setErr(e2?.message || 'failed');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const byServiceName = useMemo(() => {
     const m = new Map();
     services.forEach((s) => m.set(s.id, s.name));
@@ -897,6 +928,21 @@ function Availability({ companyId }) {
   return (
     <>
       {err ? <div className="pp-error" style={{ marginBottom: 10 }}>{err}</div> : null}
+      <div className="pp-card pp-providerTimeOff" style={{ marginBottom: 14 }}>
+        <div className="pp-card__title">Time off</div>
+        <p className="pp-muted" style={{ marginTop: 6, marginBottom: 10 }}>
+          Block all open slots on a day — useful for holidays, training, or closures.
+        </p>
+        <div className="pp-row" style={{ gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+          <label className="pp-field" style={{ margin: 0 }}>
+            <span className="pp-field__label">Date</span>
+            <input type="date" value={timeOffDate} onChange={(e) => setTimeOffDate(e.target.value)} />
+          </label>
+          <button type="button" className="pp-btn pp-btn--ghost" disabled={!timeOffDate || busy} onClick={() => void onBlockDayOff()}>
+            {busy ? 'Blocking…' : 'Block day off'}
+          </button>
+        </div>
+      </div>
       <CalendarAvailabilityPanel
         slots={slots}
         servicesById={byServiceName}
@@ -945,56 +991,139 @@ function Availability({ companyId }) {
 
 function Bookings({ companyId }) {
   const [rows, setRows] = useState([]);
+  const [slots, setSlots] = useState([]);
+  const [services, setServices] = useState([]);
   const [err, setErr] = useState('');
+  const [busyId, setBusyId] = useState('');
+  const [swapBookingId, setSwapBookingId] = useState('');
+  const [swapSlotId, setSwapSlotId] = useState('');
 
   useEffect(() => subscribeProviderBookings(companyId, setRows, (e) => setErr(e?.message || 'failed')), [companyId]);
+  useEffect(() => subscribeCompanyAvailability(companyId, setSlots, () => {}), [companyId]);
+  useEffect(() => subscribeCompanyServices(companyId, setServices, () => {}), [companyId]);
+
+  const servicesById = useMemo(() => {
+    const m = new Map();
+    services.forEach((s) => m.set(s.id, s.name));
+    return m;
+  }, [services]);
+
+  const openSlotsForBooking = useMemo(() => {
+    const booking = rows.find((b) => b.id === swapBookingId);
+    if (!booking) return [];
+    return slots
+      .filter((s) => (s.status || 'open') === 'open' && String(s.serviceId) === String(booking.serviceId))
+      .sort((a, b) => (slotDate(a)?.getTime() || 0) - (slotDate(b)?.getTime() || 0));
+  }, [rows, slots, swapBookingId]);
+
+  const onSwap = async () => {
+    if (!swapBookingId || !swapSlotId) return;
+    setErr('');
+    setBusyId(swapBookingId);
+    try {
+      await swapBookingSlot({ companyId, bookingId: swapBookingId, newSlotId: swapSlotId });
+      setSwapBookingId('');
+      setSwapSlotId('');
+    } catch (e) {
+      setErr(e?.message || 'failed');
+    } finally {
+      setBusyId('');
+    }
+  };
 
   return (
     <div className="pp-card">
       <div className="pp-card__title">Bookings</div>
+      <p className="pp-muted" style={{ marginTop: 6 }}>
+        View appointments, reschedule to another slot, complete, or cancel.
+      </p>
       {err ? <div className="pp-error">{err}</div> : null}
       {rows.length === 0 ? <div className="pp-muted">No bookings yet.</div> : null}
       <div className="pp-stack" style={{ marginTop: 10 }}>
-        {rows.map((b) => (
-          <div key={b.id} className="pp-rowBetween pp-rowBetween--card">
-            <div>
-              <div style={{ fontWeight: 900 }}>{b.petSnapshot?.name || 'Pet'}</div>
-              <div className="pp-muted" style={{ fontSize: 13 }}>
-                {b.status} • {b.startAt?.toDate ? formatDateTime24(b.startAt.toDate()) : ''}
+        {rows.map((b) => {
+          const when = b.startAt?.toDate ? formatDateTime24(b.startAt.toDate()) : '';
+          const serviceName = b.serviceSnapshot?.name || servicesById.get(b.serviceId) || 'Service';
+          const isSwapping = swapBookingId === b.id;
+          return (
+            <div key={b.id} className="pp-providerBookingCard pp-rowBetween pp-rowBetween--card" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 10 }}>
+              <div className="pp-rowBetween" style={{ width: '100%' }}>
+                <div>
+                  <div style={{ fontWeight: 900 }}>{b.petSnapshot?.name || 'Pet'}</div>
+                  <div className="pp-muted" style={{ fontSize: 13 }}>
+                    {serviceName} · {b.status}
+                  </div>
+                  <div className="pp-muted" style={{ fontSize: 13 }}>{when}</div>
+                </div>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  {b.status === 'booked' ? (
+                    <button type="button" className="pp-btn pp-btn--ghost" onClick={() => { setSwapBookingId(isSwapping ? '' : b.id); setSwapSlotId(''); }}>
+                      {isSwapping ? 'Close' : 'Reschedule'}
+                    </button>
+                  ) : null}
+                  <button type="button" className="pp-btn pp-btn--ghost" disabled={busyId === b.id} onClick={() => updateBookingStatus(b.id, { status: 'completed' })}>
+                    Complete
+                  </button>
+                  <button type="button" className="pp-btn pp-btn--ghost" disabled={busyId === b.id} onClick={() => updateBookingStatus(b.id, { status: 'cancelled' })}>
+                    Cancel
+                  </button>
+                </div>
               </div>
+              {isSwapping ? (
+                <div className="pp-providerSwapRow">
+                  <select className="pp-input" value={swapSlotId} onChange={(e) => setSwapSlotId(e.target.value)}>
+                    <option value="">Pick new time…</option>
+                    {openSlotsForBooking.map((s) => {
+                      const d = slotDate(s);
+                      return (
+                        <option key={s.id} value={s.id}>
+                          {d ? formatDateTime24(d) : s.id}
+                        </option>
+                      );
+                    })}
+                  </select>
+                  <button type="button" className="pp-btn pp-btn--primary" disabled={!swapSlotId || busyId === b.id} onClick={() => void onSwap()}>
+                    {busyId === b.id ? 'Saving…' : 'Confirm swap'}
+                  </button>
+                </div>
+              ) : null}
             </div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button
-                type="button"
-                className="pp-btn pp-btn--ghost"
-                onClick={() => updateBookingStatus(b.id, { status: 'completed' })}
-              >
-                Complete
-              </button>
-              <button
-                type="button"
-                className="pp-btn pp-btn--ghost"
-                onClick={() => updateBookingStatus(b.id, { status: 'cancelled' })}
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
 }
 
-function ClientPets({ companyId, clinicLabel = '' }) {
-  const [rows, setRows] = useState([]);
+function Customers({ companyId, clinicLabel = '' }) {
+  const [bookings, setBookings] = useState([]);
+  const [clientPets, setClientPets] = useState([]);
   const [err, setErr] = useState('');
-  const [form, setForm] = useState({ name: '', ownerName: '', ownerPhone: '', trackingImei: '' });
   const [medClient, setMedClient] = useState(/** @type {Record<string, unknown> | null} */ (null));
+  const [form, setForm] = useState({ name: '', ownerName: '', ownerPhone: '', trackingImei: '' });
 
-  useEffect(() => subscribeClientPets(companyId, setRows, (e) => setErr(e?.message || 'failed')), [companyId]);
+  useEffect(() => subscribeProviderBookings(companyId, setBookings, (e) => setErr(e?.message || 'failed')), [companyId]);
+  useEffect(() => subscribeClientPets(companyId, setClientPets, (e) => setErr(e?.message || 'failed')), [companyId]);
 
-  const onCreate = async (e) => {
+  const customersFromBookings = useMemo(() => {
+    const map = new Map();
+    bookings.forEach((b) => {
+      const key = String(b.customerUid || b.petSnapshot?.name || b.id);
+      const row = map.get(key) || {
+        key,
+        petName: b.petSnapshot?.name || 'Pet',
+        ownerLabel: b.customerUid ? `Customer ${String(b.customerUid).slice(0, 8)}…` : 'Walk-in',
+        visits: 0,
+        lastVisit: '',
+      };
+      row.visits += 1;
+      const when = b.startAt?.toDate ? b.startAt.toDate().toISOString() : '';
+      if (when && when > row.lastVisit) row.lastVisit = when;
+      map.set(key, row);
+    });
+    return [...map.values()].sort((a, b) => String(b.lastVisit).localeCompare(String(a.lastVisit)));
+  }, [bookings]);
+
+  const onCreatePet = async (e) => {
     e.preventDefault();
     setErr('');
     try {
@@ -1039,65 +1168,74 @@ function ClientPets({ companyId, clinicLabel = '' }) {
         />
       ) : null}
       <div className="pp-grid2" style={{ gap: 14 }}>
-      <div className="pp-card">
-        <div className="pp-card__title">Add client pet</div>
-        {err ? <div className="pp-error">{err}</div> : null}
-        <form onSubmit={onCreate} className="pp-form">
-          <label className="pp-field">
-            <span className="pp-field__label">Pet name</span>
-            <input value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} />
-          </label>
-          <div className="pp-modalGrid2">
-            <label className="pp-field">
-              <span className="pp-field__label">Owner name</span>
-              <input value={form.ownerName} onChange={(e) => setForm((p) => ({ ...p, ownerName: e.target.value }))} />
-            </label>
-            <label className="pp-field">
-              <span className="pp-field__label">Owner phone</span>
-              <input value={form.ownerPhone} onChange={(e) => setForm((p) => ({ ...p, ownerPhone: e.target.value }))} />
-            </label>
+        <div className="pp-card">
+          <div className="pp-card__title">Customers from bookings</div>
+          {err ? <div className="pp-error">{err}</div> : null}
+          {customersFromBookings.length === 0 ? <div className="pp-muted">No customers yet.</div> : null}
+          <div className="pp-stack" style={{ marginTop: 10 }}>
+            {customersFromBookings.map((c) => (
+              <div key={c.key} className="pp-rowBetween pp-rowBetween--card">
+                <div>
+                  <div style={{ fontWeight: 900 }}>{c.petName}</div>
+                  <div className="pp-muted" style={{ fontSize: 13 }}>
+                    {c.ownerLabel} · {c.visits} visit{c.visits === 1 ? '' : 's'}
+                  </div>
+                </div>
+                {c.lastVisit ? (
+                  <small className="pp-muted">{formatDateTime24(new Date(c.lastVisit))}</small>
+                ) : null}
+              </div>
+            ))}
           </div>
-          <label className="pp-field">
-            <span className="pp-field__label">Tracking IMEI (optional)</span>
-            <input value={form.trackingImei} onChange={(e) => setForm((p) => ({ ...p, trackingImei: e.target.value }))} />
-          </label>
-          <button className="pp-btn pp-btn--primary" type="submit">
-            Add
-          </button>
-        </form>
-      </div>
+        </div>
 
-      <div className="pp-card">
-        <div className="pp-card__title">Client pets</div>
-        {rows.length === 0 ? <div className="pp-muted">No pets added yet.</div> : null}
-        <div className="pp-stack" style={{ marginTop: 10 }}>
-          {rows.map((p) => (
-            <div key={p.id} className="pp-rowBetween pp-rowBetween--card" style={{ alignItems: 'center', gap: 10 }}>
-              <div style={{ minWidth: 0, flex: 1 }}>
-                <div style={{ fontWeight: 900 }}>{p.name}</div>
-                <div className="pp-muted" style={{ fontSize: 13 }}>
-                  {p.ownerName || '—'} {p.ownerPhone ? `• ${p.ownerPhone}` : ''}{' '}
-                  {p.trackingImei ? `• IMEI ${p.trackingImei}` : ''}
+        <div className="pp-card">
+          <div className="pp-card__title">Add client pet</div>
+          <form onSubmit={onCreatePet} className="pp-form">
+            <label className="pp-field">
+              <span className="pp-field__label">Pet name</span>
+              <input value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} />
+            </label>
+            <div className="pp-modalGrid2">
+              <label className="pp-field">
+                <span className="pp-field__label">Owner name</span>
+                <input value={form.ownerName} onChange={(e) => setForm((p) => ({ ...p, ownerName: e.target.value }))} />
+              </label>
+              <label className="pp-field">
+                <span className="pp-field__label">Owner phone</span>
+                <input value={form.ownerPhone} onChange={(e) => setForm((p) => ({ ...p, ownerPhone: e.target.value }))} />
+              </label>
+            </div>
+            <button className="pp-btn pp-btn--primary" type="submit">Add</button>
+          </form>
+        </div>
+
+        <div className="pp-card">
+          <div className="pp-card__title">Client pets on file</div>
+          {clientPets.length === 0 ? <div className="pp-muted">No pets added yet.</div> : null}
+          <div className="pp-stack" style={{ marginTop: 10 }}>
+            {clientPets.map((p) => (
+              <div key={p.id} className="pp-rowBetween pp-rowBetween--card" style={{ alignItems: 'center', gap: 10 }}>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <div style={{ fontWeight: 900 }}>{p.name}</div>
+                  <div className="pp-muted" style={{ fontSize: 13 }}>
+                    {p.ownerName || '—'} {p.ownerPhone ? `· ${p.ownerPhone}` : ''}
+                  </div>
+                </div>
+                <div className="pp-row" style={{ gap: 8, flexShrink: 0 }}>
+                  {p.ownerPhone ? (
+                    <a href={`tel:${p.ownerPhone}`} className="pp-btn pp-btn--ghost">Call</a>
+                  ) : null}
+                  <button type="button" className="pp-btn pp-iconBtn pp-iconBtn--outline" aria-label="Medication" onClick={() => setMedClient(p)}>
+                    <IconMedPill size={16} />
+                  </button>
+                  <button type="button" className="pp-btn pp-btn--ghost" onClick={() => deleteClientPet(companyId, p.id)}>Remove</button>
                 </div>
               </div>
-              <div className="pp-row" style={{ gap: 8, flexShrink: 0 }}>
-                <button
-                  type="button"
-                  className="pp-btn pp-iconBtn pp-iconBtn--outline"
-                  aria-label="Medication schedule"
-                  onClick={() => setMedClient(p)}
-                >
-                  <IconMedPill size={16} />
-                </button>
-                <button type="button" className="pp-btn pp-btn--ghost" onClick={() => deleteClientPet(companyId, p.id)}>
-                  Remove
-                </button>
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
-    </div>
     </>
   );
 }

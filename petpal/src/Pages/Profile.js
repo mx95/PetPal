@@ -234,7 +234,7 @@ export default function Profile() {
   const items = [
     { key: 'pets', to: '/pets', icon: ICONS.pets, accent: 'pets' },
     ...(MVP_NAV.showBookings ? [{ key: 'bookings', to: '/bookings', icon: ICONS.docs, accent: 'docs' }] : []),
-    ...(isApprovedCompany && profile?.bookingEnabled
+    ...(isApprovedCompany
       ? [{ key: 'provider', to: '/provider', icon: ICONS.business, accent: 'business' }]
       : []),
     { key: 'business', to: '/company/apply', icon: ICONS.business, accent: 'business' },

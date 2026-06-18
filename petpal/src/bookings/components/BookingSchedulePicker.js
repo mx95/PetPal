@@ -47,16 +47,13 @@ function slotAt(slot, key) {
   return null;
 }
 
-function slotPeriod(slot) {
-  const start = slotAt(slot, 'startAt');
-  const h = start ? start.getHours() : 12;
-  if (h < 12) return 'Morning';
-  if (h < 17) return 'Afternoon';
-  return 'Evening';
+function slotStartMs(slot) {
+  const d = slotAt(slot, 'startAt');
+  return d ? d.getTime() : 0;
 }
 
 /**
- * Calendar + grouped time-slot picker (legacy booking modal design).
+ * Calendar + flat time-slot picker.
  */
 export function BookingSchedulePicker({
   dayKey,
@@ -94,14 +91,10 @@ export function BookingSchedulePicker({
     });
   }, [slots]);
 
-  const groupedSlots = useMemo(() => {
-    return uniqueSlots.reduce((acc, sl) => {
-      const key = slotPeriod(sl);
-      acc[key] = acc[key] || [];
-      acc[key].push(sl);
-      return acc;
-    }, {});
-  }, [uniqueSlots]);
+  const sortedSlots = useMemo(
+    () => [...uniqueSlots].sort((a, b) => slotStartMs(a) - slotStartMs(b)),
+    [uniqueSlots]
+  );
 
   return (
     <div className="pp-bookSchedulePick pp-bookSchedulePick--compact">
@@ -168,35 +161,28 @@ export function BookingSchedulePicker({
         </p>
         {loading ? <p className="pp-book-muted">{t('bookingsHub.modalLoadingSlots')}</p> : null}
         {error ? <p className="pp-book-error">{error}</p> : null}
-        {!loading && !error && !uniqueSlots.length ? (
+        {!loading && !error && !sortedSlots.length ? (
           <p className="pp-book-muted">{t('bookConfirm.noSlots')}</p>
         ) : null}
-        {['Morning', 'Afternoon', 'Evening'].map((period) =>
-          groupedSlots[period]?.length ? (
-            <div key={period} className="pp-book-slotPeriod">
-              <div className="pp-book-slotPeriod__title">{period}</div>
-              <div className="pp-book-slotGrid pp-book-slotGrid--premium">
-                {groupedSlots[period].map((sl) => {
-                  const active = sl.id === slotId;
-                  const startDate = slotAt(sl, 'startAt');
-                  const endDate = slotAt(sl, 'endAt');
-                  return (
-                    <button
-                      key={sl.id}
-                      type="button"
-                      className={`pp-book-slot pp-book-slot--rich${active ? ' is-active' : ''}`}
-                      onClick={() => onSlotIdChange(sl.id)}
-                    >
-                      <strong>{startDate ? formatTime24(startDate) : sl.id}</strong>
-                      <span>{durationMin} mins</span>
-                      <small>{endDate ? `Ends ${formatTime24(endDate)}` : t('bookConfirm.slotEndTbd')}</small>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          ) : null
-        )}
+        {sortedSlots.length ? (
+          <div className="pp-book-slotGrid pp-book-slotGrid--premium pp-book-slotGrid--uniform">
+            {sortedSlots.map((sl) => {
+              const active = sl.id === slotId;
+              const startDate = slotAt(sl, 'startAt');
+              return (
+                <button
+                  key={sl.id}
+                  type="button"
+                  className={`pp-book-slot pp-book-slot--rich${active ? ' is-active' : ''}`}
+                  onClick={() => onSlotIdChange(sl.id)}
+                >
+                  <strong>{startDate ? formatTime24(startDate) : sl.id}</strong>
+                  <span>{durationMin} mins</span>
+                </button>
+              );
+            })}
+          </div>
+        ) : null}
       </div>
     </div>
   );

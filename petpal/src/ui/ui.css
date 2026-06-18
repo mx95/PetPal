@@ -19585,20 +19585,33 @@ html[data-theme="dark"] .pp-nearbyPartnerCard__name {
   margin: 4px 0 8px;
 }
 
-.pp-bookSchedulePick--compact .pp-book-slotGrid--premium {
-  flex-wrap: wrap;
-  overflow-x: visible;
+.pp-bookSchedulePick--compact .pp-book-slotGrid--premium,
+.pp-bookSchedulePick--compact .pp-book-slotGrid--uniform {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
+  overflow: visible;
   padding: 4px 0 8px;
 }
 
+@media (min-width: 480px) {
+  .pp-bookSchedulePick--compact .pp-book-slotGrid--uniform {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
 .pp-bookSchedulePick--compact .pp-book-slot--rich {
-  min-width: 96px;
+  min-width: 0;
   max-width: none;
-  flex: 1 1 calc(25% - 8px);
-  padding: 8px 10px;
+  width: 100%;
+  flex: none;
+  min-height: 52px;
+  padding: 8px 6px;
   border-radius: 14px;
   gap: 2px;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
 }
 
 .pp-bookSchedulePick--compact .pp-book-slot--rich strong {
@@ -19611,6 +19624,19 @@ html[data-theme="dark"] .pp-nearbyPartnerCard__name {
 
 .pp-bookSchedulePick--compact .pp-book-slot--rich small {
   display: none;
+}
+
+.pp-providerSwapRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+}
+
+.pp-providerSwapRow .pp-input {
+  flex: 1 1 180px;
+  min-width: 0;
 }
 
 .pp-bookAddonPick {

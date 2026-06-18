@@ -411,7 +411,7 @@ const en = {
       editProfile: { title: 'Edit profile', desc: 'Update your personal details and contact information.' },
       pets: { title: 'Manage your pets', desc: 'Add new friends, edit details, link trackers.' },
       bookings: { title: 'Book services', desc: 'Browse providers and manage your appointments.' },
-      provider: { title: 'Provider portal', desc: 'Manage services, availability, and bookings.' },
+      provider: { title: 'Manage bookings', desc: 'Bookings, availability, time off, and customers.' },
       business: { title: 'Add your Business', desc: 'Add your business on PetPal map and boost your shop.' },
       docs: { title: 'Read the guides', desc: 'Quick walkthroughs of every PetPal feature.' },
       admin: { title: 'Admin queue', desc: 'Review pending venue applications.' },
@@ -1190,10 +1190,9 @@ const en = {
     reviewsCount: '{n} reviews',
     locUnavailable: 'Location unavailable — showing a default area. You can still browse categories.',
     locDenied: 'Location permission denied — using a default map center. Enable location for results near you.',
+    locDefaultHint: 'Could not detect your location — tap Search near me or pan the map.',
     useMyLocation: 'Use my location',
     locFetching: 'Getting location…',
-    locDefaultHint:
-      'The map starts on a sample area. Tap “Use my location” to centre searches on your position (browser will ask for permission).',
     cats: {
       pet_store: { label: 'Pet shop', desc: 'Pet stores & supplies' },
       veterinary_care: { label: 'Vet', desc: 'Veterinary clinics' },

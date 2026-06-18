@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { GoogleMap, InfoWindow, Marker, useJsApiLoader } from '@react-google-maps/api';
 import { Link } from 'react-router-dom';
 import {
@@ -105,6 +105,7 @@ function NearbyMap({ apiKey }) {
   const [userLocation, setUserLocation] = useState(null);
   const [infoOpen, setInfoOpen] = useState(false);
   const [allProviders, setAllProviders] = useState(/** @type {Record<string, unknown>[]} */ ([]));
+  const autoLocRequested = useRef(false);
 
   useEffect(() => {
     if (!isFirebaseConfigured()) {
@@ -192,50 +193,71 @@ function NearbyMap({ apiKey }) {
     if (isLoaded && map) runPlacesSearch();
   }, [isLoaded, map, selectedCategoryId, searchCenter.lat, searchCenter.lng, runPlacesSearch]);
 
+  const requestUserLocation = useCallback(
+    ({ silent = false } = {}) => {
+      if (!navigator.geolocation) {
+        if (!silent) setLocationNote({ kind: 'text', message: t('nearbyPage.locUnavailable') });
+        return;
+      }
+      if (!window.isSecureContext && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+        if (!silent) {
+          setLocationNote({
+            kind: 'text',
+            message: 'Location needs HTTPS or localhost. Open the app on HTTPS, localhost, or the mobile app build.',
+          });
+        }
+        return;
+      }
+      setLocFetching(true);
+      if (!silent) setSearchStatus('loading');
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const next = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+          setUserLocation(next);
+          setSearchCenter(next);
+          setLocFetching(false);
+          setLocationNote({ kind: 'none' });
+          if (map && window.google?.maps) {
+            map.panTo(new window.google.maps.LatLng(next.lat, next.lng));
+            map.setZoom(14);
+          }
+          setSearchScope('radius');
+          runPlacesSearch('radius', next);
+        },
+        (err) => {
+          setLocFetching(false);
+          if (!silent) {
+            setSearchStatus('idle');
+            const reason =
+              err?.code === 1
+                ? 'Location permission was denied. Allow location access for this site/app and try again.'
+                : err?.code === 2
+                  ? 'Your location is unavailable right now. Check GPS/location services and try again.'
+                  : err?.code === 3
+                    ? 'Getting your location timed out. Move near a window or try again.'
+                    : t('nearbyPage.locDenied');
+            setLocationNote({ kind: 'text', message: reason });
+          } else {
+            setLocationNote((prev) =>
+              prev.kind === 'default' ? { kind: 'text', message: t('nearbyPage.locDefaultHint') } : prev
+            );
+          }
+        },
+        { enableHighAccuracy: true, maximumAge: 60_000, timeout: 20_000 }
+      );
+    },
+    [map, runPlacesSearch, t]
+  );
+
+  useEffect(() => {
+    if (!isLoaded || !map || autoLocRequested.current) return;
+    autoLocRequested.current = true;
+    requestUserLocation({ silent: true });
+  }, [isLoaded, map, requestUserLocation]);
+
   function onUseMyLocation() {
     setLocationNote({ kind: 'none' });
-    if (!navigator.geolocation) {
-      setLocationNote({ kind: 'text', message: t('nearbyPage.locUnavailable') });
-      return;
-    }
-    if (!window.isSecureContext && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-      setLocationNote({
-        kind: 'text',
-        message: 'Location needs HTTPS or localhost. Open the app on HTTPS, localhost, or the mobile app build.',
-      });
-      return;
-    }
-    setLocFetching(true);
-    setSearchStatus('loading');
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const next = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-        setUserLocation(next);
-        setSearchCenter(next);
-        setLocFetching(false);
-        setLocationNote({ kind: 'none' });
-        if (map && window.google?.maps) {
-          map.panTo(new window.google.maps.LatLng(next.lat, next.lng));
-          map.setZoom(14);
-        }
-        setSearchScope('radius');
-        runPlacesSearch('radius', next);
-      },
-      (err) => {
-        setLocFetching(false);
-        setSearchStatus('idle');
-        const reason =
-          err?.code === 1
-            ? 'Location permission was denied. Allow location access for this site/app and try again.'
-            : err?.code === 2
-              ? 'Your location is unavailable right now. Check GPS/location services and try again.'
-              : err?.code === 3
-                ? 'Getting your location timed out. Move near a window or try again.'
-                : t('nearbyPage.locDenied');
-        setLocationNote({ kind: 'text', message: reason });
-      },
-      { enableHighAccuracy: true, maximumAge: 60_000, timeout: 20_000 }
-    );
+    requestUserLocation({ silent: false });
   }
 
   function onSearchThisArea() {

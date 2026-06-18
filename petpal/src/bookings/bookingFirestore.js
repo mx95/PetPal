@@ -207,6 +207,62 @@ export async function fetchCompanyService(companyId, serviceId) {
   return { id: snap.id, ...snap.data() };
 }
 
+export async function swapBookingSlot({ companyId, bookingId, newSlotId }) {
+  if (!isFirebaseConfigured()) throw new Error('firebase_unconfigured');
+  if (!companyId || !bookingId || !newSlotId) throw new Error('missing_fields');
+
+  const bookingRef = doc(getDb(), 'bookings', bookingId);
+  const bookingSnap = await getDoc(bookingRef);
+  if (!bookingSnap.exists()) throw new Error('booking_not_found');
+  const booking = bookingSnap.data() || {};
+  if (String(booking.companyId) !== String(companyId)) throw new Error('forbidden');
+
+  const newSlotRef = doc(getDb(), 'companies', companyId, 'availability', newSlotId);
+  const newSlotSnap = await getDoc(newSlotRef);
+  if (!newSlotSnap.exists()) throw new Error('slot_not_found');
+  const newSlot = newSlotSnap.data() || {};
+  if (newSlot.status !== 'open') throw new Error('slot_not_open');
+
+  const batch = writeBatch(getDb());
+  const oldSlotId = booking.slotId ? String(booking.slotId) : '';
+  if (oldSlotId) {
+    batch.update(doc(getDb(), 'companies', companyId, 'availability', oldSlotId), {
+      status: 'open',
+      updatedAt: serverTimestamp(),
+      bookingId: null,
+    });
+  }
+  batch.update(newSlotRef, {
+    status: 'blocked',
+    updatedAt: serverTimestamp(),
+    bookedAt: serverTimestamp(),
+    bookingId,
+  });
+  batch.update(bookingRef, {
+    slotId: newSlotId,
+    startAt: newSlot.startAt || null,
+    endAt: newSlot.endAt || null,
+    status: 'booked',
+    updatedAt: serverTimestamp(),
+  });
+  await batch.commit();
+}
+
+export async function blockSlotsForTimeOff(companyId, slotIds) {
+  if (!isFirebaseConfigured() || !companyId) return;
+  const ids = Array.isArray(slotIds) ? slotIds.filter(Boolean) : [];
+  if (!ids.length) return;
+  const batch = writeBatch(getDb());
+  ids.forEach((slotId) => {
+    batch.update(doc(getDb(), 'companies', companyId, 'availability', slotId), {
+      status: 'blocked',
+      blockReason: 'time_off',
+      updatedAt: serverTimestamp(),
+    });
+  });
+  await batch.commit();
+}
+
 export async function bookSlot({
   companyId,
   serviceId,
