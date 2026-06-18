@@ -1,7 +1,14 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { fetchOpenSlots, subscribeCompanyServices } from '../bookingFirestore';
-import { getDemoServices, getDemoSlots, isDemoClosedDay, nextOpenDemoDayYmd } from '../demoBookingData';
+import {
+  getCatalogServices,
+  getCatalogSlots,
+  isCatalogClosedDay,
+  isCatalogProvider,
+  nextOpenCatalogDayYmd,
+  resolveCatalogProviderId,
+} from '../bookingCatalog';
 import { formatTime24 } from '../../formatTime24';
 import { isFirebaseConfigured } from '../../firebase';
 
@@ -80,8 +87,8 @@ export function BookingModal({ open, provider, serviceTab, onClose, t }) {
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [slotErr, setSlotErr] = useState('');
 
-  const isDemo = provider && String(provider.id || '').startsWith('example_');
-  const companyId = provider ? String(provider.id) : '';
+  const companyId = provider ? resolveCatalogProviderId(String(provider.id)) : '';
+  const useCatalog = Boolean(provider && isCatalogProvider(companyId));
 
   useEffect(() => {
     if (!open || !provider || !companyId) {
@@ -89,8 +96,8 @@ export function BookingModal({ open, provider, serviceTab, onClose, t }) {
       setServiceId('');
       return undefined;
     }
-    if (isDemo) {
-      setServices(getDemoServices(companyId));
+    if (useCatalog) {
+      setServices(getCatalogServices(companyId));
       return undefined;
     }
     if (!isFirebaseConfigured()) {
@@ -103,7 +110,7 @@ export function BookingModal({ open, provider, serviceTab, onClose, t }) {
       (rows) => setServices(Array.isArray(rows) ? rows : []),
       () => setServices([])
     );
-  }, [open, provider, isDemo, companyId]);
+  }, [open, provider, useCatalog, companyId]);
 
   const filteredServices = useMemo(() => {
     const act = services.filter((s) => s && s.active !== false);
@@ -127,9 +134,9 @@ export function BookingModal({ open, provider, serviceTab, onClose, t }) {
   const monthDays = useMemo(() => {
     return monthGrid(monthDate).map((d) => ({
       ...d,
-      isClosed: Boolean(isDemo && isDemoClosedDay(companyId, d.date)),
+      isClosed: Boolean(useCatalog && isCatalogClosedDay(companyId, d.date)),
     }));
-  }, [monthDate, isDemo, companyId]);
+  }, [monthDate, useCatalog, companyId]);
   const dowLabels = useMemo(() => calendarDowLabels(), []);
   const monthLabel = monthDate.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
   const selectedService = useMemo(() => filteredServices.find((s) => s.id === serviceId) || null, [filteredServices, serviceId]);
@@ -164,7 +171,13 @@ export function BookingModal({ open, provider, serviceTab, onClose, t }) {
       setSlotErr('');
       try {
         const after = new Date(`${dayKey}T00:00:00`);
-        const rows = isDemo ? getDemoSlots(companyId, serviceId, { after }) : await fetchOpenSlots(companyId, serviceId, { after });
+        let rows = [];
+        if (isFirebaseConfigured()) {
+          rows = await fetchOpenSlots(companyId, serviceId, { after }).catch(() => []);
+        }
+        if (!rows.length && useCatalog) {
+          rows = getCatalogSlots(companyId, serviceId, { after });
+        }
         const sameDayRows = rows.filter((slot) => {
           const start = slotDate(slot, 'startAt');
           return start ? toYmd(start) === dayKey : true;
@@ -181,7 +194,7 @@ export function BookingModal({ open, provider, serviceTab, onClose, t }) {
     return () => {
       cancelled = true;
     };
-  }, [open, isDemo, companyId, serviceId, dayKey]);
+  }, [open, useCatalog, companyId, serviceId, dayKey]);
 
   useEffect(() => {
     if (!open) {
@@ -191,10 +204,10 @@ export function BookingModal({ open, provider, serviceTab, onClose, t }) {
       return;
     }
     const today = new Date();
-    const initialYmd = isDemo && companyId ? nextOpenDemoDayYmd(companyId, today) : toYmd(today);
+    const initialYmd = useCatalog && companyId ? nextOpenCatalogDayYmd(companyId, today) : toYmd(today);
     setDayKey(initialYmd);
     setMonthDate(new Date(`${initialYmd}T12:00:00`));
-  }, [open, companyId, isDemo]);
+  }, [open, companyId, useCatalog]);
 
   if (!open || !provider) return null;
 
@@ -208,17 +221,11 @@ export function BookingModal({ open, provider, serviceTab, onClose, t }) {
         providerName: String(provider.displayName || ''),
         providerAddress: String(provider.address || ''),
         serviceName: selectedService?.name || '',
-        demoBooking: isDemo
+        prefillSlot: selectedSlot
           ? {
-              provider,
-              service: selectedService,
-              slot: selectedSlot
-                ? {
-                    id: selectedSlot.id,
-                    startAtIso: selectedSlot.startAtIso || selectedSlot.startAt?.toDate?.()?.toISOString?.(),
-                    endAtIso: selectedSlot.endAtIso || selectedSlot.endAt?.toDate?.()?.toISOString?.(),
-                  }
-                : null,
+              id: selectedSlot.id,
+              startAtIso: selectedSlot.startAtIso || selectedSlot.startAt?.toDate?.()?.toISOString?.(),
+              endAtIso: selectedSlot.endAtIso || selectedSlot.endAt?.toDate?.()?.toISOString?.(),
             }
           : null,
       },
@@ -244,7 +251,6 @@ export function BookingModal({ open, provider, serviceTab, onClose, t }) {
         </div>
 
         <div className="pp-book-modalBody">
-          {isDemo ? <p className="pp-book-modalNote">Demo provider: you can book these test slots to try the full flow.</p> : null}
             <label className="pp-book-field">
               <span className="pp-book-field__label">{t('bookingsHub.modalSelectService')}</span>
               {filteredServices.length ? (

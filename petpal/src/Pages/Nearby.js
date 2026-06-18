@@ -11,6 +11,7 @@ import { subscribeGoogleMapsAuthFailure } from '../config/googleMapsAuthFailure'
 import { useI18n } from '../i18n/I18nContext';
 import { subscribeProviders } from '../bookings/providerDirectoryFirestore';
 import { providerBoostIsActive, providerDistanceKm } from '../bookings/bookingBrowseUtils';
+import { isBookingBrowseEnabled } from '../bookings/bookingFeature';
 import { isFirebaseConfigured } from '../firebase';
 
 const mapContainerStyle = { width: '100%', height: 'min(62vh, 640px)', minHeight: 340, borderRadius: 28 };
@@ -254,7 +255,7 @@ function NearbyMap({ apiKey }) {
 
   return (
     <div className="pp-nearby-page">
-      {petpalPartners.length ? (
+      {isBookingBrowseEnabled() && petpalPartners.length ? (
         <section className="pp-sponsoredRail pp-nearbyPartners" aria-label="PetPal recommended businesses">
           <div className="pp-sponsoredRail__head">
             <span>Recommended on PetPal</span>

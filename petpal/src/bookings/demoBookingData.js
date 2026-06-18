@@ -105,8 +105,34 @@ const DEMO_SERVICES = {
     { id: 'demo_vet_vaccine', type: 'vet', name: 'Vaccination visit', durationMin: 20, description: 'Routine vaccine appointment', active: true },
   ],
   example_groom: [
-    { id: 'demo_bath_basic', type: 'bath', name: 'Bath & brush', durationMin: 45, description: 'Coat wash and brush-out', active: true },
-    { id: 'demo_groom_full', type: 'saloon', name: 'Full grooming', durationMin: 90, description: 'Wash, trim, ears and nails', active: true },
+    {
+      id: 'demo_bath_basic',
+      type: 'bath',
+      name: 'Bath & brush',
+      durationMin: 45,
+      price: '€28',
+      description: 'Coat wash and brush-out',
+      active: true,
+      variants: [
+        { id: 'short', labelKey: 'bookConfirm.coatShort', durationMin: 35, price: '€24', descriptionKey: 'bookConfirm.coatShortDesc' },
+        { id: 'medium', labelKey: 'bookConfirm.coatMedium', durationMin: 45, price: '€28', descriptionKey: 'bookConfirm.coatMediumDesc' },
+        { id: 'long', labelKey: 'bookConfirm.coatLong', durationMin: 60, price: '€35', descriptionKey: 'bookConfirm.coatLongDesc' },
+      ],
+    },
+    {
+      id: 'demo_groom_full',
+      type: 'saloon',
+      name: 'Full grooming',
+      durationMin: 75,
+      price: '€45',
+      description: 'Wash, trim, ears and nails',
+      active: true,
+      variants: [
+        { id: 'short', labelKey: 'bookConfirm.coatShort', durationMin: 60, price: '€38', descriptionKey: 'bookConfirm.coatShortDesc' },
+        { id: 'medium', labelKey: 'bookConfirm.coatMedium', durationMin: 75, price: '€45', descriptionKey: 'bookConfirm.coatMediumDesc' },
+        { id: 'long', labelKey: 'bookConfirm.coatLong', durationMin: 95, price: '€55', descriptionKey: 'bookConfirm.coatLongDesc' },
+      ],
+    },
   ],
   example_hotel: [
     { id: 'demo_hotel_daycare', type: 'hotel', name: 'Day care trial', durationMin: 240, description: 'Half-day care session', active: true },
@@ -248,14 +274,18 @@ function collectDemoSlotStarts(providerId, service, after) {
   return starts;
 }
 
-export function getDemoSlots(providerId, serviceId, { after = new Date() } = {}) {
+export function getDemoSlots(providerId, serviceId, { after = new Date(), durationMin = null } = {}) {
   const service = getDemoServices(providerId).find((s) => s.id === serviceId);
   if (!service) return [];
 
-  const slotStarts = collectDemoSlotStarts(providerId, service, after).slice(0, 16);
+  const effectiveDuration = Number.isFinite(Number(durationMin)) && Number(durationMin) > 0
+    ? Number(durationMin)
+    : Math.max(5, Number(service.durationMin) || 30);
+  const serviceForSlots = { ...service, durationMin: effectiveDuration };
+  const slotStarts = collectDemoSlotStarts(providerId, serviceForSlots, after).slice(0, 16);
 
   return slotStarts.map((slotStart, idx) => {
-    const slotEnd = new Date(slotStart.getTime() + service.durationMin * 60 * 1000);
+    const slotEnd = new Date(slotStart.getTime() + effectiveDuration * 60 * 1000);
     return {
       id: `demo_slot_${providerId}_${serviceId}_${idx}`,
       serviceId,

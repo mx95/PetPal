@@ -2,13 +2,44 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
 import { useI18n } from '../i18n/I18nContext';
-import { bookSlot, fetchOpenSlots } from '../bookings/bookingFirestore';
+import { bookSlot, fetchCompanyService, fetchOpenSlots } from '../bookings/bookingFirestore';
+import {
+  buildVariantSnapshot,
+  isCoatVariantService,
+  resolveBookingDuration,
+  resolveBookingPrice,
+  resolveServiceVariants,
+  resolveVariantById,
+} from '../bookings/bookingServiceVariants';
 import { appleCalendarDataUrl, buildCalendarEvent, googleCalendarUrl } from '../bookings/calendarLinks';
-import { getDemoProvider, getDemoServices, getDemoSlots } from '../bookings/demoBookingData';
+import {
+  getCatalogProvider,
+  getCatalogService,
+  getCatalogSlots,
+  isCatalogProvider,
+  LOCAL_BOOKINGS_KEY,
+  resolveCatalogProviderId,
+  resolveCatalogServiceId,
+} from '../bookings/bookingCatalog';
+import { isFirebaseConfigured } from '../firebase';
 import { formatTime24 } from '../formatTime24';
+import { categoryEmoji } from '../pets/petCategories';
 import { subscribePets } from '../pets/petsFirestore';
+import PetAvatar from '../components/PetAvatar';
 
-const TEST_BOOKINGS_KEY = 'petpal_test_bookings';
+function saveLocalBooking(row) {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(LOCAL_BOOKINGS_KEY) || '[]');
+    const rows = Array.isArray(parsed) ? parsed : [];
+    localStorage.setItem(LOCAL_BOOKINGS_KEY, JSON.stringify([row, ...rows].slice(0, 20)));
+  } catch {
+    /* ignore */
+  }
+}
+
+function isCatalogSlotId(slotId) {
+  return String(slotId || '').startsWith('slot_');
+}
 
 function toLocalInputValue(d) {
   const pad = (n) => String(n).padStart(2, '0');
@@ -25,7 +56,6 @@ function maxAfterYmdLocal() {
   return toLocalInputValue(d);
 }
 
-/** Keep native <input type="date"> within a sane window so iOS/Android do not show "out of range". */
 function clampAfterDateYmd(value) {
   if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return todayYmdLocal();
   const min = todayYmdLocal();
@@ -79,15 +109,6 @@ function providerInitials(name) {
   return s.slice(0, 2).toUpperCase();
 }
 
-function saveLocalTestBooking(row) {
-  try {
-    const parsed = JSON.parse(localStorage.getItem(TEST_BOOKINGS_KEY) || '[]');
-    const rows = Array.isArray(parsed) ? parsed : [];
-    localStorage.setItem(TEST_BOOKINGS_KEY, JSON.stringify([row, ...rows].slice(0, 20)));
-  } catch {
-    // Local demo bookings are best-effort only.
-  }
-}
 
 function GoogleCalIcon() {
   return (
@@ -111,17 +132,44 @@ function AppleCalIcon() {
   );
 }
 
+function WizardProgress({ steps, currentIndex }) {
+  return (
+    <ol className="pp-bookWizardProgress" aria-label="Booking steps">
+      {steps.map((label, i) => (
+        <li
+          key={label}
+          className={`pp-bookWizardProgress__item${i <= currentIndex ? ' is-active' : ''}${i < currentIndex ? ' is-done' : ''}`}
+        >
+          <span className="pp-bookWizardProgress__dot" aria-hidden>
+            {i < currentIndex ? '✓' : i + 1}
+          </span>
+          <span className="pp-bookWizardProgress__label">{label}</span>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
 export default function BookService() {
   const { t, language } = useI18n();
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const { providerId, serviceId } = useParams();
-  const companyId = String(providerId || '');
+  const { providerId, serviceId: rawServiceId } = useParams();
+  const rawProviderId = String(providerId || '');
+  const rawServiceIdStr = String(rawServiceId || '');
+  const companyId = resolveCatalogProviderId(rawProviderId);
+  const serviceId = resolveCatalogServiceId(rawServiceIdStr);
   const uid = user?.uid || null;
+  const needsLegacyRedirect = companyId !== rawProviderId || serviceId !== rawServiceIdStr;
+
+  const useCatalog = isCatalogProvider(companyId);
 
   const [pets, setPets] = useState([]);
   const [petId, setPetId] = useState('');
+  const [service, setService] = useState(null);
+  const [variantId, setVariantId] = useState('');
+  const [stepIndex, setStepIndex] = useState(0);
   const [slots, setSlots] = useState([]);
   const [slotId, setSlotId] = useState('');
   const [afterDate, setAfterDate] = useState(() => clampAfterDateYmd(toLocalInputValue(new Date())));
@@ -130,22 +178,71 @@ export default function BookService() {
   const [confirmedBooking, setConfirmedBooking] = useState(null);
 
   const routeState = location.state && typeof location.state === 'object' ? location.state : null;
-  const demoBooking = routeState?.demoBooking || null;
-  const isDemo = Boolean(demoBooking);
-  const demoProvider = demoBooking?.provider || getDemoProvider(companyId);
-  const demoServices = useMemo(() => (isDemo ? getDemoServices(companyId) : []), [companyId, isDemo]);
-  const demoService = demoBooking?.service || demoServices.find((s) => s.id === serviceId) || null;
-  const petOptions = useMemo(
-    () => (pets.length ? pets : isDemo ? [{ id: 'demo_pet', name: 'Demo pet', categoryId: 'dog' }] : []),
-    [isDemo, pets]
+  const catalogProvider = useCatalog ? getCatalogProvider(companyId) : null;
+
+  const petOptions = pets;
+
+  const coatVariants = useMemo(() => resolveServiceVariants(service), [service]);
+  const showCoatStep = coatVariants.length > 0 && isCoatVariantService(service);
+  const wizardSteps = useMemo(
+    () =>
+      showCoatStep
+        ? [
+            t('bookConfirm.stepPet'),
+            t('bookConfirm.stepCoat'),
+            t('bookConfirm.stepSchedule'),
+            t('bookConfirm.stepReview'),
+          ]
+        : [t('bookConfirm.stepPet'), t('bookConfirm.stepSchedule'), t('bookConfirm.stepReview')],
+    [showCoatStep, t]
+  );
+
+  const stepKey = showCoatStep
+    ? (['pet', 'coat', 'schedule', 'review'][stepIndex] || 'pet')
+    : (['pet', 'schedule', 'review'][stepIndex] || 'pet');
+
+  const resolvedDuration = useMemo(
+    () => resolveBookingDuration(service, variantId),
+    [service, variantId]
+  );
+  const resolvedPrice = useMemo(
+    () => resolveBookingPrice(service, variantId),
+    [service, variantId]
   );
 
   useEffect(() => subscribePets(uid, setPets), [uid]);
 
   useEffect(() => {
+    if (!companyId || !serviceId) return;
+    let cancelled = false;
+    void (async () => {
+      let row = null;
+      if (isFirebaseConfigured()) {
+        row = await fetchCompanyService(companyId, serviceId).catch(() => null);
+      }
+      if (!row && useCatalog) {
+        row = getCatalogService(companyId, serviceId);
+      }
+      if (!cancelled) setService(row);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [companyId, serviceId, useCatalog]);
+
+  useEffect(() => {
+    const variants = resolveServiceVariants(service);
+    if (!variants.length) {
+      setVariantId('');
+      return;
+    }
+    setVariantId((prev) => (variants.some((v) => v.id === prev) ? prev : variants[1]?.id || variants[0].id));
+  }, [service]);
+
+  useEffect(() => {
     const st = location.state && typeof location.state === 'object' ? location.state : null;
     if (!st) return;
-    const demoSlot = st?.demoBooking?.slot;
+    const demoSlot = st?.prefillSlot || st?.demoBooking?.slot;
     if (demoSlot?.startAtIso) {
       const d = new Date(String(demoSlot.startAtIso));
       if (!Number.isNaN(d.getTime())) {
@@ -180,9 +277,13 @@ export default function BookService() {
   const refresh = async () => {
     setErr('');
     try {
-      const rows = isDemo
-        ? getDemoSlots(companyId, String(serviceId || ''), { after })
-        : await fetchOpenSlots(companyId, String(serviceId || ''), { after });
+      let rows = [];
+      if (isFirebaseConfigured()) {
+        rows = await fetchOpenSlots(companyId, String(serviceId || ''), { after }).catch(() => []);
+      }
+      if (!rows.length && useCatalog) {
+        rows = getCatalogSlots(companyId, String(serviceId || ''), { after, durationMin: resolvedDuration });
+      }
       setSlots(rows);
       setSlotId((prev) => {
         if (rows.some((r) => r.id === prev)) return prev;
@@ -195,9 +296,10 @@ export default function BookService() {
 
   useEffect(() => {
     if (!companyId || !serviceId) return;
+    if (stepKey !== 'schedule' && stepKey !== 'review') return;
     refresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [companyId, serviceId, afterDate]);
+  }, [companyId, serviceId, afterDate, resolvedDuration, stepKey]);
 
   useEffect(() => {
     const st = location.state && typeof location.state === 'object' ? location.state : null;
@@ -220,14 +322,59 @@ export default function BookService() {
 
   if (!user) return <Navigate to="/login" replace />;
 
+  if (needsLegacyRedirect) {
+    return (
+      <Navigate
+        to={`/bookings/provider/${encodeURIComponent(companyId)}/book/${encodeURIComponent(serviceId)}`}
+        replace
+        state={location.state}
+      />
+    );
+  }
+
+  const selectedPet = petOptions.find((p) => p.id === petId) || null;
+  const selectedVariant = resolveVariantById(service, variantId);
+  const providerName =
+    routeState?.providerName || catalogProvider?.displayName || t('bookConfirm.providerFallback');
+  const providerAddress = routeState?.providerAddress || catalogProvider?.address || '';
+  const serviceName = service?.name || routeState?.serviceName || t('bookConfirm.serviceFallback');
+
+  function canProceed() {
+    if (stepKey === 'pet') return Boolean(petId);
+    if (stepKey === 'coat') return Boolean(variantId);
+    if (stepKey === 'schedule') return Boolean(slotId);
+    return true;
+  }
+
+  function goNext() {
+    if (!canProceed()) return;
+    setStepIndex((i) => Math.min(i + 1, wizardSteps.length - 1));
+  }
+
+  function goBack() {
+    setStepIndex((i) => Math.max(i - 1, 0));
+  }
+
   const onBook = async () => {
     setErr('');
     setBusy(true);
     try {
-      const pet = petOptions.find((p) => p.id === petId);
+      const pet = selectedPet;
       const slot = slots.find((s) => s.id === slotId) || null;
-      if (isDemo) {
-        const bookingId = `test_${Date.now()}`;
+      const variantSnapshot = buildVariantSnapshot(service, variantId, t);
+      const serviceSnapshot = service
+        ? {
+            name: service.name,
+            type: service.type || null,
+            durationMin: resolvedDuration,
+            price: resolvedPrice || null,
+          }
+        : null;
+
+      const useLocalBooking = !isFirebaseConfigured() || isCatalogSlotId(slotId);
+
+      if (useLocalBooking) {
+        const bookingId = `local_${Date.now()}`;
         const row = {
           id: bookingId,
           bookingId,
@@ -236,24 +383,29 @@ export default function BookService() {
           slotId,
           customerUid: uid,
           petId,
-          petName: pet?.name || 'Demo pet',
-          petSnapshot: { name: pet?.name || 'Demo pet', categoryId: pet?.categoryId || 'dog' },
-          providerName: demoProvider?.displayName || routeState?.providerName || 'PetPal partner',
-          providerAddress: demoProvider?.address || routeState?.providerAddress || '',
-          serviceName: demoService?.name || routeState?.serviceName || 'Appointment',
+          petName: pet?.name || '',
+          petSnapshot: { name: pet?.name || '', categoryId: pet?.categoryId || 'dog' },
+          variantId: variantId || null,
+          variantSnapshot,
+          serviceSnapshot,
+          providerName,
+          providerAddress,
+          serviceName,
           startAtIso: slot?.startAtIso || slot?.startAt?.toDate?.()?.toISOString?.(),
           endAtIso: slot?.endAtIso || slot?.endAt?.toDate?.()?.toISOString?.(),
           startAt: slot?.startAt || null,
           endAt: slot?.endAt || null,
-          durationMin: demoService?.durationMin ?? durationBetween(asDate(slot?.startAt), asDate(slot?.endAt)),
+          durationMin: resolvedDuration,
+          price: resolvedPrice || null,
           status: 'confirmed',
           createdAtIso: new Date().toISOString(),
         };
-        saveLocalTestBooking(row);
+        saveLocalBooking(row);
         setConfirmedBooking(row);
         setBusy(false);
         return;
       }
+
       const bookingId = await bookSlot({
         companyId,
         serviceId,
@@ -261,6 +413,9 @@ export default function BookService() {
         customerUid: uid,
         petId,
         petSnapshot: { name: pet?.name || '', categoryId: pet?.categoryId || 'dog' },
+        variantId: variantId || null,
+        variantSnapshot,
+        serviceSnapshot,
       });
       setConfirmedBooking({
         id: bookingId,
@@ -271,9 +426,14 @@ export default function BookService() {
         petId,
         petName: pet?.name || 'Pet',
         petSnapshot: { name: pet?.name || 'Pet', categoryId: pet?.categoryId || 'dog' },
-        providerName: routeState?.providerName || 'PetPal partner',
-        providerAddress: routeState?.providerAddress || '',
-        serviceName: routeState?.serviceName || 'Appointment',
+        variantId: variantId || null,
+        variantSnapshot,
+        serviceSnapshot,
+        providerName,
+        providerAddress,
+        serviceName,
+        durationMin: resolvedDuration,
+        price: resolvedPrice || null,
         startAt: slot?.startAt || null,
         endAt: slot?.endAt || null,
         startAtIso: slot?.startAtIso || slot?.startAt?.toDate?.()?.toISOString?.(),
@@ -289,7 +449,6 @@ export default function BookService() {
   };
 
   const markParts = confirmedBooking ? null : calendarMarkParts(clampAfterDateYmd(afterDate));
-
   const bookingStart = confirmedBooking ? asDate(confirmedBooking.startAt || confirmedBooking.startAtIso) : null;
   const bookingEnd = confirmedBooking ? asDate(confirmedBooking.endAt || confirmedBooking.endAtIso) : null;
   const bookingDuration =
@@ -297,7 +456,6 @@ export default function BookService() {
     (typeof confirmedBooking.durationMin === 'number'
       ? confirmedBooking.durationMin
       : durationBetween(bookingStart, bookingEnd));
-
   const calEvent = confirmedBooking ? buildCalendarEvent(confirmedBooking) : null;
 
   return (
@@ -322,6 +480,12 @@ export default function BookService() {
         <p className="pp-bookConfirmPage__lead">
           {confirmedBooking ? t('bookConfirm.successLead') : t('bookConfirm.subtitle')}
         </p>
+        {!confirmedBooking ? (
+          <p className="pp-bookConfirmPage__serviceLine">
+            <strong>{serviceName}</strong>
+            {providerName ? <span> · {providerName}</span> : null}
+          </p>
+        ) : null}
       </header>
 
       {err ? <div className="pp-bookConfirmPage__alert">{err}</div> : null}
@@ -345,6 +509,12 @@ export default function BookService() {
                 <dt>{t('bookConfirm.petLabel')}</dt>
                 <dd>{confirmedBooking.petName || confirmedBooking.petSnapshot?.name || '—'}</dd>
               </div>
+              {confirmedBooking.variantSnapshot?.label ? (
+                <div className="pp-bookConfirmPass__row">
+                  <dt>{t('bookConfirm.variantLabel')}</dt>
+                  <dd>{confirmedBooking.variantSnapshot.label}</dd>
+                </div>
+              ) : null}
               <div className="pp-bookConfirmPass__row">
                 <dt>{t('bookConfirm.whenLabel')}</dt>
                 <dd>{bookingStart ? formatWhenLine(bookingStart, language) : '—'}</dd>
@@ -353,6 +523,12 @@ export default function BookService() {
                 <div className="pp-bookConfirmPass__row">
                   <dt>{t('bookConfirm.durationLabel')}</dt>
                   <dd>{t('bookConfirm.mins', { n: bookingDuration })}</dd>
+                </div>
+              ) : null}
+              {confirmedBooking.price || confirmedBooking.variantSnapshot?.price ? (
+                <div className="pp-bookConfirmPass__row">
+                  <dt>{t('bookConfirm.priceLabel')}</dt>
+                  <dd>{confirmedBooking.price || confirmedBooking.variantSnapshot?.price}</dd>
                 </div>
               ) : null}
               {confirmedBooking.providerAddress ? (
@@ -364,7 +540,9 @@ export default function BookService() {
               <div className="pp-bookConfirmPass__row pp-bookConfirmPass__row--ref">
                 <dt>{t('bookConfirm.refLabel')}</dt>
                 <dd>
-                  <code className="pp-bookConfirmPass__code">{String(confirmedBooking.bookingId || confirmedBooking.id)}</code>
+                  <code className="pp-bookConfirmPass__code">
+                    {String(confirmedBooking.bookingId || confirmedBooking.id)}
+                  </code>
                 </dd>
               </div>
             </dl>
@@ -401,92 +579,219 @@ export default function BookService() {
             <li>{t('bookConfirm.trustReminder')}</li>
           </ul>
 
-          <button type="button" className="pp-bookConfirmPage__textCta" onClick={() => navigate('/bookings', { replace: true })}>
+          <button
+            type="button"
+            className="pp-bookConfirmPage__textCta"
+            onClick={() => navigate('/bookings', { replace: true })}
+          >
             {t('bookConfirm.backBookings')}
           </button>
         </>
-      ) : null}
+      ) : (
+        <>
+          <WizardProgress steps={wizardSteps} currentIndex={stepIndex} />
 
-      {!confirmedBooking ? (
-        <section className="pp-bookConfirmForm">
-          <h2 className="pp-bookConfirmForm__title">{t('bookConfirm.sectionDetails')}</h2>
+          <section className="pp-bookWizardPanel">
+            {stepKey === 'pet' ? (
+              <>
+                <h2 className="pp-bookWizardPanel__title">{t('bookConfirm.petStepTitle')}</h2>
+                <p className="pp-bookWizardPanel__lead">{t('bookConfirm.petStepLead')}</p>
+                {petOptions.length ? (
+                  <ul className="pp-bookPetPick">
+                    {petOptions.map((p) => (
+                      <li key={p.id}>
+                        <button
+                          type="button"
+                          className={`pp-bookPetPick__card${petId === p.id ? ' is-active' : ''}`}
+                          onClick={() => setPetId(p.id)}
+                        >
+                          <PetAvatar pet={p} size={48} />
+                          <span className="pp-bookPetPick__name">{p.name}</span>
+                          <span className="pp-bookPetPick__meta">{categoryEmoji(p.categoryId)}</span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <div className="pp-bookConfirmField__empty">
+                    <p>{t('bookConfirm.noPetsLead')}</p>
+                    <Link className="pp-bookConfirmPage__link" to="/pets#add-pet">
+                      {t('bookConfirm.noPetsCta')}
+                    </Link>
+                  </div>
+                )}
+              </>
+            ) : null}
 
-          <div className="pp-bookConfirmForm__fields">
-            <label className="pp-bookConfirmField">
-              <span className="pp-bookConfirmField__label">{t('bookConfirm.petField')}</span>
-              {petOptions.length ? (
-                <select
-                  className="pp-bookConfirmField__control"
-                  value={petId}
-                  onChange={(e) => setPetId(e.target.value)}
-                >
-                  {petOptions.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
-                    </option>
+            {stepKey === 'coat' ? (
+              <>
+                <h2 className="pp-bookWizardPanel__title">{t('bookConfirm.coatStepTitle')}</h2>
+                <p className="pp-bookWizardPanel__lead">{t('bookConfirm.coatStepLead')}</p>
+                <ul className="pp-bookVariantPick">
+                  {coatVariants.map((v) => (
+                    <li key={v.id}>
+                      <button
+                        type="button"
+                        className={`pp-bookVariantPick__card${variantId === v.id ? ' is-active' : ''}`}
+                        onClick={() => setVariantId(v.id)}
+                      >
+                        <span className="pp-bookVariantPick__name">{t(v.labelKey)}</span>
+                        {v.descriptionKey ? (
+                          <span className="pp-bookVariantPick__desc">{t(v.descriptionKey)}</span>
+                        ) : null}
+                        <span className="pp-bookVariantPick__meta">
+                          {t('bookConfirm.mins', { n: v.durationMin })}
+                          {v.price ? ` · ${v.price}` : ''}
+                        </span>
+                      </button>
+                    </li>
                   ))}
-                </select>
-              ) : (
-                <div className="pp-bookConfirmField__empty">
-                  <p>{t('bookConfirm.noPetsLead')}</p>
-                  <Link className="pp-bookConfirmPage__link" to="/pets#add-pet">
-                    {t('bookConfirm.noPetsCta')}
-                  </Link>
+                </ul>
+              </>
+            ) : null}
+
+            {stepKey === 'schedule' ? (
+              <>
+                <h2 className="pp-bookWizardPanel__title">{t('bookConfirm.scheduleStepTitle')}</h2>
+                <p className="pp-bookWizardPanel__lead">
+                  {selectedPet
+                    ? t('bookConfirm.scheduleStepLead', { pet: selectedPet.name })
+                    : t('bookConfirm.scheduleStepLeadGeneric')}
+                </p>
+                {selectedVariant ? (
+                  <p className="pp-bookWizardPanel__hint">
+                    {t('bookConfirm.scheduleDurationHint', {
+                      variant: t(selectedVariant.labelKey),
+                      mins: resolvedDuration,
+                    })}
+                  </p>
+                ) : null}
+                <div className="pp-bookConfirmForm__fields">
+                  <label className="pp-bookConfirmField">
+                    <span className="pp-bookConfirmField__label">{t('bookConfirm.dateField')}</span>
+                    <input
+                      className="pp-bookConfirmField__control"
+                      type="date"
+                      min={minAfterYmd}
+                      max={maxAfterYmd}
+                      value={afterDate}
+                      onChange={(e) => setAfterDate(clampAfterDateYmd(e.target.value || minAfterYmd))}
+                    />
+                  </label>
+                  <label className="pp-bookConfirmField">
+                    <span className="pp-bookConfirmField__label">{t('bookConfirm.slotField')}</span>
+                    {slots.length ? (
+                      <select
+                        className="pp-bookConfirmField__control"
+                        value={slotId}
+                        onChange={(e) => setSlotId(e.target.value)}
+                      >
+                        {slots.map((s) => {
+                          const start = asDate(s.startAt) || asDate(s.startAtIso);
+                          return (
+                            <option key={s.id} value={s.id}>
+                              {start ? formatWhenLine(start, language) : s.id}
+                            </option>
+                          );
+                        })}
+                      </select>
+                    ) : (
+                      <div className="pp-bookConfirmField__empty">{t('bookConfirm.noSlots')}</div>
+                    )}
+                  </label>
                 </div>
-              )}
-            </label>
+              </>
+            ) : null}
 
-            <label className="pp-bookConfirmField">
-              <span className="pp-bookConfirmField__label">{t('bookConfirm.dateField')}</span>
-              <input
-                className="pp-bookConfirmField__control"
-                type="date"
-                min={minAfterYmd}
-                max={maxAfterYmd}
-                value={afterDate}
-                onChange={(e) => setAfterDate(clampAfterDateYmd(e.target.value || minAfterYmd))}
-              />
-            </label>
+            {stepKey === 'review' ? (
+              <>
+                <h2 className="pp-bookWizardPanel__title">{t('bookConfirm.reviewStepTitle')}</h2>
+                <dl className="pp-bookReviewRows">
+                  <div className="pp-bookReviewRows__row">
+                    <dt>{t('bookConfirm.petLabel')}</dt>
+                    <dd>{selectedPet?.name || '—'}</dd>
+                  </div>
+                  <div className="pp-bookReviewRows__row">
+                    <dt>{t('bookConfirm.serviceLabel')}</dt>
+                    <dd>{serviceName}</dd>
+                  </div>
+                  {selectedVariant ? (
+                    <div className="pp-bookReviewRows__row">
+                      <dt>{t('bookConfirm.variantLabel')}</dt>
+                      <dd>{t(selectedVariant.labelKey)}</dd>
+                    </div>
+                  ) : null}
+                  <div className="pp-bookReviewRows__row">
+                    <dt>{t('bookConfirm.whenLabel')}</dt>
+                    <dd>
+                      {(() => {
+                        const slot = slots.find((s) => s.id === slotId);
+                        const start = slot ? asDate(slot.startAt) || asDate(slot.startAtIso) : null;
+                        return start ? formatWhenLine(start, language) : '—';
+                      })()}
+                    </dd>
+                  </div>
+                  <div className="pp-bookReviewRows__row">
+                    <dt>{t('bookConfirm.durationLabel')}</dt>
+                    <dd>{t('bookConfirm.mins', { n: resolvedDuration })}</dd>
+                  </div>
+                  {resolvedPrice ? (
+                    <div className="pp-bookReviewRows__row">
+                      <dt>{t('bookConfirm.priceLabel')}</dt>
+                      <dd>{resolvedPrice}</dd>
+                    </div>
+                  ) : null}
+                  {providerAddress ? (
+                    <div className="pp-bookReviewRows__row">
+                      <dt>{t('bookConfirm.addressLabel')}</dt>
+                      <dd>{providerAddress}</dd>
+                    </div>
+                  ) : null}
+                </dl>
+              </>
+            ) : null}
+          </section>
 
-            <label className="pp-bookConfirmField">
-              <span className="pp-bookConfirmField__label">{t('bookConfirm.slotField')}</span>
-              {slots.length ? (
-                <select className="pp-bookConfirmField__control" value={slotId} onChange={(e) => setSlotId(e.target.value)}>
-                  {slots.map((s) => {
-                    const start = asDate(s.startAt) || asDate(s.startAtIso);
-                    return (
-                      <option key={s.id} value={s.id}>
-                        {start ? formatWhenLine(start, language) : s.id}
-                      </option>
-                    );
-                  })}
-                </select>
-              ) : (
-                <div className="pp-bookConfirmField__empty">{t('bookConfirm.noSlots')}</div>
-              )}
-            </label>
-          </div>
-
-          <div className="pp-bookConfirmForm__actions">
+          <div className="pp-bookWizardNav">
             <button
               type="button"
-              className="pp-bookConfirmForm__primary"
-              disabled={busy || !petOptions.length || !slotId}
-              onClick={onBook}
+              className="pp-bookConfirmForm__ghost"
+              disabled={stepIndex === 0 || busy}
+              onClick={goBack}
             >
-              {busy ? t('bookConfirm.submitting') : t('bookConfirm.ctaConfirm')}
+              {t('bookConfirm.wizardBack')}
             </button>
-            <button
-              type="button"
-              className="pp-bookConfirmForm__ghost pp-bookConfirmForm__ghost--full"
-              disabled={busy}
-              onClick={() => navigate(`/bookings/provider/${encodeURIComponent(companyId)}`)}
-            >
-              {t('bookConfirm.cancel')}
-            </button>
+            {stepKey === 'review' ? (
+              <button
+                type="button"
+                className="pp-bookConfirmForm__primary"
+                disabled={busy || !petOptions.length || !slotId}
+                onClick={() => void onBook()}
+              >
+                {busy ? t('bookConfirm.submitting') : t('bookConfirm.ctaConfirm')}
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="pp-bookConfirmForm__primary"
+                disabled={!canProceed()}
+                onClick={goNext}
+              >
+                {t('bookConfirm.wizardNext')}
+              </button>
+            )}
           </div>
-        </section>
-      ) : null}
+
+          <button
+            type="button"
+            className="pp-bookConfirmPage__textCta"
+            disabled={busy}
+            onClick={() => navigate(-1)}
+          >
+            {t('bookConfirm.cancel')}
+          </button>
+        </>
+      )}
     </div>
   );
 }

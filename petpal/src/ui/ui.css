@@ -10392,6 +10392,164 @@ select.pp-bookConfirmField__control {
   }
 }
 
+.pp-bookConfirmPage__serviceLine {
+  margin: 0.35rem 0 0;
+  font-size: 0.95rem;
+  color: var(--pp-muted, #64748b);
+}
+
+.pp-bookConfirmPage__serviceLine strong {
+  color: var(--pp-text, #0f172a);
+}
+
+.pp-bookWizardProgress {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem 0.5rem;
+  margin: 0 0 1.25rem;
+  padding: 0;
+  list-style: none;
+}
+
+.pp-bookWizardProgress__item {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--pp-muted, #94a3b8);
+  font-size: 0.75rem;
+}
+
+.pp-bookWizardProgress__item.is-active,
+.pp-bookWizardProgress__item.is-done {
+  color: var(--pp-brand, #0d9488);
+}
+
+.pp-bookWizardProgress__dot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.65rem;
+  height: 1.65rem;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.pp-bookWizardProgress__item.is-active .pp-bookWizardProgress__dot,
+.pp-bookWizardProgress__item.is-done .pp-bookWizardProgress__dot {
+  background: var(--pp-brand, #0d9488);
+  border-color: var(--pp-brand, #0d9488);
+  color: #fff;
+}
+
+.pp-bookWizardPanel {
+  margin-bottom: 1rem;
+}
+
+.pp-bookWizardPanel__title {
+  margin: 0 0 0.35rem;
+  font-size: 1.15rem;
+}
+
+.pp-bookWizardPanel__lead,
+.pp-bookWizardPanel__hint {
+  margin: 0 0 1rem;
+  color: var(--pp-muted, #64748b);
+  font-size: 0.92rem;
+}
+
+.pp-bookPetPick,
+.pp-bookVariantPick {
+  display: grid;
+  gap: 0.65rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pp-bookPetPick__card,
+.pp-bookVariantPick__card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--pp-border, #e2e8f0);
+  border-radius: 12px;
+  background: #fff;
+  text-align: left;
+  cursor: pointer;
+}
+
+.pp-bookVariantPick__card {
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.pp-bookPetPick__card.is-active,
+.pp-bookVariantPick__card.is-active {
+  border-color: var(--pp-brand, #0d9488);
+  box-shadow: 0 0 0 1px var(--pp-brand, #0d9488);
+}
+
+.pp-bookPetPick__name,
+.pp-bookVariantPick__name {
+  font-weight: 600;
+}
+
+.pp-bookPetPick__meta,
+.pp-bookVariantPick__meta {
+  margin-left: auto;
+  font-size: 0.85rem;
+  color: var(--pp-muted, #64748b);
+}
+
+.pp-bookVariantPick__desc {
+  font-size: 0.88rem;
+  color: var(--pp-muted, #64748b);
+}
+
+.pp-bookReviewRows {
+  margin: 0;
+  display: grid;
+  gap: 0.65rem;
+}
+
+.pp-bookReviewRows__row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.55rem;
+  border-bottom: 1px solid var(--pp-border, #e2e8f0);
+}
+
+.pp-bookReviewRows__row dt {
+  color: var(--pp-muted, #64748b);
+  font-size: 0.88rem;
+}
+
+.pp-bookReviewRows__row dd {
+  margin: 0;
+  font-weight: 600;
+  text-align: right;
+}
+
+.pp-bookWizardNav {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.pp-bookWizardNav .pp-bookConfirmForm__primary,
+.pp-bookWizardNav .pp-bookConfirmForm__ghost {
+  flex: 1;
+  min-width: 0;
+}
+
 @media (max-width: 520px) {
   .pp-trackMapActions {
     display: grid !important;

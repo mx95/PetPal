@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useI18n } from '../i18n/I18nContext';
 import { createDiscoverPost } from './discoverFeedFirestore';
 import { CATEGORY_EMOJI } from './discoverFeedModel';
+import { isBookingBrowseEnabled } from '../bookings/bookingFeature';
 
 const CATEGORIES = [
   { id: 'vet', labelKey: 'discover.promote.catVet' },
@@ -42,7 +43,7 @@ export default function DiscoverPromoteModal({ open, onClose, companyProfile, ui
         body: tBody,
         category,
         sponsored,
-        ctaTo: '/bookings',
+        ctaTo: isBookingBrowseEnabled() ? '/bookings' : '/nearby',
         ctaLabelKey: 'discover.feed.bookNow',
         contactEmail: companyProfile.publicEmail || '',
         lat: companyProfile.lat,

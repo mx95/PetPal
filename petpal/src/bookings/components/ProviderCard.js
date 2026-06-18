@@ -21,7 +21,6 @@ function categoryLabel(types, t) {
  * }} props
  */
 export function ProviderCard({ provider, distanceKm, onBook, t }) {
-  const isDemo = String(provider.id || '').startsWith('example_');
   const rating = Number(provider.rating);
   const hasRating = Number.isFinite(rating) && rating > 0;
   const cat = useMemo(() => categoryLabel(provider.providerTypes, t), [provider.providerTypes, t]);
@@ -43,7 +42,7 @@ export function ProviderCard({ provider, distanceKm, onBook, t }) {
             </span>
           ) : null}
           <span className="rounded-full bg-white/90 px-3 py-1 text-xs font-black text-petpal-ink shadow-soft">
-            {isDemo ? 'Test ready' : 'Verified'}
+            Verified
           </span>
           <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700 shadow-soft">
             Available
@@ -65,7 +64,6 @@ export function ProviderCard({ provider, distanceKm, onBook, t }) {
         <p className="mt-2 min-h-[2.5rem] text-sm leading-6 text-petpal-muted">{String(provider.address || '')}</p>
         <div className="mt-4 flex flex-wrap gap-2">
           {distanceKm != null ? <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-black text-blue-700">About {distanceKm.toFixed(1)} km</span> : null}
-          {isDemo ? <span className="rounded-full bg-violet-50 px-3 py-1 text-xs font-black text-violet-700">Demo slots</span> : null}
         </div>
         <div className="mt-4 grid grid-cols-2 gap-2 text-xs font-bold text-petpal-muted">
           <span className="rounded-2xl bg-slate-50 px-3 py-2">Hours: {hours}</span>

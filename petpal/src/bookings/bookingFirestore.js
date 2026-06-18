@@ -70,6 +70,17 @@ export async function upsertCompanyService(companyId, serviceId, data) {
     active: data?.active !== false,
     updatedAt: serverTimestamp(),
   };
+  if (Array.isArray(data?.variants)) {
+    payload.variants = data.variants
+      .filter((v) => v && v.id)
+      .map((v) => ({
+        id: String(v.id).slice(0, 40),
+        labelKey: v.labelKey ? String(v.labelKey).slice(0, 80) : '',
+        durationMin: Number(v.durationMin) || payload.durationMin,
+        price: v.price ? String(v.price).slice(0, 40) : '',
+        descriptionKey: v.descriptionKey ? String(v.descriptionKey).slice(0, 80) : '',
+      }));
+  }
   if (!payload.name) throw new Error('service_name_required');
   if (!Number.isFinite(payload.durationMin) || payload.durationMin < 5) throw new Error('invalid_duration');
 
@@ -189,7 +200,24 @@ export async function fetchOpenSlots(companyId, serviceId, { after = new Date() 
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
 }
 
-export async function bookSlot({ companyId, serviceId, slotId, customerUid, petId, petSnapshot }) {
+export async function fetchCompanyService(companyId, serviceId) {
+  if (!isFirebaseConfigured() || !companyId || !serviceId) return null;
+  const snap = await getDoc(doc(getDb(), 'companies', companyId, 'services', serviceId));
+  if (!snap.exists()) return null;
+  return { id: snap.id, ...snap.data() };
+}
+
+export async function bookSlot({
+  companyId,
+  serviceId,
+  slotId,
+  customerUid,
+  petId,
+  petSnapshot,
+  variantId = null,
+  variantSnapshot = null,
+  serviceSnapshot = null,
+}) {
   if (!isFirebaseConfigured()) throw new Error('firebase_unconfigured');
   if (!companyId || !serviceId || !slotId || !customerUid || !petId) throw new Error('missing_fields');
 
@@ -212,6 +240,9 @@ export async function bookSlot({ companyId, serviceId, slotId, customerUid, petI
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   };
+  if (variantId) bookingPayload.variantId = String(variantId);
+  if (variantSnapshot) bookingPayload.variantSnapshot = variantSnapshot;
+  if (serviceSnapshot) bookingPayload.serviceSnapshot = serviceSnapshot;
 
   // Best-effort: mark slot blocked to prevent double-booking. In v1 this is client-side.
   const batch = writeBatch(getDb());

@@ -31,7 +31,7 @@ const BASE = [
     likes: 128,
     comments: 14,
     ctaLabelKey: 'discover.feed.bookNow',
-    ctaTo: '/bookings',
+    ctaTo: '/nearby',
     createdAt: agoHours(2),
   },
   {
@@ -137,7 +137,7 @@ const BASE = [
     likes: 167,
     comments: 22,
     ctaLabelKey: 'discover.feed.enroll',
-    ctaTo: '/bookings',
+    ctaTo: '/nearby',
     createdAt: agoHours(30),
   },
   {
@@ -168,7 +168,7 @@ export const DISCOVER_COMMUNITY_PETS = [
 
 export const DISCOVER_SERVICES = [
   { id: 'gps', icon: '📍', gradient: GRAD.brand, titleKey: 'discover.services.gps', descKey: 'discover.services.gpsDesc', to: '/tracking' },
-  { id: 'vet', icon: '🏥', gradient: GRAD.vet, titleKey: 'discover.services.vet', descKey: 'discover.services.vetDesc', to: '/bookings' },
+  { id: 'vet', icon: '🏥', gradient: GRAD.vet, titleKey: 'discover.services.vet', descKey: 'discover.services.vetDesc', to: '/nearby' },
   { id: 'walk', icon: '🚶', gradient: GRAD.tip, titleKey: 'discover.services.walk', descKey: 'discover.services.walkDesc', to: '/dashboard' },
   { id: 'profile', icon: '🐾', gradient: GRAD.adopt, titleKey: 'discover.services.profile', descKey: 'discover.services.profileDesc', to: '/pets' },
   { id: 'lost', icon: '🆘', gradient: 'linear-gradient(135deg, #ef4444, #f97316)', titleKey: 'discover.services.lost', descKey: 'discover.services.lostDesc', to: '/premium/lost' },

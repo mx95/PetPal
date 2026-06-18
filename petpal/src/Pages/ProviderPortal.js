@@ -676,6 +676,36 @@ export default function ProviderPortal() {
   );
 }
 
+function buildCoatVariants(durationMin, basePrice) {
+  const priceNum = parseFloat(String(basePrice || '').replace(/[^\d.]/g, '')) || 30;
+  const prefix = String(basePrice || '').includes('€') ? '€' : '';
+  const fmt = (n) => `${prefix}${n}`;
+  const dur = Math.max(5, Number(durationMin) || 30);
+  return [
+    {
+      id: 'short',
+      labelKey: 'bookConfirm.coatShort',
+      durationMin: Math.max(5, dur - 10),
+      price: fmt(Math.round(priceNum * 0.85)),
+      descriptionKey: 'bookConfirm.coatShortDesc',
+    },
+    {
+      id: 'medium',
+      labelKey: 'bookConfirm.coatMedium',
+      durationMin: dur,
+      price: String(basePrice || fmt(priceNum)),
+      descriptionKey: 'bookConfirm.coatMediumDesc',
+    },
+    {
+      id: 'long',
+      labelKey: 'bookConfirm.coatLong',
+      durationMin: dur + 20,
+      price: fmt(Math.round(priceNum * 1.2)),
+      descriptionKey: 'bookConfirm.coatLongDesc',
+    },
+  ];
+}
+
 function Services({ companyId }) {
   const [services, setServices] = useState([]);
   const [err, setErr] = useState('');
@@ -688,6 +718,7 @@ function Services({ companyId }) {
     addOns: '',
     preparationNotes: '',
     active: true,
+    coatVariants: false,
   });
 
   useEffect(() => subscribeCompanyServices(companyId, setServices, (e) => setErr(e?.message || 'failed')), [companyId]);
@@ -696,8 +727,23 @@ function Services({ companyId }) {
     e.preventDefault();
     setErr('');
     try {
-      await upsertCompanyService(companyId, null, form);
-      setForm({ type: 'vet', name: '', durationMin: 30, price: '', description: '', addOns: '', preparationNotes: '', active: true });
+      const payload = { ...form };
+      if (payload.coatVariants && (payload.type === 'saloon' || payload.type === 'bath')) {
+        payload.variants = buildCoatVariants(payload.durationMin, payload.price);
+      }
+      delete payload.coatVariants;
+      await upsertCompanyService(companyId, null, payload);
+      setForm({
+        type: 'vet',
+        name: '',
+        durationMin: 30,
+        price: '',
+        description: '',
+        addOns: '',
+        preparationNotes: '',
+        active: true,
+        coatVariants: false,
+      });
     } catch (e2) {
       setErr(e2?.message || 'failed');
     }
@@ -714,6 +760,7 @@ function Services({ companyId }) {
               <span className="pp-field__label">Type</span>
               <select value={form.type} onChange={(e) => setForm((p) => ({ ...p, type: e.target.value }))}>
                 <option value="vet">Vet</option>
+                <option value="bath">Bath</option>
                 <option value="saloon">Saloon</option>
                 <option value="hotel">Hotel</option>
               </select>
@@ -752,6 +799,18 @@ function Services({ companyId }) {
             <span className="pp-field__label">Preparation notes</span>
             <textarea rows={2} value={form.preparationNotes} onChange={(e) => setForm((p) => ({ ...p, preparationNotes: e.target.value }))} placeholder="Bring vaccination booklet, arrive 10 minutes early..." />
           </label>
+          {form.type === 'saloon' || form.type === 'bath' ? (
+            <label className="pp-field" style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+              <input
+                type="checkbox"
+                checked={form.coatVariants}
+                onChange={(e) => setForm((p) => ({ ...p, coatVariants: e.target.checked }))}
+              />
+              <span className="pp-field__label" style={{ margin: 0 }}>
+                Coat length options (short / medium / long)
+              </span>
+            </label>
+          ) : null}
           <label className="pp-field" style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
             <input
               type="checkbox"
@@ -777,7 +836,10 @@ function Services({ companyId }) {
               <div>
                 <div style={{ fontWeight: 900 }}>{s.name}</div>
                 <div className="pp-muted" style={{ fontSize: 13 }}>
-                  {s.type} • {s.price || 'No price'} • {s.durationMin} min • {s.active === false ? 'inactive' : 'active'}
+                  {s.type} • {s.price || 'No price'} • {s.durationMin} min
+                  {Array.isArray(s.variants) && s.variants.length ? ` • ${s.variants.length} coat options` : ''}
+                  {' • '}
+                  {s.active === false ? 'inactive' : 'active'}
                 </div>
               </div>
               <button

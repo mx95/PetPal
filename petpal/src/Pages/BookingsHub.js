@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
 import { useI18n } from '../i18n/I18nContext';
 import { subscribeCustomerBookings } from '../bookings/bookingFirestore';
+import { LOCAL_BOOKINGS_KEY } from '../bookings/bookingCatalog';
 import { subscribeProviders } from '../bookings/providerDirectoryFirestore';
 import {
   matchesRatingFilter,
@@ -18,11 +19,20 @@ import { formatDateTime24 } from '../formatTime24';
 import { appleCalendarDataUrl, buildCalendarEvent, googleCalendarUrl } from '../bookings/calendarLinks';
 import { AppCard, EmptyState, PageContainer, SectionHeader, SkeletonCard } from '../components/ui';
 
-const TEST_BOOKINGS_KEY = 'petpal_test_bookings';
+const TEST_BOOKINGS_KEY = LOCAL_BOOKINGS_KEY;
 
 function getLocalTestBookings() {
   try {
-    const parsed = JSON.parse(localStorage.getItem(TEST_BOOKINGS_KEY) || '[]');
+    let raw = localStorage.getItem(LOCAL_BOOKINGS_KEY);
+    if (!raw) {
+      const legacy = localStorage.getItem('petpal_test_bookings');
+      if (legacy) {
+        localStorage.setItem(LOCAL_BOOKINGS_KEY, legacy);
+        localStorage.removeItem('petpal_test_bookings');
+        raw = legacy;
+      }
+    }
+    const parsed = JSON.parse(raw || '[]');
     return Array.isArray(parsed) ? parsed : [];
   } catch {
     return [];
