@@ -16,6 +16,7 @@ const en = {
     tracking: 'Tracker',
     business: 'Business',
     admin: 'Admin',
+    adminBookings: 'All bookings',
     login: 'Log in',
     register: 'Register',
     logout: 'Log out',
@@ -433,6 +434,7 @@ const en = {
       business: { title: 'Add your Business', desc: 'Add your business on PetPal map and boost your shop.' },
       docs: { title: 'Read the guides', desc: 'Quick walkthroughs of every PetPal feature.' },
       admin: { title: 'Admin queue', desc: 'Review pending venue applications.' },
+      adminBookings: { title: 'All bookings', desc: 'View every appointment across customers and providers for support.' },
       signOut: { title: 'Sign out', desc: 'See you soon — we\'ll keep your pack safe.' },
     },
     photo: {

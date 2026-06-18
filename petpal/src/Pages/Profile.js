@@ -20,6 +20,7 @@ const ICONS = {
   business: '🏪',
   docs: '📖',
   admin: '🛡️',
+  adminBookings: '📅',
   signOut: '👋',
 };
 
@@ -240,6 +241,7 @@ export default function Profile() {
     { key: 'business', to: '/company/apply', icon: ICONS.business, accent: 'business' },
     { key: 'docs', to: '/docs', icon: ICONS.docs, accent: 'docs' },
     ...(isAdmin ? [{ key: 'admin', to: '/admin', icon: ICONS.admin, accent: 'admin' }] : []),
+    ...(isAdmin ? [{ key: 'adminBookings', to: '/admin/bookings', icon: ICONS.adminBookings, accent: 'admin' }] : []),
   ];
 
   async function onPickPhoto(e) {

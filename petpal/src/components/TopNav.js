@@ -22,7 +22,7 @@ function navItemClassName({ isActive }) {
 
 export default function TopNav() {
   const { user, signOut } = useAuth();
-  const { isApprovedCompany, profile } = useCompany();
+  const { isApprovedCompany, isAdmin, profile } = useCompany();
   const { unreadCount } = useInbox();
   const { t } = useI18n();
   const navigate = useNavigate();
@@ -173,6 +173,17 @@ export default function TopNav() {
                     >
                       <span aria-hidden>&#127939;</span>
                       <span>{t('nav.activity')}</span>
+                    </Link>
+                  ) : null}
+                  {isAdmin ? (
+                    <Link
+                      className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-petpal-ink no-underline transition hover:bg-petpal-soft"
+                      to="/admin/bookings"
+                      role="menuitem"
+                      onClick={() => setAccountMenuOpen(false)}
+                    >
+                      <span aria-hidden>&#128197;</span>
+                      <span>{t('nav.adminBookings')}</span>
                     </Link>
                   ) : null}
                   <Link
