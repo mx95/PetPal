@@ -7,6 +7,7 @@ import { CookieConsent } from './components/CookieConsent';
 import Community from './Pages/Community';
 import CookiePolicy from './Pages/CookiePolicy';
 import Dashboard from './Pages/Dashboard';
+import ActivityHub from './Pages/ActivityHub';
 import Leaderboard from './Pages/Leaderboard';
 import Login from './Pages/Login';
 import ForgotPassword from './Pages/ForgotPassword';
@@ -161,6 +162,14 @@ function App() {
             element={
               <RequireAuth>
                 <Dashboard />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/activity"
+            element={
+              <RequireAuth>
+                <ActivityHub />
               </RequireAuth>
             }
           />

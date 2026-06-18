@@ -202,6 +202,35 @@ export default function MyPets() {
   }, [location.hash]);
 
   useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const petId = params.get('pet');
+    if (!petId || !pets.length) return;
+    const p = pets.find((row) => row.id === petId);
+    if (!p) return;
+    setEditingId(p.id);
+    setEditName(p.name);
+    setEditCategoryId(p.categoryId);
+    setEditDevice(p.trackingDeviceId || '');
+    setEditGpsEnabled(Boolean(p.linkedTracker ?? p.trackingDeviceId));
+    setEditNfcEnabled(Boolean(p.nfcTag));
+    setEditBreed(p.breed || '');
+    setEditGender(p.gender === 'female' ? 'female' : 'male');
+    setEditDateOfBirth(p.dateOfBirth || '');
+    setEditMicrochipNo(p.microchipNo || '');
+    setEditColorScheme(p.colorScheme || '');
+    setEditIdentifyingMarks(p.identifyingMarks || '');
+    setEditDescription(p.description || '');
+    const setFrom = Array.isArray(p.friendlyWith) ? p.friendlyWith : [];
+    setEditFriendlyWith({
+      dogs: setFrom.includes('dogs'),
+      cats: setFrom.includes('cats'),
+      people: setFrom.includes('people'),
+      children: setFrom.includes('children'),
+    });
+    if (editPhotoRef.current) editPhotoRef.current.value = '';
+  }, [location.search, pets]);
+
+  useEffect(() => {
     if (!addPetDrawerOpen && !editingId) return;
     const onKey = (e) => {
       if (e.key === 'Escape') {

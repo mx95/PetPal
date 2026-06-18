@@ -1,10 +1,11 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
 import { NavLink } from 'react-router-dom';
+import { useAuth } from '../auth/AuthProvider';
+import { useCompany } from '../company/CompanyContext';
 import { useMobileDockLayout } from '../hooks/useMobileDockLayout';
 import { useI18n } from '../i18n/I18nContext';
 import { MVP_NAV } from '../config/mvpNav';
-import { useAuth } from '../auth/AuthProvider';
 
 const ICONS = {
   home: (
@@ -84,19 +85,19 @@ const ICONS = {
   ),
 };
 
-const BASE_ITEMS = [
-  { to: '/dashboard', key: 'home', labelKey: 'bottomNav.activity' },
-  { to: '/pets', key: 'pets', labelKey: 'bottomNav.pets' },
-];
-
-/** Mobile-first sticky bottom navigation with a centered FAB for "Start walk". */
+/** Mobile-first sticky bottom navigation with a centered FAB for Live tracking. */
 export default function BottomNav() {
   const { user } = useAuth();
+  const { isApprovedCompany } = useCompany();
   const { t } = useI18n();
   useMobileDockLayout(Boolean(user));
   if (!user) return null;
 
-  const left = BASE_ITEMS;
+  const homeTab = isApprovedCompany
+    ? { to: '/dashboard', key: 'bookings', labelKey: 'bottomNav.businessHome' }
+    : { to: '/dashboard', key: 'home', labelKey: 'bottomNav.activity' };
+
+  const left = [homeTab, { to: '/pets', key: 'pets', labelKey: 'bottomNav.pets' }];
   const right = [
     { to: '/nearby', key: 'nearby', labelKey: 'nav.nearby' },
     ...(MVP_NAV.showBookings ? [{ to: '/bookings', key: 'bookings', labelKey: 'bottomNav.bookings' }] : []),

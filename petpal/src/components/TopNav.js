@@ -164,6 +164,17 @@ export default function TopNav() {
                     <span aria-hidden>&#128062;</span>
                     <span>{t('nav.myPets')}</span>
                   </Link>
+                  {isApprovedCompany ? (
+                    <Link
+                      className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-petpal-ink no-underline transition hover:bg-petpal-soft"
+                      to="/activity"
+                      role="menuitem"
+                      onClick={() => setAccountMenuOpen(false)}
+                    >
+                      <span aria-hidden>&#127939;</span>
+                      <span>{t('nav.activity')}</span>
+                    </Link>
+                  ) : null}
                   <Link
                     className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-petpal-ink no-underline transition hover:bg-petpal-soft"
                     to="/profile"

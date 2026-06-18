@@ -7520,6 +7520,7 @@ a.pp-publicPet__metaValue {
 .pp-quickAction__icon { font-size: 22px; line-height: 1; }
 .pp-quickAction--track:hover { border-color: rgba(11, 95, 191, 0.35); background: linear-gradient(180deg, #ffffff, #ecfaff); }
 .pp-quickAction--walk:hover  { border-color: rgba(18, 183, 106, 0.35); background: linear-gradient(180deg, #ffffff, #ecfdf3); }
+.pp-quickAction--manage:hover { border-color: rgba(105, 65, 198, 0.35); background: linear-gradient(180deg, #ffffff, #f4f3ff); }
 .pp-quickAction--alert:hover { border-color: rgba(180, 35, 24, 0.35); background: linear-gradient(180deg, #ffffff, #fef3f2); }
 
 /* Pet dot pagination */
@@ -16002,6 +16003,14 @@ html[data-theme="dark"] .pp-book-calendar__monthControls button {
 
 .pp-providerCalendarGrid button.is-selected em {
   background: rgba(255, 255, 255, 0.24);
+}
+
+.pp-providerCalendarGrid button.is-today:not(.is-selected) {
+  box-shadow: inset 0 0 0 2px rgba(91, 55, 255, 0.35);
+}
+
+.pp-businessWeekBookings .pp-providerCalendarPanel {
+  margin-top: 0;
 }
 
 .pp-providerCalendarStrip {

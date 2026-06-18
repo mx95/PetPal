@@ -1051,13 +1051,6 @@ export default function Tracking() {
     }).filter((m) => Number.isFinite(m.lat) && Number.isFinite(m.lng));
   }, [historyTimelineEvents, mapHistoryPoints.length]);
 
-  const historyLoadMeta = useMemo(() => {
-    const stored = historyPoints.length;
-    const onMap = mapHistoryPoints.length;
-    const approximateHidden = historyPoints.filter((p) => p && !isTrustedGpsFix(p)).length;
-    return { stored, onMap, approximateHidden };
-  }, [historyPoints, mapHistoryPoints]);
-
   useEffect(() => {
     if (!historyPlaying || mapHistoryPoints.length < 2) return undefined;
     const id = window.setInterval(() => {
@@ -1518,30 +1511,18 @@ export default function Tracking() {
                 </div>
                 {historyError ? <div className="pp-error pp-trackHistoryError">{historyError}</div> : null}
                 {!historyLoading && historyPoints.length > 0 ? (
-                  <>
-                    <p className="pp-trackHistoryRangeCard__hint pp-trackHistoryRangeCard__hint--safe">
-                      {t('trackingPage.historyDataSafeNote')}
-                    </p>
-                    <p className="pp-trackHistoryRangeCard__hint">
-                      {t('trackingPage.historyPointsSummary', {
-                        onMap: historyLoadMeta.onMap,
-                        stored: historyLoadMeta.stored,
-                        hidden: historyLoadMeta.approximateHidden,
-                      })}
-                    </p>
-                    <label className="pp-trackHistoryShowAll">
-                      <input
-                        type="checkbox"
-                        checked={historyShowAllFixes}
-                        onChange={(e) => {
-                          setHistoryPlaying(false);
-                          setHistoryIndex(0);
-                          setHistoryShowAllFixes(e.target.checked);
-                        }}
-                      />
-                      <span>{t('trackingPage.historyShowAllFixes')}</span>
-                    </label>
-                  </>
+                  <label className="pp-trackHistoryShowAll">
+                    <input
+                      type="checkbox"
+                      checked={historyShowAllFixes}
+                      onChange={(e) => {
+                        setHistoryPlaying(false);
+                        setHistoryIndex(0);
+                        setHistoryShowAllFixes(e.target.checked);
+                      }}
+                    />
+                    <span>{t('trackingPage.historyShowAllFixes')}</span>
+                  </label>
                 ) : null}
                 {historyTruncated ? (
                   <p className="pp-trackHistoryRangeCard__hint pp-trackHistoryRangeCard__hint--warn">

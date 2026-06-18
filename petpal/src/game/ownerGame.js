@@ -10,7 +10,6 @@ export const DAILY_MISSIONS = [
     label: '5 km walk',
     xp: 22,
     minWalkKmToday: 5,
-    description: 'Log at least 5 km walked today (total of what you add in “Add to today”).',
   },
   { id: 'treat', label: 'Training / treat moment', xp: 4 },
   { id: 'play', label: 'Play or cuddle time', xp: 4 },
