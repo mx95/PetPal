@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
 import { useI18n } from '../i18n/I18nContext';
 import { subscribeCustomerBookings } from '../bookings/bookingFirestore';
-import { LOCAL_BOOKINGS_KEY } from '../bookings/bookingCatalog';
+import { LOCAL_BOOKINGS_KEY, getCatalogProviders } from '../bookings/bookingCatalog';
 import { subscribeProviders } from '../bookings/providerDirectoryFirestore';
 import {
   matchesRatingFilter,
@@ -77,16 +77,27 @@ function BrowseProviders() {
     []
   );
 
-  const sourceRows = rows;
+  const catalogProviders = useMemo(() => getCatalogProviders(), []);
+
+  const sourceRows = useMemo(() => {
+    const byId = new Map();
+    catalogProviders.forEach((p) => byId.set(String(p.id), p));
+    rows.forEach((p) => {
+      const id = String(p.id);
+      byId.set(id, { ...byId.get(id), ...p });
+    });
+    return Array.from(byId.values());
+  }, [rows, catalogProviders]);
 
   const filtered = useMemo(() => {
+    const applyTabFilter = rows.length > 0;
     return sourceRows.filter(
       (p) =>
-        providerMatchesServiceTab(p, serviceTab) &&
+        (!applyTabFilter || providerMatchesServiceTab(p, serviceTab)) &&
         matchesSearch(p, search) &&
         matchesRatingFilter(Number(p.rating), ratingFilter)
     );
-  }, [sourceRows, serviceTab, search, ratingFilter]);
+  }, [sourceRows, rows.length, serviceTab, search, ratingFilter]);
 
   const maxKm = distanceFilter === 'any' ? null : Number(distanceFilter);
 
@@ -170,6 +181,7 @@ function BrowseProviders() {
 
   const showEmpty = sorted.length === 0;
   const hasAdvancedFiltersActive = ratingFilter !== 'any' || (userLoc && distanceFilter !== 'any');
+  const showBrowseContent = loaded || catalogProviders.length > 0;
 
   return (
     <div className="pp-book-layout">
@@ -242,7 +254,7 @@ function BrowseProviders() {
       <div className="pp-book-main min-w-0">
         {err ? <div className="pp-book-error">{err}</div> : null}
 
-        {!loaded ? (
+        {!showBrowseContent ? (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             <SkeletonCard />
             <SkeletonCard />

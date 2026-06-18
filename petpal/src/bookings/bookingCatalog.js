@@ -4,20 +4,29 @@
  */
 
 export const GROOMING_PROVIDER_ID = 'fluffy-cuts-grooming';
+export const VET_PROVIDER_ID = 'paws-care-vet-clinic';
 
 export const GROOMING_SERVICES = {
   BATH: 'bath-brush',
   FULL: 'full-grooming',
 };
 
+export const VET_SERVICES = {
+  CHECKUP: 'health-checkup',
+  VACCINE: 'vaccination',
+};
+
 /** @deprecated Old URLs — resolved automatically in book flow */
 export const LEGACY_PROVIDER_IDS = {
   example_groom: GROOMING_PROVIDER_ID,
+  example_vet: VET_PROVIDER_ID,
 };
 
 export const LEGACY_SERVICE_IDS = {
   demo_bath_basic: GROOMING_SERVICES.BATH,
   demo_groom_full: GROOMING_SERVICES.FULL,
+  demo_vet_checkup: VET_SERVICES.CHECKUP,
+  demo_vet_vaccine: VET_SERVICES.VACCINE,
 };
 
 export function resolveCatalogProviderId(providerId) {
@@ -32,7 +41,7 @@ export function resolveCatalogServiceId(serviceId) {
 
 export function isCatalogProvider(providerId) {
   const id = resolveCatalogProviderId(providerId);
-  return Boolean(CATALOG_SERVICES[id]);
+  return Boolean(CATALOG_PROVIDERS[id]);
 }
 
 const GROOMING_PROVIDER = {
@@ -47,6 +56,29 @@ const GROOMING_PROVIDER = {
   lng: 23.8125,
   workingHours: 'Tue–Sat 10:00–19:00',
   nextAvailable: 'Grooming slots this week',
+  servicesPreview: 'Bath · Full grooming',
+};
+
+const VET_PROVIDER = {
+  id: VET_PROVIDER_ID,
+  displayName: 'Paws & Care Vet Clinic',
+  address: '12 Makarios Ave, Limassol',
+  phone: '+357 25 000 000',
+  providerTypes: { vet: true, bath: false, saloon: false, hotel: false },
+  rating: 4.8,
+  priceTier: 2,
+  lat: 34.6841,
+  lng: 33.0379,
+  workingHours: 'Mon–Sat 09:00–18:00',
+  nextAvailable: 'Next slot 10:00',
+  servicesPreview: 'Checkups · Vaccinations',
+  sponsored: true,
+  recommended: true,
+};
+
+const CATALOG_PROVIDERS = {
+  [GROOMING_PROVIDER_ID]: GROOMING_PROVIDER,
+  [VET_PROVIDER_ID]: VET_PROVIDER,
 };
 
 const CATALOG_SERVICES = {
@@ -80,6 +112,26 @@ const CATALOG_SERVICES = {
       ],
     },
   ],
+  [VET_PROVIDER_ID]: [
+    {
+      id: VET_SERVICES.CHECKUP,
+      type: 'vet',
+      name: 'Health checkup',
+      durationMin: 30,
+      price: '€35',
+      description: 'General wellness exam',
+      active: true,
+    },
+    {
+      id: VET_SERVICES.VACCINE,
+      type: 'vet',
+      name: 'Vaccination visit',
+      durationMin: 20,
+      price: '€25',
+      description: 'Routine vaccine appointment',
+      active: true,
+    },
+  ],
 };
 
 const CATALOG_SCHEDULES = {
@@ -88,6 +140,13 @@ const CATALOG_SCHEDULES = {
     windows: [
       { start: [10, 0], end: [13, 0] },
       { start: [14, 0], end: [19, 0] },
+    ],
+  },
+  [VET_PROVIDER_ID]: {
+    closedWeekdays: [0],
+    windows: [
+      { start: [9, 0], end: [13, 0] },
+      { start: [14, 0], end: [18, 0] },
     ],
   },
 };
@@ -111,10 +170,14 @@ function asTimestampLike(date) {
   };
 }
 
+export function getCatalogProviders() {
+  return Object.values(CATALOG_PROVIDERS).map((p) => ({ ...p }));
+}
+
 export function getCatalogProvider(providerId) {
   const id = resolveCatalogProviderId(providerId);
-  if (id === GROOMING_PROVIDER_ID) return { ...GROOMING_PROVIDER };
-  return null;
+  const provider = CATALOG_PROVIDERS[id];
+  return provider ? { ...provider } : null;
 }
 
 export function getCatalogServices(providerId) {

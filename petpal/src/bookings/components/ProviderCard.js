@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
-import { PetIllustration, PrimaryButton } from '../../components/ui';
+import { PrimaryButton } from '../../components/ui';
+import petpalLogo from '../../logo.png';
 import { providerBoostIsActive } from '../bookingBrowseUtils';
 
 function categoryLabel(types, t) {
@@ -34,7 +35,11 @@ export function ProviderCard({ provider, distanceKm, onBook, t }) {
     <article className="group overflow-hidden rounded-[1.75rem] border border-white/75 bg-white/90 shadow-soft backdrop-blur transition-all duration-300 hover:-translate-y-1 hover:shadow-lift">
       <div className="relative h-44 overflow-hidden bg-gradient-to-br from-petpal-soft via-white to-petpal-cream" aria-hidden>
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(91,55,255,0.18),transparent_28%),radial-gradient(circle_at_85%_15%,rgba(47,128,255,0.16),transparent_24%)]" />
-        <PetIllustration variant={provider.providerTypes?.hotel ? 'cat' : 'pet'} className="absolute bottom-[-20px] right-6 h-40 w-40 transition-transform duration-500 group-hover:scale-105" />
+        <img
+          src={petpalLogo}
+          alt=""
+          className="absolute bottom-3 right-5 h-28 w-28 object-contain opacity-95 transition-transform duration-500 group-hover:scale-105 drop-shadow-md"
+        />
         <div className="absolute left-4 top-4 flex flex-wrap gap-2">
           {sponsored ? (
             <span className="rounded-full bg-gradient-to-r from-petpal-lilac to-petpal-blue px-3 py-1 text-xs font-black text-white shadow-glow">
