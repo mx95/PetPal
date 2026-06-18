@@ -1401,7 +1401,9 @@ export default function Tracking() {
                     </p>
                   ) : null}
                   {historyLoading ? <p className="pp-subtle">{t('trackingPage.historyLoading')}</p> : null}
-                  {!historyLoading && mapHistoryPoints.length > 0 ? (
+                  {!historyLoading &&
+                  mapHistoryPoints.length > 0 &&
+                  (historyMapUsesApprox || historyDayCoverage.total > 1) ? (
                     <p className="pp-subtle pp-trackHistoryMap__sub">
                       {[
                         historyMapUsesApprox ? t('trackingPage.historyApproxMapHint') : null,
@@ -1410,9 +1412,6 @@ export default function Tracking() {
                               active: historyDayCoverage.active,
                               total: historyDayCoverage.total,
                             })
-                          : null,
-                        historyStationary && !historyMapUsesApprox
-                          ? t('trackingPage.historyStationaryHint', { count: mapHistoryPoints.length })
                           : null,
                       ]
                         .filter(Boolean)
