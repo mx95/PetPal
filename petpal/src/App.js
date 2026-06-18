@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useEffect } from 'react';
+import React, { Suspense, useEffect } from 'react';
 import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { RequireAuth } from './auth/RequireAuth';
 import { useAuth } from './auth/AuthProvider';
@@ -43,8 +43,9 @@ import ScrollToTop from './components/ScrollToTop';
 import BottomNav from './components/BottomNav';
 import TopNav from './components/TopNav';
 import { OpeningScreen } from './components/OpeningScreen';
+import { lazyWithRetry } from './lazyWithRetry';
 
-const Tracking = lazy(() => import('./Pages/Tracking'));
+const Tracking = lazyWithRetry(() => import('./Pages/Tracking'));
 
 function TrackingRouteFallback() {
   const { t } = useI18n();

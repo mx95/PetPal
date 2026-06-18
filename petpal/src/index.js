@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import './tailwind.generated.css';
 import './index.css';
 import { installGoogleMapsAuthFailureHook } from './config/googleMapsAuthFailure';
+import { clearChunkReloadFlag } from './lazyWithRetry';
 import App from './App';
 import { ErrorBoundary } from './ErrorBoundary';
 import { BrowserRouter } from 'react-router-dom';
@@ -19,6 +20,7 @@ import { ToastProvider } from './components/Toast';
 import { InboxProvider } from './inbox/InboxContext';
 
 installGoogleMapsAuthFailureHook();
+clearChunkReloadFlag();
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(

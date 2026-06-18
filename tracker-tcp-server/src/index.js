@@ -326,16 +326,31 @@ function sendSpaIndex(_req, res) {
     if (!html.includes("petpal-tracker-fetch-shim")) {
       html = html.replace("</head>", `${TRACKER_FETCH_SHIM}</head>`);
     }
+    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
     res.type("html").send(html);
   } catch (err) {
     console.warn(`[web] Failed to read ${WEB_INDEX_HTML}: ${err.message || err}`);
+    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
     res.sendFile(WEB_INDEX_HTML);
   }
 }
 
 if (fs.existsSync(WEB_INDEX_HTML)) {
   app.get(["/", "/index.html"], sendSpaIndex);
-  app.use(express.static(WEB_BUILD_DIR, { index: false }));
+  app.use(
+    express.static(WEB_BUILD_DIR, {
+      index: false,
+      setHeaders(res, filePath) {
+        if (filePath.endsWith(`${path.sep}index.html`)) {
+          res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+          return;
+        }
+        if (filePath.includes(`${path.sep}static${path.sep}`)) {
+          res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+        }
+      },
+    })
+  );
 } else {
   console.warn(
     `[web] React build not found (${WEB_INDEX_HTML}) — API only. Run: cd petpal && npm run build`
