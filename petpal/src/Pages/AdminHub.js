@@ -82,7 +82,7 @@ export default function AdminHub() {
             to="/admin/bookings"
             icon="📅"
             title="All bookings"
-            desc="View every appointment across customers and providers for support."
+            desc="Live Firestore feed of every appointment — search by customer, provider, or booking id."
           />
         </div>
       </div>

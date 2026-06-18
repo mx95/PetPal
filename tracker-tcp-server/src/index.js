@@ -5,6 +5,7 @@ const path = require("path");
 
 const { createMemoryStore } = require("./store/memory");
 const { createSqliteStore } = require("./store/sqliteStore");
+const { ensureCanonicalDatabase, backupDatabaseIfStale } = require("./db/ensureTrackerDatabase");
 const { createG365TcpServer } = require("./tcp/g365Handler");
 const { registerG365HttpApi } = require("./http/g365ApiRoutes");
 const { registerGpsposHttpApi } = require("./http/gpsposApiRoutes");
@@ -26,9 +27,30 @@ const GPS365_TCP_ENABLED =
   String(process.env.GPS365_TCP_ENABLED ?? "1").trim().toLowerCase() !== "false";
 
 /** Production path is set in ecosystem.config.cjs (/var/lib/petpal). Local dev default: */
-const DEFAULT_SQLITE_PATH = path.join(__dirname, "..", "data", "petpal.sqlite");
-const SQLITE_PATH = process.env.SQLITE_PATH || DEFAULT_SQLITE_PATH;
-const PERSIST_TO_SQLITE = String(process.env.PERSIST_TO_SQLITE || "1") !== "0";
+const SERVER_ROOT = path.join(__dirname, "..");
+const DEFAULT_SQLITE_PATH = path.join(SERVER_ROOT, "data", "petpal.sqlite");
+const REQUESTED_SQLITE_PATH = process.env.SQLITE_PATH || DEFAULT_SQLITE_PATH;
+const explicitPersistOff =
+  String(process.env.PERSIST_TO_SQLITE || "1").trim() === "0" ||
+  String(process.env.PERSIST_TO_SQLITE || "1").trim().toLowerCase() === "false";
+const NODE_ENV = String(process.env.NODE_ENV || "development").toLowerCase();
+
+if (explicitPersistOff && NODE_ENV === "production") {
+  console.error("[db] PERSIST_TO_SQLITE=0 is not allowed in production — GPS history would be lost on restart.");
+  process.exit(1);
+}
+
+const PERSIST_TO_SQLITE = !explicitPersistOff;
+let SQLITE_PATH = path.resolve(REQUESTED_SQLITE_PATH);
+
+if (PERSIST_TO_SQLITE) {
+  const ensured = ensureCanonicalDatabase(SERVER_ROOT, SQLITE_PATH);
+  SQLITE_PATH = ensured.path;
+  if (ensured.restoredFrom) {
+    console.log(`[db] Restored ${ensured.positionCount} position rows from ${ensured.restoredFrom}`);
+  }
+  backupDatabaseIfStale(SQLITE_PATH);
+}
 
 const store = PERSIST_TO_SQLITE ? createSqliteStore({ dbPath: SQLITE_PATH }) : createMemoryStore();
 if (PERSIST_TO_SQLITE) {
@@ -158,6 +180,26 @@ app.use(
 registerG365HttpApi(app, store);
 registerGpsposHttpApi(app, store);
 registerAdminDeviceRoutes(app, store);
+
+app.get("/api/admin/db-health", (req, res) => {
+  const expected = String(process.env.TRACKER_ADMIN_TOKEN || "").trim();
+  if (expected) {
+    const got = String(
+      req.headers["x-petpal-admin-token"] ||
+        req.headers["x-petpal-admin"] ||
+        (req.headers.authorization || "").replace(/^Bearer\s+/i, "")
+    ).trim();
+    if (got !== expected) return res.status(401).json({ error: "unauthorized" });
+  }
+  const positionCount =
+    typeof store.countPositions === "function" ? store.countPositions() : null;
+  res.json({
+    persistEnabled: PERSIST_TO_SQLITE,
+    sqlitePath: PERSIST_TO_SQLITE ? store.sqlitePath || SQLITE_PATH : null,
+    positionCount,
+    deviceCount: typeof store.list === "function" ? store.list().length : null,
+  });
+});
 
 // -----------------------------------------------------------------------------
 // App API (frontend-safe) — keep /devices & /position as legacy, but also expose
