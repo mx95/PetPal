@@ -1,5 +1,5 @@
 import React from 'react';
-import { isChunkLoadError, reloadForStaleChunk } from './lazyWithRetry';
+import { isChunkLoadError } from './lazyWithRetry';
 
 /**
  * Catches render errors (e.g. bad imports) so the tab isn’t a blank white screen.
@@ -12,12 +12,6 @@ export class ErrorBoundary extends React.Component {
 
   static getDerivedStateFromError(error) {
     return { error };
-  }
-
-  componentDidCatch(error) {
-    if (isChunkLoadError(error)) {
-      reloadForStaleChunk();
-    }
   }
 
   render() {

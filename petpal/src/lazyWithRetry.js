@@ -1,6 +1,7 @@
 import { lazy } from 'react';
 
-const CHUNK_RELOAD_KEY = 'petpal_chunk_reload';
+const CHUNK_RELOAD_KEY = 'petpal_chunk_reload_attempts';
+const MAX_AUTO_RELOADS = 1;
 
 export function isChunkLoadError(error) {
   if (!error) return false;
@@ -9,16 +10,30 @@ export function isChunkLoadError(error) {
   return name === 'ChunkLoadError' || /Loading chunk [\d]+ failed/i.test(message);
 }
 
-/** One automatic full reload per session when a stale lazy chunk fails after deploy. */
+function reloadAttempts() {
+  try {
+    return Number(sessionStorage.getItem(CHUNK_RELOAD_KEY) || '0');
+  } catch {
+    return 0;
+  }
+}
+
+/** One automatic full reload when a stale lazy chunk fails after deploy. */
 export function reloadForStaleChunk() {
   if (typeof window === 'undefined') return false;
-  if (sessionStorage.getItem(CHUNK_RELOAD_KEY)) return false;
-  sessionStorage.setItem(CHUNK_RELOAD_KEY, '1');
+  const attempts = reloadAttempts();
+  if (attempts >= MAX_AUTO_RELOADS) return false;
+  try {
+    sessionStorage.setItem(CHUNK_RELOAD_KEY, String(attempts + 1));
+  } catch {
+    return false;
+  }
   window.location.reload();
   return true;
 }
 
-export function clearChunkReloadFlag() {
+/** Call after a lazy route chunk loads successfully. */
+export function noteChunkLoadSuccess() {
   try {
     sessionStorage.removeItem(CHUNK_RELOAD_KEY);
   } catch {
@@ -32,7 +47,9 @@ export function clearChunkReloadFlag() {
 export function lazyWithRetry(importFn) {
   return lazy(async () => {
     try {
-      return await importFn();
+      const mod = await importFn();
+      noteChunkLoadSuccess();
+      return mod;
     } catch (error) {
       if (isChunkLoadError(error) && reloadForStaleChunk()) {
         return new Promise(() => {});

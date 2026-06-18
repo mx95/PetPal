@@ -1,4 +1,4 @@
-import React, { Suspense, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { RequireAuth } from './auth/RequireAuth';
 import { useAuth } from './auth/AuthProvider';
@@ -38,19 +38,12 @@ import AdminHub from './Pages/AdminHub';
 import AdminDeviceRegistry from './Pages/AdminDeviceRegistry';
 import AdminBroadcast from './Pages/AdminBroadcast';
 import Inbox from './Pages/Inbox';
+import Tracking from './Pages/Tracking';
 import { useI18n } from './i18n/I18nContext';
 import ScrollToTop from './components/ScrollToTop';
 import BottomNav from './components/BottomNav';
 import TopNav from './components/TopNav';
 import { OpeningScreen } from './components/OpeningScreen';
-import { lazyWithRetry } from './lazyWithRetry';
-
-const Tracking = lazyWithRetry(() => import('./Pages/Tracking'));
-
-function TrackingRouteFallback() {
-  const { t } = useI18n();
-  return <OpeningScreen subtitle={t('app.loadingTracker')} />;
-}
 
 /** JCC / gateway sometimes lands users on `/` or `/dashboard` with `?checkout=success` — normalize to the success screen. */
 function CheckoutSuccessBridge() {
@@ -267,9 +260,7 @@ function App() {
             path="/tracking"
             element={
               <RequireAuth>
-                <Suspense fallback={<TrackingRouteFallback />}>
-                  <Tracking />
-                </Suspense>
+                <Tracking />
               </RequireAuth>
             }
           />
