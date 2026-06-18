@@ -14,6 +14,25 @@ export function providerMatchesServiceTab(p, tabId) {
 }
 
 /**
+ * Pick the best service for a provider browse tab.
+ * @param {Array<{ id: string, type?: string, name?: string, active?: boolean }>} services
+ * @param {ServiceTabId} serviceTab
+ */
+export function pickDefaultServiceForTab(services, serviceTab) {
+  const act = (services || []).filter((s) => s && s.active !== false);
+  if (!act.length) return null;
+  const forTab = act.filter((s) => {
+    const type = String(s.type || 'vet');
+    if (serviceTab === 'bath') return type === 'bath' || /bath/i.test(String(s.name || ''));
+    if (serviceTab === 'saloon') return type === 'saloon' || type === 'bath';
+    if (serviceTab === 'vet') return type === 'vet';
+    if (serviceTab === 'hotel') return type === 'hotel';
+    return true;
+  });
+  return forTab[0] || act[0] || null;
+}
+
+/**
  * @param {Record<string, unknown>} p
  * @param {string} q
  */

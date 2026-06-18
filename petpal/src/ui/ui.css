@@ -19507,6 +19507,31 @@ html[data-theme="dark"] .pp-nearbyPartnerCard__name {
   margin-top: 12px;
 }
 
+/* Bookings hub — inline wizard (replaces bottom-sheet modal) */
+.pp-bookHubWizard {
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.pp-bookHubWizard__back {
+  display: inline-flex;
+  align-items: center;
+  margin: 0 0 16px;
+  padding: 6px 0;
+  border: none;
+  background: transparent;
+  color: #5b37ff;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.pp-bookConfirmPage--embedded {
+  max-width: none;
+  margin: 0;
+  padding: 0 0 calc(24px + env(safe-area-inset-bottom));
+}
+
 .pp-field--checkbox {
   display: flex;
   align-items: center;

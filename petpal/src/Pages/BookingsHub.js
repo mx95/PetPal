@@ -1,25 +1,31 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, Route, Routes, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
 import { useI18n } from '../i18n/I18nContext';
 import { subscribeCustomerBookings } from '../bookings/bookingFirestore';
-import { LOCAL_BOOKINGS_KEY, getCatalogProviders } from '../bookings/bookingCatalog';
+import {
+  LOCAL_BOOKINGS_KEY,
+  getCatalogProviders,
+  getCatalogServices,
+  isCatalogProvider,
+  resolveCatalogProviderId,
+} from '../bookings/bookingCatalog';
 import { subscribeProviders } from '../bookings/providerDirectoryFirestore';
 import {
   matchesRatingFilter,
   matchesSearch,
+  pickDefaultServiceForTab,
   providerBoostIsActive,
   providerDistanceKm,
   providerMatchesServiceTab,
 } from '../bookings/bookingBrowseUtils';
 import { ServiceTabs } from '../bookings/components/ServiceTabs';
 import { ProviderCard } from '../bookings/components/ProviderCard';
-import { BookingModal } from '../bookings/components/BookingModal';
 import { formatDateTime24 } from '../formatTime24';
 import { appleCalendarDataUrl, buildCalendarEvent, googleCalendarUrl } from '../bookings/calendarLinks';
 import { AppCard, EmptyState, PageContainer, SectionHeader, SkeletonCard } from '../components/ui';
-
-const TEST_BOOKINGS_KEY = LOCAL_BOOKINGS_KEY;
+import ProviderProfile from './ProviderProfile';
+import BookService from './BookService';
 
 function getLocalTestBookings() {
   try {
@@ -49,6 +55,7 @@ function TabButton({ active, onClick, children }) {
 
 function BrowseProviders() {
   const { t } = useI18n();
+  const navigate = useNavigate();
   const [rows, setRows] = useState([]);
   const [loaded, setLoaded] = useState(false);
   const [err, setErr] = useState('');
@@ -60,7 +67,6 @@ function BrowseProviders() {
   const [locating, setLocating] = useState(false);
   const [locMsg, setLocMsg] = useState('');
   const [filtersExpanded, setFiltersExpanded] = useState(false);
-  const [modalProvider, setModalProvider] = useState(/** @type {Record<string, unknown> | null} */ (null));
 
   useEffect(
     () =>
@@ -140,6 +146,23 @@ function BrowseProviders() {
     ],
     [t]
   );
+
+  const openBooking = (provider) => {
+    const companyId = resolveCatalogProviderId(String(provider.id || ''));
+    const services = isCatalogProvider(companyId) ? getCatalogServices(companyId) : [];
+    const service = pickDefaultServiceForTab(services, serviceTab);
+    if (service?.id) {
+      navigate(`provider/${encodeURIComponent(companyId)}/book/${encodeURIComponent(service.id)}`, {
+        state: {
+          providerName: String(provider.displayName || ''),
+          providerAddress: String(provider.address || ''),
+          serviceName: service.name || '',
+        },
+      });
+      return;
+    }
+    navigate(`provider/${encodeURIComponent(companyId)}`);
+  };
 
   const requestLocation = () => {
     if (!navigator.geolocation) {
@@ -281,28 +304,19 @@ function BrowseProviders() {
                 </div>
                 <div className="pp-sponsoredRail__row">
                   {recommended.map(({ p, km }) => (
-                    <ProviderCard key={`rec-${String(p.id)}`} provider={p} distanceKm={km} onBook={() => setModalProvider(p)} t={t} />
+                    <ProviderCard key={`rec-${String(p.id)}`} provider={p} distanceKm={km} onBook={() => openBooking(p)} t={t} />
                   ))}
                 </div>
               </section>
             ) : null}
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {sorted.map(({ p, km }) => (
-                <ProviderCard key={String(p.id)} provider={p} distanceKm={km} onBook={() => setModalProvider(p)} t={t} />
+                <ProviderCard key={String(p.id)} provider={p} distanceKm={km} onBook={() => openBooking(p)} t={t} />
               ))}
             </div>
           </>
         )}
-
       </div>
-
-      <BookingModal
-        open={Boolean(modalProvider)}
-        provider={modalProvider}
-        serviceTab={serviceTab}
-        onClose={() => setModalProvider(null)}
-        t={t}
-      />
     </div>
   );
 }
@@ -329,31 +343,31 @@ function MyBookings({ uid }) {
         {allRows.map((b) => {
           const event = buildCalendarEvent(b);
           return (
-          <div key={b.id} className="pp-book-mineCard">
-            <div>
-              <div className="pp-book-mineCard__title">{b.serviceName || b.petSnapshot?.name || 'Pet'}</div>
-              <div className="pp-book-muted">
-                {b.status}
-                {' · '}
-                {b.startAt?.toDate
-                  ? formatDateTime24(b.startAt.toDate(), language)
-                  : b.startAtIso
-                    ? formatDateTime24(new Date(b.startAtIso), language)
-                    : ''}
+            <div key={b.id} className="pp-book-mineCard">
+              <div>
+                <div className="pp-book-mineCard__title">{b.serviceName || b.petSnapshot?.name || 'Pet'}</div>
+                <div className="pp-book-muted">
+                  {b.status}
+                  {' · '}
+                  {b.startAt?.toDate
+                    ? formatDateTime24(b.startAt.toDate(), language)
+                    : b.startAtIso
+                      ? formatDateTime24(new Date(b.startAtIso), language)
+                      : ''}
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <a className="pp-book-btn pp-book-btn--ghost" href={googleCalendarUrl(event)} target="_blank" rel="noopener noreferrer">
+                  Google Calendar
+                </a>
+                <a className="pp-book-btn pp-book-btn--ghost" href={appleCalendarDataUrl(event)} download="petpal-booking.ics">
+                  Apple Calendar
+                </a>
+                <Link className="pp-book-btn pp-book-btn--ghost" to={`provider/${b.companyId}`}>
+                  {t('bookingsHub.mineOpen')}
+                </Link>
               </div>
             </div>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              <a className="pp-book-btn pp-book-btn--ghost" href={googleCalendarUrl(event)} target="_blank" rel="noopener noreferrer">
-                Google Calendar
-              </a>
-              <a className="pp-book-btn pp-book-btn--ghost" href={appleCalendarDataUrl(event)} download="petpal-booking.ics">
-                Apple Calendar
-              </a>
-              <Link className="pp-book-btn pp-book-btn--ghost" to={`/bookings/provider/${b.companyId}`}>
-                {t('bookingsHub.mineOpen')}
-              </Link>
-            </div>
-          </div>
           );
         })}
       </div>
@@ -361,34 +375,58 @@ function MyBookings({ uid }) {
   );
 }
 
-export default function BookingsHub() {
+function BookingsBrowseHome() {
   const { t } = useI18n();
   const { user } = useAuth();
   const uid = user?.uid || null;
   const [tab, setTab] = useState('browse');
 
   return (
+    <PageContainer className="!py-4 sm:!py-5 lg:!py-6">
+      <SectionHeader
+        className="!mb-4 !gap-2 sm:!mb-5 sm:!gap-3"
+        subtitleClassName="!mt-2 text-sm leading-snug sm:!mt-3 sm:text-base sm:leading-6"
+        eyebrow={t('bookingsHub.badge')}
+        title={t('bookingsHub.title')}
+        subtitle={t('bookingsHub.subtitle')}
+        action={
+          <div className="pp-book-heroTabs">
+            <TabButton active={tab === 'browse'} onClick={() => setTab('browse')}>
+              {t('bookingsHub.tabBrowse')}
+            </TabButton>
+            <TabButton active={tab === 'mine'} onClick={() => setTab('mine')}>
+              {t('bookingsHub.tabMine')}
+            </TabButton>
+          </div>
+        }
+      />
+      {tab === 'browse' ? <BrowseProviders /> : <MyBookings uid={uid} />}
+    </PageContainer>
+  );
+}
+
+function BookServiceRoute() {
+  const { t } = useI18n();
+  const navigate = useNavigate();
+
+  return (
+    <PageContainer className="pp-bookHubWizard !py-4 sm:!py-5 lg:!py-6">
+      <button type="button" className="pp-bookHubWizard__back" onClick={() => navigate('/bookings')}>
+        ← {t('bookConfirm.backBookings')}
+      </button>
+      <BookService embedded />
+    </PageContainer>
+  );
+}
+
+export default function BookingsHub() {
+  return (
     <div className="pp-book-page">
-      <PageContainer className="!py-4 sm:!py-5 lg:!py-6">
-        <SectionHeader
-          className="!mb-4 !gap-2 sm:!mb-5 sm:!gap-3"
-          subtitleClassName="!mt-2 text-sm leading-snug sm:!mt-3 sm:text-base sm:leading-6"
-          eyebrow={t('bookingsHub.badge')}
-          title={t('bookingsHub.title')}
-          subtitle={t('bookingsHub.subtitle')}
-          action={
-            <div className="pp-book-heroTabs">
-              <TabButton active={tab === 'browse'} onClick={() => setTab('browse')}>
-                {t('bookingsHub.tabBrowse')}
-              </TabButton>
-              <TabButton active={tab === 'mine'} onClick={() => setTab('mine')}>
-                {t('bookingsHub.tabMine')}
-              </TabButton>
-            </div>
-          }
-        />
-        {tab === 'browse' ? <BrowseProviders /> : <MyBookings uid={uid} />}
-      </PageContainer>
+      <Routes>
+        <Route index element={<BookingsBrowseHome />} />
+        <Route path="provider/:providerId" element={<ProviderProfile />} />
+        <Route path="provider/:providerId/book/:serviceId" element={<BookServiceRoute />} />
+      </Routes>
     </div>
   );
 }

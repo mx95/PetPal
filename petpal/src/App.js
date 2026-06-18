@@ -29,8 +29,6 @@ import ProviderPortal from './Pages/ProviderPortal';
 import BookingsHub from './Pages/BookingsHub';
 import Shop from './Pages/Shop';
 import PaymentSuccess from './Pages/PaymentSuccess';
-import ProviderProfile from './Pages/ProviderProfile';
-import BookService from './Pages/BookService';
 import './ui/ui.css';
 import CompanyApply from './Pages/CompanyApply';
 import AdminCompanyQueue from './Pages/AdminCompanyQueue';
@@ -188,26 +186,10 @@ function App() {
             }
           />
           <Route
-            path="/bookings"
+            path="/bookings/*"
             element={
               <RequireAuth>
                 <BookingsHub />
-              </RequireAuth>
-            }
-          />
-          <Route
-            path="/bookings/provider/:providerId"
-            element={
-              <RequireAuth>
-                <ProviderProfile />
-              </RequireAuth>
-            }
-          />
-          <Route
-            path="/bookings/provider/:providerId/book/:serviceId"
-            element={
-              <RequireAuth>
-                <BookService />
               </RequireAuth>
             }
           />

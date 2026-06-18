@@ -150,7 +150,7 @@ function WizardProgress({ steps, currentIndex }) {
   );
 }
 
-export default function BookService() {
+export default function BookService({ embedded = false }) {
   const { t, language } = useI18n();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -459,7 +459,7 @@ export default function BookService() {
   const calEvent = confirmedBooking ? buildCalendarEvent(confirmedBooking) : null;
 
   return (
-    <div className="pp-bookConfirmPage">
+    <div className={`pp-bookConfirmPage${embedded ? ' pp-bookConfirmPage--embedded' : ''}`}>
       <header className="pp-bookConfirmPage__header">
         <div className="pp-bookConfirmPage__mark" aria-hidden>
           {confirmedBooking ? (
@@ -782,14 +782,16 @@ export default function BookService() {
             )}
           </div>
 
-          <button
-            type="button"
-            className="pp-bookConfirmPage__textCta"
-            disabled={busy}
-            onClick={() => navigate(-1)}
-          >
-            {t('bookConfirm.cancel')}
-          </button>
+          {!embedded ? (
+            <button
+              type="button"
+              className="pp-bookConfirmPage__textCta"
+              disabled={busy}
+              onClick={() => navigate(-1)}
+            >
+              {t('bookConfirm.cancel')}
+            </button>
+          ) : null}
         </>
       )}
     </div>
