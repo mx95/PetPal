@@ -19532,6 +19532,17 @@ html[data-theme="dark"] .pp-nearbyPartnerCard__name {
   padding: 0 0 calc(24px + env(safe-area-inset-bottom));
 }
 
+.pp-bookSchedulePick {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.pp-bookSchedulePick__duration {
+  margin: 4px 0 8px;
+}
+
 .pp-field--checkbox {
   display: flex;
   align-items: center;

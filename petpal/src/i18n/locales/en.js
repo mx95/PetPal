@@ -1362,6 +1362,7 @@ const en = {
     dateField: 'Show times from',
     slotField: 'Time',
     noSlots: 'No open slots in this range.',
+    slotEndTbd: 'Finish time set after booking',
     ctaConfirm: 'Confirm appointment',
     noPetsLead: 'Add a pet first to book.',
     noPetsCta: 'Add a pet',

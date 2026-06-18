@@ -16,11 +16,14 @@ import {
   getCatalogProvider,
   getCatalogService,
   getCatalogSlots,
+  isCatalogClosedDay,
   isCatalogProvider,
   LOCAL_BOOKINGS_KEY,
+  nextOpenCatalogDayYmd,
   resolveCatalogProviderId,
   resolveCatalogServiceId,
 } from '../bookings/bookingCatalog';
+import { BookingSchedulePicker } from '../bookings/components/BookingSchedulePicker';
 import { isFirebaseConfigured } from '../firebase';
 import { formatTime24 } from '../formatTime24';
 import { categoryEmoji } from '../pets/petCategories';
@@ -173,6 +176,8 @@ export default function BookService({ embedded = false }) {
   const [slots, setSlots] = useState([]);
   const [slotId, setSlotId] = useState('');
   const [afterDate, setAfterDate] = useState(() => clampAfterDateYmd(toLocalInputValue(new Date())));
+  const [monthDate, setMonthDate] = useState(() => new Date());
+  const [loadingSlots, setLoadingSlots] = useState(false);
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
   const [confirmedBooking, setConfirmedBooking] = useState(null);
@@ -266,16 +271,34 @@ export default function BookService({ embedded = false }) {
     return Number.isNaN(d.getTime()) ? new Date() : d;
   }, [afterDate]);
 
-  const minAfterYmd = todayYmdLocal();
-  const maxAfterYmd = maxAfterYmdLocal();
-
   useEffect(() => {
     const c = clampAfterDateYmd(afterDate);
     if (c !== afterDate) setAfterDate(c);
   }, [afterDate]);
 
+  useEffect(() => {
+    if (!useCatalog || !companyId) return;
+    const today = new Date();
+    if (isCatalogClosedDay(companyId, today)) {
+      const openYmd = nextOpenCatalogDayYmd(companyId, today);
+      setAfterDate(openYmd);
+      setMonthDate(new Date(`${openYmd}T12:00:00`));
+    }
+  }, [useCatalog, companyId]);
+
+  useEffect(() => {
+    const safe = clampAfterDateYmd(afterDate);
+    setMonthDate(new Date(`${safe}T12:00:00`));
+  }, [afterDate]);
+
+  const isClosedDay = useMemo(
+    () => (date) => (useCatalog ? isCatalogClosedDay(companyId, date) : false),
+    [useCatalog, companyId]
+  );
+
   const refresh = async () => {
     setErr('');
+    setLoadingSlots(true);
     try {
       let rows = [];
       if (isFirebaseConfigured()) {
@@ -284,13 +307,20 @@ export default function BookService({ embedded = false }) {
       if (!rows.length && useCatalog) {
         rows = getCatalogSlots(companyId, String(serviceId || ''), { after, durationMin: resolvedDuration });
       }
-      setSlots(rows);
+      const dayYmd = clampAfterDateYmd(afterDate);
+      const sameDayRows = rows.filter((slot) => {
+        const start = asDate(slot.startAt) || asDate(slot.startAtIso);
+        return start ? toLocalInputValue(start) === dayYmd : true;
+      });
+      setSlots(sameDayRows);
       setSlotId((prev) => {
-        if (rows.some((r) => r.id === prev)) return prev;
-        return rows.length ? rows[0].id : '';
+        if (sameDayRows.some((r) => r.id === prev)) return prev;
+        return sameDayRows.length ? sameDayRows[0].id : '';
       });
     } catch (e) {
       setErr(e?.message || 'failed');
+    } finally {
+      setLoadingSlots(false);
     }
   };
 
@@ -666,40 +696,20 @@ export default function BookService({ embedded = false }) {
                     })}
                   </p>
                 ) : null}
-                <div className="pp-bookConfirmForm__fields">
-                  <label className="pp-bookConfirmField">
-                    <span className="pp-bookConfirmField__label">{t('bookConfirm.dateField')}</span>
-                    <input
-                      className="pp-bookConfirmField__control"
-                      type="date"
-                      min={minAfterYmd}
-                      max={maxAfterYmd}
-                      value={afterDate}
-                      onChange={(e) => setAfterDate(clampAfterDateYmd(e.target.value || minAfterYmd))}
-                    />
-                  </label>
-                  <label className="pp-bookConfirmField">
-                    <span className="pp-bookConfirmField__label">{t('bookConfirm.slotField')}</span>
-                    {slots.length ? (
-                      <select
-                        className="pp-bookConfirmField__control"
-                        value={slotId}
-                        onChange={(e) => setSlotId(e.target.value)}
-                      >
-                        {slots.map((s) => {
-                          const start = asDate(s.startAt) || asDate(s.startAtIso);
-                          return (
-                            <option key={s.id} value={s.id}>
-                              {start ? formatWhenLine(start, language) : s.id}
-                            </option>
-                          );
-                        })}
-                      </select>
-                    ) : (
-                      <div className="pp-bookConfirmField__empty">{t('bookConfirm.noSlots')}</div>
-                    )}
-                  </label>
-                </div>
+                <BookingSchedulePicker
+                  dayKey={clampAfterDateYmd(afterDate)}
+                  onDayKeyChange={(ymd) => setAfterDate(clampAfterDateYmd(ymd))}
+                  monthDate={monthDate}
+                  onMonthDateChange={setMonthDate}
+                  slots={slots}
+                  slotId={slotId}
+                  onSlotIdChange={setSlotId}
+                  durationMin={resolvedDuration}
+                  loading={loadingSlots}
+                  error={err}
+                  isClosedDay={isClosedDay}
+                  t={t}
+                />
               </>
             ) : null}
 
