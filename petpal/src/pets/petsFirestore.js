@@ -14,6 +14,7 @@ import {
   writeBatch,
 } from 'firebase/firestore';
 import { getDb, isFirebaseConfigured } from '../firebase';
+import { normalizeTrackerImei, syncTrackerImeiIndex } from '../tracking/trackerImeiIndex';
 
 function petsCol(uid) {
   return collection(getDb(), 'users', uid, 'pets');
@@ -127,24 +128,50 @@ export function subscribePets(uid, onNext, onError) {
 export async function createPet(uid, pet) {
   if (!isFirebaseConfigured() || !uid) return;
   const publicRef = doc(publicPetsCol());
-  const refDoc = await addDoc(petsCol(uid), {
+  const trackingDeviceId = normalizeTrackerImei(pet.trackingDeviceId) || null;
+  const payload = {
     ...pet,
+    ...(trackingDeviceId ? { trackingDeviceId } : {}),
     publicProfileId: publicRef.id,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
-  });
+  };
+  const refDoc = await addDoc(petsCol(uid), payload);
 
   await setDoc(publicRef, buildPublicPetPayload(uid, refDoc.id, pet));
+  if (trackingDeviceId) {
+    await syncTrackerImeiIndex(uid, refDoc.id, pet.name, null, trackingDeviceId);
+  }
   return refDoc.id;
 }
 
 export async function patchPet(uid, petId, patch) {
   if (!isFirebaseConfigured() || !uid || !petId) return;
   const petRef = doc(getDb(), 'users', uid, 'pets', petId);
-  await updateDoc(petRef, {
-    ...patch,
-    updatedAt: serverTimestamp(),
-  });
+  const beforeSnap = await getDoc(petRef);
+  const before = beforeSnap.exists() ? beforeSnap.data() || {} : {};
+
+  const nextPatch = { ...patch, updatedAt: serverTimestamp() };
+  if (Object.prototype.hasOwnProperty.call(patch, 'trackingDeviceId')) {
+    const normalized = normalizeTrackerImei(patch.trackingDeviceId);
+    nextPatch.trackingDeviceId = normalized || null;
+  }
+
+  await updateDoc(petRef, nextPatch);
+
+  if (Object.prototype.hasOwnProperty.call(patch, 'trackingDeviceId')) {
+    const nextName =
+      typeof patch.name === 'string' && patch.name.trim()
+        ? patch.name.trim()
+        : String(before.name || '').trim();
+    await syncTrackerImeiIndex(
+      uid,
+      petId,
+      nextName,
+      before.trackingDeviceId,
+      nextPatch.trackingDeviceId
+    );
+  }
 
   const snap = await getDoc(petRef);
   if (snap.exists()) {
@@ -166,9 +193,11 @@ export async function deletePet(uid, petId) {
   if (!isFirebaseConfigured() || !uid || !petId) return;
   const petRef = doc(getDb(), 'users', uid, 'pets', petId);
   const snap = await getDoc(petRef);
+  const data = snap.exists() ? snap.data() || {} : {};
   await deleteDoc(petRef);
   if (snap.exists()) {
-    const publicId = snap.data()?.publicProfileId;
+    await syncTrackerImeiIndex(uid, petId, data.name, data.trackingDeviceId, null);
+    const publicId = data.publicProfileId;
     if (typeof publicId === 'string' && publicId.trim()) {
       await deleteDoc(doc(getDb(), 'publicPets', publicId));
     }

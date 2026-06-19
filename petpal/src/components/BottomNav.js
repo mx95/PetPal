@@ -15,9 +15,11 @@ const ICONS = {
   ),
   pets: (
     <svg viewBox="0 0 24 24" width="22" height="22" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
-      <ellipse cx="9" cy="12" rx="3" ry="4" stroke="currentColor" strokeWidth="1.6" />
-      <ellipse cx="15.5" cy="12.5" rx="2.6" ry="3.2" stroke="currentColor" strokeWidth="1.6" />
-      <path d="M6 17c2 2 10 2 13 0" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      <ellipse cx="12" cy="16.8" rx="4.2" ry="3.4" stroke="currentColor" strokeWidth="1.6" />
+      <circle cx="7.2" cy="11.2" r="2.1" stroke="currentColor" strokeWidth="1.6" />
+      <circle cx="10.8" cy="8.6" r="1.9" stroke="currentColor" strokeWidth="1.6" />
+      <circle cx="13.2" cy="8.6" r="1.9" stroke="currentColor" strokeWidth="1.6" />
+      <circle cx="16.8" cy="11.2" r="2.1" stroke="currentColor" strokeWidth="1.6" />
     </svg>
   ),
   tracking: (

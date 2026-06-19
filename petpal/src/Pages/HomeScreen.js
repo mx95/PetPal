@@ -4,7 +4,8 @@ import { useAuth } from '../auth/AuthProvider';
 import { MVP_NAV } from '../config/mvpNav';
 import { useI18n } from '../i18n/I18nContext';
 
-const HOME_HERO_SRC = `${process.env.PUBLIC_URL || ''}/images/home-hero.png`;
+const LIVE_TRACKING_SRC = `${process.env.PUBLIC_URL || ''}/images/home-live-tracking.png`;
+const NFC_FEATURE_SRC = `${process.env.PUBLIC_URL || ''}/images/home-nfc-feature.png`;
 
 const ALL_FEATURES = [
   { key: 'pets', to: '/pets', icon: '🐾', accent: 'pets' },
@@ -21,6 +22,11 @@ const VALUE_PILLARS = [
   { key: 'value1', icon: 'shield' },
   { key: 'value2', icon: 'heart' },
   { key: 'value3', icon: 'globe' },
+];
+
+const SHOWCASE_ITEMS = [
+  { key: 'live', src: LIVE_TRACKING_SRC, altKey: 'home.welcome.showcase.liveAlt' },
+  { key: 'nfc', src: NFC_FEATURE_SRC, altKey: 'home.welcome.showcase.nfcAlt' },
 ];
 
 function ValuePillarIcon({ type }) {
@@ -48,20 +54,11 @@ export default function HomeScreen() {
 
   return (
     <div className="pp-homeWelcome">
-      <section className="pp-homeWelcome__banner" aria-labelledby="home-hero-title">
-        <div className="pp-homeWelcome__bannerArt" aria-hidden>
-          <img
-            className="pp-homeWelcome__heroImg"
-            src={HOME_HERO_SRC}
-            alt={t('home.welcome.heroImageAlt')}
-            decoding="async"
-          />
-          <div className="pp-homeWelcome__heroFade" />
-        </div>
+      <section className="pp-homeWelcome__banner pp-homeWelcome__banner--textOnly" aria-labelledby="home-hero-title">
         <div className="pp-homeWelcome__bannerOverlay">
           <div className="pp-homeWelcome__bannerCopy">
             <div className="pp-homeWelcome__bannerGreeting">
-              <p className="pp-homeWelcome__eyebrow">{t('home.welcome.eyebrow')}</p>
+              <p className="pp-homeWelcome__eyebrow">{t('home.publicHero.eyebrow')}</p>
               <h1 id="home-hero-title" className="pp-homeWelcome__title">
                 {t('home.publicHero.headline')}
               </h1>
@@ -97,6 +94,23 @@ export default function HomeScreen() {
           </li>
         ))}
       </ul>
+
+      <section className="pp-homeWelcome__showcase" aria-labelledby="home-showcase-title">
+        <header className="pp-homeWelcome__showcaseHead">
+          <p className="pp-homeWelcome__showcaseEyebrow">{t('home.welcome.showcase.eyebrow')}</p>
+          <h2 id="home-showcase-title" className="pp-homeWelcome__showcaseTitle">
+            {t('home.welcome.showcase.title')}
+          </h2>
+          <p className="pp-homeWelcome__showcaseSub">{t('home.welcome.showcase.sub')}</p>
+        </header>
+        <div className="pp-homeWelcome__showcaseGrid">
+          {SHOWCASE_ITEMS.map(({ key, src, altKey }) => (
+            <figure key={key} className="pp-homeWelcome__showcaseCard">
+              <img src={src} alt={t(altKey)} loading="lazy" decoding="async" />
+            </figure>
+          ))}
+        </div>
+      </section>
 
       <section className="pp-homeWelcome__section" aria-labelledby="home-features-title">
         <h2 id="home-features-title" className="pp-homeWelcome__sectionTitle">

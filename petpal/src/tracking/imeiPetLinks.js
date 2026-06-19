@@ -1,5 +1,79 @@
 import { collectionGroup, doc, getDoc, getDocs, query, where } from 'firebase/firestore';
 import { getDb, isFirebaseConfigured } from '../firebase';
+import {
+  normalizeTrackerImei,
+  readTrackerImeiIndex,
+  syncTrackerImeiIndex,
+  trackerImeiQueryValues,
+} from './trackerImeiIndex';
+
+/**
+ * @param {import('firebase/firestore').QueryDocumentSnapshot} petDoc
+ * @param {Record<string, Array<{ uid: string, petId: string, petName: string }>>} byImei
+ */
+function addPetDocLink(petDoc, byImei) {
+  const data = petDoc.data() || {};
+  const imei = normalizeTrackerImei(data.trackingDeviceId);
+  const uid = petDoc.ref.parent?.parent?.id;
+  if (!imei || !uid) return;
+  if (!byImei[imei]) byImei[imei] = [];
+  const exists = byImei[imei].some((r) => r.uid === uid && r.petId === petDoc.id);
+  if (exists) return;
+  byImei[imei].push({
+    uid,
+    petId: petDoc.id,
+    petName: String(data.name || '').trim(),
+  });
+}
+
+/**
+ * Fallback: collection-group lookup (handles legacy pets before trackerImeiIndex existed).
+ * @param {string[]} imeis
+ * @param {Record<string, Array<{ uid: string, petId: string, petName: string }>>} byImei
+ */
+async function fetchImeiPetLinksFromFirestore(imeis, byImei) {
+  const db = getDb();
+  const missing = imeis.filter((imei) => !byImei[imei]?.length);
+  if (!missing.length) return;
+
+  const seenQueries = new Set();
+
+  for (const imei of missing) {
+    for (const variant of trackerImeiQueryValues(imei)) {
+      const key = `${typeof variant}:${String(variant)}`;
+      if (seenQueries.has(key)) continue;
+      seenQueries.add(key);
+      const q = query(collectionGroup(db, 'pets'), where('trackingDeviceId', '==', variant));
+      const snap = await getDocs(q);
+      snap.docs.forEach((petDoc) => {
+        addPetDocLink(petDoc, byImei);
+        const data = petDoc.data() || {};
+        const imeiKey = normalizeTrackerImei(data.trackingDeviceId);
+        const uid = petDoc.ref.parent?.parent?.id;
+        if (imeiKey && uid) {
+          void syncTrackerImeiIndex(uid, petDoc.id, data.name, null, imeiKey);
+        }
+      });
+    }
+  }
+
+  // Batch `in` query for any still missing (string values only).
+  const stillMissing = missing.filter((imei) => !byImei[imei]?.length);
+  for (let i = 0; i < stillMissing.length; i += 10) {
+    const chunk = stillMissing.slice(i, i + 10);
+    const q = query(collectionGroup(db, 'pets'), where('trackingDeviceId', 'in', chunk));
+    const snap = await getDocs(q);
+    snap.docs.forEach((petDoc) => {
+      addPetDocLink(petDoc, byImei);
+      const data = petDoc.data() || {};
+      const imeiKey = normalizeTrackerImei(data.trackingDeviceId);
+      const uid = petDoc.ref.parent?.parent?.id;
+      if (imeiKey && uid) {
+        void syncTrackerImeiIndex(uid, petDoc.id, data.name, null, imeiKey);
+      }
+    });
+  }
+}
 
 /**
  * Resolve which app users linked each IMEI on My pets.
@@ -8,36 +82,29 @@ import { getDb, isFirebaseConfigured } from '../firebase';
  */
 export async function fetchImeiPetLinks(imeis) {
   if (!isFirebaseConfigured()) return {};
-  const unique = [...new Set((imeis || []).map((x) => String(x || '').trim()).filter(Boolean))];
+  const unique = [...new Set((imeis || []).map((x) => normalizeTrackerImei(x)).filter(Boolean))];
   if (!unique.length) return {};
 
-  const db = getDb();
   /** @type {Record<string, Array<{ uid: string, petId: string, petName: string }>>} */
   const byImei = {};
 
-  for (let i = 0; i < unique.length; i += 10) {
-    const chunk = unique.slice(i, i + 10);
-    const q = query(collectionGroup(db, 'pets'), where('trackingDeviceId', 'in', chunk));
-    const snap = await getDocs(q);
-    snap.docs.forEach((petDoc) => {
-      const data = petDoc.data() || {};
-      const imei = String(data.trackingDeviceId || '').trim();
-      const uid = petDoc.ref.parent?.parent?.id;
-      if (!imei || !uid) return;
-      if (!byImei[imei]) byImei[imei] = [];
-      byImei[imei].push({
-        uid,
-        petId: petDoc.id,
-        petName: String(data.name || '').trim(),
-      });
-    });
-  }
+  await Promise.all(
+    unique.map(async (imei) => {
+      const row = await readTrackerImeiIndex(imei);
+      if (row) {
+        byImei[imei] = [row];
+      }
+    })
+  );
+
+  await fetchImeiPetLinksFromFirestore(unique, byImei);
 
   const uids = new Set();
   Object.values(byImei).forEach((rows) => rows.forEach((r) => uids.add(r.uid)));
 
   /** @type {Record<string, { email: string }>} */
   const users = {};
+  const db = getDb();
   await Promise.all(
     [...uids].map(async (uid) => {
       try {

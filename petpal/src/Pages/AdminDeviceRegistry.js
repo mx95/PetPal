@@ -11,6 +11,7 @@ import {
   patchAdminDevice,
 } from '../tracking/adminDeviceApi';
 import { fetchImeiPetLinks } from '../tracking/imeiPetLinks';
+import { normalizeTrackerImei } from '../tracking/trackerImeiIndex';
 
 function providerLabel(id) {
   const opt = PROVIDER_OPTIONS.find((p) => p.id === id);
@@ -42,6 +43,7 @@ export default function AdminDeviceRegistry() {
   const [drafts, setDrafts] = useState({});
   const [petLinks, setPetLinks] = useState({});
   const [petLinksLoading, setPetLinksLoading] = useState(false);
+  const [petLinksError, setPetLinksError] = useState('');
 
   const apiReady = useMemo(() => isTrackerAdminApiAvailable(), []);
 
@@ -73,12 +75,16 @@ export default function AdminDeviceRegistry() {
     }
     let cancelled = false;
     setPetLinksLoading(true);
+    setPetLinksError('');
     void fetchImeiPetLinks(devices.map((d) => d.imei))
       .then((map) => {
         if (!cancelled) setPetLinks(map);
       })
-      .catch(() => {
-        if (!cancelled) setPetLinks({});
+      .catch((e) => {
+        if (!cancelled) {
+          setPetLinks({});
+          setPetLinksError(e?.message || 'Could not load app pet links.');
+        }
       })
       .finally(() => {
         if (!cancelled) setPetLinksLoading(false);
@@ -327,6 +333,8 @@ export default function AdminDeviceRegistry() {
               const isGpspos = draft.providerId === 'gpspos';
               const saving = busyImei === device.imei;
               const hasFix = Boolean(device.lastUpdate);
+              const imeiKey = normalizeTrackerImei(device.imei);
+              const links = petLinks[imeiKey] || [];
               return (
                 <article key={device.imei} className="pp-adminDeviceCard">
                   <header className="pp-adminDeviceCard__head">
@@ -344,8 +352,12 @@ export default function AdminDeviceRegistry() {
                     <div className="pp-adminDeviceCard__owner">
                       {petLinksLoading ? (
                         <span className="pp-subtle">Checking app links…</span>
-                      ) : petLinks[device.imei]?.length ? (
-                        petLinks[device.imei].map((link) => (
+                      ) : petLinksError ? (
+                        <span className="pp-subtle" style={{ color: '#b42318' }}>
+                          {petLinksError}
+                        </span>
+                      ) : links.length ? (
+                        links.map((link) => (
                           <div key={`${link.uid}-${link.petId}`} className="pp-adminDeviceCard__ownerRow">
                             <span className="pp-adminDeviceCard__ownerBadge">Linked in app</span>
                             <span>

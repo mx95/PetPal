@@ -75,6 +75,13 @@ const en = {
         book: { title: 'Bookings', desc: 'Grooming, vet visits, and more — when you need them.' },
         community: { title: 'Community', desc: 'Share moments with other pet lovers nearby.' },
       },
+      showcase: {
+        eyebrow: 'See it in action',
+        title: 'Live GPS & NFC collar tags',
+        sub: 'Track your pet on the map in real time. If they get lost, anyone who taps the NFC tag sees a contact form to reach you instantly.',
+        liveAlt: 'PetPal live GPS tracking with map, safe zone, and in-app navigation',
+        nfcAlt: 'NFC collar scan opening a lost pet contact form with call, WhatsApp, and maps buttons',
+      },
     },
     publicHero: {
       eyebrow: 'For pets and the people who love them',
