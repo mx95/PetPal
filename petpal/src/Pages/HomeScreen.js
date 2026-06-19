@@ -4,6 +4,7 @@ import { useAuth } from '../auth/AuthProvider';
 import { MVP_NAV } from '../config/mvpNav';
 import { useI18n } from '../i18n/I18nContext';
 
+const HOME_HERO_SRC = `${process.env.PUBLIC_URL || ''}/images/home-hero.png`;
 const LIVE_TRACKING_SRC = `${process.env.PUBLIC_URL || ''}/images/home-live-tracking.png`;
 const NFC_FEATURE_SRC = `${process.env.PUBLIC_URL || ''}/images/home-nfc-feature.png`;
 
@@ -54,7 +55,16 @@ export default function HomeScreen() {
 
   return (
     <div className="pp-homeWelcome">
-      <section className="pp-homeWelcome__banner pp-homeWelcome__banner--textOnly" aria-labelledby="home-hero-title">
+      <section className="pp-homeWelcome__banner" aria-labelledby="home-hero-title">
+        <div className="pp-homeWelcome__bannerArt" aria-hidden>
+          <img
+            className="pp-homeWelcome__heroImg"
+            src={HOME_HERO_SRC}
+            alt={t('home.welcome.heroImageAlt')}
+            decoding="async"
+          />
+          <div className="pp-homeWelcome__heroFade" />
+        </div>
         <div className="pp-homeWelcome__bannerOverlay">
           <div className="pp-homeWelcome__bannerCopy">
             <div className="pp-homeWelcome__bannerGreeting">
