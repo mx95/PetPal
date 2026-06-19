@@ -68,13 +68,17 @@ export async function readTrackerImeiIndex(imei) {
   if (!isFirebaseConfigured()) return null;
   const key = normalizeTrackerImei(imei);
   if (!key) return null;
-  const snap = await getDoc(doc(getDb(), 'trackerImeiIndex', key));
-  if (!snap.exists()) return null;
-  const data = snap.data() || {};
-  if (!data.uid || !data.petId) return null;
-  return {
-    uid: String(data.uid),
-    petId: String(data.petId),
-    petName: String(data.petName || '').trim(),
-  };
+  try {
+    const snap = await getDoc(doc(getDb(), 'trackerImeiIndex', key));
+    if (!snap.exists()) return null;
+    const data = snap.data() || {};
+    if (!data.uid || !data.petId) return null;
+    return {
+      uid: String(data.uid),
+      petId: String(data.petId),
+      petName: String(data.petName || '').trim(),
+    };
+  } catch {
+    return null;
+  }
 }

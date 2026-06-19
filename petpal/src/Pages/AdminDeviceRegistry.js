@@ -69,7 +69,7 @@ export default function AdminDeviceRegistry() {
   }, [load]);
 
   useEffect(() => {
-    if (!devices.length) {
+    if (!devices.length || !user) {
       setPetLinks({});
       return;
     }
@@ -92,7 +92,7 @@ export default function AdminDeviceRegistry() {
     return () => {
       cancelled = true;
     };
-  }, [devices]);
+  }, [devices, user]);
 
   const filteredDevices = useMemo(() => {
     const q = search.trim().toLowerCase();

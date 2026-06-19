@@ -36,14 +36,32 @@ async function fetchImeiPetLinksFromFirestore(imeis, byImei) {
   const missing = imeis.filter((imei) => !byImei[imei]?.length);
   if (!missing.length) return;
 
-  const seenQueries = new Set();
+  try {
+    const seenQueries = new Set();
 
-  for (const imei of missing) {
-    for (const variant of trackerImeiQueryValues(imei)) {
-      const key = `${typeof variant}:${String(variant)}`;
-      if (seenQueries.has(key)) continue;
-      seenQueries.add(key);
-      const q = query(collectionGroup(db, 'pets'), where('trackingDeviceId', '==', variant));
+    for (const imei of missing) {
+      for (const variant of trackerImeiQueryValues(imei)) {
+        const key = `${typeof variant}:${String(variant)}`;
+        if (seenQueries.has(key)) continue;
+        seenQueries.add(key);
+        const q = query(collectionGroup(db, 'pets'), where('trackingDeviceId', '==', variant));
+        const snap = await getDocs(q);
+        snap.docs.forEach((petDoc) => {
+          addPetDocLink(petDoc, byImei);
+          const data = petDoc.data() || {};
+          const imeiKey = normalizeTrackerImei(data.trackingDeviceId);
+          const uid = petDoc.ref.parent?.parent?.id;
+          if (imeiKey && uid) {
+            void syncTrackerImeiIndex(uid, petDoc.id, data.name, null, imeiKey);
+          }
+        });
+      }
+    }
+
+    const stillMissing = missing.filter((imei) => !byImei[imei]?.length);
+    for (let i = 0; i < stillMissing.length; i += 10) {
+      const chunk = stillMissing.slice(i, i + 10);
+      const q = query(collectionGroup(db, 'pets'), where('trackingDeviceId', 'in', chunk));
       const snap = await getDocs(q);
       snap.docs.forEach((petDoc) => {
         addPetDocLink(petDoc, byImei);
@@ -55,23 +73,8 @@ async function fetchImeiPetLinksFromFirestore(imeis, byImei) {
         }
       });
     }
-  }
-
-  // Batch `in` query for any still missing (string values only).
-  const stillMissing = missing.filter((imei) => !byImei[imei]?.length);
-  for (let i = 0; i < stillMissing.length; i += 10) {
-    const chunk = stillMissing.slice(i, i + 10);
-    const q = query(collectionGroup(db, 'pets'), where('trackingDeviceId', 'in', chunk));
-    const snap = await getDocs(q);
-    snap.docs.forEach((petDoc) => {
-      addPetDocLink(petDoc, byImei);
-      const data = petDoc.data() || {};
-      const imeiKey = normalizeTrackerImei(data.trackingDeviceId);
-      const uid = petDoc.ref.parent?.parent?.id;
-      if (imeiKey && uid) {
-        void syncTrackerImeiIndex(uid, petDoc.id, data.name, null, imeiKey);
-      }
-    });
+  } catch {
+    // Collection-group fallback may be blocked by rules; index rows still apply.
   }
 }
 
