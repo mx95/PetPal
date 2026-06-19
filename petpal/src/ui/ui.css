@@ -6011,64 +6011,75 @@ body.pp-noScroll {
 
 @media (max-width: 820px) {
   .pp-homeWelcome__banner {
-    --pp-home-hero-h: clamp(300px, 76vw, 380px);
     display: flex;
     flex-direction: column;
     padding: 0;
     gap: 0;
+    overflow: hidden;
   }
 
   .pp-homeWelcome__bannerArt {
     order: 1;
     flex: 0 0 auto;
-    height: var(--pp-home-hero-h);
-    min-height: var(--pp-home-hero-h);
+    width: 100%;
+    height: clamp(200px, 52vw, 280px);
+    min-height: 0;
     border-radius: 0;
+    grid-column: auto;
+    grid-row: auto;
   }
 
   .pp-homeWelcome__heroImg {
     height: 100%;
-    min-height: var(--pp-home-hero-h);
-    object-position: 58% 42%;
+    min-height: 0;
+    object-position: center 42%;
+    transform: none;
   }
 
   .pp-homeWelcome__heroFade {
-    background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.82) 0%, rgba(255, 255, 255, 0.06) 34%, rgba(255, 255, 255, 0.04) 58%, rgba(255, 255, 255, 0.78) 100%),
-      linear-gradient(90deg, rgba(255, 255, 255, 0.82) 0%, rgba(255, 255, 255, 0.18) 48%, transparent 70%);
+    background: linear-gradient(
+      180deg,
+      transparent 0%,
+      transparent 50%,
+      rgba(248, 247, 255, 0.35) 100%
+    );
   }
 
   .pp-homeWelcome__bannerOverlay {
     order: 2;
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: var(--pp-home-hero-h);
-    z-index: 2;
-    pointer-events: none;
+    position: relative;
+    top: auto;
+    left: auto;
+    right: auto;
+    height: auto;
+    z-index: 1;
+    pointer-events: auto;
+    padding: 16px 16px 0;
+    grid-column: auto;
+    grid-row: auto;
   }
 
   .pp-homeWelcome__bannerCopy {
     position: relative;
-    height: 100%;
+    height: auto;
     padding: 0;
   }
 
-  .pp-homeWelcome__bannerGreeting {
-    position: absolute;
-    top: 18px;
-    left: 16px;
-    right: 42%;
+  .pp-homeWelcome__bannerGreeting,
+  .pp-homeWelcome__bannerBody {
+    position: relative;
+    top: auto;
+    left: auto;
+    right: auto;
+    bottom: auto;
     max-width: none;
   }
 
+  .pp-homeWelcome__bannerGreeting {
+    margin-bottom: 8px;
+  }
+
   .pp-homeWelcome__bannerBody {
-    position: absolute;
-    left: 16px;
-    right: 38%;
-    bottom: 16px;
-    max-width: none;
     margin-top: 0;
   }
 
@@ -6076,44 +6087,55 @@ body.pp-noScroll {
     order: 3;
     position: relative;
     z-index: 1;
-    padding: 12px 16px 18px;
+    padding: 14px 16px 18px;
     background: transparent;
+    grid-column: auto;
+    grid-row: auto;
   }
 
-  .pp-homeWelcome__bannerActions .pp-homeWelcome__ctaRow,
-  .pp-homeWelcome__bannerActions .pp-homeWelcome__trust {
-    pointer-events: auto;
+  .pp-homeWelcome__bannerActions .pp-homeWelcome__ctaRow {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    gap: 10px;
+  }
+
+  .pp-homeWelcome__bannerActions .pp-homeWelcome__ctaRow .pp-btn {
+    width: 100%;
+    flex: none;
+    min-width: 0;
   }
 
   .pp-homeWelcome__eyebrow {
-    margin-bottom: 6px;
-    text-shadow: 0 1px 8px rgba(255, 255, 255, 0.9);
+    margin-bottom: 8px;
+    text-shadow: none;
   }
 
   .pp-homeWelcome__title {
-    margin-bottom: 0;
+    margin-bottom: 10px;
     max-width: none;
-    font-size: clamp(1.55rem, 7vw, 2rem);
-    text-shadow: 0 1px 10px rgba(255, 255, 255, 0.92);
+    font-size: clamp(1.45rem, 6.5vw, 1.9rem);
+    line-height: 1.15;
+    text-shadow: none;
   }
 
   .pp-homeWelcome__headlineSub {
-    margin-bottom: 6px;
+    margin-bottom: 8px;
     max-width: none;
     font-size: clamp(1rem, 4.5vw, 1.2rem);
-    text-shadow: 0 1px 8px rgba(255, 255, 255, 0.9);
+    text-shadow: none;
   }
 
   .pp-homeWelcome__lead {
     margin-bottom: 0;
     max-width: none;
-    font-size: 13px;
-    line-height: 1.45;
-    text-shadow: 0 1px 8px rgba(255, 255, 255, 0.9);
+    font-size: 14px;
+    line-height: 1.55;
+    text-shadow: none;
   }
 
   .pp-homeWelcome__trust {
     margin-top: 10px;
+    text-align: center;
   }
 }
 
