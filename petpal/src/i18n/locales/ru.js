@@ -532,8 +532,8 @@ const ru = {
       'Разрешите камеру и наведите на QR с IMEI на трекере (нужны HTTPS или localhost).',
     scanQrErrorCamera:
       'Не удалось включить камеру. Разрешите доступ, откройте сайт по HTTPS или введите IMEI вручную.',
-    scanQrErrorNoImei: 'В этом QR не найден 15-значный IMEI.',
-    scanQrSuccess: 'IMEI подставлен из QR.',
+    scanQrErrorNoImei: 'В этом коде не найден 15-значный IMEI.',
+    scanQrSuccess: 'IMEI подставлен из сканирования.',
     trackerLinked: 'Трекер привязан — последняя точка появится на вкладке Tracker.',
     trackerLinkFailed: 'Не удалось связаться с сервером. Откройте Tracker и нажмите обновить.',
     profilePhoto: 'Фото',

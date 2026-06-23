@@ -1,10 +1,10 @@
 /**
- * Parse IMEI from QR payload: plain 15 digits, URL query (?imei=…), or embedded digit run.
+ * Parse IMEI from QR or barcode payload: plain 15 digits, URL query (?imei=…), or embedded digit run.
  * @param {string} raw
  * @returns {string|null}
  */
 export function extractImeiFromQr(raw) {
-  const s = String(raw ?? '').trim();
+  const s = String(raw ?? '').trim().replace(/^[*+.\s-]+|[*+.\s-]+$/g, '');
   if (!s) return null;
 
   const compact = s.replace(/\s+/g, '');
