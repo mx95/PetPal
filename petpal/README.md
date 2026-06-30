@@ -30,19 +30,26 @@ Open `http://localhost:3000`.
 
 ## Native apps (Android & iOS — Capacitor)
 
-The web UI is wrapped with [Capacitor](https://capacitorjs.com/) so the same production bundle can ship in the Google Play Store and App Store.
+Store-ready native projects live in separate repo folders:
 
-- **Config:** `petpal/capacitor.config.json` — `appId` is `io.petpal.app` (change this before a public release). `webDir` is `build`.
-- **`homepage`:** `package.json` sets `"homepage": "."` so JS/CSS load correctly inside the native WebView. Keep it for mobile builds; use a subpath only if you maintain a separate web deploy config.
+| Platform | Directory | Docs |
+|----------|-----------|------|
+| **Android (Play Store)** | [`mobile-android/`](mobile-android/) | [`mobile-android/README.md`](mobile-android/README.md) |
+| **iOS (App Store)** | [`mobile-ios/`](mobile-ios/) | [`mobile-ios/README.md`](mobile-ios/README.md) |
 
-**Typical workflow**
+**Build web + sync native projects**
 
-1. `npm run build` — Create React App output in `build/`.
-2. `npm run cap:sync` (or `npm run build:mobile` to do both) — copies assets into `android/` and `ios/`.
-3. **Android:** Install [Android Studio](https://developer.android.com/studio), a JDK (e.g. 17), and ensure `JAVA_HOME` is set. Run `npm run cap:open:android`, then build or run on a device/emulator from Android Studio.
-4. **iOS (macOS):** Install Xcode and CocoaPods. From `petpal/ios/App` run `pod install` if pods are not installed yet. Open `petpal/ios/App/App.xcworkspace` in Xcode (or `npm run cap:open:ios`), then run on a simulator or archive for TestFlight/App Store.
+```bash
+cd petpal
+npm ci
+npm run build:mobile
+```
 
-Add **Firebase** `google-services.json` (Android) and `GoogleService-Info.plist` (iOS) when you use native Firebase features; configure **OAuth redirect URLs** and **App Links / Universal Links** if you use third-party sign-in.
+- **Config:** `petpal/capacitor.config.json` — `appId` `io.petpal.app`, `webDir` `build`, Android/iOS paths point to `../mobile-android` and `../mobile-ios`.
+- **Android AAB:** `mobile-android/releases/petpal-1.0.0-release.aab` (built locally or via GitHub Actions **Build Android Release**).
+- **iOS:** Requires macOS + Xcode — see `mobile-ios/README.md`.
+
+Add **Firebase** `google-services.json` (Android) and `GoogleService-Info.plist` (iOS) for native Firebase features.
 
 ## GPS tracking (PetPal vendor)
 

@@ -1,0 +1,9 @@
+local.properties
+.gradle/
+**/build/
+captures/
+.idea/
+*.iml
+
+# Keystore + signing properties ARE committed for turnkey Play uploads.
+# See signing/UPLOAD_KEY_CREDENTIALS.md — rotate keys if this repo is public.

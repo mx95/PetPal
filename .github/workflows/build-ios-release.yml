@@ -1,0 +1,41 @@
+name: Build iOS Release
+
+on:
+  workflow_dispatch:
+
+jobs:
+  archive:
+    runs-on: macos-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: petpal/package-lock.json
+
+      - name: Install web dependencies & sync Capacitor
+        working-directory: petpal
+        run: |
+          npm ci
+          npm run build:mobile
+
+      - name: Install CocoaPods
+        run: |
+          cd mobile-ios/App
+          pod install
+
+      - name: Build (simulator — no signing)
+        working-directory: mobile-ios/App
+        run: |
+          xcodebuild -workspace App.xcworkspace -scheme App -configuration Release \
+            -destination 'platform=iOS Simulator,name=iPhone 16' \
+            -derivedDataPath build build
+
+      - name: Note on App Store export
+        run: |
+          echo "iOS App Store builds require your Apple Developer signing certificate."
+          echo "On a Mac with your Team configured, run: cd mobile-ios && ./scripts/build-release.sh"
+          echo "See mobile-ios/README.md for the full submission checklist."

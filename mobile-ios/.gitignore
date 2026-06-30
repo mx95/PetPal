@@ -1,0 +1,7 @@
+# Ignore build artifacts; keep Xcode project sources.
+App/Pods/
+DerivedData/
+*.xcuserstate
+*.xcuserdata
+capacitor-cordova-ios-plugins/
+**/build/

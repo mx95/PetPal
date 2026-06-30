@@ -1,0 +1,14 @@
+{
+	"appId": "io.petpal.app",
+	"appName": "PetPal",
+	"webDir": "build",
+	"android": {
+		"path": "../mobile-android"
+	},
+	"ios": {
+		"path": "../mobile-ios"
+	},
+	"server": {
+		"androidScheme": "https"
+	}
+}
