@@ -21,11 +21,14 @@ On GitLab, create empty projects (no README):
 
 ## 2. Export mobile code from PetPal (one-time)
 
-On your PC, from the PetPal repo **before or after** mobile folders were removed from `main`:
+If mobile folders are already deleted from `main`, export from the last commit that contained them:
 
 ```bash
-cd PetPal
-bash scripts/export-mobile-repos.sh
+# Bash (Linux / macOS / Git Bash)
+bash scripts/export-mobile-repos.sh 3031e22
+
+# Windows PowerShell
+.\scripts\export-mobile-repos.ps1 3031e22
 ```
 
 This writes:

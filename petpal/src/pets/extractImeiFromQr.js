@@ -9,10 +9,12 @@ export function extractImeiFromQr(raw) {
 
   // Strip control chars (e.g. GS1 FNC1 in Code 128) and common label prefixes.
   s = s.replace(/[\u0000-\u001f\u007f]/g, '').replace(/^[*+.\s-]+|[*+.\s-]+$/g, '');
+  s = s.replace(/[()]/g, '');
   s = s.replace(/^(?:IMEI|imei|SN|S\/N|Serial|Device\s*ID)\s*[:#]?\s*/i, '');
 
   const compact = s.replace(/\s+/g, '');
   if (/^\d{15}$/.test(compact)) return compact;
+  if (/^\d{14}$/.test(compact)) return `0${compact}`;
 
   try {
     const u = new URL(s);
