@@ -33,13 +33,13 @@ function addPetDocLink(petDoc, byImei) {
  */
 async function fetchImeiPetLinksFromFirestore(imeis, byImei) {
   const db = getDb();
-  const missing = imeis.filter((imei) => !byImei[imei]?.length);
-  if (!missing.length) return;
+  const targets = imeis.filter(Boolean);
+  if (!targets.length) return;
 
   try {
     const seenQueries = new Set();
 
-    for (const imei of missing) {
+    for (const imei of targets) {
       for (const variant of trackerImeiQueryValues(imei)) {
         const key = `${typeof variant}:${String(variant)}`;
         if (seenQueries.has(key)) continue;
@@ -58,7 +58,7 @@ async function fetchImeiPetLinksFromFirestore(imeis, byImei) {
       }
     }
 
-    const stillMissing = missing.filter((imei) => !byImei[imei]?.length);
+    const stillMissing = targets.filter((imei) => !byImei[imei]?.length);
     for (let i = 0; i < stillMissing.length; i += 10) {
       const chunk = stillMissing.slice(i, i + 10);
       const q = query(collectionGroup(db, 'pets'), where('trackingDeviceId', 'in', chunk));
@@ -95,7 +95,9 @@ export async function fetchImeiPetLinks(imeis) {
     unique.map(async (imei) => {
       const row = await readTrackerImeiIndex(imei);
       if (row) {
-        byImei[imei] = [row];
+        if (!byImei[imei]) byImei[imei] = [];
+        const exists = byImei[imei].some((r) => r.uid === row.uid && r.petId === row.petId);
+        if (!exists) byImei[imei].push(row);
       }
     })
   );

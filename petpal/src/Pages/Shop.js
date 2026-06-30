@@ -1,30 +1,54 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { collection, doc, onSnapshot, query, where } from 'firebase/firestore';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
-import { useCompany } from '../company/CompanyContext';
-import { getDb, isFirebaseConfigured } from '../firebase';
+import { usePets } from '../pets/PetsContext';
+import { isFirebaseConfigured } from '../firebase';
 import { useI18n } from '../i18n/I18nContext';
+import ShopCartBar from '../components/shop/ShopCartBar';
+import ShopPetPicker from '../components/shop/ShopPetPicker';
 import {
   NFC_TAG_ADDON_CENTS,
   PLUS_SKUS,
+  PLUS_YEARLY_RENEWAL_CENTS,
   SHOP_PRODUCTS,
   TRACKER_ADDON_CENTS,
   formatEur,
   formatShopPrice,
   monthlyFirstPaymentCents,
 } from '../shop/catalog';
-import { startJccCheckout } from '../shop/startJccCheckout';
+import { MARKETPLACE_PRODUCTS } from '../shop/marketplaceProducts';
+import { useShopCart } from '../shop/ShopCartContext';
+import { requestSubscriptionCancel } from '../shop/requestSubscriptionCancel';
+import { buildSubscriptionCartItem } from '../shop/shopCartHelpers';
+import { subscribeShopSubscriptionState } from '../shop/shopSubscriptionsFirestore';
+import { normalizeTrackerImei } from '../tracking/trackerImeiIndex';
+
+const SUBSCRIPTION_PRODUCTS = SHOP_PRODUCTS.filter((p) => PLUS_SKUS.includes(p.id) || p.id === 'NFC_TAG_HARDWARE');
+
+function petForImei(pets, imei) {
+  const key = normalizeTrackerImei(imei);
+  if (!key) return null;
+  return pets.find((p) => normalizeTrackerImei(p.trackingDeviceId) === key) || null;
+}
+
+function formatImeiTail(imei) {
+  const s = normalizeTrackerImei(imei);
+  return s.length >= 4 ? s.slice(-4) : s;
+}
 
 export default function Shop() {
   const { t } = useI18n();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { isApprovedCompany } = useCompany();
+  const uid = user?.uid ?? null;
+  const { pets } = usePets();
   const [searchParams] = useSearchParams();
   const checkout = searchParams.get('checkout');
   const focusSku = searchParams.get('sku');
   const cardRefs = useRef(/** @type {Record<string, HTMLElement | null>} */ ({}));
+
+  const [shopTab, setShopTab] = useState('subscriptions');
+  const { addToCart, setCheckoutError, cartItems } = useShopCart();
 
   useEffect(() => {
     if (checkout !== 'success') return;
@@ -33,59 +57,72 @@ export default function Shop() {
   }, [checkout, navigate, searchParams]);
 
   const [plusActiveBySku, setPlusActiveBySku] = useState(() =>
-    PLUS_SKUS.reduce((acc, id) => {
-      acc[id] = false;
-      return acc;
-    }, {})
+    PLUS_SKUS.reduce((acc, id) => ({ ...acc, [id]: false }), {})
   );
   const [monthlyIncludeTracker, setMonthlyIncludeTracker] = useState(false);
   const [monthlyIncludeNfc, setMonthlyIncludeNfc] = useState(false);
-  const [activeTrackerSubCount, setActiveTrackerSubCount] = useState(0);
+  const [monthlyNfcPetIds, setMonthlyNfcPetIds] = useState(/** @type {string[]} */ ([]));
+  const [yearlyNfcPetIds, setYearlyNfcPetIds] = useState(/** @type {string[]} */ ([]));
+  const [nfcHardwarePetIds, setNfcHardwarePetIds] = useState(/** @type {string[]} */ ([]));
+  const [activeTrackerSubs, setActiveTrackerSubs] = useState(/** @type {Array<{ id: string, sku?: string, status?: string, createdAt?: unknown }>} */ ([]));
   const [legacyMonthlyActive, setLegacyMonthlyActive] = useState(false);
+  const [cancelBusy, setCancelBusy] = useState(null);
+  const [cancelMsg, setCancelMsg] = useState('');
+
+  const petOptions = useMemo(() => pets.map((p) => ({ id: p.id, name: p.name })), [pets]);
 
   useEffect(() => {
     if (!focusSku) return;
     const id = window.setTimeout(() => {
-      const el = cardRefs.current[focusSku];
-      el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      cardRefs.current[focusSku]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }, 250);
     return () => window.clearTimeout(id);
   }, [focusSku]);
 
   useEffect(() => {
-    if (!user || !isFirebaseConfigured()) {
+    if (!uid) {
       setPlusActiveBySku(PLUS_SKUS.reduce((acc, id) => ({ ...acc, [id]: false }), {}));
-      setActiveTrackerSubCount(0);
+      setActiveTrackerSubs([]);
       setLegacyMonthlyActive(false);
       return () => {};
     }
-    const db = getDb();
-    const unsubs = PLUS_SKUS.filter((sku) => sku !== 'PETPAL_PLUS_MONTHLY').map((sku) =>
-      onSnapshot(doc(db, 'billingSubscriptions', `${user.uid}_${sku}`), (snap) => {
-        const active = Boolean(snap.exists() && snap.data()?.status === 'active');
-        setPlusActiveBySku((prev) => ({ ...prev, [sku]: active }));
-      })
-    );
-    const legacyMonthlyUnsub = onSnapshot(doc(db, 'billingSubscriptions', `${user.uid}_PETPAL_PLUS_MONTHLY`), (snap) => {
-      const data = snap.data() || {};
-      const active = Boolean(snap.exists() && data.status === 'active' && data.nextRenewalAt);
-      setLegacyMonthlyActive(active);
+    return subscribeShopSubscriptionState(uid, (state) => {
+      setPlusActiveBySku(state.plusActiveBySku);
+      setActiveTrackerSubs(state.activeTrackerSubs);
+      setLegacyMonthlyActive(state.legacyMonthlyActive);
     });
-    const trackerSubsUnsub = onSnapshot(
-      query(collection(db, 'users', user.uid, 'trackerSubscriptions'), where('status', '==', 'active')),
-      (snap) => {
-        setActiveTrackerSubCount(snap.size);
-      }
-    );
-    return () => {
-      unsubs.forEach((u) => u());
-      legacyMonthlyUnsub();
-      trackerSubsUnsub();
-    };
-  }, [user]);
+  }, [uid]);
 
   const monthlySubCount =
-    activeTrackerSubCount + (legacyMonthlyActive && activeTrackerSubCount === 0 ? 1 : 0);
+    activeTrackerSubs.length + (legacyMonthlyActive && activeTrackerSubs.length === 0 ? 1 : 0);
+
+  const manageSubscriptions = useMemo(() => {
+    const rows = activeTrackerSubs.map((sub) => ({ ...sub, kind: 'tracker' }));
+    if (legacyMonthlyActive && activeTrackerSubs.length === 0) {
+      const legacyId = `${user?.uid || ''}_PETPAL_PLUS_MONTHLY`;
+      rows.unshift({
+        id: legacyId,
+        sku: 'PETPAL_PLUS_MONTHLY',
+        kind: 'legacy',
+      });
+    }
+    return rows;
+  }, [activeTrackerSubs, legacyMonthlyActive, user?.uid]);
+
+  const manageRows = useMemo(() => {
+    return manageSubscriptions.map((sub) => {
+      const imei = normalizeTrackerImei(sub.trackerImei || sub.imei);
+      const petFromId = sub.petId ? pets.find((p) => p.id === sub.petId) || null : null;
+      const petFromImei = imei ? petForImei(pets, imei) : null;
+      const pet = petFromId || petFromImei;
+      const petName = pet?.name || sub.petName || null;
+      const nfcPetNames = (Array.isArray(sub.nfcPetIds) ? sub.nfcPetIds : [])
+        .map((id) => pets.find((p) => p.id === id)?.name)
+        .filter(Boolean);
+      const awaitingImei = Boolean(sub.includeTracker !== false && !imei && sub.kind !== 'legacy');
+      return { ...sub, imei, pet, petName, nfcPetNames, awaitingImei };
+    });
+  }, [manageSubscriptions, pets]);
 
   const [saveCardById, setSaveCardById] = useState(() =>
     SHOP_PRODUCTS.reduce((acc, p) => {
@@ -93,7 +130,6 @@ export default function Shop() {
       return acc;
     }, {})
   );
-  const [busy, setBusy] = useState(null);
   const [err, setErr] = useState('');
 
   const banner = useMemo(() => {
@@ -102,12 +138,87 @@ export default function Shop() {
     return null;
   }, [checkout, t]);
 
-  const isPlusSku = (id) => PLUS_SKUS.includes(id);
-
   const monthlyAddonOpts = useMemo(
-    () => ({ includeTracker: monthlyIncludeTracker, includeNfc: monthlyIncludeNfc }),
-    [monthlyIncludeTracker, monthlyIncludeNfc]
+    () => ({
+      includeTracker: monthlyIncludeTracker,
+      nfcPetIds: monthlyIncludeNfc ? monthlyNfcPetIds : [],
+    }),
+    [monthlyIncludeTracker, monthlyIncludeNfc, monthlyNfcPetIds]
   );
+
+  function addSubscriptionToCart(product) {
+    setErr('');
+    const saveCard = Boolean(saveCardById[product.id]);
+    if (product.recurring && !saveCard) {
+      setErr(t('shopPage.saveCardRequired'));
+      return;
+    }
+    if (product.id === 'PETPAL_PLUS_MONTHLY' && monthlyIncludeNfc && !monthlyNfcPetIds.length) {
+      setErr(t('shopPage.nfcSelectPetRequired'));
+      return;
+    }
+    if (product.id === 'PETPAL_PLUS_YEARLY' && !yearlyNfcPetIds.length) {
+      setErr(t('shopPage.nfcSelectPetRequired'));
+      return;
+    }
+    if (product.id === 'NFC_TAG_HARDWARE' && !nfcHardwarePetIds.length) {
+      setErr(t('shopPage.nfcSelectPetRequired'));
+      return;
+    }
+    const includeTracker =
+      product.id === 'PETPAL_PLUS_MONTHLY'
+        ? monthlyIncludeTracker
+        : product.id === 'PETPAL_PLUS_YEARLY';
+    const includeNfc =
+      product.id === 'PETPAL_PLUS_MONTHLY'
+        ? monthlyIncludeNfc
+        : product.id === 'PETPAL_PLUS_YEARLY' || product.id === 'NFC_TAG_HARDWARE';
+    const nfcPetIds =
+      product.id === 'PETPAL_PLUS_MONTHLY'
+        ? monthlyNfcPetIds
+        : product.id === 'PETPAL_PLUS_YEARLY'
+          ? yearlyNfcPetIds
+          : nfcHardwarePetIds;
+    const petNames = petOptions.filter((p) => nfcPetIds.includes(p.id)).map((p) => p.name);
+    addToCart(
+      buildSubscriptionCartItem(product, {
+        includeTracker,
+        includeNfc,
+        nfcPetIds,
+        saveCard,
+        petNames,
+      })
+    );
+    setCheckoutError('');
+    if (product.id === 'PETPAL_PLUS_MONTHLY') {
+      setMonthlyIncludeTracker(false);
+      setMonthlyIncludeNfc(false);
+      setMonthlyNfcPetIds([]);
+    } else if (product.id === 'NFC_TAG_HARDWARE') {
+      setNfcHardwarePetIds([]);
+    }
+  }
+
+  async function onCancelSubscription(sub) {
+    if (!user) return;
+    const ok = window.confirm(t('shopPage.cancelConfirm'));
+    if (!ok) return;
+    setCancelBusy(sub.id);
+    setCancelMsg('');
+    try {
+      await requestSubscriptionCancel({
+        uid: user.uid,
+        subscriptionId: sub.id,
+        sku: sub.sku || 'PETPAL_PLUS_MONTHLY',
+        imei: sub.imei || null,
+      });
+      setCancelMsg(t('shopPage.cancelRequested'));
+    } catch (e) {
+      setCancelMsg(e?.message || String(e));
+    } finally {
+      setCancelBusy(null);
+    }
+  }
 
   if (!user) {
     return (
@@ -128,198 +239,344 @@ export default function Shop() {
   if (!isFirebaseConfigured()) {
     return (
       <div className="pp-pad">
-        <h1 className="pp-pageHeader__title">
-          {t('shopPage.needFirebaseTitle')}
-        </h1>
+        <h1 className="pp-pageHeader__title">{t('shopPage.needFirebaseTitle')}</h1>
         <p className="pp-subtle">{t('shopPage.needFirebaseSub')}</p>
       </div>
     );
   }
 
-  async function onPay(product) {
-    setErr('');
-    setBusy(product.id);
-    try {
-      const saveCard = Boolean(saveCardById[product.id]);
-      if (product.recurring && !saveCard) {
-        setErr(t('shopPage.saveCardRequired'));
-        setBusy(null);
-        return;
-      }
-      const includeTracker = product.id === 'PETPAL_PLUS_MONTHLY' && monthlyIncludeTracker;
-      const includeNfc = product.id === 'PETPAL_PLUS_MONTHLY' && monthlyIncludeNfc;
-      const companyId = product.id === 'STORE_BOOST_MONTHLY' ? user.uid : undefined;
-      await startJccCheckout({ sku: product.id, saveCard, companyId, includeTracker, includeNfc });
-    } catch (e) {
-      setErr(e?.message || String(e));
-      setBusy(null);
-    }
-  }
-
   return (
     <div className="pp-pad pp-shopPage">
+      <div className="pp-shopTabs" role="tablist" aria-label={t('shopPage.tabsAria')}>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={shopTab === 'subscriptions'}
+          className={`pp-shopTabs__btn${shopTab === 'subscriptions' ? ' is-active' : ''}`}
+          onClick={() => setShopTab('subscriptions')}
+        >
+          {t('shopPage.tabSubscriptions')}
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={shopTab === 'products'}
+          className={`pp-shopTabs__btn${shopTab === 'products' ? ' is-active' : ''}`}
+          onClick={() => setShopTab('products')}
+        >
+          {t('shopPage.tabProducts')}
+        </button>
+      </div>
+
       {banner ? (
         <div className="pp-shopBanner pp-shopBanner--warn" role="status">
           {banner.text}
         </div>
       ) : null}
-
       {err ? <div className="pp-error" style={{ marginTop: 12 }}>{err}</div> : null}
+      {cancelMsg ? <div className="pp-shopBanner" role="status">{cancelMsg}</div> : null}
 
-      <div className="pp-shopGrid">
-        {SHOP_PRODUCTS.map((p) => {
-          const planActive = isPlusSku(p.id)
-            ? p.id === 'PETPAL_PLUS_MONTHLY'
-              ? monthlySubCount > 0
-              : plusActiveBySku[p.id]
-            : false;
-          const isLoading = busy === p.id;
-          const monthlyActive = monthlySubCount > 0;
-          const monthlyAddOnMode = p.id === 'PETPAL_PLUS_MONTHLY' && monthlyActive;
-          const monthlyCanCheckout =
-            p.id !== 'PETPAL_PLUS_MONTHLY' || !monthlyActive || monthlyIncludeTracker;
-          const dueTodayCents =
-            p.id === 'PETPAL_PLUS_MONTHLY' ? monthlyFirstPaymentCents(monthlyAddonOpts) : p.amountCents;
-          const hasMonthlyAddons = monthlyIncludeTracker || monthlyIncludeNfc;
+      {cartItems.length ? <ShopCartBar /> : null}
 
-          return (
-            <article
-              key={p.id}
-              ref={(el) => {
-                cardRefs.current[p.id] = el;
-              }}
-              className={`pp-card pp-shopCard${focusSku === p.id ? ' pp-shopCard--focus' : ''}${p.id === 'PETPAL_PLUS_YEARLY' ? ' pp-shopCard--featured' : ''}`}
-            >
-              <div className="pp-shopCard__body">
-              <span className="pp-shopCard__badge">{p.badge}</span>
-              <h2 className="pp-sectionTitle" style={{ margin: '6px 0 4px' }}>
-                {p.title}
+      {shopTab === 'subscriptions' ? (
+        <>
+          <div className="pp-shopInfoBox" role="note">
+            <strong>{t('shopPage.subInfoTitle')}</strong>
+            <p>{t('shopPage.subInfoBody')}</p>
+          </div>
+
+          <div className="pp-shopGrid">
+            {SUBSCRIPTION_PRODUCTS.map((p) => {
+              const planActive = PLUS_SKUS.includes(p.id)
+                ? p.id === 'PETPAL_PLUS_MONTHLY'
+                  ? monthlySubCount > 0
+                  : plusActiveBySku[p.id]
+                : false;
+              const isLoading = false;
+              const monthlyActive = monthlySubCount > 0;
+              const monthlyAddOnMode = p.id === 'PETPAL_PLUS_MONTHLY' && monthlyActive;
+              const dueTodayCents =
+                p.id === 'PETPAL_PLUS_MONTHLY' ? monthlyFirstPaymentCents(monthlyAddonOpts) : p.amountCents;
+              const hasMonthlyAddons =
+                monthlyIncludeTracker || (monthlyIncludeNfc && monthlyNfcPetIds.length > 0);
+              const showNfcPicker =
+                (p.id === 'PETPAL_PLUS_MONTHLY' && monthlyIncludeNfc) ||
+                p.id === 'PETPAL_PLUS_YEARLY' ||
+                p.id === 'NFC_TAG_HARDWARE';
+              const inCartQty = cartItems
+                .filter((row) => row.sku === p.id)
+                .reduce((sum, row) => sum + (row.qty || 1), 0);
+
+              return (
+                <article
+                  key={p.id}
+                  ref={(el) => {
+                    cardRefs.current[p.id] = el;
+                  }}
+                  className={`pp-card pp-shopCard${focusSku === p.id ? ' pp-shopCard--focus' : ''}${p.id === 'PETPAL_PLUS_YEARLY' ? ' pp-shopCard--featured' : ''}`}
+                >
+                  <div className="pp-shopCard__body">
+                    <span className="pp-shopCard__badge">{p.badge}</span>
+                    {p.id !== 'PETPAL_PLUS_MONTHLY' ? (
+                      <h2 className="pp-sectionTitle" style={{ margin: '6px 0 4px' }}>
+                        {p.title}
+                      </h2>
+                    ) : null}
+                    {inCartQty > 0 ? (
+                      <p className="pp-shopCard__inCart">{t('shopPage.inCartQty', { count: inCartQty })}</p>
+                    ) : null}
+                    {p.subtitle ? (
+                      <p className="pp-subtle" style={{ marginTop: 0 }}>
+                        {p.subtitle}
+                      </p>
+                    ) : null}
+                    {PLUS_SKUS.includes(p.id) ? (
+                      <p className={`pp-shopCard__status${planActive ? ' pp-shopCard__status--on' : ''}`}>
+                        {planActive ? t('shopPage.plusBadgeActive') : t('shopPage.plusBadgeInactive')}
+                      </p>
+                    ) : null}
+                    {p.id === 'PETPAL_PLUS_MONTHLY' && monthlySubCount > 0 ? (
+                      <p className="pp-subtle pp-shopCard__trackerCount">
+                        {t('shopPage.trackerEntitlements', { count: monthlySubCount })}
+                      </p>
+                    ) : null}
+                    {p.id === 'PETPAL_PLUS_MONTHLY' && (!planActive || monthlyAddOnMode) ? (
+                      <div className="pp-shopAddons">
+                        <label className="pp-shopTrackerOpt">
+                          <input
+                            type="checkbox"
+                            checked={monthlyIncludeTracker}
+                            disabled={isLoading}
+                            onChange={(e) => setMonthlyIncludeTracker(e.target.checked)}
+                          />
+                          <span className="pp-shopTrackerOpt__copy">
+                            <strong>
+                              {monthlyAddOnMode
+                                ? t('shopPage.monthlyAddTrackerAgainTitle')
+                                : t('shopPage.monthlyAddTrackerTitle')}
+                            </strong>
+                            {monthlyAddOnMode && t('shopPage.monthlyAddTrackerAgainSub') ? (
+                              <small>
+                                {t('shopPage.monthlyAddTrackerAgainSub')}
+                              </small>
+                            ) : !monthlyAddOnMode && t('shopPage.monthlyAddTrackerSub') ? (
+                              <small>{t('shopPage.monthlyAddTrackerSub')}</small>
+                            ) : null}
+                          </span>
+                          <span className="pp-shopTrackerOpt__meta">
+                            <span className="pp-shopTrackerOpt__price">+{formatEur(TRACKER_ADDON_CENTS)}</span>
+                            <span className="pp-shopTrackerOpt__switch" aria-hidden />
+                          </span>
+                        </label>
+                        <label className="pp-shopTrackerOpt">
+                          <input
+                            type="checkbox"
+                            checked={monthlyIncludeNfc}
+                            disabled={isLoading}
+                            onChange={(e) => {
+                              setMonthlyIncludeNfc(e.target.checked);
+                              if (!e.target.checked) setMonthlyNfcPetIds([]);
+                            }}
+                          />
+                          <span className="pp-shopTrackerOpt__copy">
+                            <strong>{t('shopPage.monthlyAddNfcTitle')}</strong>
+                            {monthlyAddOnMode && t('shopPage.monthlyAddNfcAgainSub') ? (
+                              <small>{t('shopPage.monthlyAddNfcAgainSub')}</small>
+                            ) : !monthlyAddOnMode && t('shopPage.monthlyAddNfcSub') ? (
+                              <small>{t('shopPage.monthlyAddNfcSub')}</small>
+                            ) : null}
+                          </span>
+                          <span className="pp-shopTrackerOpt__meta">
+                            <span className="pp-shopTrackerOpt__price">+{formatEur(NFC_TAG_ADDON_CENTS)}</span>
+                            <span className="pp-shopTrackerOpt__switch" aria-hidden />
+                          </span>
+                        </label>
+                      </div>
+                    ) : null}
+                    {showNfcPicker ? (
+                      <ShopPetPicker
+                        pets={petOptions}
+                        selectedIds={
+                          p.id === 'PETPAL_PLUS_MONTHLY'
+                            ? monthlyNfcPetIds
+                            : p.id === 'PETPAL_PLUS_YEARLY'
+                              ? yearlyNfcPetIds
+                              : nfcHardwarePetIds
+                        }
+                        disabled={isLoading}
+                        onChange={
+                          p.id === 'PETPAL_PLUS_MONTHLY'
+                            ? setMonthlyNfcPetIds
+                            : p.id === 'PETPAL_PLUS_YEARLY'
+                              ? setYearlyNfcPetIds
+                              : setNfcHardwarePetIds
+                        }
+                      />
+                    ) : null}
+                    {p.id === 'PETPAL_PLUS_MONTHLY' && monthlyIncludeNfc && monthlyNfcPetIds.length > 0 ? (
+                      <p className="pp-subtle pp-shopCard__nfcPerPet">
+                        {t('shopPage.nfcPerPetNote', {
+                          count: monthlyNfcPetIds.length,
+                          amount: formatEur(NFC_TAG_ADDON_CENTS * monthlyNfcPetIds.length),
+                        })}
+                      </p>
+                    ) : null}
+                    {p.id === 'PETPAL_PLUS_YEARLY' ? (
+                      <p className="pp-shopCard__highlight">{t('shopPage.yearlyFreeHardwareIncluded')}</p>
+                    ) : null}
+                    <div className="pp-shopCard__price">{formatShopPrice(p)}</div>
+                    {p.id === 'PETPAL_PLUS_YEARLY' ? (
+                      <p className="pp-subtle pp-shopCard__renewalNote">
+                        {t('shopPage.yearlyRenewalNote', { amount: formatEur(PLUS_YEARLY_RENEWAL_CENTS) })}
+                      </p>
+                    ) : null}
+                    {p.id === 'PETPAL_PLUS_MONTHLY' ? (
+                      <p className="pp-shopCard__dueToday">
+                        {t('shopPage.dueToday', { amount: formatEur(dueTodayCents) })}
+                        {hasMonthlyAddons ? (
+                          <span className="pp-shopCard__dueTodayNote"> {t('shopPage.dueTodayWithAddons')}</span>
+                        ) : null}
+                      </p>
+                    ) : null}
+                  </div>
+                  <div className="pp-shopCard__foot">
+                    {p.recurring ? (
+                      <label className="pp-shopSaveRow">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(saveCardById[p.id])}
+                          disabled={(PLUS_SKUS.includes(p.id) && planActive && p.id !== 'PETPAL_PLUS_MONTHLY') || isLoading}
+                          onChange={(e) => setSaveCardById((prev) => ({ ...prev, [p.id]: e.target.checked }))}
+                        />
+                        <span>{t('shopPage.saveCardLabel')}</span>
+                      </label>
+                    ) : null}
+                    <button
+                      type="button"
+                      className="pp-btn pp-btn--primary pp-shopCard__payBtn"
+                      disabled={p.id === 'PETPAL_PLUS_YEARLY' && planActive}
+                      onClick={() => addSubscriptionToCart(p)}
+                    >
+                      {p.id === 'PETPAL_PLUS_MONTHLY' && monthlyAddOnMode
+                        ? t('shopPage.addAnotherSubscriptionCta')
+                        : p.id === 'PETPAL_PLUS_YEARLY' && planActive
+                          ? t('shopPage.plusSubscribedCta')
+                          : t('shopPage.addToCart')}
+                    </button>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+
+          {manageRows.length || plusActiveBySku.PETPAL_PLUS_YEARLY ? (
+            <section className="pp-card pp-pad pp-shopManage pp-shopManage--prominent">
+              <h2 className="pp-sectionTitle" style={{ marginTop: 0 }}>
+                {t('shopPage.manageTitle')}
               </h2>
-              <p className="pp-subtle" style={{ marginTop: 0 }}>
-                {p.subtitle}
-              </p>
-              {isPlusSku(p.id) ? (
-                <p className={`pp-shopCard__status${planActive ? ' pp-shopCard__status--on' : ''}`}>
-                  {planActive ? t('shopPage.plusBadgeActive') : t('shopPage.plusBadgeInactive')}
-                </p>
-              ) : null}
-              {p.id === 'PETPAL_PLUS_MONTHLY' && monthlySubCount > 0 ? (
-                <p className="pp-subtle pp-shopCard__trackerCount">
-                  {t('shopPage.trackerEntitlements', { count: monthlySubCount })}
-                </p>
-              ) : null}
-              {p.id === 'PETPAL_PLUS_MONTHLY' && (!planActive || monthlyAddOnMode) ? (
-                <div className="pp-shopAddons">
-                  {monthlyAddOnMode ? (
-                    <p className="pp-subtle pp-shopAddons__lead">{t('shopPage.monthlyAddAnotherLead')}</p>
-                  ) : null}
-                  <label className="pp-shopTrackerOpt">
-                    <input
-                      type="checkbox"
-                      checked={monthlyIncludeTracker}
-                      disabled={isLoading}
-                      onChange={(e) => setMonthlyIncludeTracker(e.target.checked)}
-                    />
-                    <span className="pp-shopTrackerOpt__copy">
-                      <strong>
-                        {monthlyAddOnMode
-                          ? t('shopPage.monthlyAddTrackerAgainTitle')
-                          : t('shopPage.monthlyAddTrackerTitle')}
-                      </strong>
-                      <small>
-                        {monthlyAddOnMode
-                          ? t('shopPage.monthlyAddTrackerAgainSub')
-                          : t('shopPage.monthlyAddTrackerSub')}
-                      </small>
-                    </span>
-                    <span className="pp-shopTrackerOpt__meta">
-                      <span className="pp-shopTrackerOpt__price">+{formatEur(TRACKER_ADDON_CENTS)}</span>
-                      <span className="pp-shopTrackerOpt__switch" aria-hidden />
-                    </span>
-                  </label>
-                  <label className="pp-shopTrackerOpt">
-                    <input
-                      type="checkbox"
-                      checked={monthlyIncludeNfc}
-                      disabled={isLoading}
-                      onChange={(e) => setMonthlyIncludeNfc(e.target.checked)}
-                    />
-                    <span className="pp-shopTrackerOpt__copy">
-                      <strong>{t('shopPage.monthlyAddNfcTitle')}</strong>
-                      <small>
-                        {monthlyAddOnMode
-                          ? t('shopPage.monthlyAddNfcAgainSub')
-                          : t('shopPage.monthlyAddNfcSub')}
-                      </small>
-                    </span>
-                    <span className="pp-shopTrackerOpt__meta">
-                      <span className="pp-shopTrackerOpt__price">+{formatEur(NFC_TAG_ADDON_CENTS)}</span>
-                      <span className="pp-shopTrackerOpt__switch" aria-hidden />
-                    </span>
-                  </label>
+              <p className="pp-subtle">{t('shopPage.manageSub')}</p>
+              <p className="pp-subtle pp-shopManage__linkHint">{t('shopPage.manageLinkHint')}</p>
+              <ul className="pp-shopManage__list">
+                {manageRows.map((sub) => {
+                  const petName = sub.petName || sub.pet?.name || null;
+                  const title =
+                    sub.kind === 'legacy'
+                      ? t('shopPage.manageLegacyMonthlyRow')
+                      : petName
+                        ? t('shopPage.manageForPet', { pet: petName })
+                        : sub.awaitingImei
+                          ? t('shopPage.manageAwaitingImei')
+                          : sub.imei
+                            ? t('shopPage.manageForImei', { imei: formatImeiTail(sub.imei) })
+                            : t('shopPage.manageUnlinked');
+                  const detail = sub.imei
+                    ? petName
+                      ? t('shopPage.managePetLinked', { pet: petName }) +
+                        ` · ${t('shopPage.manageImeiDetail', { imei: sub.imei })}`
+                      : t('shopPage.manageImeiDetail', { imei: sub.imei })
+                    : sub.kind === 'legacy'
+                      ? t('shopPage.manageLegacyImeiHint')
+                      : t('shopPage.manageLinkOnMyPets');
+                  const cancelNote = petName
+                    ? t('shopPage.manageCancelForPet', { pet: petName })
+                    : t('shopPage.manageCancelGeneric');
+                  return (
+                    <li key={sub.id} className="pp-shopManage__row">
+                      <div className="pp-shopManage__copy">
+                        <strong className="pp-shopManage__title">{title}</strong>
+                        <span className="pp-subtle pp-shopManage__detail">{detail}</span>
+                        <span className="pp-shopManage__cancelNote">{cancelNote}</span>
+                      </div>
+                      <button
+                        type="button"
+                        className="pp-btn pp-btn--ghost"
+                        disabled={cancelBusy === sub.id}
+                        onClick={() => void onCancelSubscription(sub)}
+                      >
+                        {cancelBusy === sub.id ? t('shopPage.cancelBusy') : t('shopPage.cancelCta')}
+                      </button>
+                    </li>
+                  );
+                })}
+                {plusActiveBySku.PETPAL_PLUS_YEARLY ? (
+                  <li className="pp-shopManage__row">
+                    <div className="pp-shopManage__copy">
+                      <strong className="pp-shopManage__title">{t('shopPage.manageYearlyRow')}</strong>
+                      <span className="pp-subtle pp-shopManage__detail">{t('shopPage.manageYearlyDetail')}</span>
+                      <span className="pp-shopManage__cancelNote">{t('shopPage.manageCancelYearly')}</span>
+                    </div>
+                    <button
+                      type="button"
+                      className="pp-btn pp-btn--ghost"
+                      disabled={cancelBusy === 'yearly'}
+                      onClick={() =>
+                        void onCancelSubscription({ id: 'yearly', sku: 'PETPAL_PLUS_YEARLY' })
+                      }
+                    >
+                      {cancelBusy === 'yearly' ? t('shopPage.cancelBusy') : t('shopPage.cancelCta')}
+                    </button>
+                  </li>
+                ) : null}
+              </ul>
+              <p className="pp-subtle pp-shopManage__afterCancel">{t('shopPage.manageAfterCancel')}</p>
+            </section>
+          ) : null}
+        </>
+      ) : (
+        <>
+          <p className="pp-subtle pp-shopProductsLead">{t('shopPage.productsLead')}</p>
+          <div className="pp-shopProductGrid">
+            {MARKETPLACE_PRODUCTS.map((product) => (
+              <article key={product.id} className="pp-card pp-shopProductCard">
+                <div className="pp-shopProductCard__emoji" aria-hidden>
+                  {product.emoji}
                 </div>
-              ) : null}
-              {p.id === 'PETPAL_PLUS_YEARLY' ? (
-                <p className="pp-shopCard__highlight">{t('shopPage.yearlyHardwareIncluded')}</p>
-              ) : null}
-              <div className="pp-shopCard__price">{formatShopPrice(p)}</div>
-              {p.id === 'PETPAL_PLUS_MONTHLY' && (!planActive || monthlyIncludeTracker) ? (
-                <p className="pp-shopCard__dueToday">
-                  {t('shopPage.dueToday', { amount: formatEur(dueTodayCents) })}
-                  {hasMonthlyAddons ? (
-                    <span className="pp-shopCard__dueTodayNote"> {t('shopPage.dueTodayWithAddons')}</span>
-                  ) : null}
-                </p>
-              ) : null}
-              {p.id === 'PETPAL_PLUS_MONTHLY' && monthlyAddOnMode && !monthlyIncludeTracker ? (
-                <p className="pp-subtle pp-shopCard__hint">{t('shopPage.monthlySelectTrackerHint')}</p>
-              ) : null}
-              {p.id === 'STORE_BOOST_MONTHLY' && !isApprovedCompany ? (
-                <p className="pp-subtle">{t('shopPage.boostBusinessOnly')}</p>
-              ) : null}
-              </div>
-              <div className="pp-shopCard__foot">
-              <label className="pp-shopSaveRow">
-                <input
-                  type="checkbox"
-                  checked={Boolean(saveCardById[p.id])}
-                  disabled={(isPlusSku(p.id) && planActive && p.id !== 'PETPAL_PLUS_MONTHLY') || isLoading || !p.recurring}
-                  onChange={(e) => setSaveCardById((prev) => ({ ...prev, [p.id]: e.target.checked }))}
-                />
-                <span>
-                  {t('shopPage.saveCardLabel')} <small>{t('shopPage.saveCardHint')}</small>
-                </span>
-              </label>
-              <button
-                type="button"
-                className={`pp-btn pp-btn--primary pp-shopCard__payBtn${isLoading ? ' pp-shopCard__payBtn--loading' : ''}`}
-                disabled={
-                  Boolean(busy) ||
-                  (p.id === 'STORE_BOOST_MONTHLY' && !isApprovedCompany) ||
-                  (p.id === 'PETPAL_PLUS_YEARLY' && planActive) ||
-                  !monthlyCanCheckout
-                }
-                aria-busy={isLoading}
-                onClick={() => void onPay(p)}
-              >
-                {isLoading ? (
-                  <>
-                    <span className="pp-shopCard__paySpinner" aria-hidden />
-                    <span>{t('shopPage.checkoutRedirecting')}</span>
-                  </>
-                ) : p.id === 'PETPAL_PLUS_MONTHLY' && monthlyAddOnMode && monthlyIncludeTracker ? (
-                  t('shopPage.addTrackerSubscriptionCta')
-                ) : p.id === 'PETPAL_PLUS_YEARLY' && planActive ? (
-                  t('shopPage.plusSubscribedCta')
-                ) : (
-                  t('shopPage.payCta')
-                )}
-              </button>
-              </div>
-            </article>
-          );
-        })}
-      </div>
+                <p className="pp-shopProductCard__company">{product.companyName}</p>
+                <h3 className="pp-shopProductCard__title">{product.title}</h3>
+                <p className="pp-subtle pp-shopProductCard__desc">{product.description}</p>
+                <div className="pp-shopProductCard__foot">
+                  <strong>{formatEur(product.priceCents)}</strong>
+                  <button
+                    type="button"
+                    className="pp-btn pp-btn--primary"
+                    onClick={() => {
+                      setErr('');
+                      addToCart({
+                        key: product.id,
+                        title: product.title,
+                        subtitle: product.companyName,
+                        priceCents: product.priceCents,
+                      });
+                    }}
+                  >
+                    {t('shopPage.addToCart')}
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }

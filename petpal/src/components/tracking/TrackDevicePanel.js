@@ -406,7 +406,6 @@ export default function TrackDevicePanel({ imei, petName = '', provider = null, 
             ) : (
               <p className="pp-subtle">{t('trackingPage.devicePanelGpsposPollManual')}</p>
             )}
-            <p className="pp-subtle pp-trackDevicePanel__foot">{t('trackingPage.devicePanelGpsposFoot')}</p>
           </div>
         ) : null}
 

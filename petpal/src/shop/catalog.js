@@ -2,7 +2,8 @@
 
 /** Mirror functions/shopPricing.js + shop-pricing.json */
 export const PLUS_MONTHLY_CENTS = 499;
-export const PLUS_YEARLY_CENTS = 8499;
+export const PLUS_YEARLY_CENTS = 8999;
+export const PLUS_YEARLY_RENEWAL_CENTS = 5999;
 export const TRACKER_ADDON_CENTS = 3999;
 export const NFC_TAG_ADDON_CENTS = 999;
 
@@ -10,16 +11,25 @@ export const PLUS_SKUS = ['PETPAL_PLUS_MONTHLY', 'PETPAL_PLUS_YEARLY'];
 export const HARDWARE_SKUS = ['TRACKER_HARDWARE', 'NFC_TAG_HARDWARE'];
 
 /**
- * @param {{ includeTracker?: boolean, includeNfc?: boolean } | boolean} [opts]
+ * @param {{ includeTracker?: boolean, includeNfc?: boolean, nfcPetIds?: string[], nfcPetCount?: number } | boolean} [opts]
  */
 export function monthlyFirstPaymentCents(opts = {}) {
   const options = typeof opts === 'boolean' ? { includeTracker: opts } : opts;
   const includeTracker = Boolean(options.includeTracker);
-  const includeNfc = Boolean(options.includeNfc);
+  const nfcPetCount = Math.max(
+    0,
+    Number.isFinite(options.nfcPetCount)
+      ? Number(options.nfcPetCount)
+      : Array.isArray(options.nfcPetIds)
+        ? options.nfcPetIds.length
+        : options.includeNfc
+          ? 1
+          : 0
+  );
   return (
     PLUS_MONTHLY_CENTS +
     (includeTracker ? TRACKER_ADDON_CENTS : 0) +
-    (includeNfc ? NFC_TAG_ADDON_CENTS : 0)
+    (nfcPetCount > 0 ? NFC_TAG_ADDON_CENTS * nfcPetCount : 0)
   );
 }
 
@@ -35,7 +45,18 @@ export function expectedCheckoutCents(sku, opts = {}) {
   if (sku === 'TRACKER_HARDWARE') return TRACKER_ADDON_CENTS;
   if (sku === 'NFC_TAG_HARDWARE') return NFC_TAG_ADDON_CENTS;
   if (sku === 'STORE_BOOST_MONTHLY') return 999;
+  if (sku === 'MARKETPLACE_CART' && Array.isArray(options.cartItems)) {
+    return marketplaceCartTotalCents(options.cartItems);
+  }
   return null;
+}
+
+/** @param {Array<{ priceCents: number, qty: number }>} items */
+export function marketplaceCartTotalCents(items) {
+  return (items || []).reduce(
+    (sum, row) => sum + Math.max(0, Number(row.priceCents) || 0) * Math.max(1, Number(row.qty) || 1),
+    0
+  );
 }
 
 /** @type {ShopProduct[]} */
@@ -43,8 +64,7 @@ export const SHOP_PRODUCTS = [
   {
     id: 'PETPAL_PLUS_MONTHLY',
     title: 'Monthly',
-    subtitle:
-      'PetPal Plus billed every month per tracker. Optionally add a GPS tracker or NFC tag to your first payment.',
+    subtitle: 'PetPal Plus per GPS tracker — billed monthly.',
     amountCents: PLUS_MONTHLY_CENTS,
     currency: '978',
     recurring: true,
@@ -53,25 +73,16 @@ export const SHOP_PRODUCTS = [
   {
     id: 'PETPAL_PLUS_YEARLY',
     title: 'Yearly',
-    subtitle: 'PetPal Plus for 12 months — FREE GPS tracker and NFC tag included with this plan.',
+    subtitle: 'PetPal Plus for 12 months — includes one FREE GPS tracker and one FREE NFC tag.',
     amountCents: PLUS_YEARLY_CENTS,
     currency: '978',
     recurring: true,
     badge: 'Free tracker + NFC',
   },
   {
-    id: 'TRACKER_HARDWARE',
-    title: 'GPS tracker',
-    subtitle: 'One GPS tracker device. Live tracking needs PetPal Plus — use monthly plan + tracker add-on.',
-    amountCents: TRACKER_ADDON_CENTS,
-    currency: '978',
-    recurring: false,
-    badge: 'Hardware',
-  },
-  {
     id: 'NFC_TAG_HARDWARE',
     title: 'NFC tag',
-    subtitle: 'Tap-to-open pet profile tag — no subscription required to order.',
+    subtitle: 'Tap-to-open pet profile tag for your pet.',
     amountCents: NFC_TAG_ADDON_CENTS,
     currency: '978',
     recurring: false,

@@ -1,7 +1,7 @@
 import { getApp, getApps, initializeApp } from 'firebase/app';
 import { getAnalytics, isSupported } from 'firebase/analytics';
 import { getAuth } from 'firebase/auth';
-import { getFirestore, initializeFirestore } from 'firebase/firestore';
+import { getFirestore, initializeFirestore, memoryLocalCache } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
 function trimEnv(value) {
@@ -61,6 +61,7 @@ export function getDb() {
         (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'));
     if (preferLongPolling) {
       db = initializeFirestore(app, {
+        localCache: memoryLocalCache(),
         experimentalForceLongPolling: true,
         useFetchStreams: false,
       });

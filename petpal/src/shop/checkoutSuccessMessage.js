@@ -47,6 +47,9 @@ export function checkoutSuccessMessage(t, p) {
     const total = Number.isFinite(totalRaw) ? totalRaw : shopStats.total;
     return t('shopPage.successCollar', { combo, total });
   }
+  if (focusSku === 'MARKETPLACE_CART') {
+    return t('shopPage.successMarketplace');
+  }
   if (focusSku === 'NFC_TAG_HARDWARE') {
     return t('shopPage.successNfc');
   }

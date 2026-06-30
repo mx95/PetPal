@@ -84,6 +84,12 @@ export default function AdminHub() {
             title="All bookings"
             desc="Live Firestore feed of every appointment — search by customer, provider, or booking id."
           />
+          <AdminActionCard
+            to="/admin/orders"
+            icon="📦"
+            title="Shop orders"
+            desc="Track payments, shipping, and GPS tracker fulfilment — update status per customer."
+          />
         </div>
       </div>
     </div>

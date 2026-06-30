@@ -1,7 +1,10 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { doc, getDoc } from 'firebase/firestore';
 import { useAuth } from '../auth/AuthProvider';
+import { getDb, isFirebaseConfigured } from '../firebase';
 import { getPetCategory } from './petCategories';
 import { createPet, deletePet, patchPet, subscribePets } from './petsFirestore';
+import { fetchSharedPetsForUser } from './petShareFirestore';
 
 /**
  * @typedef {{ id: string, name: string, categoryId: string, trackingDeviceId: string | null, createdAt: string, photoDataUrl?: string, photoUrl?: string, photoStoragePath?: string, colorScheme?: string, description?: string, age?: string, friendlyWith?: string[], breed?: string, microchipNo?: string, dateOfBirth?: string, identifyingMarks?: string, medicalNotes?: string, ownerName?: string, ownerPhone?: string, ownerEmail?: string }} Pet
@@ -50,6 +53,7 @@ export function PetsProvider({ children }) {
   const { user } = useAuth();
   const uid = user?.uid ?? null;
   const [pets, setPets] = useState(/** @type {Pet[]} */ ([]));
+  const [sharedPets, setSharedPets] = useState(/** @type {Pet[]} */ ([]));
 
   useEffect(() => {
     if (!uid) {
@@ -63,6 +67,41 @@ export function PetsProvider({ children }) {
     );
     return () => unsub();
   }, [uid]);
+
+  useEffect(() => {
+    if (!uid || !isFirebaseConfigured()) {
+      setSharedPets([]);
+      return;
+    }
+    let cancelled = false;
+    void fetchSharedPetsForUser(uid, user?.email || '')
+      .then(async (shares) => {
+        const db = getDb();
+        const loaded = [];
+        for (const share of shares) {
+          try {
+            const snap = await getDoc(doc(db, 'users', share.ownerUid, 'pets', share.petId));
+            if (snap.exists()) {
+              loaded.push({
+                id: snap.id,
+                ...snap.data(),
+                _sharedFrom: share.ownerUid,
+                _isShared: true,
+              });
+            }
+          } catch {
+            // skip unreadable share
+          }
+        }
+        if (!cancelled) setSharedPets(loaded);
+      })
+      .catch(() => {
+        if (!cancelled) setSharedPets([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [uid, user?.email]);
 
   const addPet = useCallback(
     ({
@@ -188,16 +227,24 @@ export function PetsProvider({ children }) {
     [uid]
   );
 
+  const allPets = useMemo(() => {
+    const ownIds = new Set(pets.map((p) => p.id));
+    const extra = sharedPets.filter((p) => !ownIds.has(p.id));
+    return [...pets, ...extra];
+  }, [pets, sharedPets]);
+
   const value = useMemo(
     () => ({
-      pets,
+      pets: allPets,
+      ownedPets: pets,
+      sharedPets,
       addPet,
       updatePet,
       removePet,
-      getPet: (id) => pets.find((p) => p.id === id),
+      getPet: (id) => allPets.find((p) => p.id === id),
       getCategory: getPetCategory,
     }),
-    [pets, addPet, updatePet, removePet]
+    [allPets, pets, sharedPets, addPet, updatePet, removePet]
   );
 
   return <PetsContext.Provider value={value}>{children}</PetsContext.Provider>;

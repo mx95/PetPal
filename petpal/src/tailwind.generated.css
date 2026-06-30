@@ -1767,6 +1767,10 @@ video {
     display: flex;
   }
 
+  .lg\:hidden {
+    display: none;
+  }
+
   .lg\:grid-cols-\[1fr_260px\] {
     grid-template-columns: 1fr 260px;
   }

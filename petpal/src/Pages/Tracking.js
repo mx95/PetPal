@@ -263,7 +263,12 @@ function downsampleMapPath(path, maxPoints = HISTORY_MAP_PATH_MAX) {
 }
 
 function defaultHistoryDayTimes() {
-  return { timeFrom: '00:00', timeTo: '23:59' };
+  const now = new Date();
+  const pad = (n) => String(n).padStart(2, '0');
+  const timeTo = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+  const fromDate = new Date(now.getTime() - 3 * 60 * 60 * 1000);
+  const timeFrom = `${pad(fromDate.getHours())}:${pad(fromDate.getMinutes())}`;
+  return { timeFrom, timeTo };
 }
 
 function combineLocalDateTime(dateStr, timeStr, endOfDay = false) {
@@ -354,11 +359,16 @@ function computeHistoryRangeForPreset(preset) {
 }
 
 function buildHistoryAnalytics(points) {
+  const MAX_SEGMENT_KM = 2;
+  const MAX_SEGMENT_MS = 15 * 60 * 1000;
   const distanceKm = points.reduce((sum, p, idx) => {
     if (!idx) return sum;
     const prev = points[idx - 1];
     if (p.positionHeldFromPreviousGps || prev.positionHeldFromPreviousGps) return sum;
-    return sum + kmBetween(prev, p);
+    const segKm = kmBetween(prev, p);
+    const dt = pointTime(p) - pointTime(prev);
+    if (segKm > MAX_SEGMENT_KM && dt < MAX_SEGMENT_MS) return sum;
+    return sum + segKm;
   }, 0);
   const first = points[0] ? pointTime(points[0]) : 0;
   const last = points[points.length - 1] ? pointTime(points[points.length - 1]) : 0;

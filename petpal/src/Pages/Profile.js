@@ -21,6 +21,7 @@ const ICONS = {
   docs: '📖',
   admin: '🛡️',
   adminBookings: '📅',
+  orders: '📦',
   signOut: '👋',
 };
 
@@ -234,6 +235,7 @@ export default function Profile() {
 
   const items = [
     { key: 'pets', to: '/pets', icon: ICONS.pets, accent: 'pets' },
+    { key: 'orders', to: '/profile/orders', icon: ICONS.orders, accent: 'docs' },
     ...(MVP_NAV.showBookings ? [{ key: 'bookings', to: '/bookings', icon: ICONS.docs, accent: 'docs' }] : []),
     ...(isApprovedCompany
       ? [{ key: 'provider', to: '/provider', icon: ICONS.business, accent: 'business' }]
@@ -242,6 +244,7 @@ export default function Profile() {
     { key: 'docs', to: '/docs', icon: ICONS.docs, accent: 'docs' },
     ...(isAdmin ? [{ key: 'admin', to: '/admin', icon: ICONS.admin, accent: 'admin' }] : []),
     ...(isAdmin ? [{ key: 'adminBookings', to: '/admin/bookings', icon: ICONS.adminBookings, accent: 'admin' }] : []),
+    ...(isAdmin ? [{ key: 'adminOrders', to: '/admin/orders', icon: ICONS.orders, accent: 'admin' }] : []),
   ];
 
   async function onPickPhoto(e) {

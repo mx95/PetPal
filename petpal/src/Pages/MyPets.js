@@ -13,6 +13,7 @@ import { useToast } from '../components/Toast';
 import ImeiQrScannerButton from '../components/ImeiQrScannerButton';
 import PetMedicationModal from '../components/PetMedicationModal';
 import IconMedPill from '../components/icons/IconMedPill';
+import { sharePetWithEmail } from '../pets/petShareFirestore';
 import { linkPetTrackerImei } from '../tracking/linkPetTrackerImei';
 import { fetchRegisteredTrackerImeis } from '../tracking/registeredDeviceClient';
 
@@ -21,6 +22,18 @@ function IconPencil() {
     <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <path d="M12 20h9" />
       <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
+    </svg>
+  );
+}
+
+function IconShare() {
+  return (
+    <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="18" cy="5" r="3" />
+      <circle cx="6" cy="12" r="3" />
+      <circle cx="18" cy="19" r="3" />
+      <path d="M8.59 13.51 15.42 17.49" />
+      <path d="M15.41 6.51 8.59 10.49" />
     </svg>
   );
 }
@@ -80,7 +93,7 @@ export default function MyPets() {
   const { t } = useI18n();
   const { show } = useToast();
   const location = useLocation();
-  const { pets, addPet, updatePet, removePet, getCategory } = usePets();
+  const { pets, ownedPets, sharedPets, addPet, updatePet, removePet, getCategory } = usePets();
   const [name, setName] = useState('');
   const [addDeviceId, setAddDeviceId] = useState('');
   const [breed, setBreed] = useState('');
@@ -126,6 +139,9 @@ export default function MyPets() {
   const [addPetDrawerOpen, setAddPetDrawerOpen] = useState(false);
   const [fullscreenPhotoUrl, setFullscreenPhotoUrl] = useState('');
   const [medModalPet, setMedModalPet] = useState(null);
+  const [sharePet, setSharePet] = useState(null);
+  const [shareEmail, setShareEmail] = useState('');
+  const [shareBusy, setShareBusy] = useState(false);
   const [search, setSearch] = useState('');
   const importRef = useRef(null);
   const addPhotoInputId = useId();
@@ -143,14 +159,14 @@ export default function MyPets() {
 
   const filteredPets = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return pets;
-    return pets.filter((p) => {
+    if (!q) return ownedPets;
+    return ownedPets.filter((p) => {
       const c = getCategory(p);
       return [p.name, p.breed, p.microchipNo, p.trackingDeviceId, c.id]
         .filter(Boolean)
         .some((x) => String(x).toLowerCase().includes(q));
     });
-  }, [pets, search, getCategory]);
+  }, [ownedPets, search, getCategory]);
 
   function exportCsv() {
     const headers = ['species', 'name', 'breed', 'microchip', 'trackingDeviceId', 'nfcTag', 'linkedTracker'];
@@ -508,8 +524,8 @@ export default function MyPets() {
 
       <div className="pp-col-12">
         <div className="pp-card pp-pad">
-          <h2 className="pp-sectionTitle">{t('myPets.yourPackCount', { count: pets.length })}</h2>
-          {pets.length === 0 ? (
+          <h2 className="pp-sectionTitle">{t('myPets.yourPackCount', { count: ownedPets.length })}</h2>
+          {ownedPets.length === 0 ? (
             <p className="pp-subtle">{t('myPets.noPets')}</p>
           ) : (
             <ul className="pp-petList">
@@ -584,6 +600,18 @@ export default function MyPets() {
                           <button
                             type="button"
                             className="pp-btn pp-iconBtn pp-iconBtn--outline pp-tooltipBtn"
+                            data-tooltip={t('myPets.sharePet')}
+                            onClick={() => {
+                              setSharePet(p);
+                              setShareEmail('');
+                            }}
+                            aria-label={t('myPets.sharePet')}
+                          >
+                            <IconShare />
+                          </button>
+                          <button
+                            type="button"
+                            className="pp-btn pp-iconBtn pp-iconBtn--outline pp-tooltipBtn"
                             data-tooltip={t('myPets.edit')}
                             onClick={() => startEdit(p)}
                             aria-label={t('myPets.edit')}
@@ -626,6 +654,31 @@ export default function MyPets() {
               ))}
             </ul>
           )}
+          {sharedPets.length ? (
+            <>
+              <h2 className="pp-sectionTitle" style={{ marginTop: 24 }}>
+                {t('myPets.sharedWithYou', { count: sharedPets.length })}
+              </h2>
+              <ul className="pp-petList">
+                {sharedPets.map((p) => (
+                  <li key={`shared-${p.id}`} className="pp-petList__item">
+                    <div className="pp-petList__row">
+                      <PetAvatar pet={p} size={56} />
+                      <div className="pp-petList__main">
+                        <div className="pp-petList__titleRow">
+                          <strong>{p.name}</strong>
+                          <span className="pp-petTag">{t('myPets.sharedBadge')}</span>
+                        </div>
+                        {p.trackingDeviceId ? (
+                          <div className="pp-petList__meta">{t('myPets.listDevice')} {p.trackingDeviceId}</div>
+                        ) : null}
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </>
+          ) : null}
         </div>
       </div>
 
@@ -1045,6 +1098,53 @@ export default function MyPets() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      ) : null}
+
+      {sharePet ? (
+        <div className="pp-modalWrap" role="dialog" aria-modal="true">
+          <button type="button" className="pp-modalBackdrop" aria-label={t('myPets.cancel')} onClick={() => setSharePet(null)} />
+          <div className="pp-modalCard pp-pad" style={{ maxWidth: 420 }}>
+            <h2 className="pp-sectionTitle" style={{ marginTop: 0 }}>{t('myPets.shareTitle')}</h2>
+            <p className="pp-subtle">{t('myPets.shareSub')}</p>
+            <p className="pp-subtle"><strong>{sharePet.name}</strong></p>
+            <input
+              className="pp-input"
+              type="email"
+              value={shareEmail}
+              onChange={(e) => setShareEmail(e.target.value)}
+              placeholder={t('myPets.shareEmailPh')}
+              autoComplete="email"
+            />
+            <div className="pp-row" style={{ marginTop: 16, justifyContent: 'flex-end', gap: 8 }}>
+              <button type="button" className="pp-btn" onClick={() => setSharePet(null)}>{t('myPets.cancel')}</button>
+              <button
+                type="button"
+                className="pp-btn pp-btn--primary"
+                disabled={shareBusy || !shareEmail.trim()}
+                onClick={async () => {
+                  if (!user?.uid) return;
+                  setShareBusy(true);
+                  try {
+                    await sharePetWithEmail({
+                      ownerUid: user.uid,
+                      petId: sharePet.id,
+                      petName: sharePet.name,
+                      email: shareEmail,
+                    });
+                    show(t('myPets.shareDone', { email: shareEmail.trim() }), { kind: 'success' });
+                    setSharePet(null);
+                  } catch (e) {
+                    show(e?.message || t('myPets.shareErr'), { kind: 'error' });
+                  } finally {
+                    setShareBusy(false);
+                  }
+                }}
+              >
+                {shareBusy ? t('myPets.shareBusy') : t('myPets.shareSend')}
+              </button>
+            </div>
           </div>
         </div>
       ) : null}

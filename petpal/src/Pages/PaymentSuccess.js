@@ -125,7 +125,10 @@ export default function PaymentSuccess() {
           {detail}
         </div>
         <div className="pp-paymentSuccess__actions">
-          <Link className="pp-btn pp-btn--primary" to="/shop">
+          <Link className="pp-btn pp-btn--primary" to="/profile/orders">
+            {t('paymentSuccess.ctaOrders')}
+          </Link>
+          <Link className="pp-btn pp-btn--ghost" to="/shop">
             {t('paymentSuccess.ctaShop')}
           </Link>
           <Link className="pp-btn pp-btn--ghost" to="/dashboard">

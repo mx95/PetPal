@@ -126,7 +126,17 @@ function uniqueOrderNumber(prefix) {
   return safe.slice(0, 36);
 }
 
-const { SKUS, PLUS_SKUS, resolveCheckoutPricing } = require('./shopPricing');
+const { SKUS, PLUS_SKUS, resolveCheckoutPricing, resolveMarketplaceCartPricing, validateMarketplaceCartLines, PRICES } = require('./shopPricing');
+const { buildJccRegisterCustomerParams, buildJccJsonParams } = require('./jccRegisterExtras');
+const { appendOrderTrackerSubscriptions } = require('./subscriptionImei');
+const {
+  normalizeShipping,
+  validateShipping,
+  createPendingOrder,
+  updateOrderStatus,
+  buildSubscriptionId,
+  recordCustomerPaymentIndex,
+} = require('./orderRecords');
 
 function nextRenewalDate(from, sku) {
   const next = new Date(from);
@@ -138,10 +148,12 @@ function nextRenewalDate(from, sku) {
   return next;
 }
 
-/** One monthly subscription per tracker — stored under users/{uid}/trackerSubscriptions/{orderNumber}. */
+/** One monthly subscription per tracker — stored under users/{uid}/trackerSubscriptions/{subscriptionId}. */
 async function createMonthlyTrackerSubscription(db, payload) {
   const {
     uid,
+    paymentId,
+    subPaymentId,
     orderNumber,
     sku,
     renewalCents,
@@ -149,16 +161,24 @@ async function createMonthlyTrackerSubscription(db, payload) {
     bindingId,
     includeTracker,
     includeNfc,
+    nfcPetIds,
     nextRenewalAt,
   } = payload;
+  const parentPaymentId = String(paymentId || orderNumber || '').slice(0, 36);
+  const subId = Number(subPaymentId) || 1;
+  const subscriptionId =
+    String(orderNumber || '').trim() || buildSubscriptionId(parentPaymentId, subId);
+  const petIds = Array.isArray(nfcPetIds) ? nfcPetIds.map(String).filter(Boolean).slice(0, 20) : [];
   await db
     .collection('users')
     .doc(uid)
     .collection('trackerSubscriptions')
-    .doc(orderNumber)
+    .doc(subscriptionId)
     .set({
       uid,
-      subscriptionId: orderNumber,
+      subscriptionId,
+      paymentId: parentPaymentId,
+      subPaymentId: subId,
       sku,
       amountCents: renewalCents,
       currency,
@@ -167,10 +187,13 @@ async function createMonthlyTrackerSubscription(db, payload) {
       status: 'active',
       includeTracker: Boolean(includeTracker),
       includeNfc: Boolean(includeNfc),
+      nfcPetIds: petIds.length ? petIds : null,
       trackerImei: null,
       petId: null,
+      petName: null,
       nextRenewalAt,
-      createdFromOrderNumber: orderNumber,
+      orderNumber: parentPaymentId,
+      createdFromOrderNumber: parentPaymentId,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     });
@@ -321,7 +344,8 @@ async function grantTrackerEntitlement(db, uid, orderNumber, sourceSku) {
   await incrementShopPublicStats(db, { totalCollarPurchases: 1 });
 }
 
-async function grantNfcEntitlement(db, uid, orderNumber, sourceSku) {
+async function grantNfcEntitlement(db, uid, orderNumber, sourceSku, petIds = []) {
+  const ids = Array.isArray(petIds) ? petIds.map(String).filter(Boolean) : [];
   await db
     .collection('users')
     .doc(uid)
@@ -332,6 +356,7 @@ async function grantNfcEntitlement(db, uid, orderNumber, sourceSku) {
         status: 'active',
         sku: 'NFC_TAG_HARDWARE',
         sourceSku,
+        petIds: ids.length ? ids : admin.firestore.FieldValue.delete(),
         purchasedAt: admin.firestore.FieldValue.serverTimestamp(),
         sessionOrderNumber: orderNumber,
       },
@@ -364,6 +389,121 @@ async function incrementShopPublicStats(db, increments) {
   });
 }
 
+/** Fulfill one mixed-cart line after successful MARKETPLACE_CART payment. */
+async function fulfillMarketplaceCartLine(db, uid, parentOrderNumber, line, idx, bindingId, subPaymentId) {
+  const sku = line.sku;
+  if (!sku || !SKUS[sku]) return;
+  const catalog = SKUS[sku];
+  const nfcPetIds = Array.isArray(line.nfcPetIds) ? line.nfcPetIds : [];
+  const qty = Math.max(1, Number(line.qty) || 1);
+
+  if (catalog.recurring && PLUS_SKUS.has(sku)) {
+    const next = nextRenewalDate(new Date(), sku);
+    const renewalCents =
+      sku === 'PETPAL_PLUS_MONTHLY'
+        ? PRICES.PLUS_MONTHLY_CENTS
+        : sku === 'PETPAL_PLUS_YEARLY'
+          ? PRICES.PLUS_YEARLY_RENEWAL_CENTS
+          : catalog.amountCents;
+    if (sku === 'PETPAL_PLUS_MONTHLY' && subPaymentId) {
+      const subscriptionId = buildSubscriptionId(parentOrderNumber, subPaymentId);
+      await createMonthlyTrackerSubscription(db, {
+        uid,
+        paymentId: parentOrderNumber,
+        subPaymentId,
+        orderNumber: subscriptionId,
+        sku,
+        renewalCents,
+        currency: catalog.currency,
+        bindingId,
+        includeTracker: line.includeTracker,
+        includeNfc: line.includeNfc,
+        nfcPetIds: line.nfcPetIds,
+        nextRenewalAt: admin.firestore.Timestamp.fromDate(next),
+      });
+      await appendOrderTrackerSubscriptions(db, parentOrderNumber, uid, [
+        {
+          paymentId: parentOrderNumber,
+          subPaymentId,
+          subscriptionId,
+          includeTracker: line.includeTracker,
+          includeNfc: line.includeNfc,
+          nfcPetIds: line.nfcPetIds,
+        },
+      ]);
+    } else if (sku === 'PETPAL_PLUS_YEARLY') {
+      await db
+        .collection('billingSubscriptions')
+        .doc(`${uid}_${sku}`)
+        .set(
+          {
+            uid,
+            sku,
+            amountCents: renewalCents,
+            currency: catalog.currency,
+            bindingId: bindingId || null,
+            clientId: uid,
+            status: 'active',
+            nextRenewalAt: admin.firestore.Timestamp.fromDate(next),
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          },
+          { merge: true }
+        );
+    }
+  }
+
+  for (let q = 0; q < qty; q += 1) {
+    const grantOrder =
+      qty > 1
+        ? `${parentOrderNumber}-L${idx + 1}-q${q + 1}`.slice(0, 36)
+        : subPaymentId
+          ? buildSubscriptionId(parentOrderNumber, subPaymentId)
+          : `${parentOrderNumber}-L${idx + 1}`.slice(0, 36);
+    if (line.includeTracker && sku === 'PETPAL_PLUS_MONTHLY') {
+      await grantTrackerEntitlement(db, uid, grantOrder, sku);
+      await incrementShopPublicStats(db, { totalCollarPurchases: 1, activeSubscriptionsWithCollar: 1 });
+    }
+    if (line.includeNfc && sku === 'PETPAL_PLUS_MONTHLY') {
+      await grantNfcEntitlement(db, uid, grantOrder, sku, nfcPetIds);
+    }
+    if (sku === 'PETPAL_PLUS_YEARLY') {
+      await grantTrackerEntitlement(db, uid, grantOrder, sku);
+      await grantNfcEntitlement(db, uid, grantOrder, sku, nfcPetIds);
+      await incrementShopPublicStats(db, { totalCollarPurchases: 1, activeSubscriptionsWithCollar: 1 });
+    }
+    if (sku === 'NFC_TAG_HARDWARE') {
+      await grantNfcEntitlement(db, uid, grantOrder, sku, nfcPetIds);
+    }
+    if (sku === 'TRACKER_HARDWARE') {
+      await grantTrackerEntitlement(db, uid, grantOrder, sku);
+      if (await userHasActivePlus(db, uid)) {
+        await incrementShopPublicStats(db, { activeSubscriptionsWithCollar: 1 });
+      }
+    }
+  }
+
+  if (PLUS_SKUS.has(sku) && bindingId) {
+    const collarSnap = await db.collection('users').doc(uid).collection('shopEntitlements').doc('collar').get();
+    if (collarSnap.exists && collarSnap.data()?.status === 'active') {
+      await incrementShopPublicStats(db, { activeSubscriptionsWithCollar: 1 });
+    }
+  }
+}
+
+async function fulfillMarketplaceCart(db, uid, orderNumber, cartItems, bindingId) {
+  const lines = Array.isArray(cartItems) ? cartItems : [];
+  let subPaymentCounter = 0;
+  for (let idx = 0; idx < lines.length; idx += 1) {
+    const line = lines[idx];
+    let subPaymentId = null;
+    if (line.sku === 'PETPAL_PLUS_MONTHLY') {
+      subPaymentCounter += 1;
+      subPaymentId = subPaymentCounter;
+    }
+    await fulfillMarketplaceCartLine(db, uid, orderNumber, line, idx, bindingId, subPaymentId);
+  }
+}
+
 exports.createJccCheckout = functions.region('europe-west1').https.onCall(async (data, context) => {
   try {
     if (!context.auth?.uid) {
@@ -375,24 +515,59 @@ exports.createJccCheckout = functions.region('europe-west1').https.onCall(async 
     const companyId = data?.companyId ? String(data.companyId).trim() : '';
     const includeTracker = Boolean(data?.includeTracker);
     const includeNfc = Boolean(data?.includeNfc);
+    const nfcPetIds = Array.isArray(data?.nfcPetIds)
+      ? data.nfcPetIds.map(String).filter(Boolean).slice(0, 20)
+      : [];
+    const rawCartItems = Array.isArray(data?.cartItems) ? data.cartItems : [];
+    const shipping = normalizeShipping(data?.shippingContact);
+    const shippingErr = validateShipping(shipping);
+    if (shippingErr) {
+      throw new functions.https.HttpsError('invalid-argument', shippingErr);
+    }
 
-    const catalog = SKUS[sku];
-    if (!catalog) {
-      throw new functions.https.HttpsError('invalid-argument', 'Unknown product.');
+    let pricing;
+    let sessionCartItems = null;
+    let cartSaveCard = saveCard;
+    if (sku === 'MARKETPLACE_CART') {
+      pricing = resolveMarketplaceCartPricing(rawCartItems);
+      if (!pricing) {
+        throw new functions.https.HttpsError('invalid-argument', 'Add at least one product to your cart.');
+      }
+      const cartErr = validateMarketplaceCartLines(pricing.cartItems);
+      if (cartErr) {
+        throw new functions.https.HttpsError('invalid-argument', cartErr);
+      }
+      sessionCartItems = pricing.cartItems;
+      cartSaveCard =
+        saveCard || pricing.cartItems.some((line) => line.sku && SKUS[line.sku]?.recurring && line.saveCard);
+    } else {
+      const catalog = SKUS[sku];
+      if (!catalog) {
+        throw new functions.https.HttpsError('invalid-argument', 'Unknown product.');
+      }
+      if (includeTracker && sku !== 'PETPAL_PLUS_MONTHLY') {
+        throw new functions.https.HttpsError('invalid-argument', 'GPS tracker add-on is only available with the monthly plan.');
+      }
+      const needsNfcPets =
+        (sku === 'PETPAL_PLUS_MONTHLY' && includeNfc) ||
+        sku === 'PETPAL_PLUS_YEARLY' ||
+        sku === 'NFC_TAG_HARDWARE';
+      if (needsNfcPets && !nfcPetIds.length) {
+        throw new functions.https.HttpsError('invalid-argument', 'Select at least one pet for NFC tag configuration.');
+      }
+      pricing = resolveCheckoutPricing(sku, { includeTracker, includeNfc });
+      if (!pricing) {
+        throw new functions.https.HttpsError('invalid-argument', 'Unknown product.');
+      }
+      if (sku === 'STORE_BOOST_MONTHLY' && companyId !== uid) {
+        throw new functions.https.HttpsError('permission-denied', 'Boost purchase must use your business account id.');
+      }
+      if (catalog.recurring && !saveCard) {
+        throw new functions.https.HttpsError('invalid-argument', 'This plan bills monthly — enable “Save card securely” so renewals can run on file.');
+      }
     }
-    if ((includeTracker || includeNfc) && sku !== 'PETPAL_PLUS_MONTHLY') {
-      throw new functions.https.HttpsError('invalid-argument', 'Hardware add-ons are only available with the monthly plan.');
-    }
-    const pricing = resolveCheckoutPricing(sku, { includeTracker, includeNfc });
-    if (!pricing) {
-      throw new functions.https.HttpsError('invalid-argument', 'Unknown product.');
-    }
-    if (sku === 'STORE_BOOST_MONTHLY' && companyId !== uid) {
-      throw new functions.https.HttpsError('permission-denied', 'Boost purchase must use your business account id.');
-    }
-    if (catalog.recurring && !saveCard) {
-      throw new functions.https.HttpsError('invalid-argument', 'This plan bills monthly — enable “Save card securely” so renewals can run on file.');
-    }
+
+    const currency = sku === 'MARKETPLACE_CART' ? '978' : SKUS[sku].currency;
 
     ensureAdmin();
     const { userName, password, restBase, returnUrl, frontendUrl } = jccCredentials();
@@ -404,32 +579,61 @@ exports.createJccCheckout = functions.region('europe-west1').https.onCall(async 
       orderNumber,
       uid,
       sku,
-      saveCard,
+      saveCard: cartSaveCard,
       includeTracker: pricing.includeTracker,
       includeNfc: pricing.includeNfc,
+      nfcPetIds: nfcPetIds.length ? nfcPetIds : null,
+      cartItems: sessionCartItems,
+      shippingContact: shipping,
       companyId: companyId || null,
       amountCents: pricing.chargeCents,
       renewalAmountCents: pricing.renewalCents,
-      currency: catalog.currency,
+      currency,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
       status: 'pending_register',
     });
+
+    await createPendingOrder(db, {
+      orderNumber,
+      uid,
+      sku,
+      pricing,
+      shipping,
+      sessionCartItems,
+      includeTracker: pricing.includeTracker,
+      includeNfc: pricing.includeNfc,
+      nfcPetIds,
+      currency,
+    });
+
+    const jccCartLines =
+      sessionCartItems ||
+      [
+        {
+          key: sku,
+          title: pricing.title,
+          priceCents: pricing.chargeCents,
+          qty: 1,
+          sku,
+        },
+      ];
 
     const params = {
       userName,
       password,
       orderNumber,
       amount: String(pricing.chargeCents),
-      currency: catalog.currency,
+      currency,
       returnUrl: `${returnUrl.replace(/\/$/, '')}?orderNumber=${encodeURIComponent(orderNumber)}`,
-      failUrl: `${frontendUrl}/shop?checkout=fail`,
+      failUrl: `${frontendUrl}/payment/failed?orderNumber=${encodeURIComponent(orderNumber)}`,
       description: pricing.title.slice(0, 240),
       language: 'en',
       clientId: uid,
-      jsonParams: JSON.stringify({ backToShopUrl: `${frontendUrl}/shop`, backToShopName: 'Back to PetPal' }),
+      jsonParams: buildJccJsonParams(frontendUrl),
+      ...buildJccRegisterCustomerParams(shipping, jccCartLines),
     };
 
-    if (saveCard) {
+    if (cartSaveCard) {
       params.features = 'FORCE_CREATE_BINDING';
     }
 
@@ -506,7 +710,7 @@ exports.jccPaymentReturn = functions.region('europe-west1').https.onRequest(asyn
   }
 
   if (!orderNumber || !jccOrderId) {
-    redirect(res, `${frontendUrl}/shop?checkout=error&reason=missing_order`);
+    redirect(res, `${frontendUrl}/payment/failed?reason=missing_order`);
     return;
   }
 
@@ -515,7 +719,7 @@ exports.jccPaymentReturn = functions.region('europe-west1').https.onRequest(asyn
   const sessionRef = db.collection('paymentSessions').doc(orderNumber);
   const snap = await sessionRef.get();
   if (!snap.exists) {
-    redirect(res, `${frontendUrl}/shop?checkout=error&reason=unknown_session`);
+    redirect(res, `${frontendUrl}/payment/failed?reason=unknown_session&orderNumber=${encodeURIComponent(orderNumber)}`);
     return;
   }
   const session = snap.data();
@@ -531,7 +735,8 @@ exports.jccPaymentReturn = functions.region('europe-west1').https.onRequest(asyn
     });
   } catch (e) {
     await sessionRef.set({ status: 'status_error', error: e?.message || String(e) }, { merge: true });
-    redirect(res, `${frontendUrl}/shop?checkout=error&reason=status`);
+    await updateOrderStatus(db, orderNumber, 'payment_failed');
+    redirect(res, `${frontendUrl}/payment/failed?reason=status&orderNumber=${encodeURIComponent(orderNumber)}`);
     return;
   }
 
@@ -539,7 +744,8 @@ exports.jccPaymentReturn = functions.region('europe-west1').https.onRequest(asyn
 
   if (!jccOk(statusJson) || !paidOrderStatus(statusJson)) {
     await sessionRef.set({ status: 'not_paid' }, { merge: true });
-    redirect(res, `${frontendUrl}/shop?checkout=fail`);
+    await updateOrderStatus(db, orderNumber, 'payment_failed');
+    redirect(res, `${frontendUrl}/payment/failed?orderNumber=${encodeURIComponent(orderNumber)}`);
     return;
   }
 
@@ -574,17 +780,31 @@ exports.jccPaymentReturn = functions.region('europe-west1').https.onRequest(asyn
         ? Number(session.renewalAmountCents)
         : catalog.amountCents;
     if (sku === 'PETPAL_PLUS_MONTHLY') {
+      const subscriptionId = buildSubscriptionId(orderNumber, 1);
       await createMonthlyTrackerSubscription(db, {
         uid,
-        orderNumber,
+        paymentId: orderNumber,
+        subPaymentId: 1,
+        orderNumber: subscriptionId,
         sku,
         renewalCents,
         currency: catalog.currency,
         bindingId,
         includeTracker: session.includeTracker,
         includeNfc: session.includeNfc,
+        nfcPetIds: session.nfcPetIds,
         nextRenewalAt: admin.firestore.Timestamp.fromDate(next),
       });
+      await appendOrderTrackerSubscriptions(db, orderNumber, uid, [
+        {
+          paymentId: orderNumber,
+          subPaymentId: 1,
+          subscriptionId,
+          includeTracker: session.includeTracker,
+          includeNfc: session.includeNfc,
+          nfcPetIds: session.nfcPetIds,
+        },
+      ]);
     } else {
       await db
         .collection('billingSubscriptions')
@@ -612,13 +832,13 @@ exports.jccPaymentReturn = functions.region('europe-west1').https.onRequest(asyn
   }
 
   if (session.includeNfc && sku === 'PETPAL_PLUS_MONTHLY') {
-    await grantNfcEntitlement(db, uid, orderNumber, sku);
+    await grantNfcEntitlement(db, uid, orderNumber, sku, session.nfcPetIds);
   }
 
   if (sku === 'PETPAL_PLUS_YEARLY') {
     await grantTrackerEntitlement(db, uid, orderNumber, sku);
-    await grantNfcEntitlement(db, uid, orderNumber, sku);
-    await incrementShopPublicStats(db, { activeSubscriptionsWithCollar: 1 });
+    await grantNfcEntitlement(db, uid, orderNumber, sku, session.nfcPetIds);
+    await incrementShopPublicStats(db, { totalCollarPurchases: 1, activeSubscriptionsWithCollar: 1 });
   }
 
   if (PLUS_SKUS.has(sku) && bindingId) {
@@ -636,7 +856,7 @@ exports.jccPaymentReturn = functions.region('europe-west1').https.onRequest(asyn
   }
 
   if (sku === 'NFC_TAG_HARDWARE') {
-    await grantNfcEntitlement(db, uid, orderNumber, sku);
+    await grantNfcEntitlement(db, uid, orderNumber, sku, session.nfcPetIds);
   }
 
   if (sku === 'STORE_BOOST_MONTHLY') {
@@ -658,6 +878,31 @@ exports.jccPaymentReturn = functions.region('europe-west1').https.onRequest(asyn
         { merge: true }
       );
   }
+
+  if (sku === 'MARKETPLACE_CART' && Array.isArray(session.cartItems) && session.cartItems.length) {
+    await fulfillMarketplaceCart(db, uid, orderNumber, session.cartItems, bindingId);
+    await db
+      .collection('users')
+      .doc(uid)
+      .collection('shopOrders')
+      .doc(orderNumber)
+      .set(
+        {
+          orderNumber,
+          items: session.cartItems,
+          amountCents: session.amountCents,
+          currency: session.currency || '978',
+          status: 'paid',
+          paidAt: admin.firestore.FieldValue.serverTimestamp(),
+        },
+        { merge: true }
+      );
+  }
+
+  await updateOrderStatus(db, orderNumber, 'paid', {
+    paidAt: admin.firestore.FieldValue.serverTimestamp(),
+  });
+  await recordCustomerPaymentIndex(db, orderNumber);
 
   await sessionRef.set({ status: 'paid', paidAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
 

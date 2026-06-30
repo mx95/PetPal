@@ -6,6 +6,7 @@ const PRICES = require('./shop-pricing.json');
 
 const PLUS_MONTHLY_CENTS = PRICES.PLUS_MONTHLY_CENTS;
 const PLUS_YEARLY_CENTS = PRICES.PLUS_YEARLY_CENTS;
+const PLUS_YEARLY_RENEWAL_CENTS = PRICES.PLUS_YEARLY_RENEWAL_CENTS;
 const TRACKER_ADDON_CENTS = PRICES.TRACKER_ADDON_CENTS;
 const NFC_TAG_ADDON_CENTS = PRICES.NFC_TAG_ADDON_CENTS;
 
@@ -46,11 +47,17 @@ const PLUS_SKUS = new Set(['PETPAL_PLUS_MONTHLY', 'PETPAL_PLUS_YEARLY']);
 
 /**
  * @param {string} sku
- * @param {{ includeTracker?: boolean, includeNfc?: boolean }} [options]
+ * @param {{ includeTracker?: boolean, includeNfc?: boolean, nfcPetIds?: string[], nfcPetCount?: number }} [options]
  */
 function resolveCheckoutPricing(sku, options = {}) {
   const includeTracker = Boolean(options.includeTracker);
-  const includeNfc = Boolean(options.includeNfc);
+  const nfcPetIds = Array.isArray(options.nfcPetIds) ? options.nfcPetIds : [];
+  const nfcPetCount = Math.max(
+    0,
+    Number.isFinite(options.nfcPetCount)
+      ? Number(options.nfcPetCount)
+      : nfcPetIds.length || (options.includeNfc ? 1 : 0)
+  );
   const catalog = SKUS[sku];
   if (!catalog) return null;
 
@@ -61,16 +68,26 @@ function resolveCheckoutPricing(sku, options = {}) {
       chargeCents += TRACKER_ADDON_CENTS;
       parts.push('GPS tracker');
     }
-    if (includeNfc) {
-      chargeCents += NFC_TAG_ADDON_CENTS;
-      parts.push('NFC tag');
+    if (nfcPetCount > 0) {
+      chargeCents += NFC_TAG_ADDON_CENTS * nfcPetCount;
+      parts.push(nfcPetCount === 1 ? 'NFC tag' : `${nfcPetCount} NFC tags`);
     }
     return {
       chargeCents,
       renewalCents: PLUS_MONTHLY_CENTS,
       title: parts.join(' + '),
       includeTracker,
-      includeNfc,
+      includeNfc: nfcPetCount > 0,
+    };
+  }
+
+  if (sku === 'PETPAL_PLUS_YEARLY') {
+    return {
+      chargeCents: PLUS_YEARLY_CENTS,
+      renewalCents: PLUS_YEARLY_RENEWAL_CENTS,
+      title: 'PetPal Plus (yearly) + free GPS tracker & NFC tag',
+      includeTracker: true,
+      includeNfc: true,
     };
   }
 
@@ -79,8 +96,83 @@ function resolveCheckoutPricing(sku, options = {}) {
     renewalCents: catalog.recurring ? catalog.amountCents : null,
     title: catalog.title,
     includeTracker: false,
-    includeNfc: false,
+    includeNfc: sku === 'NFC_TAG_HARDWARE',
   };
+}
+
+function normalizeCartLine(row) {
+  const nfcPetIds = Array.isArray(row.nfcPetIds)
+    ? row.nfcPetIds.map(String).filter(Boolean).slice(0, 20)
+    : undefined;
+  return {
+    key: String(row.key || '').slice(0, 120),
+    title: String(row.title || 'Item').slice(0, 120),
+    subtitle: row.subtitle ? String(row.subtitle).slice(0, 200) : undefined,
+    priceCents: Math.max(0, Number(row.priceCents) || 0),
+    qty: Math.max(1, Math.min(99, Number(row.qty) || 1)),
+    sku: row.sku ? String(row.sku).slice(0, 64) : undefined,
+    saveCard: Boolean(row.saveCard),
+    includeTracker: Boolean(row.includeTracker),
+    includeNfc: Boolean(row.includeNfc),
+    nfcPetIds: nfcPetIds?.length ? nfcPetIds : undefined,
+    recurring: Boolean(row.recurring),
+  };
+}
+
+function resolveMarketplaceCartPricing(cartItems) {
+  const lines = (cartItems || []).map(normalizeCartLine).filter((row) => row.key);
+  if (!lines.length) return null;
+  const chargeCents = lines.reduce((sum, row) => sum + row.priceCents * row.qty, 0);
+  if (chargeCents <= 0) return null;
+  return {
+    chargeCents,
+    renewalCents: null,
+    title: `PetPal shop order (${lines.length} item${lines.length === 1 ? '' : 's'})`,
+    includeTracker: lines.some((row) => row.includeTracker),
+    includeNfc: lines.some((row) => row.includeNfc),
+    cartItems: lines,
+  };
+}
+
+function resolveCartLinePricing(line) {
+  const sku = line.sku;
+  if (!sku || !SKUS[sku]) return Math.max(0, Number(line.priceCents) || 0);
+  const nfcPetIds = Array.isArray(line.nfcPetIds) ? line.nfcPetIds : [];
+  if (sku === 'NFC_TAG_HARDWARE') {
+    return NFC_TAG_ADDON_CENTS * Math.max(1, nfcPetIds.length || line.qty || 1);
+  }
+  const pricing = resolveCheckoutPricing(sku, {
+    includeTracker: line.includeTracker,
+    includeNfc: line.includeNfc,
+    nfcPetIds,
+  });
+  return pricing ? pricing.chargeCents : Math.max(0, Number(line.priceCents) || 0);
+}
+
+function validateMarketplaceCartLines(lines) {
+  for (const line of lines) {
+    const sku = line.sku;
+    if (!sku || !SKUS[sku]) continue;
+    const catalog = SKUS[sku];
+    const needsNfcPets =
+      (sku === 'PETPAL_PLUS_MONTHLY' && line.includeNfc) ||
+      sku === 'PETPAL_PLUS_YEARLY' ||
+      sku === 'NFC_TAG_HARDWARE';
+    if (needsNfcPets && !(line.nfcPetIds && line.nfcPetIds.length)) {
+      return 'Select at least one pet for NFC tag configuration.';
+    }
+    if (catalog.recurring && !line.saveCard) {
+      return 'This plan bills on a schedule — enable “Save card securely” on each subscription in your cart.';
+    }
+    if (line.includeTracker && sku !== 'PETPAL_PLUS_MONTHLY') {
+      return 'GPS tracker add-on is only available with the monthly plan.';
+    }
+    const expectedUnit = resolveCartLinePricing(line);
+    if (expectedUnit !== line.priceCents) {
+      return 'Cart pricing is out of date — refresh the shop page and add items again.';
+    }
+  }
+  return null;
 }
 
 /**
@@ -98,6 +190,9 @@ module.exports = {
   PRICES,
   SKUS,
   PLUS_SKUS,
+  PLUS_YEARLY_RENEWAL_CENTS,
   resolveCheckoutPricing,
+  resolveMarketplaceCartPricing,
+  validateMarketplaceCartLines,
   expectedChargeCents,
 };

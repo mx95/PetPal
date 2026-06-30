@@ -82,14 +82,38 @@ export default function TermsOfService() {
         </p>
       </section>
 
-      <section>
-        <h2>8. Subscriptions and fees (if applicable)</h2>
+      <section id="shop-payments">
+        <h2>8. Shop, payments, and subscriptions</h2>
         <p>
-          If we offer paid plans, pricing, billing, renewal, and cancellation will be described at the point of
-          purchase and in separate terms if required by law (including your EU/EEA consumer rights, such as
-          pre-contractual information and withdrawal where applicable to distance contracts). Until such features are
-          live, this section will be updated with our exact commercial terms and payment provider
-          details.
+          Card payments for the PetPal shop are processed securely by the <strong>JCC payment gateway</strong> (3-D
+          Secure where supported). Please review the following before you complete a purchase.
+        </p>
+        <p>
+          Your card details are entered on JCC’s hosted payment page — PetPal does not store your full card number.
+        </p>
+        <p>
+          Subscription plans renew automatically on the billing cycle (monthly or yearly) until you cancel from{' '}
+          <Link to="/shop" className="pp-link" style={{ display: 'inline', padding: 0 }}>
+            Shop → Your subscriptions
+          </Link>
+          . If you chose “Save card until cancelled”, your card is tokenised by JCC for renewals only.
+        </p>
+        <p>
+          GPS trackers and NFC tags are shipped to the delivery address you provide at checkout after payment.
+          Fulfilment typically takes a few business days.
+        </p>
+        <p>
+          You can request subscription cancellation in the shop at any time. After cancellation, billing stops and
+          tracker SIM service is disabled as described in your plan.
+        </p>
+        <p>
+          If you are an EU/EEA consumer, you have statutory rights for distance contracts, including pre-contractual
+          information and withdrawal where applicable. See the sections below on governing law and contact for
+          complaints, refunds, and the European Commission ODR platform.
+        </p>
+        <p>
+          Pricing, billing intervals, and any promotional first-year or renewal rates are shown at the point of purchase
+          in the shop and on your order confirmation.
         </p>
       </section>
 

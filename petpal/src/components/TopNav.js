@@ -5,6 +5,7 @@ import { useCompany } from '../company/CompanyContext';
 import { useInbox } from '../inbox/InboxContext';
 import { useI18n } from '../i18n/I18nContext';
 import { LanguageSwitcher } from '../i18n/LanguageSwitcher';
+import ShopCartHeaderButton from './shop/ShopCartHeaderButton';
 import UserAvatar from './UserAvatar';
 import petpalLogo from '../logo.png';
 import { BRAND } from '../config/brand';
@@ -119,6 +120,7 @@ export default function TopNav() {
         </nav>
 
         <div className="pp-topNavUtilityCluster">
+          <ShopCartHeaderButton />
           <LanguageSwitcher />
           {user ? (
             <div className="relative" ref={accountMenuRef}>

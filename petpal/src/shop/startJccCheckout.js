@@ -26,7 +26,7 @@ function mapCallableError(err) {
 
 /**
  * Starts JCC hosted checkout via Cloud Function `createJccCheckout` (register.do → formUrl).
- * @param {{ sku: string, saveCard: boolean, companyId?: string, includeTracker?: boolean, includeNfc?: boolean }} opts
+ * @param {{ sku: string, saveCard: boolean, companyId?: string, includeTracker?: boolean, includeNfc?: boolean, nfcPetIds?: string[], cartItems?: Array<{ key: string, title: string, priceCents: number, qty: number, subtitle?: string, sku?: string, saveCard?: boolean, includeTracker?: boolean, includeNfc?: boolean, nfcPetIds?: string[], recurring?: boolean }>, shippingContact?: { receiverName: string, email: string, phone: string, address: string } }} opts
  */
 export async function startJccCheckout(opts) {
   const app = getFirebaseApp();
@@ -41,12 +41,47 @@ export async function startJccCheckout(opts) {
   const createJccCheckout = httpsCallable(functions, 'createJccCheckout');
   let data;
   try {
+    const nfcPetIds = Array.isArray(opts.nfcPetIds)
+      ? opts.nfcPetIds.map(String).filter(Boolean)
+      : [];
+    const cartItems = Array.isArray(opts.cartItems)
+      ? opts.cartItems.map((row) => ({
+          key: String(row.key || ''),
+          title: String(row.title || ''),
+          subtitle: row.subtitle ? String(row.subtitle) : undefined,
+          priceCents: Number(row.priceCents) || 0,
+          qty: Math.max(1, Number(row.qty) || 1),
+          sku: row.sku ? String(row.sku) : undefined,
+          saveCard: Boolean(row.saveCard),
+          includeTracker: Boolean(row.includeTracker),
+          includeNfc: Boolean(row.includeNfc),
+          nfcPetIds: Array.isArray(row.nfcPetIds) ? row.nfcPetIds.map(String).filter(Boolean) : undefined,
+          recurring: Boolean(row.recurring),
+        }))
+      : undefined;
     const res = await createJccCheckout({
       sku: opts.sku,
       saveCard: Boolean(opts.saveCard),
       companyId: opts.companyId || undefined,
       includeTracker: Boolean(opts.includeTracker),
       includeNfc: Boolean(opts.includeNfc),
+      nfcPetIds,
+      cartItems,
+      shippingContact: opts.shippingContact
+        ? {
+            email: String(opts.shippingContact.email || ''),
+            phone: String(opts.shippingContact.phone || ''),
+            firstName: String(opts.shippingContact.firstName || ''),
+            lastName: String(opts.shippingContact.lastName || ''),
+            receiverName: String(opts.shippingContact.receiverName || ''),
+            address: String(opts.shippingContact.address || ''),
+            addressLine1: String(opts.shippingContact.addressLine1 || ''),
+            addressLine2: String(opts.shippingContact.addressLine2 || ''),
+            postalCode: String(opts.shippingContact.postalCode || ''),
+            city: String(opts.shippingContact.city || ''),
+            country: String(opts.shippingContact.country || 'CY'),
+          }
+        : undefined,
     });
     data = res.data;
   } catch (e) {
@@ -60,6 +95,7 @@ export async function startJccCheckout(opts) {
   const expected = expectedCheckoutCents(opts.sku, {
     includeTracker: opts.includeTracker,
     includeNfc: opts.includeNfc,
+    cartItems: opts.cartItems,
   });
   const charged = Number(data?.amountCents);
   if (expected != null && Number.isFinite(charged) && charged !== expected) {

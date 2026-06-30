@@ -181,6 +181,7 @@ try {
 }
 
 Object.assign(exports, require('./jccPayments'));
+Object.assign(exports, require('./subscriptionImei'));
 Object.assign(exports, require('./contactForm'));
 Object.assign(exports, require('./bookingEmail'));
 

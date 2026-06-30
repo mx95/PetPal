@@ -29,7 +29,11 @@ import Profile from './Pages/Profile';
 import ProviderPortal from './Pages/ProviderPortal';
 import BookingsHub from './Pages/BookingsHub';
 import Shop from './Pages/Shop';
+import ShopCheckout from './Pages/ShopCheckout';
 import PaymentSuccess from './Pages/PaymentSuccess';
+import PaymentFailed from './Pages/PaymentFailed';
+import MyOrders from './Pages/MyOrders';
+import AdminOrders from './Pages/AdminOrders';
 import './ui/ui.css';
 import CompanyApply from './Pages/CompanyApply';
 import AdminCompanyQueue from './Pages/AdminCompanyQueue';
@@ -43,6 +47,7 @@ import { useI18n } from './i18n/I18nContext';
 import ScrollToTop from './components/ScrollToTop';
 import BottomNav from './components/BottomNav';
 import TopNav from './components/TopNav';
+import ShopCartMobilePanel from './components/shop/ShopCartMobilePanel';
 import { MedicationReminderHost } from './components/MedicationReminderHost';
 import { OpeningScreen } from './components/OpeningScreen';
 
@@ -75,6 +80,7 @@ function App() {
       <ScrollToTop />
       <MedicationReminderHost />
       <TopNav />
+      <ShopCartMobilePanel />
       <CheckoutSuccessBridge />
       <div className="pp-pageScroll">
         <div className={mainAlignsWithNav ? 'pp-main pp-main--alignNav' : 'pp-main'}>
@@ -144,6 +150,14 @@ function App() {
             }
           />
           <Route
+            path="/admin/orders"
+            element={
+              <RequireAuth>
+                <AdminOrders />
+              </RequireAuth>
+            }
+          />
+          <Route
             path="/inbox"
             element={
               <RequireAuth>
@@ -190,6 +204,14 @@ function App() {
             }
           />
           <Route
+            path="/shop/checkout"
+            element={
+              <RequireAuth>
+                <ShopCheckout />
+              </RequireAuth>
+            }
+          />
+          <Route
             path="/shop"
             element={
               <RequireAuth>
@@ -202,6 +224,22 @@ function App() {
             element={
               <RequireAuth>
                 <PaymentSuccess />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/payment/failed"
+            element={
+              <RequireAuth>
+                <PaymentFailed />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/profile/orders"
+            element={
+              <RequireAuth>
+                <MyOrders />
               </RequireAuth>
             }
           />

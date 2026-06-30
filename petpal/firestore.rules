@@ -143,6 +143,21 @@ service cloud.firestore {
         allow write: if false;
       }
 
+      match /cancelRequests/{requestId} {
+        allow read, create: if request.auth != null && request.auth.uid == userId;
+        allow update, delete: if false;
+      }
+
+      match /shopOrders/{orderId} {
+        allow read: if request.auth != null && request.auth.uid == userId;
+        allow write: if false;
+      }
+
+      match /payments/{paymentId} {
+        allow read: if request.auth != null && (request.auth.uid == userId || isAdmin());
+        allow write: if false;
+      }
+
       // Per-user read state for admin broadcast inbox.
       match /inboxReads/{messageId} {
         allow read, create, update: if request.auth != null && request.auth.uid == userId;
@@ -235,6 +250,29 @@ service cloud.firestore {
     match /contactMessages/{messageId} {
       allow read: if isAdmin();
       allow write: if false;
+    }
+
+    match /orders/{orderId} {
+      allow read: if request.auth != null && (resource.data.uid == request.auth.uid || isAdmin());
+      allow create: if false;
+      allow update: if isAdmin();
+      allow delete: if false;
+    }
+
+    match /customerPayments/{emailKey}/payments/{paymentId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    // Pet sharing between PetPal accounts (owner invites collaborator by email).
+    match /petCollaborators/{shareId} {
+      allow read: if request.auth != null && (
+        resource.data.ownerUid == request.auth.uid
+        || resource.data.collaboratorUid == request.auth.uid
+        || (request.auth.token.email != null && resource.data.collaboratorEmail == request.auth.token.email)
+      );
+      allow create: if request.auth != null && request.resource.data.ownerUid == request.auth.uid;
+      allow update, delete: if request.auth != null && resource.data.ownerUid == request.auth.uid;
     }
 
     // Public profile docs used by NFC/QR pages (sanitized fields only).

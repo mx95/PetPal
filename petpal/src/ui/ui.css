@@ -17404,6 +17404,750 @@ html[data-theme="dark"] .pp-nearby-list > li {
   color: var(--pp-muted, #64748b);
 }
 
+.pp-shopCard__renewalNote {
+  margin: 4px 0 0;
+  font-size: 0.82rem;
+}
+
+.pp-shopTabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.pp-shopTabs__btn {
+  flex: 1;
+  max-width: 200px;
+  padding: 10px 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(16, 24, 40, 0.12);
+  background: #fff;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.pp-shopTabs__btn.is-active {
+  background: rgba(91, 55, 255, 0.12);
+  border-color: rgba(91, 55, 255, 0.35);
+  color: #4c1d95;
+}
+
+.pp-shopInfoBox {
+  margin-bottom: 16px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: rgba(59, 130, 246, 0.08);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.pp-shopInfoBox p {
+  margin: 6px 0 0;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.pp-shopManage__list {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pp-shopManage__row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(16, 24, 40, 0.06);
+}
+
+.pp-shopManage__row:last-child {
+  border-bottom: none;
+}
+
+.pp-shopManage--prominent {
+  margin-top: 20px;
+  border: 1px solid rgba(105, 65, 198, 0.18);
+  box-shadow: 0 8px 24px rgba(105, 65, 198, 0.08);
+}
+
+.pp-shopManage__copy {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+}
+
+.pp-shopManage__title {
+  font-size: 15px;
+}
+
+.pp-shopManage__detail,
+.pp-shopManage__linkHint,
+.pp-shopManage__afterCancel {
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.pp-shopManage__cancelNote {
+  font-size: 12px;
+  line-height: 1.4;
+  color: #667085;
+}
+
+.pp-shopManage__afterCancel {
+  margin: 14px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid rgba(16, 24, 40, 0.06);
+}
+
+.pp-shopProductGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+.pp-shopProductCard {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pp-shopProductCard__emoji {
+  font-size: 28px;
+}
+
+.pp-shopProductCard__company {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: #6366f1;
+}
+
+.pp-shopProductCard__title {
+  margin: 0;
+  font-size: 16px;
+}
+
+.pp-shopProductCard__foot {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.pp-shopCart {
+  margin: 0 0 20px;
+  border-radius: 16px;
+  background: #fff;
+  border: 1px solid rgba(16, 24, 40, 0.08);
+  overflow: hidden;
+}
+
+.pp-shopCart--pageBar {
+  display: block;
+}
+
+.pp-shopCart--mobilePanel {
+  display: none;
+}
+
+.pp-shopCartBackdrop {
+  display: none;
+}
+
+.pp-shopCartHeaderBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(105, 65, 198, 0.25);
+  background: linear-gradient(135deg, #f4f0ff 0%, #fff 100%);
+  border-radius: 999px;
+  padding: 6px 12px 6px 10px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #6941c6;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(105, 65, 198, 0.12);
+}
+
+.pp-shopCartHeaderBtn__icon {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.pp-shopCartHeaderBtn__meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.1;
+}
+
+.pp-shopCartHeaderBtn__count {
+  font-size: 11px;
+  opacity: 0.85;
+}
+
+.pp-shopCartHeaderBtn__amount {
+  font-size: 13px;
+}
+
+.pp-shopCart__mobileHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(16, 24, 40, 0.06);
+}
+
+.pp-shopCart__mobileClose {
+  border: 0;
+  background: transparent;
+  color: #6941c6;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.pp-shopCard__nfcPerPet {
+  margin: 6px 0 0;
+  font-size: 0.82rem;
+}
+
+.pp-shopCard__inCart {
+  margin: 6px 0 6px;
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: #6941c6;
+}
+
+@media (max-width: 1023px) {
+  .pp-shopCart--pageBar {
+    display: none;
+  }
+
+  .pp-shopCartBackdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    border: 0;
+    padding: 0;
+    background: rgba(15, 23, 42, 0.38);
+    cursor: pointer;
+  }
+
+  .pp-shopCart--mobilePanel {
+    display: block;
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    top: calc(var(--pp-topNav-height, 68px) + 8px);
+    z-index: 61;
+    max-height: min(70vh, 520px);
+    overflow: auto;
+    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.18);
+  }
+}
+
+.pp-shopCart__bar {
+  padding: 12px 16px;
+}
+
+.pp-shopCart__viewBtn {
+  width: 100%;
+}
+
+.pp-shopCart__body {
+  padding: 0 16px 16px;
+  border-top: 1px solid rgba(16, 24, 40, 0.06);
+}
+
+.pp-shopCart__hint {
+  margin: 12px 0 0;
+}
+
+.pp-shopCart__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.pp-shopCart__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.pp-shopCart__row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(16, 24, 40, 0.06);
+}
+
+.pp-shopCart__rowMain {
+  flex: 1;
+  min-width: 0;
+}
+
+.pp-shopCart__qtyBadge {
+  margin-left: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #6941c6;
+}
+
+.pp-shopCart__unitPrice {
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+.pp-shopCart__qtyControls {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.pp-shopCart__qtyBtn {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  border: 1px solid rgba(16, 24, 40, 0.12);
+  background: #fff;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.pp-shopCart__qtyValue {
+  min-width: 20px;
+  text-align: center;
+  font-weight: 700;
+}
+
+.pp-shopCart__foot {
+  margin-top: 12px;
+  display: grid;
+  gap: 10px;
+}
+
+.pp-shopCart__checkout {
+  width: 100%;
+}
+
+.pp-shopCart__error {
+  margin: 0;
+}
+
+.pp-checkoutDetails {
+  max-width: 480px;
+}
+
+.pp-checkoutDetails__amount {
+  font-weight: 700;
+  margin: 8px 0 16px;
+}
+
+.pp-checkoutDetails__form {
+  display: grid;
+  gap: 12px;
+}
+
+.pp-checkoutDetails__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.pp-shopCheckout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 380px);
+  gap: 32px;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+  align-items: start;
+}
+
+.pp-shopCheckout__head {
+  margin-bottom: 20px;
+}
+
+.pp-shopCheckout__title {
+  margin: 12px 0 0;
+  font-size: 1.75rem;
+  font-weight: 700;
+}
+
+.pp-shopCheckout__section {
+  display: grid;
+  gap: 14px;
+}
+
+.pp-shopCheckout__sectionTitle {
+  margin: 0 0 4px;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.pp-shopCheckout__form {
+  display: grid;
+  gap: 18px;
+}
+
+.pp-shopCheckout__field {
+  display: grid;
+  gap: 6px;
+}
+
+.pp-shopCheckout__label {
+  font-size: 13px;
+  color: #667085;
+}
+
+.pp-shopCheckout__field input,
+.pp-shopCheckout__field select {
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(16, 24, 40, 0.14);
+  background: #fff;
+  font-size: 15px;
+}
+
+.pp-shopCheckout__field input:focus,
+.pp-shopCheckout__field select:focus {
+  outline: none;
+  border-color: rgba(91, 55, 255, 0.45);
+  box-shadow: 0 0 0 3px rgba(91, 55, 255, 0.12);
+}
+
+.pp-shopCheckout__row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.pp-shopCheckout__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.pp-shopCheckout__summaryCard {
+  position: sticky;
+  top: 88px;
+  padding: 18px;
+  border-radius: 14px;
+  background: #f9fafb;
+  border: 1px solid rgba(16, 24, 40, 0.08);
+}
+
+.pp-shopCheckout__summaryTitle {
+  margin: 0 0 12px;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.pp-shopCheckout__summaryList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.pp-shopCheckout__summaryRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 14px;
+}
+
+.pp-shopCheckout__summaryName {
+  color: #344054;
+}
+
+.pp-shopCheckout__summaryQty {
+  margin-left: 6px;
+  color: #667085;
+  font-weight: 600;
+}
+
+.pp-shopCheckout__summaryTotal {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(16, 24, 40, 0.08);
+  font-size: 15px;
+}
+
+.pp-shopCheckout__summaryNote {
+  margin: 12px 0 0;
+  font-size: 13px;
+}
+
+.pp-shopCheckout__terms {
+  padding-top: 4px;
+  border-top: 1px solid rgba(16, 24, 40, 0.08);
+}
+
+.pp-shopCheckout__termsIntro {
+  margin: 0 0 10px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.pp-shopCheckout__termsList {
+  margin: 0 0 14px;
+  padding-left: 18px;
+  display: grid;
+  gap: 8px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #475467;
+}
+
+.pp-shopCheckout__termsCheck {
+  margin: 0;
+}
+
+@media (max-width: 860px) {
+  .pp-shopCheckout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .pp-shopCheckout__summary {
+    order: -1;
+  }
+
+  .pp-shopCheckout__summaryCard {
+    position: static;
+  }
+
+  .pp-shopCheckout__row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.pp-paymentResult__card {
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 28px;
+  text-align: center;
+}
+
+.pp-paymentResult__icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  margin: 0 auto 12px;
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.pp-paymentResult__icon--fail {
+  background: rgba(249, 112, 102, 0.15);
+  color: #d92d20;
+}
+
+.pp-paymentResult__badge--fail {
+  background: rgba(249, 112, 102, 0.12);
+  color: #d92d20;
+}
+
+.pp-paymentResult__detail {
+  text-align: left;
+  margin-top: 16px;
+}
+
+.pp-paymentResult__items {
+  margin: 10px 0 0;
+  padding-left: 18px;
+}
+
+.pp-paymentResult__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.pp-ordersList,
+.pp-adminOrdersList {
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.pp-ordersList__head,
+.pp-adminOrdersList__head {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  padding: 14px 16px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+}
+
+.pp-ordersList__body,
+.pp-adminOrdersList__body {
+  padding: 0 16px 16px;
+  border-top: 1px solid rgba(16, 24, 40, 0.06);
+}
+
+.pp-ordersList__lines {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.pp-adminOrdersList__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.pp-adminOrdersList__statusRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.pp-adminOrdersList__trackers {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed rgba(16, 24, 40, 0.1);
+}
+
+.pp-adminOrdersList__trackerLines {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.pp-adminOrdersList__trackerRow {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(91, 55, 255, 0.04);
+  border: 1px solid rgba(91, 55, 255, 0.1);
+}
+
+.pp-adminOrdersList__imeiRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+  align-items: center;
+}
+
+.pp-adminOrdersList__imeiRow .pp-input {
+  flex: 1 1 180px;
+  min-width: 0;
+}
+
+.pp-shopCart__rowMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pp-shopCart__remove {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.pp-shopPetPicker {
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(91, 55, 255, 0.05);
+  border: 1px solid rgba(91, 55, 255, 0.12);
+}
+
+.pp-shopPetPicker__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.pp-shopPetPicker__chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: #fff;
+  border: 1.5px solid rgba(16, 24, 40, 0.12);
+  font-size: 13px;
+  font-weight: 600;
+  color: #344054;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.pp-shopPetPicker__chip:hover:not(:disabled):not(.is-selected) {
+  border-color: rgba(91, 55, 255, 0.35);
+  background: rgba(91, 55, 255, 0.06);
+}
+
+.pp-shopPetPicker__chip.is-selected {
+  background: linear-gradient(135deg, #6941c6 0%, #5b37ff 100%);
+  border-color: #6941c6;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(91, 55, 255, 0.28);
+}
+
+.pp-shopPetPicker__chip:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.pp-shopPetPicker__chipName {
+  line-height: 1.2;
+}
+
+.pp-shopProductsLead {
+  margin-bottom: 14px;
+}
+
+.pp-shopCartNote {
+  margin-top: 10px;
+  font-size: 13px;
+}
+
 .pp-shopCard__payBtn {
   display: inline-flex;
   align-items: center;

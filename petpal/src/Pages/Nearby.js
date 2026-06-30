@@ -96,7 +96,7 @@ function NearbyMap({ apiKey }) {
   const [map, setMap] = useState(null);
   const [searchCenter, setSearchCenter] = useState(DEFAULT_CENTER);
   const [locationNote, setLocationNote] = useState(() => ({ kind: 'default' }));
-  const [selectedCategoryId, setSelectedCategoryId] = useState(NEARBY_CATEGORIES[0].id);
+  const [selectedCategoryId, setSelectedCategoryId] = useState('more');
   const [searchScope, setSearchScope] = useState('radius');
   const [places, setPlaces] = useState([]);
   const [searchStatus, setSearchStatus] = useState('idle');
@@ -150,6 +150,56 @@ function NearbyMap({ apiKey }) {
 
       const service = new window.google.maps.places.PlacesService(map);
       const cat = NEARBY_CATEGORIES.find((c) => c.id === selectedCategoryId) || NEARBY_CATEGORIES[0];
+
+      const finish = (merged) => {
+        if (merged.length) {
+          setPlaces(merged.slice(0, 30));
+          setSearchStatus('ok');
+        } else {
+          setSearchStatus('empty');
+        }
+      };
+
+      if (cat.id === 'more') {
+        const sources = NEARBY_CATEGORIES.filter((c) => c.id !== 'more');
+        const loc =
+          scope === 'bounds'
+            ? null
+            : new window.google.maps.LatLng(center.lat, center.lng);
+        const bounds = scope === 'bounds' ? map.getBounds() : null;
+        if (scope === 'bounds' && !bounds) {
+          setSearchStatus('error');
+          return;
+        }
+        /** @type {Map<string, google.maps.places.PlaceResult>} */
+        const byId = new Map();
+        let pending = sources.length;
+        if (!pending) {
+          setSearchStatus('empty');
+          return;
+        }
+        sources.forEach((entry) => {
+          const request = {};
+          if (entry.type) request.type = entry.type;
+          if (entry.keyword) request.keyword = entry.keyword;
+          if (!entry.type && !entry.keyword) request.keyword = 'pet';
+          if (bounds) request.bounds = bounds;
+          else {
+            request.location = loc;
+            request.radius = Math.max(NEARBY_SEARCH_RADIUS_M, 10000);
+          }
+          service.nearbySearch(request, (results, status) => {
+            if (status === window.google.maps.places.PlacesServiceStatus.OK && results) {
+              results.forEach((place) => {
+                if (place.place_id) byId.set(place.place_id, place);
+              });
+            }
+            pending -= 1;
+            if (pending <= 0) finish([...byId.values()]);
+          });
+        });
+        return;
+      }
 
       const request = {};
       if (cat.type) request.type = cat.type;

@@ -15,6 +15,7 @@ import {
 } from 'firebase/firestore';
 import { getDb, isFirebaseConfigured } from '../firebase';
 import { normalizeTrackerImei, syncTrackerImeiIndex } from '../tracking/trackerImeiIndex';
+import { linkTrackerSubscriptionPet } from '../shop/subscriptionImeiClient';
 
 function petsCol(uid) {
   return collection(getDb(), 'users', uid, 'pets');
@@ -171,6 +172,16 @@ export async function patchPet(uid, petId, patch) {
       before.trackingDeviceId,
       nextPatch.trackingDeviceId
     );
+    if (nextPatch.trackingDeviceId) {
+      try {
+        await linkTrackerSubscriptionPet({
+          petId,
+          imei: nextPatch.trackingDeviceId,
+        });
+      } catch {
+        // No matching subscription yet (e.g. IMEI not assigned after shipment).
+      }
+    }
   }
 
   const snap = await getDoc(petRef);
