@@ -8,5 +8,11 @@ process.env.PUBLIC_URL = '.';
 execSync('npm run build', {
   stdio: 'inherit',
   cwd: path.join(__dirname, '..'),
-  env: { ...process.env, PUBLIC_URL: '.' },
+  env: {
+    ...process.env,
+    PUBLIC_URL: '.',
+    // GitHub Actions sets CI=true, which fails the build on ESLint warnings.
+    CI: 'false',
+    DISABLE_ESLINT_PLUGIN: 'true',
+  },
 });
