@@ -13951,7 +13951,7 @@ select.pp-bookConfirmField__control {
 
 .pp-imeiQrViewport {
   width: 100%;
-  min-height: 240px;
+  min-height: 280px;
   border-radius: 12px;
   overflow: hidden;
   background: #0f172a;

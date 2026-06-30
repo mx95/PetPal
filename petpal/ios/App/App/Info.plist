@@ -24,6 +24,8 @@
 	<true/>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>PetPal uses your location to find pet-friendly places near you.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>PetPal uses the camera to scan tracker IMEI QR codes and barcodes.</string>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>

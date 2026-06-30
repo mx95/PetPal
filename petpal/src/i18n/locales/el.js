@@ -528,7 +528,7 @@ const el = {
     scanQr: 'Σάρωση QR',
     scanQrClose: 'Κλείσιμο',
     scanQrHint:
-      'Επιτρέψτε την κάμερα και στρέψτε στο QR IMEI του tracker (απαιτείται HTTPS ή localhost).',
+      'Στρέψτε στο QR ή barcode IMEI του tracker. Κρατήστε το barcode οριζόντια στην οθόνη.',
     scanQrErrorCamera:
       'Δεν ξεκίνησε η κάμερα. Επιτρέψτε δικαιώματα, χρησιμοποιήστε HTTPS ή πληκτρολογήστε το IMEI.',
     scanQrErrorNoImei: 'Δεν βρέθηκε 15ψήφιο IMEI σε αυτόν τον κωδικό.',

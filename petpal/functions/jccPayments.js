@@ -138,6 +138,164 @@ function nextRenewalDate(from, sku) {
   return next;
 }
 
+/** One monthly subscription per tracker — stored under users/{uid}/trackerSubscriptions/{orderNumber}. */
+async function createMonthlyTrackerSubscription(db, payload) {
+  const {
+    uid,
+    orderNumber,
+    sku,
+    renewalCents,
+    currency,
+    bindingId,
+    includeTracker,
+    includeNfc,
+    nextRenewalAt,
+  } = payload;
+  await db
+    .collection('users')
+    .doc(uid)
+    .collection('trackerSubscriptions')
+    .doc(orderNumber)
+    .set({
+      uid,
+      subscriptionId: orderNumber,
+      sku,
+      amountCents: renewalCents,
+      currency,
+      bindingId: bindingId || null,
+      clientId: uid,
+      status: 'active',
+      includeTracker: Boolean(includeTracker),
+      includeNfc: Boolean(includeNfc),
+      trackerImei: null,
+      petId: null,
+      nextRenewalAt,
+      createdFromOrderNumber: orderNumber,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+  await db
+    .collection('billingSubscriptions')
+    .doc(`${uid}_PETPAL_PLUS_MONTHLY`)
+    .set(
+      {
+        uid,
+        sku: 'PETPAL_PLUS_MONTHLY',
+        status: 'active',
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      },
+      { merge: true }
+    );
+}
+
+async function userHasActivePlus(db, uid) {
+  const trackerSnap = await db
+    .collection('users')
+    .doc(uid)
+    .collection('trackerSubscriptions')
+    .where('status', '==', 'active')
+    .limit(1)
+    .get();
+  if (!trackerSnap.empty) return true;
+  for (const plusSku of PLUS_SKUS) {
+    const plusSnap = await db.collection('billingSubscriptions').doc(`${uid}_${plusSku}`).get();
+    const plusD = plusSnap.data();
+    if (plusSnap.exists && plusD?.status === 'active') return true;
+  }
+  return false;
+}
+
+async function renewSubscriptionDoc(db, docRef, sub, creds) {
+  const { userName, password, restBase, returnUrl } = creds;
+  const { uid, sku, amountCents, currency, bindingId, clientId } = sub;
+  if (!bindingId || !uid || !sku) return;
+  const orderNumber = uniqueOrderNumber('RENEW');
+  const renewRef = db.collection('paymentSessions').doc(orderNumber);
+  await renewRef.set({
+    orderNumber,
+    uid,
+    sku,
+    saveCard: false,
+    kind: 'renewal',
+    subscriptionDocPath: docRef.path,
+    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    status: 'pending_register',
+  });
+
+  try {
+    const reg = await jccPost(restBase, 'register.do', {
+      userName,
+      password,
+      orderNumber,
+      amount: String(amountCents),
+      currency: currency || '978',
+      returnUrl: `${String(returnUrl).replace(/\/$/, '')}?orderNumber=${encodeURIComponent(orderNumber)}`,
+      failUrl: `${creds.frontendUrl}/shop?checkout=fail`,
+      description: `Renewal ${sku}`,
+      language: 'en',
+      clientId: clientId || uid,
+    });
+    if (!jccRegisterDoSucceeded(reg)) {
+      await renewRef.set({ status: 'register_failed', raw: reg }, { merge: true });
+      return;
+    }
+    const pay = await jccPost(restBase, 'paymentOrderBinding.do', {
+      userName,
+      password,
+      mdOrder: reg.orderId,
+      bindingId,
+      tii: 'U',
+      language: 'en',
+    });
+    if (!jccOk(pay)) {
+      await renewRef.set({ status: 'binding_pay_failed', raw: pay }, { merge: true });
+      await docRef.set({ status: 'past_due', lastError: pay?.errorMessage || pay?.error }, { merge: true });
+      return;
+    }
+    const st = await jccPost(restBase, 'getOrderStatusExtended.do', {
+      userName,
+      password,
+      orderId: reg.orderId,
+      language: 'en',
+    });
+    if (!jccOk(st) || !paidOrderStatus(st)) {
+      await renewRef.set({ status: 'not_paid_after_binding', raw: st }, { merge: true });
+      await docRef.set({ status: 'past_due' }, { merge: true });
+      return;
+    }
+    const next = nextRenewalDate(new Date(), sku);
+    await docRef.set(
+      {
+        status: 'active',
+        nextRenewalAt: admin.firestore.Timestamp.fromDate(next),
+        lastRenewedAt: admin.firestore.FieldValue.serverTimestamp(),
+      },
+      { merge: true }
+    );
+    await renewRef.set({ status: 'paid_renewal', jccOrderId: reg.orderId }, { merge: true });
+
+    if (sku === 'STORE_BOOST_MONTHLY') {
+      const until = new Date();
+      until.setDate(until.getDate() + 32);
+      await db
+        .collection('providers')
+        .doc(uid)
+        .set(
+          {
+            boostEnabled: true,
+            sponsored: true,
+            recommended: true,
+            boostUntil: admin.firestore.Timestamp.fromDate(until),
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          },
+          { merge: true }
+        );
+    }
+  } catch (e) {
+    await renewRef.set({ status: 'renewal_exception', error: e?.message || String(e) }, { merge: true });
+  }
+}
+
 async function grantTrackerEntitlement(db, uid, orderNumber, sourceSku) {
   const ref = db.collection('users').doc(uid).collection('shopEntitlements').doc('collar');
   await db.runTransaction(async (tx) => {
@@ -415,23 +573,37 @@ exports.jccPaymentReturn = functions.region('europe-west1').https.onRequest(asyn
       Number.isFinite(Number(session.renewalAmountCents)) && session.renewalAmountCents > 0
         ? Number(session.renewalAmountCents)
         : catalog.amountCents;
-    await db
-      .collection('billingSubscriptions')
-      .doc(`${uid}_${sku}`)
-      .set(
-        {
-          uid,
-          sku,
-          amountCents: renewalCents,
-          currency: catalog.currency,
-          bindingId: bindingId || null,
-          clientId: uid,
-          status: 'active',
-          nextRenewalAt: admin.firestore.Timestamp.fromDate(next),
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-        },
-        { merge: true }
-      );
+    if (sku === 'PETPAL_PLUS_MONTHLY') {
+      await createMonthlyTrackerSubscription(db, {
+        uid,
+        orderNumber,
+        sku,
+        renewalCents,
+        currency: catalog.currency,
+        bindingId,
+        includeTracker: session.includeTracker,
+        includeNfc: session.includeNfc,
+        nextRenewalAt: admin.firestore.Timestamp.fromDate(next),
+      });
+    } else {
+      await db
+        .collection('billingSubscriptions')
+        .doc(`${uid}_${sku}`)
+        .set(
+          {
+            uid,
+            sku,
+            amountCents: renewalCents,
+            currency: catalog.currency,
+            bindingId: bindingId || null,
+            clientId: uid,
+            status: 'active',
+            nextRenewalAt: admin.firestore.Timestamp.fromDate(next),
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          },
+          { merge: true }
+        );
+    }
   }
 
   if (session.includeTracker && sku === 'PETPAL_PLUS_MONTHLY') {
@@ -458,16 +630,9 @@ exports.jccPaymentReturn = functions.region('europe-west1').https.onRequest(asyn
 
   if (sku === 'TRACKER_HARDWARE') {
     await grantTrackerEntitlement(db, uid, orderNumber, sku);
-    let plusActive = false;
-    for (const plusSku of PLUS_SKUS) {
-      const plusSnap = await db.collection('billingSubscriptions').doc(`${uid}_${plusSku}`).get();
-      const plusD = plusSnap.data();
-      if (plusSnap.exists && plusD?.status === 'active') {
-        plusActive = true;
-        break;
-      }
+    if (await userHasActivePlus(db, uid)) {
+      await incrementShopPublicStats(db, { activeSubscriptionsWithCollar: 1 });
     }
-    if (plusActive) await incrementShopPublicStats(db, { activeSubscriptionsWithCollar: 1 });
   }
 
   if (sku === 'NFC_TAG_HARDWARE') {
@@ -525,99 +690,32 @@ exports.billingRenewal = functions
     } catch {
       return null;
     }
-    const { userName, password, restBase, returnUrl } = creds;
     const db = admin.firestore();
     const now = admin.firestore.Timestamp.now();
-    const q = await db.collection('billingSubscriptions').where('status', '==', 'active').where('nextRenewalAt', '<=', now).limit(25).get();
+    const legacyQ = await db
+      .collection('billingSubscriptions')
+      .where('status', '==', 'active')
+      .where('nextRenewalAt', '<=', now)
+      .limit(25)
+      .get();
+    const trackerQ = await db
+      .collectionGroup('trackerSubscriptions')
+      .where('status', '==', 'active')
+      .where('nextRenewalAt', '<=', now)
+      .limit(25)
+      .get();
 
-    for (const doc of q.docs) {
-      const sub = doc.data();
-      const { uid, sku, amountCents, currency, bindingId, clientId } = sub;
-      if (!bindingId || !uid || !sku) continue;
-      const orderNumber = uniqueOrderNumber('RENEW');
-      const renewRef = db.collection('paymentSessions').doc(orderNumber);
-      await renewRef.set({
-        orderNumber,
-        uid,
-        sku,
-        saveCard: false,
-        kind: 'renewal',
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
-        status: 'pending_register',
-      });
+    const seen = new Set();
+    const toRenew = [];
+    for (const doc of [...legacyQ.docs, ...trackerQ.docs]) {
+      if (seen.has(doc.ref.path)) continue;
+      seen.add(doc.ref.path);
+      toRenew.push(doc);
+      if (toRenew.length >= 25) break;
+    }
 
-      try {
-        const reg = await jccPost(restBase, 'register.do', {
-          userName,
-          password,
-          orderNumber,
-          amount: String(amountCents),
-          currency: currency || '978',
-          returnUrl: `${String(returnUrl).replace(/\/$/, '')}?orderNumber=${encodeURIComponent(orderNumber)}`,
-          failUrl: `${creds.frontendUrl}/shop?checkout=fail`,
-          description: `Renewal ${sku}`,
-          language: 'en',
-          clientId: clientId || uid,
-        });
-        if (!jccRegisterDoSucceeded(reg)) {
-          await renewRef.set({ status: 'register_failed', raw: reg }, { merge: true });
-          continue;
-        }
-        const pay = await jccPost(restBase, 'paymentOrderBinding.do', {
-          userName,
-          password,
-          mdOrder: reg.orderId,
-          bindingId,
-          tii: 'U',
-          language: 'en',
-        });
-        if (!jccOk(pay)) {
-          await renewRef.set({ status: 'binding_pay_failed', raw: pay }, { merge: true });
-          await doc.ref.set({ status: 'past_due', lastError: pay?.errorMessage || pay?.error }, { merge: true });
-          continue;
-        }
-        const st = await jccPost(restBase, 'getOrderStatusExtended.do', {
-          userName,
-          password,
-          orderId: reg.orderId,
-          language: 'en',
-        });
-        if (!jccOk(st) || !paidOrderStatus(st)) {
-          await renewRef.set({ status: 'not_paid_after_binding', raw: st }, { merge: true });
-          await doc.ref.set({ status: 'past_due' }, { merge: true });
-          continue;
-        }
-        const next = nextRenewalDate(new Date(), sku);
-        await doc.ref.set(
-          {
-            status: 'active',
-            nextRenewalAt: admin.firestore.Timestamp.fromDate(next),
-            lastRenewedAt: admin.firestore.FieldValue.serverTimestamp(),
-          },
-          { merge: true }
-        );
-        await renewRef.set({ status: 'paid_renewal', jccOrderId: reg.orderId }, { merge: true });
-
-        if (sku === 'STORE_BOOST_MONTHLY') {
-          const until = new Date();
-          until.setDate(until.getDate() + 32);
-          await db
-            .collection('providers')
-            .doc(uid)
-            .set(
-              {
-                boostEnabled: true,
-                sponsored: true,
-                recommended: true,
-                boostUntil: admin.firestore.Timestamp.fromDate(until),
-                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-              },
-              { merge: true }
-            );
-        }
-      } catch (e) {
-        await renewRef.set({ status: 'renewal_exception', error: e?.message || String(e) }, { merge: true });
-      }
+    for (const doc of toRenew) {
+      await renewSubscriptionDoc(db, doc.ref, doc.data(), creds);
     }
     return null;
   });

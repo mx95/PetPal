@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { collection, doc, onSnapshot, query, where } from 'firebase/firestore';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
 import { useCompany } from '../company/CompanyContext';
@@ -40,7 +40,8 @@ export default function Shop() {
   );
   const [monthlyIncludeTracker, setMonthlyIncludeTracker] = useState(false);
   const [monthlyIncludeNfc, setMonthlyIncludeNfc] = useState(false);
-  const [trackerEntitlementQty, setTrackerEntitlementQty] = useState(0);
+  const [activeTrackerSubCount, setActiveTrackerSubCount] = useState(0);
+  const [legacyMonthlyActive, setLegacyMonthlyActive] = useState(false);
 
   useEffect(() => {
     if (!focusSku) return;
@@ -54,30 +55,37 @@ export default function Shop() {
   useEffect(() => {
     if (!user || !isFirebaseConfigured()) {
       setPlusActiveBySku(PLUS_SKUS.reduce((acc, id) => ({ ...acc, [id]: false }), {}));
-      setTrackerEntitlementQty(0);
+      setActiveTrackerSubCount(0);
+      setLegacyMonthlyActive(false);
       return () => {};
     }
     const db = getDb();
-    const unsubs = PLUS_SKUS.map((sku) =>
+    const unsubs = PLUS_SKUS.filter((sku) => sku !== 'PETPAL_PLUS_MONTHLY').map((sku) =>
       onSnapshot(doc(db, 'billingSubscriptions', `${user.uid}_${sku}`), (snap) => {
         const active = Boolean(snap.exists() && snap.data()?.status === 'active');
         setPlusActiveBySku((prev) => ({ ...prev, [sku]: active }));
       })
     );
-    const collarUnsub = onSnapshot(doc(db, 'users', user.uid, 'shopEntitlements', 'collar'), (snap) => {
-      if (!snap.exists()) {
-        setTrackerEntitlementQty(0);
-        return;
-      }
+    const legacyMonthlyUnsub = onSnapshot(doc(db, 'billingSubscriptions', `${user.uid}_PETPAL_PLUS_MONTHLY`), (snap) => {
       const data = snap.data() || {};
-      const qty = Number(data.quantity);
-      setTrackerEntitlementQty(Number.isFinite(qty) && qty > 0 ? qty : data.status === 'active' ? 1 : 0);
+      const active = Boolean(snap.exists() && data.status === 'active' && data.nextRenewalAt);
+      setLegacyMonthlyActive(active);
     });
+    const trackerSubsUnsub = onSnapshot(
+      query(collection(db, 'users', user.uid, 'trackerSubscriptions'), where('status', '==', 'active')),
+      (snap) => {
+        setActiveTrackerSubCount(snap.size);
+      }
+    );
     return () => {
       unsubs.forEach((u) => u());
-      collarUnsub();
+      legacyMonthlyUnsub();
+      trackerSubsUnsub();
     };
   }, [user]);
+
+  const monthlySubCount =
+    activeTrackerSubCount + (legacyMonthlyActive && activeTrackerSubCount === 0 ? 1 : 0);
 
   const [saveCardById, setSaveCardById] = useState(() =>
     SHOP_PRODUCTS.reduce((acc, p) => {
@@ -160,9 +168,13 @@ export default function Shop() {
 
       <div className="pp-shopGrid">
         {SHOP_PRODUCTS.map((p) => {
-          const planActive = isPlusSku(p.id) ? plusActiveBySku[p.id] : false;
+          const planActive = isPlusSku(p.id)
+            ? p.id === 'PETPAL_PLUS_MONTHLY'
+              ? monthlySubCount > 0
+              : plusActiveBySku[p.id]
+            : false;
           const isLoading = busy === p.id;
-          const monthlyActive = Boolean(plusActiveBySku.PETPAL_PLUS_MONTHLY);
+          const monthlyActive = monthlySubCount > 0;
           const monthlyAddOnMode = p.id === 'PETPAL_PLUS_MONTHLY' && monthlyActive;
           const monthlyCanCheckout =
             p.id !== 'PETPAL_PLUS_MONTHLY' || !monthlyActive || monthlyIncludeTracker;
@@ -191,9 +203,9 @@ export default function Shop() {
                   {planActive ? t('shopPage.plusBadgeActive') : t('shopPage.plusBadgeInactive')}
                 </p>
               ) : null}
-              {p.id === 'PETPAL_PLUS_MONTHLY' && planActive && trackerEntitlementQty > 0 ? (
+              {p.id === 'PETPAL_PLUS_MONTHLY' && monthlySubCount > 0 ? (
                 <p className="pp-subtle pp-shopCard__trackerCount">
-                  {t('shopPage.trackerEntitlements', { count: trackerEntitlementQty })}
+                  {t('shopPage.trackerEntitlements', { count: monthlySubCount })}
                 </p>
               ) : null}
               {p.id === 'PETPAL_PLUS_MONTHLY' && (!planActive || monthlyAddOnMode) ? (

@@ -1,7 +1,7 @@
 /** @typedef {{ id: string, title: string, subtitle: string, amountCents: number, currency: string, recurring: boolean, badge?: string }} ShopProduct */
 
 /** Mirror functions/shopPricing.js + shop-pricing.json */
-export const PLUS_MONTHLY_CENTS = 699;
+export const PLUS_MONTHLY_CENTS = 499;
 export const PLUS_YEARLY_CENTS = 8499;
 export const TRACKER_ADDON_CENTS = 3999;
 export const NFC_TAG_ADDON_CENTS = 999;
@@ -44,7 +44,7 @@ export const SHOP_PRODUCTS = [
     id: 'PETPAL_PLUS_MONTHLY',
     title: 'Monthly',
     subtitle:
-      'PetPal Plus billed every month. Optionally add a GPS tracker or NFC tag to your first payment.',
+      'PetPal Plus billed every month per tracker. Optionally add a GPS tracker or NFC tag to your first payment.',
     amountCents: PLUS_MONTHLY_CENTS,
     currency: '978',
     recurring: true,

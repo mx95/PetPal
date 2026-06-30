@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { collection, doc, onSnapshot, query, where } from 'firebase/firestore';
 import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
 import { getDb, isFirebaseConfigured } from '../firebase';
@@ -31,13 +31,36 @@ export default function PaymentSuccess() {
     }
     const db = getDb();
     const plusSku = focusSku && PLUS_SKUS.includes(focusSku) ? focusSku : PLUS_SKUS[0];
-    const plusDoc = doc(db, 'billingSubscriptions', `${user.uid}_${plusSku}`);
+    const unsubs = [];
+    if (orderNumber && plusSku === 'PETPAL_PLUS_MONTHLY') {
+      unsubs.push(
+        onSnapshot(
+          doc(db, 'users', user.uid, 'trackerSubscriptions', orderNumber),
+          (snap) => setPlusActive(Boolean(snap.exists() && snap.data()?.status === 'active')),
+          () => setPlusActive(false)
+        )
+      );
+    } else {
+      unsubs.push(
+        onSnapshot(
+          doc(db, 'billingSubscriptions', `${user.uid}_${plusSku}`),
+          (snap) => setPlusActive(Boolean(snap.exists() && snap.data()?.status === 'active')),
+          () => setPlusActive(false)
+        )
+      );
+    }
+    if (plusSku === 'PETPAL_PLUS_MONTHLY') {
+      unsubs.push(
+        onSnapshot(
+          query(collection(db, 'users', user.uid, 'trackerSubscriptions'), where('status', '==', 'active')),
+          (snap) => {
+            if (snap.size > 0) setPlusActive(true);
+          },
+          () => {}
+        )
+      );
+    }
     const statsDoc = doc(db, 'shopStats', 'public');
-    const unsubPlus = onSnapshot(
-      plusDoc,
-      (snap) => setPlusActive(Boolean(snap.exists() && snap.data()?.status === 'active')),
-      () => setPlusActive(false)
-    );
     const unsubStats = onSnapshot(
       statsDoc,
       (snap) => {
@@ -50,10 +73,10 @@ export default function PaymentSuccess() {
       () => {}
     );
     return () => {
-      unsubPlus();
+      unsubs.forEach((u) => u());
       unsubStats();
     };
-  }, [user, focusSku]);
+  }, [user, focusSku, orderNumber]);
 
   const detail = useMemo(
     () =>

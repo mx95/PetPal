@@ -2,19 +2,21 @@ import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { extractImeiFromQr } from '../pets/extractImeiFromQr';
 import { useI18n } from '../i18n/I18nContext';
 
-/** Wide scan region works for 1D barcodes and still fits square QR codes. */
-function scanRegion(viewfinderWidth, viewfinderHeight) {
-  const width = Math.min(Math.floor(viewfinderWidth * 0.92), 380);
-  const height = Math.min(
-    Math.max(100, Math.floor(width * 0.42)),
-    Math.floor(viewfinderHeight * 0.55)
-  );
-  return { width, height: Math.max(100, height) };
-}
+const SCAN_FORMATS = [
+  'QR_CODE',
+  'CODE_128',
+  'CODE_39',
+  'CODE_93',
+  'ITF',
+  'CODABAR',
+  'DATA_MATRIX',
+  'EAN_13',
+  'EAN_8',
+];
 
+/** Full viewfinder scan — 1D barcodes need width; cropping often misses them. */
 const SCAN_CONFIG = {
-  fps: 10,
-  qrbox: scanRegion,
+  fps: 12,
   disableFlip: false,
 };
 
@@ -79,18 +81,11 @@ export default function ImeiQrScannerButton({ onImei, disabled }) {
       const startWithConstraints = async (videoConstraints) => {
         const { Html5Qrcode, Html5QrcodeSupportedFormats } = await import('html5-qrcode');
         if (cancelled) return;
-        const formatsToSupport = [
-          Html5QrcodeSupportedFormats.QR_CODE,
-          Html5QrcodeSupportedFormats.CODE_128,
-          Html5QrcodeSupportedFormats.CODE_39,
-          Html5QrcodeSupportedFormats.CODE_93,
-          Html5QrcodeSupportedFormats.ITF,
-          Html5QrcodeSupportedFormats.CODABAR,
-          Html5QrcodeSupportedFormats.DATA_MATRIX,
-        ];
+        const formatsToSupport = SCAN_FORMATS.map((name) => Html5QrcodeSupportedFormats[name]);
         const qr = new Html5Qrcode(scannerElementId, {
           formatsToSupport,
-          useBarCodeDetectorIfSupported: true,
+          // ZXing is more reliable for CODE_128 / ITF than native BarcodeDetector in a cropped region.
+          useBarCodeDetectorIfSupported: false,
           verbose: false,
         });
         scannerRef.current = qr;
@@ -159,6 +154,9 @@ export default function ImeiQrScannerButton({ onImei, disabled }) {
                 {err}
               </p>
             ) : null}
+            <p className="pp-subtle" style={{ marginBottom: 8, fontSize: 13 }}>
+              {t('myPets.scanQrHint')}
+            </p>
             <div
               id={scannerElementId}
               className="pp-imeiQrViewport"

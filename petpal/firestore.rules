@@ -137,6 +137,12 @@ service cloud.firestore {
         allow write: if false;
       }
 
+      // Per-tracker monthly subscriptions (one doc per collar subscription).
+      match /trackerSubscriptions/{subscriptionId} {
+        allow read: if request.auth != null && request.auth.uid == userId;
+        allow write: if false;
+      }
+
       // Per-user read state for admin broadcast inbox.
       match /inboxReads/{messageId} {
         allow read, create, update: if request.auth != null && request.auth.uid == userId;
