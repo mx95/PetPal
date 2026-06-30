@@ -112,6 +112,8 @@ if [ "$SKIP_GIT" != "1" ]; then
   git reset --hard "origin/$DEPLOY_BRANCH"
   log "Now at $(git rev-parse --short HEAD) — $(git log -1 --pretty=%s)"
   restore_tracker_db_if_needed "$positions_before"
+  # Mobile native projects are separate GitLab repos — not served by the tracker.
+  rm -rf "$PETPAL_ROOT/mobile-android" "$PETPAL_ROOT/mobile-ios" "$PETPAL_ROOT/export" 2>/dev/null || true
 fi
 
 if [ ! -f "$PETPAL_DIR/.env.local" ]; then

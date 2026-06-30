@@ -28,28 +28,22 @@ Then run:
 
 Open `http://localhost:3000`.
 
-## Native apps (Android & iOS — Capacitor)
+## Native apps (Android & iOS)
 
-Store-ready native projects live in separate repo folders:
+Mobile apps are **not in this repo**. They live in separate **GitLab** projects and are never served by the tracker server (only `petpal/build/` is served).
 
-| Platform | Directory | Docs |
-|----------|-----------|------|
-| **Android (Play Store)** | [`mobile-android/`](mobile-android/) | [`mobile-android/README.md`](mobile-android/README.md) |
-| **iOS (App Store)** | [`mobile-ios/`](mobile-ios/) | [`mobile-ios/README.md`](mobile-ios/README.md) |
+See **[`docs/MOBILE_GITLAB.md`](../docs/MOBILE_GITLAB.md)** for:
 
-**Build web + sync native projects**
+- Creating `petpal-android` and `petpal-ios` on GitLab
+- Syncing the web build into native projects
+- Testing on emulator / device
+- Play Store and App Store submission
+
+Web-only mobile build (used by native repos):
 
 ```bash
-cd petpal
-npm ci
-npm run build:mobile
+npm run build:mobile:web
 ```
-
-- **Config:** `petpal/capacitor.config.json` — `appId` `io.petpal.app`, `webDir` `build`, Android/iOS paths point to `../mobile-android` and `../mobile-ios`.
-- **Android AAB:** `mobile-android/releases/petpal-1.0.0-release.aab` (built locally or via GitHub Actions **Build Android Release**).
-- **iOS:** Requires macOS + Xcode — see `mobile-ios/README.md`.
-
-Add **Firebase** `google-services.json` (Android) and `GoogleService-Info.plist` (iOS) for native Firebase features.
 
 ## GPS tracking (PetPal vendor)
 
