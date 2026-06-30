@@ -4,8 +4,12 @@
  * @returns {string|null}
  */
 export function extractImeiFromQr(raw) {
-  const s = String(raw ?? '').trim().replace(/^[*+.\s-]+|[*+.\s-]+$/g, '');
+  let s = String(raw ?? '').trim();
   if (!s) return null;
+
+  // Strip control chars (e.g. GS1 FNC1 in Code 128) and common label prefixes.
+  s = s.replace(/[\u0000-\u001f\u007f]/g, '').replace(/^[*+.\s-]+|[*+.\s-]+$/g, '');
+  s = s.replace(/^(?:IMEI|imei|SN|S\/N|Serial|Device\s*ID)\s*[:#]?\s*/i, '');
 
   const compact = s.replace(/\s+/g, '');
   if (/^\d{15}$/.test(compact)) return compact;
@@ -29,10 +33,16 @@ export function extractImeiFromQr(raw) {
     // not a URL
   }
 
+  const digits = onlyDigits(s);
+  if (digits.length >= 15) {
+    const hit = findImei15(digits);
+    if (hit) return hit;
+  }
+
   const m = s.match(/\d{15}/);
   if (m) return m[0];
 
-  return findImei15(onlyDigits(s));
+  return null;
 }
 
 function onlyDigits(x) {
@@ -40,7 +50,7 @@ function onlyDigits(x) {
 }
 
 function findImei15(digits) {
-  if (digits.length === 15) return digits;
+  if (digits.length === 15) return luhnValidImei(digits) ? digits : digits;
   if (digits.length < 15) return null;
   for (let i = 0; i <= digits.length - 15; i++) {
     const slice = digits.slice(i, i + 15);

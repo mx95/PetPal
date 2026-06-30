@@ -1,23 +1,13 @@
-import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { extractImeiFromQr } from '../pets/extractImeiFromQr';
 import { useI18n } from '../i18n/I18nContext';
 
-const SCAN_FORMATS = [
-  'QR_CODE',
-  'CODE_128',
-  'CODE_39',
-  'CODE_93',
-  'ITF',
-  'CODABAR',
-  'DATA_MATRIX',
-  'EAN_13',
-  'EAN_8',
-];
-
-/** Full viewfinder scan — 1D barcodes need width; cropping often misses them. */
-const SCAN_CONFIG = {
-  fps: 12,
-  disableFlip: false,
+const VIDEO_CONSTRAINTS = {
+  video: {
+    facingMode: { ideal: 'environment' },
+    width: { ideal: 1920 },
+    height: { ideal: 1080 },
+  },
 };
 
 /**
@@ -26,25 +16,30 @@ const SCAN_CONFIG = {
  */
 export default function ImeiQrScannerButton({ onImei, disabled }) {
   const { t } = useI18n();
-  const reactId = useId();
-  const scannerElementId = `imei-qr-${reactId.replace(/:/g, '')}`;
   const [open, setOpen] = useState(false);
   const [err, setErr] = useState('');
   const [torchOn, setTorchOn] = useState(false);
   const [torchSupported, setTorchSupported] = useState(false);
   const [starting, setStarting] = useState(false);
   const settledRef = useRef(false);
-  const scannerRef = useRef(null);
+  const videoRef = useRef(null);
+  const controlsRef = useRef(null);
+  const streamRef = useRef(null);
 
   const stopScanner = useCallback(async () => {
-    const qr = scannerRef.current;
-    scannerRef.current = null;
-    if (!qr) return;
     try {
-      await qr.stop();
-      qr.clear();
+      controlsRef.current?.stop();
     } catch {
-      // already stopped or DOM cleared
+      // already stopped
+    }
+    controlsRef.current = null;
+    const stream = streamRef.current;
+    streamRef.current = null;
+    if (stream) {
+      stream.getTracks().forEach((track) => track.stop());
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
     }
     setTorchOn(false);
     setTorchSupported(false);
@@ -77,38 +72,76 @@ export default function ImeiQrScannerButton({ onImei, disabled }) {
     setStarting(true);
 
     let cancelled = false;
+
     const tmr = window.setTimeout(async () => {
-      const startWithConstraints = async (videoConstraints) => {
-        const { Html5Qrcode, Html5QrcodeSupportedFormats } = await import('html5-qrcode');
+      const video = videoRef.current;
+      if (!video || cancelled) return;
+
+      try {
+        const [{ BrowserMultiFormatReader }, { BarcodeFormat, DecodeHintType }] = await Promise.all([
+          import('@zxing/browser'),
+          import('@zxing/library'),
+        ]);
         if (cancelled) return;
-        const formatsToSupport = SCAN_FORMATS.map((name) => Html5QrcodeSupportedFormats[name]);
-        const qr = new Html5Qrcode(scannerElementId, {
-          formatsToSupport,
-          // ZXing is more reliable for CODE_128 / ITF than native BarcodeDetector in a cropped region.
-          useBarCodeDetectorIfSupported: false,
-          verbose: false,
+
+        const hints = new Map([
+          [
+            DecodeHintType.POSSIBLE_FORMATS,
+            [
+              BarcodeFormat.QR_CODE,
+              BarcodeFormat.CODE_128,
+              BarcodeFormat.CODE_39,
+              BarcodeFormat.CODE_93,
+              BarcodeFormat.ITF,
+              BarcodeFormat.CODABAR,
+              BarcodeFormat.DATA_MATRIX,
+              BarcodeFormat.EAN_13,
+              BarcodeFormat.EAN_8,
+            ],
+          ],
+          [DecodeHintType.TRY_HARDER, true],
+        ]);
+
+        const reader = new BrowserMultiFormatReader(hints, {
+          delayBetweenScanAttempts: 120,
+          delayBetweenScanSuccess: 400,
         });
-        scannerRef.current = qr;
-        await qr.start(videoConstraints, SCAN_CONFIG, onDecode, () => {});
+
+        const onResult = (result) => {
+          if (result && !cancelled) {
+            onDecode(result.getText());
+          }
+        };
+
+        try {
+          const controls = await reader.decodeFromConstraints(VIDEO_CONSTRAINTS, video, onResult);
+          if (cancelled) {
+            controls.stop();
+            return;
+          }
+          controlsRef.current = controls;
+        } catch {
+          const controls = await reader.decodeFromVideoDevice(undefined, video, onResult);
+          if (cancelled) {
+            controls.stop();
+            return;
+          }
+          controlsRef.current = controls;
+        }
+
+        streamRef.current = video.srcObject;
         setStarting(false);
         try {
-          const caps = qr.getRunningTrackCapabilities?.();
+          const track = streamRef.current?.getVideoTracks?.()?.[0];
+          const caps = track?.getCapabilities?.();
           setTorchSupported(!!caps?.torch);
         } catch {
           setTorchSupported(false);
         }
-      };
-
-      try {
-        await startWithConstraints({ facingMode: { exact: 'environment' } });
       } catch {
-        try {
-          await startWithConstraints({ facingMode: 'environment' });
-        } catch {
-          if (!cancelled) {
-            setErr(t('myPets.scanQrErrorCamera'));
-            setStarting(false);
-          }
+        if (!cancelled) {
+          setErr(t('myPets.scanQrErrorCamera'));
+          setStarting(false);
         }
       }
     }, 80);
@@ -118,13 +151,13 @@ export default function ImeiQrScannerButton({ onImei, disabled }) {
       window.clearTimeout(tmr);
       void stopScanner();
     };
-  }, [open, onDecode, scannerElementId, stopScanner, t]);
+  }, [open, onDecode, stopScanner, t]);
 
   const toggleTorch = useCallback(async () => {
-    const qr = scannerRef.current;
-    if (!qr) return;
+    const track = streamRef.current?.getVideoTracks?.()?.[0];
+    if (!track) return;
     try {
-      await qr.applyVideoConstraints({ advanced: [{ torch: !torchOn }] });
+      await track.applyConstraints({ advanced: [{ torch: !torchOn }] });
       setTorchOn((prev) => !prev);
     } catch {
       // ignore devices/browsers without torch support
@@ -157,10 +190,16 @@ export default function ImeiQrScannerButton({ onImei, disabled }) {
             <p className="pp-subtle" style={{ marginBottom: 8, fontSize: 13 }}>
               {t('myPets.scanQrHint')}
             </p>
-            <div
-              id={scannerElementId}
-              className="pp-imeiQrViewport"
-            />
+            <div className="pp-imeiQrViewport">
+              <video
+                ref={videoRef}
+                className="pp-imeiQrVideo"
+                autoPlay
+                muted
+                playsInline
+              />
+              <div className="pp-imeiQrGuide" aria-hidden />
+            </div>
             <div className="pp-row" style={{ marginTop: 12, justifyContent: 'flex-end' }}>
               {torchSupported ? (
                 <button

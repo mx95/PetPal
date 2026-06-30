@@ -13950,11 +13950,33 @@ select.pp-bookConfirmField__control {
 }
 
 .pp-imeiQrViewport {
+  position: relative;
   width: 100%;
   min-height: 280px;
   border-radius: 12px;
   overflow: hidden;
   background: #0f172a;
+}
+
+.pp-imeiQrVideo {
+  display: block;
+  width: 100%;
+  min-height: 280px;
+  object-fit: cover;
+  background: #0f172a;
+}
+
+/* Wide band helps users align 1D barcodes horizontally. */
+.pp-imeiQrGuide {
+  position: absolute;
+  left: 4%;
+  right: 4%;
+  top: 42%;
+  height: 22%;
+  border: 2px solid rgba(255, 255, 255, 0.75);
+  border-radius: 8px;
+  box-shadow: 0 0 0 9999px rgba(15, 23, 42, 0.35);
+  pointer-events: none;
 }
 
 @media (prefers-reduced-motion: reduce) {

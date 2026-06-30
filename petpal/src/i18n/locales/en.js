@@ -671,7 +671,7 @@ const en = {
     nfcEnabledSub: 'Pet profile opens when someone taps your NFC collar tag.',
     scanQr: 'Scan QR',
     scanQrClose: 'Close',
-    scanQrHint: 'Point at the IMEI QR code or barcode on your tracker. Hold barcodes level across the screen.',
+    scanQrHint: 'Point at the IMEI QR or barcode. For barcodes, hold steady with the lines level inside the white box.',
     scanQrErrorCamera: 'Could not start the camera. Allow permission in the browser, use HTTPS, or type the IMEI.',
     scanQrErrorNoImei: 'No 15-digit IMEI found in that code.',
     scanQrSuccess: 'IMEI filled in from scan.',
