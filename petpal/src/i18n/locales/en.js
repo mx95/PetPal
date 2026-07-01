@@ -314,7 +314,7 @@ const en = {
     tracking: 'Live',
     community: 'Pack',
     profile: 'Profile',
-    bookings: 'Book',
+    bookings: 'Bookings',
     provider: 'Manage',
     fab: 'Start a walk',
   },

@@ -99,10 +99,14 @@ export default function BottomNav() {
     ? { to: '/dashboard', key: 'bookings', labelKey: 'bottomNav.businessHome' }
     : { to: '/dashboard', key: 'home', labelKey: 'bottomNav.activity' };
 
-  const left = [homeTab, { to: '/pets', key: 'pets', labelKey: 'bottomNav.pets' }];
+  const left = [
+    homeTab,
+    ...(MVP_NAV.showBookings
+      ? [{ to: '/bookings', key: 'bookings', labelKey: 'nav.bookings', end: true }]
+      : []),
+  ];
   const right = [
     { to: '/nearby', key: 'nearby', labelKey: 'nav.nearby' },
-    ...(MVP_NAV.showBookings ? [{ to: '/bookings', key: 'bookings', labelKey: 'bottomNav.bookings' }] : []),
     ...(MVP_NAV.showShop ? [{ to: '/shop', key: 'shop', labelKey: 'nav.shop' }] : []),
   ];
 

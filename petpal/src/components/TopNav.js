@@ -75,9 +75,11 @@ export default function TopNav() {
           {t('nav.community')}
         </NavLink>
       ) : null}
-      <NavLink className={navItemClassName} to="/pets">
-        {t('nav.myPets')}
-      </NavLink>
+      {MVP_NAV.showBookings ? (
+        <NavLink className={navItemClassName} to="/bookings">
+          {t('nav.bookings')}
+        </NavLink>
+      ) : null}
       <NavLink className={navItemClassName} to="/nearby">
         {t('nav.nearby')}
       </NavLink>
@@ -87,11 +89,6 @@ export default function TopNav() {
       {MVP_NAV.showShop ? (
         <NavLink className={navItemClassName} to="/shop">
           {t('nav.shop')}
-        </NavLink>
-      ) : null}
-      {MVP_NAV.showBookings ? (
-        <NavLink className={navItemClassName} to="/bookings">
-          {t('nav.bookings')}
         </NavLink>
       ) : null}
       {isApprovedCompany && profile?.bookingEnabled ? (
