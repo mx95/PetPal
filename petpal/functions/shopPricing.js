@@ -119,8 +119,13 @@ function normalizeCartLine(row) {
   };
 }
 
+function compactCartLine(row) {
+  const line = normalizeCartLine(row);
+  return Object.fromEntries(Object.entries(line).filter(([, v]) => v !== undefined));
+}
+
 function resolveMarketplaceCartPricing(cartItems) {
-  const lines = (cartItems || []).map(normalizeCartLine).filter((row) => row.key);
+  const lines = (cartItems || []).map(compactCartLine).filter((row) => row.key);
   if (!lines.length) return null;
   const chargeCents = lines.reduce((sum, row) => sum + row.priceCents * row.qty, 0);
   if (chargeCents <= 0) return null;
