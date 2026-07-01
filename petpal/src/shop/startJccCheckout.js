@@ -15,6 +15,12 @@ function mapCallableError(err) {
     return 'Please sign in again, then retry checkout.';
   }
   if (code === 'functions/failed-precondition' || code === 'functions/invalid-argument' || code === 'functions/permission-denied') {
+    if (/unknown product/i.test(msg)) {
+      return (
+        'Checkout backend is out of date (cart checkout not supported yet). ' +
+        'Deploy the latest Firebase shop functions: cd petpal && npm run deploy:shop-functions'
+      );
+    }
     return msg || 'Checkout was rejected. Check JCC credentials and return URL on the server.';
   }
   if (code === 'functions/internal') {

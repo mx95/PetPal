@@ -1,0 +1,53 @@
+# Deploy JCC / shop Cloud Functions (separate from Hetzner SPA deploy).
+#
+# One-time setup (GitHub repo → Settings → Secrets and variables → Actions):
+#   FIREBASE_TOKEN — CI token from `firebase login:ci` (project: petpal-aecda)
+#
+# JCC credentials stay in Firebase Functions config on GCP (not in this repo):
+#   firebase functions:config:set jcc.user="..." jcc.pass="..." jcc.rest_base="..." jcc.return_url="..." jcc.frontend_url="https://petpal.com.cy"
+
+name: Deploy Firebase shop functions
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'petpal/functions/**'
+      - 'petpal/firebase.json'
+      - 'petpal/.firebaserc'
+      - '.github/workflows/deploy-firebase-functions.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-firebase-functions
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: petpal
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: petpal/functions/package-lock.json
+
+      - name: Install function dependencies
+        run: npm ci
+        working-directory: petpal/functions
+
+      - name: Deploy shop + subscription functions
+        run: >
+          npx firebase-tools@13.29.1 deploy
+          --only functions:createJccCheckout,functions:jccPaymentReturn,functions:billingRenewal,functions:expireProviderBoosts,functions:assignSubscriptionImei,functions:linkTrackerSubscriptionPet
+          --project petpal-aecda
+          --non-interactive
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
