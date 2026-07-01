@@ -1,13 +1,14 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
+import PhoneCountryInput from '../components/PhoneCountryInput';
 import { useAuth } from '../auth/AuthProvider';
 import { getDb, isFirebaseConfigured } from '../firebase';
 import { useI18n } from '../i18n/I18nContext';
 import { formatEur } from '../shop/catalog';
 import { clearPendingCheckout, readPendingCheckout } from '../shop/pendingCheckout';
 import { clearShopCartItems } from '../shop/shopCartStorage';
-import { buildShippingContact, validateShippingForm } from '../shop/shippingContact';
+import { buildShippingContact, splitPhoneForForm, validateShippingForm } from '../shop/shippingContact';
 import { startJccCheckout } from '../shop/startJccCheckout';
 
 const EMPTY_FORM = {
@@ -19,8 +20,13 @@ const EMPTY_FORM = {
   addressLine2: '',
   postalCode: '',
   city: '',
+  phoneCountry: 'CY',
   phone: '',
 };
+
+function RequiredLabel({ children }) {
+  return <span className="pp-shopCheckout__label pp-shopCheckout__label--required">{children}</span>;
+}
 
 export default function ShopCheckout() {
   const { t } = useI18n();
@@ -46,24 +52,25 @@ export default function ShopCheckout() {
           firstName = String(d.firstName || '').trim();
           lastName = String(d.lastName || '').trim();
           if (!firstName && !lastName) {
-        const combined =
-          String(d.accountName || user.displayName || '').trim();
-        const parts = combined.split(/\s+/).filter(Boolean);
-        firstName = parts[0] || '';
-        lastName = parts.slice(1).join(' ') || '';
-      }
+            const combined = String(d.accountName || user.displayName || '').trim();
+            const parts = combined.split(/\s+/).filter(Boolean);
+            firstName = parts[0] || '';
+            lastName = parts.slice(1).join(' ') || '';
+          }
           phone = String(d.phone || d.phone2 || '').trim();
         } catch {
           /* keep auth email only */
         }
       }
       if (!cancelled) {
+        const phoneFields = splitPhoneForForm(phone, 'CY');
         setForm((prev) => ({
           ...prev,
           email: prev.email || email,
           firstName: prev.firstName || firstName,
           lastName: prev.lastName || lastName,
-          phone: prev.phone || phone,
+          phoneCountry: prev.phone ? prev.phoneCountry : phoneFields.phoneCountry,
+          phone: prev.phone || phoneFields.phone,
         }));
       }
     }
@@ -120,26 +127,27 @@ export default function ShopCheckout() {
           <h1 className="pp-shopCheckout__title">{t('checkoutDetails.pageTitle')}</h1>
         </div>
 
-        <form className="pp-shopCheckout__form" onSubmit={(e) => void handleSubmit(e)}>
+        <form className="pp-shopCheckout__form" onSubmit={(e) => void handleSubmit(e)} noValidate>
           <section className="pp-shopCheckout__section" aria-labelledby="checkout-delivery-title">
             <h2 id="checkout-delivery-title" className="pp-shopCheckout__sectionTitle">
               {t('checkoutDetails.deliveryTitle')}
             </h2>
 
             <label className="pp-shopCheckout__field">
-              <span className="pp-shopCheckout__label">{t('checkoutDetails.country')}</span>
+              <RequiredLabel>{t('checkoutDetails.country')}</RequiredLabel>
               <select
                 value={form.country}
                 disabled={busy}
                 onChange={(e) => updateField('country', e.target.value)}
                 autoComplete="country"
+                required
               >
                 <option value="CY">{t('checkoutDetails.countryCyprus')}</option>
               </select>
             </label>
 
             <label className="pp-shopCheckout__field">
-              <span className="pp-shopCheckout__label">{t('checkoutDetails.email')}</span>
+              <RequiredLabel>{t('checkoutDetails.email')}</RequiredLabel>
               <input
                 type="email"
                 value={form.email}
@@ -147,12 +155,13 @@ export default function ShopCheckout() {
                 onChange={(e) => updateField('email', e.target.value)}
                 autoComplete="email"
                 placeholder={t('checkoutDetails.emailPlaceholder')}
+                required
               />
             </label>
 
-            <div className="pp-shopCheckout__row">
+            <div className="pp-shopCheckout__row pp-shopCheckout__row--compact">
               <label className="pp-shopCheckout__field">
-                <span className="pp-shopCheckout__label">{t('checkoutDetails.firstName')}</span>
+                <RequiredLabel>{t('checkoutDetails.firstName')}</RequiredLabel>
                 <input
                   type="text"
                   value={form.firstName}
@@ -160,10 +169,11 @@ export default function ShopCheckout() {
                   onChange={(e) => updateField('firstName', e.target.value)}
                   autoComplete="given-name"
                   placeholder={t('checkoutDetails.firstNamePlaceholder')}
+                  required
                 />
               </label>
               <label className="pp-shopCheckout__field">
-                <span className="pp-shopCheckout__label">{t('checkoutDetails.lastName')}</span>
+                <RequiredLabel>{t('checkoutDetails.lastName')}</RequiredLabel>
                 <input
                   type="text"
                   value={form.lastName}
@@ -171,12 +181,13 @@ export default function ShopCheckout() {
                   onChange={(e) => updateField('lastName', e.target.value)}
                   autoComplete="family-name"
                   placeholder={t('checkoutDetails.lastNamePlaceholder')}
+                  required
                 />
               </label>
             </div>
 
             <label className="pp-shopCheckout__field">
-              <span className="pp-shopCheckout__label">{t('checkoutDetails.addressLine1')}</span>
+              <RequiredLabel>{t('checkoutDetails.addressLine1')}</RequiredLabel>
               <input
                 type="text"
                 value={form.addressLine1}
@@ -184,6 +195,7 @@ export default function ShopCheckout() {
                 onChange={(e) => updateField('addressLine1', e.target.value)}
                 autoComplete="address-line1"
                 placeholder={t('checkoutDetails.addressLine1Placeholder')}
+                required
               />
             </label>
 
@@ -199,9 +211,9 @@ export default function ShopCheckout() {
               />
             </label>
 
-            <div className="pp-shopCheckout__row">
+            <div className="pp-shopCheckout__row pp-shopCheckout__row--compact">
               <label className="pp-shopCheckout__field">
-                <span className="pp-shopCheckout__label">{t('checkoutDetails.postalCode')}</span>
+                <RequiredLabel>{t('checkoutDetails.postalCode')}</RequiredLabel>
                 <input
                   type="text"
                   value={form.postalCode}
@@ -209,10 +221,11 @@ export default function ShopCheckout() {
                   onChange={(e) => updateField('postalCode', e.target.value)}
                   autoComplete="postal-code"
                   placeholder={t('checkoutDetails.postalCodePlaceholder')}
+                  required
                 />
               </label>
               <label className="pp-shopCheckout__field">
-                <span className="pp-shopCheckout__label">{t('checkoutDetails.city')}</span>
+                <RequiredLabel>{t('checkoutDetails.city')}</RequiredLabel>
                 <input
                   type="text"
                   value={form.city}
@@ -220,21 +233,24 @@ export default function ShopCheckout() {
                   onChange={(e) => updateField('city', e.target.value)}
                   autoComplete="address-level2"
                   placeholder={t('checkoutDetails.cityPlaceholder')}
+                  required
                 />
               </label>
             </div>
 
-            <label className="pp-shopCheckout__field">
-              <span className="pp-shopCheckout__label">{t('checkoutDetails.phone')}</span>
-              <input
-                type="tel"
-                value={form.phone}
+            <div className="pp-shopCheckout__field">
+              <RequiredLabel>{t('checkoutDetails.phone')}</RequiredLabel>
+              <PhoneCountryInput
+                id="checkout-phone"
+                countryCode={form.phoneCountry}
+                nationalValue={form.phone}
                 disabled={busy}
-                onChange={(e) => updateField('phone', e.target.value)}
-                autoComplete="tel"
+                required
                 placeholder={t('checkoutDetails.phonePlaceholder')}
+                onCountryChange={(code) => updateField('phoneCountry', code)}
+                onNationalChange={(value) => updateField('phone', value)}
               />
-            </label>
+            </div>
           </section>
 
           <section className="pp-shopCheckout__section pp-shopCheckout__terms" aria-labelledby="checkout-terms-title">
@@ -255,6 +271,7 @@ export default function ShopCheckout() {
                 disabled={busy}
                 onChange={(e) => setAcceptedTerms(e.target.checked)}
                 aria-describedby="checkout-terms-desc"
+                required
               />
               <span id="checkout-terms-desc">
                 {t('checkoutDetails.termsAccept')}{' '}

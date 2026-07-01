@@ -1,7 +1,14 @@
+import {
+  formatInternationalPhone,
+  isValidInternationalPhone,
+  parseInternationalPhone,
+} from './phoneCountries';
+
 /**
  * @param {{
  *   email?: string,
  *   phone?: string,
+ *   phoneCountry?: string,
  *   firstName?: string,
  *   lastName?: string,
  *   addressLine1?: string,
@@ -13,7 +20,10 @@
  */
 export function buildShippingContact(form) {
   const email = String(form.email || '').trim();
-  const phone = String(form.phone || '').trim();
+  const phone = formatInternationalPhone(
+    form.phoneCountry || form.country || 'CY',
+    form.phone,
+  );
   const firstName = String(form.firstName || '').trim();
   const lastName = String(form.lastName || '').trim();
   const addressLine1 = String(form.addressLine1 || '').trim();
@@ -44,6 +54,19 @@ export function buildShippingContact(form) {
 }
 
 /**
+ * @param {string} phone
+ * @param {string} [defaultCountry]
+ * @returns {{ phoneCountry: string, phone: string }}
+ */
+export function splitPhoneForForm(phone, defaultCountry = 'CY') {
+  const parsed = parseInternationalPhone(phone, defaultCountry);
+  return {
+    phoneCountry: parsed.country,
+    phone: parsed.national,
+  };
+}
+
+/**
  * @param {ReturnType<typeof buildShippingContact>} shipping
  * @param {(key: string) => string} t
  * @returns {string | null}
@@ -56,5 +79,6 @@ export function validateShippingForm(shipping, t) {
   if (!shipping.city) return t('checkoutDetails.errCity');
   if (!shipping.postalCode) return t('checkoutDetails.errPostalCode');
   if (!shipping.phone) return t('checkoutDetails.errPhone');
+  if (!isValidInternationalPhone(shipping.phone)) return t('checkoutDetails.errPhoneInvalid');
   return null;
 }
