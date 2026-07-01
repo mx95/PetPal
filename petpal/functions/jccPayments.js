@@ -37,12 +37,22 @@ function jccEnv(name) {
   return v && String(v).trim() ? String(v).trim() : null;
 }
 
+function normalizeUrlBase(raw, fallback) {
+  const s = String(raw ?? fallback ?? '')
+    .trim()
+    .replace(/\/$/, '');
+  return s;
+}
+
 function jccCredentials() {
-  const userName = jccEnv('JCC_USER') || getCfg('jcc.user');
-  const password = jccEnv('JCC_PASS') || getCfg('jcc.pass');
-  const restBase = (jccEnv('JCC_REST_BASE') || getCfg('jcc.rest_base') || 'https://gateway-test.jcc.com.cy/payment/rest').replace(/\/$/, '');
-  const returnUrl = jccEnv('JCC_RETURN_URL') || getCfg('jcc.return_url');
-  const frontendUrl = (jccEnv('JCC_FRONTEND_URL') || getCfg('jcc.frontend_url') || 'http://localhost:3000').replace(/\/$/, '');
+  const userName = (jccEnv('JCC_USER') || getCfg('jcc.user') || '').trim();
+  const password = (jccEnv('JCC_PASS') || getCfg('jcc.pass') || '').trim();
+  const restBase = normalizeUrlBase(
+    jccEnv('JCC_REST_BASE') || getCfg('jcc.rest_base'),
+    'https://gateway-test.jcc.com.cy/payment/rest'
+  );
+  const returnUrl = (jccEnv('JCC_RETURN_URL') || getCfg('jcc.return_url') || '').trim();
+  const frontendUrl = normalizeUrlBase(jccEnv('JCC_FRONTEND_URL') || getCfg('jcc.frontend_url'), 'http://localhost:3000');
   if (!userName || !password) {
     throw new Error('JCC credentials missing: set jcc.user / jcc.pass (Functions config) or JCC_USER / JCC_PASS env.');
   }
