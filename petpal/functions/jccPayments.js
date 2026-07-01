@@ -630,7 +630,7 @@ exports.createJccCheckout = functions.region('europe-west1').https.onCall(async 
       language: 'en',
       clientId: uid,
       jsonParams: buildJccJsonParams(frontendUrl),
-      ...buildJccRegisterCustomerParams(shipping, jccCartLines),
+      ...buildJccRegisterCustomerParams(shipping),
     };
 
     if (cartSaveCard) {
