@@ -17818,6 +17818,12 @@ html[data-theme="dark"] .pp-nearby-list > li {
   color: #667085;
 }
 
+.pp-shopCheckout__label--required::after {
+  content: ' *';
+  color: #d92d20;
+  font-weight: 600;
+}
+
 .pp-shopCheckout__field input,
 .pp-shopCheckout__field select {
   width: 100%;
@@ -17840,6 +17846,70 @@ html[data-theme="dark"] .pp-nearby-list > li {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
+}
+
+.pp-phoneCountryInput {
+  display: grid;
+  grid-template-columns: minmax(118px, 150px) minmax(0, 1fr);
+  gap: 10px;
+  align-items: stretch;
+}
+
+.pp-phoneCountryInput__countryWrap {
+  position: relative;
+  display: grid;
+  align-items: center;
+}
+
+.pp-phoneCountryInput__flag {
+  position: absolute;
+  left: 12px;
+  font-size: 18px;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.pp-phoneCountryInput__country {
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 34px 12px 38px;
+  border-radius: 10px;
+  border: 1px solid rgba(16, 24, 40, 0.14);
+  background: #fff;
+  font-size: 14px;
+  color: transparent;
+  appearance: none;
+  cursor: pointer;
+}
+
+.pp-phoneCountryInput__country option {
+  color: #101828;
+}
+
+.pp-phoneCountryInput__dial {
+  position: absolute;
+  right: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #344054;
+  pointer-events: none;
+}
+
+.pp-phoneCountryInput__number {
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(16, 24, 40, 0.14);
+  background: #fff;
+  font-size: 15px;
+}
+
+.pp-phoneCountryInput__country:focus,
+.pp-phoneCountryInput__number:focus {
+  outline: none;
+  border-color: rgba(91, 55, 255, 0.45);
+  box-shadow: 0 0 0 3px rgba(91, 55, 255, 0.12);
 }
 
 .pp-shopCheckout__actions {
@@ -17944,6 +18014,15 @@ html[data-theme="dark"] .pp-nearby-list > li {
   }
 
   .pp-shopCheckout__row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .pp-shopCheckout__row--compact {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .pp-phoneCountryInput {
     grid-template-columns: minmax(0, 1fr);
   }
 }

@@ -556,8 +556,8 @@ exports.createJccCheckout = functions.region('europe-west1').https.onCall(async 
       if (!catalog) {
         throw new functions.https.HttpsError('invalid-argument', 'Unknown product.');
       }
-      if (includeTracker && sku !== 'PETPAL_PLUS_MONTHLY') {
-        throw new functions.https.HttpsError('invalid-argument', 'GPS tracker add-on is only available with the monthly plan.');
+      if (includeTracker && !PLUS_SKUS.has(sku)) {
+        throw new functions.https.HttpsError('invalid-argument', 'GPS tracker is only available with PetPal Plus plans.');
       }
       const needsNfcPets =
         (sku === 'PETPAL_PLUS_MONTHLY' && includeNfc) ||
