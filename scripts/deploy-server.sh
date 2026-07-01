@@ -172,3 +172,4 @@ fi
 positions_after="$(count_positions "$TRACKER_DB")"
 log "Deploy OK — tracker DB: $TRACKER_DB ($positions_after position rows)"
 log "Tip: hard-refresh the browser (Ctrl+F5) to load the new JS bundle."
+log "Note: JCC shop checkout uses Firebase Cloud Functions — deploy separately with: cd petpal && npm run deploy:shop-functions"
