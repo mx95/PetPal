@@ -116,6 +116,7 @@ export function subscribePets(uid, onNext, onError) {
             ? { linkedTracker: x.linkedTracker }
             : { linkedTracker: Boolean(x.trackingDeviceId) }),
           ...(typeof x.publicProfileId === 'string' ? { publicProfileId: x.publicProfileId } : {}),
+          gender: x.gender === 'female' ? 'female' : 'male',
         };
       });
       onNext(rows);
