@@ -120,6 +120,36 @@ if [ ! -f "$PETPAL_DIR/.env.local" ]; then
   die "Missing petpal/.env.local on server — create it before deploy (Firebase + REACT_APP_XEXUN_HTTP_BASE_URL=same)."
 fi
 
+seed_business_demo_account() {
+  local marker="/var/lib/petpal/business-demo-account.seeded"
+  local script="$PETPAL_DIR/petpal/scripts/create-business-account.cjs"
+  [ -f "$script" ] || return 0
+  if [ -f "$marker" ]; then
+    log "Business demo account already seeded ($marker)"
+    return 0
+  fi
+  log "Seeding business demo account (one-time)"
+  mkdir -p "$(dirname "$marker")"
+  cd "$PETPAL_DIR/petpal"
+  export FIREBASE_PROJECT_ID=petpal-aecda
+  export BIZ_EMAIL=business.demo@petpal.com.cy
+  export BIZ_PASSWORD='PetPalBiz2026!Demo'
+  export BIZ_NAME='PetPal Demo Grooming'
+  if [ -f /root/serviceAccount.json ]; then
+    export GOOGLE_APPLICATION_CREDENTIALS=/root/serviceAccount.json
+  elif [ -f "$PETPAL_DIR/petpal/serviceAccount.json" ]; then
+    export GOOGLE_APPLICATION_CREDENTIALS="$PETPAL_DIR/petpal/serviceAccount.json"
+  fi
+  if node scripts/create-business-account.cjs; then
+    touch "$marker"
+    log "Business demo account seeded OK"
+  else
+    log "Business demo account seed skipped or failed (Firebase Admin credentials may be missing on server)"
+  fi
+}
+
+seed_business_demo_account
+
 log "Building frontend"
 cd "$PETPAL_DIR"
 if needs_npm_ci "$PETPAL_DIR"; then
