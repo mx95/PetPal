@@ -122,7 +122,7 @@ fi
 
 seed_business_demo_account() {
   local marker="/var/lib/petpal/business-demo-account.seeded"
-  local script="$PETPAL_DIR/petpal/scripts/create-business-account.cjs"
+  local script="$PETPAL_DIR/scripts/create-business-account.cjs"
   [ -f "$script" ] || return 0
   if [ -f "$marker" ]; then
     log "Business demo account already seeded ($marker)"
@@ -130,15 +130,15 @@ seed_business_demo_account() {
   fi
   log "Seeding business demo account (one-time)"
   mkdir -p "$(dirname "$marker")"
-  cd "$PETPAL_DIR/petpal"
+  cd "$PETPAL_DIR"
   export FIREBASE_PROJECT_ID=petpal-aecda
   export BIZ_EMAIL=business.demo@petpal.com.cy
   export BIZ_PASSWORD='PetPalBiz2026!Demo'
   export BIZ_NAME='PetPal Demo Grooming'
   if [ -f /root/serviceAccount.json ]; then
     export GOOGLE_APPLICATION_CREDENTIALS=/root/serviceAccount.json
-  elif [ -f "$PETPAL_DIR/petpal/serviceAccount.json" ]; then
-    export GOOGLE_APPLICATION_CREDENTIALS="$PETPAL_DIR/petpal/serviceAccount.json"
+  elif [ -f "$PETPAL_DIR/serviceAccount.json" ]; then
+    export GOOGLE_APPLICATION_CREDENTIALS="$PETPAL_DIR/serviceAccount.json"
   fi
   if node scripts/create-business-account.cjs; then
     touch "$marker"
