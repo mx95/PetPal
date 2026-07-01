@@ -7,7 +7,7 @@ import { createPet, deletePet, patchPet, subscribePets } from './petsFirestore';
 import { fetchSharedPetsForUser } from './petShareFirestore';
 
 /**
- * @typedef {{ id: string, name: string, categoryId: string, trackingDeviceId: string | null, createdAt: string, photoDataUrl?: string, photoUrl?: string, photoStoragePath?: string, colorScheme?: string, description?: string, age?: string, friendlyWith?: string[], breed?: string, microchipNo?: string, dateOfBirth?: string, identifyingMarks?: string, medicalNotes?: string, ownerName?: string, ownerPhone?: string, ownerEmail?: string }} Pet
+ * @typedef {{ id: string, name: string, categoryId: string, gender?: 'male'|'female', trackingDeviceId: string | null, createdAt: string, photoDataUrl?: string, photoUrl?: string, photoStoragePath?: string, colorScheme?: string, description?: string, age?: string, friendlyWith?: string[], breed?: string, microchipNo?: string, dateOfBirth?: string, identifyingMarks?: string, medicalNotes?: string, ownerName?: string, ownerPhone?: string, ownerEmail?: string }} Pet
  */
 
 const MAX_COLOR_SCHEME = 120;
@@ -107,6 +107,7 @@ export function PetsProvider({ children }) {
     ({
       name,
       categoryId,
+      gender = 'male',
       trackingDeviceId = null,
       photoDataUrl = undefined,
       photoUrl = undefined,
@@ -130,6 +131,7 @@ export function PetsProvider({ children }) {
       const pet = {
         name: n,
         categoryId: categoryId || 'dog',
+        gender: gender === 'female' ? 'female' : 'male',
         trackingDeviceId: trackingDeviceId && String(trackingDeviceId).trim() ? String(trackingDeviceId).trim() : null,
         linkedTracker: Boolean(trackingDeviceId && String(trackingDeviceId).trim()),
         nfcTag: Boolean(nfcTag),
@@ -181,6 +183,12 @@ export function PetsProvider({ children }) {
             }
           : {}),
       };
+      if (Object.prototype.hasOwnProperty.call(patch, 'gender')) {
+        normalized.gender = patch.gender === 'female' ? 'female' : 'male';
+      }
+      if (Object.prototype.hasOwnProperty.call(patch, 'categoryId')) {
+        normalized.categoryId = String(patch.categoryId || 'dog').trim() || 'dog';
+      }
       if (Object.prototype.hasOwnProperty.call(patch, 'linkedTracker')) {
         normalized.linkedTracker = Boolean(patch.linkedTracker);
       } else if (Object.prototype.hasOwnProperty.call(normalized, 'trackingDeviceId')) {

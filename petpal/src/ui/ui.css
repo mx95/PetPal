@@ -2230,6 +2230,8 @@ select.pp-input:focus {
 .pp-petList__medRow {
   display: flex;
   justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
   margin-top: 10px;
 }
 

@@ -578,6 +578,10 @@ export default function MyPets() {
                                 <strong>Breed:</strong> {p.breed}
                               </div>
                             ) : null}
+                            <div className="pp-petList__meta" style={{ marginTop: 4 }}>
+                              <strong>{t('petPublic.gender')}:</strong>{' '}
+                              {p.gender === 'female' ? t('petPublic.female') : t('petPublic.male')}
+                            </div>
 
                             {p.description ? (
                               <p className="pp-petList__desc">{p.description}</p>
@@ -596,18 +600,6 @@ export default function MyPets() {
                             aria-label={t('myPets.viewPublicProfile')}
                           >
                             <IconEye />
-                          </button>
-                          <button
-                            type="button"
-                            className="pp-btn pp-iconBtn pp-iconBtn--outline pp-tooltipBtn"
-                            data-tooltip={t('myPets.sharePet')}
-                            onClick={() => {
-                              setSharePet(p);
-                              setShareEmail('');
-                            }}
-                            aria-label={t('myPets.sharePet')}
-                          >
-                            <IconShare />
                           </button>
                           <button
                             type="button"
@@ -647,6 +639,18 @@ export default function MyPets() {
                           aria-label={t('myPets.medsOpen')}
                         >
                           <IconMedPill />
+                        </button>
+                        <button
+                          type="button"
+                          className="pp-btn pp-iconBtn pp-iconBtn--outline pp-tooltipBtn"
+                          data-tooltip={t('myPets.sharePet')}
+                          onClick={() => {
+                            setSharePet(p);
+                            setShareEmail('');
+                          }}
+                          aria-label={t('myPets.sharePet')}
+                        >
+                          <IconShare />
                         </button>
                       </div>
                   </>
