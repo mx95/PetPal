@@ -21,6 +21,23 @@ function normalizeCustomerEmail(email) {
     .slice(0, 160);
 }
 
+/** Firestore rejects undefined field values — omit them before writes. */
+function omitUndefined(value) {
+  if (Array.isArray(value)) {
+    return value.map((row) => omitUndefined(row));
+  }
+  if (value && typeof value === 'object') {
+    const ctor = value.constructor?.name;
+    if (ctor && ctor !== 'Object') return value;
+    return Object.fromEntries(
+      Object.entries(value)
+        .filter(([, v]) => v !== undefined)
+        .map(([k, v]) => [k, omitUndefined(v)])
+    );
+  }
+  return value;
+}
+
 /** @param {string} paymentId @param {number} subPaymentId */
 function buildSubscriptionId(paymentId, subPaymentId) {
   return `${paymentId}-S${subPaymentId}`.slice(0, 36);
@@ -91,19 +108,21 @@ function validateShipping(shipping) {
  */
 function buildOrderItems(sku, ctx) {
   if (sku === 'MARKETPLACE_CART' && Array.isArray(ctx.cartItems)) {
-    return ctx.cartItems.map((row) => ({
-      key: String(row.key || '').slice(0, 120),
-      title: String(row.title || 'Item').slice(0, 160),
-      subtitle: row.subtitle ? String(row.subtitle).slice(0, 200) : undefined,
-      priceCents: Math.max(0, Number(row.priceCents) || 0),
-      qty: Math.max(1, Number(row.qty) || 1),
-      sku: row.sku ? String(row.sku).slice(0, 64) : undefined,
-      saveCard: Boolean(row.saveCard),
-      includeTracker: Boolean(row.includeTracker),
-      includeNfc: Boolean(row.includeNfc),
-      nfcPetIds: Array.isArray(row.nfcPetIds) ? row.nfcPetIds.map(String).filter(Boolean) : undefined,
-      recurring: Boolean(row.recurring),
-    }));
+    return ctx.cartItems.map((row) =>
+      omitUndefined({
+        key: String(row.key || '').slice(0, 120),
+        title: String(row.title || 'Item').slice(0, 160),
+        subtitle: row.subtitle ? String(row.subtitle).slice(0, 200) : undefined,
+        priceCents: Math.max(0, Number(row.priceCents) || 0),
+        qty: Math.max(1, Number(row.qty) || 1),
+        sku: row.sku ? String(row.sku).slice(0, 64) : undefined,
+        saveCard: Boolean(row.saveCard),
+        includeTracker: Boolean(row.includeTracker),
+        includeNfc: Boolean(row.includeNfc),
+        nfcPetIds: Array.isArray(row.nfcPetIds) ? row.nfcPetIds.map(String).filter(Boolean) : undefined,
+        recurring: Boolean(row.recurring),
+      })
+    );
   }
   const items = [{ key: sku, title: ctx.title || sku, priceCents: ctx.chargeCents || 0, qty: 1 }];
   if (ctx.includeTracker) {
@@ -155,31 +174,33 @@ async function createPendingOrder(db, payload) {
   await db
     .collection('orders')
     .doc(orderNumber)
-    .set({
-      orderNumber,
-      paymentId: orderNumber,
-      uid,
-      sku,
-      status: 'pending_payment',
-      amountCents: pricing.chargeCents,
-      currency: currency || '978',
-      items,
-      shipping,
-      customer: {
+    .set(
+      omitUndefined({
+        orderNumber,
+        paymentId: orderNumber,
         uid,
-        email: customerEmail,
-        emailNormalized: customerEmailNormalized,
-        name: shipping.receiverName,
-        phone: shipping.phone,
-      },
-      customerEmailNormalized,
-      includeTracker: Boolean(includeTracker),
-      includeNfc: Boolean(includeNfc),
-      nfcPetIds: Array.isArray(nfcPetIds) ? nfcPetIds : null,
-      needsFulfillment: needsFulfillment(sku, { includeTracker, includeNfc }),
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-    });
+        sku,
+        status: 'pending_payment',
+        amountCents: pricing.chargeCents,
+        currency: currency || '978',
+        items,
+        shipping,
+        customer: {
+          uid,
+          email: customerEmail,
+          emailNormalized: customerEmailNormalized,
+          name: shipping.receiverName,
+          phone: shipping.phone,
+        },
+        customerEmailNormalized,
+        includeTracker: Boolean(includeTracker),
+        includeNfc: Boolean(includeNfc),
+        nfcPetIds: Array.isArray(nfcPetIds) ? nfcPetIds : null,
+        needsFulfillment: needsFulfillment(sku, { includeTracker, includeNfc }),
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      })
+    );
 }
 
 /**
@@ -254,6 +275,7 @@ module.exports = {
   ORDER_STATUSES,
   PLUS_SUBSCRIPTION_SKUS,
   normalizeCustomerEmail,
+  omitUndefined,
   buildSubscriptionId,
   annotateOrderItemsWithSubPayments,
   normalizeShipping,

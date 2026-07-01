@@ -146,6 +146,7 @@ const {
   updateOrderStatus,
   buildSubscriptionId,
   recordCustomerPaymentIndex,
+  omitUndefined,
 } = require('./orderRecords');
 
 function nextRenewalDate(from, sku) {
@@ -585,23 +586,25 @@ exports.createJccCheckout = functions.region('europe-west1').https.onCall(async 
     const orderNumber = uniqueOrderNumber('PP');
     const db = admin.firestore();
     const sessionRef = db.collection('paymentSessions').doc(orderNumber);
-    await sessionRef.set({
-      orderNumber,
-      uid,
-      sku,
-      saveCard: cartSaveCard,
-      includeTracker: pricing.includeTracker,
-      includeNfc: pricing.includeNfc,
-      nfcPetIds: nfcPetIds.length ? nfcPetIds : null,
-      cartItems: sessionCartItems,
-      shippingContact: shipping,
-      companyId: companyId || null,
-      amountCents: pricing.chargeCents,
-      renewalAmountCents: pricing.renewalCents,
-      currency,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      status: 'pending_register',
-    });
+    await sessionRef.set(
+      omitUndefined({
+        orderNumber,
+        uid,
+        sku,
+        saveCard: cartSaveCard,
+        includeTracker: pricing.includeTracker,
+        includeNfc: pricing.includeNfc,
+        nfcPetIds: nfcPetIds.length ? nfcPetIds : null,
+        cartItems: sessionCartItems,
+        shippingContact: shipping,
+        companyId: companyId || null,
+        amountCents: pricing.chargeCents,
+        renewalAmountCents: pricing.renewalCents ?? null,
+        currency,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        status: 'pending_register',
+      })
+    );
 
     await createPendingOrder(db, {
       orderNumber,
@@ -690,10 +693,16 @@ exports.createJccCheckout = functions.region('europe-west1').https.onCall(async 
     if (/JCC non-JSON/i.test(msg) || /fetch failed/i.test(msg) || /ECONNREFUSED|ENOTFOUND|ETIMEDOUT/i.test(msg)) {
       throw new functions.https.HttpsError('unavailable', msg.slice(0, 500));
     }
-    functions.logger.error('createJccCheckout failed', { err: e, uid: context.auth?.uid });
+    functions.logger.error('createJccCheckout failed', { message: msg, stack: e?.stack, uid: context.auth?.uid });
+    if (/undefined|Cannot use "undefined"/i.test(msg)) {
+      throw new functions.https.HttpsError(
+        'internal',
+        'Checkout could not save order details. Refresh the shop page and try again.'
+      );
+    }
     throw new functions.https.HttpsError(
       'internal',
-      'Checkout failed on the server. Inspect Cloud Function logs for createJccCheckout.'
+      msg && !/^internal$/i.test(msg.trim()) ? msg.slice(0, 400) : 'Checkout failed on the server. Inspect Cloud Function logs for createJccCheckout.'
     );
   }
 });
