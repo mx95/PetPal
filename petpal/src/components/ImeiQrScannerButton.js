@@ -40,19 +40,18 @@ function waitForVideoReady(video) {
   });
 }
 
-function decodeCenterCrop(reader, video) {
+async function decodeCenterCrop(reader, video, canvas) {
   const vw = video.videoWidth;
   const vh = video.videoHeight;
   if (!vw || !vh) return null;
   const cropH = Math.max(1, Math.floor(vh * 0.42));
   const cropY = Math.floor((vh - cropH) / 2);
-  const canvas = document.createElement('canvas');
   canvas.width = vw;
   canvas.height = cropH;
   const ctx = canvas.getContext('2d', { willReadFrequently: true });
   if (!ctx) return null;
   ctx.drawImage(video, 0, cropY, vw, cropH, 0, 0, vw, cropH);
-  return reader.decodeFromCanvas(canvas);
+  return await reader.decodeFromCanvas(canvas);
 }
 
 /**
@@ -72,6 +71,7 @@ export default function ImeiQrScannerButton({ onImei, disabled }) {
   const scanTimerRef = useRef(0);
   const streamRef = useRef(null);
   const cancelledRef = useRef(false);
+  const cropCanvasRef = useRef(null);
 
   const stopScanner = useCallback(async () => {
     if (scanTimerRef.current) {
@@ -118,25 +118,35 @@ export default function ImeiQrScannerButton({ onImei, disabled }) {
   );
 
   const runScanLoop = useCallback(
-    (reader, video) => {
+    async (reader, video) => {
       if (cancelledRef.current || settledRef.current) return;
 
       try {
         let result = null;
+        // Full-frame decode first.
         try {
-          result = reader.decode(video);
+          if (typeof reader.decodeFromVideoElement === 'function') {
+            result = await reader.decodeFromVideoElement(video);
+          } else if (typeof reader.decode === 'function') {
+            // Fallback for older ZXing builds (sync API).
+            result = reader.decode(video);
+          }
         } catch {
           // try center crop for 1D barcodes
         }
-        if (!result) {
+
+        if (!result && typeof reader.decodeFromCanvas === 'function') {
           try {
-            result = decodeCenterCrop(reader, video);
+            if (!cropCanvasRef.current) cropCanvasRef.current = document.createElement('canvas');
+            result = await decodeCenterCrop(reader, video, cropCanvasRef.current);
           } catch {
             // still scanning
           }
         }
-        if (result) {
-          onDecode(result.getText());
+
+        const decoded = result?.getText?.() ?? result?.text ?? null;
+        if (decoded) {
+          onDecode(decoded);
           return;
         }
       } catch {
