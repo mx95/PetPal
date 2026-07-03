@@ -12709,6 +12709,10 @@ select.pp-bookConfirmField__control {
   gap: 8px;
 }
 
+.pp-lifetime__hubToggle {
+  margin-top: 12px;
+}
+
 .pp-lifetime__list--hub {
   display: grid;
   gap: 8px;

@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useGame } from '../game/GameContext';
 import { useI18n } from '../i18n/I18nContext';
 
@@ -24,6 +24,8 @@ const KIND_ICON = {
   daily: '✅',
 };
 
+const ALL_KINDS = ['distance', 'walks', 'streak', 'level', 'pets', 'photos', 'peak', 'daily'];
+
 /**
  * Format the value/target for an achievement based on its kind.
  * Distance/peak use km, others are integer counts.
@@ -41,47 +43,41 @@ function describe(t, a) {
   return t(key, { n: a.target, s: a.target === 1 ? '' : 's' });
 }
 
-// Dashboard/hub should feel lightweight: show only a starter set.
-const BASIC_KINDS = ['distance', 'walks', 'streak', 'level', 'pets'];
-const ITEMS_PER_KIND = 2;
-
 export default function LifetimeAchievements({ variant = 'full' }) {
   const { t } = useI18n();
   const hub = variant === 'hub';
+  const [showAll, setShowAll] = useState(false);
   const { lifetimeAchievements, achievementXp, achievementCount, lifetimeAchievementDefs } = useGame();
 
   const totalAll = Array.isArray(lifetimeAchievementDefs) ? lifetimeAchievementDefs.length : 0;
 
   const groups = useMemo(() => {
-    const order = hub ? BASIC_KINDS : ['distance', 'walks', 'streak', 'level', 'pets', 'photos', 'peak', 'daily'];
+    const order = hub ? ALL_KINDS : ALL_KINDS;
     const buckets = new Map();
     for (const a of lifetimeAchievements || []) {
-      if (hub && !BASIC_KINDS.includes(a.kind)) continue;
       if (!buckets.has(a.kind)) buckets.set(a.kind, []);
       buckets.get(a.kind).push(a);
     }
     return order
       .filter((k) => buckets.has(k))
-      .map((k) => {
-        const items = buckets
+      .map((k) => ({
+        kind: k,
+        items: buckets
           .get(k)
           .slice()
-          .sort((a, b) => (a.target || 0) - (b.target || 0));
-        return { kind: k, items: hub ? items.slice(0, ITEMS_PER_KIND) : items };
-      });
+          .sort((a, b) => (a.target || 0) - (b.target || 0)),
+      }));
   }, [lifetimeAchievements, hub]);
 
-  const totals = useMemo(() => {
-    if (!hub) return { total: totalAll, unlocked: achievementCount };
-    const flat = groups.flatMap((g) => g.items);
-    return { total: flat.length, unlocked: flat.filter((a) => a.earned).length };
-  }, [achievementCount, groups, hub, totalAll]);
+  const totals = { total: totalAll, unlocked: achievementCount };
 
   const closestNext = useMemo(() => {
     const remaining = (lifetimeAchievements || []).filter((a) => !a.earned);
     if (remaining.length === 0) return null;
     return [...remaining].sort((a, b) => b.progress - a.progress)[0];
   }, [lifetimeAchievements]);
+
+  const showGroups = !hub || showAll;
 
   return (
     <section className={`pp-card pp-pad pp-lifetime${hub ? ' pp-lifetime--hub' : ''}`} aria-labelledby="pp-lifetimeTitle">
@@ -114,55 +110,70 @@ export default function LifetimeAchievements({ variant = 'full' }) {
         </div>
       </div>
 
-      <div className={`pp-lifetime__groups${hub ? ' pp-lifetime__groups--hub' : ''}`}>
-        {groups.map((g) => (
-          <div key={g.kind} className={`pp-lifetime__group pp-lifetime__group--${g.kind}`}>
-            <div className="pp-lifetime__groupHead">
-              <span className="pp-lifetime__groupIcon" aria-hidden>{KIND_ICON[g.kind] || '✨'}</span>
-              <h3 className="pp-lifetime__groupTitle">{t(`lifetime.cat.${g.kind}`)}</h3>
-            </div>
-            <ul className={`pp-lifetime__list${hub ? ' pp-lifetime__list--hub' : ''}`}>
-              {g.items.map((a) => {
-                const pct = Math.round((a.progress || 0) * 100);
-                const label = t(`lifetime.ach.${a.id}.label`);
-                return (
-                  <li
-                    key={a.id}
-                    className={`pp-achTile pp-achTile--${a.tier} ${a.earned ? 'pp-achTile--earned' : ''}`}
-                  >
-                    <div className="pp-achTile__row">
-                      <div className="pp-achTile__label">{label}</div>
-                      <div className="pp-achTile__xp">+{a.xp} XP</div>
-                    </div>
-                    <div className="pp-achTile__desc">{describe(t, a)}</div>
-                    <div
-                      className="pp-achTile__bar"
-                      role="progressbar"
-                      aria-label={t('lifetime.progressAria', { label })}
-                      aria-valuemin={0}
-                      aria-valuemax={100}
-                      aria-valuenow={pct}
+      {hub ? (
+        <div className="pp-lifetime__hubToggle">
+          <button
+            type="button"
+            className="pp-btn pp-btn--ghost"
+            onClick={() => setShowAll((v) => !v)}
+            aria-expanded={showAll}
+          >
+            {showAll ? t('activityHub.viewLessAchievements') : t('activityHub.viewMoreAchievements')}
+          </button>
+        </div>
+      ) : null}
+
+      {showGroups ? (
+        <div className={`pp-lifetime__groups${hub ? ' pp-lifetime__groups--hub' : ''}`}>
+          {groups.map((g) => (
+            <div key={g.kind} className={`pp-lifetime__group pp-lifetime__group--${g.kind}`}>
+              <div className="pp-lifetime__groupHead">
+                <span className="pp-lifetime__groupIcon" aria-hidden>{KIND_ICON[g.kind] || '✨'}</span>
+                <h3 className="pp-lifetime__groupTitle">{t(`lifetime.cat.${g.kind}`)}</h3>
+              </div>
+              <ul className={`pp-lifetime__list${hub ? ' pp-lifetime__list--hub' : ''}`}>
+                {g.items.map((a) => {
+                  const pct = Math.round((a.progress || 0) * 100);
+                  const label = t(`lifetime.ach.${a.id}.label`);
+                  return (
+                    <li
+                      key={a.id}
+                      className={`pp-achTile pp-achTile--${a.tier} ${a.earned ? 'pp-achTile--earned' : ''}`}
                     >
-                      <div className="pp-achTile__barFill" style={{ width: `${pct}%` }} />
-                    </div>
-                    <div className="pp-achTile__row pp-achTile__row--meta">
-                      <span className="pp-achTile__progress">
-                        {formatPair(a.kind, a.value, a.target)}
-                      </span>
-                      <span className="pp-achTile__tier">{t(`lifetime.tier.${a.tier}`)}</span>
-                    </div>
-                    {a.earned ? (
-                      <span className="pp-achTile__earnedBadge" aria-label={t('lifetime.earnedAria')}>
-                        {t('lifetime.earnedTag')}
-                      </span>
-                    ) : null}
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        ))}
-      </div>
+                      <div className="pp-achTile__row">
+                        <div className="pp-achTile__label">{label}</div>
+                        <div className="pp-achTile__xp">+{a.xp} XP</div>
+                      </div>
+                      <div className="pp-achTile__desc">{describe(t, a)}</div>
+                      <div
+                        className="pp-achTile__bar"
+                        role="progressbar"
+                        aria-label={t('lifetime.progressAria', { label })}
+                        aria-valuemin={0}
+                        aria-valuemax={100}
+                        aria-valuenow={pct}
+                      >
+                        <div className="pp-achTile__barFill" style={{ width: `${pct}%` }} />
+                      </div>
+                      <div className="pp-achTile__row pp-achTile__row--meta">
+                        <span className="pp-achTile__progress">
+                          {formatPair(a.kind, a.value, a.target)}
+                        </span>
+                        <span className="pp-achTile__tier">{t(`lifetime.tier.${a.tier}`)}</span>
+                      </div>
+                      {a.earned ? (
+                        <span className="pp-achTile__earnedBadge" aria-label={t('lifetime.earnedAria')}>
+                          {t('lifetime.earnedTag')}
+                        </span>
+                      ) : null}
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ))}
+        </div>
+      ) : null}
     </section>
   );
 }

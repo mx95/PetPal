@@ -7,13 +7,13 @@ import BusinessWeekBookings from './BusinessWeekBookings';
  * Home tab route (`/dashboard`): activity hub for pet owners, weekly booking calendar for businesses.
  */
 export default function Dashboard() {
-  const { isApprovedCompany, profileLoading } = useCompany();
+  const { isCompanyAccount, profileLoading } = useCompany();
 
   if (profileLoading) {
     return <div className="pp-pad pp-subtle">Loading…</div>;
   }
 
-  if (isApprovedCompany) {
+  if (isCompanyAccount) {
     return <BusinessWeekBookings />;
   }
 

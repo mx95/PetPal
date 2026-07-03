@@ -40,7 +40,7 @@ function bookingDate(booking) {
  */
 export default function BusinessWeekBookings() {
   const { user } = useAuth();
-  const { profile } = useCompany();
+  const { profile, isApprovedCompany, isPendingCompany, isRejectedCompany } = useCompany();
   const { t } = useI18n();
   const companyId = user?.uid || null;
 
@@ -112,6 +112,33 @@ export default function BusinessWeekBookings() {
 
   return (
     <div className="pp-feed pp-businessWeekBookings">
+      {!profile ? (
+        <section className="pp-card pp-pad" style={{ marginBottom: 14 }}>
+          <p className="pp-muted" style={{ marginTop: 0, marginBottom: 10 }}>
+            {t('businessWeek.applyPrompt')}
+          </p>
+          <Link className="pp-btn pp-btn--primary" to="/company/apply">
+            {t('businessWeek.applyCta')}
+          </Link>
+        </section>
+      ) : null}
+      {isPendingCompany ? (
+        <section className="pp-card pp-pad" style={{ marginBottom: 14 }}>
+          <p className="pp-muted" style={{ marginTop: 0, marginBottom: 0 }}>
+            {t('businessWeek.pendingBanner')}
+          </p>
+        </section>
+      ) : null}
+      {isRejectedCompany ? (
+        <section className="pp-card pp-pad" style={{ marginBottom: 14 }}>
+          <p className="pp-muted" style={{ marginTop: 0, marginBottom: 10 }}>
+            {t('businessWeek.rejectedBanner')}
+          </p>
+          <Link className="pp-btn pp-btn--ghost" to="/company/apply">
+            {t('businessWeek.reapplyCta')}
+          </Link>
+        </section>
+      ) : null}
       <section className="pp-activityHub__block">
         <div className="pp-rowBetween" style={{ alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
           <div>
@@ -125,9 +152,11 @@ export default function BusinessWeekBookings() {
             <Link className="pp-btn pp-btn--primary" to="/provider?tab=bookings">
               {t('businessWeek.managePortal')}
             </Link>
-            <Link className="pp-btn pp-btn--ghost" to="/provider?tab=availability">
-              {t('businessWeek.addAvailability')}
-            </Link>
+            {isApprovedCompany ? (
+              <Link className="pp-btn pp-btn--ghost" to="/provider?tab=availability">
+                {t('businessWeek.addAvailability')}
+              </Link>
+            ) : null}
           </div>
         </div>
       </section>

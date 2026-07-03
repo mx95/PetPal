@@ -45,7 +45,7 @@ function ProfileActionCard({ to, icon, title, desc, accent, onClick }) {
 
 export default function Profile() {
   const { user, signOut } = useAuth();
-  const { isAdmin, isApprovedCompany, profile } = useCompany();
+  const { isAdmin, isApprovedCompany, isCompanyAccount, profile } = useCompany();
   const { pets } = usePets();
   const { walkLog, ownerXp, level, achievementCount, lifetimeStats } = useGame();
   const { t } = useI18n();
@@ -237,7 +237,7 @@ export default function Profile() {
     { key: 'pets', to: '/pets', icon: ICONS.pets, accent: 'pets' },
     { key: 'orders', to: '/profile/orders', icon: ICONS.orders, accent: 'docs' },
     ...(MVP_NAV.showBookings ? [{ key: 'bookings', to: '/bookings', icon: ICONS.docs, accent: 'docs' }] : []),
-    ...(isApprovedCompany
+    ...(isCompanyAccount
       ? [{ key: 'provider', to: '/provider', icon: ICONS.business, accent: 'business' }]
       : []),
     { key: 'business', to: '/company/apply', icon: ICONS.business, accent: 'business' },

@@ -35,7 +35,7 @@ jobs:
       - name: Deploy Firestore rules
         run: >
           npx firebase-tools@13.29.1 deploy
-          --only firestore:rules
+          --only firestore:rules,firestore:indexes
           --project petpal-aecda
           --non-interactive
         env:

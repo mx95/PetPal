@@ -69,21 +69,41 @@ export function subscribeCompanyProfiles(uid, onNext, onError) {
     return () => {};
   }
 
-  const q = query(companiesCol(), where('ownerUid', '==', uid), orderBy('submittedAt', 'desc'));
-  return onSnapshot(
-    q,
-    (snap) => {
-      onNext(
-        snap.docs.map((d) =>
-          /** @type {import('./companyTypes').CompanyProfile} */ ({
-            id: d.id,
-            ...d.data(),
-          })
-        )
-      );
-    },
-    (err) => (onError ? onError(err) : undefined)
-  );
+  const mapRows = (snap) =>
+    snap.docs.map((d) =>
+      /** @type {import('./companyTypes').CompanyProfile} */ ({
+        id: d.id,
+        ...d.data(),
+      })
+    );
+
+  const sortRows = (rows) =>
+    [...rows].sort((a, b) => {
+      const ta = a?.submittedAt?.toMillis ? a.submittedAt.toMillis() : 0;
+      const tb = b?.submittedAt?.toMillis ? b.submittedAt.toMillis() : 0;
+      return tb - ta;
+    });
+
+  const qOrdered = query(companiesCol(), where('ownerUid', '==', uid), orderBy('submittedAt', 'desc'));
+  const qSimple = query(companiesCol(), where('ownerUid', '==', uid));
+
+  let unsub = () => {};
+  const attach = (q, clientSort) =>
+    onSnapshot(
+      q,
+      (snap) => onNext(clientSort ? sortRows(mapRows(snap)) : mapRows(snap)),
+      (err) => {
+        if (q === qOrdered) {
+          unsub();
+          unsub = attach(qSimple, true);
+          return;
+        }
+        if (onError) onError(err);
+      }
+    );
+
+  unsub = attach(qOrdered, false);
+  return () => unsub();
 }
 
 /**
