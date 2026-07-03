@@ -496,7 +496,7 @@ export async function getLatestPositionWithSync(deviceId, opts = {}) {
   if (!id) return getLatestPosition(deviceId);
 
   let provider = opts.provider ?? null;
-  if (!provider && resolveTrackerHttpBase()) {
+  if (!provider && resolveTrackerHttpBase() != null) {
     const meta = await fetchDeviceMeta(id);
     provider = meta?.provider ?? null;
   }

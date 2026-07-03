@@ -15,6 +15,9 @@ function sameOriginTrackerApi() {
 }
 
 export function resolveTrackerHttpBase() {
+  // Prefer same-origin on production (nginx proxies /api/* to the tracker server).
+  if (sameOriginTrackerApi()) return '';
+
   const raw = process.env.REACT_APP_XEXUN_HTTP_BASE_URL;
   if (raw != null && String(raw).trim() !== '') {
     if (raw === 'same') return '';
@@ -30,6 +33,11 @@ export function resolveTrackerHttpBase() {
   return null;
 }
 
+/** @returns {boolean} */
+export function isTrackerHttpBaseConfigured() {
+  return resolveTrackerHttpBase() != null;
+}
+
 function readWifiEnvFlag() {
   return String(process.env.REACT_APP_TRACKING_WIFI_ENABLED ?? '').trim().toLowerCase();
 }
@@ -39,7 +47,7 @@ export function isTrackingWifiEnabled() {
   const raw = readWifiEnvFlag();
   if (raw === '0' || raw === 'false' || raw === 'no') return false;
   if (raw === '1' || raw === 'true' || raw === 'yes') return true;
-  if (resolveTrackerHttpBase() != null) return true;
+  if (isTrackerHttpBaseConfigured()) return true;
   if (typeof window !== 'undefined' && window.isSecureContext) return true;
   return false;
 }

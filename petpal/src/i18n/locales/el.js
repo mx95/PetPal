@@ -931,7 +931,7 @@ const el = {
       'Κρατήστε το κολάρο φορτισμένο. LBS χρησιμοποιείται όταν δεν υπάρχει Wi‑Fi/GPS.',
     devicePanelNeedImei: 'Συνδέστε πρώτα tracker IMEI σε αυτό το κατοικίδιο.',
     devicePanelNeedWifi: 'Εισάγετε τον κωδικό router — δείτε «Πού βρίσκω τον κωδικό».',
-    devicePanelNoApi: 'Δεν έχει ρυθμιστεί REACT_APP_XEXUN_HTTP_BASE_URL.',
+    devicePanelNoApi: 'Δεν ήταν δυνατή η σύνδεση με την υπηρεσία tracker του PetPal. Ελέγξτε τη σύνδεσή σας και δοκιμάστε ξανά.',
     devicePanelFailed: 'Αποτυχία αποστολής εντολής.',
     devicePanelGpsposIntro:
       'Αυτό το κολάρο στέλνει δεδομένα σε cloud πλατφόρμα GPS (gpspos), όχι απευθείας στο PetPal μέσω TCP.',

@@ -14,7 +14,7 @@ async function readJsonSafe(res) {
  */
 export async function syncGpsposPosition(imei) {
   const base = resolveTrackerHttpBase();
-  if (!base) {
+  if (base == null) {
     const err = new Error('Tracker API not configured');
     err.code = 'TRACKER_API_NOT_CONFIGURED';
     throw err;
@@ -37,7 +37,7 @@ export async function syncGpsposPosition(imei) {
 }
 
 export function isGpsposSyncAvailable() {
-  return Boolean(resolveTrackerHttpBase());
+  return resolveTrackerHttpBase() != null;
 }
 
 /**
@@ -47,7 +47,7 @@ export function isGpsposSyncAvailable() {
  */
 export async function saveGpsposBatteryPlan(imei, opts = {}) {
   const base = resolveTrackerHttpBase();
-  if (!base) {
+  if (base == null) {
     const err = new Error('Tracker API not configured');
     err.code = 'TRACKER_API_NOT_CONFIGURED';
     throw err;

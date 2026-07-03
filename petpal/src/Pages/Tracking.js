@@ -579,7 +579,7 @@ export default function Tracking() {
       return;
     }
     const base = resolveTrackerHttpBase();
-    if (!base || !imei) {
+    if (base == null || !imei) {
       setDeviceProvider(null);
       return;
     }
