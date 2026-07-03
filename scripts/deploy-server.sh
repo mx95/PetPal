@@ -150,6 +150,29 @@ seed_business_demo_account() {
 
 seed_business_demo_account
 
+deploy_firestore_rules() {
+  local sa=""
+  if [ -f /root/serviceAccount.json ]; then
+    sa=/root/serviceAccount.json
+  elif [ -f "$PETPAL_DIR/serviceAccount.json" ]; then
+    sa="$PETPAL_DIR/serviceAccount.json"
+  fi
+  if [ -z "$sa" ]; then
+    log "Skipping Firestore rules deploy (no serviceAccount.json on server)"
+    return 0
+  fi
+  log "Deploying Firestore security rules"
+  cd "$PETPAL_DIR"
+  export GOOGLE_APPLICATION_CREDENTIALS="$sa"
+  if npx firebase-tools@13.29.1 deploy --only firestore:rules --project petpal-aecda --non-interactive; then
+    log "Firestore rules deployed OK"
+  else
+    log "Firestore rules deploy failed — add FIREBASE_TOKEN to GitHub Actions or run: cd petpal && firebase deploy --only firestore:rules"
+  fi
+}
+
+deploy_firestore_rules
+
 log "Building frontend"
 cd "$PETPAL_DIR"
 if needs_npm_ci "$PETPAL_DIR"; then
