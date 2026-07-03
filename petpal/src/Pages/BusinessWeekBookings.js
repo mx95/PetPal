@@ -153,7 +153,7 @@ export default function BusinessWeekBookings() {
               {t('businessWeek.managePortal')}
             </Link>
             {isApprovedCompany ? (
-              <Link className="pp-btn pp-btn--ghost" to="/provider?tab=availability">
+              <Link className="pp-btn pp-btn--ghost" to="/provider?tab=availability&add=1">
                 {t('businessWeek.addAvailability')}
               </Link>
             ) : null}

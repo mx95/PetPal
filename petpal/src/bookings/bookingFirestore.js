@@ -151,19 +151,52 @@ export async function setSlotStatus(companyId, slotId, status) {
   });
 }
 
+function mapBookingDoc(d) {
+  const x = d.data() || {};
+  return {
+    id: d.id,
+    ...x,
+    startAtMs: tsToMillis(x.startAt),
+    endAtMs: tsToMillis(x.endAt),
+  };
+}
+
 export function subscribeProviderBookings(companyId, onNext, onError) {
   if (!isFirebaseConfigured() || !companyId) {
     onNext([]);
     return () => {};
   }
-  const q = query(bookingsCol(), where('companyId', '==', companyId), orderBy('startAt', 'desc'), limit(100));
-  return onSnapshot(
-    q,
-    (snap) => {
-      onNext(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
-    },
-    (err) => (onError ? onError(err) : undefined)
-  );
+
+  const sortBookings = (rows) =>
+    [...rows].sort((a, b) => {
+      const ta = a.startAtMs ?? tsToMillis(a.startAt) ?? 0;
+      const tb = b.startAtMs ?? tsToMillis(b.startAt) ?? 0;
+      return tb - ta;
+    });
+
+  const qOrdered = query(bookingsCol(), where('companyId', '==', companyId), orderBy('startAt', 'desc'), limit(100));
+  const qSimple = query(bookingsCol(), where('companyId', '==', companyId), limit(100));
+
+  let unsub = () => {};
+  const attach = (q, clientSort) =>
+    onSnapshot(
+      q,
+      (snap) => {
+        const rows = snap.docs.map(mapBookingDoc);
+        onNext(clientSort ? sortBookings(rows).slice(0, 100) : rows);
+      },
+      (err) => {
+        if (q === qOrdered) {
+          unsub();
+          unsub = attach(qSimple, true);
+          return;
+        }
+        if (onError) onError(err);
+      }
+    );
+
+  unsub = attach(qOrdered, false);
+  return () => unsub();
 }
 
 export function subscribeCustomerBookings(uid, onNext, onError) {
@@ -171,14 +204,37 @@ export function subscribeCustomerBookings(uid, onNext, onError) {
     onNext([]);
     return () => {};
   }
-  const q = query(bookingsCol(), where('customerUid', '==', uid), orderBy('startAt', 'desc'), limit(100));
-  return onSnapshot(
-    q,
-    (snap) => {
-      onNext(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
-    },
-    (err) => (onError ? onError(err) : undefined)
-  );
+
+  const sortBookings = (rows) =>
+    [...rows].sort((a, b) => {
+      const ta = a.startAtMs ?? tsToMillis(a.startAt) ?? 0;
+      const tb = b.startAtMs ?? tsToMillis(b.startAt) ?? 0;
+      return tb - ta;
+    });
+
+  const qOrdered = query(bookingsCol(), where('customerUid', '==', uid), orderBy('startAt', 'desc'), limit(100));
+  const qSimple = query(bookingsCol(), where('customerUid', '==', uid), limit(100));
+
+  let unsub = () => {};
+  const attach = (q, clientSort) =>
+    onSnapshot(
+      q,
+      (snap) => {
+        const rows = snap.docs.map(mapBookingDoc);
+        onNext(clientSort ? sortBookings(rows).slice(0, 100) : rows);
+      },
+      (err) => {
+        if (q === qOrdered) {
+          unsub();
+          unsub = attach(qSimple, true);
+          return;
+        }
+        if (onError) onError(err);
+      }
+    );
+
+  unsub = attach(qOrdered, false);
+  return () => unsub();
 }
 
 /** Admin-only: live feed of recent bookings across all customers and providers. */

@@ -91,6 +91,7 @@ function toDateInputValue(date) {
 const PROVIDER_TABS = ['bookings', 'availability', 'customers', 'services'];
 
 function slotDate(slot) {
+  if (!slot) return null;
   if (slot.startAtMs) return new Date(slot.startAtMs);
   if (slot.startAt?.toDate) return slot.startAt.toDate();
   if (slot.startAt instanceof Date) return slot.startAt;
@@ -98,6 +99,7 @@ function slotDate(slot) {
 }
 
 function slotEndDate(slot) {
+  if (!slot) return null;
   if (slot.endAtMs) return new Date(slot.endAtMs);
   if (slot.endAt?.toDate) return slot.endAt.toDate();
   if (slot.endAt instanceof Date) return slot.endAt;
@@ -126,8 +128,9 @@ function CalendarAvailabilityPanel({
   emptyText = 'No availability yet.',
   selectedDate: controlledSelectedDate,
   onSelectedDateChange,
+  initialShowAdd = false,
 }) {
-  const firstSlotDate = slotDate(slots[0]);
+  const firstSlotDate = slots.length ? slotDate(slots[0]) : null;
   const [internalSelectedDate, setInternalSelectedDate] = useState(() => firstSlotDate || new Date());
   const selectedDate = controlledSelectedDate ?? internalSelectedDate;
   const setSelectedDate = (day) => {
@@ -136,12 +139,12 @@ function CalendarAvailabilityPanel({
   };
   const [visibleMonth, setVisibleMonth] = useState(() => firstSlotDate || new Date());
   const [view, setView] = useState('month');
-  const [showAdd, setShowAdd] = useState(false);
+  const [showAdd, setShowAdd] = useState(initialShowAdd);
   const [selectedSlotId, setSelectedSlotId] = useState('');
 
   const slotsByDay = useMemo(() => {
     const grouped = new Map();
-    slots.forEach((slot) => {
+    (slots || []).filter(Boolean).forEach((slot) => {
       const start = slotDate(slot);
       if (!start) return;
       const key = dateKey(start);
@@ -728,7 +731,7 @@ export default function ProviderPortal() {
 
       <div className="pp-providerTabContent">
         {tab === 'bookings' ? <Bookings companyId={companyId} /> : null}
-        {tab === 'availability' ? <Availability companyId={companyId} /> : null}
+        {tab === 'availability' ? <Availability companyId={companyId} openAddPanel={searchParams.get('add') === '1'} /> : null}
         {tab === 'customers' ? (
           <Customers companyId={companyId} clinicLabel={publish.displayName || profile?.businessName || ''} />
         ) : null}
@@ -919,7 +922,7 @@ function Services({ companyId }) {
   );
 }
 
-function Availability({ companyId }) {
+function Availability({ companyId, openAddPanel = false }) {
   const [services, setServices] = useState([]);
   const [slots, setSlots] = useState([]);
   const [err, setErr] = useState('');
@@ -1029,6 +1032,7 @@ function Availability({ companyId }) {
         servicesById={byServiceName}
         selectedDate={calendarDate}
         onSelectedDateChange={setCalendarDate}
+        initialShowAdd={openAddPanel}
         onToggleSlot={(s) => setSlotStatus(companyId, s.id, s.status === 'open' ? 'blocked' : 'open')}
         addPanel={(
           <form onSubmit={onCreate} className="pp-form pp-providerQuickAdd">
