@@ -1,0 +1,94 @@
+# Deploy Firestore rules + shop Cloud Functions from the Hetzner host
+# (uses server-side Firebase/gcloud credentials if present).
+#
+# Run manually: Actions → Deploy Firebase from server → Run workflow
+
+name: Deploy Firebase from server
+
+on:
+  workflow_dispatch:
+    inputs:
+      targets:
+        description: 'Deploy targets (rules, indexes, functions, or all)'
+        required: false
+        default: all
+
+concurrency:
+  group: deploy-firebase-from-server
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Deploy Firebase via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          command_timeout: 22m
+          script: |
+            set -euo pipefail
+            PETPAL_ROOT="${{ secrets.DEPLOY_PATH }}"
+            if [ -z "$PETPAL_ROOT" ]; then PETPAL_ROOT="/root/PetPal"; fi
+            TARGETS="${{ github.event.inputs.targets || 'all' }}"
+            cd "$PETPAL_ROOT"
+            git fetch origin main
+            git checkout main
+            git reset --hard origin/main
+            cd petpal
+            echo "[firebase-deploy] At $(git -C .. rev-parse --short HEAD)"
+
+            SA=""
+            if [ -f /root/serviceAccount.json ]; then
+              SA=/root/serviceAccount.json
+            elif [ -f "$PETPAL_ROOT/petpal/serviceAccount.json" ]; then
+              SA="$PETPAL_ROOT/petpal/serviceAccount.json"
+            fi
+            if [ -n "$SA" ]; then
+              export GOOGLE_APPLICATION_CREDENTIALS="$SA"
+              echo "[firebase-deploy] Using service account: $SA"
+            else
+              echo "[firebase-deploy] No serviceAccount.json — trying firebase/gcloud CLI auth"
+            fi
+
+            if command -v firebase >/dev/null 2>&1; then
+              FB="firebase"
+            else
+              FB="npx firebase-tools@13.29.1"
+            fi
+
+            deploy_rules() {
+              echo "[firebase-deploy] Deploying Firestore rules + indexes"
+              $FB deploy --only firestore:rules,firestore:indexes --project petpal-aecda --non-interactive
+            }
+
+            deploy_functions() {
+              echo "[firebase-deploy] Installing function dependencies"
+              cd "$PETPAL_ROOT/petpal/functions"
+              npm ci
+              cd "$PETPAL_ROOT/petpal"
+              echo "[firebase-deploy] Deploying shop Cloud Functions"
+              $FB deploy \
+                --only functions:createJccCheckout,functions:jccPaymentReturn,functions:billingRenewal,functions:expireProviderBoosts,functions:assignSubscriptionImei,functions:linkTrackerSubscriptionPet \
+                --project petpal-aecda \
+                --non-interactive
+            }
+
+            case "$TARGETS" in
+              rules) deploy_rules ;;
+              indexes) deploy_rules ;;
+              functions) deploy_functions ;;
+              all)
+                deploy_rules
+                deploy_functions
+                ;;
+              *)
+                echo "Unknown targets: $TARGETS (use rules, functions, or all)"
+                exit 1
+                ;;
+            esac
+
+            echo "[firebase-deploy] Done"
