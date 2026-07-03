@@ -150,6 +150,14 @@ seed_business_demo_account() {
 
 seed_business_demo_account
 
+deploy_firebase_cli() {
+  if command -v firebase >/dev/null 2>&1; then
+    echo firebase
+  else
+    echo "npx firebase-tools@13.29.1"
+  fi
+}
+
 deploy_firestore_rules() {
   local sa=""
   if [ -f /root/serviceAccount.json ]; then
@@ -157,21 +165,75 @@ deploy_firestore_rules() {
   elif [ -f "$PETPAL_DIR/serviceAccount.json" ]; then
     sa="$PETPAL_DIR/serviceAccount.json"
   fi
-  if [ -z "$sa" ]; then
-    log "Skipping Firestore rules deploy (no serviceAccount.json on server)"
+
+  local fb
+  fb="$(deploy_firebase_cli)"
+  cd "$PETPAL_DIR"
+
+  if [ -n "$sa" ]; then
+    log "Deploying Firestore rules + indexes (service account)"
+    export GOOGLE_APPLICATION_CREDENTIALS="$sa"
+    if $fb deploy --only firestore:rules,firestore:indexes --project petpal-aecda --non-interactive; then
+      log "Firestore rules deployed OK"
+      return 0
+    fi
+    log "Firestore rules deploy via service account failed — trying Firebase CLI login"
+    unset GOOGLE_APPLICATION_CREDENTIALS
+  else
+    log "No serviceAccount.json — trying Firebase CLI login on server"
+  fi
+
+  if $fb projects:list --project petpal-aecda --non-interactive >/dev/null 2>&1; then
+    log "Deploying Firestore rules + indexes (firebase login)"
+    if $fb deploy --only firestore:rules,firestore:indexes --project petpal-aecda --non-interactive; then
+      log "Firestore rules deployed OK"
+      return 0
+    fi
+    log "Firestore rules deploy failed"
+    return 1
+  fi
+
+  log "Skipping Firestore rules deploy (no serviceAccount.json or firebase login on server)"
+  return 0
+}
+
+deploy_firebase_functions() {
+  local sa=""
+  if [ -f /root/serviceAccount.json ]; then
+    sa=/root/serviceAccount.json
+  elif [ -f "$PETPAL_DIR/serviceAccount.json" ]; then
+    sa="$PETPAL_DIR/serviceAccount.json"
+  fi
+
+  local fb
+  fb="$(deploy_firebase_cli)"
+  cd "$PETPAL_DIR"
+
+  if [ -n "$sa" ]; then
+    export GOOGLE_APPLICATION_CREDENTIALS="$sa"
+  elif ! $fb projects:list --project petpal-aecda --non-interactive >/dev/null 2>&1; then
+    log "Skipping Cloud Functions deploy (no Firebase credentials on server)"
     return 0
   fi
-  log "Deploying Firestore security rules"
+
+  log "Deploying shop Cloud Functions"
+  cd "$PETPAL_DIR/functions"
+  if needs_npm_ci "$(pwd)"; then
+    npm ci
+  fi
   cd "$PETPAL_DIR"
-  export GOOGLE_APPLICATION_CREDENTIALS="$sa"
-  if npx firebase-tools@13.29.1 deploy --only firestore:rules --project petpal-aecda --non-interactive; then
-    log "Firestore rules deployed OK"
+  if $fb deploy \
+    --only functions:createJccCheckout,functions:jccPaymentReturn,functions:billingRenewal,functions:expireProviderBoosts,functions:assignSubscriptionImei,functions:linkTrackerSubscriptionPet \
+    --project petpal-aecda \
+    --non-interactive; then
+    log "Cloud Functions deployed OK"
   else
-    log "Firestore rules deploy failed — add FIREBASE_TOKEN to GitHub Actions or run: cd petpal && firebase deploy --only firestore:rules"
+    log "Cloud Functions deploy failed — run manually: cd petpal && npm run deploy:shop-functions"
   fi
 }
 
 deploy_firestore_rules
+deploy_firebase_functions
 
 log "Building frontend"
 cd "$PETPAL_DIR"
