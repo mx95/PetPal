@@ -189,10 +189,21 @@ service cloud.firestore {
         || (request.auth != null && resource.data.companyId == request.auth.uid);
 
       allow create: if request.auth != null
-        && request.resource.data.customerUid == request.auth.uid
-        && request.resource.data.companyId is string
-        && isPublicBookableCompany(request.resource.data.companyId)
-        && request.resource.data.status == 'booked';
+        && request.resource.data.status == 'booked'
+        && (
+          (
+            request.resource.data.customerUid == request.auth.uid
+            && request.resource.data.companyId is string
+            && isPublicBookableCompany(request.resource.data.companyId)
+            && request.resource.data.walkIn != true
+          )
+          || (
+            request.resource.data.companyId == request.auth.uid
+            && isApprovedCompany(request.auth.uid)
+            && request.resource.data.walkIn == true
+            && request.resource.data.bookedByProviderUid == request.auth.uid
+          )
+        );
 
       // Customer can cancel their own booking; provider can manage status for their company bookings.
       allow update: if request.auth != null

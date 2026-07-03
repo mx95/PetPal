@@ -5,6 +5,7 @@ import { useCompany } from '../company/CompanyContext';
 import {
   createAvailabilitySlot,
   blockSlotsForTimeOff,
+  createProviderBooking,
   setSlotStatus,
   subscribeCompanyAvailability,
   subscribeCompanyServices,
@@ -83,6 +84,12 @@ function dateKey(date) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
+function toDateInputValue(date) {
+  return dateKey(startOfDay(date));
+}
+
+const PROVIDER_TABS = ['bookings', 'availability', 'customers', 'services'];
+
 function slotDate(slot) {
   if (slot.startAtMs) return new Date(slot.startAtMs);
   if (slot.startAt?.toDate) return slot.startAt.toDate();
@@ -111,9 +118,22 @@ function slotPeriod(slot) {
   return 'Evening';
 }
 
-function CalendarAvailabilityPanel({ slots, servicesById, onToggleSlot, addPanel, emptyText = 'No availability yet.' }) {
+function CalendarAvailabilityPanel({
+  slots,
+  servicesById,
+  onToggleSlot,
+  addPanel,
+  emptyText = 'No availability yet.',
+  selectedDate: controlledSelectedDate,
+  onSelectedDateChange,
+}) {
   const firstSlotDate = slotDate(slots[0]);
-  const [selectedDate, setSelectedDate] = useState(() => firstSlotDate || new Date());
+  const [internalSelectedDate, setInternalSelectedDate] = useState(() => firstSlotDate || new Date());
+  const selectedDate = controlledSelectedDate ?? internalSelectedDate;
+  const setSelectedDate = (day) => {
+    if (onSelectedDateChange) onSelectedDateChange(startOfDay(day));
+    else setInternalSelectedDate(startOfDay(day));
+  };
   const [visibleMonth, setVisibleMonth] = useState(() => firstSlotDate || new Date());
   const [view, setView] = useState('month');
   const [showAdd, setShowAdd] = useState(false);
@@ -133,7 +153,12 @@ function CalendarAvailabilityPanel({ slots, servicesById, onToggleSlot, addPanel
     return grouped;
   }, [slots]);
 
-  const calendarDays = view === 'week' ? weekDays(selectedDate) : monthDays(visibleMonth);
+  const calendarDays =
+    view === 'today'
+      ? [startOfDay(new Date())]
+      : view === 'week'
+        ? weekDays(selectedDate)
+        : monthDays(visibleMonth);
   const selectedKey = dateKey(selectedDate);
   const selectedSlots = slotsByDay.get(selectedKey) || [];
   const periods = ['Morning', 'Afternoon', 'Evening'];
@@ -142,6 +167,12 @@ function CalendarAvailabilityPanel({ slots, servicesById, onToggleSlot, addPanel
   const selectDate = (day) => {
     setSelectedDate(day);
     setVisibleMonth(new Date(day.getFullYear(), day.getMonth(), 1));
+  };
+
+  const goToday = () => {
+    const today = startOfDay(new Date());
+    setView('today');
+    selectDate(today);
   };
 
   return (
@@ -155,8 +186,8 @@ function CalendarAvailabilityPanel({ slots, servicesById, onToggleSlot, addPanel
           <div className="pp-providerCalendarToggle" aria-label="Calendar view">
             <button type="button" className={view === 'month' ? 'is-active' : ''} onClick={() => setView('month')}>Month</button>
             <button type="button" className={view === 'week' ? 'is-active' : ''} onClick={() => setView('week')}>Week</button>
+            <button type="button" className={view === 'today' ? 'is-active' : ''} onClick={goToday}>Today</button>
           </div>
-          <button type="button" className="pp-btn pp-btn--ghost" onClick={() => selectDate(new Date())}>Today</button>
           <button type="button" className="pp-btn pp-btn--primary" onClick={() => setShowAdd((v) => !v)}>+ Add availability</button>
         </div>
       </div>
@@ -173,15 +204,19 @@ function CalendarAvailabilityPanel({ slots, servicesById, onToggleSlot, addPanel
 
       <div className="pp-providerCalendarLayout">
         <div className="pp-providerCalendarCard">
-          <div className="pp-providerCalendarCard__top">
-            <button type="button" aria-label="Previous month" onClick={() => setVisibleMonth((d) => new Date(d.getFullYear(), d.getMonth() - 1, 1))}>‹</button>
-            <strong>{monthLabel}</strong>
-            <button type="button" aria-label="Next month" onClick={() => setVisibleMonth((d) => new Date(d.getFullYear(), d.getMonth() + 1, 1))}>›</button>
-          </div>
-          <div className="pp-providerCalendarWeek">
-            {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, idx) => <span key={`${d}-${idx}`}>{d}</span>)}
-          </div>
-          <div className={`pp-providerCalendarGrid ${view === 'week' ? 'is-week' : ''}`}>
+          {view !== 'today' ? (
+            <div className="pp-providerCalendarCard__top">
+              <button type="button" aria-label="Previous month" onClick={() => setVisibleMonth((d) => new Date(d.getFullYear(), d.getMonth() - 1, 1))}>‹</button>
+              <strong>{monthLabel}</strong>
+              <button type="button" aria-label="Next month" onClick={() => setVisibleMonth((d) => new Date(d.getFullYear(), d.getMonth() + 1, 1))}>›</button>
+            </div>
+          ) : null}
+          {view === 'month' ? (
+            <div className="pp-providerCalendarWeek">
+              {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, idx) => <span key={`${d}-${idx}`}>{d}</span>)}
+            </div>
+          ) : null}
+          <div className={`pp-providerCalendarGrid ${view === 'week' || view === 'today' ? 'is-week' : ''}`}>
             {calendarDays.map((day) => {
               const key = dateKey(day);
               const daySlots = slotsByDay.get(key) || [];
@@ -335,7 +370,14 @@ function ProviderTabs({ tab, setTab }) {
   return (
     <div className="pp-providerTabs" role="tablist" aria-label="Provider sections">
       {tabs.map(([id, label]) => (
-        <button key={id} type="button" className={tab === id ? 'is-active' : ''} onClick={() => setTab(id)} role="tab" aria-selected={tab === id}>
+        <button
+          key={id}
+          type="button"
+          className={tab === id ? 'is-active' : ''}
+          onClick={() => setTab(id)}
+          role="tab"
+          aria-selected={tab === id}
+        >
           {label}
         </button>
       ))}
@@ -485,7 +527,25 @@ export default function ProviderPortal() {
   const demoBusinesses = useMemo(() => getDemoBusinessAccounts(), []);
   const demoBusiness = useMemo(() => getDemoBusinessAccount(demoBusinessId), [demoBusinessId]);
 
-  const [tab, setTab] = useState('bookings'); // bookings|availability|customers|services
+  const tabParam = searchParams.get('tab') || '';
+  const initialTab = PROVIDER_TABS.includes(tabParam) ? tabParam : 'bookings';
+  const [tab, setTabState] = useState(initialTab);
+  const setTab = (next) => {
+    const safe = PROVIDER_TABS.includes(next) ? next : 'bookings';
+    setTabState(safe);
+    setSearchParams(
+      (prev) => {
+        const p = new URLSearchParams(prev);
+        p.set('tab', safe);
+        return p;
+      },
+      { replace: true }
+    );
+  };
+
+  useEffect(() => {
+    if (PROVIDER_TABS.includes(tabParam) && tabParam !== tab) setTabState(tabParam);
+  }, [tabParam, tab]);
   const [publishErr, setPublishErr] = useState('');
   const [publishBusy, setPublishBusy] = useState(false);
   const [publish, setPublish] = useState(() => ({
@@ -863,9 +923,11 @@ function Availability({ companyId }) {
   const [services, setServices] = useState([]);
   const [slots, setSlots] = useState([]);
   const [err, setErr] = useState('');
+  const [ok, setOk] = useState('');
   const [busy, setBusy] = useState(false);
   const [serviceId, setServiceId] = useState('');
-  const [date, setDate] = useState('');
+  const [calendarDate, setCalendarDate] = useState(() => startOfDay(new Date()));
+  const [date, setDate] = useState(() => toDateInputValue(new Date()));
   const [start, setStart] = useState('10:00');
   const [end, setEnd] = useState('10:30');
   const [timeOffDate, setTimeOffDate] = useState('');
@@ -880,15 +942,33 @@ function Availability({ companyId }) {
     if (!serviceId && services.length) setServiceId(services[0].id);
   }, [services, serviceId]);
 
+  useEffect(() => {
+    setDate(toDateInputValue(calendarDate));
+  }, [calendarDate]);
+
   const onCreate = async (e) => {
     e.preventDefault();
     setErr('');
+    setOk('');
+    if (!services.length) {
+      setErr('Add at least one service before publishing availability.');
+      return;
+    }
+    if (!date) {
+      setErr('Pick a date for the new slot.');
+      return;
+    }
+    setBusy(true);
     try {
       const startAt = new Date(`${date}T${start}:00`);
       const endAt = new Date(`${date}T${end}:00`);
       await createAvailabilitySlot(companyId, { serviceId, startAt, endAt, status: 'open' });
+      setOk('Slot added — customers can now book this time.');
     } catch (e2) {
-      setErr(e2?.message || 'failed');
+      const code = e2?.message || 'failed';
+      setErr(code === 'invalid_time_range' ? 'End time must be after start time.' : code);
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -928,6 +1008,7 @@ function Availability({ companyId }) {
   return (
     <>
       {err ? <div className="pp-error" style={{ marginBottom: 10 }}>{err}</div> : null}
+      {ok ? <div className="pp-success" style={{ marginBottom: 10 }}>{ok}</div> : null}
       <div className="pp-card pp-providerTimeOff" style={{ marginBottom: 14 }}>
         <div className="pp-card__title">Time off</div>
         <p className="pp-muted" style={{ marginTop: 6, marginBottom: 10 }}>
@@ -946,12 +1027,19 @@ function Availability({ companyId }) {
       <CalendarAvailabilityPanel
         slots={slots}
         servicesById={byServiceName}
+        selectedDate={calendarDate}
+        onSelectedDateChange={setCalendarDate}
         onToggleSlot={(s) => setSlotStatus(companyId, s.id, s.status === 'open' ? 'blocked' : 'open')}
         addPanel={(
           <form onSubmit={onCreate} className="pp-form pp-providerQuickAdd">
+            {services.length === 0 ? (
+              <p className="pp-muted" style={{ marginTop: 0 }}>
+                Create a service first (Services tab), then return here to publish bookable times.
+              </p>
+            ) : null}
             <label className="pp-field">
               <span className="pp-field__label">Service</span>
-              <select value={serviceId} onChange={(e) => setServiceId(e.target.value)}>
+              <select value={serviceId} onChange={(e) => setServiceId(e.target.value)} disabled={!services.length}>
                 {services.map((s) => (
                   <option key={s.id} value={s.id}>
                     {s.name}
@@ -979,8 +1067,8 @@ function Availability({ companyId }) {
               <button type="button" onClick={() => { setStart('09:00'); setEnd('12:00'); }}>Morning</button>
               <button type="button" onClick={() => { setStart('14:00'); setEnd('18:00'); }}>Afternoon</button>
             </div>
-            <button className="pp-btn pp-btn--primary" type="submit" disabled={!services.length}>
-              Add slot
+            <button className="pp-btn pp-btn--primary" type="submit" disabled={!services.length || busy}>
+              {busy ? 'Adding…' : 'Add slot'}
             </button>
           </form>
         )}
@@ -990,23 +1078,69 @@ function Availability({ companyId }) {
 }
 
 function Bookings({ companyId }) {
+  const { user } = useAuth();
   const [rows, setRows] = useState([]);
   const [slots, setSlots] = useState([]);
   const [services, setServices] = useState([]);
+  const [clientPets, setClientPets] = useState([]);
   const [err, setErr] = useState('');
+  const [ok, setOk] = useState('');
   const [busyId, setBusyId] = useState('');
   const [swapBookingId, setSwapBookingId] = useState('');
   const [swapSlotId, setSwapSlotId] = useState('');
+  const [showWalkIn, setShowWalkIn] = useState(false);
+  const [walkIn, setWalkIn] = useState({
+    clientPetId: '',
+    petName: '',
+    ownerName: '',
+    ownerPhone: '',
+    serviceId: '',
+    slotId: '',
+    notes: '',
+  });
 
   useEffect(() => subscribeProviderBookings(companyId, setRows, (e) => setErr(e?.message || 'failed')), [companyId]);
   useEffect(() => subscribeCompanyAvailability(companyId, setSlots, () => {}), [companyId]);
   useEffect(() => subscribeCompanyServices(companyId, setServices, () => {}), [companyId]);
+  useEffect(() => subscribeClientPets(companyId, setClientPets, () => {}), [companyId]);
 
   const servicesById = useMemo(() => {
     const m = new Map();
     services.forEach((s) => m.set(s.id, s.name));
     return m;
   }, [services]);
+
+  const activeServices = useMemo(() => services.filter((s) => s.active !== false), [services]);
+
+  const openSlotsForWalkIn = useMemo(() => {
+    if (!walkIn.serviceId) return [];
+    const after = startOfDay(new Date());
+    return slots
+      .filter((s) => (s.status || 'open') === 'open' && String(s.serviceId) === String(walkIn.serviceId))
+      .filter((s) => {
+        const d = slotDate(s);
+        return d && d.getTime() >= after.getTime();
+      })
+      .sort((a, b) => (slotDate(a)?.getTime() || 0) - (slotDate(b)?.getTime() || 0));
+  }, [slots, walkIn.serviceId]);
+
+  useEffect(() => {
+    if (!walkIn.serviceId && activeServices.length) {
+      setWalkIn((p) => ({ ...p, serviceId: activeServices[0].id }));
+    }
+  }, [activeServices, walkIn.serviceId]);
+
+  useEffect(() => {
+    if (!walkIn.clientPetId) return;
+    const pet = clientPets.find((p) => p.id === walkIn.clientPetId);
+    if (!pet) return;
+    setWalkIn((p) => ({
+      ...p,
+      petName: pet.name || p.petName,
+      ownerName: pet.ownerName || p.ownerName,
+      ownerPhone: pet.ownerPhone || p.ownerPhone,
+    }));
+  }, [walkIn.clientPetId, clientPets]);
 
   const openSlotsForBooking = useMemo(() => {
     const booking = rows.find((b) => b.id === swapBookingId);
@@ -1031,14 +1165,130 @@ function Bookings({ companyId }) {
     }
   };
 
+  const onWalkInBook = async (e) => {
+    e.preventDefault();
+    setErr('');
+    setOk('');
+    const petName = String(walkIn.petName || '').trim();
+    if (!petName) {
+      setErr('Enter the pet name for this appointment.');
+      return;
+    }
+    if (!walkIn.serviceId || !walkIn.slotId) {
+      setErr('Pick a service and an open time slot.');
+      return;
+    }
+    setBusyId('walkin');
+    try {
+      const service = services.find((s) => s.id === walkIn.serviceId);
+      await createProviderBooking({
+        companyId,
+        providerUid: user?.uid || companyId,
+        serviceId: walkIn.serviceId,
+        slotId: walkIn.slotId,
+        clientPetId: walkIn.clientPetId || null,
+        petSnapshot: { name: petName },
+        ownerName: walkIn.ownerName,
+        ownerPhone: walkIn.ownerPhone,
+        serviceSnapshot: service
+          ? { name: service.name, durationMin: service.durationMin, type: service.type }
+          : null,
+        notes: walkIn.notes,
+      });
+      setOk('Appointment booked for walk-in customer.');
+      setWalkIn((p) => ({ ...p, slotId: '', notes: '' }));
+      setShowWalkIn(false);
+    } catch (e2) {
+      setErr(e2?.message || 'failed');
+    } finally {
+      setBusyId('');
+    }
+  };
+
   return (
     <div className="pp-card">
-      <div className="pp-card__title">Bookings</div>
-      <p className="pp-muted" style={{ marginTop: 6 }}>
-        View appointments, reschedule to another slot, complete, or cancel.
-      </p>
-      {err ? <div className="pp-error">{err}</div> : null}
-      {rows.length === 0 ? <div className="pp-muted">No bookings yet.</div> : null}
+      <div className="pp-rowBetween" style={{ alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
+        <div>
+          <div className="pp-card__title">Bookings</div>
+          <p className="pp-muted" style={{ marginTop: 6, marginBottom: 0 }}>
+            Manage your schedule and book appointments for customers without the app.
+          </p>
+        </div>
+        <button type="button" className="pp-btn pp-btn--primary" onClick={() => setShowWalkIn((v) => !v)}>
+          {showWalkIn ? 'Close' : '+ Book walk-in'}
+        </button>
+      </div>
+
+      {showWalkIn ? (
+        <form onSubmit={onWalkInBook} className="pp-form pp-providerWalkInForm" style={{ marginTop: 14 }}>
+          <p className="pp-muted" style={{ marginTop: 0 }}>
+            Reserve an open slot for a phone or walk-in customer. Add client pets under Customers if you want them on file.
+          </p>
+          {clientPets.length ? (
+            <label className="pp-field">
+              <span className="pp-field__label">Client on file (optional)</span>
+              <select value={walkIn.clientPetId} onChange={(e) => setWalkIn((p) => ({ ...p, clientPetId: e.target.value }))}>
+                <option value="">New / manual entry</option>
+                {clientPets.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}{p.ownerName ? ` — ${p.ownerName}` : ''}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : null}
+          <div className="pp-modalGrid2">
+            <label className="pp-field">
+              <span className="pp-field__label">Pet name</span>
+              <input value={walkIn.petName} onChange={(e) => setWalkIn((p) => ({ ...p, petName: e.target.value }))} required />
+            </label>
+            <label className="pp-field">
+              <span className="pp-field__label">Owner name</span>
+              <input value={walkIn.ownerName} onChange={(e) => setWalkIn((p) => ({ ...p, ownerName: e.target.value }))} />
+            </label>
+            <label className="pp-field">
+              <span className="pp-field__label">Owner phone</span>
+              <input value={walkIn.ownerPhone} onChange={(e) => setWalkIn((p) => ({ ...p, ownerPhone: e.target.value }))} />
+            </label>
+            <label className="pp-field">
+              <span className="pp-field__label">Service</span>
+              <select value={walkIn.serviceId} onChange={(e) => setWalkIn((p) => ({ ...p, serviceId: e.target.value, slotId: '' }))}>
+                {activeServices.map((s) => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+              </select>
+            </label>
+          </div>
+          <label className="pp-field">
+            <span className="pp-field__label">Open slot</span>
+            <select value={walkIn.slotId} onChange={(e) => setWalkIn((p) => ({ ...p, slotId: e.target.value }))} required>
+              <option value="">Pick a time…</option>
+              {openSlotsForWalkIn.map((s) => {
+                const d = slotDate(s);
+                return (
+                  <option key={s.id} value={s.id}>
+                    {d ? formatDateTime24(d) : s.id}
+                  </option>
+                );
+              })}
+            </select>
+          </label>
+          {!openSlotsForWalkIn.length && walkIn.serviceId ? (
+            <p className="pp-muted">No open slots for this service. Add availability first.</p>
+          ) : null}
+          <label className="pp-field">
+            <span className="pp-field__label">Notes (optional)</span>
+            <input value={walkIn.notes} onChange={(e) => setWalkIn((p) => ({ ...p, notes: e.target.value }))} />
+          </label>
+          <button className="pp-btn pp-btn--primary" type="submit" disabled={busyId === 'walkin' || !activeServices.length}>
+            {busyId === 'walkin' ? 'Booking…' : 'Confirm booking'}
+          </button>
+        </form>
+      ) : null}
+
+      {err ? <div className="pp-error" style={{ marginTop: 10 }}>{err}</div> : null}
+      {ok ? <div className="pp-success" style={{ marginTop: 10 }}>{ok}</div> : null}
+      {rows.length === 0 ? <div className="pp-muted" style={{ marginTop: 10 }}>No bookings yet.</div> : null}
       <div className="pp-stack" style={{ marginTop: 10 }}>
         {rows.map((b) => {
           const when = b.startAt?.toDate ? formatDateTime24(b.startAt.toDate()) : '';
@@ -1051,7 +1301,13 @@ function Bookings({ companyId }) {
                   <div style={{ fontWeight: 900 }}>{b.petSnapshot?.name || 'Pet'}</div>
                   <div className="pp-muted" style={{ fontSize: 13 }}>
                     {serviceName} · {b.status}
+                    {b.walkIn ? ' · Walk-in' : ''}
                   </div>
+                  {b.petSnapshot?.ownerName || b.petSnapshot?.ownerPhone ? (
+                    <div className="pp-muted" style={{ fontSize: 13 }}>
+                      {[b.petSnapshot?.ownerName, b.petSnapshot?.ownerPhone].filter(Boolean).join(' · ')}
+                    </div>
+                  ) : null}
                   <div className="pp-muted" style={{ fontSize: 13 }}>{when}</div>
                 </div>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
