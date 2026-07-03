@@ -121,9 +121,14 @@ export default function BusinessWeekBookings() {
             </h1>
             <p className="pp-subtle">{t('businessWeek.sub')}</p>
           </div>
-          <Link className="pp-btn pp-btn--primary" to="/provider">
-            {t('businessWeek.managePortal')}
-          </Link>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            <Link className="pp-btn pp-btn--primary" to="/provider?tab=bookings">
+              {t('businessWeek.managePortal')}
+            </Link>
+            <Link className="pp-btn pp-btn--ghost" to="/provider?tab=availability">
+              {t('businessWeek.addAvailability')}
+            </Link>
+          </div>
         </div>
       </section>
 
@@ -224,7 +229,11 @@ export default function BusinessWeekBookings() {
                         <div style={{ fontWeight: 900 }}>{b.petSnapshot?.name || t('businessWeek.petFallback')}</div>
                         <div className="pp-muted" style={{ fontSize: 13 }}>
                           {serviceName} · {b.status || 'booked'}
+                          {b.walkIn ? ' · Walk-in' : ''}
                         </div>
+                        {b.petSnapshot?.ownerName ? (
+                          <div className="pp-muted" style={{ fontSize: 13 }}>{b.petSnapshot.ownerName}</div>
+                        ) : null}
                         <div className="pp-muted" style={{ fontSize: 13 }}>
                           {when ? formatDateTime24(when) : '—'}
                         </div>

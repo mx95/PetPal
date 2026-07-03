@@ -96,13 +96,15 @@ export default function BottomNav() {
   if (!user) return null;
 
   const homeTab = isApprovedCompany
-    ? { to: '/dashboard', key: 'bookings', labelKey: 'bottomNav.businessHome' }
+    ? { to: '/dashboard', key: 'bookings', labelKey: 'bottomNav.businessSchedule' }
     : { to: '/dashboard', key: 'home', labelKey: 'bottomNav.activity' };
 
   const left = [
     homeTab,
     ...(MVP_NAV.showBookings
-      ? [{ to: '/bookings', key: 'bookings', labelKey: 'nav.bookings', end: true }]
+      ? isApprovedCompany
+        ? [{ to: { pathname: '/provider', search: '?tab=bookings' }, key: 'provider', labelKey: 'bottomNav.businessHub' }]
+        : [{ to: '/bookings', key: 'bookingsBrowse', labelKey: 'nav.bookings', end: true }]
       : []),
   ];
   const right = [

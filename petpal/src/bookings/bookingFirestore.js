@@ -279,6 +279,72 @@ export async function blockSlotsForTimeOff(companyId, slotIds) {
   await batch.commit();
 }
 
+/** Provider books an open slot for a walk-in / client without a PetPal account. */
+export async function createProviderBooking({
+  companyId,
+  providerUid,
+  serviceId,
+  slotId,
+  clientPetId = null,
+  petSnapshot = {},
+  ownerName = '',
+  ownerPhone = '',
+  serviceSnapshot = null,
+  notes = '',
+}) {
+  if (!isFirebaseConfigured()) throw new Error('firebase_unconfigured');
+  if (!companyId || !providerUid || !serviceId || !slotId) throw new Error('missing_fields');
+
+  const petName = String(petSnapshot?.name || '').trim();
+  if (!petName) throw new Error('pet_name_required');
+
+  const slotRef = doc(getDb(), 'companies', companyId, 'availability', slotId);
+  const slotSnap = await getDoc(slotRef);
+  if (!slotSnap.exists()) throw new Error('slot_not_found');
+  const slot = slotSnap.data() || {};
+  if (slot.status !== 'open') throw new Error('slot_not_open');
+
+  const walkInKey = clientPetId ? String(clientPetId) : `manual_${Date.now()}`;
+  const customerUid = `walkin:${companyId}:${walkInKey}`;
+  const petId = clientPetId ? String(clientPetId) : `walkin_${walkInKey}`;
+
+  const bookingPayload = {
+    companyId,
+    serviceId,
+    slotId,
+    customerUid,
+    petId,
+    petSnapshot: {
+      ...petSnapshot,
+      name: petName,
+      ownerName: ownerName ? String(ownerName).trim().slice(0, 120) : '',
+      ownerPhone: ownerPhone ? String(ownerPhone).trim().slice(0, 40) : '',
+    },
+    startAt: slot.startAt || null,
+    endAt: slot.endAt || null,
+    status: 'booked',
+    walkIn: true,
+    bookedByProviderUid: String(providerUid),
+    notes: notes ? String(notes).trim().slice(0, 500) : '',
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  };
+  if (serviceSnapshot) bookingPayload.serviceSnapshot = serviceSnapshot;
+
+  const batch = writeBatch(getDb());
+  const bookingRef = doc(bookingsCol());
+  batch.set(bookingRef, bookingPayload);
+  batch.update(slotRef, {
+    status: 'blocked',
+    updatedAt: serverTimestamp(),
+    bookedAt: serverTimestamp(),
+    bookingId: bookingRef.id,
+  });
+  await batch.commit();
+
+  return bookingRef.id;
+}
+
 export async function bookSlot({
   companyId,
   serviceId,
