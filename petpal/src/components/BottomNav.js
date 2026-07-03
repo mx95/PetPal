@@ -90,19 +90,19 @@ const ICONS = {
 /** Mobile-first sticky bottom navigation with a centered FAB for Live tracking. */
 export default function BottomNav() {
   const { user } = useAuth();
-  const { isCompanyAccount } = useCompany();
+  const { isBusinessHome } = useCompany();
   const { t } = useI18n();
   useMobileDockLayout(Boolean(user));
   if (!user) return null;
 
-  const homeTab = isCompanyAccount
+  const homeTab = isBusinessHome
     ? { to: '/dashboard', key: 'businessSchedule', iconKey: 'bookings', labelKey: 'bottomNav.businessSchedule' }
     : { to: '/dashboard', key: 'home', labelKey: 'bottomNav.activity' };
 
   const left = [
     homeTab,
     ...(MVP_NAV.showBookings
-      ? isCompanyAccount
+      ? isBusinessHome
         ? [{ to: { pathname: '/provider', search: '?tab=bookings' }, key: 'businessHub', iconKey: 'provider', labelKey: 'bottomNav.businessHub' }]
         : [{ to: '/bookings', key: 'bookingsBrowse', iconKey: 'bookings', labelKey: 'nav.bookings', end: true }]
       : []),

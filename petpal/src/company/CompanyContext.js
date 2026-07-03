@@ -79,6 +79,10 @@ export function CompanyProvider({ children }) {
     || isApprovedCompany
     || isPendingCompany
     || isRejectedCompany;
+  /** Business schedule home + nav — never for platform admins using a personal login. */
+  const isBusinessHome =
+    !isAdmin
+    && (isApprovedCompany || (userAccountType === 'company' && !isApprovedCompany));
 
   const value = useMemo(
     () => ({
@@ -87,6 +91,7 @@ export function CompanyProvider({ children }) {
       profileLoading,
       userAccountType,
       isCompanyAccount,
+      isBusinessHome,
       isApprovedCompany,
       isPendingCompany,
       isRejectedCompany,
@@ -99,6 +104,7 @@ export function CompanyProvider({ children }) {
       profileLoading,
       userAccountType,
       isCompanyAccount,
+      isBusinessHome,
       isApprovedCompany,
       isPendingCompany,
       isRejectedCompany,

@@ -23,7 +23,7 @@ function km(n) {
  */
 export default function ActivityHub() {
   const { t, language } = useI18n();
-  const { isCompanyAccount, profileLoading } = useCompany();
+  const { isBusinessHome, profileLoading } = useCompany();
   const { pets } = usePets();
   const {
     ownerXp,
@@ -170,7 +170,7 @@ export default function ActivityHub() {
     );
   };
 
-  if (!profileLoading && isCompanyAccount) {
+  if (!profileLoading && isBusinessHome) {
     return <Navigate to="/dashboard" replace />;
   }
 
