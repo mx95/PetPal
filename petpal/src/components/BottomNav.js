@@ -96,15 +96,15 @@ export default function BottomNav() {
   if (!user) return null;
 
   const homeTab = isApprovedCompany
-    ? { to: '/dashboard', key: 'bookings', labelKey: 'bottomNav.businessSchedule' }
+    ? { to: '/dashboard', key: 'businessSchedule', iconKey: 'bookings', labelKey: 'bottomNav.businessSchedule' }
     : { to: '/dashboard', key: 'home', labelKey: 'bottomNav.activity' };
 
   const left = [
     homeTab,
     ...(MVP_NAV.showBookings
       ? isApprovedCompany
-        ? [{ to: { pathname: '/provider', search: '?tab=bookings' }, key: 'provider', labelKey: 'bottomNav.businessHub' }]
-        : [{ to: '/bookings', key: 'bookingsBrowse', labelKey: 'nav.bookings', end: true }]
+        ? [{ to: { pathname: '/provider', search: '?tab=bookings' }, key: 'businessHub', iconKey: 'provider', labelKey: 'bottomNav.businessHub' }]
+        : [{ to: '/bookings', key: 'bookingsBrowse', iconKey: 'bookings', labelKey: 'nav.bookings', end: true }]
       : []),
   ];
   const right = [
@@ -121,7 +121,7 @@ export default function BottomNav() {
       aria-label={t(item.labelKey)}
       title={t(item.labelKey)}
     >
-      <span className="pp-bottomNav__icon">{ICONS[item.key]}</span>
+      <span className="pp-bottomNav__icon">{ICONS[item.iconKey || item.key]}</span>
       <span className="pp-bottomNav__label">{t(item.labelKey)}</span>
     </NavLink>
   );
