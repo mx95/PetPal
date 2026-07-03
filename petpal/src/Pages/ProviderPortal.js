@@ -88,6 +88,20 @@ function toDateInputValue(date) {
   return dateKey(startOfDay(date));
 }
 
+function eachDateKeyInRange(startStr, endStr) {
+  if (!startStr) return [];
+  const start = startOfDay(new Date(`${startStr}T12:00:00`));
+  const end = startOfDay(new Date(`${(endStr || startStr)}T12:00:00`));
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return [];
+  const from = end < start ? end : start;
+  const to = end < start ? start : end;
+  const keys = [];
+  for (let d = new Date(from); d.getTime() <= to.getTime(); d = addDays(d, 1)) {
+    keys.push(dateKey(d));
+  }
+  return keys;
+}
+
 const PROVIDER_TABS = ['bookings', 'availability', 'customers', 'services'];
 
 function slotDate(slot) {
@@ -166,6 +180,7 @@ function CalendarAvailabilityPanel({
   const selectedSlots = slotsByDay.get(selectedKey) || [];
   const periods = ['Morning', 'Afternoon', 'Evening'];
   const monthLabel = visibleMonth.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+  const mobileMonthLabel = selectedDate.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
 
   const selectDate = (day) => {
     setSelectedDate(day);
@@ -179,7 +194,7 @@ function CalendarAvailabilityPanel({
   };
 
   return (
-    <section className="pp-providerPanel pp-providerCalendarPanel">
+    <section className={`pp-providerPanel pp-providerCalendarPanel ${view === 'month' ? 'pp-providerCalendarPanel--month' : ''}`}>
       <div className="pp-providerPanel__head">
         <div>
           <h2>Availability</h2>
@@ -207,13 +222,20 @@ function CalendarAvailabilityPanel({
 
       <div className="pp-providerCalendarLayout">
         <div className="pp-providerCalendarCard">
+          <div className="pp-providerCalendarMobileMonth" aria-live="polite">
+            <strong>{mobileMonthLabel}</strong>
+          </div>
           {view !== 'today' ? (
-            <div className="pp-providerCalendarCard__top">
+            <div className="pp-providerCalendarCard__top pp-providerCalendarCard__top--desktop">
               <button type="button" aria-label="Previous month" onClick={() => setVisibleMonth((d) => new Date(d.getFullYear(), d.getMonth() - 1, 1))}>‹</button>
               <strong>{monthLabel}</strong>
               <button type="button" aria-label="Next month" onClick={() => setVisibleMonth((d) => new Date(d.getFullYear(), d.getMonth() + 1, 1))}>›</button>
             </div>
-          ) : null}
+          ) : (
+            <div className="pp-providerCalendarCard__top pp-providerCalendarCard__top--desktop pp-providerCalendarCard__top--today">
+              <strong>{mobileMonthLabel}</strong>
+            </div>
+          )}
           {view === 'month' ? (
             <div className="pp-providerCalendarWeek">
               {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, idx) => <span key={`${d}-${idx}`}>{d}</span>)}
@@ -815,15 +837,22 @@ function Services({ companyId }) {
   };
 
   return (
-    <div className="pp-grid2" style={{ gap: 14 }}>
-      <div className="pp-card">
-        <div className="pp-card__title">Create service</div>
+    <section className="pp-providerPanel">
+      <div className="pp-providerPanel__head">
+        <div>
+          <h2>Services</h2>
+          <p>What customers can book — name, duration, price, and prep notes.</p>
+        </div>
+      </div>
+
+      <div className="pp-providerFormCard">
+        <h3 className="pp-providerFormCard__title">Create service</h3>
         {err ? <div className="pp-error">{err}</div> : null}
-        <form onSubmit={onCreate} className="pp-form">
+        <form onSubmit={onCreate} className="pp-form pp-providerForm">
           <div className="pp-modalGrid2">
             <label className="pp-field">
               <span className="pp-field__label">Type</span>
-              <select value={form.type} onChange={(e) => setForm((p) => ({ ...p, type: e.target.value }))}>
+              <select className="pp-input" value={form.type} onChange={(e) => setForm((p) => ({ ...p, type: e.target.value }))}>
                 <option value="vet">Vet</option>
                 <option value="bath">Bath</option>
                 <option value="saloon">Saloon</option>
@@ -833,6 +862,7 @@ function Services({ companyId }) {
             <label className="pp-field">
               <span className="pp-field__label">Duration (min)</span>
               <input
+                className="pp-input"
                 type="number"
                 min={5}
                 value={form.durationMin}
@@ -841,50 +871,48 @@ function Services({ companyId }) {
             </label>
             <label className="pp-field">
               <span className="pp-field__label">Price</span>
-              <input value={form.price} onChange={(e) => setForm((p) => ({ ...p, price: e.target.value }))} placeholder="€25" />
+              <input className="pp-input" value={form.price} onChange={(e) => setForm((p) => ({ ...p, price: e.target.value }))} placeholder="€25" />
             </label>
           </div>
           <label className="pp-field">
             <span className="pp-field__label">Name</span>
-            <input value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} />
+            <input className="pp-input" value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} placeholder="Health checkup" />
           </label>
           <label className="pp-field">
             <span className="pp-field__label">Description</span>
             <textarea
+              className="pp-input"
               rows={3}
               value={form.description}
               onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
+              placeholder="General wellness exam"
             />
           </label>
           <label className="pp-field">
             <span className="pp-field__label">Optional add-ons</span>
-            <textarea rows={2} value={form.addOns} onChange={(e) => setForm((p) => ({ ...p, addOns: e.target.value }))} placeholder="Nail trim +€8, medicated shampoo +€10" />
+            <textarea className="pp-input" rows={2} value={form.addOns} onChange={(e) => setForm((p) => ({ ...p, addOns: e.target.value }))} placeholder="Nail trim +€8, medicated shampoo +€10" />
           </label>
           <label className="pp-field">
             <span className="pp-field__label">Preparation notes</span>
-            <textarea rows={2} value={form.preparationNotes} onChange={(e) => setForm((p) => ({ ...p, preparationNotes: e.target.value }))} placeholder="Bring vaccination booklet, arrive 10 minutes early..." />
+            <textarea className="pp-input" rows={2} value={form.preparationNotes} onChange={(e) => setForm((p) => ({ ...p, preparationNotes: e.target.value }))} placeholder="Bring vaccination booklet, arrive 10 minutes early..." />
           </label>
           {form.type === 'saloon' || form.type === 'bath' ? (
-            <label className="pp-field" style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+            <label className="pp-field pp-field--checkbox">
               <input
                 type="checkbox"
                 checked={form.coatVariants}
                 onChange={(e) => setForm((p) => ({ ...p, coatVariants: e.target.checked }))}
               />
-              <span className="pp-field__label" style={{ margin: 0 }}>
-                Coat length options (short / medium / long)
-              </span>
+              <span>Coat length options (short / medium / long)</span>
             </label>
           ) : null}
-          <label className="pp-field" style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          <label className="pp-field pp-field--checkbox">
             <input
               type="checkbox"
               checked={form.active}
               onChange={(e) => setForm((p) => ({ ...p, active: e.target.checked }))}
             />
-            <span className="pp-field__label" style={{ margin: 0 }}>
-              Active
-            </span>
+            <span>Active — visible to customers</span>
           </label>
           <button className="pp-btn pp-btn--primary" type="submit">
             Add service
@@ -892,33 +920,32 @@ function Services({ companyId }) {
         </form>
       </div>
 
-      <div className="pp-card">
-        <div className="pp-card__title">Services</div>
-        {services.length === 0 ? <div className="pp-muted">No services yet.</div> : null}
-        <div className="pp-stack" style={{ marginTop: 10 }}>
-          {services.map((s) => (
-            <div key={s.id} className="pp-rowBetween pp-rowBetween--card">
-              <div>
-                <div style={{ fontWeight: 900 }}>{s.name}</div>
-                <div className="pp-muted" style={{ fontSize: 13 }}>
-                  {s.type} • {s.price || 'No price'} • {s.durationMin} min
-                  {Array.isArray(s.variants) && s.variants.length ? ` • ${s.variants.length} coat options` : ''}
-                  {' • '}
-                  {s.active === false ? 'inactive' : 'active'}
-                </div>
+      <div className="pp-providerServiceGrid" style={{ marginTop: 14 }}>
+        {services.length === 0 ? <div className="pp-providerEmptyCard">No services yet — add your first bookable service above.</div> : null}
+        {services.map((s) => (
+          <article key={s.id} className="pp-providerServiceCard">
+            <div className="pp-providerServiceCard__icon" aria-hidden>{serviceIcon(s.type)}</div>
+            <div className="pp-providerServiceCard__body">
+              <div className="pp-providerServiceCard__top">
+                <h3>{s.name}</h3>
+                <span className={s.active === false ? 'is-off' : 'is-on'}>{s.active === false ? 'Inactive' : 'Active'}</span>
               </div>
-              <button
-                type="button"
-                className="pp-btn pp-btn--ghost"
-                onClick={() => upsertCompanyService(companyId, s.id, { active: s.active === false })}
-              >
+              <p>{s.description || 'No description yet.'}</p>
+              <div className="pp-providerServiceCard__meta">
+                <span>{s.durationMin} min</span>
+                <span>{s.price || 'No price'}</span>
+                <span>{s.type}</span>
+              </div>
+            </div>
+            <div className="pp-providerServiceCard__actions">
+              <button type="button" className="pp-btn pp-btn--ghost" onClick={() => upsertCompanyService(companyId, s.id, { active: s.active === false })}>
                 {s.active === false ? 'Enable' : 'Disable'}
               </button>
             </div>
-          ))}
-        </div>
+          </article>
+        ))}
       </div>
-    </div>
+    </section>
   );
 }
 
@@ -934,6 +961,8 @@ function Availability({ companyId, openAddPanel = false }) {
   const [start, setStart] = useState('10:00');
   const [end, setEnd] = useState('10:30');
   const [timeOffDate, setTimeOffDate] = useState('');
+  const [timeOffEndDate, setTimeOffEndDate] = useState('');
+  const [timeOffMode, setTimeOffMode] = useState('single');
 
   useEffect(() => subscribeCompanyServices(companyId, setServices, (e) => setErr(e?.message || 'failed')), [companyId]);
   useEffect(
@@ -977,24 +1006,31 @@ function Availability({ companyId, openAddPanel = false }) {
 
   const onBlockDayOff = async () => {
     if (!timeOffDate) return;
+    if (timeOffMode === 'range' && !timeOffEndDate) {
+      setErr('Pick an end date for the time-off range.');
+      return;
+    }
     setErr('');
     setBusy(true);
     try {
-      const openOnDay = slots.filter((s) => {
+      const dayKeys = eachDateKeyInRange(timeOffDate, timeOffMode === 'range' ? timeOffEndDate : timeOffDate);
+      const openOnDays = slots.filter((s) => {
         const d = slotDate(s);
         if (!d) return false;
         const key = dateKey(d);
-        return key === timeOffDate && (s.status || 'open') === 'open';
+        return dayKeys.includes(key) && (s.status || 'open') === 'open';
       });
-      if (!openOnDay.length) {
-        setErr('No open slots on that date to block.');
+      if (!openOnDays.length) {
+        setErr('No open slots in that period to block.');
         return;
       }
       await blockSlotsForTimeOff(
         companyId,
-        openOnDay.map((s) => s.id)
+        openOnDays.map((s) => s.id)
       );
       setTimeOffDate('');
+      setTimeOffEndDate('');
+      setOk(`Blocked ${openOnDays.length} slot${openOnDays.length === 1 ? '' : 's'} across ${dayKeys.length} day${dayKeys.length === 1 ? '' : 's'}.`);
     } catch (e2) {
       setErr(e2?.message || 'failed');
     } finally {
@@ -1014,16 +1050,43 @@ function Availability({ companyId, openAddPanel = false }) {
       {ok ? <div className="pp-success" style={{ marginBottom: 10 }}>{ok}</div> : null}
       <div className="pp-card pp-providerTimeOff" style={{ marginBottom: 14 }}>
         <div className="pp-card__title">Time off</div>
-        <p className="pp-muted" style={{ marginTop: 6, marginBottom: 10 }}>
-          Block all open slots on a day — useful for holidays, training, or closures.
+        <p className="pp-muted" style={{ marginTop: 6, marginBottom: 12 }}>
+          Block open slots for a single day or a date range — holidays, training, or closures.
         </p>
-        <div className="pp-row" style={{ gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
-          <label className="pp-field" style={{ margin: 0 }}>
-            <span className="pp-field__label">Date</span>
-            <input type="date" value={timeOffDate} onChange={(e) => setTimeOffDate(e.target.value)} />
-          </label>
-          <button type="button" className="pp-btn pp-btn--ghost" disabled={!timeOffDate || busy} onClick={() => void onBlockDayOff()}>
-            {busy ? 'Blocking…' : 'Block day off'}
+        <div className="pp-providerTimeOffModes" role="tablist" aria-label="Time off mode">
+          <button type="button" className={timeOffMode === 'single' ? 'is-active' : ''} onClick={() => setTimeOffMode('single')}>
+            Single day
+          </button>
+          <button type="button" className={timeOffMode === 'range' ? 'is-active' : ''} onClick={() => setTimeOffMode('range')}>
+            Date range
+          </button>
+        </div>
+        <div className="pp-providerFormCard pp-providerFormCard--inline" style={{ marginTop: 12 }}>
+          {timeOffMode === 'single' ? (
+            <label className="pp-field">
+              <span className="pp-field__label">Date</span>
+              <input className="pp-input" type="date" value={timeOffDate} onChange={(e) => setTimeOffDate(e.target.value)} />
+            </label>
+          ) : (
+            <div className="pp-modalGrid2">
+              <label className="pp-field">
+                <span className="pp-field__label">From</span>
+                <input className="pp-input" type="date" value={timeOffDate} onChange={(e) => setTimeOffDate(e.target.value)} />
+              </label>
+              <label className="pp-field">
+                <span className="pp-field__label">To</span>
+                <input className="pp-input" type="date" value={timeOffEndDate} min={timeOffDate || undefined} onChange={(e) => setTimeOffEndDate(e.target.value)} />
+              </label>
+            </div>
+          )}
+          <button
+            type="button"
+            className="pp-btn pp-btn--primary"
+            style={{ marginTop: 12 }}
+            disabled={!timeOffDate || busy || (timeOffMode === 'range' && !timeOffEndDate)}
+            onClick={() => void onBlockDayOff()}
+          >
+            {busy ? 'Blocking…' : 'Block time off'}
           </button>
         </div>
       </div>
@@ -1043,7 +1106,7 @@ function Availability({ companyId, openAddPanel = false }) {
             ) : null}
             <label className="pp-field">
               <span className="pp-field__label">Service</span>
-              <select value={serviceId} onChange={(e) => setServiceId(e.target.value)} disabled={!services.length}>
+              <select className="pp-input" value={serviceId} onChange={(e) => setServiceId(e.target.value)} disabled={!services.length}>
                 {services.map((s) => (
                   <option key={s.id} value={s.id}>
                     {s.name}
@@ -1054,7 +1117,7 @@ function Availability({ companyId, openAddPanel = false }) {
             <div className="pp-modalGrid2">
               <label className="pp-field">
                 <span className="pp-field__label">Date</span>
-                <input type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
+                <input className="pp-input" type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
               </label>
               <label className="pp-field">
                 <span className="pp-field__label">Start</span>
@@ -1427,62 +1490,76 @@ function Customers({ companyId, clinicLabel = '' }) {
           }}
         />
       ) : null}
-      <div className="pp-grid2" style={{ gap: 14 }}>
-        <div className="pp-card">
-          <div className="pp-card__title">Customers from bookings</div>
-          {err ? <div className="pp-error">{err}</div> : null}
-          {customersFromBookings.length === 0 ? <div className="pp-muted">No customers yet.</div> : null}
-          <div className="pp-stack" style={{ marginTop: 10 }}>
-            {customersFromBookings.map((c) => (
-              <div key={c.key} className="pp-rowBetween pp-rowBetween--card">
-                <div>
-                  <div style={{ fontWeight: 900 }}>{c.petName}</div>
-                  <div className="pp-muted" style={{ fontSize: 13 }}>
-                    {c.ownerLabel} · {c.visits} visit{c.visits === 1 ? '' : 's'}
-                  </div>
-                </div>
-                {c.lastVisit ? (
-                  <small className="pp-muted">{formatDateTime24(new Date(c.lastVisit))}</small>
-                ) : null}
-              </div>
-            ))}
+      <section className="pp-providerPanel">
+        <div className="pp-providerPanel__head">
+          <div>
+            <h2>Customers</h2>
+            <p>Walk-in clients, pets on file, and repeat visitors from bookings.</p>
           </div>
         </div>
 
-        <div className="pp-card">
-          <div className="pp-card__title">Add client pet</div>
-          <form onSubmit={onCreatePet} className="pp-form">
+        {err ? <div className="pp-error" style={{ marginBottom: 10 }}>{err}</div> : null}
+
+        <div className="pp-providerFormCard">
+          <h3 className="pp-providerFormCard__title">Add client pet</h3>
+          <p className="pp-muted" style={{ marginTop: 0, marginBottom: 12 }}>
+            Save pets for phone or walk-in customers who do not use the app.
+          </p>
+          <form onSubmit={onCreatePet} className="pp-form pp-providerForm">
             <label className="pp-field">
               <span className="pp-field__label">Pet name</span>
-              <input value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} />
+              <input className="pp-input" value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} placeholder="Luna" required />
             </label>
             <div className="pp-modalGrid2">
               <label className="pp-field">
                 <span className="pp-field__label">Owner name</span>
-                <input value={form.ownerName} onChange={(e) => setForm((p) => ({ ...p, ownerName: e.target.value }))} />
+                <input className="pp-input" value={form.ownerName} onChange={(e) => setForm((p) => ({ ...p, ownerName: e.target.value }))} placeholder="Maria P." />
               </label>
               <label className="pp-field">
                 <span className="pp-field__label">Owner phone</span>
-                <input value={form.ownerPhone} onChange={(e) => setForm((p) => ({ ...p, ownerPhone: e.target.value }))} />
+                <input className="pp-input" type="tel" value={form.ownerPhone} onChange={(e) => setForm((p) => ({ ...p, ownerPhone: e.target.value }))} placeholder="+357 99 000000" />
               </label>
             </div>
-            <button className="pp-btn pp-btn--primary" type="submit">Add</button>
+            <label className="pp-field">
+              <span className="pp-field__label">Tracker IMEI (optional)</span>
+              <input className="pp-input" value={form.trackingImei} onChange={(e) => setForm((p) => ({ ...p, trackingImei: e.target.value }))} placeholder="Link a GPS collar" />
+            </label>
+            <button className="pp-btn pp-btn--primary" type="submit">Add client pet</button>
           </form>
         </div>
 
-        <div className="pp-card">
-          <div className="pp-card__title">Client pets on file</div>
-          {clientPets.length === 0 ? <div className="pp-muted">No pets added yet.</div> : null}
-          <div className="pp-stack" style={{ marginTop: 10 }}>
-            {clientPets.map((p) => (
-              <div key={p.id} className="pp-rowBetween pp-rowBetween--card" style={{ alignItems: 'center', gap: 10 }}>
-                <div style={{ minWidth: 0, flex: 1 }}>
-                  <div style={{ fontWeight: 900 }}>{p.name}</div>
-                  <div className="pp-muted" style={{ fontSize: 13 }}>
-                    {p.ownerName || '—'} {p.ownerPhone ? `· ${p.ownerPhone}` : ''}
-                  </div>
+        <div className="pp-providerClientGrid" style={{ marginTop: 14 }}>
+          <h3 className="pp-providerFormCard__title" style={{ gridColumn: '1 / -1', margin: 0 }}>Customers from bookings</h3>
+          {customersFromBookings.length === 0 ? (
+            <div className="pp-providerEmptyCard" style={{ gridColumn: '1 / -1' }}>No customers from bookings yet.</div>
+          ) : (
+            customersFromBookings.map((c) => (
+              <article key={c.key} className="pp-providerClientCard">
+                <div className="pp-providerAvatar" aria-hidden>{c.petName.charAt(0)}</div>
+                <div>
+                  <h3>{c.petName}</h3>
+                  <p>{c.ownerLabel}</p>
+                  <small>{c.visits} visit{c.visits === 1 ? '' : 's'}{c.lastVisit ? ` · ${formatDateTime24(new Date(c.lastVisit))}` : ''}</small>
                 </div>
-                <div className="pp-row" style={{ gap: 8, flexShrink: 0 }}>
+              </article>
+            ))
+          )}
+        </div>
+
+        <div className="pp-providerClientGrid" style={{ marginTop: 14 }}>
+          <h3 className="pp-providerFormCard__title" style={{ gridColumn: '1 / -1', margin: 0 }}>Client pets on file</h3>
+          {clientPets.length === 0 ? (
+            <div className="pp-providerEmptyCard" style={{ gridColumn: '1 / -1' }}>No pets added yet.</div>
+          ) : (
+            clientPets.map((p) => (
+              <article key={p.id} className="pp-providerClientCard">
+                <div className="pp-providerAvatar" aria-hidden>{p.name.charAt(0)}</div>
+                <div>
+                  <h3>{p.name}</h3>
+                  <p>{p.ownerName || 'Walk-in customer'}</p>
+                  <small>{p.ownerPhone || 'No phone'}{p.trackingImei ? ' · Tracker linked' : ''}</small>
+                </div>
+                <div className="pp-providerClientCard__actions">
                   {p.ownerPhone ? (
                     <a href={`tel:${p.ownerPhone}`} className="pp-btn pp-btn--ghost">Call</a>
                   ) : null}
@@ -1491,11 +1568,11 @@ function Customers({ companyId, clinicLabel = '' }) {
                   </button>
                   <button type="button" className="pp-btn pp-btn--ghost" onClick={() => deleteClientPet(companyId, p.id)}>Remove</button>
                 </div>
-              </div>
-            ))}
-          </div>
+              </article>
+            ))
+          )}
         </div>
-      </div>
+      </section>
     </>
   );
 }

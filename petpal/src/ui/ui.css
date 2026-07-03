@@ -16211,6 +16211,108 @@ html[data-theme="dark"] .pp-book-calendar__monthControls button {
   overflow: visible;
 }
 
+.pp-providerCalendarMobileMonth {
+  display: none;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.pp-providerCalendarMobileMonth strong {
+  color: var(--pp-text);
+  font-size: 16px;
+  font-weight: 950;
+}
+
+.pp-providerFormCard {
+  border: 1px solid rgba(91, 55, 255, 0.14);
+  border-radius: 22px;
+  background:
+    radial-gradient(220px 100px at 100% 0%, rgba(91, 55, 255, 0.08), transparent 76%),
+    rgba(255, 255, 255, 0.82);
+  box-shadow: var(--pp-shadow-xs);
+  padding: 16px;
+}
+
+.pp-providerFormCard--inline {
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.pp-providerFormCard__title {
+  margin: 0 0 12px;
+  color: var(--pp-text);
+  font-size: 15px;
+  font-weight: 950;
+}
+
+.pp-demoProviderPortal .pp-providerForm .pp-field {
+  display: grid;
+  gap: 6px;
+}
+
+.pp-demoProviderPortal .pp-field__label {
+  color: var(--pp-text-2);
+  font-size: 12px;
+  font-weight: 850;
+  letter-spacing: 0.02em;
+}
+
+.pp-demoProviderPortal .pp-field--checkbox {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid rgba(16, 24, 40, 0.08);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.pp-demoProviderPortal .pp-field--checkbox span {
+  font-size: 13px;
+  font-weight: 750;
+  color: var(--pp-text);
+}
+
+.pp-providerEmptyCard {
+  border: 1px dashed rgba(91, 55, 255, 0.22);
+  border-radius: 18px;
+  background: rgba(91, 55, 255, 0.04);
+  color: var(--pp-text-2);
+  padding: 16px;
+  font-size: 13px;
+  font-weight: 750;
+  text-align: center;
+}
+
+.pp-providerTimeOffModes {
+  display: inline-flex;
+  gap: 6px;
+  padding: 4px;
+  border-radius: 999px;
+  background: rgba(91, 55, 255, 0.07);
+}
+
+.pp-providerTimeOffModes button {
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #5b37ff;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 950;
+}
+
+.pp-providerTimeOffModes button.is-active {
+  background: #fff;
+  box-shadow: 0 8px 18px -14px rgba(91, 55, 255, 0.8);
+}
+
+.pp-providerClientCard__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
 .pp-providerCalendarStrip {
   display: none;
   gap: 8px;
@@ -16490,15 +16592,42 @@ html[data-theme="dark"] .pp-book-calendar__monthControls button {
     justify-content: flex-start;
   }
 
-  .pp-providerCalendarWeek,
-  .pp-providerCalendarGrid {
+  .pp-providerCalendarCard__top--desktop {
     display: none;
   }
 
-  .pp-providerCalendarStrip {
+  .pp-providerCalendarMobileMonth {
+    display: block;
+  }
+
+  .pp-providerCalendarWeek {
+    display: none;
+  }
+
+  .pp-providerCalendarGrid:not(.is-week) {
+    display: none;
+  }
+
+  .pp-providerCalendarGrid.is-week {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 4px;
+  }
+
+  .pp-providerCalendarGrid.is-week button {
+    min-height: 42px;
+    border-radius: 12px;
+    font-size: 13px;
+  }
+
+  .pp-providerCalendarPanel--month .pp-providerCalendarStrip {
     display: flex;
     flex-wrap: nowrap;
     max-width: 100%;
+  }
+
+  .pp-providerCalendarPanel:not(.pp-providerCalendarPanel--month) .pp-providerCalendarStrip {
+    display: none;
   }
 
   .pp-providerCalendarCard {
