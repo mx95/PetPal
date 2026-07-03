@@ -1,0 +1,42 @@
+# Deploy Firestore security rules (walk-in bookings, availability, etc.).
+#
+# Requires FIREBASE_TOKEN in GitHub Actions secrets (firebase login:ci).
+
+name: Deploy Firestore rules
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'petpal/firestore.rules'
+      - 'petpal/firestore.indexes.json'
+      - '.github/workflows/deploy-firestore-rules.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-firestore-rules
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: petpal
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Deploy Firestore rules
+        run: >
+          npx firebase-tools@13.29.1 deploy
+          --only firestore:rules
+          --project petpal-aecda
+          --non-interactive
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
