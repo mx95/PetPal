@@ -123,15 +123,33 @@ export function providerDistanceKm(p, userLoc) {
  * True when a provider should appear as “recommended” in UI (honours optional `boostUntil`).
  * @param {Record<string, unknown> | null | undefined} p
  */
-export function providerBoostIsActive(p) {
-  if (!p || typeof p !== 'object') return false;
-  const flagged = Boolean(p.sponsored || p.recommended || p.boostEnabled);
-  if (!flagged) return false;
-  const until = p.boostUntil;
+function boostTimestampActive(until) {
   if (until == null) return true;
   let ms = null;
   if (typeof until.toMillis === 'function') ms = until.toMillis();
   else if (typeof until.seconds === 'number') ms = until.seconds * 1000;
   if (ms == null || !Number.isFinite(ms)) return true;
   return ms > Date.now();
+}
+
+/** @param {Record<string, unknown> | null | undefined} p */
+export function providerNearbyBoostIsActive(p) {
+  if (!p || typeof p !== 'object') return false;
+  const flagged = Boolean(p.boostNearbyEnabled || p.sponsored || p.boostEnabled);
+  if (!flagged) return false;
+  const until = p.boostNearbyUntil ?? p.boostUntil;
+  return boostTimestampActive(until);
+}
+
+/** @param {Record<string, unknown> | null | undefined} p */
+export function providerBookingsBoostIsActive(p) {
+  if (!p || typeof p !== 'object') return false;
+  const flagged = Boolean(p.boostBookingsEnabled || p.recommended || p.boostEnabled);
+  if (!flagged) return false;
+  const until = p.boostBookingsUntil ?? p.boostUntil;
+  return boostTimestampActive(until);
+}
+
+export function providerBoostIsActive(p) {
+  return providerNearbyBoostIsActive(p) || providerBookingsBoostIsActive(p);
 }

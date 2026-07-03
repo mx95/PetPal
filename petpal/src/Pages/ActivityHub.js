@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, Navigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useI18n } from '../i18n/I18nContext';
-import { useCompany } from '../company/CompanyContext';
 import { useGame } from '../game/GameContext';
 import PetCard from '../components/PetCard';
 import HubLeaderboardPeek from '../components/HubLeaderboardPeek';
@@ -23,7 +22,6 @@ function km(n) {
  */
 export default function ActivityHub() {
   const { t, language } = useI18n();
-  const { isBusinessHome, profileLoading } = useCompany();
   const { pets } = usePets();
   const {
     ownerXp,
@@ -169,10 +167,6 @@ export default function ActivityHub() {
       </div>
     );
   };
-
-  if (!profileLoading && isBusinessHome) {
-    return <Navigate to="/dashboard" replace />;
-  }
 
   return (
     <div className="pp-feed pp-activityHub">

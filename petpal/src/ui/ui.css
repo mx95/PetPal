@@ -15761,26 +15761,139 @@ html[data-theme="dark"] .pp-book-calendar__monthControls button {
 
 .pp-providerTabs {
   position: sticky;
-  top: 74px;
-  z-index: 10;
-  display: flex;
-  gap: 6px;
-  overflow-x: auto;
-  margin-top: 14px;
+  top: 72px;
+  z-index: 12;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 4px;
+  margin-top: 0;
   border: 1px solid rgba(255, 255, 255, 0.74);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.82);
+  background: rgba(255, 255, 255, 0.92);
   padding: 6px;
   box-shadow: var(--pp-shadow-xs);
   backdrop-filter: blur(14px);
 }
 
+.pp-providerHubShell {
+  margin-top: 14px;
+}
+
+.pp-providerListingSection {
+  margin-top: 14px;
+}
+
+.pp-providerBoostToggles {
+  display: grid;
+  gap: 10px;
+}
+
+.pp-providerBoostToggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid var(--pp-border);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.72);
+  padding: 12px 14px;
+}
+
+.pp-providerBoostToggle__copy strong {
+  display: block;
+  font-size: 15px;
+  font-weight: 950;
+}
+
+.pp-providerBoostToggle__copy small {
+  display: block;
+  margin-top: 4px;
+  color: var(--pp-text-2);
+  font-size: 12px;
+  font-weight: 750;
+  line-height: 1.45;
+}
+
+.pp-providerBoostToggle__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.pp-providerBoostToggle__price {
+  color: #5b37ff;
+  font-size: 13px;
+  font-weight: 950;
+  white-space: nowrap;
+}
+
+.pp-providerBoostToggle__status {
+  color: #027a48;
+  font-size: 12px;
+  font-weight: 950;
+}
+
+.pp-providerBoostSubscribe {
+  color: #5b37ff;
+  font-size: 12px;
+  font-weight: 950;
+  text-decoration: none;
+}
+
+.pp-providerBoostSwitch {
+  position: relative;
+  display: inline-flex;
+  width: 46px;
+  height: 28px;
+  flex-shrink: 0;
+}
+
+.pp-providerBoostSwitch input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.pp-providerBoostSwitch span {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: rgba(102, 112, 133, 0.28);
+  transition: background 160ms ease;
+}
+
+.pp-providerBoostSwitch span::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(16, 24, 40, 0.18);
+  transition: transform 160ms ease;
+}
+
+.pp-providerBoostSwitch.is-on span {
+  background: linear-gradient(135deg, #5b37ff, #2f80ff);
+}
+
+.pp-providerBoostSwitch.is-on span::after {
+  transform: translateX(18px);
+}
+
 .pp-providerTabs button {
+  width: 100%;
+  text-align: center;
   border: 0;
   border-radius: 999px;
   background: transparent;
   color: var(--pp-text-2);
-  padding: 10px 14px;
+  padding: 10px 8px;
+  font-size: 13px;
   font-weight: 950;
   white-space: nowrap;
   transition: transform 160ms ease, background 160ms ease, color 160ms ease, box-shadow 160ms ease;

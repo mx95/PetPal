@@ -60,15 +60,17 @@ service cloud.firestore {
             && (resource.data.status == 'pending' || resource.data.status == 'rejected'));
       allow delete: if false;
 
-      // Provider service catalog (public read if booking-enabled + approved; owner/admin writes).
+      // Provider service catalog (owner reads while setting up; customers when booking-enabled).
       match /services/{serviceId} {
-        allow read: if request.auth != null && isPublicBookableCompany(companyId);
+        allow read: if request.auth != null
+          && (isApprovedCompany(companyId) || isPublicBookableCompany(companyId));
         allow create, update, delete: if isAdmin() || isApprovedCompany(companyId);
       }
 
-      // Slot-based availability (public read if booking-enabled + approved; owner/admin writes).
+      // Slot-based availability (owner reads while setting up; customers when booking-enabled).
       match /availability/{slotId} {
-        allow read: if request.auth != null && isPublicBookableCompany(companyId);
+        allow read: if request.auth != null
+          && (isApprovedCompany(companyId) || isPublicBookableCompany(companyId));
         allow create, update, delete: if isAdmin() || isApprovedCompany(companyId);
       }
 

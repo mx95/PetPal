@@ -41,6 +41,18 @@ const SKUS = {
     title: 'Business visibility boost (monthly)',
     recurring: true,
   },
+  STORE_BOOST_NEARBY_MONTHLY: {
+    amountCents: PRICES.STORE_BOOST_NEARBY_MONTHLY_CENTS,
+    currency: '978',
+    title: 'Nearby map boost (monthly)',
+    recurring: true,
+  },
+  STORE_BOOST_BOOKINGS_MONTHLY: {
+    amountCents: PRICES.STORE_BOOST_BOOKINGS_MONTHLY_CENTS,
+    currency: '978',
+    title: 'Bookings recommended boost (monthly)',
+    recurring: true,
+  },
 };
 
 const PLUS_SKUS = new Set(['PETPAL_PLUS_MONTHLY', 'PETPAL_PLUS_YEARLY']);

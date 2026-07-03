@@ -62,6 +62,60 @@ function jccCredentials() {
   return { userName, password, restBase, returnUrl, frontendUrl };
 }
 
+const BOOST_SKUS = new Set([
+  'STORE_BOOST_MONTHLY',
+  'STORE_BOOST_NEARBY_MONTHLY',
+  'STORE_BOOST_BOOKINGS_MONTHLY',
+]);
+
+async function grantProviderBoostAfterPayment(db, companyId, sku) {
+  const until = new Date();
+  until.setDate(until.getDate() + 32);
+  const tsUntil = admin.firestore.Timestamp.fromDate(until);
+  const base = {
+    boostSource: 'jcc_shop',
+    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+  };
+  if (sku === 'STORE_BOOST_NEARBY_MONTHLY') {
+    await db.collection('providers').doc(companyId).set(
+      {
+        ...base,
+        boostNearbyEnabled: true,
+        boostNearbyUntil: tsUntil,
+        sponsored: true,
+      },
+      { merge: true }
+    );
+    return;
+  }
+  if (sku === 'STORE_BOOST_BOOKINGS_MONTHLY') {
+    await db.collection('providers').doc(companyId).set(
+      {
+        ...base,
+        boostBookingsEnabled: true,
+        boostBookingsUntil: tsUntil,
+        recommended: true,
+      },
+      { merge: true }
+    );
+    return;
+  }
+  await db.collection('providers').doc(companyId).set(
+    {
+      ...base,
+      boostEnabled: true,
+      boostNearbyEnabled: true,
+      boostBookingsEnabled: true,
+      sponsored: true,
+      recommended: true,
+      boostUntil: tsUntil,
+      boostNearbyUntil: tsUntil,
+      boostBookingsUntil: tsUntil,
+    },
+    { merge: true }
+  );
+}
+
 async function jccPost(restBase, method, params) {
   const url = `${restBase}/${method}`;
   const body = new URLSearchParams();
@@ -308,22 +362,8 @@ async function renewSubscriptionDoc(db, docRef, sub, creds) {
     );
     await renewRef.set({ status: 'paid_renewal', jccOrderId: reg.orderId }, { merge: true });
 
-    if (sku === 'STORE_BOOST_MONTHLY') {
-      const until = new Date();
-      until.setDate(until.getDate() + 32);
-      await db
-        .collection('providers')
-        .doc(uid)
-        .set(
-          {
-            boostEnabled: true,
-            sponsored: true,
-            recommended: true,
-            boostUntil: admin.firestore.Timestamp.fromDate(until),
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-          },
-          { merge: true }
-        );
+    if (BOOST_SKUS.has(sku)) {
+      await grantProviderBoostAfterPayment(db, uid, sku);
     }
   } catch (e) {
     await renewRef.set({ status: 'renewal_exception', error: e?.message || String(e) }, { merge: true });
@@ -570,7 +610,7 @@ exports.createJccCheckout = functions.region('europe-west1').https.onCall(async 
       if (!pricing) {
         throw new functions.https.HttpsError('invalid-argument', 'Unknown product.');
       }
-      if (sku === 'STORE_BOOST_MONTHLY' && companyId !== uid) {
+      if (BOOST_SKUS.has(sku) && companyId !== uid) {
         throw new functions.https.HttpsError('permission-denied', 'Boost purchase must use your business account id.');
       }
       if (catalog.recurring && !saveCard) {
@@ -878,24 +918,9 @@ exports.jccPaymentReturn = functions.region('europe-west1').https.onRequest(asyn
     await grantNfcEntitlement(db, uid, orderNumber, sku, session.nfcPetIds);
   }
 
-  if (sku === 'STORE_BOOST_MONTHLY') {
-    const companyId = session.companyId || uid;
-    const until = new Date();
-    until.setDate(until.getDate() + 32);
-    await db
-      .collection('providers')
-      .doc(companyId)
-      .set(
-        {
-          boostEnabled: true,
-          sponsored: true,
-          recommended: true,
-          boostUntil: admin.firestore.Timestamp.fromDate(until),
-          boostSource: 'jcc_shop',
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-        },
-        { merge: true }
-      );
+  if (BOOST_SKUS.has(sku)) {
+    const boostCompanyId = session.companyId || uid;
+    await grantProviderBoostAfterPayment(db, boostCompanyId, sku);
   }
 
   if (sku === 'MARKETPLACE_CART' && Array.isArray(session.cartItems) && session.cartItems.length) {
@@ -984,7 +1009,7 @@ exports.billingRenewal = functions
     return null;
   });
 
-/** Clears shop-paid boost flags after `boostUntil` (keeps Firestore aligned with UI `providerBoostIsActive`). */
+/** Clears shop-paid boost flags after boost-until timestamps expire. */
 exports.expireProviderBoosts = functions
   .region('europe-west1')
   .pubsub.schedule('every day 05:15')
@@ -993,26 +1018,43 @@ exports.expireProviderBoosts = functions
     ensureAdmin();
     const db = admin.firestore();
     const now = admin.firestore.Timestamp.now();
-    const snap = await db.collection('providers').where('boostUntil', '<=', now).limit(100).get();
-    if (snap.empty) return null;
+    const seen = new Set();
+    const queries = [
+      db.collection('providers').where('boostUntil', '<=', now).limit(100),
+      db.collection('providers').where('boostNearbyUntil', '<=', now).limit(100),
+      db.collection('providers').where('boostBookingsUntil', '<=', now).limit(100),
+    ];
     const batch = db.batch();
     let count = 0;
-    for (const doc of snap.docs) {
-      const d = doc.data() || {};
-      if (d.boostSource !== 'jcc_shop' && !d.boostEnabled) continue;
-      batch.set(
-        doc.ref,
-        {
-          boostEnabled: false,
-          sponsored: false,
-          recommended: false,
-          boostUntil: admin.firestore.FieldValue.delete(),
-          boostSource: admin.firestore.FieldValue.delete(),
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-        },
-        { merge: true }
-      );
-      count += 1;
+    for (const q of queries) {
+      const snap = await q.get();
+      for (const doc of snap.docs) {
+        if (seen.has(doc.id)) continue;
+        seen.add(doc.id);
+        const d = doc.data() || {};
+        if (d.boostSource !== 'jcc_shop' && !d.boostEnabled && !d.boostNearbyEnabled && !d.boostBookingsEnabled) {
+          continue;
+        }
+        const patch = { updatedAt: admin.firestore.FieldValue.serverTimestamp() };
+        if (d.boostUntil && d.boostUntil <= now) {
+          patch.boostEnabled = false;
+          patch.boostUntil = admin.firestore.FieldValue.delete();
+        }
+        if (d.boostNearbyUntil && d.boostNearbyUntil <= now) {
+          patch.boostNearbyEnabled = false;
+          patch.boostNearbyUntil = admin.firestore.FieldValue.delete();
+          patch.sponsored = false;
+        }
+        if (d.boostBookingsUntil && d.boostBookingsUntil <= now) {
+          patch.boostBookingsEnabled = false;
+          patch.boostBookingsUntil = admin.firestore.FieldValue.delete();
+          patch.recommended = false;
+        }
+        if (Object.keys(patch).length > 1) {
+          batch.set(doc.ref, patch, { merge: true });
+          count += 1;
+        }
+      }
     }
     if (count) await batch.commit();
     return null;

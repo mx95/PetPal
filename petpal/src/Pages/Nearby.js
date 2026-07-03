@@ -10,7 +10,7 @@ import { GOOGLE_MAPS_LOADER_ID } from '../config/googleMapsLoaderId';
 import { subscribeGoogleMapsAuthFailure } from '../config/googleMapsAuthFailure';
 import { useI18n } from '../i18n/I18nContext';
 import { subscribeProviders } from '../bookings/providerDirectoryFirestore';
-import { providerBoostIsActive, providerDistanceKm } from '../bookings/bookingBrowseUtils';
+import { providerNearbyBoostIsActive, providerDistanceKm } from '../bookings/bookingBrowseUtils';
 import { isBookingBrowseEnabled } from '../bookings/bookingFeature';
 import { isFirebaseConfigured } from '../firebase';
 
@@ -122,7 +122,7 @@ function NearbyMap({ apiKey }) {
     const center = userLocation || searchCenter;
     const loc = Number.isFinite(center?.lat) && Number.isFinite(center?.lng) ? center : null;
     return allProviders
-      .filter((p) => providerBoostIsActive(p))
+      .filter((p) => providerNearbyBoostIsActive(p))
       .map((p) => ({ p, km: providerDistanceKm(p, loc) }))
       .sort((a, b) => {
         if (a.km != null && b.km != null) return a.km - b.km;

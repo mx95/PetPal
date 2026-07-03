@@ -45,6 +45,8 @@ export function expectedCheckoutCents(sku, opts = {}) {
   if (sku === 'TRACKER_HARDWARE') return TRACKER_ADDON_CENTS;
   if (sku === 'NFC_TAG_HARDWARE') return NFC_TAG_ADDON_CENTS;
   if (sku === 'STORE_BOOST_MONTHLY') return 999;
+  if (sku === 'STORE_BOOST_NEARBY_MONTHLY') return 299;
+  if (sku === 'STORE_BOOST_BOOKINGS_MONTHLY') return 399;
   if (sku === 'MARKETPLACE_CART' && Array.isArray(options.cartItems)) {
     return marketplaceCartTotalCents(options.cartItems);
   }

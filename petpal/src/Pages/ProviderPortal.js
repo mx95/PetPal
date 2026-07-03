@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
 import { useCompany } from '../company/CompanyContext';
@@ -17,7 +17,8 @@ import {
 import { createClientPet, deleteClientPet, patchClientPet, subscribeClientPets } from '../bookings/providerPetsFirestore';
 import PetMedicationModal from '../components/PetMedicationModal';
 import IconMedPill from '../components/icons/IconMedPill';
-import { publishProviderProfile } from '../bookings/providerDirectoryFirestore';
+import { publishProviderProfile, subscribeProviderProfile } from '../bookings/providerDirectoryFirestore';
+import { providerBookingsBoostIsActive, providerNearbyBoostIsActive } from '../bookings/bookingBrowseUtils';
 import { getDemoBusinessAccount, getDemoBusinessAccounts, getDemoSlots } from '../bookings/demoBookingData';
 import { formatDateTime24, formatTime24 } from '../formatTime24';
 import TimeInput24 from '../components/TimeInput24';
@@ -103,6 +104,27 @@ function eachDateKeyInRange(startStr, endStr) {
 }
 
 const PROVIDER_TABS = ['bookings', 'availability', 'customers', 'services'];
+
+function buildPublishState(companyProfile, providerDoc) {
+  return {
+    bookingEnabled: Boolean(providerDoc?.bookingEnabled),
+    displayName: String(providerDoc?.displayName || companyProfile?.businessName || '').trim(),
+    address: String(providerDoc?.address || companyProfile?.addressLine || '').trim(),
+    phone: String(providerDoc?.phone || companyProfile?.phoneNumber || '').trim(),
+    providerTypes:
+      providerDoc?.providerTypes && typeof providerDoc.providerTypes === 'object'
+        ? providerDoc.providerTypes
+        : { vet: true, saloon: false, hotel: false, shop: false },
+    workingHours: providerDoc?.workingHours || companyProfile?.workingHours || 'Mon-Fri 09:00-18:00',
+    breakHours: providerDoc?.breakHours || '13:00-14:00',
+    holidayClosures: providerDoc?.holidayClosures || '',
+    staffCount: providerDoc?.staffCount || 1,
+    slotIntervalMin: providerDoc?.slotIntervalMin || 30,
+    bookingLimitPerDay: providerDoc?.bookingLimitPerDay || 12,
+    boostNearbyEnabled: Boolean(providerDoc?.boostNearbyEnabled),
+    boostBookingsEnabled: Boolean(providerDoc?.boostBookingsEnabled),
+  };
+}
 
 function slotDate(slot) {
   if (!slot) return null;
@@ -573,20 +595,22 @@ export default function ProviderPortal() {
   }, [tabParam, tab]);
   const [publishErr, setPublishErr] = useState('');
   const [publishBusy, setPublishBusy] = useState(false);
-  const [publish, setPublish] = useState(() => ({
-    bookingEnabled: Boolean(profile?.bookingEnabled),
-    displayName: profile?.businessName || '',
-    address: profile?.addressLine || '',
-    phone: profile?.publicEmail || '',
-    providerTypes: { vet: true, saloon: false, hotel: false, shop: false },
-    workingHours: profile?.workingHours || 'Mon-Fri 09:00-18:00',
-    breakHours: profile?.breakHours || '13:00-14:00',
-    holidayClosures: profile?.holidayClosures || '',
-    staffCount: profile?.staffCount || 1,
-    slotIntervalMin: profile?.slotIntervalMin || 30,
-    bookingLimitPerDay: profile?.bookingLimitPerDay || 12,
-    boostEnabled: Boolean(profile?.boostEnabled),
-  }));
+  const [providerDoc, setProviderDoc] = useState(null);
+  const publishSyncedRef = useRef(false);
+  const [publish, setPublish] = useState(() => buildPublishState(null, null));
+
+  useEffect(() => {
+    if (!companyId) return undefined;
+    publishSyncedRef.current = false;
+    return subscribeProviderProfile(companyId, setProviderDoc);
+  }, [companyId]);
+
+  useEffect(() => {
+    if (publishSyncedRef.current || profileLoading) return;
+    if (!profile && !providerDoc) return;
+    setPublish(buildPublishState(profile, providerDoc));
+    publishSyncedRef.current = true;
+  }, [profileLoading, profile, providerDoc]);
 
   if (demoBusiness) {
     return (
@@ -623,6 +647,9 @@ export default function ProviderPortal() {
     );
   }
 
+  const nearbyBoostActive = providerNearbyBoostIsActive(providerDoc);
+  const bookingsBoostActive = providerBookingsBoostIsActive(providerDoc);
+
   return (
     <div className="pp-pad pp-demoProviderPortal">
       <ProviderDashboardHero
@@ -639,126 +666,197 @@ export default function ProviderPortal() {
       />
       <DemoBusinessSwitcher businesses={demoBusinesses} onSelect={(id) => setSearchParams({ demoBusiness: id })} compact />
 
-      <div className="pp-card pp-providerBoostCta" style={{ marginTop: 14 }}>
-        <div className="pp-card__title">Recommended on Nearby &amp; Bookings</div>
-        <p className="pp-muted" style={{ marginTop: 8, marginBottom: 0, lineHeight: 1.5 }}>
-          Boost your clinic or shop so pet parents see you first on the Nearby map strip and in Bookings. Paid monthly via
-          PetPal Shop (JCC hosted checkout); renewals use your saved card token.
-        </p>
-        <div style={{ marginTop: 14, display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
-          <Link className="pp-btn pp-btn--primary" to="/shop?sku=STORE_BOOST_MONTHLY">
-            Open boost in Shop
-          </Link>
-          <Link className="pp-link" to="/shop">
-            Browse all products
-          </Link>
+      <div className="pp-providerHubShell">
+        <ProviderTabs tab={tab} setTab={setTab} />
+
+        <div className="pp-providerTabContent">
+          {tab === 'bookings' ? <Bookings companyId={companyId} /> : null}
+          {tab === 'availability' ? <Availability companyId={companyId} openAddPanel={searchParams.get('add') === '1'} /> : null}
+          {tab === 'customers' ? (
+            <Customers companyId={companyId} clinicLabel={publish.displayName || profile?.businessName || ''} />
+          ) : null}
+          {tab === 'services' ? <Services companyId={companyId} /> : null}
         </div>
       </div>
 
-      <div className="pp-card" style={{ marginTop: 14 }}>
-        <div className="pp-card__title">Public listing</div>
-        <div className="pp-muted" style={{ marginTop: 6 }}>
-          Enable bookings to appear in customer search. You can still use tracking and all other features.
+      <section className="pp-providerPanel pp-providerListingSection">
+        <div className="pp-providerPanel__head">
+          <div>
+            <h2>Public listing</h2>
+            <p>Enable bookings to appear in customer search. You can still use tracking and all other features.</p>
+          </div>
         </div>
-        {publishErr ? <div className="pp-error">{publishErr}</div> : null}
-        <div className="pp-form" style={{ marginTop: 10 }}>
-          <label className="pp-field" style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-            <input
-              type="checkbox"
-              checked={publish.bookingEnabled}
-              onChange={(e) => setPublish((p) => ({ ...p, bookingEnabled: e.target.checked }))}
-            />
-            <span className="pp-field__label" style={{ margin: 0 }}>
-              Booking enabled
-            </span>
-          </label>
-          <div className="pp-modalGrid2">
-            <label className="pp-field">
-              <span className="pp-field__label">Display name</span>
-              <input value={publish.displayName} onChange={(e) => setPublish((p) => ({ ...p, displayName: e.target.value }))} />
-            </label>
-            <label className="pp-field">
-              <span className="pp-field__label">Phone (optional)</span>
-              <input value={publish.phone} onChange={(e) => setPublish((p) => ({ ...p, phone: e.target.value }))} />
-            </label>
-          </div>
-          <label className="pp-field">
-            <span className="pp-field__label">Address (optional)</span>
-            <input value={publish.address} onChange={(e) => setPublish((p) => ({ ...p, address: e.target.value }))} />
-          </label>
-          <div className="pp-modalGrid2">
-            <label className="pp-field">
-              <span className="pp-field__label">Working hours</span>
-              <input value={publish.workingHours} onChange={(e) => setPublish((p) => ({ ...p, workingHours: e.target.value }))} placeholder="Mon-Fri 09:00-18:00" />
-            </label>
-            <label className="pp-field">
-              <span className="pp-field__label">Break hours</span>
-              <input value={publish.breakHours} onChange={(e) => setPublish((p) => ({ ...p, breakHours: e.target.value }))} placeholder="13:00-14:00" />
-            </label>
-          </div>
-          <div className="pp-modalGrid2">
-            <label className="pp-field">
-              <span className="pp-field__label">Available staff</span>
-              <input type="number" min={1} value={publish.staffCount} onChange={(e) => setPublish((p) => ({ ...p, staffCount: Number(e.target.value) }))} />
-            </label>
-            <label className="pp-field">
-              <span className="pp-field__label">Slot interval (min)</span>
-              <input type="number" min={5} value={publish.slotIntervalMin} onChange={(e) => setPublish((p) => ({ ...p, slotIntervalMin: Number(e.target.value) }))} />
-            </label>
-            <label className="pp-field">
-              <span className="pp-field__label">Booking limit / day</span>
-              <input type="number" min={1} value={publish.bookingLimitPerDay} onChange={(e) => setPublish((p) => ({ ...p, bookingLimitPerDay: Number(e.target.value) }))} />
-            </label>
-          </div>
-          <label className="pp-field">
-            <span className="pp-field__label">Holiday closures</span>
-            <textarea rows={2} value={publish.holidayClosures} onChange={(e) => setPublish((p) => ({ ...p, holidayClosures: e.target.value }))} placeholder="Public holidays, renovation days, team leave..." />
-          </label>
-          <label className="pp-field pp-boostPanel">
-            <input
-              type="checkbox"
-              checked={publish.boostEnabled}
-              onChange={(e) => setPublish((p) => ({ ...p, boostEnabled: e.target.checked }))}
-            />
-            <span>
-              <strong>Business boost (listing flag)</strong>
-              <small>
-                For production, use <Link to="/shop?sku=STORE_BOOST_MONTHLY">PetPal Shop — Business boost</Link> so visibility
-                matches paid renewals. This toggle is for testing or manual admin overrides only.
-              </small>
-            </span>
-          </label>
-          <button
-            type="button"
-            className="pp-btn pp-btn--primary"
-            disabled={publishBusy}
-            onClick={async () => {
+
+        <div className="pp-providerFormCard">
+          {publishErr ? <div className="pp-error">{publishErr}</div> : null}
+          <form
+            className="pp-form pp-providerForm"
+            onSubmit={async (e) => {
+              e.preventDefault();
               setPublishErr('');
               setPublishBusy(true);
               try {
                 await publishProviderProfile(companyId, publish);
-              } catch (e) {
-                setPublishErr(e?.message || 'failed');
+              } catch (err) {
+                setPublishErr(err?.message || 'failed');
               } finally {
                 setPublishBusy(false);
               }
             }}
           >
-            Save listing
-          </button>
+            <label className="pp-field pp-field--checkbox">
+              <input
+                type="checkbox"
+                checked={publish.bookingEnabled}
+                onChange={(e) => setPublish((p) => ({ ...p, bookingEnabled: e.target.checked }))}
+              />
+              <span>Booking enabled — show in customer search</span>
+            </label>
+            <div className="pp-modalGrid2">
+              <label className="pp-field">
+                <span className="pp-field__label">Display name</span>
+                <input
+                  className="pp-input"
+                  value={publish.displayName}
+                  onChange={(e) => setPublish((p) => ({ ...p, displayName: e.target.value }))}
+                />
+              </label>
+              <label className="pp-field">
+                <span className="pp-field__label">Phone (optional)</span>
+                <input
+                  className="pp-input"
+                  value={publish.phone}
+                  onChange={(e) => setPublish((p) => ({ ...p, phone: e.target.value }))}
+                  placeholder="+357 …"
+                />
+              </label>
+            </div>
+            <label className="pp-field">
+              <span className="pp-field__label">Address (optional)</span>
+              <input
+                className="pp-input"
+                value={publish.address}
+                onChange={(e) => setPublish((p) => ({ ...p, address: e.target.value }))}
+              />
+            </label>
+            <div className="pp-modalGrid2">
+              <label className="pp-field">
+                <span className="pp-field__label">Working hours</span>
+                <input
+                  className="pp-input"
+                  value={publish.workingHours}
+                  onChange={(e) => setPublish((p) => ({ ...p, workingHours: e.target.value }))}
+                  placeholder="Mon-Fri 09:00-18:00"
+                />
+              </label>
+              <label className="pp-field">
+                <span className="pp-field__label">Break hours</span>
+                <input
+                  className="pp-input"
+                  value={publish.breakHours}
+                  onChange={(e) => setPublish((p) => ({ ...p, breakHours: e.target.value }))}
+                  placeholder="13:00-14:00"
+                />
+              </label>
+              <label className="pp-field">
+                <span className="pp-field__label">Available staff</span>
+                <input
+                  className="pp-input"
+                  type="number"
+                  min={1}
+                  value={publish.staffCount}
+                  onChange={(e) => setPublish((p) => ({ ...p, staffCount: Number(e.target.value) }))}
+                />
+              </label>
+              <label className="pp-field">
+                <span className="pp-field__label">Slot interval (min)</span>
+                <input
+                  className="pp-input"
+                  type="number"
+                  min={5}
+                  value={publish.slotIntervalMin}
+                  onChange={(e) => setPublish((p) => ({ ...p, slotIntervalMin: Number(e.target.value) }))}
+                />
+              </label>
+              <label className="pp-field">
+                <span className="pp-field__label">Booking limit / day</span>
+                <input
+                  className="pp-input"
+                  type="number"
+                  min={1}
+                  value={publish.bookingLimitPerDay}
+                  onChange={(e) => setPublish((p) => ({ ...p, bookingLimitPerDay: Number(e.target.value) }))}
+                />
+              </label>
+            </div>
+            <label className="pp-field">
+              <span className="pp-field__label">Holiday closures</span>
+              <textarea
+                className="pp-input"
+                rows={2}
+                value={publish.holidayClosures}
+                onChange={(e) => setPublish((p) => ({ ...p, holidayClosures: e.target.value }))}
+                placeholder="Public holidays, renovation days, team leave…"
+              />
+            </label>
+            <button type="submit" className="pp-btn pp-btn--primary" disabled={publishBusy}>
+              {publishBusy ? 'Saving…' : 'Save listing'}
+            </button>
+          </form>
         </div>
-      </div>
 
-      <ProviderTabs tab={tab} setTab={setTab} />
-
-      <div className="pp-providerTabContent">
-        {tab === 'bookings' ? <Bookings companyId={companyId} /> : null}
-        {tab === 'availability' ? <Availability companyId={companyId} openAddPanel={searchParams.get('add') === '1'} /> : null}
-        {tab === 'customers' ? (
-          <Customers companyId={companyId} clinicLabel={publish.displayName || profile?.businessName || ''} />
-        ) : null}
-        {tab === 'services' ? <Services companyId={companyId} /> : null}
-      </div>
+        <div className="pp-providerFormCard" style={{ marginTop: 14 }}>
+          <h3 className="pp-providerFormCard__title">Visibility boosts</h3>
+          <p className="pp-muted" style={{ marginTop: 0, marginBottom: 12, lineHeight: 1.5 }}>
+            Paid monthly via PetPal Shop. Renewals use your saved card on file.
+          </p>
+          <div className="pp-providerBoostToggles">
+            <div className="pp-providerBoostToggle">
+              <div className="pp-providerBoostToggle__copy">
+                <strong>Boost in Nearby</strong>
+                <small>Appear first on the map strip for pet parents browsing locally.</small>
+              </div>
+              <div className="pp-providerBoostToggle__actions">
+                <span className="pp-providerBoostToggle__price">€2.99/mo</span>
+                <label className={`pp-providerBoostSwitch${nearbyBoostActive ? ' is-on' : ''}`}>
+                  <input type="checkbox" checked={nearbyBoostActive} readOnly tabIndex={-1} />
+                  <span aria-hidden />
+                </label>
+                {!nearbyBoostActive ? (
+                  <Link className="pp-providerBoostSubscribe" to="/shop?sku=STORE_BOOST_NEARBY_MONTHLY">
+                    Subscribe
+                  </Link>
+                ) : (
+                  <span className="pp-providerBoostToggle__status">Active</span>
+                )}
+              </div>
+            </div>
+            <div className="pp-providerBoostToggle">
+              <div className="pp-providerBoostToggle__copy">
+                <strong>Boost in Bookings</strong>
+                <small>Get recommended at the top of the Bookings hub for your area.</small>
+              </div>
+              <div className="pp-providerBoostToggle__actions">
+                <span className="pp-providerBoostToggle__price">€3.99/mo</span>
+                <label className={`pp-providerBoostSwitch${bookingsBoostActive ? ' is-on' : ''}`}>
+                  <input type="checkbox" checked={bookingsBoostActive} readOnly tabIndex={-1} />
+                  <span aria-hidden />
+                </label>
+                {!bookingsBoostActive ? (
+                  <Link className="pp-providerBoostSubscribe" to="/shop?sku=STORE_BOOST_BOOKINGS_MONTHLY">
+                    Subscribe
+                  </Link>
+                ) : (
+                  <span className="pp-providerBoostToggle__status">Active</span>
+                )}
+              </div>
+            </div>
+          </div>
+          <Link className="pp-link" to="/shop" style={{ marginTop: 10, display: 'inline-block' }}>
+            Open PetPal Shop
+          </Link>
+        </div>
+      </section>
     </div>
   );
 }
@@ -1273,13 +1371,11 @@ function Bookings({ companyId }) {
   };
 
   return (
-    <div className="pp-card">
-      <div className="pp-rowBetween" style={{ alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
+    <section className="pp-providerPanel">
+      <div className="pp-providerPanel__head">
         <div>
-          <div className="pp-card__title">Bookings</div>
-          <p className="pp-muted" style={{ marginTop: 6, marginBottom: 0 }}>
-            Manage your schedule and book appointments for customers without the app.
-          </p>
+          <h2>Bookings</h2>
+          <p>Manage your schedule and book appointments for customers without the app.</p>
         </div>
         <button type="button" className="pp-btn pp-btn--primary" onClick={() => setShowWalkIn((v) => !v)}>
           {showWalkIn ? 'Close' : '+ Book walk-in'}
@@ -1287,76 +1383,110 @@ function Bookings({ companyId }) {
       </div>
 
       {showWalkIn ? (
-        <form onSubmit={onWalkInBook} className="pp-form pp-providerWalkInForm" style={{ marginTop: 14 }}>
-          <p className="pp-muted" style={{ marginTop: 0 }}>
+        <div className="pp-providerFormCard" style={{ marginBottom: 14 }}>
+          <h3 className="pp-providerFormCard__title">Walk-in booking</h3>
+          <p className="pp-muted" style={{ marginTop: 0, marginBottom: 12, lineHeight: 1.5 }}>
             Reserve an open slot for a phone or walk-in customer. Add client pets under Customers if you want them on file.
           </p>
-          {clientPets.length ? (
+          <form onSubmit={onWalkInBook} className="pp-form pp-providerForm">
+            {clientPets.length ? (
+              <label className="pp-field">
+                <span className="pp-field__label">Client on file (optional)</span>
+                <select
+                  className="pp-input"
+                  value={walkIn.clientPetId}
+                  onChange={(e) => setWalkIn((p) => ({ ...p, clientPetId: e.target.value }))}
+                >
+                  <option value="">New / manual entry</option>
+                  {clientPets.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}{p.ownerName ? ` — ${p.ownerName}` : ''}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
+            <div className="pp-modalGrid2">
+              <label className="pp-field">
+                <span className="pp-field__label">Pet name</span>
+                <input
+                  className="pp-input"
+                  value={walkIn.petName}
+                  onChange={(e) => setWalkIn((p) => ({ ...p, petName: e.target.value }))}
+                  required
+                />
+              </label>
+              <label className="pp-field">
+                <span className="pp-field__label">Owner name</span>
+                <input
+                  className="pp-input"
+                  value={walkIn.ownerName}
+                  onChange={(e) => setWalkIn((p) => ({ ...p, ownerName: e.target.value }))}
+                />
+              </label>
+              <label className="pp-field">
+                <span className="pp-field__label">Owner phone</span>
+                <input
+                  className="pp-input"
+                  value={walkIn.ownerPhone}
+                  onChange={(e) => setWalkIn((p) => ({ ...p, ownerPhone: e.target.value }))}
+                />
+              </label>
+              <label className="pp-field">
+                <span className="pp-field__label">Service</span>
+                <select
+                  className="pp-input"
+                  value={walkIn.serviceId}
+                  onChange={(e) => setWalkIn((p) => ({ ...p, serviceId: e.target.value, slotId: '' }))}
+                >
+                  {activeServices.map((s) => (
+                    <option key={s.id} value={s.id}>{s.name}</option>
+                  ))}
+                </select>
+              </label>
+            </div>
             <label className="pp-field">
-              <span className="pp-field__label">Client on file (optional)</span>
-              <select value={walkIn.clientPetId} onChange={(e) => setWalkIn((p) => ({ ...p, clientPetId: e.target.value }))}>
-                <option value="">New / manual entry</option>
-                {clientPets.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}{p.ownerName ? ` — ${p.ownerName}` : ''}
-                  </option>
-                ))}
+              <span className="pp-field__label">Open slot</span>
+              <select
+                className="pp-input"
+                value={walkIn.slotId}
+                onChange={(e) => setWalkIn((p) => ({ ...p, slotId: e.target.value }))}
+                required
+              >
+                <option value="">Pick a time…</option>
+                {openSlotsForWalkIn.map((s) => {
+                  const d = slotDate(s);
+                  return (
+                    <option key={s.id} value={s.id}>
+                      {d ? formatDateTime24(d) : s.id}
+                    </option>
+                  );
+                })}
               </select>
             </label>
-          ) : null}
-          <div className="pp-modalGrid2">
+            {!openSlotsForWalkIn.length && walkIn.serviceId ? (
+              <p className="pp-muted">No open slots for this service. Add availability first.</p>
+            ) : null}
             <label className="pp-field">
-              <span className="pp-field__label">Pet name</span>
-              <input value={walkIn.petName} onChange={(e) => setWalkIn((p) => ({ ...p, petName: e.target.value }))} required />
+              <span className="pp-field__label">Notes (optional)</span>
+              <textarea
+                className="pp-input"
+                rows={2}
+                value={walkIn.notes}
+                onChange={(e) => setWalkIn((p) => ({ ...p, notes: e.target.value }))}
+              />
             </label>
-            <label className="pp-field">
-              <span className="pp-field__label">Owner name</span>
-              <input value={walkIn.ownerName} onChange={(e) => setWalkIn((p) => ({ ...p, ownerName: e.target.value }))} />
-            </label>
-            <label className="pp-field">
-              <span className="pp-field__label">Owner phone</span>
-              <input value={walkIn.ownerPhone} onChange={(e) => setWalkIn((p) => ({ ...p, ownerPhone: e.target.value }))} />
-            </label>
-            <label className="pp-field">
-              <span className="pp-field__label">Service</span>
-              <select value={walkIn.serviceId} onChange={(e) => setWalkIn((p) => ({ ...p, serviceId: e.target.value, slotId: '' }))}>
-                {activeServices.map((s) => (
-                  <option key={s.id} value={s.id}>{s.name}</option>
-                ))}
-              </select>
-            </label>
-          </div>
-          <label className="pp-field">
-            <span className="pp-field__label">Open slot</span>
-            <select value={walkIn.slotId} onChange={(e) => setWalkIn((p) => ({ ...p, slotId: e.target.value }))} required>
-              <option value="">Pick a time…</option>
-              {openSlotsForWalkIn.map((s) => {
-                const d = slotDate(s);
-                return (
-                  <option key={s.id} value={s.id}>
-                    {d ? formatDateTime24(d) : s.id}
-                  </option>
-                );
-              })}
-            </select>
-          </label>
-          {!openSlotsForWalkIn.length && walkIn.serviceId ? (
-            <p className="pp-muted">No open slots for this service. Add availability first.</p>
-          ) : null}
-          <label className="pp-field">
-            <span className="pp-field__label">Notes (optional)</span>
-            <input value={walkIn.notes} onChange={(e) => setWalkIn((p) => ({ ...p, notes: e.target.value }))} />
-          </label>
-          <button className="pp-btn pp-btn--primary" type="submit" disabled={busyId === 'walkin' || !activeServices.length}>
-            {busyId === 'walkin' ? 'Booking…' : 'Confirm booking'}
-          </button>
-        </form>
+            <button className="pp-btn pp-btn--primary" type="submit" disabled={busyId === 'walkin' || !activeServices.length}>
+              {busyId === 'walkin' ? 'Booking…' : 'Confirm booking'}
+            </button>
+          </form>
+        </div>
       ) : null}
 
-      {err ? <div className="pp-error" style={{ marginTop: 10 }}>{err}</div> : null}
-      {ok ? <div className="pp-success" style={{ marginTop: 10 }}>{ok}</div> : null}
-      {rows.length === 0 ? <div className="pp-muted" style={{ marginTop: 10 }}>No bookings yet.</div> : null}
-      <div className="pp-stack" style={{ marginTop: 10 }}>
+      {err ? <div className="pp-error">{err}</div> : null}
+      {ok ? <div className="pp-success">{ok}</div> : null}
+      {rows.length === 0 ? <div className="pp-providerEmptyCard">No bookings yet — book a walk-in or wait for customer requests.</div> : null}
+      <div className="pp-providerBookingList" style={{ marginTop: rows.length ? 10 : 0 }}>
         {rows.map((b) => {
           const when = b.startAt?.toDate ? formatDateTime24(b.startAt.toDate()) : '';
           const serviceName = b.serviceSnapshot?.name || servicesById.get(b.serviceId) || 'Service';
@@ -1413,7 +1543,7 @@ function Bookings({ companyId }) {
           );
         })}
       </div>
-    </div>
+    </section>
   );
 }
 

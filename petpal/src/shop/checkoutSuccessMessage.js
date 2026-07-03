@@ -56,6 +56,12 @@ export function checkoutSuccessMessage(t, p) {
   if (focusSku === 'STORE_BOOST_MONTHLY') {
     return t('shopPage.successBoost');
   }
+  if (focusSku === 'STORE_BOOST_NEARBY_MONTHLY') {
+    return t('shopPage.successBoostNearby');
+  }
+  if (focusSku === 'STORE_BOOST_BOOKINGS_MONTHLY') {
+    return t('shopPage.successBoostBookings');
+  }
   return t('shopPage.successGeneric');
 }
 

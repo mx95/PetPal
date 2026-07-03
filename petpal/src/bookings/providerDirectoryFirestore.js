@@ -38,6 +38,18 @@ export function subscribeProviders(onNext, onError) {
   );
 }
 
+export function subscribeProviderProfile(companyId, onNext, onError) {
+  if (!isFirebaseConfigured() || !companyId) {
+    onNext(null);
+    return () => {};
+  }
+  return onSnapshot(
+    doc(getDb(), 'providers', companyId),
+    (snap) => onNext(snap.exists() ? { id: snap.id, ...snap.data() } : null),
+    (err) => (onError ? onError(err) : undefined)
+  );
+}
+
 /**
  * After a company is approved, create `providers/<companyId>` once from the company application
  * so the portal listing card has sensible defaults (listing stays off until they enable bookings).
@@ -78,9 +90,11 @@ export async function publishProviderProfile(companyId, patch) {
     staffCount: Number.isFinite(Number(patch?.staffCount)) ? Math.max(1, Number(patch.staffCount)) : 1,
     slotIntervalMin: Number.isFinite(Number(patch?.slotIntervalMin)) ? Math.max(5, Number(patch.slotIntervalMin)) : 30,
     bookingLimitPerDay: Number.isFinite(Number(patch?.bookingLimitPerDay)) ? Math.max(1, Number(patch.bookingLimitPerDay)) : 12,
-    boostEnabled: Boolean(patch?.boostEnabled),
-    sponsored: Boolean(patch?.sponsored || patch?.boostEnabled),
-    recommended: Boolean(patch?.recommended || patch?.boostEnabled),
+    boostEnabled: Boolean(patch?.boostEnabled || patch?.boostNearbyEnabled || patch?.boostBookingsEnabled),
+    boostNearbyEnabled: Boolean(patch?.boostNearbyEnabled),
+    boostBookingsEnabled: Boolean(patch?.boostBookingsEnabled),
+    sponsored: Boolean(patch?.sponsored || patch?.boostNearbyEnabled || patch?.boostEnabled),
+    recommended: Boolean(patch?.recommended || patch?.boostBookingsEnabled || patch?.boostEnabled),
     updatedAt: serverTimestamp(),
   };
   await setDoc(doc(getDb(), 'providers', companyId), payload, { merge: true });

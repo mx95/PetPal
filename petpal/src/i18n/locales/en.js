@@ -1490,6 +1490,8 @@ const en = {
       'Your GPS tracker order is confirmed (€39.99 one-time). PetPal shows {combo} Plus + tracker pairs and {total} paid tracker checkouts in total.',
     successNfc: 'Your NFC tag order is confirmed (€9.99 one-time). We will fulfil it separately.',
     successBoost: 'Business boost is active — you should appear as recommended where your profile and Nearby allow.',
+    successBoostNearby: 'Nearby boost is active — your business should appear first on the map strip.',
+    successBoostBookings: 'Bookings boost is active — you should appear in the recommended row on Bookings.',
     plusBadgeActive: 'Active on your account',
     plusBadgeInactive: 'Not subscribed',
     plusSubscribedCta: 'Current plan',
