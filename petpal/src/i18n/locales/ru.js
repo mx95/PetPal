@@ -932,7 +932,7 @@ const ru = {
       'Держите ошейник заряженным. LBS используется, когда нет Wi‑Fi/GPS.',
     devicePanelNeedImei: 'Сначала привяжите IMEI трекера к питомцу.',
     devicePanelNeedWifi: 'Введите код роутера — см. «Где найти код роутера?».',
-    devicePanelNoApi: 'Не настроен REACT_APP_XEXUN_HTTP_BASE_URL.',
+    devicePanelNoApi: 'Не удалось подключиться к сервису трекера PetPal. Проверьте соединение и попробуйте снова.',
     devicePanelFailed: 'Не удалось отправить команду.',
     devicePanelGpsposIntro:
       'Этот ошейник отправляет данные на облачную GPS-платформу (gpspos), а не напрямую на PetPal по TCP.',

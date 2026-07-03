@@ -7,6 +7,15 @@ const VIDEO_CONSTRAINTS = [
   {
     video: {
       facingMode: { ideal: 'environment' },
+      width: { ideal: 1920 },
+      height: { ideal: 1080 },
+      focusMode: { ideal: 'continuous' },
+    },
+    audio: false,
+  },
+  {
+    video: {
+      facingMode: { ideal: 'environment' },
       width: { ideal: 1280 },
       height: { ideal: 720 },
     },
@@ -40,19 +49,42 @@ function waitForVideoReady(video) {
   });
 }
 
-async function decodeCenterCrop(reader, video, canvas) {
+function drawCrop(video, canvas, { yRatio = 0.29, hRatio = 0.42, xRatio = 0, wRatio = 1 }) {
   const vw = video.videoWidth;
   const vh = video.videoHeight;
-  if (!vw || !vh) return null;
-  const cropH = Math.max(1, Math.floor(vh * 0.42));
-  const cropY = Math.floor((vh - cropH) / 2);
-  canvas.width = vw;
+  if (!vw || !vh) return false;
+  const cropW = Math.max(1, Math.floor(vw * wRatio));
+  const cropH = Math.max(1, Math.floor(vh * hRatio));
+  const cropX = Math.floor(vw * xRatio);
+  const cropY = Math.floor(vh * yRatio);
+  canvas.width = cropW;
   canvas.height = cropH;
   const ctx = canvas.getContext('2d', { willReadFrequently: true });
-  if (!ctx) return null;
-  ctx.drawImage(video, 0, cropY, vw, cropH, 0, 0, vw, cropH);
-  return await reader.decodeFromCanvas(canvas);
+  if (!ctx) return false;
+  ctx.drawImage(video, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+  return true;
 }
+
+function invertCanvas(canvas) {
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  if (!ctx) return;
+  const { width, height } = canvas;
+  const image = ctx.getImageData(0, 0, width, height);
+  const data = image.data;
+  for (let i = 0; i < data.length; i += 4) {
+    data[i] = 255 - data[i];
+    data[i + 1] = 255 - data[i + 1];
+    data[i + 2] = 255 - data[i + 2];
+  }
+  ctx.putImageData(image, 0, 0);
+}
+
+const CROP_STRATEGIES = [
+  { yRatio: 0, hRatio: 1, xRatio: 0, wRatio: 1 },
+  { yRatio: 0.29, hRatio: 0.42, xRatio: 0.05, wRatio: 0.9 },
+  { yRatio: 0.22, hRatio: 0.56, xRatio: 0, wRatio: 1 },
+  { yRatio: 0.35, hRatio: 0.3, xRatio: 0.02, wRatio: 0.96 },
+];
 
 /**
  * Opens camera scanner for QR codes and 1D barcodes; extracts a 15-digit IMEI.
@@ -68,15 +100,15 @@ export default function ImeiQrScannerButton({ onImei, disabled }) {
   const settledRef = useRef(false);
   const videoRef = useRef(null);
   const readerRef = useRef(null);
-  const scanTimerRef = useRef(0);
+  const scanFrameRef = useRef(0);
   const streamRef = useRef(null);
   const cancelledRef = useRef(false);
   const cropCanvasRef = useRef(null);
 
   const stopScanner = useCallback(async () => {
-    if (scanTimerRef.current) {
-      window.clearTimeout(scanTimerRef.current);
-      scanTimerRef.current = 0;
+    if (scanFrameRef.current) {
+      cancelAnimationFrame(scanFrameRef.current);
+      scanFrameRef.current = 0;
     }
     readerRef.current = null;
     const stream = streamRef.current;
@@ -117,47 +149,43 @@ export default function ImeiQrScannerButton({ onImei, disabled }) {
     [onImei, stopScanner, t]
   );
 
-  const runScanLoop = useCallback(
+  const tryDecodeFrame = useCallback(
     async (reader, video) => {
-      if (cancelledRef.current || settledRef.current) return;
+      if (!cropCanvasRef.current) cropCanvasRef.current = document.createElement('canvas');
+      const canvas = cropCanvasRef.current;
 
-      try {
-        let result = null;
-        // Full-frame decode first.
-        try {
-          if (typeof reader.decodeFromVideoElement === 'function') {
-            result = await reader.decodeFromVideoElement(video);
-          } else if (typeof reader.decode === 'function') {
-            // Fallback for older ZXing builds (sync API).
-            result = reader.decode(video);
-          }
-        } catch {
-          // try center crop for 1D barcodes
-        }
-
-        if (!result && typeof reader.decodeFromCanvas === 'function') {
+      for (const crop of CROP_STRATEGIES) {
+        if (!drawCrop(video, canvas, crop)) continue;
+        for (const invert of [false, true]) {
+          if (invert) invertCanvas(canvas);
           try {
-            if (!cropCanvasRef.current) cropCanvasRef.current = document.createElement('canvas');
-            result = await decodeCenterCrop(reader, video, cropCanvasRef.current);
+            const result = await reader.decodeFromCanvas(canvas);
+            const decoded = result?.getText?.() ?? result?.text ?? null;
+            if (decoded) {
+              onDecode(decoded);
+              return true;
+            }
           } catch {
-            // still scanning
+            // keep scanning
           }
+          if (invert) invertCanvas(canvas);
         }
-
-        const decoded = result?.getText?.() ?? result?.text ?? null;
-        if (decoded) {
-          onDecode(decoded);
-          return;
-        }
-      } catch {
-        // keep scanning
       }
-
-      scanTimerRef.current = window.setTimeout(() => {
-        runScanLoop(reader, video);
-      }, 90);
+      return false;
     },
     [onDecode]
+  );
+
+  const runScanLoop = useCallback(
+    (reader, video) => {
+      if (cancelledRef.current || settledRef.current) return;
+
+      void tryDecodeFrame(reader, video).then((found) => {
+        if (found || cancelledRef.current || settledRef.current) return;
+        scanFrameRef.current = requestAnimationFrame(() => runScanLoop(reader, video));
+      });
+    },
+    [tryDecodeFrame]
   );
 
   useEffect(() => {
@@ -200,6 +228,7 @@ export default function ImeiQrScannerButton({ onImei, disabled }) {
           ],
           [DecodeHintType.TRY_HARDER, true],
           [DecodeHintType.ASSUME_GS1, true],
+          [DecodeHintType.ALSO_INVERTED, true],
         ]);
 
         const reader = new BrowserMultiFormatReader(hints);

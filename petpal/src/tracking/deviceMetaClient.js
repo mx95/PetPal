@@ -19,7 +19,7 @@ async function readJsonSafe(res) {
  */
 export async function fetchDeviceMeta(imei) {
   const base = resolveTrackerHttpBase();
-  if (!base || !imei?.trim()) return null;
+  if (base == null || !imei?.trim()) return null;
   const path = `/api/app/devices/${encodeURIComponent(String(imei).trim())}`;
   const url = base === '' ? path : `${base}${path}`;
   try {

@@ -673,7 +673,7 @@ const en = {
     nfcEnabledSub: 'Pet profile opens when someone taps your NFC collar tag.',
     scanQr: 'Scan QR',
     scanQrClose: 'Close',
-    scanQrHint: 'Point at the IMEI QR or barcode. For barcodes, hold steady with the lines level inside the white box.',
+    scanQrHint: 'Point at the IMEI QR or barcode. Hold the lines level inside the white box. You can also type the 15-digit IMEI below.',
     scanQrErrorCamera: 'Could not start the camera. Allow permission in the browser, use HTTPS, or type the IMEI.',
     scanQrErrorNoImei: 'No 15-digit IMEI found in that code.',
     scanQrSuccess: 'IMEI filled in from scan.',
@@ -1083,7 +1083,7 @@ const en = {
       'For server or SIM changes, use SMS to the collar SIM (see setup guide). Upload interval can also be set by SMS: time#3.',
     devicePanelNeedImei: 'Link a tracker to this pet first (IMEI number).',
     devicePanelNoApi:
-      'Tracker command API is not configured. Set REACT_APP_XEXUN_HTTP_BASE_URL to your server (e.g. http://YOUR_IP:5002) and rebuild the app.',
+      'Could not reach the PetPal tracker service. Check your connection and try again.',
     devicePanelFailed: 'Could not send command. Check the server and IMEI.',
     devicePanelGpsposIntro:
       'This collar reports to a cloud GPS platform (gpspos-style API), not directly to PetPal over TCP. Choose a plan below — PetPal pulls from the cloud on that schedule.',
