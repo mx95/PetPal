@@ -4,6 +4,7 @@ import { useAuth } from '../auth/AuthProvider';
 import { useCompany } from '../company/CompanyContext';
 import {
   createAvailabilitySlot,
+  bulkCreateAvailabilitySlots,
   blockSlotsForTimeOff,
   createProviderBooking,
   setSlotStatus,
@@ -20,6 +21,7 @@ import IconMedPill from '../components/icons/IconMedPill';
 import { publishProviderProfile, subscribeProviderProfile } from '../bookings/providerDirectoryFirestore';
 import { providerBookingsBoostIsActive, providerNearbyBoostIsActive } from '../bookings/bookingBrowseUtils';
 import { getDemoBusinessAccount, getDemoBusinessAccounts, getDemoSlots } from '../bookings/demoBookingData';
+import { getPublicHolidays, HOLIDAY_COUNTRY_OPTIONS } from '../bookings/publicHolidays';
 import { formatDateTime24, formatTime24 } from '../formatTime24';
 import TimeInput24 from '../components/TimeInput24';
 
@@ -121,6 +123,7 @@ function buildPublishState(companyProfile, providerDoc) {
     staffCount: providerDoc?.staffCount || 1,
     slotIntervalMin: providerDoc?.slotIntervalMin || 30,
     bookingLimitPerDay: providerDoc?.bookingLimitPerDay || 12,
+    holidayCountry: providerDoc?.holidayCountry || 'CY',
     boostNearbyEnabled: Boolean(providerDoc?.boostNearbyEnabled),
     boostBookingsEnabled: Boolean(providerDoc?.boostBookingsEnabled),
   };
@@ -218,10 +221,6 @@ function CalendarAvailabilityPanel({
     selectDate(today);
   };
 
-  const shiftSelectedWeek = (deltaDays) => {
-    selectDate(addDays(selectedDate, deltaDays));
-  };
-
   const renderDayButton = (day, { compact = false } = {}) => {
     const key = dateKey(day);
     const daySlots = slotsByDay.get(key) || [];
@@ -282,9 +281,9 @@ function CalendarAvailabilityPanel({
           <div className="pp-providerCalendarMobileMonth" aria-live="polite">
             {view === 'month' ? (
               <div className="pp-providerCalendarMobileNav">
-                <button type="button" aria-label="Previous week" onClick={() => shiftSelectedWeek(-7)}>‹</button>
-                <strong>{mobileMonthLabel}</strong>
-                <button type="button" aria-label="Next week" onClick={() => shiftSelectedWeek(7)}>›</button>
+                <button type="button" aria-label="Previous month" onClick={() => setVisibleMonth((d) => new Date(d.getFullYear(), d.getMonth() - 1, 1))}>‹</button>
+                <strong>{monthLabel}</strong>
+                <button type="button" aria-label="Next month" onClick={() => setVisibleMonth((d) => new Date(d.getFullYear(), d.getMonth() + 1, 1))}>›</button>
               </div>
             ) : (
               <strong>{mobileMonthLabel}</strong>
@@ -306,7 +305,7 @@ function CalendarAvailabilityPanel({
               {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, idx) => <span key={`${d}-${idx}`}>{d}</span>)}
             </div>
           ) : null}
-          {view !== 'today' ? (
+          {view === 'week' ? (
             <div className="pp-providerCalendarWeek pp-providerCalendarWeek--mobile">
               {mobileWeekDays.map((day) => (
                 <span key={`head-${dateKey(day)}`}>{day.toLocaleDateString(undefined, { weekday: 'narrow' })}</span>
@@ -363,21 +362,35 @@ function CalendarAvailabilityPanel({
   );
 }
 
-function DemoBusinessSwitcher({ businesses, onSelect, activeId = '', compact = false }) {
+function DemoBusinessSwitcher({ businesses, onSelect, onSelectLive, activeId = '', compact = false, showLive = false }) {
   return (
     <section className={`pp-card pp-demoBusiness ${compact ? 'pp-demoBusiness--compact' : ''}`}>
       <div className="pp-rowBetween" style={{ alignItems: 'flex-start', gap: 12 }}>
         <div>
-          <div className="pp-badge">Demo business accounts</div>
+          <div className="pp-badge">{showLive && activeId ? 'Demo preview' : 'Demo business accounts'}</div>
           <h2 className="pp-sectionTitle" style={{ margin: '8px 0 4px' }}>
-            Preview business perspective
+            {showLive && activeId ? 'You are viewing a demo' : 'Preview business perspective'}
           </h2>
           <p className="pp-subtle" style={{ margin: 0 }}>
-            Open a ready-made business portal for each nearby category to see what providers can manage.
+            {showLive && activeId
+              ? 'Actions like adding services are disabled in demo mode. Switch back to your live business to manage bookings.'
+              : 'Open a ready-made business portal for each nearby category to see what providers can manage.'}
           </p>
         </div>
       </div>
       <div className="pp-demoBusiness__grid">
+        {showLive ? (
+          <button
+            type="button"
+            className={`pp-demoBusiness__card pp-demoBusiness__card--live ${!activeId ? 'is-active' : ''}`}
+            onClick={() => onSelectLive?.()}
+          >
+            <span className="pp-demoBusiness__icon" aria-hidden>🏪</span>
+            <span className="pp-demoBusiness__type">Live account</span>
+            <strong>Your live business</strong>
+            <small>Manage services & availability</small>
+          </button>
+        ) : null}
         {businesses.map((b) => (
           <button key={b.id} type="button" className={`pp-demoBusiness__card ${b.id === activeId ? 'is-active' : ''}`} onClick={() => onSelect(b.id)}>
             <span className="pp-demoBusiness__icon" aria-hidden>{businessIcon(b.providerTypes)}</span>
@@ -566,7 +579,7 @@ function DemoClientPetsPanel({ pets }) {
   );
 }
 
-function DemoProviderPortal({ business, businesses, onChangeBusiness }) {
+function DemoProviderPortal({ business, businesses, onChangeBusiness, onExitDemo }) {
   const [tab, setTab] = useState('services');
   const firstService = business.services[0];
   const slots = firstService ? getDemoSlots(business.id, firstService.id, { after: new Date() }).slice(0, 6) : [];
@@ -575,7 +588,14 @@ function DemoProviderPortal({ business, businesses, onChangeBusiness }) {
     <div className="pp-pad pp-demoProviderPortal">
       <ProviderDashboardHero business={business} />
 
-      <DemoBusinessSwitcher businesses={businesses} onSelect={onChangeBusiness} activeId={business.id} compact />
+      <DemoBusinessSwitcher
+        businesses={businesses}
+        onSelect={onChangeBusiness}
+        onSelectLive={onExitDemo}
+        activeId={business.id}
+        showLive
+        compact
+      />
 
       <ProviderStats business={business} />
 
@@ -643,7 +663,14 @@ export default function ProviderPortal() {
       <DemoProviderPortal
         business={demoBusiness}
         businesses={demoBusinesses}
-        onChangeBusiness={(id) => setSearchParams({ demoBusiness: id })}
+        onChangeBusiness={(id) => setSearchParams({ demoBusiness: id, tab })}
+        onExitDemo={() => {
+          setSearchParams((prev) => {
+            const p = new URLSearchParams(prev);
+            p.delete('demoBusiness');
+            return p;
+          });
+        }}
       />
     );
   }
@@ -690,7 +717,19 @@ export default function ProviderPortal() {
           nextAvailable: 'Manage live availability',
         }}
       />
-      <DemoBusinessSwitcher businesses={demoBusinesses} onSelect={(id) => setSearchParams({ demoBusiness: id })} compact />
+      <DemoBusinessSwitcher
+        businesses={demoBusinesses}
+        onSelect={(id) => setSearchParams({ demoBusiness: id, tab })}
+        onSelectLive={() => {
+          setSearchParams((prev) => {
+            const p = new URLSearchParams(prev);
+            p.delete('demoBusiness');
+            return p;
+          });
+        }}
+        showLive
+        compact
+      />
 
       <div className="pp-providerHubShell">
         <div className="pp-providerTabsWrap">
@@ -699,7 +738,17 @@ export default function ProviderPortal() {
 
         <div className="pp-providerTabContent">
           {tab === 'bookings' ? <Bookings companyId={companyId} /> : null}
-          {tab === 'availability' ? <Availability companyId={companyId} openAddPanel={searchParams.get('add') === '1'} /> : null}
+          {tab === 'availability' ? (
+            <Availability
+              companyId={companyId}
+              openAddPanel={searchParams.get('add') === '1'}
+              holidayCountry={publish.holidayCountry || 'CY'}
+              onHolidayCountryChange={(code) => setPublish((p) => ({ ...p, holidayCountry: code }))}
+              onSaveHolidayCountry={async (code) => {
+                await publishProviderProfile(companyId, { ...publish, holidayCountry: code });
+              }}
+            />
+          ) : null}
           {tab === 'customers' ? (
             <Customers companyId={companyId} clinicLabel={publish.displayName || profile?.businessName || ''} />
           ) : null}
@@ -1075,7 +1124,13 @@ function Services({ companyId }) {
   );
 }
 
-function Availability({ companyId, openAddPanel = false }) {
+function Availability({
+  companyId,
+  openAddPanel = false,
+  holidayCountry = 'CY',
+  onHolidayCountryChange,
+  onSaveHolidayCountry,
+}) {
   const [services, setServices] = useState([]);
   const [slots, setSlots] = useState([]);
   const [err, setErr] = useState('');
@@ -1089,6 +1144,19 @@ function Availability({ companyId, openAddPanel = false }) {
   const [timeOffDate, setTimeOffDate] = useState('');
   const [timeOffEndDate, setTimeOffEndDate] = useState('');
   const [timeOffMode, setTimeOffMode] = useState('single');
+  const [country, setCountry] = useState(holidayCountry || 'CY');
+  const [showYearlyModal, setShowYearlyModal] = useState(false);
+  const [holidaySkips, setHolidaySkips] = useState(() => new Set());
+
+  useEffect(() => {
+    setCountry(holidayCountry || 'CY');
+  }, [holidayCountry]);
+
+  const yearHolidays = useMemo(() => getPublicHolidays(country, calendarDate.getFullYear()), [country, calendarDate]);
+
+  useEffect(() => {
+    setHolidaySkips(new Set(yearHolidays.map((h) => h.date)));
+  }, [yearHolidays]);
 
   useEffect(() => subscribeCompanyServices(companyId, setServices, (e) => setErr(e?.message || 'failed')), [companyId]);
   useEffect(
@@ -1170,10 +1238,161 @@ function Availability({ companyId, openAddPanel = false }) {
     return m;
   }, [services]);
 
+  const weekTemplateSlots = useMemo(() => {
+    const week = weekDays(calendarDate);
+    const weekKeys = new Set(week.map((d) => dateKey(d)));
+    return slots.filter((s) => {
+      const d = slotDate(s);
+      return d && weekKeys.has(dateKey(d)) && (s.status || 'open') === 'open';
+    });
+  }, [slots, calendarDate]);
+
+  const existingSlotKeys = useMemo(() => {
+    const keys = new Set();
+    slots.forEach((s) => {
+      const d = slotDate(s);
+      if (!d) return;
+      keys.add(`${dateKey(d)}|${s.serviceId}|${formatTime24(d)}`);
+    });
+    return keys;
+  }, [slots]);
+
+  const onApplyWeekToYear = async () => {
+    setErr('');
+    setOk('');
+    if (!weekTemplateSlots.length) {
+      setErr('Add open slots to this week first, then apply the pattern to the full year.');
+      return;
+    }
+    setBusy(true);
+    try {
+      const year = calendarDate.getFullYear();
+      const yearStart = new Date(year, 0, 1);
+      const yearEnd = new Date(year, 11, 31);
+      const toCreate = [];
+
+      for (let d = new Date(yearStart); d.getTime() <= yearEnd.getTime(); d = addDays(d, 1)) {
+        const key = dateKey(d);
+        if (holidaySkips.has(key)) continue;
+        const dow = d.getDay();
+        weekTemplateSlots.forEach((template) => {
+          const templateDate = slotDate(template);
+          const templateEnd = slotEndDate(template);
+          if (!templateDate || !templateEnd) return;
+          if (templateDate.getDay() !== dow) return;
+          const startAt = new Date(d);
+          startAt.setHours(templateDate.getHours(), templateDate.getMinutes(), 0, 0);
+          const endAt = new Date(d);
+          endAt.setHours(templateEnd.getHours(), templateEnd.getMinutes(), 0, 0);
+          if (startAt.getTime() < Date.now() - 86400000) return;
+          const dedupe = `${key}|${template.serviceId}|${formatTime24(startAt)}`;
+          if (existingSlotKeys.has(dedupe)) return;
+          toCreate.push({
+            serviceId: template.serviceId,
+            startAt,
+            endAt,
+            status: 'open',
+          });
+        });
+      }
+
+      if (!toCreate.length) {
+        setErr('No new slots to add — this pattern may already cover the year.');
+        return;
+      }
+
+      const created = await bulkCreateAvailabilitySlots(companyId, toCreate);
+      setShowYearlyModal(false);
+      setOk(`Applied weekly pattern — ${created} new slot${created === 1 ? '' : 's'} added for ${year}.`);
+    } catch (e2) {
+      setErr(e2?.message || 'failed');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const onCountryChange = async (code) => {
+    setCountry(code);
+    onHolidayCountryChange?.(code);
+    try {
+      await onSaveHolidayCountry?.(code);
+    } catch {
+      /* profile save is best-effort */
+    }
+  };
+
   return (
     <>
       {err ? <div className="pp-error" style={{ marginBottom: 10 }}>{err}</div> : null}
       {ok ? <div className="pp-success" style={{ marginBottom: 10 }}>{ok}</div> : null}
+      <div className="pp-card pp-providerYearlyAvail" style={{ marginBottom: 14 }}>
+        <div className="pp-card__title">Yearly schedule</div>
+        <p className="pp-muted" style={{ marginTop: 6, marginBottom: 12 }}>
+          Set open slots for one week, then copy that pattern across the whole year. Public holidays can be skipped automatically.
+        </p>
+        <div className="pp-modalGrid2">
+          <label className="pp-field">
+            <span className="pp-field__label">Public holidays country</span>
+            <select className="pp-input" value={country} onChange={(e) => void onCountryChange(e.target.value)}>
+              {HOLIDAY_COUNTRY_OPTIONS.map((c) => (
+                <option key={c.code} value={c.code}>{c.label}</option>
+              ))}
+            </select>
+          </label>
+          <div className="pp-field" style={{ display: 'flex', alignItems: 'flex-end' }}>
+            <button
+              type="button"
+              className="pp-btn pp-btn--primary"
+              style={{ width: '100%' }}
+              disabled={busy || !weekTemplateSlots.length}
+              onClick={() => setShowYearlyModal(true)}
+            >
+              Apply this week to full year
+            </button>
+          </div>
+        </div>
+        {!weekTemplateSlots.length ? (
+          <p className="pp-muted" style={{ marginTop: 10, marginBottom: 0, fontSize: 13 }}>
+            Add open slots to the selected week first — they become the template for every matching weekday.
+          </p>
+        ) : null}
+      </div>
+      {showYearlyModal ? (
+        <div className="pp-providerYearlyModal" role="dialog" aria-modal="true" aria-labelledby="yearly-avail-title">
+          <div className="pp-providerYearlyModal__backdrop" onClick={() => !busy && setShowYearlyModal(false)} />
+          <div className="pp-providerYearlyModal__card">
+            <h3 id="yearly-avail-title">Confirm public holidays</h3>
+            <p className="pp-muted">
+              These {yearHolidays.length} public holidays in {HOLIDAY_COUNTRY_OPTIONS.find((c) => c.code === country)?.label || country} will be skipped when copying your week pattern. Uncheck any you want to keep open.
+            </p>
+            <div className="pp-providerYearlyModal__list">
+              {yearHolidays.map((h) => (
+                <label key={h.date} className="pp-field pp-field--checkbox">
+                  <input
+                    type="checkbox"
+                    checked={holidaySkips.has(h.date)}
+                    onChange={(e) => {
+                      setHolidaySkips((prev) => {
+                        const next = new Set(prev);
+                        if (e.target.checked) next.add(h.date);
+                        else next.delete(h.date);
+                        return next;
+                      });
+                    }}
+                  />
+                  <span>{new Date(`${h.date}T12:00:00`).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })} — {h.name}</span>
+                </label>
+              ))}
+            </div>
+            <div className="pp-providerYearlyModal__actions">
+              <button type="button" className="pp-btn pp-btn--ghost" disabled={busy} onClick={() => setShowYearlyModal(false)}>Cancel</button>
+              <button type="button" className="pp-btn pp-btn--primary" disabled={busy} onClick={() => void onApplyWeekToYear()}>
+                {busy ? 'Applying…' : `Apply to ${calendarDate.getFullYear()}`}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
       <div className="pp-card pp-providerTimeOff" style={{ marginBottom: 14 }}>
         <div className="pp-card__title">Time off</div>
         <p className="pp-muted" style={{ marginTop: 6, marginBottom: 12 }}>

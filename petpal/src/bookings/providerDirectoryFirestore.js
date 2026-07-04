@@ -90,6 +90,7 @@ export async function publishProviderProfile(companyId, patch) {
     staffCount: Number.isFinite(Number(patch?.staffCount)) ? Math.max(1, Number(patch.staffCount)) : 1,
     slotIntervalMin: Number.isFinite(Number(patch?.slotIntervalMin)) ? Math.max(5, Number(patch.slotIntervalMin)) : 30,
     bookingLimitPerDay: Number.isFinite(Number(patch?.bookingLimitPerDay)) ? Math.max(1, Number(patch.bookingLimitPerDay)) : 12,
+    holidayCountry: patch?.holidayCountry ? String(patch.holidayCountry).trim().slice(0, 2).toUpperCase() : 'CY',
     boostEnabled: Boolean(patch?.boostEnabled || patch?.boostNearbyEnabled || patch?.boostBookingsEnabled),
     boostNearbyEnabled: Boolean(patch?.boostNearbyEnabled),
     boostBookingsEnabled: Boolean(patch?.boostBookingsEnabled),

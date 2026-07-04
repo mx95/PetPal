@@ -143,6 +143,46 @@ export async function createAvailabilitySlot(companyId, slot) {
   return refDoc.id;
 }
 
+/**
+ * Create many availability slots in batched writes (Firestore limit 500 per batch).
+ * @param {string} companyId
+ * @param {Array<{ serviceId: string, startAt: Date, endAt: Date, status?: string }>} slots
+ * @returns {Promise<number>} count created
+ */
+export async function bulkCreateAvailabilitySlots(companyId, slots) {
+  if (!isFirebaseConfigured() || !companyId || !Array.isArray(slots) || !slots.length) return 0;
+  const col = companyAvailabilityCol(companyId);
+  let created = 0;
+  for (let i = 0; i < slots.length; i += 450) {
+    const chunk = slots.slice(i, i + 450);
+    const batch = writeBatch(getDb());
+    let batchCount = 0;
+    chunk.forEach((slot) => {
+      const startAt = slot?.startAt instanceof Date ? slot.startAt : new Date(String(slot?.startAt || ''));
+      const endAt = slot?.endAt instanceof Date ? slot.endAt : new Date(String(slot?.endAt || ''));
+      if (Number.isNaN(startAt.getTime()) || Number.isNaN(endAt.getTime()) || endAt <= startAt) return;
+      const serviceId = String(slot?.serviceId || '');
+      if (!serviceId) return;
+      const ref = doc(col);
+      batch.set(ref, {
+        serviceId,
+        startAt: Timestamp.fromDate(startAt),
+        endAt: Timestamp.fromDate(endAt),
+        capacity: 1,
+        status: String(slot?.status || 'open'),
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+      batchCount += 1;
+    });
+    if (batchCount > 0) {
+      await batch.commit();
+      created += batchCount;
+    }
+  }
+  return created;
+}
+
 export async function setSlotStatus(companyId, slotId, status) {
   if (!isFirebaseConfigured() || !companyId || !slotId) return;
   await updateDoc(doc(getDb(), 'companies', companyId, 'availability', slotId), {

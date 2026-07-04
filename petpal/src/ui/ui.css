@@ -15786,7 +15786,7 @@ html[data-theme="dark"] .pp-book-calendar__monthControls button {
 }
 
 .pp-providerHubShell {
-  margin-top: 14px;
+  margin-top: 22px;
 }
 
 .pp-providerListingSection {
@@ -15917,7 +15917,7 @@ html[data-theme="dark"] .pp-book-calendar__monthControls button {
 }
 
 .pp-providerTabContent {
-  margin-top: 14px;
+  margin-top: 24px;
 }
 
 .pp-providerPanel {
@@ -16211,6 +16211,7 @@ html[data-theme="dark"] .pp-book-calendar__monthControls button {
   grid-template-columns: minmax(300px, 0.9fr) minmax(0, 1.1fr);
   gap: 14px;
   align-items: start;
+  margin-top: 16px;
 }
 
 .pp-providerCalendarCard,
@@ -16555,6 +16556,85 @@ html[data-theme="dark"] .pp-book-calendar__monthControls button {
   font-weight: 850;
 }
 
+.pp-providerYearlyAvail .pp-card__title {
+  font-weight: 950;
+}
+
+.pp-providerYearlyModal {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+}
+
+.pp-providerYearlyModal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(16, 24, 40, 0.45);
+}
+
+.pp-providerYearlyModal__card {
+  position: relative;
+  z-index: 1;
+  width: min(480px, 100%);
+  max-height: min(80vh, 640px);
+  overflow: auto;
+  border: 1px solid var(--pp-border);
+  border-radius: 24px;
+  background: var(--pp-surface, #fff);
+  box-shadow: var(--pp-shadow-lg);
+  padding: 18px;
+}
+
+.pp-providerYearlyModal__card h3 {
+  margin: 0 0 8px;
+  font-size: 18px;
+}
+
+.pp-providerYearlyModal__list {
+  display: grid;
+  gap: 6px;
+  max-height: 280px;
+  overflow: auto;
+  margin: 12px 0;
+  padding: 10px;
+  border: 1px solid var(--pp-border);
+  border-radius: 16px;
+  background: rgba(91, 55, 255, 0.03);
+}
+
+.pp-providerYearlyModal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.pp-demoBusiness__card--live {
+  border-color: rgba(18, 183, 106, 0.28);
+}
+
+.pp-demoBusiness__card--live.is-active {
+  border-color: rgba(18, 183, 106, 0.5);
+  background:
+    radial-gradient(180px 90px at 100% 0%, rgba(18, 183, 106, 0.14), transparent 72%),
+    var(--pp-surface, #fff);
+}
+
+.pp-businessWeekBookings__hero {
+  margin-bottom: 20px;
+}
+
+.pp-businessWeekBookings .pp-providerCalendarPanel {
+  margin-top: 4px;
+}
+
+.pp-providerDaySchedule--full {
+  grid-column: 1 / -1;
+}
+
 .pp-providerTimePeriod + .pp-providerTimePeriod {
   margin-top: 14px;
 }
@@ -16776,11 +16856,33 @@ html[data-theme="dark"] .pp-book-calendar__monthControls button {
     display: none !important;
   }
 
-  .pp-providerCalendarGrid--mobileWeek {
+  .pp-providerCalendarPanel--month .pp-providerCalendarGrid--desktopMonth {
     display: grid !important;
     grid-template-columns: repeat(7, minmax(0, 1fr));
     gap: 4px;
     width: 100%;
+  }
+
+  .pp-providerCalendarPanel--month .pp-providerCalendarWeek--desktop {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 4px;
+    margin-bottom: 6px;
+  }
+
+  .pp-providerCalendarPanel--month .pp-providerCalendarGrid--mobileWeek {
+    display: none !important;
+  }
+
+  .pp-providerCalendarPanel:not(.pp-providerCalendarPanel--month) .pp-providerCalendarGrid--mobileWeek {
+    display: grid !important;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 4px;
+    width: 100%;
+  }
+
+  .pp-providerCalendarGrid--mobileWeek {
+    display: none;
   }
 
   .pp-providerCalendarGrid--mobileWeek.is-single {
@@ -16838,8 +16940,16 @@ html[data-theme="dark"] .pp-book-calendar__monthControls button {
     display: none;
   }
 
+  .pp-providerCalendarPanel--month .pp-providerCalendarGrid:not(.is-week) {
+    display: grid !important;
+  }
+
   .pp-providerCalendarGrid.is-week {
     display: none;
+  }
+
+  .pp-providerCalendarPanel:not(.pp-providerCalendarPanel--month) .pp-providerCalendarGrid.is-week.pp-providerCalendarGrid--mobileWeek {
+    display: grid !important;
   }
 
   .pp-providerCalendarPanel--month .pp-providerCalendarStrip {
