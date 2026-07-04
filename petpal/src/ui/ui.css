@@ -15760,8 +15760,7 @@ html[data-theme="dark"] .pp-book-calendar__monthControls button {
 }
 
 .pp-providerTabs {
-  position: sticky;
-  top: 72px;
+  position: relative;
   z-index: 12;
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -15773,6 +15772,17 @@ html[data-theme="dark"] .pp-book-calendar__monthControls button {
   padding: 6px;
   box-shadow: var(--pp-shadow-xs);
   backdrop-filter: blur(14px);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.pp-providerTabsWrap {
+  position: sticky;
+  top: calc(56px + env(safe-area-inset-top, 0px));
+  z-index: 20;
+  padding: 4px 0 10px;
+  margin-bottom: 2px;
+  background: linear-gradient(180deg, var(--pp-bg, #f6f7fb) 78%, rgba(246, 247, 251, 0));
 }
 
 .pp-providerHubShell {
@@ -15903,6 +15913,7 @@ html[data-theme="dark"] .pp-book-calendar__monthControls button {
   background: linear-gradient(135deg, #5b37ff, #2f80ff);
   color: #fff;
   box-shadow: 0 12px 22px -14px rgba(91, 55, 255, 0.8);
+  transform: none;
 }
 
 .pp-providerTabContent {
@@ -16336,6 +16347,36 @@ html[data-theme="dark"] .pp-book-calendar__monthControls button {
   font-weight: 950;
 }
 
+.pp-providerCalendarMobileNav {
+  display: grid;
+  grid-template-columns: 38px 1fr 38px;
+  align-items: center;
+  gap: 8px;
+}
+
+.pp-providerCalendarMobileNav button {
+  border: 1px solid var(--pp-border);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--pp-text);
+  height: 36px;
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.pp-providerCalendarMobileNav strong {
+  text-align: center;
+  font-size: 15px;
+}
+
+.pp-providerCalendarWeek--mobile {
+  display: none;
+}
+
+.pp-providerCalendarGrid--mobileWeek {
+  display: none;
+}
+
 .pp-providerFormCard {
   border: 1px solid rgba(91, 55, 255, 0.14);
   border-radius: 22px;
@@ -16713,8 +16754,84 @@ html[data-theme="dark"] .pp-book-calendar__monthControls button {
     display: block;
   }
 
-  .pp-providerCalendarWeek {
+  .pp-providerCalendarWeek--desktop {
     display: none;
+  }
+
+  .pp-providerCalendarWeek--mobile {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 4px;
+    margin-bottom: 6px;
+  }
+
+  .pp-providerCalendarWeek--mobile span {
+    text-align: center;
+    color: var(--pp-text-2);
+    font-size: 11px;
+    font-weight: 950;
+  }
+
+  .pp-providerCalendarGrid--desktopMonth {
+    display: none !important;
+  }
+
+  .pp-providerCalendarGrid--mobileWeek {
+    display: grid !important;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 4px;
+    width: 100%;
+  }
+
+  .pp-providerCalendarGrid--mobileWeek.is-single {
+    grid-template-columns: 1fr;
+    max-width: 72px;
+  }
+
+  .pp-providerCalendarGrid--mobileWeek button {
+    min-height: 52px;
+    border-radius: 14px;
+    padding: 6px 4px;
+    display: grid;
+    place-items: center;
+    gap: 2px;
+  }
+
+  .pp-providerCalendarGrid--mobileWeek button small {
+    color: var(--pp-text-2);
+    font-size: 10px;
+    font-weight: 950;
+    line-height: 1;
+  }
+
+  .pp-providerCalendarGrid--mobileWeek button strong {
+    font-size: 16px;
+    font-weight: 950;
+    line-height: 1.1;
+  }
+
+  .pp-providerCalendarGrid--mobileWeek button.is-selected small {
+    color: rgba(255, 255, 255, 0.85);
+  }
+
+  .pp-providerCalendarStrip {
+    display: none !important;
+  }
+
+  .pp-providerCalendarCard {
+    position: static;
+    top: auto;
+  }
+
+  .pp-providerTabsWrap {
+    top: calc(52px + env(safe-area-inset-top, 0px));
+    padding-bottom: 8px;
+  }
+
+  .pp-providerTabs button {
+    font-size: 11px;
+    padding: 9px 3px;
+    letter-spacing: -0.02em;
   }
 
   .pp-providerCalendarGrid:not(.is-week) {
@@ -16722,31 +16839,15 @@ html[data-theme="dark"] .pp-book-calendar__monthControls button {
   }
 
   .pp-providerCalendarGrid.is-week {
-    display: grid;
-    grid-template-columns: repeat(7, minmax(0, 1fr));
-    gap: 4px;
-  }
-
-  .pp-providerCalendarGrid.is-week button {
-    min-height: 42px;
-    border-radius: 12px;
-    font-size: 13px;
-  }
-
-  .pp-providerCalendarPanel--month .pp-providerCalendarStrip {
-    display: flex;
-    flex-wrap: nowrap;
-    max-width: 100%;
-  }
-
-  .pp-providerCalendarPanel:not(.pp-providerCalendarPanel--month) .pp-providerCalendarStrip {
     display: none;
   }
 
-  .pp-providerCalendarCard {
-    position: sticky;
-    top: 126px;
-    z-index: 6;
+  .pp-providerCalendarPanel--month .pp-providerCalendarStrip {
+    display: none !important;
+  }
+
+  .pp-providerCalendarPanel:not(.pp-providerCalendarPanel--month) .pp-providerCalendarStrip {
+    display: none !important;
   }
 
   .pp-providerTimeSlots button {

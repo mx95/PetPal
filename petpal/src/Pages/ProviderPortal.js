@@ -174,9 +174,11 @@ function CalendarAvailabilityPanel({
     else setInternalSelectedDate(startOfDay(day));
   };
   const [visibleMonth, setVisibleMonth] = useState(() => firstSlotDate || new Date());
-  const [view, setView] = useState('month');
+  const [view, setView] = useState('week');
   const [showAdd, setShowAdd] = useState(initialShowAdd);
   const [selectedSlotId, setSelectedSlotId] = useState('');
+
+  const weekRowDays = useMemo(() => weekDays(selectedDate), [selectedDate]);
 
   const slotsByDay = useMemo(() => {
     const grouped = new Map();
@@ -196,8 +198,9 @@ function CalendarAvailabilityPanel({
     view === 'today'
       ? [startOfDay(new Date())]
       : view === 'week'
-        ? weekDays(selectedDate)
+        ? weekRowDays
         : monthDays(visibleMonth);
+  const mobileWeekDays = view === 'today' ? [startOfDay(new Date())] : weekRowDays;
   const selectedKey = dateKey(selectedDate);
   const selectedSlots = slotsByDay.get(selectedKey) || [];
   const periods = ['Morning', 'Afternoon', 'Evening'];
@@ -213,6 +216,38 @@ function CalendarAvailabilityPanel({
     const today = startOfDay(new Date());
     setView('today');
     selectDate(today);
+  };
+
+  const shiftSelectedWeek = (deltaDays) => {
+    selectDate(addDays(selectedDate, deltaDays));
+  };
+
+  const renderDayButton = (day, { compact = false } = {}) => {
+    const key = dateKey(day);
+    const daySlots = slotsByDay.get(key) || [];
+    const isSelected = key === selectedKey;
+    const inMonth = day.getMonth() === visibleMonth.getMonth();
+    const isToday = key === dateKey(new Date());
+    return (
+      <button
+        key={key}
+        type="button"
+        className={`${isSelected ? 'is-selected' : ''} ${!inMonth && view === 'month' && !compact ? 'is-muted' : ''} ${daySlots.length ? 'has-slots' : ''} ${isToday ? 'is-today' : ''}`}
+        onClick={() => selectDate(day)}
+      >
+        {compact ? (
+          <>
+            <small>{day.toLocaleDateString(undefined, { weekday: 'short' })}</small>
+            <strong>{day.getDate()}</strong>
+          </>
+        ) : (
+          <>
+            <span>{day.getDate()}</span>
+            {daySlots.length ? <em>{Math.min(daySlots.length, 4)}</em> : null}
+          </>
+        )}
+      </button>
+    );
   };
 
   return (
@@ -245,7 +280,15 @@ function CalendarAvailabilityPanel({
       <div className="pp-providerCalendarLayout">
         <div className="pp-providerCalendarCard">
           <div className="pp-providerCalendarMobileMonth" aria-live="polite">
-            <strong>{mobileMonthLabel}</strong>
+            {view === 'month' ? (
+              <div className="pp-providerCalendarMobileNav">
+                <button type="button" aria-label="Previous week" onClick={() => shiftSelectedWeek(-7)}>‹</button>
+                <strong>{mobileMonthLabel}</strong>
+                <button type="button" aria-label="Next week" onClick={() => shiftSelectedWeek(7)}>›</button>
+              </div>
+            ) : (
+              <strong>{mobileMonthLabel}</strong>
+            )}
           </div>
           {view !== 'today' ? (
             <div className="pp-providerCalendarCard__top pp-providerCalendarCard__top--desktop">
@@ -259,39 +302,22 @@ function CalendarAvailabilityPanel({
             </div>
           )}
           {view === 'month' ? (
-            <div className="pp-providerCalendarWeek">
+            <div className="pp-providerCalendarWeek pp-providerCalendarWeek--desktop">
               {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, idx) => <span key={`${d}-${idx}`}>{d}</span>)}
             </div>
           ) : null}
-          <div className={`pp-providerCalendarGrid ${view === 'week' || view === 'today' ? 'is-week' : ''}`}>
-            {calendarDays.map((day) => {
-              const key = dateKey(day);
-              const daySlots = slotsByDay.get(key) || [];
-              const isSelected = key === selectedKey;
-              const inMonth = day.getMonth() === visibleMonth.getMonth();
-              return (
-                <button
-                  key={key}
-                  type="button"
-                  className={`${isSelected ? 'is-selected' : ''} ${!inMonth && view === 'month' ? 'is-muted' : ''} ${daySlots.length ? 'has-slots' : ''}`}
-                  onClick={() => selectDate(day)}
-                >
-                  <span>{day.getDate()}</span>
-                  {daySlots.length ? <em>{Math.min(daySlots.length, 4)}</em> : null}
-                </button>
-              );
-            })}
+          {view !== 'today' ? (
+            <div className="pp-providerCalendarWeek pp-providerCalendarWeek--mobile">
+              {mobileWeekDays.map((day) => (
+                <span key={`head-${dateKey(day)}`}>{day.toLocaleDateString(undefined, { weekday: 'narrow' })}</span>
+              ))}
+            </div>
+          ) : null}
+          <div className={`pp-providerCalendarGrid pp-providerCalendarGrid--desktopMonth ${view === 'week' || view === 'today' ? 'is-week' : ''}`}>
+            {calendarDays.map((day) => renderDayButton(day))}
           </div>
-          <div className="pp-providerCalendarStrip" aria-label="Mobile date picker">
-            {calendarDays.map((day) => {
-              const key = dateKey(day);
-              return (
-                <button key={`strip-${key}`} type="button" className={key === selectedKey ? 'is-selected' : ''} onClick={() => selectDate(day)}>
-                  <small>{day.toLocaleDateString(undefined, { weekday: 'short' })}</small>
-                  <strong>{day.getDate()}</strong>
-                </button>
-              );
-            })}
+          <div className={`pp-providerCalendarGrid is-week pp-providerCalendarGrid--mobileWeek${view === 'today' ? ' is-single' : ''}`}>
+            {mobileWeekDays.map((day) => renderDayButton(day, { compact: view === 'today' }))}
           </div>
         </div>
 
@@ -667,7 +693,9 @@ export default function ProviderPortal() {
       <DemoBusinessSwitcher businesses={demoBusinesses} onSelect={(id) => setSearchParams({ demoBusiness: id })} compact />
 
       <div className="pp-providerHubShell">
-        <ProviderTabs tab={tab} setTab={setTab} />
+        <div className="pp-providerTabsWrap">
+          <ProviderTabs tab={tab} setTab={setTab} />
+        </div>
 
         <div className="pp-providerTabContent">
           {tab === 'bookings' ? <Bookings companyId={companyId} /> : null}
