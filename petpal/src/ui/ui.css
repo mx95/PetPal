@@ -16377,6 +16377,57 @@ body.pp-mobile-dock .pp-providerTabsWrap {
   margin-top: 0;
 }
 
+.pp-bookingHeatCalendar--monthOnly .pp-providerCalendarCard__top--desktop {
+  display: none;
+}
+
+.pp-bookingHeatCalendar--walkIn {
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+}
+
+.pp-walkInSlotGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pp-walkInSlotBtn {
+  border: 1px solid var(--pp-border);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--pp-text);
+  padding: 10px 14px;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.pp-walkInSlotBtn.is-selected {
+  border-color: rgba(91, 55, 255, 0.55);
+  background: rgba(91, 55, 255, 0.12);
+  color: var(--pp-primary, #5b37ff);
+}
+
+.pp-availTimeRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: flex-end;
+}
+
+.pp-availTimeRow__field {
+  flex: 1 1 120px;
+  min-width: 0;
+  margin-bottom: 0;
+}
+
+.pp-availTimeRow .pp-field__label {
+  font-size: 12px;
+}
+
 .pp-bookingHeatCalendar .pp-providerCalendarControls {
   justify-content: flex-start;
 }
