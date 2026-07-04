@@ -1496,6 +1496,10 @@ const en = {
     boostSectionSub: 'Paid monthly — show your clinic or shop first on Nearby and in Bookings.',
     boostActive: 'Active on your listing',
     boostActiveCta: 'Currently active',
+    boostCancelCta: 'Cancel subscription',
+    boostCancelConfirm:
+      'Cancel this visibility boost? It will stop showing on your listing immediately. Recurring billing will be stopped.',
+    boostCancelRequested: 'Boost cancelled. Billing cancellation has been requested.',
     successGeneric: 'Payment completed. Thank you — your purchase will appear in your account shortly.',
     successMarketplace: 'Your order is confirmed. Track packing and delivery in My orders on your profile.',
     successPlusActive: 'PetPal Plus is now active on your account — premium walks, insights, and perks are unlocked.',

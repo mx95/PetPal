@@ -24,6 +24,7 @@ import {
 import { MARKETPLACE_PRODUCTS } from '../shop/marketplaceProducts';
 import { useShopCart } from '../shop/ShopCartContext';
 import { requestSubscriptionCancel } from '../shop/requestSubscriptionCancel';
+import { cancelBusinessBoost } from '../shop/cancelBusinessBoost';
 import { buildSubscriptionCartItem } from '../shop/shopCartHelpers';
 import { subscribeShopSubscriptionState } from '../shop/shopSubscriptionsFirestore';
 import { normalizeTrackerImei } from '../tracking/trackerImeiIndex';
@@ -76,6 +77,7 @@ export default function Shop() {
   const [activeTrackerSubs, setActiveTrackerSubs] = useState(/** @type {Array<{ id: string, sku?: string, status?: string, createdAt?: unknown }>} */ ([]));
   const [legacyMonthlyActive, setLegacyMonthlyActive] = useState(false);
   const [cancelBusy, setCancelBusy] = useState(null);
+  const [boostCancelBusy, setBoostCancelBusy] = useState('');
   const [cancelMsg, setCancelMsg] = useState('');
 
   const petOptions = useMemo(() => pets.map((p) => ({ id: p.id, name: p.name })), [pets]);
@@ -237,6 +239,23 @@ export default function Shop() {
     }
   }
 
+  async function onCancelBoost(product) {
+    if (!user) return;
+    const kind = product.id === 'STORE_BOOST_NEARBY_MONTHLY' ? 'nearby' : 'bookings';
+    const ok = window.confirm(t('shopPage.boostCancelConfirm'));
+    if (!ok) return;
+    setBoostCancelBusy(product.id);
+    setCancelMsg('');
+    try {
+      await cancelBusinessBoost({ uid: user.uid, companyId: user.uid, kind });
+      setCancelMsg(t('shopPage.boostCancelRequested'));
+    } catch (e) {
+      setCancelMsg(e?.message || String(e));
+    } finally {
+      setBoostCancelBusy('');
+    }
+  }
+
   async function onCancelSubscription(sub) {
     if (!user) return;
     const ok = window.confirm(t('shopPage.cancelConfirm'));
@@ -372,11 +391,15 @@ export default function Shop() {
                           </label>
                           <button
                             type="button"
-                            className="pp-btn pp-btn--primary pp-shopCard__payBtn"
-                            disabled={boostActive}
-                            onClick={() => addSubscriptionToCart(p)}
+                            className={`pp-btn ${boostActive ? 'pp-btn--ghost' : 'pp-btn--primary'} pp-shopCard__payBtn`}
+                            disabled={boostActive ? boostCancelBusy === p.id : false}
+                            onClick={() => (boostActive ? onCancelBoost(p) : addSubscriptionToCart(p))}
                           >
-                            {boostActive ? t('shopPage.boostActiveCta') : t('shopPage.addToCart')}
+                            {boostActive
+                              ? boostCancelBusy === p.id
+                                ? t('shopPage.cancelBusy')
+                                : t('shopPage.boostCancelCta')
+                              : t('shopPage.addToCart')}
                           </button>
                         </div>
                       </article>

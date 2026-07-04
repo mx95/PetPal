@@ -4683,25 +4683,26 @@ body.pp-noScroll {
 }
 
 .pp-footer__col--compact {
-  gap: 5px;
+  gap: 2px;
 }
 
 .pp-footer__col--compact .pp-footer__title {
-  margin-bottom: 2px;
-  font-size: 11px;
-  letter-spacing: 0.08em;
+  margin-bottom: 0;
+  font-size: 10px;
+  letter-spacing: 0.06em;
 }
 
 .pp-footer__col--compact .pp-footer__link,
 .pp-footer__col--compact .pp-footer__linkBtn {
-  font-size: 13px;
-  line-height: 1.35;
+  font-size: 12px;
+  line-height: 1.2;
+  padding: 1px 0;
 }
 
 .pp-footer__col {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 4px;
   min-width: 0;
 }
 
@@ -7897,37 +7898,54 @@ a.pp-publicPet__metaValue {
 @media (max-width: 720px) {
   .pp-footer {
     flex-shrink: 0;
-    padding: 12px 12px 8px;
+    padding: 8px 10px 6px;
   }
 
   .pp-footer__inner {
     max-width: none;
-    gap: 8px;
+    gap: 4px;
   }
 
   .pp-footer__grid {
     grid-template-columns: 1fr;
-    gap: 10px;
+    gap: 6px;
   }
 
   .pp-footer__linkCols {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 4px 8px;
+    gap: 2px 6px;
   }
 
   .pp-footer__col--legal {
     grid-column: auto;
   }
 
+  .pp-footer__col--brand {
+    gap: 2px;
+  }
+
+  .pp-footer__desc {
+    font-size: 10px;
+    line-height: 1.25;
+  }
+
   .pp-footer__col--compact .pp-footer__title {
-    font-size: 9px;
-    letter-spacing: 0.06em;
+    font-size: 8px;
+    letter-spacing: 0.05em;
+    margin-bottom: 0;
   }
 
   .pp-footer__col--compact .pp-footer__link,
   .pp-footer__col--compact .pp-footer__linkBtn {
-    font-size: 11px;
-    min-height: 30px;
+    font-size: 10px;
+    min-height: 0;
+    line-height: 1.2;
+    padding: 0;
+  }
+
+  .pp-footer__note {
+    padding-top: 2px;
+    font-size: 9px;
     line-height: 1.25;
   }
 }
@@ -15855,6 +15873,13 @@ body.pp-mobile-dock .pp-providerTabsWrap {
   font-weight: 950;
 }
 
+.pp-providerBoostCancel {
+  min-height: 34px;
+  padding: 6px 12px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
 .pp-providerBoostSubscribe {
   color: #5b37ff;
   font-size: 12px;
@@ -16386,6 +16411,28 @@ body.pp-mobile-dock .pp-providerTabsWrap {
   background: transparent;
   box-shadow: none;
   padding: 0;
+}
+
+.pp-bookingHeatCalendar--walkIn .pp-providerCalendarMobileMonth {
+  display: block;
+}
+
+.pp-bookingHeatCalendar--walkIn .pp-providerCalendarWeek--desktop {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.pp-bookingHeatCalendar--walkIn .pp-providerCalendarGrid--desktopMonth {
+  display: grid !important;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+  width: 100%;
+}
+
+.pp-bookingHeatCalendar--walkIn .pp-providerCalendarGrid--desktopMonth button {
+  min-height: 40px;
 }
 
 .pp-walkInSlotGrid {
