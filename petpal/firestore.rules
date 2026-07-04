@@ -81,15 +81,21 @@ service cloud.firestore {
       }
 
       match /availabilityOverrides/{overrideId} {
-        allow read, create, update, delete: if isAdmin() || isApprovedCompany(companyId);
+        allow read: if request.auth != null
+          && (isApprovedCompany(companyId) || isPublicBookableCompany(companyId));
+        allow create, update, delete: if isAdmin() || isApprovedCompany(companyId);
       }
 
       match /vacations/{vacationId} {
-        allow read, create, update, delete: if isAdmin() || isApprovedCompany(companyId);
+        allow read: if request.auth != null
+          && (isApprovedCompany(companyId) || isPublicBookableCompany(companyId));
+        allow create, update, delete: if isAdmin() || isApprovedCompany(companyId);
       }
 
       match /blockedPeriods/{blockId} {
-        allow read, create, update, delete: if isAdmin() || isApprovedCompany(companyId);
+        allow read: if request.auth != null
+          && (isApprovedCompany(companyId) || isPublicBookableCompany(companyId));
+        allow create, update, delete: if isAdmin() || isApprovedCompany(companyId);
       }
 
       match /employees/{employeeId} {
@@ -212,7 +218,8 @@ service cloud.firestore {
 
       allow list: if isAdmin()
         || (request.auth != null && resource.data.customerUid == request.auth.uid)
-        || (request.auth != null && resource.data.companyId == request.auth.uid);
+        || (request.auth != null && resource.data.companyId == request.auth.uid)
+        || (request.auth != null && isPublicBookableCompany(resource.data.companyId));
 
       allow create: if request.auth != null
         && request.resource.data.status == 'booked'

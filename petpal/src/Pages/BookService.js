@@ -380,7 +380,7 @@ export default function BookService({ embedded = false }) {
     try {
       let rows = [];
       if (isFirebaseConfigured()) {
-        rows = await fetchOpenSlots(companyId, String(serviceId || ''), { after, durationMin: resolvedDuration }).catch(() => []);
+        rows = await fetchOpenSlots(companyId, String(serviceId || ''), { after, durationMin: resolvedDuration });
       }
       if (!rows.length && useCatalog) {
         rows = getCatalogSlots(companyId, String(serviceId || ''), { after, durationMin: resolvedDuration });
@@ -390,6 +390,17 @@ export default function BookService({ embedded = false }) {
         const start = asDate(slot.startAt) || asDate(slot.startAtIso);
         return start ? toLocalInputValue(start) === dayYmd : true;
       });
+      if (!sameDayRows.length && rows.length && !useCatalog) {
+        const first = rows.find((slot) => asDate(slot.startAt) || asDate(slot.startAtIso));
+        const start = first ? asDate(first.startAt) || asDate(first.startAtIso) : null;
+        if (start) {
+          const nextYmd = toLocalInputValue(start);
+          if (nextYmd !== dayYmd) {
+            setAfterDate(nextYmd);
+            return;
+          }
+        }
+      }
       setSlots(sameDayRows);
       setSlotId((prev) => {
         if (sameDayRows.some((r) => r.id === prev)) return prev;

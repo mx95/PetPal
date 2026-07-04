@@ -744,6 +744,18 @@ export default function ProviderPortal() {
           {tab === 'availability' ? (
             <Availability
               companyId={companyId}
+              profile={profile}
+              publish={publish}
+              setPublish={setPublish}
+              publishErr={publishErr}
+              setPublishErr={setPublishErr}
+              publishBusy={publishBusy}
+              setPublishBusy={setPublishBusy}
+              nearbyBoostActive={nearbyBoostActive}
+              bookingsBoostActive={bookingsBoostActive}
+              boostCancelBusy={boostCancelBusy}
+              boostCancelMsg={boostCancelMsg}
+              onCancelBoost={onCancelBoost}
               openAddPanel={searchParams.get('add') === '1'}
               holidayCountry={publish.holidayCountry || 'CY'}
               onHolidayCountryChange={(code) => setPublish((p) => ({ ...p, holidayCountry: code }))}
@@ -758,215 +770,6 @@ export default function ProviderPortal() {
           {tab === 'services' ? <Services companyId={companyId} /> : null}
         </div>
       </div>
-
-      <section className="pp-providerPanel pp-providerListingSection">
-        <div className="pp-providerPanel__head">
-          <div>
-            <h2>Public listing</h2>
-            <p>Enable bookings to appear in customer search. You can still use tracking and all other features.</p>
-          </div>
-        </div>
-
-        <div className="pp-providerFormCard">
-          {publishErr ? <div className="pp-error">{publishErr}</div> : null}
-          <form
-            className="pp-form pp-providerForm"
-            onSubmit={async (e) => {
-              e.preventDefault();
-              setPublishErr('');
-              setPublishBusy(true);
-              try {
-                await publishProviderProfile(companyId, publish);
-              } catch (err) {
-                setPublishErr(err?.message || 'failed');
-              } finally {
-                setPublishBusy(false);
-              }
-            }}
-          >
-            <label className="pp-field pp-field--checkbox">
-              <input
-                type="checkbox"
-                checked={publish.bookingEnabled}
-                onChange={(e) => setPublish((p) => ({ ...p, bookingEnabled: e.target.checked }))}
-              />
-              <span>Booking enabled — show in customer search</span>
-            </label>
-            <div className="pp-field">
-              <span className="pp-field__label">Import from your map pin</span>
-              <ListingPlaceImportField
-                profile={profile}
-                onImport={(data) => {
-                  setPublish((p) => ({
-                    ...p,
-                    displayName: data.displayName || p.displayName,
-                    address: data.address || p.address,
-                    phone: data.phone || p.phone,
-                    workingHours: data.workingHours || p.workingHours,
-                  }));
-                }}
-              />
-            </div>
-            <div className="pp-modalGrid2">
-              <label className="pp-field">
-                <span className="pp-field__label">Display name</span>
-                <input
-                  className="pp-input"
-                  value={publish.displayName}
-                  onChange={(e) => setPublish((p) => ({ ...p, displayName: e.target.value }))}
-                />
-              </label>
-              <label className="pp-field">
-                <span className="pp-field__label">Phone (optional)</span>
-                <input
-                  className="pp-input"
-                  value={publish.phone}
-                  onChange={(e) => setPublish((p) => ({ ...p, phone: e.target.value }))}
-                  placeholder="+357 …"
-                />
-              </label>
-            </div>
-            <label className="pp-field">
-              <span className="pp-field__label">Address (optional)</span>
-              <input
-                className="pp-input"
-                value={publish.address}
-                onChange={(e) => setPublish((p) => ({ ...p, address: e.target.value }))}
-              />
-            </label>
-            <div className="pp-modalGrid2">
-              <label className="pp-field">
-                <span className="pp-field__label">Working hours</span>
-                <input
-                  className="pp-input"
-                  value={publish.workingHours}
-                  onChange={(e) => setPublish((p) => ({ ...p, workingHours: e.target.value }))}
-                  placeholder="Mon-Fri 09:00-18:00"
-                />
-              </label>
-              <label className="pp-field">
-                <span className="pp-field__label">Break hours</span>
-                <input
-                  className="pp-input"
-                  value={publish.breakHours}
-                  onChange={(e) => setPublish((p) => ({ ...p, breakHours: e.target.value }))}
-                  placeholder="13:00-14:00"
-                />
-              </label>
-              <label className="pp-field">
-                <span className="pp-field__label">Available staff</span>
-                <input
-                  className="pp-input"
-                  type="number"
-                  min={1}
-                  value={publish.staffCount}
-                  onChange={(e) => setPublish((p) => ({ ...p, staffCount: Number(e.target.value) }))}
-                />
-              </label>
-              <label className="pp-field">
-                <span className="pp-field__label">Slot interval (min)</span>
-                <input
-                  className="pp-input"
-                  type="number"
-                  min={5}
-                  value={publish.slotIntervalMin}
-                  onChange={(e) => setPublish((p) => ({ ...p, slotIntervalMin: Number(e.target.value) }))}
-                />
-              </label>
-              <label className="pp-field">
-                <span className="pp-field__label">Booking limit / day</span>
-                <input
-                  className="pp-input"
-                  type="number"
-                  min={1}
-                  value={publish.bookingLimitPerDay}
-                  onChange={(e) => setPublish((p) => ({ ...p, bookingLimitPerDay: Number(e.target.value) }))}
-                />
-              </label>
-            </div>
-            <label className="pp-field">
-              <span className="pp-field__label">Holiday closures</span>
-              <textarea
-                className="pp-input"
-                rows={2}
-                value={publish.holidayClosures}
-                onChange={(e) => setPublish((p) => ({ ...p, holidayClosures: e.target.value }))}
-                placeholder="Public holidays, renovation days, team leave…"
-              />
-            </label>
-            <button type="submit" className="pp-btn pp-btn--primary" disabled={publishBusy}>
-              {publishBusy ? 'Saving…' : 'Save listing'}
-            </button>
-          </form>
-        </div>
-
-        <div className="pp-providerFormCard" style={{ marginTop: 14 }}>
-          <h3 className="pp-providerFormCard__title">Visibility boosts</h3>
-          <p className="pp-muted" style={{ marginTop: 0, marginBottom: 12, lineHeight: 1.5 }}>
-            Paid monthly via PetPal Shop. Renewals use your saved card on file.
-          </p>
-          <div className="pp-providerBoostToggles">
-            <div className="pp-providerBoostToggle">
-              <div className="pp-providerBoostToggle__copy">
-                <strong>Boost in Nearby</strong>
-                <small>Appear first on the map strip for pet parents browsing locally.</small>
-              </div>
-              <div className="pp-providerBoostToggle__actions">
-                <span className="pp-providerBoostToggle__price">€2.99/mo</span>
-                <label className={`pp-providerBoostSwitch${nearbyBoostActive ? ' is-on' : ''}`}>
-                  <input type="checkbox" checked={nearbyBoostActive} readOnly tabIndex={-1} />
-                  <span aria-hidden />
-                </label>
-                {!nearbyBoostActive ? (
-                  <Link className="pp-providerBoostSubscribe" to="/shop?sku=STORE_BOOST_NEARBY_MONTHLY">
-                    Subscribe
-                  </Link>
-                ) : (
-                  <button
-                    type="button"
-                    className="pp-btn pp-btn--ghost pp-providerBoostCancel"
-                    disabled={boostCancelBusy === 'nearby'}
-                    onClick={() => void onCancelBoost('nearby')}
-                  >
-                    {boostCancelBusy === 'nearby' ? 'Cancelling…' : 'Cancel'}
-                  </button>
-                )}
-              </div>
-            </div>
-            <div className="pp-providerBoostToggle">
-              <div className="pp-providerBoostToggle__copy">
-                <strong>Boost in Bookings</strong>
-                <small>Get recommended at the top of the Bookings hub for your area.</small>
-              </div>
-              <div className="pp-providerBoostToggle__actions">
-                <span className="pp-providerBoostToggle__price">€3.99/mo</span>
-                <label className={`pp-providerBoostSwitch${bookingsBoostActive ? ' is-on' : ''}`}>
-                  <input type="checkbox" checked={bookingsBoostActive} readOnly tabIndex={-1} />
-                  <span aria-hidden />
-                </label>
-                {!bookingsBoostActive ? (
-                  <Link className="pp-providerBoostSubscribe" to="/shop?sku=STORE_BOOST_BOOKINGS_MONTHLY">
-                    Subscribe
-                  </Link>
-                ) : (
-                  <button
-                    type="button"
-                    className="pp-btn pp-btn--ghost pp-providerBoostCancel"
-                    disabled={boostCancelBusy === 'bookings'}
-                    onClick={() => void onCancelBoost('bookings')}
-                  >
-                    {boostCancelBusy === 'bookings' ? 'Cancelling…' : 'Cancel'}
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-          {boostCancelMsg ? <p className="pp-muted" style={{ marginTop: 10, marginBottom: 0 }}>{boostCancelMsg}</p> : null}
-          <Link className="pp-link" to="/shop" style={{ marginTop: 10, display: 'inline-block' }}>
-            Open PetPal Shop
-          </Link>
-        </div>
-      </section>
     </div>
   );
 }
@@ -1174,7 +977,252 @@ function Services({ companyId }) {
   );
 }
 
-function Availability({ companyId, openAddPanel = false, holidayCountry = 'CY', onHolidayCountryChange, onSaveHolidayCountry }) {
+function PublicListingPanel({
+  companyId,
+  profile,
+  publish,
+  setPublish,
+  publishErr,
+  setPublishErr,
+  publishBusy,
+  setPublishBusy,
+  nearbyBoostActive,
+  bookingsBoostActive,
+  boostCancelBusy,
+  boostCancelMsg,
+  onCancelBoost,
+}) {
+  return (
+    <section className="pp-providerPanel pp-providerListingSection">
+      <div className="pp-providerPanel__head">
+        <div>
+          <h2>Public listing</h2>
+          <p>Enable bookings to appear in customer search. You can still use tracking and all other features.</p>
+        </div>
+      </div>
+
+      <div className="pp-providerFormCard">
+        {publishErr ? <div className="pp-error">{publishErr}</div> : null}
+        <form
+          className="pp-form pp-providerForm"
+          onSubmit={async (e) => {
+            e.preventDefault();
+            setPublishErr('');
+            setPublishBusy(true);
+            try {
+              await publishProviderProfile(companyId, publish);
+            } catch (err) {
+              setPublishErr(err?.message || 'failed');
+            } finally {
+              setPublishBusy(false);
+            }
+          }}
+        >
+          <label className="pp-field pp-field--checkbox">
+            <input
+              type="checkbox"
+              checked={publish.bookingEnabled}
+              onChange={(e) => setPublish((p) => ({ ...p, bookingEnabled: e.target.checked }))}
+            />
+            <span>Booking enabled — show in customer search</span>
+          </label>
+          <div className="pp-field">
+            <span className="pp-field__label">Import from your map pin</span>
+            <ListingPlaceImportField
+              profile={profile}
+              onImport={(data) => {
+                setPublish((p) => ({
+                  ...p,
+                  displayName: data.displayName || p.displayName,
+                  address: data.address || p.address,
+                  phone: data.phone || p.phone,
+                  workingHours: data.workingHours || p.workingHours,
+                }));
+              }}
+            />
+          </div>
+          <div className="pp-modalGrid2">
+            <label className="pp-field">
+              <span className="pp-field__label">Display name</span>
+              <input
+                className="pp-input"
+                value={publish.displayName}
+                onChange={(e) => setPublish((p) => ({ ...p, displayName: e.target.value }))}
+              />
+            </label>
+            <label className="pp-field">
+              <span className="pp-field__label">Phone (optional)</span>
+              <input
+                className="pp-input"
+                value={publish.phone}
+                onChange={(e) => setPublish((p) => ({ ...p, phone: e.target.value }))}
+                placeholder="+357 …"
+              />
+            </label>
+          </div>
+          <label className="pp-field">
+            <span className="pp-field__label">Address (optional)</span>
+            <input
+              className="pp-input"
+              value={publish.address}
+              onChange={(e) => setPublish((p) => ({ ...p, address: e.target.value }))}
+            />
+          </label>
+          <div className="pp-modalGrid2">
+            <label className="pp-field">
+              <span className="pp-field__label">Working hours</span>
+              <input
+                className="pp-input"
+                value={publish.workingHours}
+                onChange={(e) => setPublish((p) => ({ ...p, workingHours: e.target.value }))}
+                placeholder="Mon-Fri 09:00-18:00"
+              />
+            </label>
+            <label className="pp-field">
+              <span className="pp-field__label">Break hours</span>
+              <input
+                className="pp-input"
+                value={publish.breakHours}
+                onChange={(e) => setPublish((p) => ({ ...p, breakHours: e.target.value }))}
+                placeholder="13:00-14:00"
+              />
+            </label>
+            <label className="pp-field">
+              <span className="pp-field__label">Available staff</span>
+              <input
+                className="pp-input"
+                type="number"
+                min={1}
+                value={publish.staffCount}
+                onChange={(e) => setPublish((p) => ({ ...p, staffCount: Number(e.target.value) }))}
+              />
+            </label>
+            <label className="pp-field">
+              <span className="pp-field__label">Slot interval (min)</span>
+              <input
+                className="pp-input"
+                type="number"
+                min={5}
+                value={publish.slotIntervalMin}
+                onChange={(e) => setPublish((p) => ({ ...p, slotIntervalMin: Number(e.target.value) }))}
+              />
+            </label>
+            <label className="pp-field">
+              <span className="pp-field__label">Booking limit / day</span>
+              <input
+                className="pp-input"
+                type="number"
+                min={1}
+                value={publish.bookingLimitPerDay}
+                onChange={(e) => setPublish((p) => ({ ...p, bookingLimitPerDay: Number(e.target.value) }))}
+              />
+            </label>
+          </div>
+          <label className="pp-field">
+            <span className="pp-field__label">Holiday closures</span>
+            <textarea
+              className="pp-input"
+              rows={2}
+              value={publish.holidayClosures}
+              onChange={(e) => setPublish((p) => ({ ...p, holidayClosures: e.target.value }))}
+              placeholder="Public holidays, renovation days, team leave…"
+            />
+          </label>
+          <button type="submit" className="pp-btn pp-btn--primary" disabled={publishBusy}>
+            {publishBusy ? 'Saving…' : 'Save listing'}
+          </button>
+        </form>
+      </div>
+
+      <div className="pp-providerFormCard" style={{ marginTop: 14 }}>
+        <h3 className="pp-providerFormCard__title">Visibility boosts</h3>
+        <p className="pp-muted" style={{ marginTop: 0, marginBottom: 12, lineHeight: 1.5 }}>
+          Paid monthly via PetPal Shop. Renewals use your saved card on file.
+        </p>
+        <div className="pp-providerBoostToggles">
+          <div className="pp-providerBoostToggle">
+            <div className="pp-providerBoostToggle__copy">
+              <strong>Boost in Nearby</strong>
+              <small>Appear first on the map strip for pet parents browsing locally.</small>
+            </div>
+            <div className="pp-providerBoostToggle__actions">
+              <span className="pp-providerBoostToggle__price">€2.99/mo</span>
+              <label className={`pp-providerBoostSwitch${nearbyBoostActive ? ' is-on' : ''}`}>
+                <input type="checkbox" checked={nearbyBoostActive} readOnly tabIndex={-1} />
+                <span aria-hidden />
+              </label>
+              {!nearbyBoostActive ? (
+                <Link className="pp-providerBoostSubscribe" to="/shop?sku=STORE_BOOST_NEARBY_MONTHLY">
+                  Subscribe
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  className="pp-btn pp-btn--ghost pp-providerBoostCancel"
+                  disabled={boostCancelBusy === 'nearby'}
+                  onClick={() => void onCancelBoost('nearby')}
+                >
+                  {boostCancelBusy === 'nearby' ? 'Cancelling…' : 'Cancel'}
+                </button>
+              )}
+            </div>
+          </div>
+          <div className="pp-providerBoostToggle">
+            <div className="pp-providerBoostToggle__copy">
+              <strong>Boost in Bookings</strong>
+              <small>Get recommended at the top of the Bookings hub for your area.</small>
+            </div>
+            <div className="pp-providerBoostToggle__actions">
+              <span className="pp-providerBoostToggle__price">€3.99/mo</span>
+              <label className={`pp-providerBoostSwitch${bookingsBoostActive ? ' is-on' : ''}`}>
+                <input type="checkbox" checked={bookingsBoostActive} readOnly tabIndex={-1} />
+                <span aria-hidden />
+              </label>
+              {!bookingsBoostActive ? (
+                <Link className="pp-providerBoostSubscribe" to="/shop?sku=STORE_BOOST_BOOKINGS_MONTHLY">
+                  Subscribe
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  className="pp-btn pp-btn--ghost pp-providerBoostCancel"
+                  disabled={boostCancelBusy === 'bookings'}
+                  onClick={() => void onCancelBoost('bookings')}
+                >
+                  {boostCancelBusy === 'bookings' ? 'Cancelling…' : 'Cancel'}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+        {boostCancelMsg ? <p className="pp-muted" style={{ marginTop: 10, marginBottom: 0 }}>{boostCancelMsg}</p> : null}
+        <Link className="pp-link" to="/shop" style={{ marginTop: 10, display: 'inline-block' }}>
+          Open PetPal Shop
+        </Link>
+      </div>
+    </section>
+  );
+}
+
+function Availability({
+  companyId,
+  profile,
+  publish,
+  setPublish,
+  publishErr,
+  setPublishErr,
+  publishBusy,
+  setPublishBusy,
+  nearbyBoostActive,
+  bookingsBoostActive,
+  boostCancelBusy,
+  boostCancelMsg,
+  onCancelBoost,
+  openAddPanel = false,
+  holidayCountry = 'CY',
+  onHolidayCountryChange,
+  onSaveHolidayCountry,
+}) {
   const [services, setServices] = useState([]);
   const [slots, setSlots] = useState([]);
   const [computedSlots, setComputedSlots] = useState([]);
@@ -1258,6 +1306,21 @@ function Availability({ companyId, openAddPanel = false, holidayCountry = 'CY', 
         emptyText={useRules ? 'No bookable slots on this date — check your weekly schedule.' : 'No availability yet.'}
         onToggleSlot={useRules ? undefined : (s) => setSlotStatus(companyId, s.id, s.status === 'open' ? 'blocked' : 'open')}
         hideAdd={useRules}
+      />
+      <PublicListingPanel
+        companyId={companyId}
+        profile={profile}
+        publish={publish}
+        setPublish={setPublish}
+        publishErr={publishErr}
+        setPublishErr={setPublishErr}
+        publishBusy={publishBusy}
+        setPublishBusy={setPublishBusy}
+        nearbyBoostActive={nearbyBoostActive}
+        bookingsBoostActive={bookingsBoostActive}
+        boostCancelBusy={boostCancelBusy}
+        boostCancelMsg={boostCancelMsg}
+        onCancelBoost={onCancelBoost}
       />
     </>
   );
