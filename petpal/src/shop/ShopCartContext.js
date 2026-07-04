@@ -1,7 +1,8 @@
 import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../auth/AuthProvider';
 import { useI18n } from '../i18n/I18nContext';
-import { marketplaceCartTotalCents, PLUS_SKUS } from './catalog';
+import { marketplaceCartTotalCents, PLUS_SKUS, BOOST_SKUS } from './catalog';
 import { clearShopCartItems, readShopCartItems, writeShopCartItems } from './shopCartStorage';
 import { isSubscriptionCartLine, validateCartForCheckout } from './shopCartHelpers';
 import { clearPendingCheckout, readPendingCheckout, savePendingCheckout } from './pendingCheckout';
@@ -19,6 +20,7 @@ function initialCartItems() {
 export function ShopCartProvider({ children }) {
   const navigate = useNavigate();
   const { t } = useI18n();
+  const { user } = useAuth();
   const [cartItems, setCartItemsState] = useState(initialCartItems);
   const [expanded, setExpanded] = useState(false);
   const [checkoutError, setCheckoutError] = useState('');
@@ -93,7 +95,10 @@ export function ShopCartProvider({ children }) {
       setExpanded(true);
       return;
     }
-    const hasRecurring = cartItems.some((row) => row.recurring || PLUS_SKUS.includes(row.sku || ''));
+    const hasRecurring = cartItems.some(
+      (row) => row.recurring || PLUS_SKUS.includes(row.sku || '') || BOOST_SKUS.includes(row.sku || '')
+    );
+    const hasBoost = cartItems.some((row) => BOOST_SKUS.includes(row.sku || ''));
     savePendingCheckout({
       cartItems,
       amountCents: totalCents,
@@ -101,11 +106,12 @@ export function ShopCartProvider({ children }) {
         sku: 'MARKETPLACE_CART',
         saveCard: hasRecurring,
         cartItems,
+        ...(hasBoost && user?.uid ? { companyId: user.uid } : {}),
       },
     });
     setExpanded(false);
     navigate('/shop/checkout');
-  }, [cartItems, navigate, t, totalCents]);
+  }, [cartItems, navigate, t, totalCents, user?.uid]);
 
   const value = useMemo(
     () => ({

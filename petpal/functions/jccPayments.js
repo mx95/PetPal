@@ -531,6 +531,30 @@ async function fulfillMarketplaceCartLine(db, uid, parentOrderNumber, line, idx,
         await incrementShopPublicStats(db, { activeSubscriptionsWithCollar: 1 });
       }
     }
+    if (BOOST_SKUS.has(sku)) {
+      await grantProviderBoostAfterPayment(db, uid, sku);
+    }
+  }
+
+  if (catalog.recurring && BOOST_SKUS.has(sku)) {
+    const next = nextRenewalDate(new Date(), sku);
+    await db
+      .collection('billingSubscriptions')
+      .doc(`${uid}_${sku}`)
+      .set(
+        {
+          uid,
+          sku,
+          amountCents: catalog.amountCents,
+          currency: catalog.currency,
+          bindingId: bindingId || null,
+          clientId: uid,
+          status: 'active',
+          nextRenewalAt: admin.firestore.Timestamp.fromDate(next),
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        },
+        { merge: true }
+      );
   }
 
   if (PLUS_SKUS.has(sku) && bindingId) {

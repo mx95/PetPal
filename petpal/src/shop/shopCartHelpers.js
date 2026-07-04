@@ -1,4 +1,4 @@
-import { PLUS_SKUS, monthlyFirstPaymentCents, formatEur, NFC_TAG_ADDON_CENTS } from './catalog';
+import { PLUS_SKUS, BOOST_SKUS, monthlyFirstPaymentCents, formatEur, NFC_TAG_ADDON_CENTS } from './catalog';
 
 /**
  * @typedef {import('./catalog').ShopProduct} ShopProduct
@@ -100,7 +100,7 @@ export function validateCartForCheckout(items, t) {
     if ((sku === 'PETPAL_PLUS_MONTHLY' && row.includeNfc) || sku === 'PETPAL_PLUS_YEARLY' || sku === 'NFC_TAG_HARDWARE') {
       if (!row.nfcPetIds?.length) return t('shopPage.nfcSelectPetRequired');
     }
-    if ((row.recurring || PLUS_SKUS.includes(sku)) && !row.saveCard) {
+    if ((row.recurring || PLUS_SKUS.includes(sku) || BOOST_SKUS.includes(sku)) && !row.saveCard) {
       return t('shopPage.saveCardRequired');
     }
   }
@@ -109,7 +109,8 @@ export function validateCartForCheckout(items, t) {
 
 /** Subscription / NFC lines should not merge quantities — one checkout config per row. */
 export function isSubscriptionCartLine(row) {
-  return Boolean(row.sku && (PLUS_SKUS.includes(row.sku) || row.sku === 'NFC_TAG_HARDWARE'));
+  const sku = row.sku || '';
+  return Boolean(sku && (PLUS_SKUS.includes(sku) || BOOST_SKUS.includes(sku) || sku === 'NFC_TAG_HARDWARE'));
 }
 
 /** @param {ReturnType<typeof buildSubscriptionCartItem>} item */

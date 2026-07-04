@@ -9,6 +9,11 @@ export const NFC_TAG_ADDON_CENTS = 999;
 
 export const PLUS_SKUS = ['PETPAL_PLUS_MONTHLY', 'PETPAL_PLUS_YEARLY'];
 export const HARDWARE_SKUS = ['TRACKER_HARDWARE', 'NFC_TAG_HARDWARE'];
+export const BOOST_SKUS = [
+  'STORE_BOOST_NEARBY_MONTHLY',
+  'STORE_BOOST_BOOKINGS_MONTHLY',
+  'STORE_BOOST_MONTHLY',
+];
 
 /**
  * @param {{ includeTracker?: boolean, includeNfc?: boolean, nfcPetIds?: string[], nfcPetCount?: number } | boolean} [opts]
@@ -92,6 +97,28 @@ export const SHOP_PRODUCTS = [
   },
 ];
 
+/** Business-only visibility boosts (approved company accounts). */
+export const BUSINESS_BOOST_PRODUCTS = [
+  {
+    id: 'STORE_BOOST_NEARBY_MONTHLY',
+    title: 'Nearby boost',
+    subtitle: 'Appear first on the Nearby map strip when pet parents browse local businesses.',
+    amountCents: 299,
+    currency: '978',
+    recurring: true,
+    badge: 'Business',
+  },
+  {
+    id: 'STORE_BOOST_BOOKINGS_MONTHLY',
+    title: 'Bookings boost',
+    subtitle: 'Get recommended at the top of the Bookings hub in your area.',
+    amountCents: 399,
+    currency: '978',
+    recurring: true,
+    badge: 'Business',
+  },
+];
+
 export function formatEur(amountCents) {
   const n = amountCents / 100;
   return new Intl.NumberFormat(undefined, { style: 'currency', currency: 'EUR' }).format(n);
@@ -101,5 +128,6 @@ export function formatEur(amountCents) {
 export function formatShopPrice(product) {
   if (product.id === 'PETPAL_PLUS_MONTHLY') return `${formatEur(product.amountCents)}/mo`;
   if (product.id === 'PETPAL_PLUS_YEARLY') return `${formatEur(product.amountCents)}/year`;
+  if (BOOST_SKUS.includes(product.id)) return `${formatEur(product.amountCents)}/mo`;
   return formatEur(product.amountCents);
 }

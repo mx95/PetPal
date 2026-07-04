@@ -1479,6 +1479,10 @@ const en = {
     successPlusMonthlyBoth:
       'Monthly PetPal Plus is active with GPS tracker and NFC tag included in this payment — hardware fulfilment follows separately.',
     boostBusinessOnly: 'Approved business accounts only. Apply from your profile flow first.',
+    boostSectionTitle: 'Business visibility boosts',
+    boostSectionSub: 'Paid monthly — show your clinic or shop first on Nearby and in Bookings.',
+    boostActive: 'Active on your listing',
+    boostActiveCta: 'Currently active',
     successGeneric: 'Payment completed. Thank you — your purchase will appear in your account shortly.',
     successMarketplace: 'Your order is confirmed. Track packing and delivery in My orders on your profile.',
     successPlusActive: 'PetPal Plus is now active on your account — premium walks, insights, and perks are unlocked.',

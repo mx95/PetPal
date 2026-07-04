@@ -1,9 +1,12 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
+import { useCompany } from '../company/CompanyContext';
 import { usePets } from '../pets/PetsContext';
 import { isFirebaseConfigured } from '../firebase';
 import { useI18n } from '../i18n/I18nContext';
+import { subscribeProviderProfile } from '../bookings/providerDirectoryFirestore';
+import { providerBookingsBoostIsActive, providerNearbyBoostIsActive } from '../bookings/bookingBrowseUtils';
 import ShopCartBar from '../components/shop/ShopCartBar';
 import ShopPetPicker from '../components/shop/ShopPetPicker';
 import {
@@ -11,6 +14,8 @@ import {
   PLUS_SKUS,
   PLUS_YEARLY_RENEWAL_CENTS,
   SHOP_PRODUCTS,
+  BUSINESS_BOOST_PRODUCTS,
+  BOOST_SKUS,
   TRACKER_ADDON_CENTS,
   formatEur,
   formatShopPrice,
@@ -41,6 +46,7 @@ export default function Shop() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const uid = user?.uid ?? null;
+  const { isApprovedCompany, isCompanyAccount } = useCompany();
   const { pets } = usePets();
   const [searchParams] = useSearchParams();
   const checkout = searchParams.get('checkout');
@@ -70,6 +76,22 @@ export default function Shop() {
   const [cancelMsg, setCancelMsg] = useState('');
 
   const petOptions = useMemo(() => pets.map((p) => ({ id: p.id, name: p.name })), [pets]);
+
+  const [providerDoc, setProviderDoc] = useState(null);
+
+  useEffect(() => {
+    if (!uid || !isApprovedCompany) {
+      setProviderDoc(null);
+      return undefined;
+    }
+    return subscribeProviderProfile(uid, setProviderDoc);
+  }, [uid, isApprovedCompany]);
+
+  useEffect(() => {
+    if (focusSku && BOOST_SKUS.includes(focusSku)) {
+      setShopTab('subscriptions');
+    }
+  }, [focusSku]);
 
   useEffect(() => {
     if (!focusSku) return;
@@ -125,7 +147,7 @@ export default function Shop() {
   }, [manageSubscriptions, pets]);
 
   const [saveCardById, setSaveCardById] = useState(() =>
-    SHOP_PRODUCTS.reduce((acc, p) => {
+    [...SHOP_PRODUCTS, ...BUSINESS_BOOST_PRODUCTS].reduce((acc, p) => {
       acc[p.id] = p.recurring;
       return acc;
     }, {})
@@ -468,6 +490,76 @@ export default function Shop() {
               );
             })}
           </div>
+
+          {isCompanyAccount ? (
+            <section className="pp-shopBoostSection" style={{ marginTop: 18 }}>
+              <h2 className="pp-sectionTitle">{t('shopPage.boostSectionTitle')}</h2>
+              <p className="pp-subtle">{t('shopPage.boostSectionSub')}</p>
+              {!isApprovedCompany ? (
+                <div className="pp-shopInfoBox" role="note" style={{ marginTop: 12 }}>
+                  {t('shopPage.boostBusinessOnly')}
+                </div>
+              ) : (
+                <div className="pp-shopGrid" style={{ marginTop: 12 }}>
+                  {BUSINESS_BOOST_PRODUCTS.map((p) => {
+                    const boostActive =
+                      p.id === 'STORE_BOOST_NEARBY_MONTHLY'
+                        ? providerNearbyBoostIsActive(providerDoc)
+                        : providerBookingsBoostIsActive(providerDoc);
+                    const inCartQty = cartItems
+                      .filter((row) => row.sku === p.id)
+                      .reduce((sum, row) => sum + (row.qty || 1), 0);
+                    return (
+                      <article
+                        key={p.id}
+                        ref={(el) => {
+                          cardRefs.current[p.id] = el;
+                        }}
+                        className={`pp-card pp-shopCard pp-shopCard--boost${focusSku === p.id ? ' pp-shopCard--focus' : ''}`}
+                      >
+                        <div className="pp-shopCard__body">
+                          <span className="pp-shopCard__badge">{p.badge}</span>
+                          <h3 className="pp-sectionTitle" style={{ margin: '6px 0 4px' }}>
+                            {p.title}
+                          </h3>
+                          {inCartQty > 0 ? (
+                            <p className="pp-shopCard__inCart">{t('shopPage.inCartQty', { count: inCartQty })}</p>
+                          ) : null}
+                          <p className="pp-subtle" style={{ marginTop: 0 }}>
+                            {p.subtitle}
+                          </p>
+                          <p className={`pp-shopCard__status${boostActive ? ' pp-shopCard__status--on' : ''}`}>
+                            {boostActive ? t('shopPage.boostActive') : t('shopPage.plusBadgeInactive')}
+                          </p>
+                          <div className="pp-shopCard__price">{formatShopPrice(p)}</div>
+                          <p className="pp-shopCard__dueToday">{t('shopPage.dueToday', { amount: formatEur(p.amountCents) })}</p>
+                        </div>
+                        <div className="pp-shopCard__foot">
+                          <label className="pp-shopSaveRow">
+                            <input
+                              type="checkbox"
+                              checked={Boolean(saveCardById[p.id])}
+                              disabled={boostActive}
+                              onChange={(e) => setSaveCardById((prev) => ({ ...prev, [p.id]: e.target.checked }))}
+                            />
+                            <span>{t('shopPage.saveCardLabel')}</span>
+                          </label>
+                          <button
+                            type="button"
+                            className="pp-btn pp-btn--primary pp-shopCard__payBtn"
+                            disabled={boostActive}
+                            onClick={() => addSubscriptionToCart(p)}
+                          >
+                            {boostActive ? t('shopPage.boostActiveCta') : t('shopPage.addToCart')}
+                          </button>
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+              )}
+            </section>
+          ) : null}
 
           {manageRows.length || plusActiveBySku.PETPAL_PLUS_YEARLY ? (
             <section className="pp-card pp-pad pp-shopManage pp-shopManage--prominent">
