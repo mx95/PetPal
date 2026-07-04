@@ -29,6 +29,7 @@ import {
 import BookingHeatCalendar from '../bookings/BookingHeatCalendar';
 import { addDays, daysFromMonday, WEEKDAY_LABELS_MON_START } from '../bookings/bookingHeatMap';
 import ListingPlaceImportField from '../company/ListingPlaceImportField';
+import { cancelBusinessBoost } from '../shop/cancelBusinessBoost';
 import { formatDateTime24, formatTime24 } from '../formatTime24';
 
 function businessTypeLabel(providerTypes = {}) {
@@ -633,6 +634,8 @@ export default function ProviderPortal() {
   }, [tabParam, tab]);
   const [publishErr, setPublishErr] = useState('');
   const [publishBusy, setPublishBusy] = useState(false);
+  const [boostCancelBusy, setBoostCancelBusy] = useState('');
+  const [boostCancelMsg, setBoostCancelMsg] = useState('');
   const [providerDoc, setProviderDoc] = useState(null);
   const publishSyncedRef = useRef(false);
   const [publish, setPublish] = useState(() => buildPublishState(null, null));
@@ -694,6 +697,26 @@ export default function ProviderPortal() {
 
   const nearbyBoostActive = providerNearbyBoostIsActive(providerDoc);
   const bookingsBoostActive = providerBookingsBoostIsActive(providerDoc);
+
+  const onCancelBoost = async (kind) => {
+    if (!companyId || !user?.uid) return;
+    const ok = window.confirm(
+      kind === 'nearby'
+        ? 'Cancel Nearby boost? It will stop showing on your listing immediately and we will stop recurring billing.'
+        : 'Cancel Bookings boost? It will stop showing on your listing immediately and we will stop recurring billing.'
+    );
+    if (!ok) return;
+    setBoostCancelMsg('');
+    setBoostCancelBusy(kind);
+    try {
+      await cancelBusinessBoost({ uid: user.uid, companyId, kind });
+      setBoostCancelMsg('Boost cancelled. Billing cancellation has been requested.');
+    } catch (e) {
+      setBoostCancelMsg(e?.message || 'Could not cancel boost.');
+    } finally {
+      setBoostCancelBusy('');
+    }
+  };
 
   return (
     <div className="pp-pad pp-demoProviderPortal">
@@ -900,7 +923,14 @@ export default function ProviderPortal() {
                     Subscribe
                   </Link>
                 ) : (
-                  <span className="pp-providerBoostToggle__status">Active</span>
+                  <button
+                    type="button"
+                    className="pp-btn pp-btn--ghost pp-providerBoostCancel"
+                    disabled={boostCancelBusy === 'nearby'}
+                    onClick={() => void onCancelBoost('nearby')}
+                  >
+                    {boostCancelBusy === 'nearby' ? 'Cancelling…' : 'Cancel'}
+                  </button>
                 )}
               </div>
             </div>
@@ -920,11 +950,19 @@ export default function ProviderPortal() {
                     Subscribe
                   </Link>
                 ) : (
-                  <span className="pp-providerBoostToggle__status">Active</span>
+                  <button
+                    type="button"
+                    className="pp-btn pp-btn--ghost pp-providerBoostCancel"
+                    disabled={boostCancelBusy === 'bookings'}
+                    onClick={() => void onCancelBoost('bookings')}
+                  >
+                    {boostCancelBusy === 'bookings' ? 'Cancelling…' : 'Cancel'}
+                  </button>
                 )}
               </div>
             </div>
           </div>
+          {boostCancelMsg ? <p className="pp-muted" style={{ marginTop: 10, marginBottom: 0 }}>{boostCancelMsg}</p> : null}
           <Link className="pp-link" to="/shop" style={{ marginTop: 10, display: 'inline-block' }}>
             Open PetPal Shop
           </Link>
