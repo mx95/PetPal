@@ -16362,6 +16362,14 @@ html[data-theme="dark"] .pp-book-calendar__monthControls button {
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06);
 }
 
+.pp-bookingHeatCalendar {
+  margin-top: 0;
+}
+
+.pp-bookingHeatCalendar .pp-providerCalendarControls {
+  justify-content: flex-start;
+}
+
 .pp-businessWeekBookings .pp-providerCalendarCard {
   overflow: visible;
 }
