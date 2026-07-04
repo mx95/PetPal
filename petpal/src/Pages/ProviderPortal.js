@@ -26,6 +26,13 @@ import {
   fetchSchedulingSettings,
   loadSchedulingContext,
 } from '../bookings/availability/availabilityFirestore';
+import BookingHeatCalendar from '../bookings/BookingHeatCalendar';
+import {
+  bookingHeatStyles,
+  BookingHeatLegend,
+  groupBookingsByDay,
+  maxBookingsInPeriod as computeMaxBookingsInPeriod,
+} from '../bookings/bookingHeatMap';
 import { formatDateTime24, formatTime24 } from '../formatTime24';
 
 function businessTypeLabel(providerTypes = {}) {
@@ -147,6 +154,7 @@ function slotPeriod(slot) {
 function CalendarAvailabilityPanel({
   slots,
   servicesById,
+  bookings = [],
   onToggleSlot,
   addPanel,
   emptyText = 'No availability yet.',
@@ -154,6 +162,7 @@ function CalendarAvailabilityPanel({
   onSelectedDateChange,
   initialShowAdd = false,
   hideAdd = false,
+  heatLegendLabels = { fewer: 'Fewer', more: 'More' },
 }) {
   const firstSlotDate = slots.length ? slotDate(slots[0]) : null;
   const [internalSelectedDate, setInternalSelectedDate] = useState(() => firstSlotDate || new Date());
@@ -168,6 +177,7 @@ function CalendarAvailabilityPanel({
   const [selectedSlotId, setSelectedSlotId] = useState('');
 
   const weekRowDays = useMemo(() => weekDays(selectedDate), [selectedDate]);
+  const selectedKey = dateKey(selectedDate);
 
   const slotsByDay = useMemo(() => {
     const grouped = new Map();
@@ -183,6 +193,20 @@ function CalendarAvailabilityPanel({
     return grouped;
   }, [slots]);
 
+  const bookingsByDay = useMemo(() => groupBookingsByDay(bookings), [bookings]);
+
+  const maxBookingHeat = useMemo(
+    () =>
+      computeMaxBookingsInPeriod(bookingsByDay, {
+        view: view === 'today' ? 'week' : view,
+        monthGrid: monthDays(visibleMonth),
+        visibleMonth,
+        weekRow: weekRowDays,
+        selectedKey,
+      }),
+    [bookingsByDay, view, visibleMonth, weekRowDays, selectedKey]
+  );
+
   const calendarDays =
     view === 'today'
       ? [startOfDay(new Date())]
@@ -190,7 +214,6 @@ function CalendarAvailabilityPanel({
         ? weekRowDays
         : monthDays(visibleMonth);
   const mobileWeekDays = view === 'today' ? [startOfDay(new Date())] : weekRowDays;
-  const selectedKey = dateKey(selectedDate);
   const selectedSlots = slotsByDay.get(selectedKey) || [];
   const periods = ['Morning', 'Afternoon', 'Evening'];
   const monthLabel = visibleMonth.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
@@ -210,14 +233,19 @@ function CalendarAvailabilityPanel({
   const renderDayButton = (day, { compact = false } = {}) => {
     const key = dateKey(day);
     const daySlots = slotsByDay.get(key) || [];
+    const dayBookings = bookingsByDay.get(key) || [];
     const isSelected = key === selectedKey;
     const inMonth = day.getMonth() === visibleMonth.getMonth();
     const isToday = key === dateKey(new Date());
+    const heatStyle = !isSelected ? bookingHeatStyles(dayBookings.length, maxBookingHeat) : undefined;
+    const badgeCount = dayBookings.length || daySlots.length;
     return (
       <button
         key={key}
         type="button"
-        className={`${isSelected ? 'is-selected' : ''} ${!inMonth && view === 'month' && !compact ? 'is-muted' : ''} ${daySlots.length ? 'has-slots' : ''} ${isToday ? 'is-today' : ''}`}
+        className={`${isSelected ? 'is-selected' : ''} ${!inMonth && view === 'month' && !compact ? 'is-muted' : ''} ${badgeCount ? 'has-slots' : ''} ${dayBookings.length ? 'has-bookings' : ''} ${isToday ? 'is-today' : ''}`}
+        style={heatStyle}
+        title={dayBookings.length ? `${dayBookings.length} booking${dayBookings.length === 1 ? '' : 's'}` : undefined}
         onClick={() => selectDate(day)}
       >
         {compact ? (
@@ -228,7 +256,7 @@ function CalendarAvailabilityPanel({
         ) : (
           <>
             <span>{day.getDate()}</span>
-            {daySlots.length ? <em>{Math.min(daySlots.length, 4)}</em> : null}
+            {badgeCount ? <em>{Math.min(badgeCount, 9)}</em> : null}
           </>
         )}
       </button>
@@ -310,6 +338,9 @@ function CalendarAvailabilityPanel({
           <div className={`pp-providerCalendarGrid is-week pp-providerCalendarGrid--mobileWeek`}>
             {mobileWeekDays.map((day) => renderDayButton(day))}
           </div>
+          {maxBookingHeat > 0 ? (
+            <BookingHeatLegend fewerLabel={heatLegendLabels.fewer} moreLabel={heatLegendLabels.more} />
+          ) : null}
         </div>
         )}
 
@@ -1120,6 +1151,7 @@ function Services({ companyId }) {
 function Availability({ companyId, openAddPanel = false, holidayCountry = 'CY', onHolidayCountryChange, onSaveHolidayCountry }) {
   const [services, setServices] = useState([]);
   const [slots, setSlots] = useState([]);
+  const [bookings, setBookings] = useState([]);
   const [computedSlots, setComputedSlots] = useState([]);
   const [useRules, setUseRules] = useState(true);
   const [schedulingSettings, setSchedulingSettings] = useState(null);
@@ -1131,6 +1163,7 @@ function Availability({ companyId, openAddPanel = false, holidayCountry = 'CY', 
     () => subscribeCompanyAvailability(companyId, setSlots, (e) => setErr(e?.message || 'failed')),
     [companyId]
   );
+  useEffect(() => subscribeProviderBookings(companyId, setBookings, () => {}), [companyId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -1194,6 +1227,7 @@ function Availability({ companyId, openAddPanel = false, holidayCountry = 'CY', 
       />
       <CalendarAvailabilityPanel
         slots={displaySlots}
+        bookings={bookings}
         servicesById={byServiceName}
         selectedDate={calendarDate}
         onSelectedDateChange={setCalendarDate}
@@ -1201,6 +1235,7 @@ function Availability({ companyId, openAddPanel = false, holidayCountry = 'CY', 
         emptyText={useRules ? 'No bookable slots on this date — check your weekly schedule.' : 'No availability yet.'}
         onToggleSlot={useRules ? undefined : (s) => setSlotStatus(companyId, s.id, s.status === 'open' ? 'blocked' : 'open')}
         hideAdd={useRules}
+        heatLegendLabels={{ fewer: 'Fewer bookings', more: 'More bookings' }}
       />
     </>
   );
@@ -1221,6 +1256,8 @@ function Bookings({ companyId }) {
   const [swapBookingId, setSwapBookingId] = useState('');
   const [swapSlotId, setSwapSlotId] = useState('');
   const [showWalkIn, setShowWalkIn] = useState(false);
+  const [scheduleDate, setScheduleDate] = useState(() => startOfDay(new Date()));
+  const [showAllDates, setShowAllDates] = useState(false);
   const [walkIn, setWalkIn] = useState({
     clientPetId: '',
     petName: '',
@@ -1350,6 +1387,16 @@ function Bookings({ companyId }) {
       .sort((a, b) => (slotDate(a)?.getTime() || 0) - (slotDate(b)?.getTime() || 0));
   }, [rows, legacySlots, swapBookingId, useRuleEngine, swapSlots]);
 
+  const displayedRows = useMemo(() => {
+    if (showAllDates) return rows;
+    const key = dateKey(scheduleDate);
+    return rows.filter((b) => {
+      if (String(b.status || '').toLowerCase() === 'cancelled') return false;
+      const d = b.startAt?.toDate ? b.startAt.toDate() : b.startAt instanceof Date ? b.startAt : null;
+      return d && dateKey(d) === key;
+    });
+  }, [rows, scheduleDate, showAllDates]);
+
   const onSwap = async () => {
     if (!swapBookingId || !swapSlotId) return;
     setErr('');
@@ -1415,6 +1462,33 @@ function Bookings({ companyId }) {
         <button type="button" className="pp-btn pp-btn--primary" onClick={() => setShowWalkIn((v) => !v)}>
           {showWalkIn ? 'Close' : '+ Book walk-in'}
         </button>
+      </div>
+
+      <div className="pp-providerFormCard" style={{ marginBottom: 14 }}>
+        <div className="pp-rowBetween" style={{ alignItems: 'flex-start', gap: 12, marginBottom: 10 }}>
+          <div>
+            <h3 className="pp-providerFormCard__title" style={{ marginBottom: 4 }}>Schedule overview</h3>
+            <p className="pp-muted" style={{ margin: 0, lineHeight: 1.5 }}>
+              Days are colored by booking load — green is lighter, red is busier.
+            </p>
+          </div>
+          <button
+            type="button"
+            className="pp-btn pp-btn--ghost"
+            onClick={() => setShowAllDates((v) => !v)}
+          >
+            {showAllDates ? 'Selected day only' : 'Show all dates'}
+          </button>
+        </div>
+        <BookingHeatCalendar
+          bookings={rows}
+          selectedDate={scheduleDate}
+          onSelectedDateChange={(d) => {
+            setScheduleDate(d);
+            setShowAllDates(false);
+          }}
+          legendLabels={{ fewer: 'Fewer', more: 'More' }}
+        />
       </div>
 
       {showWalkIn ? (
@@ -1520,9 +1594,19 @@ function Bookings({ companyId }) {
 
       {err ? <div className="pp-error">{err}</div> : null}
       {ok ? <div className="pp-success">{ok}</div> : null}
-      {rows.length === 0 ? <div className="pp-providerEmptyCard">No bookings yet — book a walk-in or wait for customer requests.</div> : null}
-      <div className="pp-providerBookingList" style={{ marginTop: rows.length ? 10 : 0 }}>
-        {rows.map((b) => {
+      {!showAllDates ? (
+        <p className="pp-muted" style={{ marginTop: 0, marginBottom: 10 }}>
+          Showing appointments for{' '}
+          <strong>{scheduleDate.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}</strong>
+        </p>
+      ) : null}
+      {displayedRows.length === 0 ? (
+        <div className="pp-providerEmptyCard">
+          {showAllDates ? 'No bookings yet — book a walk-in or wait for customer requests.' : 'No appointments on this day.'}
+        </div>
+      ) : null}
+      <div className="pp-providerBookingList" style={{ marginTop: displayedRows.length ? 10 : 0 }}>
+        {displayedRows.map((b) => {
           const when = b.startAt?.toDate ? formatDateTime24(b.startAt.toDate()) : '';
           const serviceName = b.serviceSnapshot?.name || servicesById.get(b.serviceId) || 'Service';
           const isSwapping = swapBookingId === b.id;

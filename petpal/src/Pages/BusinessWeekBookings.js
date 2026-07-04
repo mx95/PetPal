@@ -4,43 +4,20 @@ import { useAuth } from '../auth/AuthProvider';
 import { useCompany } from '../company/CompanyContext';
 import { useI18n } from '../i18n/I18nContext';
 import { subscribeProviderBookings, subscribeCompanyServices } from '../bookings/bookingFirestore';
-import { bookingHeatStyles } from '../bookings/bookingHeatMap';
+import {
+  activeBookingsList,
+  addDays,
+  bookingDate,
+  bookingHeatStyles,
+  BookingHeatLegend,
+  dateKey,
+  groupBookingsByDay,
+  maxBookingsInPeriod as computeMaxBookingsInPeriod,
+  monthDays,
+  startOfDay,
+  weekDays,
+} from '../bookings/bookingHeatMap';
 import { formatDateTime24, formatTime24 } from '../formatTime24';
-
-function startOfDay(date) {
-  const d = new Date(date);
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
-
-function addDays(date, days) {
-  const d = new Date(date);
-  d.setDate(d.getDate() + days);
-  return d;
-}
-
-function weekDays(date) {
-  const selected = startOfDay(date);
-  const start = addDays(selected, -selected.getDay());
-  return Array.from({ length: 7 }, (_, idx) => addDays(start, idx));
-}
-
-function monthDays(date) {
-  const first = new Date(date.getFullYear(), date.getMonth(), 1);
-  const start = addDays(first, -first.getDay());
-  return Array.from({ length: 42 }, (_, idx) => addDays(start, idx));
-}
-
-function dateKey(date) {
-  const d = startOfDay(date);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
-
-function bookingDate(booking) {
-  if (booking.startAt?.toDate) return booking.startAt.toDate();
-  if (booking.startAt instanceof Date) return booking.startAt;
-  return null;
-}
 
 function BookingList({ bookings, servicesById, t }) {
   if (!bookings.length) {
@@ -112,24 +89,9 @@ export default function BusinessWeekBookings() {
     return m;
   }, [services]);
 
-  const activeBookings = useMemo(
-    () => bookings.filter((b) => String(b.status || '').toLowerCase() !== 'cancelled'),
-    [bookings]
-  );
+  const activeBookings = useMemo(() => activeBookingsList(bookings), [bookings]);
 
-  const bookingsByDay = useMemo(() => {
-    const grouped = new Map();
-    activeBookings.forEach((b) => {
-      const d = bookingDate(b);
-      if (!d) return;
-      const key = dateKey(d);
-      const rows = grouped.get(key) || [];
-      rows.push(b);
-      grouped.set(key, rows);
-    });
-    grouped.forEach((rows) => rows.sort((a, b) => (bookingDate(a)?.getTime() || 0) - (bookingDate(b)?.getTime() || 0)));
-    return grouped;
-  }, [activeBookings]);
+  const bookingsByDay = useMemo(() => groupBookingsByDay(bookings), [bookings]);
 
   const weekStart = useMemo(() => {
     const d = startOfDay(anchorDate);
@@ -165,22 +127,17 @@ export default function BusinessWeekBookings() {
     });
   }, [activeBookings, visibleMonth]);
 
-  const maxBookingsInPeriod = useMemo(() => {
-    const keys =
-      view === 'month'
-        ? monthGrid
-            .filter((day) => day.getMonth() === visibleMonth.getMonth())
-            .map((day) => dateKey(day))
-        : view === 'week'
-          ? weekRow.map((day) => dateKey(day))
-          : [selectedKey];
-    let max = 0;
-    keys.forEach((key) => {
-      const count = (bookingsByDay.get(key) || []).length;
-      if (count > max) max = count;
-    });
-    return max;
-  }, [view, monthGrid, visibleMonth, weekRow, selectedKey, bookingsByDay]);
+  const maxBookingsInPeriod = useMemo(
+    () =>
+      computeMaxBookingsInPeriod(bookingsByDay, {
+        view,
+        monthGrid,
+        visibleMonth,
+        weekRow,
+        selectedKey,
+      }),
+    [view, monthGrid, visibleMonth, weekRow, selectedKey, bookingsByDay]
+  );
 
   const weekLabel = `${weekStart.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} – ${weekEnd.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}`;
   const monthLabel = visibleMonth.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
@@ -360,11 +317,10 @@ export default function BusinessWeekBookings() {
                       {monthGrid.map((day) => renderDayButton(day, { inMonth: day.getMonth() === visibleMonth.getMonth() }))}
                     </div>
                     {maxBookingsInPeriod > 0 ? (
-                      <div className="pp-bookingHeatLegend" aria-hidden>
-                        <span className="pp-bookingHeatLegend__label">{t('businessWeek.bookingHeatFewer')}</span>
-                        <span className="pp-bookingHeatLegend__bar" />
-                        <span className="pp-bookingHeatLegend__label">{t('businessWeek.bookingHeatMore')}</span>
-                      </div>
+                      <BookingHeatLegend
+                        fewerLabel={t('businessWeek.bookingHeatFewer')}
+                        moreLabel={t('businessWeek.bookingHeatMore')}
+                      />
                     ) : null}
                   </>
                 ) : (
@@ -378,11 +334,10 @@ export default function BusinessWeekBookings() {
                       {weekRow.map((day) => renderDayButton(day))}
                     </div>
                     {maxBookingsInPeriod > 0 ? (
-                      <div className="pp-bookingHeatLegend" aria-hidden>
-                        <span className="pp-bookingHeatLegend__label">{t('businessWeek.bookingHeatFewer')}</span>
-                        <span className="pp-bookingHeatLegend__bar" />
-                        <span className="pp-bookingHeatLegend__label">{t('businessWeek.bookingHeatMore')}</span>
-                      </div>
+                      <BookingHeatLegend
+                        fewerLabel={t('businessWeek.bookingHeatFewer')}
+                        moreLabel={t('businessWeek.bookingHeatMore')}
+                      />
                     ) : null}
                   </>
                 )}
