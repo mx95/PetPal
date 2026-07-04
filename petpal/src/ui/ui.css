@@ -16552,6 +16552,142 @@ body.pp-mobile-dock .pp-providerTabsWrap {
   font-size: 12px;
 }
 
+.pp-availTimeRow__field--labelOnly {
+  flex: 0 0 auto;
+  min-width: 0;
+  margin-bottom: 0;
+}
+
+.pp-availTimeRow__field--labelOnly .pp-field__label {
+  margin-bottom: 0;
+  line-height: 40px;
+}
+
+.pp-availTimeRow__field--time {
+  flex: 0 1 108px;
+  min-width: 88px;
+  margin-bottom: 0;
+}
+
+.pp-availTimeRow__sep {
+  align-self: center;
+  margin-bottom: 0;
+}
+
+.pp-bookingDetailList {
+  display: grid;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.pp-bookingDetailList__item {
+  display: grid;
+  gap: 8px;
+}
+
+.pp-bookingDetailList__extra {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0 4px;
+}
+
+.pp-bookingDetailCard {
+  border: 1px solid var(--pp-border);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.86);
+  padding: 14px;
+  display: grid;
+  gap: 10px;
+}
+
+.pp-bookingDetailCard__titleRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.pp-bookingDetailCard__pet {
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.pp-bookingDetailCard__pill {
+  border-radius: 999px;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 800;
+  background: rgba(91, 55, 255, 0.1);
+  color: #5b37ff;
+}
+
+.pp-bookingDetailCard__status {
+  margin-left: auto;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.pp-bookingDetailCard__status--booked {
+  background: rgba(18, 183, 106, 0.12);
+  color: #027a48;
+}
+
+.pp-bookingDetailCard__status--completed {
+  background: rgba(91, 55, 255, 0.1);
+  color: #5b37ff;
+}
+
+.pp-bookingDetailCard__status--cancelled {
+  background: rgba(148, 163, 184, 0.2);
+  color: #475467;
+}
+
+.pp-bookingDetailCard__service,
+.pp-bookingDetailCard__owner,
+.pp-bookingDetailCard__when {
+  font-size: 13px;
+  color: var(--pp-text-2);
+  line-height: 1.45;
+}
+
+.pp-bookingDetailCard__timeRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+}
+
+.pp-bookingDetailCard__timeLabel {
+  color: var(--pp-text-2);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.pp-bookingDetailCard__timeValue {
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+
+.pp-bookingDetailCard__timeArrow {
+  color: var(--pp-text-2);
+  font-weight: 900;
+}
+
+.pp-bookingDetailCard__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+html[data-theme="dark"] .pp-bookingDetailCard {
+  background: rgba(16, 24, 40, 0.72);
+}
+
 .pp-bookingHeatCalendar .pp-providerCalendarControls {
   justify-content: flex-start;
 }

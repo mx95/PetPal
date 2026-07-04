@@ -48,9 +48,10 @@ export default function CompanyApply() {
     (nextLat, nextLng, meta = {}) => {
       setPos(nextLat, nextLng);
       if (meta.placeId) setGooglePlaceId(String(meta.placeId));
-      if (meta.placeAddress) {
-        setAddressLine((line) => line || String(meta.placeAddress));
-      }
+      if (meta.placeAddress) setAddressLine((line) => line.trim() || String(meta.placeAddress));
+      if (meta.placeName) setBusinessName((name) => name.trim() || String(meta.placeName));
+      if (meta.phoneNumber) setPhoneNumber((phone) => phone.trim() || String(meta.phoneNumber));
+      if (meta.workingHours) setWorkingHours((hours) => hours.trim() || String(meta.workingHours));
       setRecenterSignal((n) => n + 1);
     },
     [setPos]
@@ -266,6 +267,21 @@ export default function CompanyApply() {
             </div>
 
             <form className="pp-form pp-modalForm" onSubmit={onSubmit}>
+              <div className="pp-companyMapSection">
+                <div className="pp-label">Find your business on the map</div>
+                <p className="pp-subtle" style={{ marginTop: 0, marginBottom: 10, fontSize: 13 }}>
+                  Search first — we will pre-fill name, address, phone, and hours when available.
+                </p>
+                <CompanyPlaceSearchField onPicked={onPlacePicked} businessName={businessName} addressLine={addressLine} />
+                <div className="pp-label" style={{ marginTop: 14 }}>Pin position</div>
+                <LocationPicker lat={lat} lng={lng} onChange={setPos} recenterSignal={recenterSignal} />
+                <p className="pp-subtle" style={{ fontSize: 12, marginTop: 6, marginBottom: 0 }}>
+                  <a className="pp-link" style={{ display: 'inline' }} href={mapsLink(lat, lng)} target="_blank" rel="noopener noreferrer">
+                    Preview in Google Maps
+                  </a>
+                </p>
+              </div>
+
               <div>
                 <div className="pp-label">Business or venue name</div>
                 <input
@@ -340,18 +356,6 @@ export default function CompanyApply() {
                   style={{ minHeight: 80, resize: 'vertical' }}
                   placeholder="e.g. Mon–Fri 10:00–18:00, Sat 11:00–19:00, Sun closed"
                 />
-              </div>
-
-              <div className="pp-companyMapSection">
-                <div className="pp-label">Find your business on the map</div>
-                <CompanyPlaceSearchField onPicked={onPlacePicked} businessName={businessName} addressLine={addressLine} />
-                <div className="pp-label" style={{ marginTop: 14 }}>Pin position</div>
-                <LocationPicker lat={lat} lng={lng} onChange={setPos} recenterSignal={recenterSignal} />
-                <p className="pp-subtle" style={{ fontSize: 12, marginTop: 6, marginBottom: 0 }}>
-                  <a className="pp-link" style={{ display: 'inline' }} href={mapsLink(lat, lng)} target="_blank" rel="noopener noreferrer">
-                    Preview in Google Maps
-                  </a>
-                </p>
               </div>
 
               {error ? <div className="pp-error">{error}</div> : null}
