@@ -66,6 +66,41 @@ export function subscribeCompanyServices(companyId, onNext, onError) {
 
 export async function upsertCompanyService(companyId, serviceId, data) {
   if (!isFirebaseConfigured() || !companyId) return;
+
+  const ref = serviceId
+    ? doc(getDb(), 'companies', companyId, 'services', serviceId)
+    : doc(companyServicesCol(companyId));
+
+  if (serviceId) {
+    const payload = { updatedAt: serverTimestamp() };
+    if (data?.type !== undefined) payload.type = String(data.type || 'vet');
+    if (data?.name !== undefined) payload.name = String(data.name || '').trim().slice(0, 120);
+    if (data?.durationMin !== undefined) {
+      payload.durationMin = Number(data.durationMin || 30);
+      if (!Number.isFinite(payload.durationMin) || payload.durationMin < 5) throw new Error('invalid_duration');
+    }
+    if (data?.price !== undefined) payload.price = data.price ? String(data.price).trim().slice(0, 40) : '';
+    if (data?.addOns !== undefined) payload.addOns = data.addOns ? String(data.addOns).trim().slice(0, 500) : '';
+    if (data?.preparationNotes !== undefined) {
+      payload.preparationNotes = data.preparationNotes ? String(data.preparationNotes).trim().slice(0, 800) : '';
+    }
+    if (data?.description !== undefined) payload.description = data.description ? String(data.description).slice(0, 800) : '';
+    if (data?.active !== undefined) payload.active = data.active !== false;
+    if (Array.isArray(data?.variants)) {
+      payload.variants = data.variants
+        .filter((v) => v && v.id)
+        .map((v) => ({
+          id: String(v.id).slice(0, 40),
+          labelKey: v.labelKey ? String(v.labelKey).slice(0, 80) : '',
+          durationMin: Number(v.durationMin) || payload.durationMin || 30,
+          price: v.price ? String(v.price).slice(0, 40) : '',
+          descriptionKey: v.descriptionKey ? String(v.descriptionKey).slice(0, 80) : '',
+        }));
+    }
+    await updateDoc(ref, payload);
+    return serviceId;
+  }
+
   const payload = {
     type: String(data?.type || 'vet'),
     name: String(data?.name || '').trim().slice(0, 120),
@@ -76,6 +111,7 @@ export async function upsertCompanyService(companyId, serviceId, data) {
     description: data?.description ? String(data.description).slice(0, 800) : '',
     active: data?.active !== false,
     updatedAt: serverTimestamp(),
+    createdAt: serverTimestamp(),
   };
   if (Array.isArray(data?.variants)) {
     payload.variants = data.variants
@@ -91,12 +127,7 @@ export async function upsertCompanyService(companyId, serviceId, data) {
   if (!payload.name) throw new Error('service_name_required');
   if (!Number.isFinite(payload.durationMin) || payload.durationMin < 5) throw new Error('invalid_duration');
 
-  const ref = serviceId
-    ? doc(getDb(), 'companies', companyId, 'services', serviceId)
-    : doc(companyServicesCol(companyId));
-  if (!serviceId) payload.createdAt = serverTimestamp();
   await updateDoc(ref, payload).catch(async () => {
-    // updateDoc fails for new doc; fallback to set via batch
     const batch = writeBatch(getDb());
     batch.set(ref, payload, { merge: true });
     await batch.commit();

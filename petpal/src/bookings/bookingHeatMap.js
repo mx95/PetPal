@@ -14,15 +14,22 @@ export function addDays(date, days) {
   return d;
 }
 
+/** Days since Monday (Mon=0 … Sun=6). */
+export function daysFromMonday(date) {
+  return (date.getDay() + 6) % 7;
+}
+
+export const WEEKDAY_LABELS_MON_START = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+
 export function weekDays(date) {
   const selected = startOfDay(date);
-  const start = addDays(selected, -selected.getDay());
+  const start = addDays(selected, -daysFromMonday(selected));
   return Array.from({ length: 7 }, (_, idx) => addDays(start, idx));
 }
 
 export function monthDays(date) {
   const first = new Date(date.getFullYear(), date.getMonth(), 1);
-  const start = addDays(first, -first.getDay());
+  const start = addDays(first, -daysFromMonday(first));
   return Array.from({ length: 42 }, (_, idx) => addDays(start, idx));
 }
 
