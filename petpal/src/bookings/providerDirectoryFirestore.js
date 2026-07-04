@@ -1,5 +1,6 @@
 import {
   collection,
+  deleteField,
   doc,
   getDoc,
   onSnapshot,
@@ -89,7 +90,6 @@ export async function publishProviderProfile(companyId, patch) {
     holidayClosures: patch?.holidayClosures ? String(patch.holidayClosures).trim().slice(0, 300) : '',
     staffCount: Number.isFinite(Number(patch?.staffCount)) ? Math.max(1, Number(patch.staffCount)) : 1,
     slotIntervalMin: Number.isFinite(Number(patch?.slotIntervalMin)) ? Math.max(5, Number(patch.slotIntervalMin)) : 30,
-    bookingLimitPerDay: Number.isFinite(Number(patch?.bookingLimitPerDay)) ? Math.max(1, Number(patch.bookingLimitPerDay)) : 12,
     holidayCountry: patch?.holidayCountry ? String(patch.holidayCountry).trim().slice(0, 2).toUpperCase() : 'CY',
     boostEnabled: Boolean(patch?.boostEnabled || patch?.boostNearbyEnabled || patch?.boostBookingsEnabled),
     boostNearbyEnabled: Boolean(patch?.boostNearbyEnabled),
@@ -98,6 +98,11 @@ export async function publishProviderProfile(companyId, patch) {
     recommended: Boolean(patch?.recommended || patch?.boostBookingsEnabled || patch?.boostEnabled),
     updatedAt: serverTimestamp(),
   };
+  if (patch?.bookingLimitEnabled && Number.isFinite(Number(patch?.bookingLimitPerDay))) {
+    payload.bookingLimitPerDay = Math.max(1, Number(patch.bookingLimitPerDay));
+  } else {
+    payload.bookingLimitPerDay = deleteField();
+  }
   await setDoc(doc(getDb(), 'providers', companyId), payload, { merge: true });
 }
 

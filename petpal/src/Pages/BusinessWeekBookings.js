@@ -145,7 +145,7 @@ export default function BusinessWeekBookings() {
           <div>
             <h2 className="pp-sectionTitle" style={{ margin: 0 }}>{t('businessWeek.monthTitle')}</h2>
             <p className="pp-muted" style={{ marginTop: 4, marginBottom: 0 }}>
-              Days are colored by booking load — green is lighter, red is busier.
+              {t('businessWeek.monthHeatHint')}
             </p>
           </div>
         </div>

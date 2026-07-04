@@ -91,6 +91,8 @@ function dateKey(date) {
 const PROVIDER_TABS = ['bookings', 'availability', 'customers', 'services'];
 
 function buildPublishState(companyProfile, providerDoc) {
+  const limitRaw = providerDoc?.bookingLimitPerDay;
+  const hasLimit = limitRaw != null && Number(limitRaw) > 0;
   return {
     bookingEnabled: Boolean(providerDoc?.bookingEnabled),
     displayName: String(providerDoc?.displayName || companyProfile?.businessName || '').trim(),
@@ -105,7 +107,8 @@ function buildPublishState(companyProfile, providerDoc) {
     holidayClosures: providerDoc?.holidayClosures || '',
     staffCount: providerDoc?.staffCount || 1,
     slotIntervalMin: providerDoc?.slotIntervalMin || 30,
-    bookingLimitPerDay: providerDoc?.bookingLimitPerDay || 12,
+    bookingLimitEnabled: hasLimit,
+    bookingLimitPerDay: hasLimit ? Number(limitRaw) : 12,
     holidayCountry: providerDoc?.holidayCountry || 'CY',
     boostNearbyEnabled: Boolean(providerDoc?.boostNearbyEnabled),
     boostBookingsEnabled: Boolean(providerDoc?.boostBookingsEnabled),
@@ -412,7 +415,7 @@ function ProviderDashboardHero({ business, companyId, bookingEnabled = false }) 
           <div className="pp-providerDashHero__badges">
             <span>{businessTypeLabel(business.providerTypes)}</span>
             <span className="is-live">Open</span>
-            {bookingEnabled ? <span className="is-enabled">Booking enabled</span> : null}
+            {bookingEnabled ? <span className="is-enabled">Active for booking</span> : null}
           </div>
           <h1>{business.displayName}</h1>
           <p>{business.address}</p>
@@ -1025,14 +1028,20 @@ function PublicListingPanel({
             }
           }}
         >
-          <label className="pp-field pp-field--checkbox">
-            <input
-              type="checkbox"
-              checked={publish.bookingEnabled}
-              onChange={(e) => setPublish((p) => ({ ...p, bookingEnabled: e.target.checked }))}
-            />
-            <span>Booking enabled — show in customer search</span>
-          </label>
+          <div className="pp-providerBoostToggle pp-providerListingToggle">
+            <div className="pp-providerBoostToggle__copy">
+              <strong>Active for booking</strong>
+              <small>Show in customer search and accept online bookings.</small>
+            </div>
+            <label className={`pp-providerBoostSwitch${publish.bookingEnabled ? ' is-on' : ''}`}>
+              <input
+                type="checkbox"
+                checked={publish.bookingEnabled}
+                onChange={(e) => setPublish((p) => ({ ...p, bookingEnabled: e.target.checked }))}
+              />
+              <span aria-hidden />
+            </label>
+          </div>
           <div className="pp-field">
             <span className="pp-field__label">Import from your map pin</span>
             <ListingPlaceImportField
@@ -1114,6 +1123,16 @@ function PublicListingPanel({
                 onChange={(e) => setPublish((p) => ({ ...p, slotIntervalMin: Number(e.target.value) }))}
               />
             </label>
+          </div>
+          <label className="pp-field pp-field--checkbox">
+            <input
+              type="checkbox"
+              checked={publish.bookingLimitEnabled}
+              onChange={(e) => setPublish((p) => ({ ...p, bookingLimitEnabled: e.target.checked }))}
+            />
+            <span>Cap daily appointments (optional — only if you want fewer bookings per day)</span>
+          </label>
+          {publish.bookingLimitEnabled ? (
             <label className="pp-field">
               <span className="pp-field__label">Booking limit / day</span>
               <input
@@ -1124,7 +1143,7 @@ function PublicListingPanel({
                 onChange={(e) => setPublish((p) => ({ ...p, bookingLimitPerDay: Number(e.target.value) }))}
               />
             </label>
-          </div>
+          ) : null}
           <label className="pp-field">
             <span className="pp-field__label">Holiday closures</span>
             <textarea

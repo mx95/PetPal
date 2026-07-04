@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import TimeInput24 from '../../components/TimeInput24';
+import { dateKey, monthDays, WEEKDAY_LABELS_MON_START } from '../bookingHeatMap';
 import { HOLIDAY_COUNTRY_OPTIONS } from '../publicHolidays';
 import {
   buildCalendarPreview,
@@ -42,20 +43,45 @@ function emptyPeriod() {
 }
 
 function PreviewCalendar({ days }) {
-  const keys = Object.keys(days || {}).sort();
-  if (!keys.length) return null;
+  const anchor = useMemo(() => {
+    const keys = Object.keys(days || {}).sort();
+    if (!keys.length) return new Date();
+    const parsed = new Date(`${keys[0]}T12:00:00`);
+    return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
+  }, [days]);
+
+  const monthGrid = useMemo(() => monthDays(anchor), [anchor]);
+  const visibleMonth = anchor.getMonth();
+
   return (
-    <div className="pp-availPreview" aria-label="Schedule preview">
-      {keys.map((key) => (
-        <span key={key} className={`pp-availPreview__day is-${days[key]}`} title={`${key}: ${days[key]}`}>
-          {Number(key.slice(8, 10))}
-        </span>
-      ))}
-      <div className="pp-availPreview__legend">
-        <span className="is-working">Working</span>
-        <span className="is-override">Override</span>
-        <span className="is-vacation">Time off</span>
-        <span className="is-holiday">Holiday</span>
+    <div className="pp-availPreviewWrap">
+      <div className="pp-availPreviewWeekdays" aria-hidden>
+        {WEEKDAY_LABELS_MON_START.map((label, idx) => (
+          <span key={`${label}-${idx}`} className="pp-availPreview__weekday">
+            {label}
+          </span>
+        ))}
+      </div>
+      <div className="pp-availPreview" aria-label="Schedule preview">
+        {monthGrid.map((day) => {
+          const key = dateKey(day);
+          const inMonth = day.getMonth() === visibleMonth;
+          const status = days?.[key] || 'closed';
+          if (!inMonth) {
+            return <span key={key} className="pp-availPreview__day is-outside" aria-hidden />;
+          }
+          return (
+            <span key={key} className={`pp-availPreview__day is-${status}`} title={`${key}: ${status}`}>
+              {day.getDate()}
+            </span>
+          );
+        })}
+        <div className="pp-availPreview__legend">
+          <span className="is-working">Working</span>
+          <span className="is-override">Override</span>
+          <span className="is-vacation">Time off</span>
+          <span className="is-holiday">Holiday</span>
+        </div>
       </div>
     </div>
   );
@@ -83,7 +109,18 @@ export default function AvailabilityScheduler({ companyId, services = [], settin
     void ensureDefaultAvailabilityRules(companyId);
   }, [companyId]);
 
-  useEffect(() => subscribeAvailabilityRules(companyId, setRules, (e) => setErr(e?.message || 'failed')), [companyId]);
+  useEffect(
+    () =>
+      subscribeAvailabilityRules(
+        companyId,
+        (rows) => {
+          setRules(rows);
+          setErr('');
+        },
+        (e) => setErr(e?.message || 'failed')
+      ),
+    [companyId]
+  );
   useEffect(() => subscribeAvailabilityOverrides(companyId, setOverrides, () => {}), [companyId]);
   useEffect(() => subscribeVacations(companyId, setVacations, () => {}), [companyId]);
   useEffect(() => subscribeBlockedPeriods(companyId, setBlocked, () => {}), [companyId]);
