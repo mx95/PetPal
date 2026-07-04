@@ -107,7 +107,8 @@ backup_tracker_db
 if [ "$SKIP_GIT" != "1" ]; then
   log "Updating repo at $PETPAL_ROOT (branch: $DEPLOY_BRANCH)"
   cd "$PETPAL_ROOT"
-  git fetch origin "$DEPLOY_BRANCH"
+  # Force-update remote tracking ref — avoids stale ref errors when deploy workflows overlap.
+  git fetch origin "+refs/heads/${DEPLOY_BRANCH}:refs/remotes/origin/${DEPLOY_BRANCH}" --prune
   git checkout "$DEPLOY_BRANCH"
   git reset --hard "origin/$DEPLOY_BRANCH"
   log "Now at $(git rev-parse --short HEAD) — $(git log -1 --pretty=%s)"

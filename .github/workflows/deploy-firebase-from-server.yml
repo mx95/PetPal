@@ -38,7 +38,7 @@ jobs:
             if [ -z "$PETPAL_ROOT" ]; then PETPAL_ROOT="/root/PetPal"; fi
             TARGETS="${{ github.event.inputs.targets || 'all' }}"
             cd "$PETPAL_ROOT"
-            git fetch origin main
+            git fetch origin "+refs/heads/main:refs/remotes/origin/main" --prune
             git checkout main
             git reset --hard origin/main
             cd petpal
