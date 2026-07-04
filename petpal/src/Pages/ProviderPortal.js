@@ -27,12 +27,6 @@ import {
   loadSchedulingContext,
 } from '../bookings/availability/availabilityFirestore';
 import BookingHeatCalendar from '../bookings/BookingHeatCalendar';
-import {
-  bookingHeatStyles,
-  BookingHeatLegend,
-  groupBookingsByDay,
-  maxBookingsInPeriod as computeMaxBookingsInPeriod,
-} from '../bookings/bookingHeatMap';
 import { formatDateTime24, formatTime24 } from '../formatTime24';
 
 function businessTypeLabel(providerTypes = {}) {
@@ -193,20 +187,6 @@ function CalendarAvailabilityPanel({
     return grouped;
   }, [slots]);
 
-  const bookingsByDay = useMemo(() => groupBookingsByDay(bookings), [bookings]);
-
-  const maxBookingHeat = useMemo(
-    () =>
-      computeMaxBookingsInPeriod(bookingsByDay, {
-        view: view === 'today' ? 'week' : view,
-        monthGrid: monthDays(visibleMonth),
-        visibleMonth,
-        weekRow: weekRowDays,
-        selectedKey,
-      }),
-    [bookingsByDay, view, visibleMonth, weekRowDays, selectedKey]
-  );
-
   const calendarDays =
     view === 'today'
       ? [startOfDay(new Date())]
@@ -233,19 +213,14 @@ function CalendarAvailabilityPanel({
   const renderDayButton = (day, { compact = false } = {}) => {
     const key = dateKey(day);
     const daySlots = slotsByDay.get(key) || [];
-    const dayBookings = bookingsByDay.get(key) || [];
     const isSelected = key === selectedKey;
     const inMonth = day.getMonth() === visibleMonth.getMonth();
     const isToday = key === dateKey(new Date());
-    const heatStyle = !isSelected ? bookingHeatStyles(dayBookings.length, maxBookingHeat) : undefined;
-    const badgeCount = dayBookings.length || daySlots.length;
     return (
       <button
         key={key}
         type="button"
-        className={`${isSelected ? 'is-selected' : ''} ${!inMonth && view === 'month' && !compact ? 'is-muted' : ''} ${badgeCount ? 'has-slots' : ''} ${dayBookings.length ? 'has-bookings' : ''} ${isToday ? 'is-today' : ''}`}
-        style={heatStyle}
-        title={dayBookings.length ? `${dayBookings.length} booking${dayBookings.length === 1 ? '' : 's'}` : undefined}
+        className={`${isSelected ? 'is-selected' : ''} ${!inMonth && view === 'month' && !compact ? 'is-muted' : ''} ${daySlots.length ? 'has-slots' : ''} ${isToday ? 'is-today' : ''}`}
         onClick={() => selectDate(day)}
       >
         {compact ? (
@@ -256,7 +231,7 @@ function CalendarAvailabilityPanel({
         ) : (
           <>
             <span>{day.getDate()}</span>
-            {badgeCount ? <em>{Math.min(badgeCount, 9)}</em> : null}
+            {daySlots.length ? <em>{Math.min(daySlots.length, 9)}</em> : null}
           </>
         )}
       </button>
@@ -338,9 +313,6 @@ function CalendarAvailabilityPanel({
           <div className={`pp-providerCalendarGrid is-week pp-providerCalendarGrid--mobileWeek`}>
             {mobileWeekDays.map((day) => renderDayButton(day))}
           </div>
-          {maxBookingHeat > 0 ? (
-            <BookingHeatLegend fewerLabel={heatLegendLabels.fewer} moreLabel={heatLegendLabels.more} />
-          ) : null}
         </div>
         )}
 
@@ -1139,7 +1111,6 @@ function Services({ companyId }) {
 function Availability({ companyId, openAddPanel = false, holidayCountry = 'CY', onHolidayCountryChange, onSaveHolidayCountry }) {
   const [services, setServices] = useState([]);
   const [slots, setSlots] = useState([]);
-  const [bookings, setBookings] = useState([]);
   const [computedSlots, setComputedSlots] = useState([]);
   const [useRules, setUseRules] = useState(true);
   const [schedulingSettings, setSchedulingSettings] = useState(null);
@@ -1151,7 +1122,6 @@ function Availability({ companyId, openAddPanel = false, holidayCountry = 'CY', 
     () => subscribeCompanyAvailability(companyId, setSlots, (e) => setErr(e?.message || 'failed')),
     [companyId]
   );
-  useEffect(() => subscribeProviderBookings(companyId, setBookings, () => {}), [companyId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -1215,7 +1185,6 @@ function Availability({ companyId, openAddPanel = false, holidayCountry = 'CY', 
       />
       <CalendarAvailabilityPanel
         slots={displaySlots}
-        bookings={bookings}
         servicesById={byServiceName}
         selectedDate={calendarDate}
         onSelectedDateChange={setCalendarDate}
@@ -1223,7 +1192,6 @@ function Availability({ companyId, openAddPanel = false, holidayCountry = 'CY', 
         emptyText={useRules ? 'No bookable slots on this date — check your weekly schedule.' : 'No availability yet.'}
         onToggleSlot={useRules ? undefined : (s) => setSlotStatus(companyId, s.id, s.status === 'open' ? 'blocked' : 'open')}
         hideAdd={useRules}
-        heatLegendLabels={{ fewer: 'Fewer bookings', more: 'More bookings' }}
       />
     </>
   );
@@ -1244,8 +1212,7 @@ function Bookings({ companyId }) {
   const [swapBookingId, setSwapBookingId] = useState('');
   const [swapSlotId, setSwapSlotId] = useState('');
   const [showWalkIn, setShowWalkIn] = useState(false);
-  const [scheduleDate, setScheduleDate] = useState(() => startOfDay(new Date()));
-  const [showAllDates, setShowAllDates] = useState(false);
+  const [walkInDate, setWalkInDate] = useState(() => startOfDay(new Date()));
   const [walkIn, setWalkIn] = useState({
     clientPetId: '',
     petName: '',
@@ -1277,7 +1244,7 @@ function Bookings({ companyId }) {
   }, [companyId]);
 
   useEffect(() => {
-    if (!useRuleEngine || !walkIn.serviceId) {
+    if (!useRuleEngine || !walkIn.serviceId || !walkInDate) {
       setWalkInSlots([]);
       return undefined;
     }
@@ -1286,7 +1253,7 @@ function Bookings({ companyId }) {
     void (async () => {
       try {
         const rowsOpen = await fetchOpenSlots(companyId, walkIn.serviceId, {
-          after: startOfDay(new Date()),
+          after: startOfDay(walkInDate),
           durationMin: svc?.durationMin,
         });
         if (!cancelled) setWalkInSlots(rowsOpen);
@@ -1297,7 +1264,7 @@ function Bookings({ companyId }) {
     return () => {
       cancelled = true;
     };
-  }, [companyId, useRuleEngine, walkIn.serviceId, services]);
+  }, [companyId, useRuleEngine, walkIn.serviceId, walkInDate, services]);
 
   useEffect(() => {
     if (!useRuleEngine || !swapBookingId) {
@@ -1336,17 +1303,18 @@ function Bookings({ companyId }) {
   const activeServices = useMemo(() => services.filter((s) => s.active !== false), [services]);
 
   const openSlotsForWalkIn = useMemo(() => {
-    if (!walkIn.serviceId) return [];
-    if (useRuleEngine) return walkInSlots;
-    const after = startOfDay(new Date());
+    if (!walkIn.serviceId || !walkInDate) return [];
+    const dayKey = dateKey(walkInDate);
+    const matchesDay = (s) => {
+      const d = slotDate(s);
+      return d && dateKey(d) === dayKey;
+    };
+    if (useRuleEngine) return walkInSlots.filter(matchesDay);
     return legacySlots
       .filter((s) => (s.status || 'open') === 'open' && String(s.serviceId) === String(walkIn.serviceId))
-      .filter((s) => {
-        const d = slotDate(s);
-        return d && d.getTime() >= after.getTime();
-      })
+      .filter(matchesDay)
       .sort((a, b) => (slotDate(a)?.getTime() || 0) - (slotDate(b)?.getTime() || 0));
-  }, [legacySlots, walkIn.serviceId, useRuleEngine, walkInSlots]);
+  }, [legacySlots, walkIn.serviceId, walkInDate, useRuleEngine, walkInSlots]);
 
   useEffect(() => {
     if (!walkIn.serviceId && activeServices.length) {
@@ -1376,14 +1344,14 @@ function Bookings({ companyId }) {
   }, [rows, legacySlots, swapBookingId, useRuleEngine, swapSlots]);
 
   const displayedRows = useMemo(() => {
-    if (showAllDates) return rows;
-    const key = dateKey(scheduleDate);
-    return rows.filter((b) => {
-      if (String(b.status || '').toLowerCase() === 'cancelled') return false;
-      const d = b.startAt?.toDate ? b.startAt.toDate() : b.startAt instanceof Date ? b.startAt : null;
-      return d && dateKey(d) === key;
-    });
-  }, [rows, scheduleDate, showAllDates]);
+    return rows
+      .filter((b) => String(b.status || '').toLowerCase() !== 'cancelled')
+      .sort((a, b) => {
+        const da = a.startAt?.toDate ? a.startAt.toDate() : a.startAt instanceof Date ? a.startAt : null;
+        const db = b.startAt?.toDate ? b.startAt.toDate() : b.startAt instanceof Date ? b.startAt : null;
+        return (da?.getTime() || 0) - (db?.getTime() || 0);
+      });
+  }, [rows]);
 
   const onSwap = async () => {
     if (!swapBookingId || !swapSlotId) return;
@@ -1409,8 +1377,8 @@ function Bookings({ companyId }) {
       setErr('Enter the pet name for this appointment.');
       return;
     }
-    if (!walkIn.serviceId || !walkIn.slotId) {
-      setErr('Pick a service and an open time slot.');
+    if (!walkIn.serviceId || !walkIn.slotId || !walkInDate) {
+      setErr('Pick a date, service, and an open time slot.');
       return;
     }
     setBusyId('walkin');
@@ -1447,45 +1415,37 @@ function Bookings({ companyId }) {
           <h2>Bookings</h2>
           <p>Manage your schedule and book appointments for customers without the app.</p>
         </div>
-        <button type="button" className="pp-btn pp-btn--primary" onClick={() => setShowWalkIn((v) => !v)}>
+        <button type="button" className="pp-btn pp-btn--primary" onClick={() => {
+          setShowWalkIn((v) => {
+            if (!v) setWalkInDate(startOfDay(new Date()));
+            return !v;
+          });
+        }}>
           {showWalkIn ? 'Close' : '+ Book walk-in'}
         </button>
-      </div>
-
-      <div className="pp-providerFormCard" style={{ marginBottom: 14 }}>
-        <div className="pp-rowBetween" style={{ alignItems: 'flex-start', gap: 12, marginBottom: 10 }}>
-          <div>
-            <h3 className="pp-providerFormCard__title" style={{ marginBottom: 4 }}>Schedule overview</h3>
-            <p className="pp-muted" style={{ margin: 0, lineHeight: 1.5 }}>
-              Days are colored by booking load — green is lighter, red is busier.
-            </p>
-          </div>
-          <button
-            type="button"
-            className="pp-btn pp-btn--ghost"
-            onClick={() => setShowAllDates((v) => !v)}
-          >
-            {showAllDates ? 'Selected day only' : 'Show all dates'}
-          </button>
-        </div>
-        <BookingHeatCalendar
-          bookings={rows}
-          selectedDate={scheduleDate}
-          onSelectedDateChange={(d) => {
-            setScheduleDate(d);
-            setShowAllDates(false);
-          }}
-          legendLabels={{ fewer: 'Fewer', more: 'More' }}
-        />
       </div>
 
       {showWalkIn ? (
         <div className="pp-providerFormCard" style={{ marginBottom: 14 }}>
           <h3 className="pp-providerFormCard__title">Walk-in booking</h3>
           <p className="pp-muted" style={{ marginTop: 0, marginBottom: 12, lineHeight: 1.5 }}>
-            Reserve an open slot for a phone or walk-in customer. Add client pets under Customers if you want them on file.
+            Pick a date, then choose an open slot for a phone or walk-in customer.
           </p>
           <form onSubmit={onWalkInBook} className="pp-form pp-providerForm">
+            <div className="pp-field">
+              <span className="pp-field__label">Date</span>
+              <BookingHeatCalendar
+                bookings={[]}
+                selectedDate={walkInDate}
+                onSelectedDateChange={(d) => {
+                  setWalkInDate(d);
+                  setWalkIn((p) => ({ ...p, slotId: '' }));
+                }}
+                showHeat={false}
+                showLegend={false}
+                className="pp-bookingHeatCalendar--walkIn"
+              />
+            </div>
             {clientPets.length ? (
               <label className="pp-field">
                 <span className="pp-field__label">Client on file (optional)</span>
@@ -1542,28 +1502,37 @@ function Bookings({ companyId }) {
                 </select>
               </label>
             </div>
-            <label className="pp-field">
+            <div className="pp-field">
               <span className="pp-field__label">Open slot</span>
-              <select
-                className="pp-input"
-                value={walkIn.slotId}
-                onChange={(e) => setWalkIn((p) => ({ ...p, slotId: e.target.value }))}
-                required
-              >
-                <option value="">Pick a time…</option>
-                {openSlotsForWalkIn.map((s) => {
-                  const d = slotDate(s);
-                  return (
-                    <option key={s.id} value={s.id}>
-                      {d ? formatDateTime24(d) : s.id}
-                    </option>
-                  );
-                })}
-              </select>
-            </label>
-            {!openSlotsForWalkIn.length && walkIn.serviceId ? (
-              <p className="pp-muted">No open slots for this service. Add availability first.</p>
-            ) : null}
+              {!walkIn.serviceId ? (
+                <p className="pp-muted" style={{ margin: 0 }}>Select a service first.</p>
+              ) : openSlotsForWalkIn.length ? (
+                <div className="pp-walkInSlotGrid" role="listbox" aria-label="Available time slots">
+                  {openSlotsForWalkIn.map((s) => {
+                    const d = slotDate(s);
+                    const isSelected = walkIn.slotId === s.id;
+                    return (
+                      <button
+                        key={s.id}
+                        type="button"
+                        role="option"
+                        aria-selected={isSelected}
+                        className={`pp-walkInSlotBtn ${isSelected ? 'is-selected' : ''}`}
+                        onClick={() => setWalkIn((p) => ({ ...p, slotId: s.id }))}
+                      >
+                        {d ? formatTime24(d) : s.id}
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="pp-muted" style={{ margin: 0 }}>
+                  No open slots on{' '}
+                  {walkInDate.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}.
+                  Add availability first.
+                </p>
+              )}
+            </div>
             <label className="pp-field">
               <span className="pp-field__label">Notes (optional)</span>
               <textarea
@@ -1573,7 +1542,7 @@ function Bookings({ companyId }) {
                 onChange={(e) => setWalkIn((p) => ({ ...p, notes: e.target.value }))}
               />
             </label>
-            <button className="pp-btn pp-btn--primary" type="submit" disabled={busyId === 'walkin' || !activeServices.length}>
+            <button className="pp-btn pp-btn--primary" type="submit" disabled={busyId === 'walkin' || !activeServices.length || !walkIn.slotId}>
               {busyId === 'walkin' ? 'Booking…' : 'Confirm booking'}
             </button>
           </form>
@@ -1582,15 +1551,9 @@ function Bookings({ companyId }) {
 
       {err ? <div className="pp-error">{err}</div> : null}
       {ok ? <div className="pp-success">{ok}</div> : null}
-      {!showAllDates ? (
-        <p className="pp-muted" style={{ marginTop: 0, marginBottom: 10 }}>
-          Showing appointments for{' '}
-          <strong>{scheduleDate.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}</strong>
-        </p>
-      ) : null}
       {displayedRows.length === 0 ? (
         <div className="pp-providerEmptyCard">
-          {showAllDates ? 'No bookings yet — book a walk-in or wait for customer requests.' : 'No appointments on this day.'}
+          No bookings yet — book a walk-in or wait for customer requests.
         </div>
       ) : null}
       <div className="pp-providerBookingList" style={{ marginTop: displayedRows.length ? 10 : 0 }}>
