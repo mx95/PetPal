@@ -27,6 +27,8 @@ import {
   loadSchedulingContext,
 } from '../bookings/availability/availabilityFirestore';
 import BookingHeatCalendar from '../bookings/BookingHeatCalendar';
+import { addDays, daysFromMonday, WEEKDAY_LABELS_MON_START } from '../bookings/bookingHeatMap';
+import ListingPlaceImportField from '../company/ListingPlaceImportField';
 import { formatDateTime24, formatTime24 } from '../formatTime24';
 
 function businessTypeLabel(providerTypes = {}) {
@@ -68,21 +70,15 @@ function startOfDay(date) {
   return d;
 }
 
-function addDays(date, days) {
-  const d = new Date(date);
-  d.setDate(d.getDate() + days);
-  return d;
-}
-
 function monthDays(date) {
   const first = new Date(date.getFullYear(), date.getMonth(), 1);
-  const start = addDays(first, -first.getDay());
+  const start = addDays(first, -daysFromMonday(first));
   return Array.from({ length: 42 }, (_, idx) => addDays(start, idx));
 }
 
 function weekDays(date) {
   const selected = startOfDay(date);
-  const start = addDays(selected, -selected.getDay());
+  const start = addDays(selected, -daysFromMonday(selected));
   return Array.from({ length: 7 }, (_, idx) => addDays(start, idx));
 }
 
@@ -297,7 +293,7 @@ function CalendarAvailabilityPanel({
           )}
           {view === 'month' ? (
             <div className="pp-providerCalendarWeek pp-providerCalendarWeek--desktop">
-              {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, idx) => <span key={`${d}-${idx}`}>{d}</span>)}
+              {WEEKDAY_LABELS_MON_START.map((d, idx) => <span key={`${d}-${idx}`}>{d}</span>)}
             </div>
           ) : null}
           {view === 'week' ? (
@@ -773,6 +769,22 @@ export default function ProviderPortal() {
               />
               <span>Booking enabled — show in customer search</span>
             </label>
+            <div className="pp-field">
+              <span className="pp-field__label">Import from Google Maps</span>
+              <ListingPlaceImportField
+                displayName={publish.displayName}
+                address={publish.address}
+                onImport={(data) => {
+                  setPublish((p) => ({
+                    ...p,
+                    displayName: data.displayName || p.displayName,
+                    address: data.address || p.address,
+                    phone: data.phone || p.phone,
+                    workingHours: data.workingHours || p.workingHours,
+                  }));
+                }}
+              />
+            </div>
             <div className="pp-modalGrid2">
               <label className="pp-field">
                 <span className="pp-field__label">Display name</span>
@@ -955,6 +967,7 @@ function buildCoatVariants(durationMin, basePrice) {
 function Services({ companyId }) {
   const [services, setServices] = useState([]);
   const [err, setErr] = useState('');
+  const [toggleBusyId, setToggleBusyId] = useState('');
   const [form, setForm] = useState({
     type: 'vet',
     name: '',
@@ -1097,8 +1110,24 @@ function Services({ companyId }) {
               </div>
             </div>
             <div className="pp-providerServiceCard__actions">
-              <button type="button" className="pp-btn pp-btn--ghost" onClick={() => upsertCompanyService(companyId, s.id, { active: s.active === false })}>
-                {s.active === false ? 'Enable' : 'Disable'}
+              <button
+                type="button"
+                className="pp-btn pp-btn--ghost"
+                disabled={toggleBusyId === s.id}
+                onClick={async () => {
+                  setErr('');
+                  setToggleBusyId(s.id);
+                  try {
+                    const nextActive = s.active === false;
+                    await upsertCompanyService(companyId, s.id, { active: nextActive });
+                  } catch (e) {
+                    setErr(e?.message || 'Could not update service.');
+                  } finally {
+                    setToggleBusyId('');
+                  }
+                }}
+              >
+                {toggleBusyId === s.id ? 'Saving…' : s.active === false ? 'Enable' : 'Disable'}
               </button>
             </div>
           </article>

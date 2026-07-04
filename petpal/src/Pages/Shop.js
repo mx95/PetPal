@@ -325,7 +325,6 @@ export default function Shop() {
           {isCompanyAccount ? (
             <section className="pp-shopBoostSection" style={{ marginBottom: 18 }}>
               <h2 className="pp-sectionTitle">{t('shopPage.boostSectionTitle')}</h2>
-              <p className="pp-subtle">{t('shopPage.boostSectionSub')}</p>
               {!isApprovedCompany ? (
                 <div className="pp-shopInfoBox" role="note" style={{ marginTop: 12 }}>
                   {t('shopPage.boostBusinessOnly')}

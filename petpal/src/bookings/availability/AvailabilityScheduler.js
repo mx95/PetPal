@@ -135,6 +135,34 @@ export default function AvailabilityScheduler({ companyId, services = [], settin
 
   const addPeriod = () => setWeeklyDraft((d) => ({ ...d, periods: [...(d.periods || []), emptyPeriod()] }));
 
+  const removePeriod = (idx) => {
+    setWeeklyDraft((d) => {
+      const periods = [...(d.periods || [])];
+      if (periods.length <= 1) return d;
+      periods.splice(idx, 1);
+      return { ...d, periods };
+    });
+  };
+
+  const AvailTimeRange = ({ startTime, endTime, onStartChange, onEndChange, onRemove, canRemove }) => (
+    <div className="pp-availTimeRow">
+      <label className="pp-field pp-availTimeRow__field">
+        <span className="pp-field__label">From</span>
+        <TimeInput24 value={startTime} onChange={onStartChange} />
+      </label>
+      <span className="pp-availTimeRow__sep" aria-hidden>→</span>
+      <label className="pp-field pp-availTimeRow__field">
+        <span className="pp-field__label">To</span>
+        <TimeInput24 value={endTime} onChange={onEndChange} />
+      </label>
+      {canRemove ? (
+        <button type="button" className="pp-availTimeRow__remove" aria-label="Remove period" onClick={onRemove}>
+          ×
+        </button>
+      ) : null}
+    </div>
+  );
+
   const saveOverride = async () => {
     if (!overrideDraft.date) return;
     setBusy(true);
@@ -231,7 +259,7 @@ export default function AvailabilityScheduler({ companyId, services = [], settin
             </label>
           ) : null}
 
-          <div className="pp-field">
+          <div className="pp-field pp-availWeekdayField">
             <div className="pp-providerWeekdayToggle">
               {WEEKDAYS.map(({ dow, label }) => (
                 <button
@@ -249,30 +277,23 @@ export default function AvailabilityScheduler({ companyId, services = [], settin
           <div className="pp-field">
             <span className="pp-field__label">Working periods</span>
             {(weeklyDraft.periods || []).map((p, idx) => (
-              <div key={`period-${idx}`} className="pp-availTimeRow" style={{ marginBottom: 8 }}>
-                <label className="pp-field pp-availTimeRow__field">
-                  <span className="pp-field__label">From</span>
-                  <TimeInput24
-                    value={p.startTime}
-                    onChange={(v) => setWeeklyDraft((d) => {
-                      const periods = [...d.periods];
-                      periods[idx] = { ...periods[idx], startTime: v };
-                      return { ...d, periods };
-                    })}
-                  />
-                </label>
-                <label className="pp-field pp-availTimeRow__field">
-                  <span className="pp-field__label">To</span>
-                  <TimeInput24
-                    value={p.endTime}
-                    onChange={(v) => setWeeklyDraft((d) => {
-                      const periods = [...d.periods];
-                      periods[idx] = { ...periods[idx], endTime: v };
-                      return { ...d, periods };
-                    })}
-                  />
-                </label>
-              </div>
+              <AvailTimeRange
+                key={`period-${idx}`}
+                startTime={p.startTime}
+                endTime={p.endTime}
+                canRemove={(weeklyDraft.periods || []).length > 1}
+                onStartChange={(v) => setWeeklyDraft((d) => {
+                  const periods = [...d.periods];
+                  periods[idx] = { ...periods[idx], startTime: v };
+                  return { ...d, periods };
+                })}
+                onEndChange={(v) => setWeeklyDraft((d) => {
+                  const periods = [...d.periods];
+                  periods[idx] = { ...periods[idx], endTime: v };
+                  return { ...d, periods };
+                })}
+                onRemove={() => removePeriod(idx)}
+              />
             ))}
             <button type="button" className="pp-btn pp-btn--ghost" onClick={addPeriod}>+ Add period</button>
           </div>
@@ -336,18 +357,16 @@ export default function AvailabilityScheduler({ companyId, services = [], settin
               </label>
             </div>
             {!overrideDraft.unavailable ? (
-              <div className="pp-availTimeRow">
-                <label className="pp-field pp-availTimeRow__field">
-                  <span className="pp-field__label">From</span>
-                  <TimeInput24 value={overrideDraft.periods[0].startTime} onChange={(v) => setOverrideDraft((d) => ({ ...d, periods: [{ ...d.periods[0], startTime: v }] }))} />
-                </label>
-                <label className="pp-field pp-availTimeRow__field">
-                  <span className="pp-field__label">To</span>
-                  <TimeInput24 value={overrideDraft.periods[0].endTime} onChange={(v) => setOverrideDraft((d) => ({ ...d, periods: [{ ...d.periods[0], endTime: v }] }))} />
-                </label>
-              </div>
+              <AvailTimeRange
+                startTime={overrideDraft.periods[0].startTime}
+                endTime={overrideDraft.periods[0].endTime}
+                onStartChange={(v) => setOverrideDraft((d) => ({ ...d, periods: [{ ...d.periods[0], startTime: v }] }))}
+                onEndChange={(v) => setOverrideDraft((d) => ({ ...d, periods: [{ ...d.periods[0], endTime: v }] }))}
+              />
             ) : null}
-            <button type="button" className="pp-btn pp-btn--primary" disabled={busy} onClick={() => void saveOverride()}>Save override</button>
+            <div className="pp-availFormActions">
+              <button type="button" className="pp-btn pp-btn--primary" disabled={busy} onClick={() => void saveOverride()}>Save override</button>
+            </div>
             {overrides.length ? (
               <ul className="pp-availList">
                 {overrides.map((o) => (
@@ -383,9 +402,12 @@ export default function AvailabilityScheduler({ companyId, services = [], settin
             </div>
             <div className="pp-availTimeRow">
               <label className="pp-field pp-availTimeRow__field"><span className="pp-field__label">From</span><TimeInput24 value={blockDraft.start} onChange={(v) => setBlockDraft((d) => ({ ...d, start: v }))} /></label>
+              <span className="pp-availTimeRow__sep" aria-hidden>→</span>
               <label className="pp-field pp-availTimeRow__field"><span className="pp-field__label">To</span><TimeInput24 value={blockDraft.end} onChange={(v) => setBlockDraft((d) => ({ ...d, end: v }))} /></label>
             </div>
-            <button type="button" className="pp-btn pp-btn--primary" disabled={busy} onClick={() => void saveBlock()}>Save blocked time</button>
+            <div className="pp-availFormActions">
+              <button type="button" className="pp-btn pp-btn--primary" disabled={busy} onClick={() => void saveBlock()}>Save blocked time</button>
+            </div>
             {blocked.length ? (
               <ul className="pp-availList">
                 {blocked.map((b) => (

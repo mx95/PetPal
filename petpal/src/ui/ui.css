@@ -4656,7 +4656,7 @@ body.pp-noScroll {
 /* Legal & footer */
 .pp-footer {
   margin-top: auto;
-  padding: 16px 16px 12px;
+  padding: 12px 14px 10px;
   border-top: 1px solid rgba(16, 24, 40, 0.08);
   background: rgba(255, 255, 255, 0.82);
 }
@@ -4665,25 +4665,25 @@ body.pp-noScroll {
   max-width: 1100px;
   margin: 0 auto;
   display: grid;
-  gap: 10px;
+  gap: 8px;
 }
 
 .pp-footer__grid {
   display: grid;
   grid-template-columns: minmax(0, 1.35fr) minmax(0, 1.65fr);
-  gap: 12px 20px;
+  gap: 10px 16px;
   align-items: start;
 }
 
 .pp-footer__linkCols {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px 18px;
+  gap: 8px 14px;
   align-items: start;
 }
 
 .pp-footer__col--compact {
-  gap: 7px;
+  gap: 5px;
 }
 
 .pp-footer__col--compact .pp-footer__title {
@@ -4711,7 +4711,7 @@ body.pp-noScroll {
 
 .pp-footer__brand {
   margin: 0;
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 800;
   letter-spacing: -0.02em;
   color: #1d2939;
@@ -4720,8 +4720,8 @@ body.pp-noScroll {
 .pp-footer__desc {
   margin: 0;
   max-width: 38ch;
-  font-size: 12px;
-  line-height: 1.45;
+  font-size: 11px;
+  line-height: 1.35;
   color: #667085;
 }
 
@@ -16414,14 +16414,52 @@ body.pp-mobile-dock .pp-providerTabsWrap {
 .pp-availTimeRow {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px;
   align-items: flex-end;
+  margin-bottom: 10px;
 }
 
 .pp-availTimeRow__field {
-  flex: 1 1 120px;
+  flex: 1 1 108px;
   min-width: 0;
   margin-bottom: 0;
+}
+
+.pp-availTimeRow__sep {
+  flex: 0 0 auto;
+  align-self: center;
+  margin: 0 2px 10px;
+  color: var(--pp-muted, #667085);
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.pp-availTimeRow__remove {
+  flex: 0 0 auto;
+  align-self: center;
+  margin-bottom: 6px;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--pp-border);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--pp-text);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.pp-availWeekdayField {
+  margin-top: 14px;
+  margin-bottom: 14px;
+}
+
+.pp-availFormActions {
+  margin-top: 14px;
+}
+
+.pp-listingPlaceImport {
+  margin-top: 4px;
 }
 
 .pp-availTimeRow .pp-field__label {

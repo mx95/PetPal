@@ -7,6 +7,7 @@ import {
   maxBookingsInPeriod,
   monthDays,
   startOfDay,
+  WEEKDAY_LABELS_MON_START,
 } from './bookingHeatMap';
 
 /**
@@ -106,7 +107,7 @@ export default function BookingHeatCalendar({
       </div>
 
       <div className="pp-providerCalendarWeek pp-providerCalendarWeek--desktop">
-        {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, idx) => (
+        {WEEKDAY_LABELS_MON_START.map((d, idx) => (
           <span key={`${d}-${idx}`}>{d}</span>
         ))}
       </div>
