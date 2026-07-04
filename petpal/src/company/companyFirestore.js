@@ -138,6 +138,8 @@ export async function saveCompanyApplication(uid, data) {
     workingHours: data.workingHours ? String(data.workingHours).trim().slice(0, 250) : '',
     lat: Number(data.lat),
     lng: Number(data.lng),
+    googlePlaceId: data.googlePlaceId ? String(data.googlePlaceId).trim().slice(0, 120) : '',
+    pickedPlaceName: data.pickedPlaceName ? String(data.pickedPlaceName).trim().slice(0, 120) : '',
     status: 'pending',
     submittedAt: serverTimestamp(),
   };

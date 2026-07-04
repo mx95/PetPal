@@ -9,6 +9,8 @@
  * @property {string} [workingHours]
  * @property {number} lat
  * @property {number} lng
+ * @property {string} [googlePlaceId]
+ * @property {string} [pickedPlaceName]
  */
 
 /**
@@ -25,6 +27,8 @@
  * @property {string} [workingHours]
  * @property {number} lat
  * @property {number} lng
+ * @property {string} [googlePlaceId]
+ * @property {string} [pickedPlaceName]
  * @property {'pending'|'approved'|'rejected'} status
  * @property {import('firebase/firestore').Timestamp} [submittedAt]
  * @property {import('firebase/firestore').Timestamp} [reviewedAt]

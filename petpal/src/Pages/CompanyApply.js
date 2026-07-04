@@ -34,6 +34,7 @@ export default function CompanyApply() {
   const [workingHours, setWorkingHours] = useState('');
   const [lat, setLat] = useState(defaultMapCenter.lat);
   const [lng, setLng] = useState(defaultMapCenter.lng);
+  const [googlePlaceId, setGooglePlaceId] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [recenterSignal, setRecenterSignal] = useState(0);
@@ -44,8 +45,12 @@ export default function CompanyApply() {
   }, []);
 
   const onPlacePicked = useCallback(
-    (nextLat, nextLng) => {
+    (nextLat, nextLng, meta = {}) => {
       setPos(nextLat, nextLng);
+      if (meta.placeId) setGooglePlaceId(String(meta.placeId));
+      if (meta.placeAddress) {
+        setAddressLine((line) => line || String(meta.placeAddress));
+      }
       setRecenterSignal((n) => n + 1);
     },
     [setPos]
@@ -108,6 +113,8 @@ export default function CompanyApply() {
         workingHours,
         lat,
         lng,
+        googlePlaceId,
+        pickedPlaceName: businessName.trim(),
       });
       setModalOpen(false);
       setBusinessName('');
@@ -117,6 +124,7 @@ export default function CompanyApply() {
       setPublicEmail((user && user.email) || '');
       setPhoneNumber('');
       setWorkingHours('');
+      setGooglePlaceId('');
     } catch (err) {
       const c = err?.code || err?.message || '';
       if (c.includes('permission') || c.includes('PERMISSION')) {

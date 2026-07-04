@@ -793,10 +793,9 @@ export default function ProviderPortal() {
               <span>Booking enabled — show in customer search</span>
             </label>
             <div className="pp-field">
-              <span className="pp-field__label">Import from Google Maps</span>
+              <span className="pp-field__label">Import from your map pin</span>
               <ListingPlaceImportField
-                displayName={publish.displayName}
-                address={publish.address}
+                profile={profile}
                 onImport={(data) => {
                   setPublish((p) => ({
                     ...p,
