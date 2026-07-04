@@ -21,6 +21,7 @@ service cloud.firestore {
 
     function isCompanyOwner(companyId) {
       return request.auth != null
+        && companyDoc(companyId).exists
         && companyDoc(companyId).data.ownerUid == request.auth.uid;
     }
 
@@ -39,10 +40,23 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/companies/$(request.auth.uid)).data.status == 'approved';
     }
 
-    /** True when this company is open for customer booking (used for services/availability reads + booking create). */
+    /** Provider has a public directory row (may still have bookings disabled). */
+    function hasProviderListing(companyId) {
+      return exists(/databases/$(database)/documents/providers/$(companyId));
+    }
+
+    /** True when this company is open for customer booking (used for booking create). */
     function isPublicBookableCompany(companyId) {
       let p = get(/databases/$(database)/documents/providers/$(companyId));
       return p.exists && p.data.bookingEnabled == true;
+    }
+
+    /** Read services, availability rules, and slot data for booking UI. */
+    function canReadProviderBookingData(companyId) {
+      return isAdmin()
+        || isApprovedCompany(companyId)
+        || isPublicBookableCompany(companyId)
+        || (request.auth != null && hasProviderListing(companyId));
     }
 
     match /companies/{companyId} {
@@ -60,47 +74,40 @@ service cloud.firestore {
             && (resource.data.status == 'pending' || resource.data.status == 'rejected'));
       allow delete: if false;
 
-      // Provider service catalog (owner reads while setting up; customers when booking-enabled).
+      // Provider service catalog (owner reads while setting up; customers when listing exists).
       match /services/{serviceId} {
-        allow read: if request.auth != null
-          && (isApprovedCompany(companyId) || isPublicBookableCompany(companyId));
+        allow read: if canReadProviderBookingData(companyId);
         allow create, update, delete: if isAdmin() || isApprovedCompany(companyId);
       }
 
-      // Slot-based availability (owner reads while setting up; customers when booking-enabled).
+      // Slot-based availability (owner reads while setting up; customers when listing exists).
       match /availability/{slotId} {
-        allow read: if request.auth != null
-          && (isApprovedCompany(companyId) || isPublicBookableCompany(companyId));
+        allow read: if canReadProviderBookingData(companyId);
         allow create, update, delete: if isAdmin() || isApprovedCompany(companyId);
       }
 
       match /availabilityRules/{ruleId} {
-        allow read: if request.auth != null
-          && (isApprovedCompany(companyId) || isPublicBookableCompany(companyId));
+        allow read: if canReadProviderBookingData(companyId);
         allow create, update, delete: if isAdmin() || isApprovedCompany(companyId);
       }
 
       match /availabilityOverrides/{overrideId} {
-        allow read: if request.auth != null
-          && (isApprovedCompany(companyId) || isPublicBookableCompany(companyId));
+        allow read: if canReadProviderBookingData(companyId);
         allow create, update, delete: if isAdmin() || isApprovedCompany(companyId);
       }
 
       match /vacations/{vacationId} {
-        allow read: if request.auth != null
-          && (isApprovedCompany(companyId) || isPublicBookableCompany(companyId));
+        allow read: if canReadProviderBookingData(companyId);
         allow create, update, delete: if isAdmin() || isApprovedCompany(companyId);
       }
 
       match /blockedPeriods/{blockId} {
-        allow read: if request.auth != null
-          && (isApprovedCompany(companyId) || isPublicBookableCompany(companyId));
+        allow read: if canReadProviderBookingData(companyId);
         allow create, update, delete: if isAdmin() || isApprovedCompany(companyId);
       }
 
       match /employees/{employeeId} {
-        allow read: if request.auth != null
-          && (isApprovedCompany(companyId) || isPublicBookableCompany(companyId));
+        allow read: if canReadProviderBookingData(companyId);
         allow create, update, delete: if isAdmin() || isApprovedCompany(companyId);
       }
 
@@ -219,7 +226,8 @@ service cloud.firestore {
       allow list: if isAdmin()
         || (request.auth != null && resource.data.customerUid == request.auth.uid)
         || (request.auth != null && resource.data.companyId == request.auth.uid)
-        || (request.auth != null && isPublicBookableCompany(resource.data.companyId));
+        || (request.auth != null && isPublicBookableCompany(resource.data.companyId))
+        || (request.auth != null && hasProviderListing(resource.data.companyId));
 
       allow create: if request.auth != null
         && request.resource.data.status == 'booked'
