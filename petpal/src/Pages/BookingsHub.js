@@ -61,12 +61,9 @@ function BrowseProviders() {
   const [err, setErr] = useState('');
   const [serviceTab, setServiceTab] = useState(/** @type {'vet'|'saloon'|'hotel'|'bath'} */ ('vet'));
   const [search, setSearch] = useState('');
-  const [ratingFilter, setRatingFilter] = useState(/** @type {'any'|'4'|'4.5'} */ ('any'));
-  const [distanceFilter, setDistanceFilter] = useState(/** @type {'any'|'5'|'15'|'30'} */ ('any'));
-  const [userLoc, setUserLoc] = useState(/** @type {{ lat: number, lng: number } | null} */ (null));
-  const [locating, setLocating] = useState(false);
-  const [locMsg, setLocMsg] = useState('');
-  const [filtersExpanded, setFiltersExpanded] = useState(false);
+  const [ratingFilter] = useState(/** @type {'any'|'4'|'4.5'} */ ('any'));
+  const [distanceFilter] = useState(/** @type {'any'|'5'|'15'|'30'} */ ('any'));
+  const [userLoc] = useState(/** @type {{ lat: number, lng: number } | null} */ (null));
 
   useEffect(
     () =>
@@ -164,46 +161,7 @@ function BrowseProviders() {
     navigate(`provider/${encodeURIComponent(companyId)}`);
   };
 
-  const requestLocation = () => {
-    if (!navigator.geolocation) {
-      setLocMsg(t('bookingsHub.locationDenied'));
-      return;
-    }
-    setLocating(true);
-    setLocMsg('');
-    const optsList = [
-      { enableHighAccuracy: false, timeout: 22000, maximumAge: 300000 },
-      { enableHighAccuracy: true, timeout: 30000, maximumAge: 0 },
-    ];
-    let attempt = 0;
-    const run = () => {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          setUserLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-          setLocating(false);
-        },
-        (err) => {
-          attempt += 1;
-          if (attempt < optsList.length) {
-            run();
-            return;
-          }
-          const code = err && typeof err.code === 'number' ? err.code : 0;
-          let msgKey = 'bookingsHub.locationDenied';
-          if (code === 1) msgKey = 'bookingsHub.locationPermissionDenied';
-          else if (code === 2) msgKey = 'bookingsHub.locationUnavailable';
-          else if (code === 3) msgKey = 'bookingsHub.locationTimeout';
-          setLocMsg(t(msgKey));
-          setLocating(false);
-        },
-        optsList[attempt]
-      );
-    };
-    run();
-  };
-
   const showEmpty = sorted.length === 0;
-  const hasAdvancedFiltersActive = ratingFilter !== 'any' || (userLoc && distanceFilter !== 'any');
   const showBrowseContent = loaded || catalogProviders.length > 0;
 
   return (
@@ -221,51 +179,6 @@ function BrowseProviders() {
               onChange={(e) => setSearch(e.target.value)}
             />
           </label>
-          <button
-            type="button"
-            className="pp-book-moreFiltersBtn"
-            aria-expanded={filtersExpanded}
-            aria-controls="pp-book-advanced-filters"
-            onClick={() => setFiltersExpanded((v) => !v)}
-          >
-            <span className="pp-book-moreFiltersBtn__chevron" aria-hidden>
-              {filtersExpanded ? '▴' : '▾'}
-            </span>
-            <span>
-              {filtersExpanded ? t('bookingsHub.hideFilters') : t('bookingsHub.moreFilters')}
-              {!filtersExpanded && hasAdvancedFiltersActive ? (
-                <span className="pp-book-moreFiltersBtn__dot"> · {t('bookingsHub.filtersActiveHint')}</span>
-              ) : null}
-            </span>
-          </button>
-          <div id="pp-book-advanced-filters" className="pp-book-advancedFilters" hidden={!filtersExpanded}>
-            <label className="pp-book-field">
-              <span className="pp-book-field__label">{t('bookingsHub.filterRatingLabel')}</span>
-              <select className="pp-book-select" value={ratingFilter} onChange={(e) => setRatingFilter(e.target.value)}>
-                <option value="any">{t('bookingsHub.ratingAny')}</option>
-                <option value="4">{t('bookingsHub.rating4')}</option>
-                <option value="4.5">{t('bookingsHub.rating45')}</option>
-              </select>
-            </label>
-            <label className="pp-book-field">
-              <span className="pp-book-field__label">{t('bookingsHub.filterDistanceLabel')}</span>
-              <select
-                className="pp-book-select"
-                value={distanceFilter}
-                onChange={(e) => setDistanceFilter(e.target.value)}
-                disabled={!userLoc}
-              >
-                <option value="any">{t('bookingsHub.distanceAny')}</option>
-                <option value="5">{t('bookingsHub.distance5')}</option>
-                <option value="15">{t('bookingsHub.distance15')}</option>
-                <option value="30">{t('bookingsHub.distance30')}</option>
-              </select>
-            </label>
-            <button type="button" className="mt-2 w-full rounded-full border border-slate-200 bg-white px-4 py-3 text-sm font-black text-petpal-ink shadow-soft transition hover:-translate-y-0.5 hover:shadow-lift disabled:opacity-60" onClick={requestLocation} disabled={locating}>
-              {locating ? t('bookingsHub.locating') : t('bookingsHub.useLocation')}
-            </button>
-            {locMsg ? <p className="pp-book-muted pp-book-muted--sm">{locMsg}</p> : null}
-          </div>
         </AppCard>
 
         <AppCard hover={false} className="pp-book-servicesCard">
@@ -385,10 +298,8 @@ function BookingsBrowseHome() {
     <PageContainer className="!py-4 sm:!py-5 lg:!py-6">
       <SectionHeader
         className="!mb-4 !gap-2 sm:!mb-5 sm:!gap-3"
-        subtitleClassName="!mt-2 text-sm leading-snug sm:!mt-3 sm:text-base sm:leading-6"
         eyebrow={t('bookingsHub.badge')}
         title={t('bookingsHub.title')}
-        subtitle={t('bookingsHub.subtitle')}
         action={
           <div className="pp-book-heroTabs">
             <TabButton active={tab === 'browse'} onClick={() => setTab('browse')}>

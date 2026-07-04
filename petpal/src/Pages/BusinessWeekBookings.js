@@ -249,7 +249,6 @@ export default function BusinessWeekBookings() {
             <h1 className="pp-h1" style={{ marginTop: 10, marginBottom: 4 }}>
               {profile?.businessName || t('businessWeek.title')}
             </h1>
-            <p className="pp-subtle">{t('businessWeek.sub')}</p>
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             <Link className="pp-btn pp-btn--primary" to="/provider?tab=bookings">

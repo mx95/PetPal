@@ -107,6 +107,16 @@ function eachDateKeyInRange(startStr, endStr) {
 
 const PROVIDER_TABS = ['bookings', 'availability', 'customers', 'services'];
 
+const WEEKDAY_OPTIONS = [
+  { dow: 0, label: 'Sun' },
+  { dow: 1, label: 'Mon' },
+  { dow: 2, label: 'Tue' },
+  { dow: 3, label: 'Wed' },
+  { dow: 4, label: 'Thu' },
+  { dow: 5, label: 'Fri' },
+  { dow: 6, label: 'Sat' },
+];
+
 function buildPublishState(companyProfile, providerDoc) {
   return {
     bookingEnabled: Boolean(providerDoc?.bookingEnabled),
@@ -250,11 +260,10 @@ function CalendarAvailabilityPanel({
   };
 
   return (
-    <section className={`pp-providerPanel pp-providerCalendarPanel ${view === 'month' ? 'pp-providerCalendarPanel--month' : ''}`}>
+    <section className={`pp-providerPanel pp-providerCalendarPanel${view === 'month' ? ' pp-providerCalendarPanel--month' : ''}${view === 'today' ? ' pp-providerCalendarPanel--today' : ''}`}>
       <div className="pp-providerPanel__head">
         <div>
           <h2>Availability</h2>
-          <p>Calendar scheduling with fast slot controls.</p>
         </div>
         <div className="pp-providerCalendarControls">
           <div className="pp-providerCalendarToggle" aria-label="Calendar view">
@@ -276,7 +285,14 @@ function CalendarAvailabilityPanel({
         </div>
       ) : null}
 
-      <div className="pp-providerCalendarLayout">
+      <div className={`pp-providerCalendarLayout${view === 'today' ? ' pp-providerCalendarLayout--today' : ''}`}>
+        {view === 'today' ? (
+          <div className="pp-providerTodayBanner">
+            <span className="pp-providerTodayBanner__label">Today</span>
+            <strong>{selectedDate.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</strong>
+            <em>{selectedSlots.length ? `${selectedSlots.length} open slot${selectedSlots.length === 1 ? '' : 's'}` : 'No slots published yet'}</em>
+          </div>
+        ) : (
         <div className="pp-providerCalendarCard">
           <div className="pp-providerCalendarMobileMonth" aria-live="polite">
             {view === 'month' ? (
@@ -315,10 +331,11 @@ function CalendarAvailabilityPanel({
           <div className={`pp-providerCalendarGrid pp-providerCalendarGrid--desktopMonth ${view === 'week' || view === 'today' ? 'is-week' : ''}`}>
             {calendarDays.map((day) => renderDayButton(day))}
           </div>
-          <div className={`pp-providerCalendarGrid is-week pp-providerCalendarGrid--mobileWeek${view === 'today' ? ' is-single' : ''}`}>
-            {mobileWeekDays.map((day) => renderDayButton(day, { compact: view === 'today' }))}
+          <div className={`pp-providerCalendarGrid is-week pp-providerCalendarGrid--mobileWeek`}>
+            {mobileWeekDays.map((day) => renderDayButton(day))}
           </div>
         </div>
+        )}
 
         <div className="pp-providerDaySchedule">
           <div className="pp-providerDaySchedule__head">
@@ -1147,6 +1164,10 @@ function Availability({
   const [country, setCountry] = useState(holidayCountry || 'CY');
   const [showYearlyModal, setShowYearlyModal] = useState(false);
   const [holidaySkips, setHolidaySkips] = useState(() => new Set());
+  const [weeklyDays, setWeeklyDays] = useState(() => new Set([1, 2, 3, 4, 5]));
+  const [weeklyStart, setWeeklyStart] = useState('09:00');
+  const [weeklyEnd, setWeeklyEnd] = useState('17:00');
+  const [weeklyHorizon, setWeeklyHorizon] = useState('year');
 
   useEffect(() => {
     setCountry(holidayCountry || 'CY');
@@ -1321,10 +1342,146 @@ function Availability({
     }
   };
 
+  const toggleWeeklyDay = (dow) => {
+    setWeeklyDays((prev) => {
+      const next = new Set(prev);
+      if (next.has(dow)) next.delete(dow);
+      else next.add(dow);
+      return next;
+    });
+  };
+
+  const onCreateWeeklySlots = async () => {
+    setErr('');
+    setOk('');
+    if (!services.length) {
+      setErr('Add at least one service before publishing availability.');
+      return;
+    }
+    if (!weeklyDays.size) {
+      setErr('Select at least one day of the week.');
+      return;
+    }
+    if (!serviceId) {
+      setErr('Pick a service for these weekly hours.');
+      return;
+    }
+    setBusy(true);
+    try {
+      const today = startOfDay(new Date());
+      const year = today.getFullYear();
+      let endDate;
+      if (weeklyHorizon === '4w') endDate = addDays(today, 27);
+      else if (weeklyHorizon === '12w') endDate = addDays(today, 83);
+      else endDate = new Date(year, 11, 31);
+
+      const holidayKeys = new Set(getPublicHolidays(country, year).map((h) => h.date));
+      const toCreate = [];
+
+      for (let d = new Date(today); d.getTime() <= endDate.getTime(); d = addDays(d, 1)) {
+        const key = dateKey(d);
+        if (holidayKeys.has(key)) continue;
+        if (!weeklyDays.has(d.getDay())) continue;
+        const startAt = new Date(`${key}T${weeklyStart}:00`);
+        const endAt = new Date(`${key}T${weeklyEnd}:00`);
+        if (endAt <= startAt) {
+          throw new Error('invalid_time_range');
+        }
+        const dedupe = `${key}|${serviceId}|${formatTime24(startAt)}`;
+        if (existingSlotKeys.has(dedupe)) continue;
+        toCreate.push({ serviceId, startAt, endAt, status: 'open' });
+      }
+
+      if (!toCreate.length) {
+        setErr('No new slots to add — these weekly hours may already exist.');
+        return;
+      }
+
+      const created = await bulkCreateAvailabilitySlots(companyId, toCreate);
+      setOk(`Weekly hours added — ${created} new slot${created === 1 ? '' : 's'} created.`);
+    } catch (e2) {
+      const code = e2?.message || 'failed';
+      setErr(code === 'invalid_time_range' ? 'End time must be after start time.' : code);
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <>
       {err ? <div className="pp-error" style={{ marginBottom: 10 }}>{err}</div> : null}
       {ok ? <div className="pp-success" style={{ marginBottom: 10 }}>{ok}</div> : null}
+      <div className="pp-card pp-providerWeeklyHours" style={{ marginBottom: 14 }}>
+        <div className="pp-card__title">Weekly hours</div>
+        <p className="pp-muted" style={{ marginTop: 6, marginBottom: 12 }}>
+          Set daily open hours for selected days of the week. Slots are created automatically for the period you choose.
+        </p>
+        {services.length === 0 ? (
+          <p className="pp-muted" style={{ margin: 0, fontSize: 13 }}>Create a service first (Services tab), then return here.</p>
+        ) : (
+          <div className="pp-providerFormCard pp-providerFormCard--inline">
+            <label className="pp-field">
+              <span className="pp-field__label">Service</span>
+              <select className="pp-input" value={serviceId} onChange={(e) => setServiceId(e.target.value)}>
+                {services.map((s) => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+              </select>
+            </label>
+            <div className="pp-field">
+              <span className="pp-field__label">Days of the week</span>
+              <div className="pp-providerWeekdayToggle" role="group" aria-label="Days of the week">
+                {WEEKDAY_OPTIONS.map(({ dow, label }) => (
+                  <button
+                    key={dow}
+                    type="button"
+                    className={weeklyDays.has(dow) ? 'is-active' : ''}
+                    aria-pressed={weeklyDays.has(dow)}
+                    onClick={() => toggleWeeklyDay(dow)}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="pp-modalGrid2">
+              <label className="pp-field">
+                <span className="pp-field__label">From</span>
+                <TimeInput24 value={weeklyStart} onChange={setWeeklyStart} aria-label="Weekly start time" />
+              </label>
+              <label className="pp-field">
+                <span className="pp-field__label">To</span>
+                <TimeInput24 value={weeklyEnd} onChange={setWeeklyEnd} aria-label="Weekly end time" />
+              </label>
+              <label className="pp-field">
+                <span className="pp-field__label">Apply for</span>
+                <select className="pp-input" value={weeklyHorizon} onChange={(e) => setWeeklyHorizon(e.target.value)}>
+                  <option value="4w">Next 4 weeks</option>
+                  <option value="12w">Next 12 weeks</option>
+                  <option value="year">Rest of {calendarDate.getFullYear()}</option>
+                </select>
+              </label>
+            </div>
+            <div className="pp-providerTemplates">
+              <span>Quick presets</span>
+              <button type="button" onClick={() => { setWeeklyStart('09:00'); setWeeklyEnd('17:00'); }}>9–5</button>
+              <button type="button" onClick={() => { setWeeklyStart('09:00'); setWeeklyEnd('12:00'); }}>Morning</button>
+              <button type="button" onClick={() => { setWeeklyStart('14:00'); setWeeklyEnd('18:00'); }}>Afternoon</button>
+              <button type="button" onClick={() => setWeeklyDays(new Set([1, 2, 3, 4, 5]))}>Mon–Fri</button>
+              <button type="button" onClick={() => setWeeklyDays(new Set([0, 1, 2, 3, 4, 5, 6]))}>Every day</button>
+            </div>
+            <button
+              type="button"
+              className="pp-btn pp-btn--primary"
+              style={{ marginTop: 12 }}
+              disabled={busy || !weeklyDays.size}
+              onClick={() => void onCreateWeeklySlots()}
+            >
+              {busy ? 'Creating…' : 'Create weekly availability'}
+            </button>
+          </div>
+        )}
+      </div>
       <div className="pp-card pp-providerYearlyAvail" style={{ marginBottom: 14 }}>
         <div className="pp-card__title">Yearly schedule</div>
         <p className="pp-muted" style={{ marginTop: 6, marginBottom: 12 }}>
