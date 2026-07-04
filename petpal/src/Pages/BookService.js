@@ -380,7 +380,7 @@ export default function BookService({ embedded = false }) {
     try {
       let rows = [];
       if (isFirebaseConfigured()) {
-        rows = await fetchOpenSlots(companyId, String(serviceId || ''), { after }).catch(() => []);
+        rows = await fetchOpenSlots(companyId, String(serviceId || ''), { after, durationMin: resolvedDuration }).catch(() => []);
       }
       if (!rows.length && useCatalog) {
         rows = getCatalogSlots(companyId, String(serviceId || ''), { after, durationMin: resolvedDuration });

@@ -15,6 +15,13 @@ import {
   writeBatch,
 } from 'firebase/firestore';
 import { getDb, isFirebaseConfigured } from '../firebase';
+import { computeAvailableSlots, slotToFirestoreShape } from './availability/availabilityEngine';
+import { parseGeneratedSlotId } from './availability/slotId';
+import {
+  fetchBookingsInRange,
+  fetchSchedulingSettings,
+  loadSchedulingContext,
+} from './availability/availabilityFirestore';
 
 function companyServicesCol(companyId) {
   return collection(getDb(), 'companies', companyId, 'services');
@@ -298,8 +305,38 @@ export async function updateBookingStatus(bookingId, patch) {
   await updateDoc(doc(getDb(), 'bookings', bookingId), { ...patch, updatedAt: serverTimestamp() });
 }
 
-export async function fetchOpenSlots(companyId, serviceId, { after = new Date() } = {}) {
+export async function fetchOpenSlots(companyId, serviceId, { after = new Date(), durationMin = null, employeeId = null } = {}) {
   if (!isFirebaseConfigured() || !companyId || !serviceId) return [];
+
+  const settings = await fetchSchedulingSettings(companyId);
+  if (settings.useRuleEngine !== false) {
+    try {
+      const ctx = await loadSchedulingContext(companyId);
+      if (ctx.rules.length) {
+        const service = await fetchCompanyService(companyId, serviceId);
+        const rangeEnd = new Date(after.getTime() + Math.min(settings.maxBookingDaysAhead || 90, 90) * 86400000);
+        const bookings = await fetchBookingsInRange(companyId, after, rangeEnd);
+        const slots = computeAvailableSlots({
+          settings,
+          service,
+          serviceId,
+          employeeId,
+          durationMin,
+          rules: ctx.rules,
+          overrides: ctx.overrides,
+          vacations: ctx.vacations,
+          blockedPeriods: ctx.blockedPeriods,
+          bookings,
+          rangeStart: after,
+          rangeEnd,
+        });
+        return slots.slice(0, 50).map(slotToFirestoreShape);
+      }
+    } catch {
+      /* fall through to legacy slots */
+    }
+  }
+
   const q = query(
     companyAvailabilityCol(companyId),
     where('serviceId', '==', serviceId),
@@ -319,6 +356,30 @@ export async function fetchCompanyService(companyId, serviceId) {
   return { id: snap.id, ...snap.data() };
 }
 
+async function resolveOpenSlot(companyId, serviceId, slotId, { durationMin = null } = {}) {
+  const generated = parseGeneratedSlotId(slotId);
+  if (generated) {
+    if (String(generated.serviceId) !== String(serviceId)) throw new Error('slot_not_open');
+    const start = new Date(generated.startMs);
+    const open = await fetchOpenSlots(companyId, serviceId, {
+      after: new Date(start.getTime() - 60000),
+      durationMin,
+    });
+    const match = open.find((s) => s.id === slotId);
+    if (!match) throw new Error('slot_not_open');
+    const startAt = match.startAt instanceof Date ? Timestamp.fromDate(match.startAt) : match.startAt;
+    const endAt = match.endAt instanceof Date ? Timestamp.fromDate(match.endAt) : match.endAt;
+    return { generated: true, startAt, endAt };
+  }
+
+  const slotRef = doc(getDb(), 'companies', companyId, 'availability', slotId);
+  const slotSnap = await getDoc(slotRef);
+  if (!slotSnap.exists()) throw new Error('slot_not_found');
+  const slot = slotSnap.data() || {};
+  if (slot.status !== 'open') throw new Error('slot_not_open');
+  return { generated: false, startAt: slot.startAt || null, endAt: slot.endAt || null, slotRef };
+}
+
 export async function swapBookingSlot({ companyId, bookingId, newSlotId }) {
   if (!isFirebaseConfigured()) throw new Error('firebase_unconfigured');
   if (!companyId || !bookingId || !newSlotId) throw new Error('missing_fields');
@@ -329,27 +390,27 @@ export async function swapBookingSlot({ companyId, bookingId, newSlotId }) {
   const booking = bookingSnap.data() || {};
   if (String(booking.companyId) !== String(companyId)) throw new Error('forbidden');
 
-  const newSlotRef = doc(getDb(), 'companies', companyId, 'availability', newSlotId);
-  const newSlotSnap = await getDoc(newSlotRef);
-  if (!newSlotSnap.exists()) throw new Error('slot_not_found');
-  const newSlot = newSlotSnap.data() || {};
-  if (newSlot.status !== 'open') throw new Error('slot_not_open');
+  const serviceId = String(booking.serviceId || '');
+  const durationMin = booking.serviceSnapshot?.durationMin || booking.variantSnapshot?.durationMin || null;
+  const newSlot = await resolveOpenSlot(companyId, serviceId, newSlotId, { durationMin });
 
   const batch = writeBatch(getDb());
   const oldSlotId = booking.slotId ? String(booking.slotId) : '';
-  if (oldSlotId) {
+  if (oldSlotId && !parseGeneratedSlotId(oldSlotId)) {
     batch.update(doc(getDb(), 'companies', companyId, 'availability', oldSlotId), {
       status: 'open',
       updatedAt: serverTimestamp(),
       bookingId: null,
     });
   }
-  batch.update(newSlotRef, {
-    status: 'blocked',
-    updatedAt: serverTimestamp(),
-    bookedAt: serverTimestamp(),
-    bookingId,
-  });
+  if (!newSlot.generated && newSlot.slotRef) {
+    batch.update(newSlot.slotRef, {
+      status: 'blocked',
+      updatedAt: serverTimestamp(),
+      bookedAt: serverTimestamp(),
+      bookingId,
+    });
+  }
   batch.update(bookingRef, {
     slotId: newSlotId,
     startAt: newSlot.startAt || null,
@@ -394,11 +455,8 @@ export async function createProviderBooking({
   const petName = String(petSnapshot?.name || '').trim();
   if (!petName) throw new Error('pet_name_required');
 
-  const slotRef = doc(getDb(), 'companies', companyId, 'availability', slotId);
-  const slotSnap = await getDoc(slotRef);
-  if (!slotSnap.exists()) throw new Error('slot_not_found');
-  const slot = slotSnap.data() || {};
-  if (slot.status !== 'open') throw new Error('slot_not_open');
+  const durationMin = serviceSnapshot?.durationMin || null;
+  const slot = await resolveOpenSlot(companyId, serviceId, slotId, { durationMin });
 
   const walkInKey = clientPetId ? String(clientPetId) : `manual_${Date.now()}`;
   const customerUid = `walkin:${companyId}:${walkInKey}`;
@@ -430,12 +488,14 @@ export async function createProviderBooking({
   const batch = writeBatch(getDb());
   const bookingRef = doc(bookingsCol());
   batch.set(bookingRef, bookingPayload);
-  batch.update(slotRef, {
-    status: 'blocked',
-    updatedAt: serverTimestamp(),
-    bookedAt: serverTimestamp(),
-    bookingId: bookingRef.id,
-  });
+  if (!slot.generated && slot.slotRef) {
+    batch.update(slot.slotRef, {
+      status: 'blocked',
+      updatedAt: serverTimestamp(),
+      bookedAt: serverTimestamp(),
+      bookingId: bookingRef.id,
+    });
+  }
   await batch.commit();
 
   return bookingRef.id;
@@ -455,11 +515,11 @@ export async function bookSlot({
   if (!isFirebaseConfigured()) throw new Error('firebase_unconfigured');
   if (!companyId || !serviceId || !slotId || !customerUid || !petId) throw new Error('missing_fields');
 
-  const slotRef = doc(getDb(), 'companies', companyId, 'availability', slotId);
-  const slotSnap = await getDoc(slotRef);
-  if (!slotSnap.exists()) throw new Error('slot_not_found');
-  const slot = slotSnap.data() || {};
-  if (slot.status !== 'open') throw new Error('slot_not_open');
+  const service = serviceSnapshot || (await fetchCompanyService(companyId, serviceId));
+  const durationMin = variantSnapshot?.durationMin || service?.durationMin || 30;
+  const resolved = await resolveOpenSlot(companyId, serviceId, slotId, { durationMin });
+  const slotStart = resolved.startAt;
+  const slotEnd = resolved.endAt;
 
   const bookingPayload = {
     companyId,
@@ -468,8 +528,8 @@ export async function bookSlot({
     customerUid,
     petId,
     petSnapshot: petSnapshot || {},
-    startAt: slot.startAt || null,
-    endAt: slot.endAt || null,
+    startAt: slotStart,
+    endAt: slotEnd,
     status: 'booked',
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
@@ -478,11 +538,17 @@ export async function bookSlot({
   if (variantSnapshot) bookingPayload.variantSnapshot = variantSnapshot;
   if (serviceSnapshot) bookingPayload.serviceSnapshot = serviceSnapshot;
 
-  // Best-effort: mark slot blocked to prevent double-booking. In v1 this is client-side.
   const batch = writeBatch(getDb());
   const bookingRef = doc(bookingsCol());
   batch.set(bookingRef, bookingPayload);
-  batch.update(slotRef, { status: 'blocked', updatedAt: serverTimestamp(), bookedAt: serverTimestamp(), bookingId: bookingRef.id });
+  if (!resolved.generated && resolved.slotRef) {
+    batch.update(resolved.slotRef, {
+      status: 'blocked',
+      updatedAt: serverTimestamp(),
+      bookedAt: serverTimestamp(),
+      bookingId: bookingRef.id,
+    });
+  }
   await batch.commit();
 
   return bookingRef.id;
