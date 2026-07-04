@@ -16332,6 +16332,36 @@ html[data-theme="dark"] .pp-book-calendar__monthControls button {
   box-shadow: inset 0 0 0 2px rgba(91, 55, 255, 0.35);
 }
 
+.pp-providerCalendarGrid button.has-bookings:not(.is-selected) em {
+  background: rgba(0, 0, 0, 0.18);
+  color: inherit;
+}
+
+.pp-bookingHeatLegend {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 12px;
+  padding-top: 4px;
+}
+
+.pp-bookingHeatLegend__label {
+  color: var(--pp-text-2);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.pp-bookingHeatLegend__bar {
+  flex: 1;
+  max-width: 160px;
+  height: 8px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, hsl(142 52% 90%), hsl(86 60% 82%), hsl(38 70% 78%), hsl(8 76% 68%));
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06);
+}
+
 .pp-businessWeekBookings .pp-providerCalendarCard {
   overflow: visible;
 }

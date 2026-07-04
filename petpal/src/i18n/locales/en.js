@@ -351,6 +351,8 @@ const en = {
     noBookingsMonth: 'No appointments this month yet.',
     serviceFallback: 'Service',
     petFallback: 'Pet',
+    bookingHeatFewer: 'Fewer',
+    bookingHeatMore: 'More',
   },
   activityHub: {
     badge: 'Your progress',

@@ -4,6 +4,7 @@ import { useAuth } from '../auth/AuthProvider';
 import { useCompany } from '../company/CompanyContext';
 import { useI18n } from '../i18n/I18nContext';
 import { subscribeProviderBookings, subscribeCompanyServices } from '../bookings/bookingFirestore';
+import { bookingHeatStyles } from '../bookings/bookingHeatMap';
 import { formatDateTime24, formatTime24 } from '../formatTime24';
 
 function startOfDay(date) {
@@ -164,6 +165,23 @@ export default function BusinessWeekBookings() {
     });
   }, [activeBookings, visibleMonth]);
 
+  const maxBookingsInPeriod = useMemo(() => {
+    const keys =
+      view === 'month'
+        ? monthGrid
+            .filter((day) => day.getMonth() === visibleMonth.getMonth())
+            .map((day) => dateKey(day))
+        : view === 'week'
+          ? weekRow.map((day) => dateKey(day))
+          : [selectedKey];
+    let max = 0;
+    keys.forEach((key) => {
+      const count = (bookingsByDay.get(key) || []).length;
+      if (count > max) max = count;
+    });
+    return max;
+  }, [view, monthGrid, visibleMonth, weekRow, selectedKey, bookingsByDay]);
+
   const weekLabel = `${weekStart.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} – ${weekEnd.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}`;
   const monthLabel = visibleMonth.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
   const dayLabel = selectedDate.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
@@ -194,11 +212,14 @@ export default function BusinessWeekBookings() {
     const dayBookings = bookingsByDay.get(key) || [];
     const isSelected = key === selectedKey;
     const isToday = key === dateKey(new Date());
+    const heatStyle = !isSelected ? bookingHeatStyles(dayBookings.length, maxBookingsInPeriod) : undefined;
     return (
       <button
         key={key}
         type="button"
-        className={`${isSelected ? 'is-selected' : ''} ${!inMonth ? 'is-muted' : ''} ${dayBookings.length ? 'has-slots' : ''} ${isToday ? 'is-today' : ''}`}
+        className={`${isSelected ? 'is-selected' : ''} ${!inMonth ? 'is-muted' : ''} ${dayBookings.length ? 'has-slots has-bookings' : ''} ${isToday ? 'is-today' : ''}`}
+        style={heatStyle}
+        title={dayBookings.length ? `${dayBookings.length} booking${dayBookings.length === 1 ? '' : 's'}` : undefined}
         onClick={() => selectDate(day)}
       >
         <span>{day.getDate()}</span>
@@ -338,6 +359,13 @@ export default function BusinessWeekBookings() {
                     <div className={`pp-providerCalendarGrid pp-providerCalendarGrid--desktopMonth`}>
                       {monthGrid.map((day) => renderDayButton(day, { inMonth: day.getMonth() === visibleMonth.getMonth() }))}
                     </div>
+                    {maxBookingsInPeriod > 0 ? (
+                      <div className="pp-bookingHeatLegend" aria-hidden>
+                        <span className="pp-bookingHeatLegend__label">{t('businessWeek.bookingHeatFewer')}</span>
+                        <span className="pp-bookingHeatLegend__bar" />
+                        <span className="pp-bookingHeatLegend__label">{t('businessWeek.bookingHeatMore')}</span>
+                      </div>
+                    ) : null}
                   </>
                 ) : (
                   <>
@@ -349,6 +377,13 @@ export default function BusinessWeekBookings() {
                     <div className="pp-providerCalendarGrid is-week pp-providerCalendarGrid--mobileWeek">
                       {weekRow.map((day) => renderDayButton(day))}
                     </div>
+                    {maxBookingsInPeriod > 0 ? (
+                      <div className="pp-bookingHeatLegend" aria-hidden>
+                        <span className="pp-bookingHeatLegend__label">{t('businessWeek.bookingHeatFewer')}</span>
+                        <span className="pp-bookingHeatLegend__bar" />
+                        <span className="pp-bookingHeatLegend__label">{t('businessWeek.bookingHeatMore')}</span>
+                      </div>
+                    ) : null}
                   </>
                 )}
               </div>
