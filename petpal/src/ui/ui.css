@@ -16394,7 +16394,7 @@ body.pp-mobile-dock .pp-providerTabsWrap {
   max-width: 160px;
   height: 8px;
   border-radius: 999px;
-  background: linear-gradient(90deg, hsl(142 52% 90%), hsl(86 60% 82%), hsl(38 70% 78%), hsl(8 76% 68%));
+  background: linear-gradient(90deg, hsl(142 52% 88%), hsl(95 58% 80%), hsl(38 72% 74%), hsl(8 76% 62%));
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06);
 }
 
@@ -16985,6 +16985,26 @@ body.pp-mobile-dock .pp-providerTabsWrap {
   color: #fff;
 }
 
+.pp-availPreviewWrap {
+  margin-bottom: 12px;
+}
+
+.pp-availPreviewWeekdays {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+  padding: 0 12px;
+  margin-bottom: 4px;
+}
+
+.pp-availPreview__weekday {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--pp-muted, #64748b);
+  letter-spacing: 0.02em;
+}
+
 .pp-availPreview {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
@@ -17010,6 +17030,17 @@ body.pp-mobile-dock .pp-providerTabsWrap {
 .pp-availPreview__day.is-vacation { background: rgba(239, 68, 68, 0.14); color: #b42318; }
 .pp-availPreview__day.is-holiday { background: rgba(47, 128, 255, 0.14); color: #175cd3; }
 .pp-availPreview__day.is-closed { background: rgba(148, 163, 184, 0.12); color: #64748b; }
+.pp-availPreview__day.is-outside {
+  visibility: hidden;
+}
+
+.pp-providerListingToggle {
+  margin-bottom: 14px;
+}
+
+.pp-providerListingToggle .pp-providerBoostSwitch input {
+  cursor: pointer;
+}
 
 .pp-availPreview__legend {
   grid-column: 1 / -1;

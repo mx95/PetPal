@@ -51,12 +51,23 @@ service cloud.firestore {
       return p.exists && p.data.bookingEnabled == true;
     }
 
+    /** Signed-in business account operating their own provider portal (companyId == auth uid). */
+    function isProviderSelf(companyId) {
+      return request.auth != null && request.auth.uid == companyId;
+    }
+
     /** Read services, availability rules, and slot data for booking UI. */
     function canReadProviderBookingData(companyId) {
       return isAdmin()
         || isApprovedCompany(companyId)
         || isPublicBookableCompany(companyId)
-        || (request.auth != null && hasProviderListing(companyId));
+        || (request.auth != null && hasProviderListing(companyId))
+        || isProviderSelf(companyId);
+    }
+
+    /** Write provider scheduling catalog (rules, slots, services). */
+    function canManageProviderData(companyId) {
+      return isAdmin() || isApprovedCompany(companyId) || isProviderSelf(companyId);
     }
 
     match /companies/{companyId} {
@@ -77,43 +88,43 @@ service cloud.firestore {
       // Provider service catalog (owner reads while setting up; customers when listing exists).
       match /services/{serviceId} {
         allow read: if canReadProviderBookingData(companyId);
-        allow create, update, delete: if isAdmin() || isApprovedCompany(companyId);
+        allow create, update, delete: if canManageProviderData(companyId);
       }
 
       // Slot-based availability (owner reads while setting up; customers when listing exists).
       match /availability/{slotId} {
         allow read: if canReadProviderBookingData(companyId);
-        allow create, update, delete: if isAdmin() || isApprovedCompany(companyId);
+        allow create, update, delete: if canManageProviderData(companyId);
       }
 
       match /availabilityRules/{ruleId} {
         allow read: if canReadProviderBookingData(companyId);
-        allow create, update, delete: if isAdmin() || isApprovedCompany(companyId);
+        allow create, update, delete: if canManageProviderData(companyId);
       }
 
       match /availabilityOverrides/{overrideId} {
         allow read: if canReadProviderBookingData(companyId);
-        allow create, update, delete: if isAdmin() || isApprovedCompany(companyId);
+        allow create, update, delete: if canManageProviderData(companyId);
       }
 
       match /vacations/{vacationId} {
         allow read: if canReadProviderBookingData(companyId);
-        allow create, update, delete: if isAdmin() || isApprovedCompany(companyId);
+        allow create, update, delete: if canManageProviderData(companyId);
       }
 
       match /blockedPeriods/{blockId} {
         allow read: if canReadProviderBookingData(companyId);
-        allow create, update, delete: if isAdmin() || isApprovedCompany(companyId);
+        allow create, update, delete: if canManageProviderData(companyId);
       }
 
       match /employees/{employeeId} {
         allow read: if canReadProviderBookingData(companyId);
-        allow create, update, delete: if isAdmin() || isApprovedCompany(companyId);
+        allow create, update, delete: if canManageProviderData(companyId);
       }
 
       // Provider-managed roster for walk-ins / unregistered dogs (private to provider/admin).
       match /clientPets/{petId} {
-        allow read, create, update, delete: if isAdmin() || isApprovedCompany(companyId);
+        allow read, create, update, delete: if canManageProviderData(companyId);
       }
     }
 
@@ -277,7 +288,7 @@ service cloud.firestore {
     // Public provider directory (one doc per approved company). Used for customer browse/search.
     match /providers/{companyId} {
       allow read: if request.auth != null;
-      allow create, update: if isAdmin() || isApprovedCompany(companyId);
+      allow create, update: if isAdmin() || isApprovedCompany(companyId) || isProviderSelf(companyId);
       allow delete: if false;
     }
 

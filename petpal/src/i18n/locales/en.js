@@ -334,6 +334,7 @@ const en = {
     weekTitle: 'This week',
     dayTitle: 'Today',
     monthTitle: 'This month',
+    monthHeatHint: 'Green = fewer bookings · Red = fuller day',
     viewToggle: 'Schedule view',
     viewDay: 'Day',
     viewWeek: 'Week',
@@ -351,8 +352,8 @@ const en = {
     noBookingsMonth: 'No appointments this month yet.',
     serviceFallback: 'Service',
     petFallback: 'Pet',
-    bookingHeatFewer: 'Fewer',
-    bookingHeatMore: 'More',
+    bookingHeatFewer: 'Less busy',
+    bookingHeatMore: 'Fuller',
   },
   activityHub: {
     badge: 'Your progress',

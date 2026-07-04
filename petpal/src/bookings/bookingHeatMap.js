@@ -82,7 +82,7 @@ export function maxBookingsInPeriod(bookingsByDay, { view, monthGrid, visibleMon
 }
 
 /**
- * Maps booking count to a green → red heat color for calendar day cells.
+ * Maps booking count to heat color: green = fewer bookings, red = fuller day.
  */
 export function bookingHeatStyles(count, maxCount) {
   const n = Number(count) || 0;
@@ -91,10 +91,10 @@ export function bookingHeatStyles(count, maxCount) {
   const max = Math.max(1, Number(maxCount) || 1);
   const ratio = Math.min(1, n / max);
   const hue = Math.round(142 - ratio * 134);
-  const sat = Math.round(52 + ratio * 28);
-  const light = Math.round(90 - ratio * 22);
-  const borderLight = Math.max(42, light - 14);
-  const text = ratio >= 0.62 ? '#ffffff' : ratio >= 0.38 ? '#93370d' : '#027a48';
+  const sat = Math.round(48 + ratio * 32);
+  const light = Math.round(92 - ratio * 28);
+  const borderLight = Math.max(38, light - 16);
+  const text = ratio >= 0.55 ? '#ffffff' : ratio >= 0.3 ? '#93370d' : '#027a48';
 
   return {
     background: `hsl(${hue} ${sat}% ${light}%)`,
@@ -103,7 +103,7 @@ export function bookingHeatStyles(count, maxCount) {
   };
 }
 
-export function BookingHeatLegend({ fewerLabel = 'Fewer', moreLabel = 'More' }) {
+export function BookingHeatLegend({ fewerLabel = 'Less busy', moreLabel = 'Fuller' }) {
   return (
     <div className="pp-bookingHeatLegend" aria-hidden>
       <span className="pp-bookingHeatLegend__label">{fewerLabel}</span>
