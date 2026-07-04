@@ -16509,6 +16509,45 @@ body.pp-mobile-dock .pp-providerTabsWrap {
   margin-top: 4px;
 }
 
+.pp-listingPlaceImport__hint {
+  margin: 0 0 8px;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.pp-listingPlaceImport__card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--pp-border);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.pp-listingPlaceImport__meta {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.pp-listingPlaceImport__meta strong {
+  font-size: 14px;
+}
+
+.pp-listingPlaceImport__meta .pp-muted {
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.pp-listingPlaceImport__ok,
+.pp-listingPlaceImport__err {
+  margin: 8px 0 0;
+  font-size: 13px;
+}
+
 .pp-availTimeRow .pp-field__label {
   font-size: 12px;
 }

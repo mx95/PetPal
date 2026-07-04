@@ -1,280 +1,259 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { useJsApiLoader } from '@react-google-maps/api';
-import { defaultMapCenter } from './locationDefaults';
+import { haversineKm } from '../bookings/bookingBrowseUtils';
 import { searchOsmPlaces } from './placeSearch';
-import FillFromAboveButton from './FillFromAboveButton';
 
 const mapsLib = ['places'];
 const mapsScriptId = 'petpal-google-maps';
+/** Max km between registered pin and Google listing — prevents importing another store. */
+const MAX_PIN_DISTANCE_KM = 0.2;
 
 function formatOpeningHours(weekdayText = []) {
   if (!weekdayText.length) return '';
   return weekdayText.join('; ').slice(0, 240);
 }
 
-/**
- * Search Google Maps / OSM and import listing fields into the provider profile form.
- * @param {{ onImport: (data: { displayName?: string, address?: string, phone?: string, workingHours?: string }) => void, displayName?: string, address?: string }} props
- */
-export default function ListingPlaceImportField({ onImport, displayName = '', address = '' }) {
-  const key = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
-  if (key) {
-    return (
-      <GoogleListingImport
-        apiKey={key}
-        onImport={onImport}
-        displayName={displayName}
-        address={address}
-      />
-    );
-  }
-  return (
-    <OsmListingImport onImport={onImport} displayName={displayName} address={address} />
-  );
+function hasRegisteredPin(profile) {
+  const lat = Number(profile?.lat);
+  const lng = Number(profile?.lng);
+  return Number.isFinite(lat) && Number.isFinite(lng);
 }
 
-function GoogleListingImport({ apiKey, onImport, displayName, address }) {
+function placeImportPayload(place) {
+  return {
+    displayName: place.name || '',
+    address: place.formatted_address || '',
+    phone: place.formatted_phone_number || place.international_phone_number || '',
+    workingHours: formatOpeningHours(place.opening_hours?.weekday_text),
+    googlePlaceId: place.place_id || '',
+  };
+}
+
+function distanceKmToPlace(place, lat, lng) {
+  const loc = place?.geometry?.location;
+  if (!loc) return Infinity;
+  const plat = typeof loc.lat === 'function' ? loc.lat() : Number(loc.lat);
+  const plng = typeof loc.lng === 'function' ? loc.lng() : Number(loc.lng);
+  return haversineKm(lat, lng, plat, plng);
+}
+
+/**
+ * Import listing data only from the business registered map pin (set during application).
+ * @param {{ profile: import('./companyTypes').CompanyProfile | null, onImport: Function }} props
+ */
+export default function ListingPlaceImportField({ profile, onImport }) {
+  if (!hasRegisteredPin(profile)) {
+    return (
+      <p className="pp-subtle pp-listingPlaceImport__hint">
+        Map pin required. Apply for a business account and set your location on the map to unlock listing import.
+      </p>
+    );
+  }
+
+  const key = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
+  if (key) {
+    return <VerifiedGoogleListingImport apiKey={key} profile={profile} onImport={onImport} />;
+  }
+  return <VerifiedOsmListingImport profile={profile} onImport={onImport} />;
+}
+
+function VerifiedGoogleListingImport({ apiKey, profile, onImport }) {
   const { isLoaded, loadError } = useJsApiLoader({
     id: mapsScriptId,
     googleMapsApiKey: apiKey,
     libraries: mapsLib,
   });
-  const [q, setQ] = useState('');
-  const [rows, setRows] = useState([]);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
+  const [preview, setPreview] = useState(null);
 
-  const runOsm = useCallback(async (text) => {
-    setErr('');
-    setBusy(true);
-    try {
-      const list = await searchOsmPlaces(text);
-      setRows(
-        list.map((p, i) => ({
-          _key: `osm-${i}`,
-          kind: 'osm',
-          label: p.label,
-          sublabel: p.type,
-          address: p.label,
-        }))
-      );
-      if (!list.length) setErr('No results. Try a different search.');
-    } catch (e) {
-      setErr(e?.message || 'Search failed.');
-      setRows([]);
-    } finally {
-      setBusy(false);
-    }
-  }, []);
+  const lat = Number(profile.lat);
+  const lng = Number(profile.lng);
+  const businessName = String(profile.businessName || profile.displayName || '').trim();
+  const storedPlaceId = String(profile.googlePlaceId || '').trim();
 
-  const runGoogle = useCallback(() => {
-    if (!isLoaded || !window.google?.maps?.places) return;
-    const t = q.trim();
-    if (t.length < 2) {
-      setErr('Type at least 2 characters.');
-      return;
-    }
-    setErr('');
-    setBusy(true);
-    const ac = new window.google.maps.places.AutocompleteService();
-    const center = new window.google.maps.LatLng(defaultMapCenter.lat, defaultMapCenter.lng);
-    ac.getPlacePredictions(
-      {
-        input: t,
-        componentRestrictions: { country: 'cy' },
-        locationBias: new window.google.maps.Circle({ center, radius: 200_000 }),
-      },
-      (predictions, status) => {
-        if (
-          status !== window.google.maps.places.PlacesServiceStatus.OK &&
-          status !== window.google.maps.places.PlacesServiceStatus.ZERO_RESULTS
-        ) {
-          setBusy(false);
-          void runOsm(t);
-          return;
-        }
-        if (!predictions?.length) {
-          setRows([]);
-          setBusy(false);
-          void runOsm(t);
-          return;
-        }
-        setRows(
-          predictions.slice(0, 10).map((p) => ({
-            _key: p.place_id,
-            kind: 'g',
-            placeId: p.place_id,
-            label: p.structured_formatting?.main_text || p.description,
-            sublabel: p.structured_formatting?.secondary_text || '',
-          }))
+  const pinLabel = useMemo(() => {
+    if (profile.addressLine) return profile.addressLine;
+    return `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+  }, [profile.addressLine, lat, lng]);
+
+  const fetchPlaceDetails = useCallback(
+    (placeId) =>
+      new Promise((resolve, reject) => {
+        const el = document.createElement('div');
+        const svc = new window.google.maps.places.PlacesService(el);
+        svc.getDetails(
+          {
+            placeId,
+            fields: [
+              'place_id',
+              'name',
+              'geometry',
+              'formatted_address',
+              'formatted_phone_number',
+              'international_phone_number',
+              'opening_hours',
+            ],
+          },
+          (place, status) => {
+            if (status !== window.google.maps.places.PlacesServiceStatus.OK || !place) {
+              reject(new Error('Could not load your Google listing.'));
+              return;
+            }
+            if (distanceKmToPlace(place, lat, lng) > MAX_PIN_DISTANCE_KM) {
+              reject(new Error('That listing is too far from your registered map pin.'));
+              return;
+            }
+            resolve(place);
+          }
         );
-        setBusy(false);
-      }
-    );
-  }, [isLoaded, q, runOsm]);
+      }),
+    [lat, lng]
+  );
 
-  const run = useCallback(() => {
-    const t = q.trim();
-    if (t.length < 2) {
-      setErr('Type at least 2 characters.');
-      return;
+  const findPlaceAtPin = useCallback(() => {
+    if (!isLoaded || !window.google?.maps?.places) {
+      return Promise.reject(new Error('Maps are still loading…'));
     }
-    if (loadError) {
-      void runOsm(t);
-      return;
-    }
-    if (isLoaded) runGoogle();
-    else setErr('Maps are still loading…');
-  }, [loadError, isLoaded, runGoogle, runOsm, q]);
-
-  const onSelect = useCallback(
-    (r) => {
-      setErr('');
-      if (r.kind === 'osm') {
-        onImport({ displayName: r.label.split(',')[0]?.trim() || r.label, address: r.address || r.label });
-        setRows([]);
-        return;
-      }
-      if (!isLoaded || !r.placeId) return;
-      setBusy(true);
+    const query = businessName || profile.addressLine || 'business';
+    return new Promise((resolve, reject) => {
       const el = document.createElement('div');
       const svc = new window.google.maps.places.PlacesService(el);
-      svc.getDetails(
+      const center = new window.google.maps.LatLng(lat, lng);
+      svc.findPlaceFromQuery(
         {
-          placeId: r.placeId,
-          fields: ['name', 'formatted_address', 'formatted_phone_number', 'international_phone_number', 'opening_hours'],
+          query,
+          fields: ['place_id', 'name', 'geometry', 'formatted_address'],
+          locationBias: new window.google.maps.Circle({ center, radius: 150 }),
         },
-        (place, status) => {
-          setBusy(false);
-          if (status !== window.google.maps.places.PlacesServiceStatus.OK || !place) {
-            setErr('Could not load that listing. Try another result.');
+        (results, status) => {
+          if (status !== window.google.maps.places.PlacesServiceStatus.OK || !results?.length) {
+            reject(new Error('No Google listing found at your registered map pin.'));
             return;
           }
-          onImport({
-            displayName: place.name || r.label,
-            address: place.formatted_address || r.sublabel || '',
-            phone: place.formatted_phone_number || place.international_phone_number || '',
-            workingHours: formatOpeningHours(place.opening_hours?.weekday_text),
-          });
-          setRows([]);
+          const nearest = results
+            .map((place) => ({ place, dist: distanceKmToPlace(place, lat, lng) }))
+            .filter(({ dist }) => dist <= MAX_PIN_DISTANCE_KM)
+            .sort((a, b) => a.dist - b.dist)[0];
+          if (!nearest) {
+            reject(new Error('No Google listing matches your registered map pin.'));
+            return;
+          }
+          resolve(nearest.place);
         }
       );
-    },
-    [isLoaded, onImport]
-  );
+    });
+  }, [businessName, isLoaded, lat, lng, profile.addressLine]);
 
-  const canFill = useMemo(
-    () => Boolean([displayName, address].filter(Boolean).join(' ').trim()),
-    [displayName, address]
-  );
-
-  return (
-    <ListingSearchUi
-      q={q}
-      setQ={setQ}
-      rows={rows}
-      busy={busy}
-      err={err}
-      run={run}
-      onSelect={onSelect}
-      canFill={canFill}
-      onFill={() => setQ([displayName, address].filter(Boolean).join(' ').trim())}
-      hint="Search your Google Maps listing to fill name, address, phone, and hours."
-    />
-  );
-}
-
-function OsmListingImport({ onImport, displayName, address }) {
-  const [q, setQ] = useState('');
-  const [rows, setRows] = useState([]);
-  const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState('');
-
-  const run = useCallback(async () => {
-    const t = q.trim();
-    if (t.length < 2) {
-      setErr('Type at least 2 characters.');
-      return;
-    }
+  const loadListing = useCallback(async () => {
     setErr('');
     setBusy(true);
+    setPreview(null);
     try {
-      const list = await searchOsmPlaces(t);
-      setRows(
-        list.map((p, i) => ({
-          _key: `o-${i}`,
-          kind: 'osm',
-          label: p.label,
-          sublabel: p.type,
-          address: p.label,
-        }))
-      );
-      if (!list.length) setErr('No results. Try adding a city name.');
+      if (loadError) throw new Error('Google Maps could not load.');
+      let place;
+      if (storedPlaceId) {
+        place = await fetchPlaceDetails(storedPlaceId);
+      } else {
+        const found = await findPlaceAtPin();
+        if (!found.place_id) throw new Error('No verified listing at your pin.');
+        place = await fetchPlaceDetails(found.place_id);
+      }
+      const payload = placeImportPayload(place);
+      setPreview(payload);
+      onImport(payload);
     } catch (e) {
-      setErr(e?.message || 'Search failed.');
-      setRows([]);
+      setErr(e?.message || 'Import failed.');
     } finally {
       setBusy(false);
     }
-  }, [q]);
-
-  const canFill = useMemo(
-    () => Boolean([displayName, address].filter(Boolean).join(' ').trim()),
-    [displayName, address]
-  );
+  }, [fetchPlaceDetails, findPlaceAtPin, loadError, onImport, storedPlaceId]);
 
   return (
-    <ListingSearchUi
-      q={q}
-      setQ={setQ}
-      rows={rows}
+    <VerifiedImportUi
+      businessName={businessName || 'Your business'}
+      pinLabel={pinLabel}
       busy={busy}
       err={err}
-      run={run}
-      onSelect={(r) => {
-        onImport({ displayName: r.label.split(',')[0]?.trim() || r.label, address: r.address || r.label });
-        setRows([]);
-      }}
-      canFill={canFill}
-      onFill={() => setQ([displayName, address].filter(Boolean).join(' ').trim())}
-      hint="Search OpenStreetMap to fill your listing name and address."
+      preview={preview}
+      onLoad={loadListing}
+      disabled={!isLoaded && !loadError}
+      hint={
+        storedPlaceId
+          ? 'Loads data only from your verified Google listing at the map pin you set when applying.'
+          : 'Finds the Google listing at your registered map pin — you cannot import other stores.'
+      }
     />
   );
 }
 
-function ListingSearchUi({ q, setQ, rows, busy, err, run, onSelect, canFill, onFill, hint }) {
+function VerifiedOsmListingImport({ profile, onImport }) {
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+  const [preview, setPreview] = useState(null);
+
+  const lat = Number(profile.lat);
+  const lng = Number(profile.lng);
+  const businessName = String(profile.businessName || '').trim();
+  const pinLabel = profile.addressLine || `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+
+  const loadListing = useCallback(async () => {
+    setErr('');
+    setBusy(true);
+    setPreview(null);
+    try {
+      const q = [businessName, profile.addressLine].filter(Boolean).join(', ').trim();
+      const list = await searchOsmPlaces(q || `${lat}, ${lng}`);
+      const match = list.find((p) => haversineKm(lat, lng, p.lat, p.lng) <= MAX_PIN_DISTANCE_KM);
+      if (!match) throw new Error('No listing found near your registered map pin.');
+      const payload = {
+        displayName: match.label.split(',')[0]?.trim() || businessName,
+        address: match.label,
+        phone: '',
+        workingHours: '',
+        googlePlaceId: '',
+      };
+      setPreview(payload);
+      onImport(payload);
+    } catch (e) {
+      setErr(e?.message || 'Import failed.');
+    } finally {
+      setBusy(false);
+    }
+  }, [businessName, lat, lng, onImport, profile.addressLine]);
+
   return (
-    <div className="pp-companyMapSearch pp-listingPlaceImport">
-      <p className="pp-subtle pp-companyMapSearch__hint">{hint}</p>
-      <div className="pp-companyMapSearch__row">
-        <input
-          className="pp-input pp-companyMapSearch__input"
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), run())}
-          placeholder="Business name or address"
-          aria-label="Search Google Maps listing"
-        />
-        <div className="pp-companyMapSearch__actions">
-          <button type="button" className="pp-btn pp-companyMapSearch__btn" disabled={busy} onClick={run}>
-            {busy ? '…' : 'Search'}
-          </button>
-          <FillFromAboveButton onClick={onFill} disabled={!canFill} />
+    <VerifiedImportUi
+      businessName={businessName || 'Your business'}
+      pinLabel={pinLabel}
+      busy={busy}
+      err={err}
+      preview={preview}
+      onLoad={loadListing}
+      hint="Loads address data from OpenStreetMap at your registered map pin only."
+    />
+  );
+}
+
+function VerifiedImportUi({ businessName, pinLabel, busy, err, preview, onLoad, disabled, hint }) {
+  return (
+    <div className="pp-listingPlaceImport">
+      <p className="pp-subtle pp-listingPlaceImport__hint">{hint}</p>
+      <div className="pp-listingPlaceImport__card">
+        <div className="pp-listingPlaceImport__meta">
+          <strong>{businessName}</strong>
+          <span className="pp-muted">{pinLabel}</span>
         </div>
+        <button type="button" className="pp-btn pp-btn--ghost" disabled={busy || disabled} onClick={() => void onLoad()}>
+          {busy ? 'Loading…' : 'Load listing data'}
+        </button>
       </div>
-      {err ? <p className="pp-error pp-companyMapSearch__err">{err}</p> : null}
-      {rows.length > 0 ? (
-        <ul className="pp-companyMapSearch__results" role="listbox" aria-label="Listing search results">
-          {rows.map((r) => (
-            <li key={r._key}>
-              <button type="button" className="pp-companyMapSearch__resultBtn" onClick={() => onSelect(r)}>
-                <span className="pp-companyMapSearch__resultLabel">{r.label}</span>
-                {r.sublabel ? <span className="pp-companyMapSearch__resultType">{r.sublabel}</span> : null}
-              </button>
-            </li>
-          ))}
-        </ul>
+      {preview ? (
+        <p className="pp-success pp-listingPlaceImport__ok">
+          Loaded {preview.displayName}{preview.address ? ` — ${preview.address}` : ''}
+        </p>
       ) : null}
+      {err ? <p className="pp-error pp-listingPlaceImport__err">{err}</p> : null}
     </div>
   );
 }

@@ -137,7 +137,11 @@ function GooglePlaceSearch({ apiKey, onPicked, businessName, addressLine }) {
           setBusy(false);
           if (status === window.google.maps.places.PlacesServiceStatus.OK && place?.geometry?.location) {
             const loc = place.geometry.location;
-            onPicked(loc.lat(), loc.lng());
+            onPicked(loc.lat(), loc.lng(), {
+              placeId: place.place_id || r.placeId || '',
+              placeName: place.name || r.label || '',
+              placeAddress: place.formatted_address || r.sublabel || '',
+            });
             setRows([]);
             return;
           }
