@@ -673,10 +673,6 @@ video {
   margin-bottom: 1rem !important;
 }
 
-.\!mt-2 {
-  margin-top: 0.5rem !important;
-}
-
 .mb-2 {
   margin-bottom: 0.5rem;
 }
@@ -1324,10 +1320,6 @@ video {
   line-height: 2rem;
 }
 
-.leading-snug {
-  line-height: 1.375;
-}
-
 .tracking-\[-0\.03em\] {
   letter-spacing: -0.03em;
 }
@@ -1455,6 +1447,11 @@ video {
 
 .drop-shadow-md {
   --tw-drop-shadow: drop-shadow(0 4px 3px rgb(0 0 0 / 0.07)) drop-shadow(0 2px 2px rgb(0 0 0 / 0.06));
+  filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);
+}
+
+.invert {
+  --tw-invert: invert(100%);
   filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);
 }
 
@@ -1657,10 +1654,6 @@ video {
   opacity: 0.5;
 }
 
-.disabled\:opacity-60:disabled {
-  opacity: 0.6;
-}
-
 .group:hover .group-hover\:scale-105 {
   --tw-scale-x: 1.05;
   --tw-scale-y: 1.05;
@@ -1670,10 +1663,6 @@ video {
 @media (min-width: 640px) {
   .sm\:\!mb-5 {
     margin-bottom: 1.25rem !important;
-  }
-
-  .sm\:\!mt-3 {
-    margin-top: 0.75rem !important;
   }
 
   .sm\:mb-8 {
@@ -1745,10 +1734,6 @@ video {
   .sm\:text-lg {
     font-size: 1.125rem;
     line-height: 1.75rem;
-  }
-
-  .sm\:leading-6 {
-    line-height: 1.5rem;
   }
 }
 

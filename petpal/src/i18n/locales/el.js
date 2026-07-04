@@ -225,6 +225,8 @@ const el = {
     noBookingsMonth: 'Καμία κράτηση αυτόν τον μήνα.',
     serviceFallback: 'Υπηρεσία',
     petFallback: 'Κατοικίδιο',
+    bookingHeatFewer: 'Λιγότερα',
+    bookingHeatMore: 'Περισσότερα',
   },
   activityHub: {
     badge: 'Η πρόοδός σας',

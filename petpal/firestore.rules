@@ -74,6 +74,30 @@ service cloud.firestore {
         allow create, update, delete: if isAdmin() || isApprovedCompany(companyId);
       }
 
+      match /availabilityRules/{ruleId} {
+        allow read: if request.auth != null
+          && (isApprovedCompany(companyId) || isPublicBookableCompany(companyId));
+        allow create, update, delete: if isAdmin() || isApprovedCompany(companyId);
+      }
+
+      match /availabilityOverrides/{overrideId} {
+        allow read, create, update, delete: if isAdmin() || isApprovedCompany(companyId);
+      }
+
+      match /vacations/{vacationId} {
+        allow read, create, update, delete: if isAdmin() || isApprovedCompany(companyId);
+      }
+
+      match /blockedPeriods/{blockId} {
+        allow read, create, update, delete: if isAdmin() || isApprovedCompany(companyId);
+      }
+
+      match /employees/{employeeId} {
+        allow read: if request.auth != null
+          && (isApprovedCompany(companyId) || isPublicBookableCompany(companyId));
+        allow create, update, delete: if isAdmin() || isApprovedCompany(companyId);
+      }
+
       // Provider-managed roster for walk-ins / unregistered dogs (private to provider/admin).
       match /clientPets/{petId} {
         allow read, create, update, delete: if isAdmin() || isApprovedCompany(companyId);

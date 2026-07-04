@@ -226,6 +226,8 @@ const ru = {
     noBookingsMonth: 'В этом месяце записей нет.',
     serviceFallback: 'Услуга',
     petFallback: 'Питомец',
+    bookingHeatFewer: 'Меньше',
+    bookingHeatMore: 'Больше',
   },
   activityHub: {
     badge: 'Ваш прогресс',

@@ -3,10 +3,8 @@ import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
 import { useCompany } from '../company/CompanyContext';
 import {
-  createAvailabilitySlot,
-  bulkCreateAvailabilitySlots,
-  blockSlotsForTimeOff,
   createProviderBooking,
+  fetchOpenSlots,
   setSlotStatus,
   subscribeCompanyAvailability,
   subscribeCompanyServices,
@@ -21,9 +19,21 @@ import IconMedPill from '../components/icons/IconMedPill';
 import { publishProviderProfile, subscribeProviderProfile } from '../bookings/providerDirectoryFirestore';
 import { providerBookingsBoostIsActive, providerNearbyBoostIsActive } from '../bookings/bookingBrowseUtils';
 import { getDemoBusinessAccount, getDemoBusinessAccounts, getDemoSlots } from '../bookings/demoBookingData';
-import { getPublicHolidays, HOLIDAY_COUNTRY_OPTIONS } from '../bookings/publicHolidays';
+import AvailabilityScheduler from '../bookings/availability/AvailabilityScheduler';
+import { computeAvailableSlots, slotToFirestoreShape } from '../bookings/availability/availabilityEngine';
+import {
+  fetchBookingsInRange,
+  fetchSchedulingSettings,
+  loadSchedulingContext,
+} from '../bookings/availability/availabilityFirestore';
+import BookingHeatCalendar from '../bookings/BookingHeatCalendar';
+import {
+  bookingHeatStyles,
+  BookingHeatLegend,
+  groupBookingsByDay,
+  maxBookingsInPeriod as computeMaxBookingsInPeriod,
+} from '../bookings/bookingHeatMap';
 import { formatDateTime24, formatTime24 } from '../formatTime24';
-import TimeInput24 from '../components/TimeInput24';
 
 function businessTypeLabel(providerTypes = {}) {
   if (providerTypes.vet) return 'Vet';
@@ -87,35 +97,7 @@ function dateKey(date) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-function toDateInputValue(date) {
-  return dateKey(startOfDay(date));
-}
-
-function eachDateKeyInRange(startStr, endStr) {
-  if (!startStr) return [];
-  const start = startOfDay(new Date(`${startStr}T12:00:00`));
-  const end = startOfDay(new Date(`${(endStr || startStr)}T12:00:00`));
-  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return [];
-  const from = end < start ? end : start;
-  const to = end < start ? start : end;
-  const keys = [];
-  for (let d = new Date(from); d.getTime() <= to.getTime(); d = addDays(d, 1)) {
-    keys.push(dateKey(d));
-  }
-  return keys;
-}
-
 const PROVIDER_TABS = ['bookings', 'availability', 'customers', 'services'];
-
-const WEEKDAY_OPTIONS = [
-  { dow: 0, label: 'Sun' },
-  { dow: 1, label: 'Mon' },
-  { dow: 2, label: 'Tue' },
-  { dow: 3, label: 'Wed' },
-  { dow: 4, label: 'Thu' },
-  { dow: 5, label: 'Fri' },
-  { dow: 6, label: 'Sat' },
-];
 
 function buildPublishState(companyProfile, providerDoc) {
   return {
@@ -172,12 +154,15 @@ function slotPeriod(slot) {
 function CalendarAvailabilityPanel({
   slots,
   servicesById,
+  bookings = [],
   onToggleSlot,
   addPanel,
   emptyText = 'No availability yet.',
   selectedDate: controlledSelectedDate,
   onSelectedDateChange,
   initialShowAdd = false,
+  hideAdd = false,
+  heatLegendLabels = { fewer: 'Fewer', more: 'More' },
 }) {
   const firstSlotDate = slots.length ? slotDate(slots[0]) : null;
   const [internalSelectedDate, setInternalSelectedDate] = useState(() => firstSlotDate || new Date());
@@ -192,6 +177,7 @@ function CalendarAvailabilityPanel({
   const [selectedSlotId, setSelectedSlotId] = useState('');
 
   const weekRowDays = useMemo(() => weekDays(selectedDate), [selectedDate]);
+  const selectedKey = dateKey(selectedDate);
 
   const slotsByDay = useMemo(() => {
     const grouped = new Map();
@@ -207,6 +193,20 @@ function CalendarAvailabilityPanel({
     return grouped;
   }, [slots]);
 
+  const bookingsByDay = useMemo(() => groupBookingsByDay(bookings), [bookings]);
+
+  const maxBookingHeat = useMemo(
+    () =>
+      computeMaxBookingsInPeriod(bookingsByDay, {
+        view: view === 'today' ? 'week' : view,
+        monthGrid: monthDays(visibleMonth),
+        visibleMonth,
+        weekRow: weekRowDays,
+        selectedKey,
+      }),
+    [bookingsByDay, view, visibleMonth, weekRowDays, selectedKey]
+  );
+
   const calendarDays =
     view === 'today'
       ? [startOfDay(new Date())]
@@ -214,7 +214,6 @@ function CalendarAvailabilityPanel({
         ? weekRowDays
         : monthDays(visibleMonth);
   const mobileWeekDays = view === 'today' ? [startOfDay(new Date())] : weekRowDays;
-  const selectedKey = dateKey(selectedDate);
   const selectedSlots = slotsByDay.get(selectedKey) || [];
   const periods = ['Morning', 'Afternoon', 'Evening'];
   const monthLabel = visibleMonth.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
@@ -234,14 +233,19 @@ function CalendarAvailabilityPanel({
   const renderDayButton = (day, { compact = false } = {}) => {
     const key = dateKey(day);
     const daySlots = slotsByDay.get(key) || [];
+    const dayBookings = bookingsByDay.get(key) || [];
     const isSelected = key === selectedKey;
     const inMonth = day.getMonth() === visibleMonth.getMonth();
     const isToday = key === dateKey(new Date());
+    const heatStyle = !isSelected ? bookingHeatStyles(dayBookings.length, maxBookingHeat) : undefined;
+    const badgeCount = dayBookings.length || daySlots.length;
     return (
       <button
         key={key}
         type="button"
-        className={`${isSelected ? 'is-selected' : ''} ${!inMonth && view === 'month' && !compact ? 'is-muted' : ''} ${daySlots.length ? 'has-slots' : ''} ${isToday ? 'is-today' : ''}`}
+        className={`${isSelected ? 'is-selected' : ''} ${!inMonth && view === 'month' && !compact ? 'is-muted' : ''} ${badgeCount ? 'has-slots' : ''} ${dayBookings.length ? 'has-bookings' : ''} ${isToday ? 'is-today' : ''}`}
+        style={heatStyle}
+        title={dayBookings.length ? `${dayBookings.length} booking${dayBookings.length === 1 ? '' : 's'}` : undefined}
         onClick={() => selectDate(day)}
       >
         {compact ? (
@@ -252,7 +256,7 @@ function CalendarAvailabilityPanel({
         ) : (
           <>
             <span>{day.getDate()}</span>
-            {daySlots.length ? <em>{Math.min(daySlots.length, 4)}</em> : null}
+            {badgeCount ? <em>{Math.min(badgeCount, 9)}</em> : null}
           </>
         )}
       </button>
@@ -271,7 +275,7 @@ function CalendarAvailabilityPanel({
             <button type="button" className={view === 'week' ? 'is-active' : ''} onClick={() => setView('week')}>Week</button>
             <button type="button" className={view === 'today' ? 'is-active' : ''} onClick={goToday}>Today</button>
           </div>
-          <button type="button" className="pp-btn pp-btn--primary" onClick={() => setShowAdd((v) => !v)}>+ Add availability</button>
+          <button type="button" className="pp-btn pp-btn--primary" onClick={() => setShowAdd((v) => !v)} disabled={hideAdd} style={hideAdd ? { display: 'none' } : undefined}>+ Add availability</button>
         </div>
       </div>
 
@@ -334,6 +338,9 @@ function CalendarAvailabilityPanel({
           <div className={`pp-providerCalendarGrid is-week pp-providerCalendarGrid--mobileWeek`}>
             {mobileWeekDays.map((day) => renderDayButton(day))}
           </div>
+          {maxBookingHeat > 0 ? (
+            <BookingHeatLegend fewerLabel={heatLegendLabels.fewer} moreLabel={heatLegendLabels.more} />
+          ) : null}
         </div>
         )}
 
@@ -1141,117 +1148,61 @@ function Services({ companyId }) {
   );
 }
 
-function Availability({
-  companyId,
-  openAddPanel = false,
-  holidayCountry = 'CY',
-  onHolidayCountryChange,
-  onSaveHolidayCountry,
-}) {
+function Availability({ companyId, openAddPanel = false, holidayCountry = 'CY', onHolidayCountryChange, onSaveHolidayCountry }) {
   const [services, setServices] = useState([]);
   const [slots, setSlots] = useState([]);
+  const [bookings, setBookings] = useState([]);
+  const [computedSlots, setComputedSlots] = useState([]);
+  const [useRules, setUseRules] = useState(true);
+  const [schedulingSettings, setSchedulingSettings] = useState(null);
   const [err, setErr] = useState('');
-  const [ok, setOk] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [serviceId, setServiceId] = useState('');
   const [calendarDate, setCalendarDate] = useState(() => startOfDay(new Date()));
-  const [date, setDate] = useState(() => toDateInputValue(new Date()));
-  const [start, setStart] = useState('10:00');
-  const [end, setEnd] = useState('10:30');
-  const [timeOffDate, setTimeOffDate] = useState('');
-  const [timeOffEndDate, setTimeOffEndDate] = useState('');
-  const [timeOffMode, setTimeOffMode] = useState('single');
-  const [country, setCountry] = useState(holidayCountry || 'CY');
-  const [showYearlyModal, setShowYearlyModal] = useState(false);
-  const [holidaySkips, setHolidaySkips] = useState(() => new Set());
-  const [weeklyDays, setWeeklyDays] = useState(() => new Set([1, 2, 3, 4, 5]));
-  const [weeklyStart, setWeeklyStart] = useState('09:00');
-  const [weeklyEnd, setWeeklyEnd] = useState('17:00');
-  const [weeklyHorizon, setWeeklyHorizon] = useState('year');
-
-  useEffect(() => {
-    setCountry(holidayCountry || 'CY');
-  }, [holidayCountry]);
-
-  const yearHolidays = useMemo(() => getPublicHolidays(country, calendarDate.getFullYear()), [country, calendarDate]);
-
-  useEffect(() => {
-    setHolidaySkips(new Set(yearHolidays.map((h) => h.date)));
-  }, [yearHolidays]);
 
   useEffect(() => subscribeCompanyServices(companyId, setServices, (e) => setErr(e?.message || 'failed')), [companyId]);
   useEffect(
     () => subscribeCompanyAvailability(companyId, setSlots, (e) => setErr(e?.message || 'failed')),
     [companyId]
   );
+  useEffect(() => subscribeProviderBookings(companyId, setBookings, () => {}), [companyId]);
 
   useEffect(() => {
-    if (!serviceId && services.length) setServiceId(services[0].id);
-  }, [services, serviceId]);
-
-  useEffect(() => {
-    setDate(toDateInputValue(calendarDate));
-  }, [calendarDate]);
-
-  const onCreate = async (e) => {
-    e.preventDefault();
-    setErr('');
-    setOk('');
-    if (!services.length) {
-      setErr('Add at least one service before publishing availability.');
-      return;
-    }
-    if (!date) {
-      setErr('Pick a date for the new slot.');
-      return;
-    }
-    setBusy(true);
-    try {
-      const startAt = new Date(`${date}T${start}:00`);
-      const endAt = new Date(`${date}T${end}:00`);
-      await createAvailabilitySlot(companyId, { serviceId, startAt, endAt, status: 'open' });
-      setOk('Slot added — customers can now book this time.');
-    } catch (e2) {
-      const code = e2?.message || 'failed';
-      setErr(code === 'invalid_time_range' ? 'End time must be after start time.' : code);
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const onBlockDayOff = async () => {
-    if (!timeOffDate) return;
-    if (timeOffMode === 'range' && !timeOffEndDate) {
-      setErr('Pick an end date for the time-off range.');
-      return;
-    }
-    setErr('');
-    setBusy(true);
-    try {
-      const dayKeys = eachDateKeyInRange(timeOffDate, timeOffMode === 'range' ? timeOffEndDate : timeOffDate);
-      const openOnDays = slots.filter((s) => {
-        const d = slotDate(s);
-        if (!d) return false;
-        const key = dateKey(d);
-        return dayKeys.includes(key) && (s.status || 'open') === 'open';
-      });
-      if (!openOnDays.length) {
-        setErr('No open slots in that period to block.');
-        return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const settings = await fetchSchedulingSettings(companyId);
+        if (cancelled) return;
+        setSchedulingSettings({ ...settings, holidayCountry: settings.holidayCountry || holidayCountry });
+        setUseRules(settings.useRuleEngine !== false);
+        const ctx = await loadSchedulingContext(companyId);
+        if (!ctx.rules.length || cancelled) return;
+        const rangeStart = new Date();
+        const rangeEnd = new Date(rangeStart.getTime() + 60 * 86400000);
+        const bookings = await fetchBookingsInRange(companyId, rangeStart, rangeEnd);
+        const merged = [];
+        for (const svc of services) {
+          const rows = computeAvailableSlots({
+            settings,
+            service: svc,
+            serviceId: svc.id,
+            rules: ctx.rules,
+            overrides: ctx.overrides,
+            vacations: ctx.vacations,
+            blockedPeriods: ctx.blockedPeriods,
+            bookings,
+            rangeStart,
+            rangeEnd,
+          }).map(slotToFirestoreShape);
+          merged.push(...rows);
+        }
+        if (!cancelled) setComputedSlots(merged);
+      } catch {
+        if (!cancelled) setComputedSlots([]);
       }
-      await blockSlotsForTimeOff(
-        companyId,
-        openOnDays.map((s) => s.id)
-      );
-      setTimeOffDate('');
-      setTimeOffEndDate('');
-      setOk(`Blocked ${openOnDays.length} slot${openOnDays.length === 1 ? '' : 's'} across ${dayKeys.length} day${dayKeys.length === 1 ? '' : 's'}.`);
-    } catch (e2) {
-      setErr(e2?.message || 'failed');
-    } finally {
-      setBusy(false);
-    }
-  };
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [companyId, services, holidayCountry]);
 
   const byServiceName = useMemo(() => {
     const m = new Map();
@@ -1259,388 +1210,32 @@ function Availability({
     return m;
   }, [services]);
 
-  const weekTemplateSlots = useMemo(() => {
-    const week = weekDays(calendarDate);
-    const weekKeys = new Set(week.map((d) => dateKey(d)));
-    return slots.filter((s) => {
-      const d = slotDate(s);
-      return d && weekKeys.has(dateKey(d)) && (s.status || 'open') === 'open';
-    });
-  }, [slots, calendarDate]);
-
-  const existingSlotKeys = useMemo(() => {
-    const keys = new Set();
-    slots.forEach((s) => {
-      const d = slotDate(s);
-      if (!d) return;
-      keys.add(`${dateKey(d)}|${s.serviceId}|${formatTime24(d)}`);
-    });
-    return keys;
-  }, [slots]);
-
-  const onApplyWeekToYear = async () => {
-    setErr('');
-    setOk('');
-    if (!weekTemplateSlots.length) {
-      setErr('Add open slots to this week first, then apply the pattern to the full year.');
-      return;
-    }
-    setBusy(true);
-    try {
-      const year = calendarDate.getFullYear();
-      const yearStart = new Date(year, 0, 1);
-      const yearEnd = new Date(year, 11, 31);
-      const toCreate = [];
-
-      for (let d = new Date(yearStart); d.getTime() <= yearEnd.getTime(); d = addDays(d, 1)) {
-        const key = dateKey(d);
-        if (holidaySkips.has(key)) continue;
-        const dow = d.getDay();
-        weekTemplateSlots.forEach((template) => {
-          const templateDate = slotDate(template);
-          const templateEnd = slotEndDate(template);
-          if (!templateDate || !templateEnd) return;
-          if (templateDate.getDay() !== dow) return;
-          const startAt = new Date(d);
-          startAt.setHours(templateDate.getHours(), templateDate.getMinutes(), 0, 0);
-          const endAt = new Date(d);
-          endAt.setHours(templateEnd.getHours(), templateEnd.getMinutes(), 0, 0);
-          if (startAt.getTime() < Date.now() - 86400000) return;
-          const dedupe = `${key}|${template.serviceId}|${formatTime24(startAt)}`;
-          if (existingSlotKeys.has(dedupe)) return;
-          toCreate.push({
-            serviceId: template.serviceId,
-            startAt,
-            endAt,
-            status: 'open',
-          });
-        });
-      }
-
-      if (!toCreate.length) {
-        setErr('No new slots to add — this pattern may already cover the year.');
-        return;
-      }
-
-      const created = await bulkCreateAvailabilitySlots(companyId, toCreate);
-      setShowYearlyModal(false);
-      setOk(`Applied weekly pattern — ${created} new slot${created === 1 ? '' : 's'} added for ${year}.`);
-    } catch (e2) {
-      setErr(e2?.message || 'failed');
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const onCountryChange = async (code) => {
-    setCountry(code);
-    onHolidayCountryChange?.(code);
-    try {
-      await onSaveHolidayCountry?.(code);
-    } catch {
-      /* profile save is best-effort */
-    }
-  };
-
-  const toggleWeeklyDay = (dow) => {
-    setWeeklyDays((prev) => {
-      const next = new Set(prev);
-      if (next.has(dow)) next.delete(dow);
-      else next.add(dow);
-      return next;
-    });
-  };
-
-  const onCreateWeeklySlots = async () => {
-    setErr('');
-    setOk('');
-    if (!services.length) {
-      setErr('Add at least one service before publishing availability.');
-      return;
-    }
-    if (!weeklyDays.size) {
-      setErr('Select at least one day of the week.');
-      return;
-    }
-    if (!serviceId) {
-      setErr('Pick a service for these weekly hours.');
-      return;
-    }
-    setBusy(true);
-    try {
-      const today = startOfDay(new Date());
-      const year = today.getFullYear();
-      let endDate;
-      if (weeklyHorizon === '4w') endDate = addDays(today, 27);
-      else if (weeklyHorizon === '12w') endDate = addDays(today, 83);
-      else endDate = new Date(year, 11, 31);
-
-      const holidayKeys = new Set(getPublicHolidays(country, year).map((h) => h.date));
-      const toCreate = [];
-
-      for (let d = new Date(today); d.getTime() <= endDate.getTime(); d = addDays(d, 1)) {
-        const key = dateKey(d);
-        if (holidayKeys.has(key)) continue;
-        if (!weeklyDays.has(d.getDay())) continue;
-        const startAt = new Date(`${key}T${weeklyStart}:00`);
-        const endAt = new Date(`${key}T${weeklyEnd}:00`);
-        if (endAt <= startAt) {
-          throw new Error('invalid_time_range');
-        }
-        const dedupe = `${key}|${serviceId}|${formatTime24(startAt)}`;
-        if (existingSlotKeys.has(dedupe)) continue;
-        toCreate.push({ serviceId, startAt, endAt, status: 'open' });
-      }
-
-      if (!toCreate.length) {
-        setErr('No new slots to add — these weekly hours may already exist.');
-        return;
-      }
-
-      const created = await bulkCreateAvailabilitySlots(companyId, toCreate);
-      setOk(`Weekly hours added — ${created} new slot${created === 1 ? '' : 's'} created.`);
-    } catch (e2) {
-      const code = e2?.message || 'failed';
-      setErr(code === 'invalid_time_range' ? 'End time must be after start time.' : code);
-    } finally {
-      setBusy(false);
-    }
-  };
+  const displaySlots = useRules && computedSlots.length ? computedSlots : slots;
 
   return (
     <>
       {err ? <div className="pp-error" style={{ marginBottom: 10 }}>{err}</div> : null}
-      {ok ? <div className="pp-success" style={{ marginBottom: 10 }}>{ok}</div> : null}
-      <div className="pp-card pp-providerWeeklyHours" style={{ marginBottom: 14 }}>
-        <div className="pp-card__title">Weekly hours</div>
-        <p className="pp-muted" style={{ marginTop: 6, marginBottom: 12 }}>
-          Set daily open hours for selected days of the week. Slots are created automatically for the period you choose.
-        </p>
-        {services.length === 0 ? (
-          <p className="pp-muted" style={{ margin: 0, fontSize: 13 }}>Create a service first (Services tab), then return here.</p>
-        ) : (
-          <div className="pp-providerFormCard pp-providerFormCard--inline">
-            <label className="pp-field">
-              <span className="pp-field__label">Service</span>
-              <select className="pp-input" value={serviceId} onChange={(e) => setServiceId(e.target.value)}>
-                {services.map((s) => (
-                  <option key={s.id} value={s.id}>{s.name}</option>
-                ))}
-              </select>
-            </label>
-            <div className="pp-field">
-              <span className="pp-field__label">Days of the week</span>
-              <div className="pp-providerWeekdayToggle" role="group" aria-label="Days of the week">
-                {WEEKDAY_OPTIONS.map(({ dow, label }) => (
-                  <button
-                    key={dow}
-                    type="button"
-                    className={weeklyDays.has(dow) ? 'is-active' : ''}
-                    aria-pressed={weeklyDays.has(dow)}
-                    onClick={() => toggleWeeklyDay(dow)}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="pp-modalGrid2">
-              <label className="pp-field">
-                <span className="pp-field__label">From</span>
-                <TimeInput24 value={weeklyStart} onChange={setWeeklyStart} aria-label="Weekly start time" />
-              </label>
-              <label className="pp-field">
-                <span className="pp-field__label">To</span>
-                <TimeInput24 value={weeklyEnd} onChange={setWeeklyEnd} aria-label="Weekly end time" />
-              </label>
-              <label className="pp-field">
-                <span className="pp-field__label">Apply for</span>
-                <select className="pp-input" value={weeklyHorizon} onChange={(e) => setWeeklyHorizon(e.target.value)}>
-                  <option value="4w">Next 4 weeks</option>
-                  <option value="12w">Next 12 weeks</option>
-                  <option value="year">Rest of {calendarDate.getFullYear()}</option>
-                </select>
-              </label>
-            </div>
-            <div className="pp-providerTemplates">
-              <span>Quick presets</span>
-              <button type="button" onClick={() => { setWeeklyStart('09:00'); setWeeklyEnd('17:00'); }}>9–5</button>
-              <button type="button" onClick={() => { setWeeklyStart('09:00'); setWeeklyEnd('12:00'); }}>Morning</button>
-              <button type="button" onClick={() => { setWeeklyStart('14:00'); setWeeklyEnd('18:00'); }}>Afternoon</button>
-              <button type="button" onClick={() => setWeeklyDays(new Set([1, 2, 3, 4, 5]))}>Mon–Fri</button>
-              <button type="button" onClick={() => setWeeklyDays(new Set([0, 1, 2, 3, 4, 5, 6]))}>Every day</button>
-            </div>
-            <button
-              type="button"
-              className="pp-btn pp-btn--primary"
-              style={{ marginTop: 12 }}
-              disabled={busy || !weeklyDays.size}
-              onClick={() => void onCreateWeeklySlots()}
-            >
-              {busy ? 'Creating…' : 'Create weekly availability'}
-            </button>
-          </div>
-        )}
-      </div>
-      <div className="pp-card pp-providerYearlyAvail" style={{ marginBottom: 14 }}>
-        <div className="pp-card__title">Yearly schedule</div>
-        <p className="pp-muted" style={{ marginTop: 6, marginBottom: 12 }}>
-          Set open slots for one week, then copy that pattern across the whole year. Public holidays can be skipped automatically.
-        </p>
-        <div className="pp-modalGrid2">
-          <label className="pp-field">
-            <span className="pp-field__label">Public holidays country</span>
-            <select className="pp-input" value={country} onChange={(e) => void onCountryChange(e.target.value)}>
-              {HOLIDAY_COUNTRY_OPTIONS.map((c) => (
-                <option key={c.code} value={c.code}>{c.label}</option>
-              ))}
-            </select>
-          </label>
-          <div className="pp-field" style={{ display: 'flex', alignItems: 'flex-end' }}>
-            <button
-              type="button"
-              className="pp-btn pp-btn--primary"
-              style={{ width: '100%' }}
-              disabled={busy || !weekTemplateSlots.length}
-              onClick={() => setShowYearlyModal(true)}
-            >
-              Apply this week to full year
-            </button>
-          </div>
-        </div>
-        {!weekTemplateSlots.length ? (
-          <p className="pp-muted" style={{ marginTop: 10, marginBottom: 0, fontSize: 13 }}>
-            Add open slots to the selected week first — they become the template for every matching weekday.
-          </p>
-        ) : null}
-      </div>
-      {showYearlyModal ? (
-        <div className="pp-providerYearlyModal" role="dialog" aria-modal="true" aria-labelledby="yearly-avail-title">
-          <div className="pp-providerYearlyModal__backdrop" onClick={() => !busy && setShowYearlyModal(false)} />
-          <div className="pp-providerYearlyModal__card">
-            <h3 id="yearly-avail-title">Confirm public holidays</h3>
-            <p className="pp-muted">
-              These {yearHolidays.length} public holidays in {HOLIDAY_COUNTRY_OPTIONS.find((c) => c.code === country)?.label || country} will be skipped when copying your week pattern. Uncheck any you want to keep open.
-            </p>
-            <div className="pp-providerYearlyModal__list">
-              {yearHolidays.map((h) => (
-                <label key={h.date} className="pp-field pp-field--checkbox">
-                  <input
-                    type="checkbox"
-                    checked={holidaySkips.has(h.date)}
-                    onChange={(e) => {
-                      setHolidaySkips((prev) => {
-                        const next = new Set(prev);
-                        if (e.target.checked) next.add(h.date);
-                        else next.delete(h.date);
-                        return next;
-                      });
-                    }}
-                  />
-                  <span>{new Date(`${h.date}T12:00:00`).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })} — {h.name}</span>
-                </label>
-              ))}
-            </div>
-            <div className="pp-providerYearlyModal__actions">
-              <button type="button" className="pp-btn pp-btn--ghost" disabled={busy} onClick={() => setShowYearlyModal(false)}>Cancel</button>
-              <button type="button" className="pp-btn pp-btn--primary" disabled={busy} onClick={() => void onApplyWeekToYear()}>
-                {busy ? 'Applying…' : `Apply to ${calendarDate.getFullYear()}`}
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
-      <div className="pp-card pp-providerTimeOff" style={{ marginBottom: 14 }}>
-        <div className="pp-card__title">Time off</div>
-        <p className="pp-muted" style={{ marginTop: 6, marginBottom: 12 }}>
-          Block open slots for a single day or a date range — holidays, training, or closures.
-        </p>
-        <div className="pp-providerTimeOffModes" role="tablist" aria-label="Time off mode">
-          <button type="button" className={timeOffMode === 'single' ? 'is-active' : ''} onClick={() => setTimeOffMode('single')}>
-            Single day
-          </button>
-          <button type="button" className={timeOffMode === 'range' ? 'is-active' : ''} onClick={() => setTimeOffMode('range')}>
-            Date range
-          </button>
-        </div>
-        <div className="pp-providerFormCard pp-providerFormCard--inline" style={{ marginTop: 12 }}>
-          {timeOffMode === 'single' ? (
-            <label className="pp-field">
-              <span className="pp-field__label">Date</span>
-              <input className="pp-input" type="date" value={timeOffDate} onChange={(e) => setTimeOffDate(e.target.value)} />
-            </label>
-          ) : (
-            <div className="pp-modalGrid2">
-              <label className="pp-field">
-                <span className="pp-field__label">From</span>
-                <input className="pp-input" type="date" value={timeOffDate} onChange={(e) => setTimeOffDate(e.target.value)} />
-              </label>
-              <label className="pp-field">
-                <span className="pp-field__label">To</span>
-                <input className="pp-input" type="date" value={timeOffEndDate} min={timeOffDate || undefined} onChange={(e) => setTimeOffEndDate(e.target.value)} />
-              </label>
-            </div>
-          )}
-          <button
-            type="button"
-            className="pp-btn pp-btn--primary"
-            style={{ marginTop: 12 }}
-            disabled={!timeOffDate || busy || (timeOffMode === 'range' && !timeOffEndDate)}
-            onClick={() => void onBlockDayOff()}
-          >
-            {busy ? 'Blocking…' : 'Block time off'}
-          </button>
-        </div>
-      </div>
+      <AvailabilityScheduler
+        companyId={companyId}
+        services={services}
+        settings={schedulingSettings || { holidayCountry }}
+        onSettingsChange={(next) => {
+          setSchedulingSettings(next);
+          onHolidayCountryChange?.(next.holidayCountry);
+          void onSaveHolidayCountry?.(next.holidayCountry);
+        }}
+      />
       <CalendarAvailabilityPanel
-        slots={slots}
+        slots={displaySlots}
+        bookings={bookings}
         servicesById={byServiceName}
         selectedDate={calendarDate}
         onSelectedDateChange={setCalendarDate}
-        initialShowAdd={openAddPanel}
-        onToggleSlot={(s) => setSlotStatus(companyId, s.id, s.status === 'open' ? 'blocked' : 'open')}
-        addPanel={(
-          <form onSubmit={onCreate} className="pp-form pp-providerQuickAdd">
-            {services.length === 0 ? (
-              <p className="pp-muted" style={{ marginTop: 0 }}>
-                Create a service first (Services tab), then return here to publish bookable times.
-              </p>
-            ) : null}
-            <label className="pp-field">
-              <span className="pp-field__label">Service</span>
-              <select className="pp-input" value={serviceId} onChange={(e) => setServiceId(e.target.value)} disabled={!services.length}>
-                {services.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <div className="pp-modalGrid2">
-              <label className="pp-field">
-                <span className="pp-field__label">Date</span>
-                <input className="pp-input" type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
-              </label>
-              <label className="pp-field">
-                <span className="pp-field__label">Start</span>
-                <TimeInput24 value={start} onChange={setStart} aria-label="Start time" />
-              </label>
-              <label className="pp-field">
-                <span className="pp-field__label">End</span>
-                <TimeInput24 value={end} onChange={setEnd} aria-label="End time" />
-              </label>
-            </div>
-            <div className="pp-providerTemplates">
-              <span>Quick templates</span>
-              <button type="button" onClick={() => { setStart('09:00'); setEnd('17:00'); }}>Full day</button>
-              <button type="button" onClick={() => { setStart('09:00'); setEnd('12:00'); }}>Morning</button>
-              <button type="button" onClick={() => { setStart('14:00'); setEnd('18:00'); }}>Afternoon</button>
-            </div>
-            <button className="pp-btn pp-btn--primary" type="submit" disabled={!services.length || busy}>
-              {busy ? 'Adding…' : 'Add slot'}
-            </button>
-          </form>
-        )}
+        initialShowAdd={openAddPanel && !useRules}
+        emptyText={useRules ? 'No bookable slots on this date — check your weekly schedule.' : 'No availability yet.'}
+        onToggleSlot={useRules ? undefined : (s) => setSlotStatus(companyId, s.id, s.status === 'open' ? 'blocked' : 'open')}
+        hideAdd={useRules}
+        heatLegendLabels={{ fewer: 'Fewer bookings', more: 'More bookings' }}
       />
     </>
   );
@@ -1649,7 +1244,10 @@ function Availability({
 function Bookings({ companyId }) {
   const { user } = useAuth();
   const [rows, setRows] = useState([]);
-  const [slots, setSlots] = useState([]);
+  const [legacySlots, setLegacySlots] = useState([]);
+  const [useRuleEngine, setUseRuleEngine] = useState(false);
+  const [walkInSlots, setWalkInSlots] = useState([]);
+  const [swapSlots, setSwapSlots] = useState([]);
   const [services, setServices] = useState([]);
   const [clientPets, setClientPets] = useState([]);
   const [err, setErr] = useState('');
@@ -1658,6 +1256,8 @@ function Bookings({ companyId }) {
   const [swapBookingId, setSwapBookingId] = useState('');
   const [swapSlotId, setSwapSlotId] = useState('');
   const [showWalkIn, setShowWalkIn] = useState(false);
+  const [scheduleDate, setScheduleDate] = useState(() => startOfDay(new Date()));
+  const [showAllDates, setShowAllDates] = useState(false);
   const [walkIn, setWalkIn] = useState({
     clientPetId: '',
     petName: '',
@@ -1669,9 +1269,75 @@ function Bookings({ companyId }) {
   });
 
   useEffect(() => subscribeProviderBookings(companyId, setRows, (e) => setErr(e?.message || 'failed')), [companyId]);
-  useEffect(() => subscribeCompanyAvailability(companyId, setSlots, () => {}), [companyId]);
+  useEffect(() => subscribeCompanyAvailability(companyId, setLegacySlots, () => {}), [companyId]);
   useEffect(() => subscribeCompanyServices(companyId, setServices, () => {}), [companyId]);
   useEffect(() => subscribeClientPets(companyId, setClientPets, () => {}), [companyId]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const ctx = await loadSchedulingContext(companyId);
+        if (!cancelled) setUseRuleEngine(ctx.rules.length > 0);
+      } catch {
+        if (!cancelled) setUseRuleEngine(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [companyId]);
+
+  useEffect(() => {
+    if (!useRuleEngine || !walkIn.serviceId) {
+      setWalkInSlots([]);
+      return undefined;
+    }
+    let cancelled = false;
+    const svc = services.find((s) => s.id === walkIn.serviceId);
+    void (async () => {
+      try {
+        const rowsOpen = await fetchOpenSlots(companyId, walkIn.serviceId, {
+          after: startOfDay(new Date()),
+          durationMin: svc?.durationMin,
+        });
+        if (!cancelled) setWalkInSlots(rowsOpen);
+      } catch {
+        if (!cancelled) setWalkInSlots([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [companyId, useRuleEngine, walkIn.serviceId, services]);
+
+  useEffect(() => {
+    if (!useRuleEngine || !swapBookingId) {
+      setSwapSlots([]);
+      return undefined;
+    }
+    const booking = rows.find((b) => b.id === swapBookingId);
+    if (!booking?.serviceId) {
+      setSwapSlots([]);
+      return undefined;
+    }
+    let cancelled = false;
+    const svc = services.find((s) => s.id === booking.serviceId);
+    void (async () => {
+      try {
+        const rowsOpen = await fetchOpenSlots(companyId, booking.serviceId, {
+          after: startOfDay(new Date()),
+          durationMin: svc?.durationMin,
+        });
+        if (!cancelled) setSwapSlots(rowsOpen);
+      } catch {
+        if (!cancelled) setSwapSlots([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [companyId, useRuleEngine, swapBookingId, rows, services]);
 
   const servicesById = useMemo(() => {
     const m = new Map();
@@ -1683,15 +1349,16 @@ function Bookings({ companyId }) {
 
   const openSlotsForWalkIn = useMemo(() => {
     if (!walkIn.serviceId) return [];
+    if (useRuleEngine) return walkInSlots;
     const after = startOfDay(new Date());
-    return slots
+    return legacySlots
       .filter((s) => (s.status || 'open') === 'open' && String(s.serviceId) === String(walkIn.serviceId))
       .filter((s) => {
         const d = slotDate(s);
         return d && d.getTime() >= after.getTime();
       })
       .sort((a, b) => (slotDate(a)?.getTime() || 0) - (slotDate(b)?.getTime() || 0));
-  }, [slots, walkIn.serviceId]);
+  }, [legacySlots, walkIn.serviceId, useRuleEngine, walkInSlots]);
 
   useEffect(() => {
     if (!walkIn.serviceId && activeServices.length) {
@@ -1714,10 +1381,21 @@ function Bookings({ companyId }) {
   const openSlotsForBooking = useMemo(() => {
     const booking = rows.find((b) => b.id === swapBookingId);
     if (!booking) return [];
-    return slots
+    if (useRuleEngine) return swapSlots;
+    return legacySlots
       .filter((s) => (s.status || 'open') === 'open' && String(s.serviceId) === String(booking.serviceId))
       .sort((a, b) => (slotDate(a)?.getTime() || 0) - (slotDate(b)?.getTime() || 0));
-  }, [rows, slots, swapBookingId]);
+  }, [rows, legacySlots, swapBookingId, useRuleEngine, swapSlots]);
+
+  const displayedRows = useMemo(() => {
+    if (showAllDates) return rows;
+    const key = dateKey(scheduleDate);
+    return rows.filter((b) => {
+      if (String(b.status || '').toLowerCase() === 'cancelled') return false;
+      const d = b.startAt?.toDate ? b.startAt.toDate() : b.startAt instanceof Date ? b.startAt : null;
+      return d && dateKey(d) === key;
+    });
+  }, [rows, scheduleDate, showAllDates]);
 
   const onSwap = async () => {
     if (!swapBookingId || !swapSlotId) return;
@@ -1784,6 +1462,33 @@ function Bookings({ companyId }) {
         <button type="button" className="pp-btn pp-btn--primary" onClick={() => setShowWalkIn((v) => !v)}>
           {showWalkIn ? 'Close' : '+ Book walk-in'}
         </button>
+      </div>
+
+      <div className="pp-providerFormCard" style={{ marginBottom: 14 }}>
+        <div className="pp-rowBetween" style={{ alignItems: 'flex-start', gap: 12, marginBottom: 10 }}>
+          <div>
+            <h3 className="pp-providerFormCard__title" style={{ marginBottom: 4 }}>Schedule overview</h3>
+            <p className="pp-muted" style={{ margin: 0, lineHeight: 1.5 }}>
+              Days are colored by booking load — green is lighter, red is busier.
+            </p>
+          </div>
+          <button
+            type="button"
+            className="pp-btn pp-btn--ghost"
+            onClick={() => setShowAllDates((v) => !v)}
+          >
+            {showAllDates ? 'Selected day only' : 'Show all dates'}
+          </button>
+        </div>
+        <BookingHeatCalendar
+          bookings={rows}
+          selectedDate={scheduleDate}
+          onSelectedDateChange={(d) => {
+            setScheduleDate(d);
+            setShowAllDates(false);
+          }}
+          legendLabels={{ fewer: 'Fewer', more: 'More' }}
+        />
       </div>
 
       {showWalkIn ? (
@@ -1889,9 +1594,19 @@ function Bookings({ companyId }) {
 
       {err ? <div className="pp-error">{err}</div> : null}
       {ok ? <div className="pp-success">{ok}</div> : null}
-      {rows.length === 0 ? <div className="pp-providerEmptyCard">No bookings yet — book a walk-in or wait for customer requests.</div> : null}
-      <div className="pp-providerBookingList" style={{ marginTop: rows.length ? 10 : 0 }}>
-        {rows.map((b) => {
+      {!showAllDates ? (
+        <p className="pp-muted" style={{ marginTop: 0, marginBottom: 10 }}>
+          Showing appointments for{' '}
+          <strong>{scheduleDate.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}</strong>
+        </p>
+      ) : null}
+      {displayedRows.length === 0 ? (
+        <div className="pp-providerEmptyCard">
+          {showAllDates ? 'No bookings yet — book a walk-in or wait for customer requests.' : 'No appointments on this day.'}
+        </div>
+      ) : null}
+      <div className="pp-providerBookingList" style={{ marginTop: displayedRows.length ? 10 : 0 }}>
+        {displayedRows.map((b) => {
           const when = b.startAt?.toDate ? formatDateTime24(b.startAt.toDate()) : '';
           const serviceName = b.serviceSnapshot?.name || servicesById.get(b.serviceId) || 'Service';
           const isSwapping = swapBookingId === b.id;

@@ -4,42 +4,20 @@ import { useAuth } from '../auth/AuthProvider';
 import { useCompany } from '../company/CompanyContext';
 import { useI18n } from '../i18n/I18nContext';
 import { subscribeProviderBookings, subscribeCompanyServices } from '../bookings/bookingFirestore';
+import {
+  activeBookingsList,
+  addDays,
+  bookingDate,
+  bookingHeatStyles,
+  BookingHeatLegend,
+  dateKey,
+  groupBookingsByDay,
+  maxBookingsInPeriod as computeMaxBookingsInPeriod,
+  monthDays,
+  startOfDay,
+  weekDays,
+} from '../bookings/bookingHeatMap';
 import { formatDateTime24, formatTime24 } from '../formatTime24';
-
-function startOfDay(date) {
-  const d = new Date(date);
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
-
-function addDays(date, days) {
-  const d = new Date(date);
-  d.setDate(d.getDate() + days);
-  return d;
-}
-
-function weekDays(date) {
-  const selected = startOfDay(date);
-  const start = addDays(selected, -selected.getDay());
-  return Array.from({ length: 7 }, (_, idx) => addDays(start, idx));
-}
-
-function monthDays(date) {
-  const first = new Date(date.getFullYear(), date.getMonth(), 1);
-  const start = addDays(first, -first.getDay());
-  return Array.from({ length: 42 }, (_, idx) => addDays(start, idx));
-}
-
-function dateKey(date) {
-  const d = startOfDay(date);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
-
-function bookingDate(booking) {
-  if (booking.startAt?.toDate) return booking.startAt.toDate();
-  if (booking.startAt instanceof Date) return booking.startAt;
-  return null;
-}
 
 function BookingList({ bookings, servicesById, t }) {
   if (!bookings.length) {
@@ -111,24 +89,9 @@ export default function BusinessWeekBookings() {
     return m;
   }, [services]);
 
-  const activeBookings = useMemo(
-    () => bookings.filter((b) => String(b.status || '').toLowerCase() !== 'cancelled'),
-    [bookings]
-  );
+  const activeBookings = useMemo(() => activeBookingsList(bookings), [bookings]);
 
-  const bookingsByDay = useMemo(() => {
-    const grouped = new Map();
-    activeBookings.forEach((b) => {
-      const d = bookingDate(b);
-      if (!d) return;
-      const key = dateKey(d);
-      const rows = grouped.get(key) || [];
-      rows.push(b);
-      grouped.set(key, rows);
-    });
-    grouped.forEach((rows) => rows.sort((a, b) => (bookingDate(a)?.getTime() || 0) - (bookingDate(b)?.getTime() || 0)));
-    return grouped;
-  }, [activeBookings]);
+  const bookingsByDay = useMemo(() => groupBookingsByDay(bookings), [bookings]);
 
   const weekStart = useMemo(() => {
     const d = startOfDay(anchorDate);
@@ -164,6 +127,18 @@ export default function BusinessWeekBookings() {
     });
   }, [activeBookings, visibleMonth]);
 
+  const maxBookingsInPeriod = useMemo(
+    () =>
+      computeMaxBookingsInPeriod(bookingsByDay, {
+        view,
+        monthGrid,
+        visibleMonth,
+        weekRow,
+        selectedKey,
+      }),
+    [view, monthGrid, visibleMonth, weekRow, selectedKey, bookingsByDay]
+  );
+
   const weekLabel = `${weekStart.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} – ${weekEnd.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}`;
   const monthLabel = visibleMonth.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
   const dayLabel = selectedDate.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
@@ -194,11 +169,14 @@ export default function BusinessWeekBookings() {
     const dayBookings = bookingsByDay.get(key) || [];
     const isSelected = key === selectedKey;
     const isToday = key === dateKey(new Date());
+    const heatStyle = !isSelected ? bookingHeatStyles(dayBookings.length, maxBookingsInPeriod) : undefined;
     return (
       <button
         key={key}
         type="button"
-        className={`${isSelected ? 'is-selected' : ''} ${!inMonth ? 'is-muted' : ''} ${dayBookings.length ? 'has-slots' : ''} ${isToday ? 'is-today' : ''}`}
+        className={`${isSelected ? 'is-selected' : ''} ${!inMonth ? 'is-muted' : ''} ${dayBookings.length ? 'has-slots has-bookings' : ''} ${isToday ? 'is-today' : ''}`}
+        style={heatStyle}
+        title={dayBookings.length ? `${dayBookings.length} booking${dayBookings.length === 1 ? '' : 's'}` : undefined}
         onClick={() => selectDate(day)}
       >
         <span>{day.getDate()}</span>
@@ -338,6 +316,12 @@ export default function BusinessWeekBookings() {
                     <div className={`pp-providerCalendarGrid pp-providerCalendarGrid--desktopMonth`}>
                       {monthGrid.map((day) => renderDayButton(day, { inMonth: day.getMonth() === visibleMonth.getMonth() }))}
                     </div>
+                    {maxBookingsInPeriod > 0 ? (
+                      <BookingHeatLegend
+                        fewerLabel={t('businessWeek.bookingHeatFewer')}
+                        moreLabel={t('businessWeek.bookingHeatMore')}
+                      />
+                    ) : null}
                   </>
                 ) : (
                   <>
@@ -349,6 +333,12 @@ export default function BusinessWeekBookings() {
                     <div className="pp-providerCalendarGrid is-week pp-providerCalendarGrid--mobileWeek">
                       {weekRow.map((day) => renderDayButton(day))}
                     </div>
+                    {maxBookingsInPeriod > 0 ? (
+                      <BookingHeatLegend
+                        fewerLabel={t('businessWeek.bookingHeatFewer')}
+                        moreLabel={t('businessWeek.bookingHeatMore')}
+                      />
+                    ) : null}
                   </>
                 )}
               </div>
