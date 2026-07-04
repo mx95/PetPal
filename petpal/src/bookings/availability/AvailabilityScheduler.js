@@ -52,9 +52,14 @@ function PreviewCalendar({ days }) {
 
   const monthGrid = useMemo(() => monthDays(anchor), [anchor]);
   const visibleMonth = anchor.getMonth();
+  const monthLabel = anchor.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
 
   return (
     <div className="pp-availPreviewWrap">
+      <div className="pp-availPreview__head">
+        <strong className="pp-availPreview__title">{monthLabel}</strong>
+        <span className="pp-availPreview__subtitle">Schedule preview from today</span>
+      </div>
       <div className="pp-availPreviewWeekdays" aria-hidden>
         {WEEKDAY_LABELS_MON_START.map((label, idx) => (
           <span key={`${label}-${idx}`} className="pp-availPreview__weekday">
