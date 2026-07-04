@@ -397,7 +397,10 @@ function DemoBusinessSwitcher({ businesses, onSelect, onSelectLive, activeId = '
   );
 }
 
-function ProviderDashboardHero({ business }) {
+function ProviderDashboardHero({ business, companyId, bookingEnabled = false }) {
+  const customerPageTo = companyId
+    ? `/bookings/provider/${encodeURIComponent(companyId)}`
+    : '/bookings';
   return (
     <section className="pp-providerDashHero">
       <div className="pp-providerDashHero__banner" aria-hidden>
@@ -409,14 +412,16 @@ function ProviderDashboardHero({ business }) {
           <div className="pp-providerDashHero__badges">
             <span>{businessTypeLabel(business.providerTypes)}</span>
             <span className="is-live">Open</span>
-            <span className="is-enabled">Booking enabled</span>
+            {bookingEnabled ? <span className="is-enabled">Booking enabled</span> : null}
           </div>
           <h1>{business.displayName}</h1>
           <p>{business.address}</p>
         </div>
       </div>
       <div className="pp-providerDashHero__side">
-        <Link className="pp-btn pp-btn--primary" to="/bookings">View customer page</Link>
+        <Link className="pp-btn pp-btn--primary" to={customerPageTo}>
+          View customer page
+        </Link>
         <div className="pp-providerDashHero__miniStats">
           <span><strong>{business.services.length}</strong> services</span>
           <span><strong>{business.bookings.length}</strong> today</span>
@@ -721,6 +726,8 @@ export default function ProviderPortal() {
   return (
     <div className="pp-pad pp-demoProviderPortal">
       <ProviderDashboardHero
+        companyId={companyId}
+        bookingEnabled={publish.bookingEnabled}
         business={{
           displayName: profile?.businessName || publish.displayName || 'Business',
           address: profile?.addressLine || publish.address || 'Business profile',

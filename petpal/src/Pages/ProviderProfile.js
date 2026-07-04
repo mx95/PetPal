@@ -50,7 +50,10 @@ export default function ProviderProfile() {
             setServices([]);
           }
         },
-        (e) => setErr(e?.message || 'failed')
+      (e) => {
+        const msg = String(e?.message || 'failed');
+        setErr(/permission/i.test(msg) ? 'Could not load services for this provider.' : msg);
+      }
       ),
     [companyId, useCatalog]
   );

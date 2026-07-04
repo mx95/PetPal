@@ -407,7 +407,12 @@ export default function BookService({ embedded = false }) {
         return sameDayRows.length ? sameDayRows[0].id : '';
       });
     } catch (e) {
-      setErr(e?.message || 'failed');
+      const msg = String(e?.message || '');
+      if (/permission/i.test(msg)) {
+        setErr('Could not load available times. Ask the business to save their listing under Availability → Public listing.');
+      } else {
+        setErr(msg || 'failed');
+      }
     } finally {
       setLoadingSlots(false);
     }
