@@ -15778,11 +15778,22 @@ html[data-theme="dark"] .pp-book-calendar__monthControls button {
 
 .pp-providerTabsWrap {
   position: sticky;
-  top: calc(56px + env(safe-area-inset-top, 0px));
-  z-index: 20;
-  padding: 4px 0 10px;
+  top: 0;
+  z-index: 25;
+  padding: 6px 0 10px;
   margin-bottom: 2px;
-  background: linear-gradient(180deg, var(--pp-bg, #f6f7fb) 78%, rgba(246, 247, 251, 0));
+  background: var(--pp-bg, #f6f7fb);
+  border-bottom: 1px solid rgba(16, 24, 40, 0.06);
+}
+
+@media (min-width: 1024px) {
+  .pp-providerTabsWrap {
+    top: calc(56px + env(safe-area-inset-top, 0px));
+  }
+}
+
+body.pp-mobile-dock .pp-providerTabsWrap {
+  top: 0;
 }
 
 .pp-providerHubShell {
@@ -16745,7 +16756,37 @@ html[data-theme="dark"] .pp-book-calendar__monthControls button {
 .pp-availScheduler {
   display: grid;
   gap: 14px;
+  min-width: 0;
   margin-bottom: 16px;
+}
+
+.pp-availScheduler .pp-card {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.pp-availScheduler .pp-field {
+  min-width: 0;
+}
+
+.pp-availScheduler .pp-input,
+.pp-availScheduler input[type="date"],
+.pp-availScheduler input[type="time"] {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.pp-availScheduler .pp-modalGrid2 {
+  grid-template-columns: 1fr;
+  min-width: 0;
+}
+
+@media (min-width: 560px) {
+  .pp-availScheduler .pp-modalGrid2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .pp-availScheduler__tabs {
@@ -17138,7 +17179,7 @@ html[data-theme="dark"] .pp-book-calendar__monthControls button {
   }
 
   .pp-providerTabsWrap {
-    top: calc(52px + env(safe-area-inset-top, 0px));
+    top: 0;
     padding-bottom: 8px;
   }
 

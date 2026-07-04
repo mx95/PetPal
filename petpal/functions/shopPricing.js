@@ -127,6 +127,7 @@ function normalizeCartLine(row) {
     includeTracker: Boolean(row.includeTracker),
     includeNfc: Boolean(row.includeNfc),
     nfcPetIds: nfcPetIds?.length ? nfcPetIds : undefined,
+    trackerImei: row.trackerImei ? String(row.trackerImei).trim().slice(0, 20) : undefined,
     recurring: Boolean(row.recurring),
   };
 }
@@ -183,6 +184,9 @@ function validateMarketplaceCartLines(lines) {
     }
     if (line.includeTracker && !PLUS_SKUS.has(sku)) {
       return 'GPS tracker is only available with PetPal Plus plans.';
+    }
+    if (sku === 'PETPAL_PLUS_MONTHLY' && line.trackerImei && !/^\d{10,20}$/.test(String(line.trackerImei).trim())) {
+      return 'Enter a valid tracker IMEI (10–20 digits).';
     }
     const expectedUnit = resolveCartLinePricing(line);
     if (expectedUnit !== line.priceCents) {
