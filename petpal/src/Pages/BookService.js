@@ -196,7 +196,7 @@ function WizardProgress({ steps, currentIndex }) {
     <ol className="pp-bookWizardProgress" aria-label="Booking steps">
       {steps.map((label, i) => (
         <li
-          key={label}
+          key={`${label}-${i}`}
           className={`pp-bookWizardProgress__item${i <= currentIndex ? ' is-active' : ''}${i < currentIndex ? ' is-done' : ''}`}
         >
           <span className="pp-bookWizardProgress__dot" aria-hidden>
@@ -261,6 +261,12 @@ export default function BookService({ embedded = false }) {
     return keys;
   }, [showServicesStep, showCoatStep]);
 
+  const maxStepIndex = Math.max(0, stepKeys.length - 1);
+
+  useEffect(() => {
+    setStepIndex((i) => Math.min(i, maxStepIndex));
+  }, [maxStepIndex]);
+
   const wizardSteps = useMemo(
     () =>
       stepKeys.map((key) => {
@@ -273,7 +279,7 @@ export default function BookService({ embedded = false }) {
     [stepKeys, t]
   );
 
-  const stepKey = stepKeys[stepIndex] || 'pet';
+  const stepKey = stepKeys[stepIndex] ?? stepKeys[0] ?? 'pet';
 
   const baseDuration = useMemo(
     () => resolveBookingDuration(service, variantId),
@@ -461,6 +467,11 @@ export default function BookService({ embedded = false }) {
   }
 
   function goBack() {
+    if (stepIndex <= 0) {
+      if (window.history.length > 1) navigate(-1);
+      else navigate('/bookings');
+      return;
+    }
     setStepIndex((i) => Math.max(i - 1, 0));
   }
 
@@ -935,7 +946,7 @@ export default function BookService({ embedded = false }) {
             <button
               type="button"
               className="pp-bookConfirmForm__ghost"
-              disabled={stepIndex === 0 || busy}
+              disabled={busy}
               onClick={goBack}
             >
               {t('bookConfirm.wizardBack')}
