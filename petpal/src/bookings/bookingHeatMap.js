@@ -82,14 +82,16 @@ export function maxBookingsInPeriod(bookingsByDay, { view, monthGrid, visibleMon
 }
 
 /**
- * Maps booking count to heat color: green = fewer bookings, red = fuller day.
+ * Maps booked slots vs day capacity to heat color: green = fewer bookings, red = fuller day.
+ * @param {number} bookedCount Active bookings on the day
+ * @param {number} capacity Total bookable slots from availability rules
  */
-export function bookingHeatStyles(count, maxCount) {
-  const n = Number(count) || 0;
-  if (n <= 0) return undefined;
+export function bookingHeatStyles(bookedCount, capacity) {
+  const capacityN = Math.max(0, Number(capacity) || 0);
+  if (capacityN <= 0) return undefined;
 
-  const max = Math.max(1, Number(maxCount) || 1);
-  const ratio = Math.min(1, n / max);
+  const booked = Math.max(0, Number(bookedCount) || 0);
+  const ratio = Math.min(1, booked / capacityN);
   const hue = Math.round(142 - ratio * 134);
   const sat = Math.round(48 + ratio * 32);
   const light = Math.round(92 - ratio * 28);
@@ -101,6 +103,13 @@ export function bookingHeatStyles(count, maxCount) {
     borderColor: `hsl(${hue} ${sat}% ${borderLight}%)`,
     color: text,
   };
+}
+
+/** @deprecated Use capacity-based heat; kept for callers without scheduling rules. */
+export function bookingHeatStylesFromMax(count, maxCount) {
+  const n = Number(count) || 0;
+  if (n <= 0) return undefined;
+  return bookingHeatStyles(n, Math.max(1, Number(maxCount) || 1));
 }
 
 export function BookingHeatLegend({ fewerLabel = 'Less busy', moreLabel = 'Fuller' }) {

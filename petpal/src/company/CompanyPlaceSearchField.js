@@ -8,8 +8,13 @@ const mapsLib = ['places'];
 /** Must match `../config/googleMapsLoaderId` and the id used in Nearby — one script load for the whole app. */
 const mapsScriptId = 'petpal-google-maps';
 
+function formatGoogleOpeningHours(openingHours) {
+  if (!openingHours?.weekday_text?.length) return '';
+  return openingHours.weekday_text.join(', ');
+}
+
 /**
- * @param {{ onPicked: (lat: number, lng: number) => void, businessName: string, addressLine: string }} props
+ * @param {{ onPicked: (lat: number, lng: number, meta?: object) => void, businessName: string, addressLine: string }} props
  */
 export default function CompanyPlaceSearchField({ onPicked, businessName, addressLine }) {
   const key = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
@@ -131,7 +136,16 @@ function GooglePlaceSearch({ apiKey, onPicked, businessName, addressLine }) {
       svc.getDetails(
         {
           placeId: r.placeId,
-          fields: ['geometry', 'name', 'formatted_address', 'place_id'],
+          fields: [
+            'geometry',
+            'name',
+            'formatted_address',
+            'place_id',
+            'formatted_phone_number',
+            'international_phone_number',
+            'opening_hours',
+            'website',
+          ],
         },
         (place, status) => {
           setBusy(false);
@@ -141,6 +155,9 @@ function GooglePlaceSearch({ apiKey, onPicked, businessName, addressLine }) {
               placeId: place.place_id || r.placeId || '',
               placeName: place.name || r.label || '',
               placeAddress: place.formatted_address || r.sublabel || '',
+              phoneNumber: place.international_phone_number || place.formatted_phone_number || '',
+              workingHours: formatGoogleOpeningHours(place.opening_hours),
+              website: place.website || '',
             });
             setRows([]);
             return;

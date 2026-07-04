@@ -188,14 +188,18 @@ export default function AvailabilityScheduler({ companyId, services = [], settin
 
   const AvailTimeRange = ({ startTime, endTime, onStartChange, onEndChange, onRemove, canRemove }) => (
     <div className="pp-availTimeRow">
-      <label className="pp-field pp-availTimeRow__field">
+      <label className="pp-field pp-availTimeRow__field pp-availTimeRow__field--labelOnly">
         <span className="pp-field__label">From</span>
-        <TimeInput24 value={startTime} onChange={onStartChange} />
       </label>
+      <div className="pp-availTimeRow__field pp-availTimeRow__field--time">
+        <TimeInput24 value={startTime} onChange={onStartChange} aria-label="Start time" />
+      </div>
       <span className="pp-availTimeRow__sep" aria-hidden>→</span>
-      <label className="pp-field pp-availTimeRow__field">
+      <div className="pp-availTimeRow__field pp-availTimeRow__field--time">
+        <TimeInput24 value={endTime} onChange={onEndChange} aria-label="End time" />
+      </div>
+      <label className="pp-field pp-availTimeRow__field pp-availTimeRow__field--labelOnly">
         <span className="pp-field__label">To</span>
-        <TimeInput24 value={endTime} onChange={onEndChange} />
       </label>
       {canRemove ? (
         <button type="button" className="pp-availTimeRow__remove" aria-label="Remove period" onClick={onRemove}>
@@ -443,9 +447,19 @@ export default function AvailabilityScheduler({ companyId, services = [], settin
               <label className="pp-field"><span className="pp-field__label">Date</span><input className="pp-input" type="date" value={blockDraft.date} onChange={(e) => setBlockDraft((d) => ({ ...d, date: e.target.value }))} /></label>
             </div>
             <div className="pp-availTimeRow">
-              <label className="pp-field pp-availTimeRow__field"><span className="pp-field__label">From</span><TimeInput24 value={blockDraft.start} onChange={(v) => setBlockDraft((d) => ({ ...d, start: v }))} /></label>
+              <label className="pp-field pp-availTimeRow__field pp-availTimeRow__field--labelOnly">
+                <span className="pp-field__label">From</span>
+              </label>
+              <div className="pp-availTimeRow__field pp-availTimeRow__field--time">
+                <TimeInput24 value={blockDraft.start} onChange={(v) => setBlockDraft((d) => ({ ...d, start: v }))} aria-label="Block start time" />
+              </div>
               <span className="pp-availTimeRow__sep" aria-hidden>→</span>
-              <label className="pp-field pp-availTimeRow__field"><span className="pp-field__label">To</span><TimeInput24 value={blockDraft.end} onChange={(v) => setBlockDraft((d) => ({ ...d, end: v }))} /></label>
+              <div className="pp-availTimeRow__field pp-availTimeRow__field--time">
+                <TimeInput24 value={blockDraft.end} onChange={(v) => setBlockDraft((d) => ({ ...d, end: v }))} aria-label="Block end time" />
+              </div>
+              <label className="pp-field pp-availTimeRow__field pp-availTimeRow__field--labelOnly">
+                <span className="pp-field__label">To</span>
+              </label>
             </div>
             <div className="pp-availFormActions">
               <button type="button" className="pp-btn pp-btn--primary" disabled={busy} onClick={() => void saveBlock()}>Save blocked time</button>

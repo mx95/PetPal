@@ -27,6 +27,7 @@ import {
   loadSchedulingContext,
 } from '../bookings/availability/availabilityFirestore';
 import BookingHeatCalendar from '../bookings/BookingHeatCalendar';
+import ProviderBookingCard from '../bookings/ProviderBookingCard';
 import { addDays, daysFromMonday, WEEKDAY_LABELS_MON_START } from '../bookings/bookingHeatMap';
 import ListingPlaceImportField from '../company/ListingPlaceImportField';
 import { cancelBusinessBoost } from '../shop/cancelBusinessBoost';
@@ -1523,6 +1524,21 @@ function Bookings({ companyId }) {
     }
   };
 
+  const onBookingStatus = async (bookingId, patch) => {
+    setErr('');
+    setOk('');
+    setBusyId(bookingId);
+    try {
+      await updateBookingStatus(bookingId, patch);
+      if (patch.status === 'completed') setOk('Booking marked complete.');
+      else if (patch.status === 'cancelled') setOk('Booking cancelled.');
+    } catch (e) {
+      setErr(e?.message || 'Could not update booking.');
+    } finally {
+      setBusyId('');
+    }
+  };
+
   const onWalkInBook = async (e) => {
     e.preventDefault();
     setErr('');
@@ -1711,41 +1727,33 @@ function Bookings({ companyId }) {
           No bookings yet — book a walk-in or wait for customer requests.
         </div>
       ) : null}
-      <div className="pp-providerBookingList" style={{ marginTop: displayedRows.length ? 10 : 0 }}>
+      <div className="pp-bookingDetailList" style={{ marginTop: displayedRows.length ? 10 : 0 }}>
         {displayedRows.map((b) => {
-          const when = b.startAt?.toDate ? formatDateTime24(b.startAt.toDate()) : '';
           const serviceName = b.serviceSnapshot?.name || servicesById.get(b.serviceId) || 'Service';
           const isSwapping = swapBookingId === b.id;
           return (
-            <div key={b.id} className="pp-providerBookingCard pp-rowBetween pp-rowBetween--card" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 10 }}>
-              <div className="pp-rowBetween" style={{ width: '100%' }}>
-                <div>
-                  <div style={{ fontWeight: 900 }}>{b.petSnapshot?.name || 'Pet'}</div>
-                  <div className="pp-muted" style={{ fontSize: 13 }}>
-                    {serviceName} · {b.status}
-                    {b.walkIn ? ' · Walk-in' : ''}
-                  </div>
-                  {b.petSnapshot?.ownerName || b.petSnapshot?.ownerPhone ? (
-                    <div className="pp-muted" style={{ fontSize: 13 }}>
-                      {[b.petSnapshot?.ownerName, b.petSnapshot?.ownerPhone].filter(Boolean).join(' · ')}
-                    </div>
-                  ) : null}
-                  <div className="pp-muted" style={{ fontSize: 13 }}>{when}</div>
-                </div>
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                  {b.status === 'booked' ? (
-                    <button type="button" className="pp-btn pp-btn--ghost" onClick={() => { setSwapBookingId(isSwapping ? '' : b.id); setSwapSlotId(''); }}>
-                      {isSwapping ? 'Close' : 'Reschedule'}
-                    </button>
-                  ) : null}
-                  <button type="button" className="pp-btn pp-btn--ghost" disabled={busyId === b.id} onClick={() => updateBookingStatus(b.id, { status: 'completed' })}>
-                    Complete
-                  </button>
-                  <button type="button" className="pp-btn pp-btn--ghost" disabled={busyId === b.id} onClick={() => updateBookingStatus(b.id, { status: 'cancelled' })}>
-                    Cancel
+            <div key={b.id} className="pp-bookingDetailList__item">
+              <ProviderBookingCard
+                booking={b}
+                serviceName={serviceName}
+                busy={busyId === b.id}
+                onComplete={(id) => void onBookingStatus(id, { status: 'completed' })}
+                onCancel={(id) => void onBookingStatus(id, { status: 'cancelled' })}
+              />
+              {b.status === 'booked' ? (
+                <div className="pp-bookingDetailList__extra">
+                  <button
+                    type="button"
+                    className="pp-btn pp-btn--ghost"
+                    onClick={() => {
+                      setSwapBookingId(isSwapping ? '' : b.id);
+                      setSwapSlotId('');
+                    }}
+                  >
+                    {isSwapping ? 'Close reschedule' : 'Reschedule'}
                   </button>
                 </div>
-              </div>
+              ) : null}
               {isSwapping ? (
                 <div className="pp-providerSwapRow">
                   <select className="pp-input" value={swapSlotId} onChange={(e) => setSwapSlotId(e.target.value)}>
@@ -1759,7 +1767,12 @@ function Bookings({ companyId }) {
                       );
                     })}
                   </select>
-                  <button type="button" className="pp-btn pp-btn--primary" disabled={!swapSlotId || busyId === b.id} onClick={() => void onSwap()}>
+                  <button
+                    type="button"
+                    className="pp-btn pp-btn--primary"
+                    disabled={!swapSlotId || busyId === b.id}
+                    onClick={() => void onSwap()}
+                  >
                     {busyId === b.id ? 'Saving…' : 'Confirm swap'}
                   </button>
                 </div>

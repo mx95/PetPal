@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import {
   BookingHeatLegend,
   bookingHeatStyles,
+  bookingHeatStylesFromMax,
   dateKey,
   groupBookingsByDay,
   maxBookingsInPeriod,
@@ -15,6 +16,7 @@ import {
  */
 export default function BookingHeatCalendar({
   bookings = [],
+  dayCapacityByKey = null,
   selectedDate: controlledSelectedDate,
   onSelectedDateChange,
   legendLabels = { fewer: 'Fewer', more: 'More' },
@@ -52,6 +54,9 @@ export default function BookingHeatCalendar({
     [bookingsByDay, monthGrid, visibleMonth, selectedKey]
   );
 
+  const hasCapacityHeat = Boolean(dayCapacityByKey && dayCapacityByKey.size > 0);
+  const showHeatLegend = showLegend && showHeat && (hasCapacityHeat || maxHeat > 0);
+
   const monthLabel = visibleMonth.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
 
   const selectDate = (day) => {
@@ -64,16 +69,25 @@ export default function BookingHeatCalendar({
     const dayBookings = bookingsByDay.get(key) || [];
     const isSelected = key === selectedKey;
     const isToday = key === dateKey(new Date());
+    const capacity = hasCapacityHeat ? dayCapacityByKey.get(key) || 0 : 0;
     const heatStyle =
-      showHeat && !isSelected ? bookingHeatStyles(dayBookings.length, maxHeat) : undefined;
+      showHeat && !isSelected
+        ? hasCapacityHeat
+          ? bookingHeatStyles(dayBookings.length, capacity)
+          : bookingHeatStylesFromMax(dayBookings.length, maxHeat)
+        : undefined;
+
+    const titleParts = [];
+    if (dayBookings.length) titleParts.push(`${dayBookings.length} booking${dayBookings.length === 1 ? '' : 's'}`);
+    if (hasCapacityHeat && capacity > 0) titleParts.push(`${capacity} slots available`);
 
     return (
       <button
         key={key}
         type="button"
-        className={`${isSelected ? 'is-selected' : ''} ${!inMonth ? 'is-muted' : ''} ${dayBookings.length ? 'has-slots has-bookings' : ''} ${isToday ? 'is-today' : ''}`}
+        className={`${isSelected ? 'is-selected' : ''} ${!inMonth ? 'is-muted' : ''} ${dayBookings.length ? 'has-slots has-bookings' : ''} ${hasCapacityHeat && capacity > 0 ? 'has-capacity' : ''} ${isToday ? 'is-today' : ''}`}
         style={heatStyle}
-        title={dayBookings.length ? `${dayBookings.length} booking${dayBookings.length === 1 ? '' : 's'}` : undefined}
+        title={titleParts.length ? titleParts.join(' · ') : undefined}
         onClick={() => selectDate(day)}
       >
         <span>{day.getDate()}</span>
@@ -116,7 +130,7 @@ export default function BookingHeatCalendar({
         {monthGrid.map((day) => renderDayButton(day, { inMonth: day.getMonth() === visibleMonth.getMonth() }))}
       </div>
 
-      {showLegend && showHeat && maxHeat > 0 ? (
+      {showHeatLegend ? (
         <BookingHeatLegend fewerLabel={legendLabels.fewer} moreLabel={legendLabels.more} />
       ) : null}
     </div>
