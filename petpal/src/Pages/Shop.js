@@ -46,7 +46,8 @@ export default function Shop() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const uid = user?.uid ?? null;
-  const { isApprovedCompany, isCompanyAccount } = useCompany();
+  const { isApprovedCompany, isAdmin } = useCompany();
+  const showBusinessBoosts = isApprovedCompany && !isAdmin;
   const { pets } = usePets();
   const [searchParams] = useSearchParams();
   const checkout = searchParams.get('checkout');
@@ -82,12 +83,12 @@ export default function Shop() {
   const [providerDoc, setProviderDoc] = useState(null);
 
   useEffect(() => {
-    if (!uid || !isApprovedCompany) {
+    if (!uid || !showBusinessBoosts) {
       setProviderDoc(null);
       return undefined;
     }
     return subscribeProviderProfile(uid, setProviderDoc);
-  }, [uid, isApprovedCompany]);
+  }, [uid, showBusinessBoosts]);
 
   useEffect(() => {
     if (focusSku && BOOST_SKUS.includes(focusSku)) {
@@ -322,16 +323,11 @@ export default function Shop() {
             <p>{t('shopPage.subInfoBody')}</p>
           </div>
 
-          {isCompanyAccount ? (
+          {showBusinessBoosts ? (
             <section className="pp-shopBoostSection" style={{ marginBottom: 18 }}>
               <h2 className="pp-sectionTitle">{t('shopPage.boostSectionTitle')}</h2>
-              {!isApprovedCompany ? (
-                <div className="pp-shopInfoBox" role="note" style={{ marginTop: 12 }}>
-                  {t('shopPage.boostBusinessOnly')}
-                </div>
-              ) : (
-                <div className="pp-shopGrid" style={{ marginTop: 12 }}>
-                  {BUSINESS_BOOST_PRODUCTS.map((p) => {
+              <div className="pp-shopGrid" style={{ marginTop: 12 }}>
+                {BUSINESS_BOOST_PRODUCTS.map((p) => {
                     const boostActive =
                       p.id === 'STORE_BOOST_NEARBY_MONTHLY'
                         ? providerNearbyBoostIsActive(providerDoc)
@@ -386,8 +382,7 @@ export default function Shop() {
                       </article>
                     );
                   })}
-                </div>
-              )}
+              </div>
             </section>
           ) : null}
 
