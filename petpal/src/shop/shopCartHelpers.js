@@ -16,6 +16,7 @@ import { PLUS_SKUS, BOOST_SKUS, monthlyFirstPaymentCents, formatEur, NFC_TAG_ADD
  *   includeTracker?: boolean,
  *   includeNfc?: boolean,
  *   nfcPetIds?: string[],
+ *   trackerImei?: string,
  *   recurring?: boolean,
  * }} CartItem
  */
@@ -28,6 +29,7 @@ import { PLUS_SKUS, BOOST_SKUS, monthlyFirstPaymentCents, formatEur, NFC_TAG_ADD
  *   nfcPetIds?: string[],
  *   saveCard?: boolean,
  *   petNames?: string[],
+ *   trackerImei?: string,
  * }} opts
  * @returns {CartItem}
  */
@@ -37,6 +39,7 @@ export function buildSubscriptionCartItem(product, opts) {
   const includeNfc = Boolean(opts.includeNfc) && nfcPetIds.length > 0;
   const saveCard = Boolean(opts.saveCard);
   const petNames = Array.isArray(opts.petNames) ? opts.petNames : [];
+  const trackerImei = opts.trackerImei ? String(opts.trackerImei).trim() : '';
 
   let priceCents = product.amountCents;
   let title = product.title;
@@ -44,7 +47,8 @@ export function buildSubscriptionCartItem(product, opts) {
 
   if (product.id === 'PETPAL_PLUS_MONTHLY') {
     priceCents = monthlyFirstPaymentCents({ includeTracker, nfcPetIds });
-    if (includeTracker) parts.push('GPS tracker');
+    if (trackerImei) parts.push('Existing GPS tracker');
+    else if (includeTracker) parts.push('GPS tracker');
     if (includeNfc) {
       parts.push(nfcPetIds.length === 1 ? 'NFC tag' : `${nfcPetIds.length} NFC tags`);
     }
@@ -85,6 +89,7 @@ export function buildSubscriptionCartItem(product, opts) {
     includeTracker: yearlyIncludeTracker,
     includeNfc: yearlyIncludeNfc,
     nfcPetIds: nfcPetIds.length ? nfcPetIds : undefined,
+    trackerImei: trackerImei || undefined,
     recurring: Boolean(product.recurring),
   };
 }
@@ -99,6 +104,9 @@ export function validateCartForCheckout(items, t) {
     const sku = row.sku || '';
     if ((sku === 'PETPAL_PLUS_MONTHLY' && row.includeNfc) || sku === 'PETPAL_PLUS_YEARLY' || sku === 'NFC_TAG_HARDWARE') {
       if (!row.nfcPetIds?.length) return t('shopPage.nfcSelectPetRequired');
+    }
+    if (sku === 'PETPAL_PLUS_MONTHLY' && row.trackerImei && !/^\d{10,20}$/.test(String(row.trackerImei).trim())) {
+      return t('shopPage.existingImeiInvalid');
     }
     if ((row.recurring || PLUS_SKUS.includes(sku) || BOOST_SKUS.includes(sku)) && !row.saveCard) {
       return t('shopPage.saveCardRequired');

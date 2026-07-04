@@ -741,19 +741,7 @@ export default function ProviderPortal() {
           nextAvailable: 'Manage live availability',
         }}
       />
-      <DemoBusinessSwitcher
-        businesses={demoBusinesses}
-        onSelect={(id) => setSearchParams({ demoBusiness: id, tab })}
-        onSelectLive={() => {
-          setSearchParams((prev) => {
-            const p = new URLSearchParams(prev);
-            p.delete('demoBusiness');
-            return p;
-          });
-        }}
-        showLive
-        compact
-      />
+      {/* Demo business preview hidden for live providers — use Bookings/Availability tabs directly. */}
 
       <div className="pp-providerHubShell">
         <div className="pp-providerTabsWrap">

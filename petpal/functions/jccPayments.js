@@ -192,7 +192,7 @@ function uniqueOrderNumber(prefix) {
 
 const { SKUS, PLUS_SKUS, resolveCheckoutPricing, resolveMarketplaceCartPricing, validateMarketplaceCartLines, PRICES } = require('./shopPricing');
 const { buildJccRegisterCustomerParams, buildJccJsonParams } = require('./jccRegisterExtras');
-const { appendOrderTrackerSubscriptions } = require('./subscriptionImei');
+const { appendOrderTrackerSubscriptions, normalizeImei } = require('./subscriptionImei');
 const {
   normalizeShipping,
   validateShipping,
@@ -228,12 +228,14 @@ async function createMonthlyTrackerSubscription(db, payload) {
     includeNfc,
     nfcPetIds,
     nextRenewalAt,
+    trackerImei: rawTrackerImei,
   } = payload;
   const parentPaymentId = String(paymentId || orderNumber || '').slice(0, 36);
   const subId = Number(subPaymentId) || 1;
   const subscriptionId =
     String(orderNumber || '').trim() || buildSubscriptionId(parentPaymentId, subId);
   const petIds = Array.isArray(nfcPetIds) ? nfcPetIds.map(String).filter(Boolean).slice(0, 20) : [];
+  const trackerImei = normalizeImei(rawTrackerImei);
   await db
     .collection('users')
     .doc(uid)
@@ -250,10 +252,11 @@ async function createMonthlyTrackerSubscription(db, payload) {
       bindingId: bindingId || null,
       clientId: uid,
       status: 'active',
-      includeTracker: Boolean(includeTracker),
+      includeTracker: trackerImei ? false : Boolean(includeTracker),
       includeNfc: Boolean(includeNfc),
       nfcPetIds: petIds.length ? petIds : null,
-      trackerImei: null,
+      trackerImei: trackerImei || null,
+      imei: trackerImei || null,
       petId: null,
       petName: null,
       nextRenewalAt,
@@ -470,6 +473,7 @@ async function fulfillMarketplaceCartLine(db, uid, parentOrderNumber, line, idx,
         includeTracker: line.includeTracker,
         includeNfc: line.includeNfc,
         nfcPetIds: line.nfcPetIds,
+        trackerImei: line.trackerImei,
         nextRenewalAt: admin.firestore.Timestamp.fromDate(next),
       });
       await appendOrderTrackerSubscriptions(db, parentOrderNumber, uid, [
@@ -480,6 +484,7 @@ async function fulfillMarketplaceCartLine(db, uid, parentOrderNumber, line, idx,
           includeTracker: line.includeTracker,
           includeNfc: line.includeNfc,
           nfcPetIds: line.nfcPetIds,
+          trackerImei: line.trackerImei || null,
         },
       ]);
     } else if (sku === 'PETPAL_PLUS_YEARLY') {
@@ -876,6 +881,7 @@ exports.jccPaymentReturn = functions.region('europe-west1').https.onRequest(asyn
         includeTracker: session.includeTracker,
         includeNfc: session.includeNfc,
         nfcPetIds: session.nfcPetIds,
+        trackerImei: session.trackerImei,
         nextRenewalAt: admin.firestore.Timestamp.fromDate(next),
       });
       await appendOrderTrackerSubscriptions(db, orderNumber, uid, [
@@ -886,6 +892,7 @@ exports.jccPaymentReturn = functions.region('europe-west1').https.onRequest(asyn
           includeTracker: session.includeTracker,
           includeNfc: session.includeNfc,
           nfcPetIds: session.nfcPetIds,
+          trackerImei: session.trackerImei || null,
         },
       ]);
     } else {
