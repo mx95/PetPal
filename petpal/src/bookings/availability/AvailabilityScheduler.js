@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import TimeRangeRow from '../../components/TimeRangeRow';
+import NumericSettingInput from '../../components/NumericSettingInput';
 import { dateKey, monthDays, WEEKDAY_LABELS_MON_START } from '../bookingHeatMap';
 import { HOLIDAY_COUNTRY_OPTIONS } from '../publicHolidays';
 import {
@@ -477,19 +478,35 @@ export default function AvailabilityScheduler({ companyId, services = [], settin
             </label>
             <label className="pp-field">
               <span className="pp-field__label">Advance notice (minutes)</span>
-              <input className="pp-input" type="number" min={0} value={settings.advanceNoticeMin ?? 120} onChange={(e) => void saveSettings({ advanceNoticeMin: Number(e.target.value) })} />
+              <NumericSettingInput
+                value={settings.advanceNoticeMin ?? 120}
+                min={0}
+                onCommit={(n) => void saveSettings({ advanceNoticeMin: n })}
+              />
             </label>
             <label className="pp-field">
               <span className="pp-field__label">Max booking window (days)</span>
-              <input className="pp-input" type="number" min={1} value={settings.maxBookingDaysAhead ?? 90} onChange={(e) => void saveSettings({ maxBookingDaysAhead: Number(e.target.value) })} />
+              <NumericSettingInput
+                value={settings.maxBookingDaysAhead ?? 90}
+                min={1}
+                onCommit={(n) => void saveSettings({ maxBookingDaysAhead: n })}
+              />
             </label>
             <label className="pp-field">
               <span className="pp-field__label">Buffer before (min)</span>
-              <input className="pp-input" type="number" min={0} value={settings.bufferBeforeMin ?? 0} onChange={(e) => void saveSettings({ bufferBeforeMin: Number(e.target.value) })} />
+              <NumericSettingInput
+                value={settings.bufferBeforeMin ?? 0}
+                min={0}
+                onCommit={(n) => void saveSettings({ bufferBeforeMin: n })}
+              />
             </label>
             <label className="pp-field">
               <span className="pp-field__label">Buffer after (min)</span>
-              <input className="pp-input" type="number" min={0} value={settings.bufferAfterMin ?? 0} onChange={(e) => void saveSettings({ bufferAfterMin: Number(e.target.value) })} />
+              <NumericSettingInput
+                value={settings.bufferAfterMin ?? 0}
+                min={0}
+                onCommit={(n) => void saveSettings({ bufferAfterMin: n })}
+              />
             </label>
           </div>
           <p className="pp-muted" style={{ marginTop: 10 }}>
