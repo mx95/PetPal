@@ -10458,12 +10458,26 @@ html[data-theme="dark"] .pp-publicHero__eyebrow {
   color: #0f172a;
   font-weight: 800;
   font-size: 0.8125rem;
+  font-family: inherit;
   text-decoration: none;
   box-shadow: 0 6px 16px -12px rgba(15, 23, 42, 0.2);
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
   transition:
     border-color 0.18s ease,
     box-shadow 0.18s ease,
     transform 0.18s ease;
+}
+
+.pp-bookConfirmCalRow--inline {
+  display: inline-grid;
+  grid-template-columns: auto auto;
+  margin-top: 0;
+}
+
+button.pp-bookConfirmCalBtn {
+  width: 100%;
 }
 
 .pp-bookConfirmCalBtn:hover {
