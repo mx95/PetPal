@@ -22,7 +22,7 @@ import {
 import { ServiceTabs } from '../bookings/components/ServiceTabs';
 import { ProviderCard } from '../bookings/components/ProviderCard';
 import { formatDateTime24 } from '../formatTime24';
-import { appleCalendarDataUrl, buildCalendarEvent, googleCalendarUrl } from '../bookings/calendarLinks';
+import CalendarAddButtons from '../bookings/CalendarAddButtons';
 import { AppCard, EmptyState, PageContainer, SectionHeader, SkeletonCard } from '../components/ui';
 import ProviderProfile from './ProviderProfile';
 import BookService from './BookService';
@@ -253,9 +253,7 @@ function MyBookings({ uid }) {
       {err ? <div className="pp-book-error">{err}</div> : null}
       {allRows.length === 0 ? <p className="pp-book-muted">{t('bookingsHub.mineEmpty')}</p> : null}
       <div className="pp-book-mineList">
-        {allRows.map((b) => {
-          const event = buildCalendarEvent(b);
-          return (
+        {allRows.map((b) => (
             <div key={b.id} className="pp-book-mineCard">
               <div>
                 <div className="pp-book-mineCard__title">{b.serviceName || b.petSnapshot?.name || 'Pet'}</div>
@@ -269,20 +267,19 @@ function MyBookings({ uid }) {
                       : ''}
                 </div>
               </div>
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                <a className="pp-book-btn pp-book-btn--ghost" href={googleCalendarUrl(event)} target="_blank" rel="noopener noreferrer">
-                  Google Calendar
-                </a>
-                <a className="pp-book-btn pp-book-btn--ghost" href={appleCalendarDataUrl(event)} download="petpal-booking.ics">
-                  Apple Calendar
-                </a>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                <CalendarAddButtons
+                  booking={b}
+                  className="pp-bookConfirmCalRow pp-bookConfirmCalRow--inline"
+                  googleLabel="Google Calendar"
+                  appleLabel="Apple Calendar"
+                />
                 <Link className="pp-book-btn pp-book-btn--ghost" to={`provider/${b.companyId}`}>
                   {t('bookingsHub.mineOpen')}
                 </Link>
               </div>
             </div>
-          );
-        })}
+          ))}
       </div>
     </div>
   );
