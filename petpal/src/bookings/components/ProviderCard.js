@@ -7,9 +7,10 @@ function categoryLabel(types, t) {
   const pt = types && typeof types === 'object' ? types : {};
   const bits = [];
   if (pt.vet) bits.push(t('bookingsHub.tabVet'));
-  if (pt.bath) bits.push('Bath');
+  if (pt.bath) bits.push(t('bookingsHub.tabBath'));
   if (pt.saloon) bits.push(t('bookingsHub.tabGroom'));
   if (pt.hotel) bits.push(t('bookingsHub.tabHotel'));
+  if (pt.walker) bits.push(t('bookingsHub.tabWalker'));
   return bits.length ? bits.join(' · ') : t('bookingsHub.tabVet');
 }
 

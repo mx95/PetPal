@@ -39,6 +39,7 @@ function businessTypeLabel(providerTypes = {}) {
   if (providerTypes.park) return 'Pet / dog park';
   if (providerTypes.hotel) return 'Pet hotel & boarding';
   if (providerTypes.bath || providerTypes.saloon) return 'Grooming & bath';
+  if (providerTypes.walker) return 'Pet walkers';
   if (providerTypes.daycare) return 'Daycare';
   if (providerTypes.cafe) return 'Pet cafe & events';
   return 'All pet services';
@@ -50,6 +51,7 @@ function businessIcon(providerTypes = {}) {
   if (providerTypes.park) return '🌳';
   if (providerTypes.hotel) return '🏨';
   if (providerTypes.bath || providerTypes.saloon) return '🛁';
+  if (providerTypes.walker) return '🦮';
   if (providerTypes.daycare) return '☀️';
   if (providerTypes.cafe) return '☕';
   return '🐾';
@@ -59,6 +61,7 @@ function serviceIcon(type) {
   if (type === 'vet') return '🩺';
   if (type === 'bath' || type === 'saloon') return '🛁';
   if (type === 'hotel') return '🏨';
+  if (type === 'walker') return '🦮';
   if (type === 'shop') return '🛍️';
   if (type === 'daycare') return '☀️';
   if (type === 'cafe') return '☕';
@@ -102,7 +105,7 @@ function buildPublishState(companyProfile, providerDoc) {
     providerTypes:
       providerDoc?.providerTypes && typeof providerDoc.providerTypes === 'object'
         ? providerDoc.providerTypes
-        : { vet: true, saloon: false, hotel: false, shop: false },
+        : { vet: true, saloon: false, hotel: false, walker: false, shop: false },
     workingHours: providerDoc?.workingHours || companyProfile?.workingHours || 'Mon-Fri 09:00-18:00',
     breakHours: providerDoc?.breakHours || '13:00-14:00',
     holidayClosures: providerDoc?.holidayClosures || '',
@@ -880,6 +883,7 @@ function Services({ companyId }) {
                 <option value="bath">Bath</option>
                 <option value="saloon">Saloon</option>
                 <option value="hotel">Hotel</option>
+                <option value="walker">Pet walker</option>
               </select>
             </label>
             <label className="pp-field">
@@ -1043,6 +1047,35 @@ function PublicListingPanel({
               <span aria-hidden />
             </label>
           </div>
+          <fieldset className="pp-field">
+            <legend className="pp-field__label">Categories shown in Bookings search</legend>
+            <p className="pp-muted" style={{ fontSize: 13, marginBottom: 8 }}>
+              Select every service type customers can book from you.
+            </p>
+            <div className="pp-providerTypeChecks">
+              {[
+                { key: 'vet', label: 'Vet' },
+                { key: 'walker', label: 'Pet walkers' },
+                { key: 'bath', label: 'Bath & wash' },
+                { key: 'saloon', label: 'Grooming' },
+                { key: 'hotel', label: 'Pet hotel' },
+              ].map(({ key, label }) => (
+                <label key={key} className="pp-field pp-field--checkbox">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(publish.providerTypes?.[key])}
+                    onChange={(e) =>
+                      setPublish((p) => ({
+                        ...p,
+                        providerTypes: { ...p.providerTypes, [key]: e.target.checked },
+                      }))
+                    }
+                  />
+                  <span>{label}</span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
           <div className="pp-field">
             <span className="pp-field__label">Import from your map pin</span>
             <ListingPlaceImportField

@@ -1452,6 +1452,7 @@ const ru = {
     tabGroom: 'Груминг',
     tabHotel: 'Отель',
     tabBath: 'Купание',
+    tabWalker: 'Выгул собак',
     recommendedTitle: 'Рекомендуем',
     recommendedSub: 'Местный бизнес с продвижением',
     filtersTitle: 'Поиск',

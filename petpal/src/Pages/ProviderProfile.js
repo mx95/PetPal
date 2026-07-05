@@ -59,7 +59,7 @@ export default function ProviderProfile() {
   );
 
   const grouped = useMemo(() => {
-    const g = { vet: [], saloon: [], hotel: [], bath: [] };
+    const g = { vet: [], saloon: [], hotel: [], bath: [], walker: [] };
     services.forEach((s) => {
       const k = s.type || 'vet';
       if (!g[k]) g[k] = [];
@@ -68,7 +68,9 @@ export default function ProviderProfile() {
     return g;
   }, [services]);
 
-  const groupLabels = { vet: 'Vet', saloon: 'Grooming', hotel: 'Hotel', bath: 'Bath' };
+  const groupLabels = { vet: 'Vet', saloon: 'Grooming', hotel: 'Hotel', bath: 'Bath', walker: 'Pet walkers' };
+
+  const groupOrder = ['vet', 'walker', 'bath', 'saloon', 'hotel'];
 
   if (needsLegacyRedirect) {
     return <Navigate to={`/bookings/provider/${encodeURIComponent(companyId)}`} replace />;
@@ -93,7 +95,7 @@ export default function ProviderProfile() {
         {services.length === 0 ? <div className="pp-muted">No services published yet.</div> : null}
 
         <div className="pp-stack" style={{ marginTop: 10 }}>
-          {['vet', 'bath', 'saloon', 'hotel'].map((k) =>
+          {groupOrder.map((k) =>
             grouped[k]?.length ? (
               <div key={k} style={{ marginBottom: 8 }}>
                 <div style={{ fontWeight: 900, marginBottom: 6 }}>{groupLabels[k] || k}</div>
