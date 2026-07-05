@@ -195,9 +195,6 @@ export default function BusinessWeekBookings() {
         <div className="pp-providerPanel__head">
           <div>
             <h2 className="pp-sectionTitle" style={{ margin: 0 }}>{t('businessWeek.monthTitle')}</h2>
-            <p className="pp-muted" style={{ marginTop: 4, marginBottom: 0 }}>
-              {t('businessWeek.monthHeatHint')}
-            </p>
           </div>
         </div>
 

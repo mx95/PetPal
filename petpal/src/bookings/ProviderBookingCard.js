@@ -1,5 +1,6 @@
 import React from 'react';
 import { formatDateTime24 } from '../formatTime24';
+import TimeRangeRow from '../components/TimeRangeRow';
 import {
   bookingEndDate,
   bookingStartDate,
@@ -46,15 +47,12 @@ export default function ProviderBookingCard({
         ) : null}
       </div>
 
-      <div className="pp-bookingDetailCard__timeRow" aria-label="Appointment time">
-        <span className="pp-bookingDetailCard__timeLabel">From</span>
-        <strong className="pp-bookingDetailCard__timeValue">{startLabel}</strong>
-        <span className="pp-bookingDetailCard__timeArrow" aria-hidden>
-          →
-        </span>
-        <strong className="pp-bookingDetailCard__timeValue">{endLabel}</strong>
-        <span className="pp-bookingDetailCard__timeLabel">To</span>
-      </div>
+      <TimeRangeRow
+        readOnly
+        startTime={startLabel}
+        endTime={endLabel}
+        className="pp-timeRangeRow--booking"
+      />
 
       {showActions && actionable ? (
         <div className="pp-bookingDetailCard__actions">
