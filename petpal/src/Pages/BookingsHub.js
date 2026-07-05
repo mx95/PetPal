@@ -59,7 +59,7 @@ function BrowseProviders() {
   const [rows, setRows] = useState([]);
   const [loaded, setLoaded] = useState(false);
   const [err, setErr] = useState('');
-  const [serviceTab, setServiceTab] = useState(/** @type {'vet'|'saloon'|'hotel'|'bath'} */ ('vet'));
+  const [serviceTab, setServiceTab] = useState(/** @type {'vet'|'saloon'|'hotel'|'bath'|'walker'} */ ('vet'));
   const [search, setSearch] = useState('');
   const [ratingFilter] = useState(/** @type {'any'|'4'|'4.5'} */ ('any'));
   const [distanceFilter] = useState(/** @type {'any'|'5'|'15'|'30'} */ ('any'));
@@ -140,6 +140,7 @@ function BrowseProviders() {
       { id: 'hotel', emoji: '🏨', label: t('bookingsHub.tabHotel') },
       { id: 'bath', emoji: '🛁', label: t('bookingsHub.tabBath') },
       { id: 'saloon', emoji: '✂️', label: t('bookingsHub.tabGroom') },
+      { id: 'walker', emoji: '🦮', label: t('bookingsHub.tabWalker') },
     ],
     [t]
   );

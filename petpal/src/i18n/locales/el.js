@@ -232,8 +232,8 @@ const el = {
     actions: {
       aria: 'Γρήγορες ενέργειες',
       vets: 'Κτηνίατροι κοντά',
-      groomers: 'Groomers',
-      shops: 'Pet shops',
+      groomers: 'Κομμωτήρια',
+      shops: 'Καταστήματα',
       lost: 'Χαμένα κατοικίδια',
       bookings: 'Κρατήσεις',
       walk: 'Καταγραφή βόλτας',
@@ -1476,6 +1476,7 @@ const el = {
     tabGroom: 'Grooming',
     tabHotel: 'Ξενοδοχείο',
     tabBath: 'Λούσιμο',
+    tabWalker: 'Βόλτες κατοικιδίων',
     recommendedTitle: 'Προτεινόμενα',
     recommendedSub: 'Τοπικές επιχειρήσεις με ενίσχυση',
     filtersTitle: 'Εύρεση',

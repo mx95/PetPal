@@ -58,6 +58,15 @@ export function subscribeProviderProfile(companyId, onNext, onError) {
  * @param {string} companyId
  * @param {Record<string, unknown>} companyData companies/{companyId} fields before status flip
  */
+function providerTypesFromBusinessType(businessType) {
+  const t = String(businessType || '').toLowerCase();
+  if (t === 'pet_walker') return { vet: false, saloon: false, hotel: false, walker: true, bath: false, shop: false };
+  if (t === 'pet_hotel') return { vet: false, saloon: false, hotel: true, walker: false, bath: false, shop: false };
+  if (t === 'vet_clinic') return { vet: true, saloon: false, hotel: false, walker: false, bath: false, shop: false };
+  if (t === 'pet_shop') return { vet: false, saloon: false, hotel: false, walker: false, bath: false, shop: true };
+  return { vet: true, saloon: true, hotel: true, walker: false, shop: false };
+}
+
 export async function seedProviderListingFromCompany(companyId, companyData) {
   if (!isFirebaseConfigured() || !companyId || !companyData || typeof companyData !== 'object') return;
   const pRef = doc(getDb(), 'providers', companyId);
@@ -71,7 +80,7 @@ export async function seedProviderListingFromCompany(companyId, companyData) {
     phone: String(companyData.publicEmail || '').trim().slice(0, 60),
     lat: finiteCoordFromPatch(companyData.lat),
     lng: finiteCoordFromPatch(companyData.lng),
-    providerTypes: { vet: true, saloon: true, hotel: true, shop: false },
+    providerTypes: providerTypesFromBusinessType(companyData.businessType),
   });
 }
 

@@ -1325,6 +1325,7 @@ const en = {
     tabGroom: 'Grooming',
     tabHotel: 'Hotel',
     tabBath: 'Bath & wash',
+    tabWalker: 'Pet walkers',
     recommendedTitle: 'Recommended',
     recommendedSub: 'Boosted local businesses',
     filtersTitle: 'Find',

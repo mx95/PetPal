@@ -339,6 +339,7 @@ const el = {
     tabGroom: 'Grooming',
     tabHotel: 'Ξενοδοχείο',
     tabBath: 'Λούσιμο',
+    tabWalker: 'Βόλτες κατοικιδίων',
     recommendedTitle: 'Προτεινόμενα',
     recommendedSub: 'Τοπικές επιχειρήσεις με ενίσχυση',
     filtersTitle: 'Εύρεση',

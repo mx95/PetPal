@@ -1,4 +1,4 @@
-/** @typedef {'vet'|'saloon'|'hotel'|'bath'} ServiceTabId */
+/** @typedef {'vet'|'saloon'|'hotel'|'bath'|'walker'} ServiceTabId */
 
 /**
  * @param {Record<string, unknown>} p
@@ -10,6 +10,7 @@ export function providerMatchesServiceTab(p, tabId) {
   if (tabId === 'bath') return Boolean(pt.bath || pt.saloon);
   if (tabId === 'saloon') return Boolean(pt.saloon);
   if (tabId === 'hotel') return Boolean(pt.hotel);
+  if (tabId === 'walker') return Boolean(pt.walker);
   return true;
 }
 
@@ -27,6 +28,9 @@ export function pickDefaultServiceForTab(services, serviceTab) {
     if (serviceTab === 'saloon') return type === 'saloon' || type === 'bath';
     if (serviceTab === 'vet') return type === 'vet';
     if (serviceTab === 'hotel') return type === 'hotel';
+    if (serviceTab === 'walker') {
+      return type === 'walker' || /walk|walker/i.test(String(s.name || ''));
+    }
     return true;
   });
   return forTab[0] || act[0] || null;

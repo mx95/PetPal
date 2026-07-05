@@ -14,6 +14,7 @@ const BUSINESS_TYPES = [
   { id: 'vet_clinic', label: 'Vet clinic' },
   { id: 'pet_shop', label: 'Pet shop' },
   { id: 'pet_hotel', label: 'Pet hotel' },
+  { id: 'pet_walker', label: 'Pet walkers' },
   { id: 'other', label: 'Other' },
 ];
 
