@@ -53,21 +53,17 @@ function isCatalogSlotId(slotId) {
   return String(slotId || '').startsWith('slot_');
 }
 
-function mapBookingError(e) {
+function mapBookingError(e, t) {
   const code = String(e?.code || '');
   const msg = String(e?.message || '');
-  if (msg === 'slot_not_open') return 'That time is no longer available. Please pick another slot.';
-  if (msg === 'slot_not_found') return 'That time slot was not found. Please pick another slot.';
-  if (msg === 'booking_not_enabled') {
-    return 'Online booking is not enabled for this business yet. Ask them to turn on public booking in their portal.';
-  }
-  if (msg === 'booking_timeout') return 'Booking is taking too long. Check your connection and try again.';
-  if (msg === 'firebase_unconfigured') return 'Online booking is unavailable right now.';
-  if (msg === 'missing_fields') return 'Please complete all booking details.';
-  if (code === 'permission-denied' || /permission/i.test(msg)) {
-    return 'Could not confirm this booking. The business may need to enable public booking.';
-  }
-  return msg || 'Booking failed. Please try again.';
+  if (msg === 'slot_not_open') return t('bookConfirm.errorSlotTaken');
+  if (msg === 'slot_not_found') return t('bookConfirm.errorSlotMissing');
+  if (msg === 'booking_not_enabled') return t('bookConfirm.errorNotEnabled');
+  if (msg === 'booking_timeout') return t('bookConfirm.errorTimeout');
+  if (msg === 'firebase_unconfigured') return t('bookConfirm.errorOffline');
+  if (msg === 'missing_fields') return t('bookConfirm.errorIncomplete');
+  if (code === 'permission-denied' || /permission/i.test(msg)) return t('bookConfirm.errorPermission');
+  return msg && msg !== 'failed' ? msg : t('bookConfirm.errorGeneric');
 }
 
 function withTimeout(promise, ms, errorCode = 'timeout') {
@@ -378,8 +374,8 @@ export default function BookService({ embedded = false }) {
     [useCatalog, companyId]
   );
 
-  const refresh = async () => {
-    setErr('');
+  const refresh = async ({ preserveError = false } = {}) => {
+    if (!preserveError) setErr('');
     setLoadingSlots(true);
     try {
       let rows = [];
@@ -497,6 +493,14 @@ export default function BookService({ embedded = false }) {
 
   const onBook = async () => {
     setErr('');
+    if (!uid) {
+      setErr(t('bookConfirm.errorSignIn'));
+      return;
+    }
+    if (!slotId) {
+      setErr(t('bookConfirm.errorPickSlot'));
+      return;
+    }
     setBusy(true);
     try {
       const pet = selectedPet;
@@ -577,6 +581,7 @@ export default function BookService({ embedded = false }) {
           addonsSnapshot,
           serviceSnapshot,
           durationMin: resolvedDuration,
+          forCustomer: true,
         }),
         45000,
         'booking_timeout'
@@ -622,9 +627,13 @@ export default function BookService({ embedded = false }) {
       });
       setBusy(false);
     } catch (e) {
-      setErr(mapBookingError(e));
       setBusy(false);
-      refresh();
+      const bookingErr = mapBookingError(e, t);
+      const code = String(e?.message || '');
+      if (code === 'slot_not_open' || code === 'slot_not_found') {
+        await refresh({ preserveError: true });
+      }
+      setErr(bookingErr);
     }
   };
 

@@ -550,6 +550,7 @@ export async function bookSlot({
   variantSnapshot = null,
   serviceSnapshot = null,
   durationMin = null,
+  forCustomer = false,
 }) {
   if (!isFirebaseConfigured()) throw new Error('firebase_unconfigured');
   if (!companyId || !serviceId || !slotId || !customerUid || !petId) throw new Error('missing_fields');
@@ -585,7 +586,8 @@ export async function bookSlot({
   const batch = writeBatch(getDb());
   const bookingRef = doc(bookingsCol());
   batch.set(bookingRef, bookingPayload);
-  if (!resolved.generated && resolved.slotRef) {
+  const shouldBlockLegacySlot = !forCustomer && !resolved.generated && resolved.slotRef;
+  if (shouldBlockLegacySlot) {
     batch.update(resolved.slotRef, {
       status: 'blocked',
       updatedAt: serverTimestamp(),
