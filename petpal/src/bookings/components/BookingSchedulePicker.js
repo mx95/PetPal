@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { formatTime24 } from '../../formatTime24';
+import { slotStartDate } from '../slotTime';
 
 function pad2(n) {
   return String(n).padStart(2, '0');
@@ -40,15 +41,8 @@ function calendarDowLabels() {
   );
 }
 
-function slotAt(slot, key) {
-  const v = slot?.[key];
-  if (v?.toDate) return v.toDate();
-  if (slot?.[`${key}Iso`]) return new Date(slot[`${key}Iso`]);
-  return null;
-}
-
 function slotStartMs(slot) {
-  const d = slotAt(slot, 'startAt');
+  const d = slotStartDate(slot);
   return d ? d.getTime() : 0;
 }
 
@@ -83,8 +77,9 @@ export function BookingSchedulePicker({
   const uniqueSlots = useMemo(() => {
     const seen = new Set();
     return slots.filter((sl) => {
-      const start = slotAt(sl, 'startAt');
-      const key = start ? start.toISOString() : sl.id;
+      const start = slotStartDate(sl);
+      if (!start) return false;
+      const key = start.toISOString();
       if (seen.has(key)) return false;
       seen.add(key);
       return true;
@@ -168,7 +163,8 @@ export function BookingSchedulePicker({
           <div className="pp-book-slotGrid pp-book-slotGrid--premium pp-book-slotGrid--uniform">
             {sortedSlots.map((sl) => {
               const active = sl.id === slotId;
-              const startDate = slotAt(sl, 'startAt');
+              const startDate = slotStartDate(sl);
+              if (!startDate) return null;
               return (
                 <button
                   key={sl.id}
@@ -176,7 +172,7 @@ export function BookingSchedulePicker({
                   className={`pp-book-slot pp-book-slot--rich${active ? ' is-active' : ''}`}
                   onClick={() => onSlotIdChange(sl.id)}
                 >
-                  <strong>{startDate ? formatTime24(startDate) : sl.id}</strong>
+                  <strong>{formatTime24(startDate)}</strong>
                   <span>{durationMin} mins</span>
                 </button>
               );

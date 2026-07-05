@@ -21853,6 +21853,11 @@ html[data-theme="dark"] .pp-nearbyPartnerCard__name {
 
 .pp-bookSchedulePick--compact .pp-book-slot--rich strong {
   font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 .pp-bookSchedulePick--compact .pp-book-slot--rich span {
