@@ -1,5 +1,5 @@
 import { computeAvailableSlots, DEFAULT_SCHEDULING_SETTINGS } from './availabilityEngine';
-import { encodeGeneratedSlotId } from './slotId';
+import { encodeGeneratedSlotId, resolveGeneratedSlotTimes } from './slotId';
 
 const TZ = 'UTC';
 const settings = { ...DEFAULT_SCHEDULING_SETTINGS, timezone: TZ, advanceNoticeMin: 0, holidayMode: 'ignore' };
@@ -141,4 +141,12 @@ test('existing booking removes only overlapping slot', () => {
 test('generated slot ids are stable', () => {
   const id = encodeGeneratedSlotId({ startMs: 1000, serviceId: 'abc' });
   expect(id).toBe('gen_1000_abc');
+});
+
+test('resolveGeneratedSlotTimes builds start/end from id and duration', () => {
+  const id = encodeGeneratedSlotId({ startMs: 1_720_444_800_000, serviceId: 'svc1' });
+  const resolved = resolveGeneratedSlotTimes(id, 25);
+  expect(resolved?.serviceId).toBe('svc1');
+  expect(resolved?.start.getTime()).toBe(1_720_444_800_000);
+  expect(resolved?.end.getTime()).toBe(1_720_444_800_000 + 25 * 60_000);
 });

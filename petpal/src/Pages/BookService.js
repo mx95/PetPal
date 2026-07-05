@@ -53,6 +53,28 @@ function isCatalogSlotId(slotId) {
   return String(slotId || '').startsWith('slot_');
 }
 
+function mapBookingError(e, t) {
+  const code = String(e?.code || '');
+  const msg = String(e?.message || '');
+  if (msg === 'slot_not_open') return t('bookConfirm.errorSlotTaken');
+  if (msg === 'slot_not_found') return t('bookConfirm.errorSlotMissing');
+  if (msg === 'booking_not_enabled') return t('bookConfirm.errorNotEnabled');
+  if (msg === 'booking_timeout') return t('bookConfirm.errorTimeout');
+  if (msg === 'firebase_unconfigured') return t('bookConfirm.errorOffline');
+  if (msg === 'missing_fields') return t('bookConfirm.errorIncomplete');
+  if (code === 'permission-denied' || /permission/i.test(msg)) return t('bookConfirm.errorPermission');
+  return msg && msg !== 'failed' ? msg : t('bookConfirm.errorGeneric');
+}
+
+function withTimeout(promise, ms, errorCode = 'timeout') {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => {
+      setTimeout(() => reject(new Error(errorCode)), ms);
+    }),
+  ]);
+}
+
 async function resolveBusinessEmail(companyId, catalogProvider) {
   if (catalogProvider?.email) return String(catalogProvider.email).trim();
   if (!isFirebaseConfigured()) return '';
@@ -352,8 +374,8 @@ export default function BookService({ embedded = false }) {
     [useCatalog, companyId]
   );
 
-  const refresh = async () => {
-    setErr('');
+  const refresh = async ({ preserveError = false } = {}) => {
+    if (!preserveError) setErr('');
     setLoadingSlots(true);
     try {
       let rows = [];
@@ -471,6 +493,14 @@ export default function BookService({ embedded = false }) {
 
   const onBook = async () => {
     setErr('');
+    if (!uid) {
+      setErr(t('bookConfirm.errorSignIn'));
+      return;
+    }
+    if (!slotId) {
+      setErr(t('bookConfirm.errorPickSlot'));
+      return;
+    }
     setBusy(true);
     try {
       const pet = selectedPet;
@@ -538,18 +568,24 @@ export default function BookService({ embedded = false }) {
         return;
       }
 
-      const bookingId = await bookSlot({
-        companyId,
-        serviceId,
-        slotId,
-        customerUid: uid,
-        petId,
-        petSnapshot: { name: pet?.name || '', categoryId: pet?.categoryId || 'dog' },
-        variantId: variantId || null,
-        variantSnapshot,
-        addonsSnapshot,
-        serviceSnapshot,
-      });
+      const bookingId = await withTimeout(
+        bookSlot({
+          companyId,
+          serviceId,
+          slotId,
+          customerUid: uid,
+          petId,
+          petSnapshot: { name: pet?.name || '', categoryId: pet?.categoryId || 'dog' },
+          variantId: variantId || null,
+          variantSnapshot,
+          addonsSnapshot,
+          serviceSnapshot,
+          durationMin: resolvedDuration,
+          forCustomer: true,
+        }),
+        45000,
+        'booking_timeout'
+      );
       setConfirmedBooking({
         id: bookingId,
         bookingId,
@@ -591,9 +627,13 @@ export default function BookService({ embedded = false }) {
       });
       setBusy(false);
     } catch (e) {
-      setErr(e?.message || 'failed');
       setBusy(false);
-      refresh();
+      const bookingErr = mapBookingError(e, t);
+      const code = String(e?.message || '');
+      if (code === 'slot_not_open' || code === 'slot_not_found') {
+        await refresh({ preserveError: true });
+      }
+      setErr(bookingErr);
     }
   };
 

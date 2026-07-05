@@ -94,7 +94,15 @@ service cloud.firestore {
       // Slot-based availability (owner reads while setting up; customers when listing exists).
       match /availability/{slotId} {
         allow read: if canReadProviderBookingData(companyId);
-        allow create, update, delete: if canManageProviderData(companyId);
+        allow create, delete: if canManageProviderData(companyId);
+        allow update: if canManageProviderData(companyId)
+          || (
+            request.auth != null
+            && isPublicBookableCompany(companyId)
+            && resource.data.status == 'open'
+            && request.resource.data.status == 'blocked'
+            && request.resource.data.bookingId is string
+          );
       }
 
       match /availabilityRules/{ruleId} {

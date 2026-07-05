@@ -21,3 +21,14 @@ export function parseGeneratedSlotId(slotId) {
 export function isGeneratedSlotId(slotId) {
   return parseGeneratedSlotId(slotId) != null;
 }
+
+/** Build start/end for a rule-engine slot id without re-querying availability. */
+export function resolveGeneratedSlotTimes(slotId, durationMin) {
+  const generated = parseGeneratedSlotId(slotId);
+  if (!generated) return null;
+  const mins = Math.max(5, Number(durationMin) || 30);
+  const start = new Date(generated.startMs);
+  const end = new Date(generated.startMs + mins * 60000);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return null;
+  return { ...generated, start, end, durationMin: mins };
+}
