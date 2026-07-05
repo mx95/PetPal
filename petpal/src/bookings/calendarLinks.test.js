@@ -29,7 +29,9 @@ describe('calendarLinks', () => {
       endAtIso: '2026-07-06T10:50:00.000Z',
     });
     const url = googleCalendarUrl(event);
-    expect(url).toContain('calendar.google.com');
+    expect(url).toContain('www.google.com/calendar/render');
+    expect(url).toContain('action=TEMPLATE');
+    expect(url).toContain('sf=true');
     expect(url).toContain('dates=20260706T095500Z%2F20260706T105000Z');
   });
 

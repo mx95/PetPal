@@ -94,26 +94,36 @@ export function googleCalendarUrl(event) {
   const endStamp = googleDate(end);
   if (!startStamp || !endStamp) return '';
 
-  const url = new URL('https://calendar.google.com/calendar/render');
-  url.searchParams.set('action', 'TEMPLATE');
-  url.searchParams.set('text', event.title || 'PetPal appointment');
-  url.searchParams.set('dates', `${startStamp}/${endStamp}`);
-  if (event.details) url.searchParams.set('details', event.details);
-  if (event.location) url.searchParams.set('location', event.location);
-  return url.toString();
+  const params = new URLSearchParams();
+  params.set('action', 'TEMPLATE');
+  params.set('text', event.title || 'PetPal appointment');
+  params.set('dates', `${startStamp}/${endStamp}`);
+  params.set('sf', 'true');
+  params.set('output', 'xml');
+  if (event.details) params.set('details', event.details);
+  if (event.location) params.set('location', event.location);
+  // www.google.com/calendar/render opens the event editor on mobile; calendar.google.com
+  // often redirects signed-out users to the Workspace marketing page.
+  return `https://www.google.com/calendar/render?${params.toString()}`;
+}
+
+/** @deprecated Prefer native <a href> — see CalendarAddButtons. */
+export function openGoogleCalendar(event) {
+  const url = googleCalendarUrl(event);
+  if (!url) return false;
+  const link = document.createElement('a');
+  link.href = url;
+  link.target = '_blank';
+  link.rel = 'noopener noreferrer';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  return true;
 }
 
 /** @deprecated Prefer downloadAppleCalendar — data URLs fail on many mobile browsers. */
 export function appleCalendarDataUrl(event) {
   return `data:text/calendar;charset=utf-8,${encodeURIComponent(buildIcsContent(event))}`;
-}
-
-export function openGoogleCalendar(event) {
-  const url = googleCalendarUrl(event);
-  if (!url) return false;
-  const opened = window.open(url, '_blank', 'noopener,noreferrer');
-  if (!opened) window.location.assign(url);
-  return true;
 }
 
 export function downloadAppleCalendar(event, filename = 'petpal-booking.ics') {
