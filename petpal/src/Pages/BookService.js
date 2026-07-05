@@ -53,6 +53,32 @@ function isCatalogSlotId(slotId) {
   return String(slotId || '').startsWith('slot_');
 }
 
+function mapBookingError(e) {
+  const code = String(e?.code || '');
+  const msg = String(e?.message || '');
+  if (msg === 'slot_not_open') return 'That time is no longer available. Please pick another slot.';
+  if (msg === 'slot_not_found') return 'That time slot was not found. Please pick another slot.';
+  if (msg === 'booking_not_enabled') {
+    return 'Online booking is not enabled for this business yet. Ask them to turn on public booking in their portal.';
+  }
+  if (msg === 'booking_timeout') return 'Booking is taking too long. Check your connection and try again.';
+  if (msg === 'firebase_unconfigured') return 'Online booking is unavailable right now.';
+  if (msg === 'missing_fields') return 'Please complete all booking details.';
+  if (code === 'permission-denied' || /permission/i.test(msg)) {
+    return 'Could not confirm this booking. The business may need to enable public booking.';
+  }
+  return msg || 'Booking failed. Please try again.';
+}
+
+function withTimeout(promise, ms, errorCode = 'timeout') {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => {
+      setTimeout(() => reject(new Error(errorCode)), ms);
+    }),
+  ]);
+}
+
 async function resolveBusinessEmail(companyId, catalogProvider) {
   if (catalogProvider?.email) return String(catalogProvider.email).trim();
   if (!isFirebaseConfigured()) return '';
@@ -538,18 +564,23 @@ export default function BookService({ embedded = false }) {
         return;
       }
 
-      const bookingId = await bookSlot({
-        companyId,
-        serviceId,
-        slotId,
-        customerUid: uid,
-        petId,
-        petSnapshot: { name: pet?.name || '', categoryId: pet?.categoryId || 'dog' },
-        variantId: variantId || null,
-        variantSnapshot,
-        addonsSnapshot,
-        serviceSnapshot,
-      });
+      const bookingId = await withTimeout(
+        bookSlot({
+          companyId,
+          serviceId,
+          slotId,
+          customerUid: uid,
+          petId,
+          petSnapshot: { name: pet?.name || '', categoryId: pet?.categoryId || 'dog' },
+          variantId: variantId || null,
+          variantSnapshot,
+          addonsSnapshot,
+          serviceSnapshot,
+          durationMin: resolvedDuration,
+        }),
+        45000,
+        'booking_timeout'
+      );
       setConfirmedBooking({
         id: bookingId,
         bookingId,
@@ -591,7 +622,7 @@ export default function BookService({ embedded = false }) {
       });
       setBusy(false);
     } catch (e) {
-      setErr(e?.message || 'failed');
+      setErr(mapBookingError(e));
       setBusy(false);
       refresh();
     }

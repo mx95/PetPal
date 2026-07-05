@@ -16,7 +16,7 @@ import {
 } from 'firebase/firestore';
 import { getDb, isFirebaseConfigured } from '../firebase';
 import { computeAvailableSlots, slotToFirestoreShape } from './availability/availabilityEngine';
-import { parseGeneratedSlotId } from './availability/slotId';
+import { parseGeneratedSlotId, resolveGeneratedSlotTimes } from './availability/slotId';
 import {
   fetchBookingsInRange,
   fetchSchedulingSettings,
@@ -388,19 +388,14 @@ export async function fetchCompanyService(companyId, serviceId) {
 }
 
 async function resolveOpenSlot(companyId, serviceId, slotId, { durationMin = null } = {}) {
-  const generated = parseGeneratedSlotId(slotId);
+  const generated = resolveGeneratedSlotTimes(slotId, durationMin);
   if (generated) {
     if (String(generated.serviceId) !== String(serviceId)) throw new Error('slot_not_open');
-    const start = new Date(generated.startMs);
-    const open = await fetchOpenSlots(companyId, serviceId, {
-      after: new Date(start.getTime() - 60000),
-      durationMin,
-    });
-    const match = open.find((s) => s.id === slotId);
-    if (!match) throw new Error('slot_not_open');
-    const startAt = match.startAt instanceof Date ? Timestamp.fromDate(match.startAt) : match.startAt;
-    const endAt = match.endAt instanceof Date ? Timestamp.fromDate(match.endAt) : match.endAt;
-    return { generated: true, startAt, endAt };
+    return {
+      generated: true,
+      startAt: Timestamp.fromDate(generated.start),
+      endAt: Timestamp.fromDate(generated.end),
+    };
   }
 
   const slotRef = doc(getDb(), 'companies', companyId, 'availability', slotId);
@@ -532,6 +527,18 @@ export async function createProviderBooking({
   return bookingRef.id;
 }
 
+function resolveBookingDurationMin({ durationMin = null, serviceSnapshot = null, variantSnapshot = null, service = null } = {}) {
+  const explicit = Number(durationMin);
+  if (Number.isFinite(explicit) && explicit >= 5) return Math.round(explicit);
+  const fromServiceSnapshot = Number(serviceSnapshot?.durationMin);
+  if (Number.isFinite(fromServiceSnapshot) && fromServiceSnapshot >= 5) return Math.round(fromServiceSnapshot);
+  const fromVariant = Number(variantSnapshot?.durationMin);
+  if (Number.isFinite(fromVariant) && fromVariant >= 5) return Math.round(fromVariant);
+  const fromService = Number(service?.durationMin);
+  if (Number.isFinite(fromService) && fromService >= 5) return Math.round(fromService);
+  return 30;
+}
+
 export async function bookSlot({
   companyId,
   serviceId,
@@ -542,13 +549,19 @@ export async function bookSlot({
   variantId = null,
   variantSnapshot = null,
   serviceSnapshot = null,
+  durationMin = null,
 }) {
   if (!isFirebaseConfigured()) throw new Error('firebase_unconfigured');
   if (!companyId || !serviceId || !slotId || !customerUid || !petId) throw new Error('missing_fields');
 
   const service = serviceSnapshot || (await fetchCompanyService(companyId, serviceId));
-  const durationMin = variantSnapshot?.durationMin || service?.durationMin || 30;
-  const resolved = await resolveOpenSlot(companyId, serviceId, slotId, { durationMin });
+  const resolvedDurationMin = resolveBookingDurationMin({
+    durationMin,
+    serviceSnapshot,
+    variantSnapshot,
+    service,
+  });
+  const resolved = await resolveOpenSlot(companyId, serviceId, slotId, { durationMin: resolvedDurationMin });
   const slotStart = resolved.startAt;
   const slotEnd = resolved.endAt;
 
@@ -580,7 +593,16 @@ export async function bookSlot({
       bookingId: bookingRef.id,
     });
   }
-  await batch.commit();
+  try {
+    await batch.commit();
+  } catch (e) {
+    const code = String(e?.code || '');
+    const msg = String(e?.message || '');
+    if (code === 'permission-denied' || /permission/i.test(msg)) {
+      throw new Error('booking_not_enabled');
+    }
+    throw e;
+  }
 
   return bookingRef.id;
 }
