@@ -88,7 +88,7 @@ export async function publishProviderProfile(companyId, patch) {
   if (!isFirebaseConfigured() || !companyId || !patch || typeof patch !== 'object') return;
   const payload = { updatedAt: serverTimestamp() };
 
-  if ('bookingEnabled' in patch) payload.bookingEnabled = Boolean(patch.bookingEnabled);
+  if ('bookingEnabled' in patch) payload.bookingEnabled = patch.bookingEnabled === true;
   if (patch.displayName !== undefined) {
     payload.displayName = String(patch.displayName || '').trim().slice(0, 120);
   }
@@ -135,6 +135,32 @@ export async function publishProviderProfile(companyId, patch) {
 }
 
 export async function setProviderBookingEnabled(companyId, bookingEnabled) {
-  await publishProviderProfile(companyId, { bookingEnabled });
+  await publishProviderProfile(companyId, { bookingEnabled: bookingEnabled === true });
+}
+
+/** Coerce legacy provider rows to a strict boolean for booking checks. */
+export function normalizeBookingEnabledFlag(value) {
+  return value === true;
+}
+
+/**
+ * Live booking gate for customer appointments (read before bookSlot commit).
+ * @param {string} companyId
+ * @returns {Promise<{ exists: boolean, bookingEnabled: boolean, displayName: string }>}
+ */
+export async function getProviderBookingStatus(companyId) {
+  if (!isFirebaseConfigured() || !companyId) {
+    return { exists: false, bookingEnabled: false, displayName: '' };
+  }
+  const snap = await getDoc(doc(getDb(), 'providers', String(companyId)));
+  if (!snap.exists()) {
+    return { exists: false, bookingEnabled: false, displayName: '' };
+  }
+  const data = snap.data() || {};
+  return {
+    exists: true,
+    bookingEnabled: normalizeBookingEnabledFlag(data.bookingEnabled),
+    displayName: String(data.displayName || '').trim(),
+  };
 }
 
