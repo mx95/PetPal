@@ -46,6 +46,15 @@ function tsToMillis(v) {
   return null;
 }
 
+function withTimeout(promise, ms, code = 'timeout') {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => {
+      setTimeout(() => reject(new Error(code)), ms);
+    }),
+  ]);
+}
+
 export function subscribeCompanyServices(companyId, onNext, onError) {
   if (!isFirebaseConfigured() || !companyId) {
     onNext([]);
@@ -351,48 +360,61 @@ export async function updateBookingStatus(bookingId, patch) {
   await updateDoc(doc(getDb(), 'bookings', bookingId), { ...patch, updatedAt: serverTimestamp() });
 }
 
-export async function fetchOpenSlots(companyId, serviceId, { after = new Date(), durationMin = null, employeeId = null } = {}) {
+export async function fetchOpenSlots(
+  companyId,
+  serviceId,
+  { after = new Date(), durationMin = null, employeeId = null, rangeDays = 21, timeoutMs = 15000 } = {}
+) {
   if (!isFirebaseConfigured() || !companyId || !serviceId) return [];
 
-  const settings = await fetchSchedulingSettings(companyId);
-  if (settings.useRuleEngine !== false) {
-    try {
-      const ctx = await loadSchedulingContext(companyId);
-      if (ctx.rules.length) {
-        const service = await fetchCompanyService(companyId, serviceId);
-        const rangeEnd = new Date(after.getTime() + Math.min(settings.maxBookingDaysAhead || 90, 90) * 86400000);
-        const bookings = await fetchBookingsInRange(companyId, after, rangeEnd);
-        const slots = computeAvailableSlots({
-          settings,
-          service,
-          serviceId,
-          employeeId,
-          durationMin,
-          rules: ctx.rules,
-          overrides: ctx.overrides,
-          vacations: ctx.vacations,
-          blockedPeriods: ctx.blockedPeriods,
-          bookings,
-          rangeStart: after,
-          rangeEnd,
-        });
-        return slots.slice(0, 50).map(slotToFirestoreShape);
-      }
-    } catch {
-      /* fall through to legacy slots */
-    }
-  }
+  const load = async () => {
+    const settings = await fetchSchedulingSettings(companyId);
+    const horizonDays = Math.min(
+      Math.max(1, Number(rangeDays) || 21),
+      Math.min(settings.maxBookingDaysAhead || 90, 90)
+    );
+    const rangeEnd = new Date(after.getTime() + horizonDays * 86400000);
 
-  const q = query(
-    companyAvailabilityCol(companyId),
-    where('serviceId', '==', serviceId),
-    where('status', '==', 'open'),
-    where('startAt', '>=', Timestamp.fromDate(after)),
-    orderBy('startAt', 'asc'),
-    limit(50)
-  );
-  const snap = await getDocs(q);
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    if (settings.useRuleEngine !== false) {
+      try {
+        const ctx = await loadSchedulingContext(companyId);
+        if (ctx.rules.length) {
+          const service = await fetchCompanyService(companyId, serviceId);
+          const bookings = await fetchBookingsInRange(companyId, after, rangeEnd);
+          const slots = computeAvailableSlots({
+            settings,
+            service,
+            serviceId,
+            employeeId,
+            durationMin,
+            rules: ctx.rules,
+            overrides: ctx.overrides,
+            vacations: ctx.vacations,
+            blockedPeriods: ctx.blockedPeriods,
+            bookings,
+            rangeStart: after,
+            rangeEnd,
+          });
+          return slots.slice(0, 50).map(slotToFirestoreShape);
+        }
+      } catch {
+        /* fall through to legacy slots */
+      }
+    }
+
+    const q = query(
+      companyAvailabilityCol(companyId),
+      where('serviceId', '==', serviceId),
+      where('status', '==', 'open'),
+      where('startAt', '>=', Timestamp.fromDate(after)),
+      orderBy('startAt', 'asc'),
+      limit(50)
+    );
+    const snap = await getDocs(q);
+    return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  };
+
+  return withTimeout(load(), timeoutMs, 'slots_timeout');
 }
 
 export async function fetchCompanyService(companyId, serviceId) {

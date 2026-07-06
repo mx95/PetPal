@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
 import { useI18n } from '../i18n/I18nContext';
@@ -246,6 +246,8 @@ export default function BookService({ embedded = false }) {
   const [confirmedBooking, setConfirmedBooking] = useState(null);
   const [providerBookingEnabled, setProviderBookingEnabled] = useState(null);
   const [providerBookingCheckBusy, setProviderBookingCheckBusy] = useState(false);
+  const refreshSeqRef = useRef(0);
+  const autoDayJumpRef = useRef(0);
 
   const routeState = location.state && typeof location.state === 'object' ? location.state : null;
   const catalogProvider = useCatalog ? getCatalogProvider(companyId) : null;
@@ -412,46 +414,58 @@ export default function BookService({ embedded = false }) {
   );
 
   const refresh = async ({ preserveError = false } = {}) => {
+    const seq = ++refreshSeqRef.current;
     if (!preserveError) setErr('');
     setLoadingSlots(true);
     try {
       let rows = [];
-      if (isFirebaseConfigured()) {
-        rows = await fetchOpenSlots(companyId, String(serviceId || ''), { after, durationMin: resolvedDuration });
-      }
-      if (!rows.length && useCatalog) {
+      if (useCatalog) {
         rows = getCatalogSlots(companyId, String(serviceId || ''), { after, durationMin: resolvedDuration });
+      } else if (isFirebaseConfigured()) {
+        rows = await fetchOpenSlots(companyId, String(serviceId || ''), {
+          after,
+          durationMin: resolvedDuration,
+          rangeDays: 21,
+          timeoutMs: 15000,
+        });
       }
+      if (seq !== refreshSeqRef.current) return;
+
       const dayYmd = clampAfterDateYmd(afterDate);
       const sameDayRows = rows.filter((slot) => {
         const start = asDate(slot.startAt) || asDate(slot.startAtIso);
-        return start ? toLocalInputValue(start) === dayYmd : true;
+        return start ? toLocalInputValue(start) === dayYmd : false;
       });
-      if (!sameDayRows.length && rows.length && !useCatalog) {
+      if (!sameDayRows.length && rows.length && !useCatalog && autoDayJumpRef.current < 6) {
         const first = rows.find((slot) => asDate(slot.startAt) || asDate(slot.startAtIso));
         const start = first ? asDate(first.startAt) || asDate(first.startAtIso) : null;
         if (start) {
           const nextYmd = toLocalInputValue(start);
           if (nextYmd !== dayYmd) {
+            autoDayJumpRef.current += 1;
             setAfterDate(nextYmd);
             return;
           }
         }
       }
+      autoDayJumpRef.current = 0;
       setSlots(sameDayRows);
       setSlotId((prev) => {
         if (sameDayRows.some((r) => r.id === prev)) return prev;
         return sameDayRows.length ? sameDayRows[0].id : '';
       });
     } catch (e) {
+      if (seq !== refreshSeqRef.current) return;
       const msg = String(e?.message || '');
-      if (/permission/i.test(msg)) {
+      if (msg === 'slots_timeout') {
+        setErr(t('bookingsHub.slotsTimeout'));
+      } else if (/permission/i.test(msg)) {
         setErr('Could not load available times. Ask the business to save their listing under Availability → Public listing.');
       } else {
         setErr(msg || 'failed');
       }
     } finally {
-      setLoadingSlots(false);
+      if (seq === refreshSeqRef.current) setLoadingSlots(false);
     }
   };
 
@@ -953,7 +967,10 @@ export default function BookService({ embedded = false }) {
                 ) : null}
                 <BookingSchedulePicker
                   dayKey={clampAfterDateYmd(afterDate)}
-                  onDayKeyChange={(ymd) => setAfterDate(clampAfterDateYmd(ymd))}
+                  onDayKeyChange={(ymd) => {
+                    autoDayJumpRef.current = 0;
+                    setAfterDate(clampAfterDateYmd(ymd));
+                  }}
                   monthDate={monthDate}
                   onMonthDateChange={setMonthDate}
                   slots={slots}
