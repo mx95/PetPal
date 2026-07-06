@@ -1377,6 +1377,11 @@ const en = {
     modalDemoCta: 'Got it',
     mineEmpty: 'No bookings yet.',
     mineOpen: 'View details',
+    mineDetailTitle: 'Booking details',
+    mineDetailBack: 'Back to my bookings',
+    mineDetailLoading: 'Loading booking…',
+    mineDetailNotFound: 'This booking could not be found.',
+    mineDetailStatus: 'Status',
   },
   bookConfirm: {
     eyebrow: 'Appointment',
@@ -1543,7 +1548,7 @@ const en = {
     monthlyAddTrackerAgainSub: '',
     monthlyAddNfcAgainSub: '',
     monthlyExistingImeiTitle: 'I already have a GPS tracker',
-    monthlyExistingImeiSub: 'Enter the IMEI on your collar to activate this subscription — no new hardware charge.',
+    monthlyExistingImeiSub: '',
     monthlyExistingImeiLabel: 'Tracker IMEI',
     monthlyExistingImeiPlaceholder: '15-digit IMEI on the collar label',
     existingImeiInvalid: 'Enter a valid tracker IMEI (10–20 digits).',
@@ -1553,8 +1558,7 @@ const en = {
     tabProducts: 'Products',
     tabsAria: 'Shop sections',
     subInfoTitle: 'Each GPS tracker needs its own subscription',
-    subInfoBody:
-      'One PetPal Plus subscription covers one collar. Add another monthly plan for each extra tracker.',
+    subInfoBody: '',
     manageTitle: 'Your subscriptions',
     manageSub: 'Cancel here to stop renewal. We disable the tracker SIM after cancellation is processed.',
     manageLinkHint:

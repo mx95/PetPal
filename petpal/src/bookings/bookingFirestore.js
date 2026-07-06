@@ -241,6 +241,19 @@ function mapBookingDoc(d) {
   };
 }
 
+export async function fetchCustomerBooking(bookingId) {
+  if (!isFirebaseConfigured() || !bookingId) return null;
+  const snap = await getDoc(doc(getDb(), 'bookings', String(bookingId)));
+  if (!snap.exists()) return null;
+  const x = snap.data() || {};
+  return {
+    id: snap.id,
+    ...x,
+    startAtMs: tsToMillis(x.startAt),
+    endAtMs: tsToMillis(x.endAt),
+  };
+}
+
 export function subscribeProviderBookings(companyId, onNext, onError) {
   if (!isFirebaseConfigured() || !companyId) {
     onNext([]);
