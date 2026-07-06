@@ -1373,6 +1373,7 @@ const en = {
     modalNoSlots: 'No open slots for this day — try another date.',
     modalNoServices: 'No published services for this category yet — try another tab or open the provider page.',
     modalLoadingSlots: 'Loading slots…',
+    slotsTimeout: 'Loading times is taking too long. Check your connection and try again.',
     modalContinue: 'Continue to confirm',
     modalDemoCta: 'Got it',
     mineEmpty: 'No bookings yet.',

@@ -244,28 +244,41 @@ export async function deleteEmployee(companyId, employeeId) {
   await deleteDoc(doc(getDb(), 'companies', companyId, 'employees', employeeId));
 }
 
-export async function fetchBookingsInRange(companyId, rangeStart, rangeEnd) {
+export async function fetchBookingsInRange(companyId, rangeStart, rangeEnd, { limitCount = 500 } = {}) {
   if (!isFirebaseConfigured() || !companyId) return [];
+  const cap = Math.max(50, Math.min(Number(limitCount) || 500, 1000));
+  const startTs = Timestamp.fromDate(rangeStart);
+  const endTs = Timestamp.fromDate(rangeEnd);
   const q = query(
     collection(getDb(), 'bookings'),
     where('companyId', '==', companyId),
-    where('startAt', '>=', Timestamp.fromDate(rangeStart)),
-    where('startAt', '<=', Timestamp.fromDate(rangeEnd))
+    where('startAt', '>=', startTs),
+    where('startAt', '<=', endTs),
+    limit(cap)
   );
   try {
     const snap = await getDocs(q);
     return snap.docs.map(mapDoc);
   } catch {
-    const qSimple = query(collection(getDb(), 'bookings'), where('companyId', '==', companyId));
-    const snap = await getDocs(qSimple);
-    const startMs = rangeStart.getTime();
-    const endMs = rangeEnd.getTime();
-    return snap.docs
-      .map(mapDoc)
-      .filter((b) => {
-        const ms = b.startAt?.toDate?.()?.getTime?.() ?? b.startAtMs ?? 0;
-        return ms >= startMs && ms <= endMs;
-      });
+    const qFallback = query(
+      collection(getDb(), 'bookings'),
+      where('companyId', '==', companyId),
+      orderBy('startAt', 'desc'),
+      limit(cap)
+    );
+    try {
+      const snap = await getDocs(qFallback);
+      const startMs = rangeStart.getTime();
+      const endMs = rangeEnd.getTime();
+      return snap.docs
+        .map(mapDoc)
+        .filter((b) => {
+          const ms = b.startAt?.toDate?.()?.getTime?.() ?? b.startAtMs ?? 0;
+          return ms >= startMs && ms <= endMs;
+        });
+    } catch {
+      return [];
+    }
   }
 }
 
