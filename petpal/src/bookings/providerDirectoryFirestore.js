@@ -85,33 +85,56 @@ export async function seedProviderListingFromCompany(companyId, companyData) {
 }
 
 export async function publishProviderProfile(companyId, patch) {
-  if (!isFirebaseConfigured() || !companyId) return;
-  const payload = {
-    bookingEnabled: Boolean(patch?.bookingEnabled),
-    displayName: String(patch?.displayName || '').trim().slice(0, 120),
-    address: patch?.address ? String(patch.address).trim().slice(0, 200) : '',
-    phone: patch?.phone ? String(patch.phone).trim().slice(0, 60) : '',
-    lat: finiteCoordFromPatch(patch?.lat),
-    lng: finiteCoordFromPatch(patch?.lng),
-    providerTypes: patch?.providerTypes && typeof patch.providerTypes === 'object' ? patch.providerTypes : {},
-    workingHours: patch?.workingHours ? String(patch.workingHours).trim().slice(0, 120) : '',
-    breakHours: patch?.breakHours ? String(patch.breakHours).trim().slice(0, 120) : '',
-    holidayClosures: patch?.holidayClosures ? String(patch.holidayClosures).trim().slice(0, 300) : '',
-    staffCount: Number.isFinite(Number(patch?.staffCount)) ? Math.max(1, Number(patch.staffCount)) : 1,
-    slotIntervalMin: Number.isFinite(Number(patch?.slotIntervalMin)) ? Math.max(5, Number(patch.slotIntervalMin)) : 30,
-    holidayCountry: patch?.holidayCountry ? String(patch.holidayCountry).trim().slice(0, 2).toUpperCase() : 'CY',
-    boostEnabled: Boolean(patch?.boostEnabled || patch?.boostNearbyEnabled || patch?.boostBookingsEnabled),
-    boostNearbyEnabled: Boolean(patch?.boostNearbyEnabled),
-    boostBookingsEnabled: Boolean(patch?.boostBookingsEnabled),
-    sponsored: Boolean(patch?.sponsored || patch?.boostNearbyEnabled || patch?.boostEnabled),
-    recommended: Boolean(patch?.recommended || patch?.boostBookingsEnabled || patch?.boostEnabled),
-    updatedAt: serverTimestamp(),
-  };
-  if (patch?.bookingLimitEnabled && Number.isFinite(Number(patch?.bookingLimitPerDay))) {
-    payload.bookingLimitPerDay = Math.max(1, Number(patch.bookingLimitPerDay));
-  } else {
-    payload.bookingLimitPerDay = deleteField();
+  if (!isFirebaseConfigured() || !companyId || !patch || typeof patch !== 'object') return;
+  const payload = { updatedAt: serverTimestamp() };
+
+  if ('bookingEnabled' in patch) payload.bookingEnabled = Boolean(patch.bookingEnabled);
+  if (patch.displayName !== undefined) {
+    payload.displayName = String(patch.displayName || '').trim().slice(0, 120);
   }
+  if (patch.address !== undefined) payload.address = patch.address ? String(patch.address).trim().slice(0, 200) : '';
+  if (patch.phone !== undefined) payload.phone = patch.phone ? String(patch.phone).trim().slice(0, 60) : '';
+  if (patch.lat !== undefined) payload.lat = finiteCoordFromPatch(patch.lat);
+  if (patch.lng !== undefined) payload.lng = finiteCoordFromPatch(patch.lng);
+  if (patch.providerTypes !== undefined && typeof patch.providerTypes === 'object') {
+    payload.providerTypes = patch.providerTypes;
+  }
+  if (patch.workingHours !== undefined) {
+    payload.workingHours = patch.workingHours ? String(patch.workingHours).trim().slice(0, 120) : '';
+  }
+  if (patch.breakHours !== undefined) payload.breakHours = patch.breakHours ? String(patch.breakHours).trim().slice(0, 120) : '';
+  if (patch.holidayClosures !== undefined) {
+    payload.holidayClosures = patch.holidayClosures ? String(patch.holidayClosures).trim().slice(0, 300) : '';
+  }
+  if (patch.staffCount !== undefined) {
+    payload.staffCount = Number.isFinite(Number(patch.staffCount)) ? Math.max(1, Number(patch.staffCount)) : 1;
+  }
+  if (patch.slotIntervalMin !== undefined) {
+    payload.slotIntervalMin = Number.isFinite(Number(patch.slotIntervalMin)) ? Math.max(5, Number(patch.slotIntervalMin)) : 30;
+  }
+  if (patch.holidayCountry !== undefined) {
+    payload.holidayCountry = patch.holidayCountry ? String(patch.holidayCountry).trim().slice(0, 2).toUpperCase() : 'CY';
+  }
+  if ('boostNearbyEnabled' in patch || 'boostBookingsEnabled' in patch || 'boostEnabled' in patch) {
+    payload.boostEnabled = Boolean(patch?.boostEnabled || patch?.boostNearbyEnabled || patch?.boostBookingsEnabled);
+    payload.boostNearbyEnabled = Boolean(patch?.boostNearbyEnabled);
+    payload.boostBookingsEnabled = Boolean(patch?.boostBookingsEnabled);
+    payload.sponsored = Boolean(patch?.sponsored || patch?.boostNearbyEnabled || patch?.boostEnabled);
+    payload.recommended = Boolean(patch?.recommended || patch?.boostBookingsEnabled || patch?.boostEnabled);
+  }
+  if ('bookingLimitEnabled' in patch || 'bookingLimitPerDay' in patch) {
+    if (patch?.bookingLimitEnabled && Number.isFinite(Number(patch?.bookingLimitPerDay))) {
+      payload.bookingLimitPerDay = Math.max(1, Number(patch.bookingLimitPerDay));
+    } else if ('bookingLimitEnabled' in patch) {
+      payload.bookingLimitPerDay = deleteField();
+    }
+  }
+
+  if (Object.keys(payload).length <= 1) return;
   await setDoc(doc(getDb(), 'providers', companyId), payload, { merge: true });
+}
+
+export async function setProviderBookingEnabled(companyId, bookingEnabled) {
+  await publishProviderProfile(companyId, { bookingEnabled });
 }
 
