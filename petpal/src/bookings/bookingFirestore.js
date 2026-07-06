@@ -22,6 +22,7 @@ import {
   fetchSchedulingSettings,
   loadSchedulingContext,
 } from './availability/availabilityFirestore';
+import { getProviderBookingStatus } from './providerDirectoryFirestore';
 
 function companyServicesCol(companyId) {
   return collection(getDb(), 'companies', companyId, 'services');
@@ -566,6 +567,10 @@ export async function bookSlot({
   const slotStart = resolved.startAt;
   const slotEnd = resolved.endAt;
 
+  const listing = await getProviderBookingStatus(companyId);
+  if (!listing.exists) throw new Error('booking_provider_missing');
+  if (!listing.bookingEnabled) throw new Error('booking_not_enabled');
+
   const bookingPayload = {
     companyId,
     serviceId,
@@ -599,9 +604,11 @@ export async function bookSlot({
     await batch.commit();
   } catch (e) {
     const code = String(e?.code || '');
-    const msg = String(e?.message || '');
-    if (code === 'permission-denied' || /permission/i.test(msg)) {
-      throw new Error('booking_not_enabled');
+    if (code === 'permission-denied') {
+      const latest = await getProviderBookingStatus(companyId).catch(() => listing);
+      if (!latest.bookingEnabled) throw new Error('booking_not_enabled');
+      if (String(customerUid) === String(companyId)) throw new Error('booking_self_account');
+      throw new Error('booking_permission_denied');
     }
     throw e;
   }

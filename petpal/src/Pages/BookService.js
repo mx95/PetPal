@@ -3,6 +3,7 @@ import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-route
 import { useAuth } from '../auth/AuthProvider';
 import { useI18n } from '../i18n/I18nContext';
 import { bookSlot, fetchCompanyService, fetchOpenSlots } from '../bookings/bookingFirestore';
+import { getProviderBookingStatus } from '../bookings/providerDirectoryFirestore';
 import {
   buildVariantSnapshot,
   isCoatVariantService,
@@ -59,6 +60,9 @@ function mapBookingError(e, t) {
   if (msg === 'slot_not_open') return t('bookConfirm.errorSlotTaken');
   if (msg === 'slot_not_found') return t('bookConfirm.errorSlotMissing');
   if (msg === 'booking_not_enabled') return t('bookConfirm.errorNotEnabled');
+  if (msg === 'booking_provider_missing') return t('bookConfirm.errorProviderMissing');
+  if (msg === 'booking_self_account') return t('bookConfirm.errorSelfAccount');
+  if (msg === 'booking_permission_denied') return t('bookConfirm.errorPermissionEnabled');
   if (msg === 'booking_timeout') return t('bookConfirm.errorTimeout');
   if (msg === 'firebase_unconfigured') return t('bookConfirm.errorOffline');
   if (msg === 'missing_fields') return t('bookConfirm.errorIncomplete');
@@ -238,6 +242,8 @@ export default function BookService({ embedded = false }) {
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
   const [confirmedBooking, setConfirmedBooking] = useState(null);
+  const [providerBookingEnabled, setProviderBookingEnabled] = useState(null);
+  const [providerBookingCheckBusy, setProviderBookingCheckBusy] = useState(false);
 
   const routeState = location.state && typeof location.state === 'object' ? location.state : null;
   const catalogProvider = useCatalog ? getCatalogProvider(companyId) : null;
@@ -294,6 +300,35 @@ export default function BookService({ embedded = false }) {
   }, [service, variantId, selectedAddons]);
 
   useEffect(() => subscribePets(uid, setPets), [uid]);
+
+  useEffect(() => {
+    if (useCatalog || !companyId || !isFirebaseConfigured()) {
+      setProviderBookingEnabled(useCatalog ? true : null);
+      return undefined;
+    }
+    let cancelled = false;
+    setProviderBookingCheckBusy(true);
+    void getProviderBookingStatus(companyId)
+      .then((status) => {
+        if (!cancelled) setProviderBookingEnabled(status.bookingEnabled);
+      })
+      .catch(() => {
+        if (!cancelled) setProviderBookingEnabled(null);
+      })
+      .finally(() => {
+        if (!cancelled) setProviderBookingCheckBusy(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [companyId, useCatalog, stepKey]);
+
+  useEffect(() => {
+    if (!companyId || useCatalog || providerBookingEnabled !== false) return;
+    if (stepKey === 'review') {
+      setErr(t('bookConfirm.errorNotEnabled'));
+    }
+  }, [companyId, useCatalog, providerBookingEnabled, stepKey, t]);
 
   useEffect(() => {
     if (!companyId || !serviceId) return;
@@ -501,8 +536,27 @@ export default function BookService({ embedded = false }) {
       setErr(t('bookConfirm.errorPickSlot'));
       return;
     }
+    if (!useCatalog && isFirebaseConfigured()) {
+      try {
+        const status = await getProviderBookingStatus(companyId);
+        if (!status.exists) {
+          setErr(t('bookConfirm.errorProviderMissing'));
+          return;
+        }
+        if (!status.bookingEnabled) {
+          setErr(t('bookConfirm.errorNotEnabled'));
+          return;
+        }
+      } catch {
+        setErr(t('bookConfirm.errorPermission'));
+        return;
+      }
+    }
     setBusy(true);
     try {
+      if (user?.getIdToken) {
+        await user.getIdToken(true).catch(() => {});
+      }
       const pet = selectedPet;
       const slot = slots.find((s) => s.id === slotId) || null;
       const variantSnapshot = buildVariantSnapshot(service, variantId, t);
@@ -645,6 +699,13 @@ export default function BookService({ embedded = false }) {
     (typeof confirmedBooking.durationMin === 'number'
       ? confirmedBooking.durationMin
       : durationBetween(bookingStart, bookingEnd));
+
+  const confirmBlocked =
+    busy ||
+    !petOptions.length ||
+    !slotId ||
+    providerBookingCheckBusy ||
+    (!useCatalog && providerBookingEnabled === false);
 
   return (
     <div className={`pp-bookConfirmPage${embedded ? ' pp-bookConfirmPage--embedded' : ''}`}>
@@ -908,6 +969,19 @@ export default function BookService({ embedded = false }) {
             {stepKey === 'review' ? (
               <>
                 <h2 className="pp-bookWizardPanel__title">{t('bookConfirm.reviewStepTitle')}</h2>
+                {!useCatalog && uid === companyId ? (
+                  <p className="pp-book-muted" role="status">
+                    {t('bookConfirm.selfAccountHint')}
+                  </p>
+                ) : null}
+                {!useCatalog && providerBookingEnabled === false ? (
+                  <p className="pp-bookConfirmPage__alert" role="status">
+                    {t('bookConfirm.errorNotEnabled')}
+                  </p>
+                ) : null}
+                {!useCatalog && providerBookingCheckBusy ? (
+                  <p className="pp-book-muted">{t('bookConfirm.checkingAvailability')}</p>
+                ) : null}
                 <dl className="pp-bookReviewRows">
                   <div className="pp-bookReviewRows__row">
                     <dt>{t('bookConfirm.petLabel')}</dt>
@@ -973,7 +1047,7 @@ export default function BookService({ embedded = false }) {
               <button
                 type="button"
                 className="pp-bookConfirmForm__primary"
-                disabled={busy || !petOptions.length || !slotId}
+                disabled={confirmBlocked}
                 onClick={() => void onBook()}
               >
                 {busy ? t('bookConfirm.submitting') : t('bookConfirm.ctaConfirm')}

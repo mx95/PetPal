@@ -1457,11 +1457,19 @@ const en = {
     errorSlotTaken: 'That time is no longer available. Please pick another slot.',
     errorSlotMissing: 'That time slot was not found. Please pick another slot.',
     errorNotEnabled: 'Online booking is not enabled for this business yet. Ask them to turn on public booking in their portal.',
+    errorProviderMissing: 'This business has not finished setting up online booking yet.',
+    errorSelfAccount:
+      'You are signed in to this business account. Log out and sign in with a personal pet-owner account to book, or add a walk-in booking from your provider portal.',
+    selfAccountHint:
+      'Tip: if confirmation fails, sign out of your business account and book with a personal pet-owner account.',
+    errorPermissionEnabled:
+      'Booking is enabled but confirmation was blocked. Try again in a moment, or sign in with a personal account if you are testing your own listing.',
     errorTimeout: 'Booking is taking too long. Check your connection and try again.',
     errorOffline: 'Online booking is unavailable right now.',
     errorIncomplete: 'Please complete all booking details.',
     errorPermission: 'Could not confirm this booking. The business may need to enable public booking.',
     errorGeneric: 'Booking failed. Please try again.',
+    checkingAvailability: 'Checking booking availability…',
   },
   shopPage: {
     badge: 'PetPal Shop',
