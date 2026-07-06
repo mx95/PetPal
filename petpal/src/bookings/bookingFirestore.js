@@ -599,6 +599,10 @@ async function createCustomerBookingViaFunction({
   variantSnapshot,
   serviceSnapshot,
   durationMin,
+  price = null,
+  addons = [],
+  providerName = '',
+  providerAddress = '',
 }) {
   const app = getFirebaseApp();
   if (!app) throw new Error('firebase_unconfigured');
@@ -615,6 +619,10 @@ async function createCustomerBookingViaFunction({
       variantSnapshot: variantSnapshot || null,
       serviceSnapshot: serviceSnapshot || null,
       durationMin,
+      price: price || null,
+      addons: Array.isArray(addons) ? addons : [],
+      providerName: providerName || '',
+      providerAddress: providerAddress || '',
     });
     const bookingId = res?.data?.bookingId;
     if (!bookingId) throw new Error('booking_permission_denied');
@@ -636,6 +644,10 @@ export async function bookSlot({
   serviceSnapshot = null,
   durationMin = null,
   forCustomer = false,
+  price = null,
+  addons = [],
+  providerName = '',
+  providerAddress = '',
 }) {
   if (!isFirebaseConfigured()) throw new Error('firebase_unconfigured');
   if (!companyId || !serviceId || !slotId || !customerUid || !petId) throw new Error('missing_fields');
@@ -675,6 +687,10 @@ export async function bookSlot({
       variantSnapshot,
       serviceSnapshot,
       durationMin: resolvedDurationMin,
+      price,
+      addons,
+      providerName,
+      providerAddress,
     });
   }
 

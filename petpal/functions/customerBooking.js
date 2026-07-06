@@ -1,5 +1,6 @@
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
+const { sendBookingConfirmationEmails } = require('./bookingEmail');
 
 const GENERATED_SLOT_PREFIX = 'gen_';
 
@@ -27,6 +28,16 @@ function resolveDurationMin({ durationMin, serviceSnapshot, variantSnapshot }) {
 
 function fail(code, message) {
   throw new functions.https.HttpsError(code, message);
+}
+
+function timestampToDate(value) {
+  if (!value) return null;
+  if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value;
+  if (typeof value.toDate === 'function') {
+    const d = value.toDate();
+    return d instanceof Date && !Number.isNaN(d.getTime()) ? d : null;
+  }
+  return null;
 }
 
 async function resolveOpenSlot(db, companyId, serviceId, slotId, durationMin) {
@@ -83,7 +94,8 @@ exports.createCustomerBooking = functions.region('europe-west1').https.onCall(as
   const db = admin.firestore();
   const providerSnap = await db.doc(`providers/${companyId}`).get();
   if (!providerSnap.exists) fail('failed-precondition', 'booking_provider_missing');
-  if (providerSnap.data()?.bookingEnabled !== true) fail('failed-precondition', 'booking_not_enabled');
+  const providerData = providerSnap.data() || {};
+  if (providerData.bookingEnabled !== true) fail('failed-precondition', 'booking_not_enabled');
 
   const resolved = await resolveOpenSlot(db, companyId, serviceId, slotId, durationMin);
   const bookingRef = db.collection('bookings').doc();
@@ -106,5 +118,30 @@ exports.createCustomerBooking = functions.region('europe-west1').https.onCall(as
   if (serviceSnapshot) bookingPayload.serviceSnapshot = serviceSnapshot;
 
   await bookingRef.set(bookingPayload);
+
+  const startDate = timestampToDate(resolved.startAt);
+  const endDate = timestampToDate(resolved.endAt);
+  try {
+    await sendBookingConfirmationEmails({
+      db,
+      bookingId: bookingRef.id,
+      customerUid,
+      companyId,
+      storeName: String(providerData.displayName || data?.providerName || '').trim(),
+      serviceName: String(serviceSnapshot?.name || data?.serviceName || 'Appointment').trim(),
+      petName: String(petSnapshot?.name || data?.petName || 'Pet').trim(),
+      variantLabel: String(variantSnapshot?.label || '').trim(),
+      whenIso: startDate ? startDate.toISOString() : '',
+      startAt: startDate,
+      endAt: endDate,
+      durationMin,
+      price: data?.price || variantSnapshot?.price || serviceSnapshot?.price || '',
+      address: String(providerData.address || data?.providerAddress || '').trim(),
+      addons: Array.isArray(data?.addons) ? data.addons.map(String) : [],
+    });
+  } catch (err) {
+    functions.logger.error('Booking confirmation emails failed after create', err);
+  }
+
   return { bookingId: bookingRef.id };
 });
