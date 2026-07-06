@@ -85,8 +85,20 @@ async function resolveBusinessEmail(companyId, catalogProvider) {
   if (catalogProvider?.email) return String(catalogProvider.email).trim();
   if (!isFirebaseConfigured()) return '';
   try {
-    const snap = await getDoc(doc(getDb(), 'companies', companyId));
-    if (snap.exists()) return String(snap.data()?.publicEmail || '').trim();
+    const companySnap = await getDoc(doc(getDb(), 'companies', companyId));
+    if (companySnap.exists()) {
+      const publicEmail = String(companySnap.data()?.publicEmail || '').trim();
+      if (publicEmail) return publicEmail;
+    }
+  } catch {
+    /* ignore */
+  }
+  try {
+    const providerSnap = await getDoc(doc(getDb(), 'providers', companyId));
+    if (providerSnap.exists()) {
+      const bookingEmail = String(providerSnap.data()?.bookingNotificationEmail || '').trim();
+      if (bookingEmail) return bookingEmail;
+    }
   } catch {
     /* ignore */
   }
@@ -104,6 +116,7 @@ async function notifyBookingByEmail({
   resolvedDuration,
   resolvedPrice,
   selectedAddons,
+  variantSnapshot,
   slot,
   pet,
   t,
@@ -115,11 +128,14 @@ async function notifyBookingByEmail({
     slot?.startAtIso || slot?.startAt?.toDate?.()?.toISOString?.() || new Date().toISOString();
   void sendBookingConfirmationEmail({
     bookingId,
+    companyId,
     customerEmail,
     businessEmail,
+    storeName: providerName,
     providerName,
     serviceName,
     petName: pet?.name || 'Pet',
+    variantLabel: variantSnapshot?.label || '',
     whenIso,
     durationMin: resolvedDuration,
     price: resolvedPrice || '',
@@ -630,6 +646,7 @@ export default function BookService({ embedded = false }) {
           resolvedDuration,
           resolvedPrice,
           selectedAddons,
+          variantSnapshot,
           slot,
           pet,
           t,
@@ -652,6 +669,10 @@ export default function BookService({ embedded = false }) {
           serviceSnapshot,
           durationMin: resolvedDuration,
           forCustomer: true,
+          price: resolvedPrice || null,
+          addons: selectedAddons.map((a) => t(a.nameKey)),
+          providerName,
+          providerAddress,
         }),
         45000,
         'booking_timeout'
@@ -679,21 +700,6 @@ export default function BookService({ embedded = false }) {
         startAtIso: slot?.startAtIso || slot?.startAt?.toDate?.()?.toISOString?.(),
         endAtIso: slot?.endAtIso || slot?.endAt?.toDate?.()?.toISOString?.(),
         status: 'booked',
-      });
-      void notifyBookingByEmail({
-        user,
-        bookingId,
-        companyId,
-        catalogProvider,
-        providerName,
-        providerAddress,
-        serviceName,
-        resolvedDuration,
-        resolvedPrice,
-        selectedAddons,
-        slot,
-        pet,
-        t,
       });
       setBusy(false);
     } catch (e) {
