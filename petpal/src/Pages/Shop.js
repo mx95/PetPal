@@ -339,7 +339,6 @@ export default function Shop() {
         <>
           <div className="pp-shopInfoBox" role="note">
             <strong>{t('shopPage.subInfoTitle')}</strong>
-            <p>{t('shopPage.subInfoBody')}</p>
           </div>
 
           {showBusinessBoosts ? (

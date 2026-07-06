@@ -71,7 +71,7 @@ export const SHOP_PRODUCTS = [
   {
     id: 'PETPAL_PLUS_MONTHLY',
     title: 'Monthly',
-    subtitle: 'PetPal Plus per GPS tracker — billed monthly.',
+    subtitle: '',
     amountCents: PLUS_MONTHLY_CENTS,
     currency: '978',
     recurring: true,
@@ -80,7 +80,7 @@ export const SHOP_PRODUCTS = [
   {
     id: 'PETPAL_PLUS_YEARLY',
     title: 'Yearly',
-    subtitle: 'PetPal Plus for 12 months — includes one FREE GPS tracker and one FREE NFC tag.',
+    subtitle: '',
     amountCents: PLUS_YEARLY_CENTS,
     currency: '978',
     recurring: true,

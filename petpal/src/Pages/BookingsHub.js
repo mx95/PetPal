@@ -26,6 +26,7 @@ import CalendarAddButtons from '../bookings/CalendarAddButtons';
 import { AppCard, EmptyState, PageContainer, SectionHeader, SkeletonCard } from '../components/ui';
 import ProviderProfile from './ProviderProfile';
 import BookService from './BookService';
+import BookingDetail from './BookingDetail';
 
 function getLocalTestBookings() {
   try {
@@ -257,7 +258,9 @@ function MyBookings({ uid }) {
         {allRows.map((b) => (
             <div key={b.id} className="pp-book-mineCard">
               <div>
-                <div className="pp-book-mineCard__title">{b.serviceName || b.petSnapshot?.name || 'Pet'}</div>
+                <div className="pp-book-mineCard__title">
+                  {b.serviceSnapshot?.name || b.serviceName || b.petSnapshot?.name || 'Pet'}
+                </div>
                 <div className="pp-book-muted">
                   {b.status}
                   {' · '}
@@ -275,7 +278,11 @@ function MyBookings({ uid }) {
                   googleLabel="Google Calendar"
                   appleLabel="Apple Calendar"
                 />
-                <Link className="pp-book-btn pp-book-btn--ghost" to={`provider/${b.companyId}`}>
+                <Link
+                  className="pp-book-btn pp-book-btn--ghost"
+                  to={`booking/${encodeURIComponent(b.id)}`}
+                  state={{ booking: b }}
+                >
                   {t('bookingsHub.mineOpen')}
                 </Link>
               </div>
@@ -333,6 +340,7 @@ export default function BookingsHub() {
     <div className="pp-book-page">
       <Routes>
         <Route index element={<BookingsBrowseHome />} />
+        <Route path="booking/:bookingId" element={<BookingDetail />} />
         <Route path="provider/:providerId" element={<ProviderProfile />} />
         <Route path="provider/:providerId/book/:serviceId" element={<BookServiceRoute />} />
       </Routes>

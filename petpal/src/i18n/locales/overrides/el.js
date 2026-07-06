@@ -509,8 +509,7 @@ const el = {
     monthlyAddTrackerAgainSub: '',
     monthlyAddNfcAgainSub: '',
     monthlyExistingImeiTitle: 'Έχω ήδη GPS tracker',
-    monthlyExistingImeiSub:
-      'Εισάγετε το IMEI του κολαριού για ενεργοποίηση συνδρομής — χωρίς χρέωση νέας συσκευής.',
+    monthlyExistingImeiSub: '',
     monthlyExistingImeiLabel: 'IMEI tracker',
     monthlyExistingImeiPlaceholder: '15ψήφιο IMEI στην ετικέτα κολαριού',
     existingImeiInvalid: 'Εισάγετε έγκυρο IMEI tracker (10–20 ψηφία).',
@@ -520,8 +519,7 @@ const el = {
     tabProducts: 'Προϊόντα',
     tabsAria: 'Τμήματα καταστήματος',
     subInfoTitle: 'Κάθε GPS tracker χρειάζεται δική του συνδρομή',
-    subInfoBody:
-      'Μία συνδρομή PetPal Plus καλύπτει ένα κολάρο. Προσθέστε άλλο μηνιαίο πλάνο για κάθε επιπλέον tracker.',
+    subInfoBody: '',
     manageTitle: 'Οι συνδρομές σας',
     manageSub:
       'Ακυρώστε εδώ για διακοπή ανανέωσης. Απενεργοποιούμε την SIM tracker μετά την επεξεργασία ακύρωσης.',

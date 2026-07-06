@@ -1506,6 +1506,11 @@ const ru = {
     modalDemoCta: 'Понятно',
     mineEmpty: 'Записей пока нет.',
     mineOpen: 'Подробности',
+    mineDetailTitle: 'Детали записи',
+    mineDetailBack: 'Назад к моим записям',
+    mineDetailLoading: 'Загрузка записи…',
+    mineDetailNotFound: 'Запись не найдена.',
+    mineDetailStatus: 'Статус',
     sub: 'Запишитесь на груминг или к ветеринару.',
     browseTab: 'Поиск',
     mineTab: 'Мои записи',
@@ -1679,8 +1684,7 @@ const ru = {
     monthlyAddTrackerAgainSub: '',
     monthlyAddNfcAgainSub: '',
     monthlyExistingImeiTitle: 'У меня уже есть GPS-трекер',
-    monthlyExistingImeiSub:
-      'Введите IMEI ошейника для активации подписки — без оплаты нового устройства.',
+    monthlyExistingImeiSub: '',
     monthlyExistingImeiLabel: 'IMEI трекера',
     monthlyExistingImeiPlaceholder: '15-значный IMEI на этикетке ошейника',
     existingImeiInvalid: 'Введите корректный IMEI трекера (10–20 цифр).',
@@ -1690,8 +1694,7 @@ const ru = {
     tabProducts: 'Товары',
     tabsAria: 'Разделы магазина',
     subInfoTitle: 'Каждому GPS-трекеру нужна своя подписка',
-    subInfoBody:
-      'Одна подписка PetPal Plus покрывает один ошейник. Добавьте ещё месячный план для каждого дополнительного трекера.',
+    subInfoBody: '',
     manageTitle: 'Ваши подписки',
     manageSub:
       'Отмените здесь, чтобы остановить продление. После обработки отмены мы отключим SIM трекера.',
