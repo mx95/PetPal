@@ -62,6 +62,8 @@ function mapBookingError(e, t) {
   if (msg === 'booking_not_enabled') return t('bookConfirm.errorNotEnabled');
   if (msg === 'booking_provider_missing') return t('bookConfirm.errorProviderMissing');
   if (msg === 'booking_self_account') return t('bookConfirm.errorSelfAccount');
+  if (msg === 'booking_auth_required') return t('bookConfirm.errorSignIn');
+  if (msg === 'booking_auth_mismatch') return t('bookConfirm.errorAuthMismatch');
   if (msg === 'booking_permission_denied') return t('bookConfirm.errorPermissionEnabled');
   if (msg === 'booking_timeout') return t('bookConfirm.errorTimeout');
   if (msg === 'firebase_unconfigured') return t('bookConfirm.errorOffline');

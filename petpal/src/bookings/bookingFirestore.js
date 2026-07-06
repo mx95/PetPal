@@ -14,7 +14,7 @@ import {
   where,
   writeBatch,
 } from 'firebase/firestore';
-import { getDb, isFirebaseConfigured } from '../firebase';
+import { auth, getDb, isFirebaseConfigured } from '../firebase';
 import { computeAvailableSlots, slotToFirestoreShape } from './availability/availabilityEngine';
 import { parseGeneratedSlotId, resolveGeneratedSlotTimes } from './availability/slotId';
 import {
@@ -556,6 +556,15 @@ export async function bookSlot({
   if (!isFirebaseConfigured()) throw new Error('firebase_unconfigured');
   if (!companyId || !serviceId || !slotId || !customerUid || !petId) throw new Error('missing_fields');
 
+  const authUid = auth?.currentUser?.uid || null;
+  if (!authUid) throw new Error('booking_auth_required');
+  if (String(customerUid) !== String(authUid)) throw new Error('booking_auth_mismatch');
+  try {
+    await auth.currentUser.getIdToken(true);
+  } catch {
+    /* continue with cached token */
+  }
+
   const service = serviceSnapshot || (await fetchCompanyService(companyId, serviceId));
   const resolvedDurationMin = resolveBookingDurationMin({
     durationMin,
@@ -572,15 +581,16 @@ export async function bookSlot({
   if (!listing.bookingEnabled) throw new Error('booking_not_enabled');
 
   const bookingPayload = {
-    companyId,
-    serviceId,
-    slotId,
-    customerUid,
-    petId,
+    companyId: String(companyId),
+    serviceId: String(serviceId),
+    slotId: String(slotId),
+    customerUid: authUid,
+    petId: String(petId),
     petSnapshot: petSnapshot || {},
     startAt: slotStart,
     endAt: slotEnd,
     status: 'booked',
+    walkIn: false,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   };
@@ -607,7 +617,7 @@ export async function bookSlot({
     if (code === 'permission-denied') {
       const latest = await getProviderBookingStatus(companyId).catch(() => listing);
       if (!latest.bookingEnabled) throw new Error('booking_not_enabled');
-      if (String(customerUid) === String(companyId)) throw new Error('booking_self_account');
+      if (String(authUid) === String(companyId)) throw new Error('booking_self_account');
       throw new Error('booking_permission_denied');
     }
     throw e;

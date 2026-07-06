@@ -51,6 +51,17 @@ service cloud.firestore {
       return p.exists && p.data.bookingEnabled == true;
     }
 
+    /** Customer online booking (pet owner or provider testing with a second account). */
+    function isCustomerOnlineBooking() {
+      return request.auth != null
+        && request.resource.data.status == 'booked'
+        && request.resource.data.customerUid == request.auth.uid
+        && request.resource.data.companyId is string
+        && request.resource.data.companyId.size() > 0
+        && request.resource.data.walkIn == false
+        && isPublicBookableCompany(request.resource.data.companyId);
+    }
+
     /** Signed-in business account operating their own provider portal (companyId == auth uid). */
     function isProviderSelf(companyId) {
       return request.auth != null && request.auth.uid == companyId;
@@ -248,21 +259,14 @@ service cloud.firestore {
         || (request.auth != null && isPublicBookableCompany(resource.data.companyId))
         || (request.auth != null && hasProviderListing(resource.data.companyId));
 
-      allow create: if request.auth != null
-        && request.resource.data.status == 'booked'
-        && (
-          (
-            request.resource.data.customerUid == request.auth.uid
-            && request.resource.data.companyId is string
-            && isPublicBookableCompany(request.resource.data.companyId)
-            && request.resource.data.walkIn != true
-          )
-          || (
-            request.resource.data.companyId == request.auth.uid
-            && isApprovedCompany(request.auth.uid)
-            && request.resource.data.walkIn == true
-            && request.resource.data.bookedByProviderUid == request.auth.uid
-          )
+      allow create: if isCustomerOnlineBooking()
+        || (
+          request.auth != null
+          && request.resource.data.status == 'booked'
+          && request.resource.data.companyId == request.auth.uid
+          && isApprovedCompany(request.auth.uid)
+          && request.resource.data.walkIn == true
+          && request.resource.data.bookedByProviderUid == request.auth.uid
         );
 
       // Customer can cancel their own booking; provider can manage status for their company bookings.

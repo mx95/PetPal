@@ -1462,6 +1462,7 @@ const en = {
       'You are signed in to this business account. Log out and sign in with a personal pet-owner account to book, or add a walk-in booking from your provider portal.',
     selfAccountHint:
       'Tip: if confirmation fails, sign out of your business account and book with a personal pet-owner account.',
+    errorAuthMismatch: 'Your session changed during booking. Sign out, sign in again, then retry.',
     errorPermissionEnabled:
       'Booking is enabled but confirmation was blocked. Try again in a moment, or sign in with a personal account if you are testing your own listing.',
     errorTimeout: 'Booking is taking too long. Check your connection and try again.',
