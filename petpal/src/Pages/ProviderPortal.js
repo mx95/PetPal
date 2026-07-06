@@ -16,7 +16,7 @@ import {
 import { createClientPet, deleteClientPet, patchClientPet, subscribeClientPets } from '../bookings/providerPetsFirestore';
 import PetMedicationModal from '../components/PetMedicationModal';
 import IconMedPill from '../components/icons/IconMedPill';
-import { publishProviderProfile, subscribeProviderProfile } from '../bookings/providerDirectoryFirestore';
+import { publishProviderProfile, setProviderBookingEnabled, subscribeProviderProfile } from '../bookings/providerDirectoryFirestore';
 import { providerBookingsBoostIsActive, providerNearbyBoostIsActive } from '../bookings/bookingBrowseUtils';
 import { getDemoBusinessAccount, getDemoBusinessAccounts, getDemoSlots } from '../bookings/demoBookingData';
 import AvailabilityScheduler from '../bookings/availability/AvailabilityScheduler';
@@ -649,20 +649,19 @@ export default function ProviderPortal() {
   const [boostCancelBusy, setBoostCancelBusy] = useState('');
   const [boostCancelMsg, setBoostCancelMsg] = useState('');
   const [providerDoc, setProviderDoc] = useState(null);
-  const publishSyncedRef = useRef(false);
+  const listingDirtyRef = useRef(false);
   const [publish, setPublish] = useState(() => buildPublishState(null, null));
 
   useEffect(() => {
     if (!companyId) return undefined;
-    publishSyncedRef.current = false;
+    listingDirtyRef.current = false;
     return subscribeProviderProfile(companyId, setProviderDoc);
   }, [companyId]);
 
   useEffect(() => {
-    if (publishSyncedRef.current || profileLoading) return;
-    if (!profile && !providerDoc) return;
+    if (profileLoading || !providerDoc) return;
+    if (listingDirtyRef.current) return;
     setPublish(buildPublishState(profile, providerDoc));
-    publishSyncedRef.current = true;
   }, [profileLoading, profile, providerDoc]);
 
   if (demoBusiness) {
@@ -774,7 +773,13 @@ export default function ProviderPortal() {
               holidayCountry={publish.holidayCountry || 'CY'}
               onHolidayCountryChange={(code) => setPublish((p) => ({ ...p, holidayCountry: code }))}
               onSaveHolidayCountry={async (code) => {
-                await publishProviderProfile(companyId, { ...publish, holidayCountry: code });
+                await publishProviderProfile(companyId, { holidayCountry: code });
+              }}
+              onListingDirty={() => {
+                listingDirtyRef.current = true;
+              }}
+              onListingSaved={() => {
+                listingDirtyRef.current = false;
               }}
             />
           ) : null}
@@ -1006,7 +1011,27 @@ function PublicListingPanel({
   boostCancelBusy,
   boostCancelMsg,
   onCancelBoost,
+  onListingDirty,
+  onListingSaved,
 }) {
+  const [toggleBusy, setToggleBusy] = useState(false);
+
+  const onBookingToggle = async (nextEnabled) => {
+    setPublish((p) => ({ ...p, bookingEnabled: nextEnabled }));
+    setPublishErr('');
+    setToggleBusy(true);
+    try {
+      await setProviderBookingEnabled(companyId, nextEnabled);
+    } catch (err) {
+      setPublish((p) => ({ ...p, bookingEnabled: !nextEnabled }));
+      setPublishErr(err?.message || 'Could not update booking status.');
+    } finally {
+      setToggleBusy(false);
+    }
+  };
+
+  const markDirty = () => onListingDirty?.();
+
   return (
     <section className="pp-providerPanel pp-providerListingSection">
       <div className="pp-providerPanel__head">
@@ -1026,6 +1051,7 @@ function PublicListingPanel({
             setPublishBusy(true);
             try {
               await publishProviderProfile(companyId, publish);
+              onListingSaved?.();
             } catch (err) {
               setPublishErr(err?.message || 'failed');
             } finally {
@@ -1042,7 +1068,8 @@ function PublicListingPanel({
               <input
                 type="checkbox"
                 checked={publish.bookingEnabled}
-                onChange={(e) => setPublish((p) => ({ ...p, bookingEnabled: e.target.checked }))}
+                disabled={toggleBusy || publishBusy}
+                onChange={(e) => void onBookingToggle(e.target.checked)}
               />
               <span aria-hidden />
             </label>
@@ -1064,12 +1091,13 @@ function PublicListingPanel({
                   <input
                     type="checkbox"
                     checked={Boolean(publish.providerTypes?.[key])}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      markDirty();
                       setPublish((p) => ({
                         ...p,
                         providerTypes: { ...p.providerTypes, [key]: e.target.checked },
-                      }))
-                    }
+                      }));
+                    }}
                   />
                   <span>{label}</span>
                 </label>
@@ -1081,6 +1109,7 @@ function PublicListingPanel({
             <ListingPlaceImportField
               profile={profile}
               onImport={(data) => {
+                markDirty();
                 setPublish((p) => ({
                   ...p,
                   displayName: data.displayName || p.displayName,
@@ -1097,7 +1126,10 @@ function PublicListingPanel({
               <input
                 className="pp-input"
                 value={publish.displayName}
-                onChange={(e) => setPublish((p) => ({ ...p, displayName: e.target.value }))}
+                onChange={(e) => {
+                  markDirty();
+                  setPublish((p) => ({ ...p, displayName: e.target.value }));
+                }}
               />
             </label>
             <label className="pp-field">
@@ -1105,7 +1137,10 @@ function PublicListingPanel({
               <input
                 className="pp-input"
                 value={publish.phone}
-                onChange={(e) => setPublish((p) => ({ ...p, phone: e.target.value }))}
+                onChange={(e) => {
+                  markDirty();
+                  setPublish((p) => ({ ...p, phone: e.target.value }));
+                }}
                 placeholder="+357 …"
               />
             </label>
@@ -1115,7 +1150,10 @@ function PublicListingPanel({
             <input
               className="pp-input"
               value={publish.address}
-              onChange={(e) => setPublish((p) => ({ ...p, address: e.target.value }))}
+              onChange={(e) => {
+                markDirty();
+                setPublish((p) => ({ ...p, address: e.target.value }));
+              }}
             />
           </label>
           <div className="pp-modalGrid2">
@@ -1124,7 +1162,10 @@ function PublicListingPanel({
               <input
                 className="pp-input"
                 value={publish.workingHours}
-                onChange={(e) => setPublish((p) => ({ ...p, workingHours: e.target.value }))}
+                onChange={(e) => {
+                  markDirty();
+                  setPublish((p) => ({ ...p, workingHours: e.target.value }));
+                }}
                 placeholder="Mon-Fri 09:00-18:00"
               />
             </label>
@@ -1133,7 +1174,10 @@ function PublicListingPanel({
               <input
                 className="pp-input"
                 value={publish.breakHours}
-                onChange={(e) => setPublish((p) => ({ ...p, breakHours: e.target.value }))}
+                onChange={(e) => {
+                  markDirty();
+                  setPublish((p) => ({ ...p, breakHours: e.target.value }));
+                }}
                 placeholder="13:00-14:00"
               />
             </label>
@@ -1144,7 +1188,10 @@ function PublicListingPanel({
                 type="number"
                 min={1}
                 value={publish.staffCount}
-                onChange={(e) => setPublish((p) => ({ ...p, staffCount: Number(e.target.value) }))}
+                onChange={(e) => {
+                  markDirty();
+                  setPublish((p) => ({ ...p, staffCount: Number(e.target.value) }));
+                }}
               />
             </label>
             <label className="pp-field">
@@ -1154,7 +1201,10 @@ function PublicListingPanel({
                 type="number"
                 min={5}
                 value={publish.slotIntervalMin}
-                onChange={(e) => setPublish((p) => ({ ...p, slotIntervalMin: Number(e.target.value) }))}
+                onChange={(e) => {
+                  markDirty();
+                  setPublish((p) => ({ ...p, slotIntervalMin: Number(e.target.value) }));
+                }}
               />
             </label>
           </div>
@@ -1162,7 +1212,10 @@ function PublicListingPanel({
             <input
               type="checkbox"
               checked={publish.bookingLimitEnabled}
-              onChange={(e) => setPublish((p) => ({ ...p, bookingLimitEnabled: e.target.checked }))}
+              onChange={(e) => {
+                markDirty();
+                setPublish((p) => ({ ...p, bookingLimitEnabled: e.target.checked }));
+              }}
             />
             <span>Cap daily appointments (optional — only if you want fewer bookings per day)</span>
           </label>
@@ -1174,7 +1227,10 @@ function PublicListingPanel({
                 type="number"
                 min={1}
                 value={publish.bookingLimitPerDay}
-                onChange={(e) => setPublish((p) => ({ ...p, bookingLimitPerDay: Number(e.target.value) }))}
+                onChange={(e) => {
+                  markDirty();
+                  setPublish((p) => ({ ...p, bookingLimitPerDay: Number(e.target.value) }));
+                }}
               />
             </label>
           ) : null}
@@ -1184,7 +1240,10 @@ function PublicListingPanel({
               className="pp-input"
               rows={2}
               value={publish.holidayClosures}
-              onChange={(e) => setPublish((p) => ({ ...p, holidayClosures: e.target.value }))}
+              onChange={(e) => {
+                markDirty();
+                setPublish((p) => ({ ...p, holidayClosures: e.target.value }));
+              }}
               placeholder="Public holidays, renovation days, team leave…"
             />
           </label>
@@ -1282,6 +1341,8 @@ function Availability({
   holidayCountry = 'CY',
   onHolidayCountryChange,
   onSaveHolidayCountry,
+  onListingDirty,
+  onListingSaved,
 }) {
   const [services, setServices] = useState([]);
   const [slots, setSlots] = useState([]);
@@ -1381,6 +1442,8 @@ function Availability({
         boostCancelBusy={boostCancelBusy}
         boostCancelMsg={boostCancelMsg}
         onCancelBoost={onCancelBoost}
+        onListingDirty={onListingDirty}
+        onListingSaved={onListingSaved}
       />
     </>
   );
