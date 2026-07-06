@@ -6,6 +6,7 @@ import { fetchCustomerBooking } from '../bookings/bookingFirestore';
 import { getCatalogProvider } from '../bookings/bookingCatalog';
 import CalendarAddButtons from '../bookings/CalendarAddButtons';
 import { formatTime24 } from '../formatTime24';
+import { slotEndDate, slotStartDate } from '../bookings/slotTime';
 import { getDb, isFirebaseConfigured } from '../firebase';
 import { useI18n } from '../i18n/I18nContext';
 import { PageContainer } from '../components/ui';
@@ -70,6 +71,7 @@ function enrichBooking(row, meta) {
     bookingId: row.bookingId || row.id,
     providerName: row.providerName || meta.providerName || '',
     providerAddress: row.providerAddress || meta.providerAddress || '',
+    storeName: row.storeName || row.providerName || meta.providerName || '',
     serviceName: row.serviceName || row.serviceSnapshot?.name || '',
     petName: row.petName || row.petSnapshot?.name || '',
     price: row.price || row.variantSnapshot?.price || row.serviceSnapshot?.price || null,
@@ -136,8 +138,8 @@ export default function BookingDetail() {
     };
   }, [bookingId, routeBooking?.id, t, user?.uid]);
 
-  const bookingStart = useMemo(() => asDate(booking?.startAt || booking?.startAtIso), [booking]);
-  const bookingEnd = useMemo(() => asDate(booking?.endAt || booking?.endAtIso), [booking]);
+  const bookingStart = useMemo(() => slotStartDate(booking), [booking]);
+  const bookingEnd = useMemo(() => slotEndDate(booking), [booking]);
   const bookingDuration = useMemo(() => {
     if (!booking) return null;
     if (typeof booking.durationMin === 'number') return booking.durationMin;
@@ -147,14 +149,6 @@ export default function BookingDetail() {
     if (Number.isFinite(fromVariant) && fromVariant > 0) return fromVariant;
     return durationBetween(bookingStart, bookingEnd);
   }, [booking, bookingStart, bookingEnd]);
-
-  const calendarBooking = useMemo(() => {
-    if (!booking) return null;
-    return {
-      ...booking,
-      serviceName: booking.serviceName || booking.serviceSnapshot?.name || '',
-    };
-  }, [booking]);
 
   return (
     <PageContainer className="pp-bookHubWizard !py-4 sm:!py-5 lg:!py-6">
@@ -246,7 +240,7 @@ export default function BookingDetail() {
             </section>
 
             <CalendarAddButtons
-              booking={calendarBooking}
+              booking={booking}
               googleLabel={t('bookConfirm.calGoogleShort')}
               appleLabel={t('bookConfirm.calAppleShort')}
               googleAria={t('bookConfirm.calGoogleAria')}

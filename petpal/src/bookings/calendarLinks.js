@@ -1,3 +1,5 @@
+import { slotEndDate, slotStartDate } from './slotTime';
+
 function asDate(value) {
   if (!value) return null;
   if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value;
@@ -36,29 +38,82 @@ function resolveEventTimes(event) {
   return { start, end };
 }
 
+function buildEventTitle({ storeName, serviceName, petName }) {
+  const store = String(storeName || '').trim();
+  const service = String(serviceName || '').trim() || 'PetPal appointment';
+  const pet = String(petName || '').trim() || 'your pet';
+
+  if (store && service && store.toLowerCase() !== service.toLowerCase()) {
+    return `${store} — ${service} for ${pet}`;
+  }
+  if (store) return `${store} — ${pet}`;
+  return `${service} for ${pet}`;
+}
+
+function buildEventDetails({
+  storeName,
+  serviceName,
+  petName,
+  variantLabel,
+  location,
+  bookingId,
+  price,
+  durationMin,
+}) {
+  const lines = [];
+  if (storeName) lines.push(`Store: ${storeName}`);
+  if (serviceName) lines.push(`Service: ${serviceName}`);
+  if (variantLabel) lines.push(`Coat: ${variantLabel}`);
+  if (petName) lines.push(`Pet: ${petName}`);
+  if (Number.isFinite(durationMin) && durationMin > 0) lines.push(`Duration: ${durationMin} min`);
+  if (price) lines.push(`Price: ${price}`);
+  if (location) lines.push(`Location: ${location}`);
+  if (bookingId) lines.push(`Confirmation: ${bookingId}`);
+  lines.push('Booked via PetPal');
+  return lines.join('\n');
+}
+
 export function buildCalendarEvent(booking) {
-  const providerName = booking?.providerName || 'PetPal provider';
-  const serviceName = booking?.serviceName || booking?.serviceSnapshot?.name || 'PetPal appointment';
-  const petName = booking?.petName || booking?.petSnapshot?.name || 'your pet';
-  const start = asDate(booking?.startAt) || asDate(booking?.startAtIso);
-  const end = asDate(booking?.endAt) || asDate(booking?.endAtIso);
+  const storeName = String(
+    booking?.storeName || booking?.providerName || booking?.companyName || ''
+  ).trim();
+  const serviceName = String(booking?.serviceName || booking?.serviceSnapshot?.name || 'PetPal appointment').trim();
+  const petName = String(booking?.petName || booking?.petSnapshot?.name || 'your pet').trim();
+  const variantLabel = String(booking?.variantSnapshot?.label || '').trim();
+  const location = String(booking?.providerAddress || booking?.address || booking?.location || '').trim();
+  const bookingId = booking?.bookingId || booking?.id || '';
+  const price = booking?.price || booking?.variantSnapshot?.price || booking?.serviceSnapshot?.price || '';
   const durationMin = Number(booking?.durationMin);
 
-  let resolvedEnd = end;
-  if (start && !resolvedEnd && Number.isFinite(durationMin) && durationMin > 0) {
-    resolvedEnd = new Date(start.getTime() + durationMin * 60000);
+  const start = slotStartDate(booking);
+  let end = slotEndDate(booking);
+  if (start && !end && Number.isFinite(durationMin) && durationMin > 0) {
+    end = new Date(start.getTime() + durationMin * 60000);
   }
 
+  const title = buildEventTitle({ storeName, serviceName, petName });
+  const details = buildEventDetails({
+    storeName,
+    serviceName,
+    petName,
+    variantLabel,
+    location,
+    bookingId,
+    price,
+    durationMin: Number.isFinite(durationMin) && durationMin > 0 ? durationMin : undefined,
+  });
+
   return {
-    title: `${serviceName} for ${petName}`,
-    details: `PetPal booking${booking?.bookingId || booking?.id ? ` #${booking.bookingId || booking.id}` : ''}`,
-    location: booking?.providerAddress || '',
-    providerName,
+    title,
+    details,
+    location,
+    storeName,
+    providerName: storeName,
     serviceName,
     petName,
     durationMin: Number.isFinite(durationMin) && durationMin > 0 ? durationMin : undefined,
     start,
-    end: resolvedEnd,
+    end,
   };
 }
 
@@ -102,8 +157,6 @@ export function googleCalendarUrl(event) {
   params.set('output', 'xml');
   if (event.details) params.set('details', event.details);
   if (event.location) params.set('location', event.location);
-  // www.google.com/calendar/render opens the event editor on mobile; calendar.google.com
-  // often redirects signed-out users to the Workspace marketing page.
   return `https://www.google.com/calendar/render?${params.toString()}`;
 }
 

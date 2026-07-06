@@ -21,6 +21,23 @@ describe('calendarLinks', () => {
     expect(hasCalendarTimes(event)).toBe(true);
   });
 
+  test('buildCalendarEvent includes store name and location', () => {
+    const event = buildCalendarEvent({
+      providerName: 'Sotiris Demo',
+      serviceName: 'Full grooming',
+      petName: 'Odin',
+      providerAddress: 'Xylofagou',
+      startAtIso: '2026-07-07T07:00:00.000Z',
+      durationMin: 30,
+      bookingId: 'abc123',
+    });
+    expect(event.title).toBe('Sotiris Demo — Full grooming for Odin');
+    expect(event.location).toBe('Xylofagou');
+    expect(event.details).toContain('Store: Sotiris Demo');
+    expect(event.details).toContain('Location: Xylofagou');
+    expect(event.details).toContain('Confirmation: abc123');
+  });
+
   test('googleCalendarUrl includes start and end stamps', () => {
     const event = buildCalendarEvent({
       serviceName: 'Grooming',
@@ -35,8 +52,9 @@ describe('calendarLinks', () => {
     expect(url).toContain('dates=20260706T095500Z%2F20260706T105000Z');
   });
 
-  test('buildIcsContent includes DTSTART and DTEND', () => {
+  test('buildIcsContent includes DTSTART, DTEND, and LOCATION', () => {
     const event = buildCalendarEvent({
+      providerName: 'Sotiris Demo',
       serviceName: 'Grooming',
       petName: 'Odin',
       startAtIso: '2026-07-06T09:55:00.000Z',
@@ -47,6 +65,7 @@ describe('calendarLinks', () => {
     expect(ics).toContain('DTSTART:20260706T095500Z');
     expect(ics).toContain('DTEND:20260706T105000Z');
     expect(ics).toContain('LOCATION:12 Makarios Ave\\, Limassol');
+    expect(ics).toContain('SUMMARY:Sotiris Demo');
   });
 
   test('downloadAppleCalendar returns true when event has times', () => {

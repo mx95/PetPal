@@ -1,10 +1,13 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { doc, getDoc } from 'firebase/firestore';
+import { getCatalogProvider } from './bookingCatalog';
 import {
   buildCalendarEvent,
   downloadAppleCalendar,
   googleCalendarUrl,
   hasCalendarTimes,
 } from './calendarLinks';
+import { getDb, isFirebaseConfigured } from '../firebase';
 
 function GoogleCalIcon() {
   return (
@@ -31,6 +34,78 @@ function AppleCalIcon() {
   );
 }
 
+function mergeBookingForCalendar(booking, providerMeta) {
+  if (!booking) return null;
+  const catalog = booking.companyId ? getCatalogProvider(booking.companyId) : null;
+  const storeName =
+    booking.storeName ||
+    booking.providerName ||
+    providerMeta?.storeName ||
+    catalog?.displayName ||
+    '';
+  const providerAddress =
+    booking.providerAddress ||
+    booking.address ||
+    providerMeta?.providerAddress ||
+    catalog?.address ||
+    '';
+
+  return {
+    ...booking,
+    storeName,
+    providerName: storeName,
+    providerAddress,
+    serviceName: booking.serviceName || booking.serviceSnapshot?.name || '',
+    petName: booking.petName || booking.petSnapshot?.name || '',
+  };
+}
+
+function useProviderCalendarMeta(booking) {
+  const [meta, setMeta] = useState(null);
+
+  useEffect(() => {
+    if (!booking?.companyId) {
+      setMeta(null);
+      return undefined;
+    }
+
+    const catalog = getCatalogProvider(booking.companyId);
+    if (catalog) {
+      setMeta({ storeName: catalog.displayName || '', providerAddress: catalog.address || '' });
+      return undefined;
+    }
+
+    const hasStore = Boolean(booking.storeName || booking.providerName);
+    const hasAddress = Boolean(booking.providerAddress || booking.address);
+    if (hasStore && hasAddress) {
+      setMeta(null);
+      return undefined;
+    }
+
+    if (!isFirebaseConfigured()) return undefined;
+
+    let cancelled = false;
+    void getDoc(doc(getDb(), 'providers', String(booking.companyId)))
+      .then((snap) => {
+        if (cancelled || !snap.exists()) return;
+        const data = snap.data() || {};
+        setMeta({
+          storeName: String(data.displayName || '').trim(),
+          providerAddress: String(data.address || '').trim(),
+        });
+      })
+      .catch(() => {
+        if (!cancelled) setMeta(null);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [booking]);
+
+  return meta;
+}
+
 export default function CalendarAddButtons({
   booking,
   className = 'pp-bookConfirmCalRow',
@@ -40,7 +115,12 @@ export default function CalendarAddButtons({
   appleAria = 'Apple Calendar',
   groupAria = 'Add to calendar',
 }) {
-  const event = useMemo(() => (booking ? buildCalendarEvent(booking) : null), [booking]);
+  const providerMeta = useProviderCalendarMeta(booking);
+  const calendarBooking = useMemo(
+    () => mergeBookingForCalendar(booking, providerMeta),
+    [booking, providerMeta]
+  );
+  const event = useMemo(() => (calendarBooking ? buildCalendarEvent(calendarBooking) : null), [calendarBooking]);
   const googleUrl = useMemo(() => (event ? googleCalendarUrl(event) : ''), [event]);
   const ready = event && hasCalendarTimes(event) && googleUrl;
 
