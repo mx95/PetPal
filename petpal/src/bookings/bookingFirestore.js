@@ -14,7 +14,8 @@ import {
   where,
   writeBatch,
 } from 'firebase/firestore';
-import { auth, getDb, isFirebaseConfigured } from '../firebase';
+import { auth, getDb, getFirebaseApp, isFirebaseConfigured } from '../firebase';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 import { computeAvailableSlots, slotToFirestoreShape } from './availability/availabilityEngine';
 import { parseGeneratedSlotId, resolveGeneratedSlotTimes } from './availability/slotId';
 import {
@@ -540,6 +541,54 @@ function resolveBookingDurationMin({ durationMin = null, serviceSnapshot = null,
   return 30;
 }
 
+function mapCallableBookingError(e) {
+  const code = String(e?.code || '');
+  const msg = String(e?.message || '');
+  if (code === 'functions/unauthenticated') return new Error('booking_auth_required');
+  if (msg === 'booking_not_enabled') return new Error('booking_not_enabled');
+  if (msg === 'booking_provider_missing') return new Error('booking_provider_missing');
+  if (msg === 'slot_not_open') return new Error('slot_not_open');
+  if (msg === 'slot_not_found') return new Error('slot_not_found');
+  if (msg === 'missing_fields') return new Error('missing_fields');
+  if (code === 'functions/permission-denied') return new Error('booking_permission_denied');
+  return new Error(msg || 'booking_permission_denied');
+}
+
+async function createCustomerBookingViaFunction({
+  companyId,
+  serviceId,
+  slotId,
+  petId,
+  petSnapshot,
+  variantId,
+  variantSnapshot,
+  serviceSnapshot,
+  durationMin,
+}) {
+  const app = getFirebaseApp();
+  if (!app) throw new Error('firebase_unconfigured');
+  const region = process.env.REACT_APP_FUNCTIONS_REGION || 'europe-west1';
+  const fn = httpsCallable(getFunctions(app, region), 'createCustomerBooking');
+  try {
+    const res = await fn({
+      companyId: String(companyId),
+      serviceId: String(serviceId),
+      slotId: String(slotId),
+      petId: String(petId),
+      petSnapshot: petSnapshot || {},
+      variantId: variantId || null,
+      variantSnapshot: variantSnapshot || null,
+      serviceSnapshot: serviceSnapshot || null,
+      durationMin,
+    });
+    const bookingId = res?.data?.bookingId;
+    if (!bookingId) throw new Error('booking_permission_denied');
+    return String(bookingId);
+  } catch (e) {
+    throw mapCallableBookingError(e);
+  }
+}
+
 export async function bookSlot({
   companyId,
   serviceId,
@@ -579,6 +628,20 @@ export async function bookSlot({
   const listing = await getProviderBookingStatus(companyId);
   if (!listing.exists) throw new Error('booking_provider_missing');
   if (!listing.bookingEnabled) throw new Error('booking_not_enabled');
+
+  if (forCustomer) {
+    return createCustomerBookingViaFunction({
+      companyId,
+      serviceId,
+      slotId,
+      petId,
+      petSnapshot,
+      variantId,
+      variantSnapshot,
+      serviceSnapshot,
+      durationMin: resolvedDurationMin,
+    });
+  }
 
   const bookingPayload = {
     companyId: String(companyId),
