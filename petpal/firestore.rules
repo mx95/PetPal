@@ -58,7 +58,7 @@ service cloud.firestore {
         && request.resource.data.customerUid == request.auth.uid
         && request.resource.data.companyId is string
         && request.resource.data.companyId.size() > 0
-        && request.resource.data.walkIn == false
+        && (!('walkIn' in request.resource.data) || request.resource.data.walkIn != true)
         && isPublicBookableCompany(request.resource.data.companyId);
     }
 

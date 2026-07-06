@@ -75,7 +75,7 @@ jobs:
               cd "$PETPAL_ROOT/petpal"
               echo "[firebase-deploy] Deploying shop Cloud Functions"
               $FB deploy \
-                --only functions:createJccCheckout,functions:jccPaymentReturn,functions:billingRenewal,functions:expireProviderBoosts,functions:assignSubscriptionImei,functions:linkTrackerSubscriptionPet \
+                --only functions:createJccCheckout,functions:jccPaymentReturn,functions:billingRenewal,functions:expireProviderBoosts,functions:assignSubscriptionImei,functions:linkTrackerSubscriptionPet,functions:createCustomerBooking,functions:sendBookingConfirmation \
                 --project petpal-aecda \
                 --non-interactive
             }

@@ -46,7 +46,7 @@ jobs:
       - name: Deploy shop + subscription functions
         run: >
           npx firebase-tools@13.29.1 deploy
-          --only functions:createJccCheckout,functions:jccPaymentReturn,functions:billingRenewal,functions:expireProviderBoosts,functions:assignSubscriptionImei,functions:linkTrackerSubscriptionPet
+          --only functions:createJccCheckout,functions:jccPaymentReturn,functions:billingRenewal,functions:expireProviderBoosts,functions:assignSubscriptionImei,functions:linkTrackerSubscriptionPet,functions:createCustomerBooking,functions:sendBookingConfirmation
           --project petpal-aecda
           --non-interactive
         env:
