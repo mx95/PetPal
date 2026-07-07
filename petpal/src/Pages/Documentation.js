@@ -1,9 +1,10 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { APP_API_CATALOG, APP_ROUTE_CATALOG } from '../config/appRouteCatalog';
+import { APP_ROUTE_CATALOG } from '../config/appRouteCatalog';
 import { useAuth } from '../auth/AuthProvider';
 import { useI18n } from '../i18n/I18nContext';
 import en from '../i18n/locales/en';
+import { BRAND } from '../config/brand';
 
 function getDeep(obj, dotPath) {
   return dotPath.split('.').reduce((acc, part) => (acc == null ? undefined : acc[part]), obj);
@@ -78,18 +79,13 @@ export default function Documentation() {
   const { t } = useI18n();
   const back = user ? { to: '/', label: t('docs.backHome') } : { to: '/login', label: t('docs.backLogin') };
 
-  const mvpRoutes = APP_ROUTE_CATALOG.filter((r) => r.mvpNav);
-  const hiddenRoutes = APP_ROUTE_CATALOG.filter((r) => !r.mvpNav);
+  const mvpRoutes = APP_ROUTE_CATALOG.filter((r) => r.mvpNav && r.auth !== 'admin');
 
   const toc = [
     { href: '#docs-overview', key: 'docs.toc1' },
+    { href: '#docs-howto', key: 'docs.tocHowto' },
     { href: '#docs-routes-mvp', key: 'docs.tocRoutesMvp' },
-    { href: '#docs-routes-hidden', key: 'docs.tocRoutesHidden' },
-    { href: '#docs-apis', key: 'docs.tocApis' },
-    { href: '#docs-trackers', key: 'docs.tocTrackers' },
-    { href: '#docs-pets', key: 'docs.toc3' },
-    { href: '#docs-tracking', key: 'docs.toc8' },
-    { href: '#docs-nearby', key: 'docs.toc7' },
+    { href: '#docs-support', key: 'docs.tocSupport' },
     { href: '#docs-language', key: 'docs.toc11' },
   ];
 
@@ -129,66 +125,34 @@ export default function Documentation() {
               <ParaBlock textKey="docs.u1BodyMvp" />
             </section>
 
+            <section id="docs-howto">
+              <h2>{t('docs.howtoTitle')}</h2>
+              <ul>
+                <li>{t('docs.howtoBook')}</li>
+                <li>{t('docs.howtoCalendar')}</li>
+                <li>{t('docs.howtoSubscriptions')}</li>
+                <li>{t('docs.howtoSupport')}</li>
+              </ul>
+            </section>
+
             <section id="docs-routes-mvp">
               <h2>{t('docs.routesMvpTitle')}</h2>
               <p>{t('docs.routesMvpIntro')}</p>
               <RouteTable routes={mvpRoutes} />
             </section>
 
-            <section id="docs-routes-hidden">
-              <h2>{t('docs.routesHiddenTitle')}</h2>
-              <p>{t('docs.routesHiddenIntro')}</p>
-              <RouteTable routes={hiddenRoutes} />
-            </section>
-
-            <section id="docs-apis">
-              <h2>{t('docs.apisTitle')}</h2>
-              <p>{t('docs.apisIntro')}</p>
-              {APP_API_CATALOG.map((group) => (
-                <article key={group.id} className="pp-docsApiGroup" id={`docs-api-${group.id}`}>
-                  <h3>{t(group.titleKey)}</h3>
-                  <p>{t(group.introKey)}</p>
-                  <p className="pp-docsApiGroup__base">
-                    <span className="pp-docsApiGroup__baseLabel">{t('docs.apiBaseLabel')}</span>{' '}
-                    <code className="pp-docsCode">{t(group.baseKey)}</code>
-                  </p>
-                  <ul className="pp-docsApiList">
-                    {group.endpoints.map((ep) => (
-                      <li key={`${group.id}-${ep.path}`}>
-                        <span className="pp-docsApiList__method">{ep.method}</span>
-                        <code className="pp-docsCode">{ep.path}</code>
-                        <span className="pp-docsApiList__desc">{docStr(t, ep.descKey)}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </article>
-              ))}
-            </section>
-
-            <section id="docs-trackers">
-              <h2>{t('docs.trackersTitle')}</h2>
-              <p>{t('docs.trackersIntro')}</p>
-              <h3>{t('docs.trackersXexunTitle')}</h3>
-              <ParaBlock textKey="docs.trackersXexunBody" />
-              <h3>{t('docs.trackersG365Title')}</h3>
-              <ParaBlock textKey="docs.trackersG365Body" />
-              <h3>{t('docs.trackersGpsposTitle')}</h3>
-              <ParaBlock textKey="docs.trackersGpsposBody" />
-            </section>
-
-            <section id="docs-pets">
-              <h2>{t('docs.u3Title')}</h2>
-              <ParaBlock textKey="docs.u3Body" />
-            </section>
-
-            <section id="docs-tracking">
-              <h2>{t('docs.u8Title')}</h2>
-              <ParaBlock textKey="docs.u8Body" />
-            </section>
-
-            <section id="docs-nearby">
-              <h2>{t('docs.u7Title')}</h2>
-              <ParaBlock textKey="docs.u7Body" />
+            <section id="docs-support">
+              <h2>{t('docs.supportTitle')}</h2>
+              <p>{t('docs.supportBody')}</p>
+              <p>
+                <Link className="pp-link" to="/contact">
+                  {t('docs.supportCta')}
+                </Link>
+                {' · '}
+                <a className="pp-link" href={`mailto:${BRAND.contactEmail}`}>
+                  {BRAND.contactEmail}
+                </a>
+              </p>
             </section>
 
             <section id="docs-language">
