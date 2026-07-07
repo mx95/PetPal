@@ -9,8 +9,8 @@ export default function TermsOfService() {
       <section>
         <h2>1. Agreement</h2>
         <p>
-          These Terms of Service (“<strong>Terms</strong>”) govern your access to and use of the PetPal web application
-          and related services (the “<strong>Service</strong>”) operated by {BRAND.legalName}, {BRAND.address}
+          These Terms of Service (“<strong>Terms</strong>”) govern your access to and use of the PetPal Care Hub web
+          application and related services (the “<strong>Service</strong>”) operated by {BRAND.legalName}, {BRAND.address}
           (“<strong>we</strong>”, “<strong>us</strong>”). By creating an account or using the Service, you agree to
           these Terms and our{' '}
           <Link to="/privacy" className="pp-link" style={{ display: 'inline', padding: 0 }}>
@@ -89,11 +89,11 @@ export default function TermsOfService() {
       <section id="shop-payments">
         <h2>8. Shop, payments, and subscriptions</h2>
         <p>
-          Card payments for the PetPal shop are processed securely by the <strong>JCC payment gateway</strong> (3-D
+          Card payments for the PetPal Care Hub shop are processed securely by the <strong>JCC payment gateway</strong> (3-D
           Secure where supported). Please review the following before you complete a purchase.
         </p>
         <p>
-          Your card details are entered on JCC’s hosted payment page — PetPal does not store your full card number.
+          Your card details are entered on JCC’s hosted payment page — PetPal Care Hub does not store your full card number.
         </p>
         <p>
           Subscription plans renew automatically on the billing cycle (monthly or yearly) until you cancel from{' '}

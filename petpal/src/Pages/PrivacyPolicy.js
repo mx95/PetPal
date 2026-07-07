@@ -27,10 +27,10 @@ export default function PrivacyPolicy() {
       <section>
         <h2>2. Scope</h2>
         <p>
-          This policy describes how we process personal data in connection with the PetPal web application and related
-          services (the “<strong>Service</strong>”). It applies to users in the European Economic Area (EEA) and, where
-          the UK GDPR applies, to users in the United Kingdom, in each case in addition to any local law that applies to
-          you.
+          This policy describes how we process personal data in connection with the PetPal Care Hub web application and
+          related services (the “<strong>Service</strong>”). It applies to users in the European Economic Area (EEA) and,
+          where the UK GDPR applies, to users in the United Kingdom, in each case in addition to any local law that
+          applies to you.
         </p>
       </section>
 
@@ -128,8 +128,8 @@ export default function PrivacyPolicy() {
       <section>
         <h2>6. Payments (JCC) and subscriptions</h2>
         <p>
-          When you purchase items or subscriptions in the PetPal shop, your card payment is processed by{' '}
-          <strong>JCC Payment Systems Ltd</strong>. PetPal does not store your full card number.
+          When you purchase items or subscriptions in the PetPal Care Hub shop, your card payment is processed by{' '}
+          <strong>JCC Payment Systems Ltd</strong>. PetPal Care Hub does not store your full card number.
         </p>
         <p>
           We may receive and store limited payment-related information needed to operate the shop and subscriptions,

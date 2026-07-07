@@ -1,6 +1,6 @@
 {
   "appId": "io.petpal.app",
-  "appName": "PetPal",
+  "appName": "PetPal Care Hub",
   "webDir": "build",
   "server": {
     "androidScheme": "https"
