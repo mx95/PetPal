@@ -14,7 +14,6 @@ export function LegalPageShell({ title, lastUpdated, children }) {
     <div className="pp-grid">
       <div className="pp-col-12">
         <div className="pp-card pp-pad pp-legalDoc">
-          <p className="pp-legalDisclaimer">{t('legal.disclaimer')}</p>
           <Link className="pp-link pp-legalBack" to={back.to}>
             {back.label}
           </Link>
