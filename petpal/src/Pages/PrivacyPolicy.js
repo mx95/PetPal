@@ -22,10 +22,6 @@ export default function PrivacyPolicy() {
             {BRAND.privacyEmail}
           </a>
         </p>
-        <p>
-          If we appoint a Data Protection Officer (DPO), their contact details will be added here. Under current EU
-          guidance, not every organisation is required to appoint a DPO; if you do, list name and contact.
-        </p>
       </section>
 
       <section>
