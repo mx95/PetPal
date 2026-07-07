@@ -151,7 +151,7 @@ export default function AdminTrackerSetup() {
             className="pp-input"
             value={host}
             onChange={(e) => setHost(e.target.value)}
-            placeholder="e.g. tracker.yourdomain.com or 116.203.209.68"
+            placeholder="e.g. tracker.petpal.com.cy or 116.203.209.68"
             style={{ marginTop: 6 }}
           />
 

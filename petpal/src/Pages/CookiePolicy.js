@@ -14,8 +14,7 @@ export default function CookiePolicy() {
         </p>
         <p>
           On first visit, a banner may ask you to allow optional analytics. Your choice is stored in your browser
-          (local key <code>petpal_cookie_consent_v1</code>) as “essential only” or “accept analytics”, until you
-          clear site data.
+          as “essential only” or “accept analytics”, until you change it or clear site data.
         </p>
       </section>
 
@@ -31,7 +30,7 @@ export default function CookiePolicy() {
           </li>
           <li>
             <strong>Analytics / performance:</strong> understand how the Service is used in aggregate, if you consent
-            where required (e.g. Google Analytics, if enabled).
+            where required (e.g. analytics tools, if enabled).
           </li>
         </ul>
         <p>We will not use non-essential cookies (or read/write to non-essential local storage) without consent where EU law requires it.</p>
@@ -51,12 +50,12 @@ export default function CookiePolicy() {
             <tr>
               <td>Session / auth (necessary)</td>
               <td>Maintain your authenticated session (often via the authentication provider).</td>
-              <td>Session or as set by the provider; see our Privacy policy and Firebase documentation.</td>
+              <td>Session or as set by the provider; see our Privacy policy.</td>
             </tr>
             <tr>
               <td>localStorage / app storage (necessary / functional)</td>
               <td>Store app preferences and offline-first data for your account on this device.</td>
-              <td>Until cleared by you or the app; may contain pet/game/community drafts.</td>
+              <td>Until cleared by you or the app (e.g. preferences or drafts).</td>
             </tr>
             <tr>
               <td>Analytics (optional)</td>
@@ -66,8 +65,8 @@ export default function CookiePolicy() {
           </tbody>
         </table>
         <p className="pp-subtle" style={{ marginTop: 12 }}>
-          We will list specific cookie names, providers, and retention in a data map as the Service matures. Third-party
-          providers maintain their own documentation (e.g. Google/Firebase).
+          Third-party providers maintain their own documentation. You can also use your browser settings to view and
+          delete cookies and site data.
         </p>
       </section>
 
