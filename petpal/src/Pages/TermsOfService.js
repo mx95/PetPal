@@ -41,8 +41,12 @@ export default function TermsOfService() {
         <h2>3. Accounts and security</h2>
         <p>
           You are responsible for safeguarding your credentials and for activity under your account. Notify us promptly
-          at [contact@yourdomain.com] if you suspect unauthorised access. We may suspend or terminate accounts that
-          violate these Terms or pose a security risk.
+          at{' '}
+          <a href={`mailto:${BRAND.contactEmail}`} className="pp-link" style={{ display: 'inline', padding: 0 }}>
+            {BRAND.contactEmail}
+          </a>{' '}
+          if you suspect unauthorised access. We may suspend or terminate accounts that violate these Terms or pose a
+          security risk.
         </p>
       </section>
 
@@ -174,7 +178,11 @@ export default function TermsOfService() {
       <section>
         <h2>13. Contact</h2>
         <p>
-          Questions: [contact@yourdomain.com]. For data protection, see the Privacy policy.
+          Questions:{' '}
+          <a href={`mailto:${BRAND.contactEmail}`} className="pp-link" style={{ display: 'inline', padding: 0 }}>
+            {BRAND.contactEmail}
+          </a>
+          . For data protection, see the Privacy policy.
         </p>
       </section>
     </LegalPageShell>

@@ -2,7 +2,7 @@
 export const BRAND = {
   appName: 'PetPal',
   tagline: 'Care hub',
-  legalName: 'PetPal Services Ltd',
+  legalName: 'Pomware Innovative Solutions Ltd',
   address: 'Nicosia, Republic of Cyprus',
   contactEmail: 'support@petpal.app',
   privacyEmail: 'privacy@petpal.app',
