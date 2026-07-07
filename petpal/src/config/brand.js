@@ -4,6 +4,6 @@ export const BRAND = {
   tagline: 'Care hub',
   legalName: 'Pomware Innovative Solutions Ltd',
   address: 'Nicosia, Republic of Cyprus',
-  contactEmail: 'support@petpal.app',
-  privacyEmail: 'privacy@petpal.app',
+  contactEmail: 'info@petpal.com.cy',
+  privacyEmail: 'info@petpal.com.cy',
 };
