@@ -138,7 +138,7 @@ export default function TermsOfService() {
           cannot be waived), we are not liable for any indirect, incidental, special, consequential, or punitive
           damages, or any loss of profits, data, or goodwill, arising from your use of the Service. Our total liability
           for any claim relating to the Service is limited to the greater of (a) the amounts you paid us for the
-          Service in the [twelve] months before the event giving rise to liability, or (b) [€50] if you have not paid
+          Service in the twelve (12) months before the event giving rise to liability, or (b) €50 if you have not paid
           us, unless a stricter limit applies under law.
         </p>
         <p>Nothing in these Terms limits liability for death or personal injury caused by negligence, fraud, or other

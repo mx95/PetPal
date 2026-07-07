@@ -46,15 +46,21 @@ export default function PrivacyPolicy() {
           <li>
             <strong>Pet and activity data you enter:</strong> pet names, categories, optional device/tracker
             identifiers you associate with a pet, walk distances or logs you record, optional photos you attach to a
-            walk log (stored in your browser as part of your local game data until you use any future cloud feature),
-            in-app game/progress data stored on your device or your account, and content you post in community features.
+            walk log, and content you post in community features.
+          </li>
+          <li>
+            <strong>Bookings:</strong> appointment details you create or receive (e.g. provider/store, service, pet,
+            time, and status) and related communications (e.g. confirmation emails and calendar invitations).
+          </li>
+          <li>
+            <strong>Shop and subscriptions:</strong> purchases, subscription status (monthly/yearly), renewal and
+            cancellation events, delivery/shipping details for physical items (e.g. GPS trackers or NFC tags), and
+            customer support messages about orders.
           </li>
           <li>
             <strong>Technical and usage data:</strong> IP address, device/browser type, approximate location derived
             from IP if available, timestamps, and diagnostic or security logs, including via hosting and service
-            providers. <strong>Google Analytics</strong> (if you choose “Accept analytics” in the cookie banner) may
-            process usage in aggregate; if you choose “Essential only”, we do not load the Analytics module for your
-            session on supported browsers.
+            providers. If we enable optional analytics, we will ask for consent where required before loading it.
           </li>
           <li>
             <strong>Maps / places:</strong> if you use location-based features, we may process queries (e.g. map centre
@@ -102,11 +108,15 @@ export default function PrivacyPolicy() {
             database, and related infrastructure, potentially including analytics if enabled.
           </li>
           <li>
+            <strong>JCC Payment Systems Ltd:</strong> payment processing for shop purchases and subscriptions. Payment
+            details are entered on JCC’s hosted checkout pages; we do not receive your full card number.
+          </li>
+          <li>
             <strong>Maps, geocoding, or Places providers</strong> (e.g. Google Maps Platform) where such features are
             used.
           </li>
           <li>
-            <strong>Hosting, email, and error monitoring</strong> as we introduce them.
+            <strong>Hosting, email, and error monitoring</strong> providers used to operate the Service.
           </li>
         </ul>
         <p>
@@ -116,7 +126,21 @@ export default function PrivacyPolicy() {
       </section>
 
       <section>
-        <h2>6. International transfers</h2>
+        <h2>6. Payments (JCC) and subscriptions</h2>
+        <p>
+          When you purchase items or subscriptions in the PetPal shop, your card payment is processed by{' '}
+          <strong>JCC Payment Systems Ltd</strong>. PetPal does not store your full card number.
+        </p>
+        <p>
+          We may receive and store limited payment-related information needed to operate the shop and subscriptions,
+          such as the status of a payment (successful/failed), order reference, subscription status (active/cancelled),
+          and whether a saved payment token exists for renewals. Where required, we use this information to provide
+          customer support, process cancellations, and comply with accounting and tax obligations.
+        </p>
+      </section>
+
+      <section>
+        <h2>7. International transfers</h2>
         <p>
           Data may be processed in the EEA and, where a provider is located in a country not subject to an EU adequacy
           decision, we rely on appropriate safeguards (such as the EU Commission-approved Standard Contractual Clauses)
@@ -125,11 +149,18 @@ export default function PrivacyPolicy() {
       </section>
 
       <section>
-        <h2>7. Retention</h2>
+        <h2>8. Retention</h2>
         <p>We keep personal data only as long as necessary for the purposes above, including:</p>
         <ul>
           <li>
             <strong>Account data:</strong> for the life of your account, unless a longer period is required by law.
+          </li>
+          <li>
+            <strong>Bookings:</strong> to manage your appointments and provide history, and as needed for customer
+            support and dispute handling.
+          </li>
+          <li>
+            <strong>Orders and billing records:</strong> as required for accounting, tax, and legal compliance.
           </li>
           <li>
             <strong>Security logs:</strong> typically a limited period unless needed for an investigation.
@@ -139,11 +170,13 @@ export default function PrivacyPolicy() {
             may remove it from your device.
           </li>
         </ul>
-        <p>Specific retention tables may be provided here as you operationalise the Service.</p>
+        <p>
+          Where possible, we minimise data and delete or anonymise it when it is no longer needed for the purposes above.
+        </p>
       </section>
 
       <section>
-        <h2>8. Your rights</h2>
+        <h2>9. Your rights</h2>
         <p>Subject to applicable law, you may have the right to:</p>
         <ul>
           <li>Request access to your personal data and certain information about processing (Art. 15 GDPR).</li>
@@ -175,7 +208,7 @@ export default function PrivacyPolicy() {
       </section>
 
       <section>
-        <h2>9. Security</h2>
+        <h2>10. Security</h2>
         <p>
           We implement appropriate technical and organisational measures appropriate to the risk, including
           industry-standard transport encryption where applicable, access control principles, and reliance on
@@ -184,7 +217,7 @@ export default function PrivacyPolicy() {
       </section>
 
       <section>
-        <h2>10. Children</h2>
+        <h2>11. Children</h2>
         <p>
           The Service is not directed at children under the age at which they may provide consent for information society
           services under local law (often 16 in the EU, with Member State variations; Cyprus implements conditions under
@@ -194,7 +227,7 @@ export default function PrivacyPolicy() {
       </section>
 
       <section>
-        <h2>11. Changes</h2>
+        <h2>12. Changes</h2>
         <p>
           We may update this policy. We will post the new version with an updated “Last updated” date and, where
           required, provide a more prominent notice (e.g. in-app or by email) for material changes.
