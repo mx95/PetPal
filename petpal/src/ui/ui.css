@@ -19240,7 +19240,8 @@ html[data-theme="dark"] .pp-nearby-list > li {
   }
 
   .pp-phoneCountryInput {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: minmax(108px, 132px) minmax(0, 1fr);
+    gap: 8px;
   }
 }
 
