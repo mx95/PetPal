@@ -103,8 +103,8 @@ export default function TermsOfService() {
           . If you chose “Save card until cancelled”, your card is tokenised by JCC for renewals only.
         </p>
         <p>
-          GPS trackers and NFC tags are shipped to the delivery address you provide at checkout after payment.
-          Fulfilment typically takes a few business days.
+          GPS trackers and NFC tags are shipped to the delivery address you provide at checkout after payment,
+          via <strong>BOX NOW</strong> or <strong>ACS</strong>. Expected delivery is 1–3 working days.
         </p>
         <p>
           You can request subscription cancellation in the shop at any time. After cancellation, billing stops and
