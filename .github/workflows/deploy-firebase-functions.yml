@@ -1,5 +1,8 @@
 # Deploy JCC / shop Cloud Functions (separate from Hetzner SPA deploy).
 #
+# Prefer the SSH workflow (Deploy Firebase from server) when FIREBASE_TOKEN is
+# not configured. This workflow is optional CI auth via `firebase login:ci`.
+#
 # One-time setup (GitHub repo → Settings → Secrets and variables → Actions):
 #   FIREBASE_TOKEN — CI token from `firebase login:ci` (project: petpal-aecda)
 #
@@ -20,8 +23,9 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: deploy-firebase-functions
-  cancel-in-progress: true
+  # Share with deploy-firebase-from-server.yml so both paths do not race.
+  group: deploy-firebase-functions-prod
+  cancel-in-progress: false
 
 jobs:
   deploy:
@@ -31,19 +35,36 @@ jobs:
       run:
         working-directory: petpal
     steps:
+      - name: Check FIREBASE_TOKEN
+        id: auth
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+        run: |
+          if [ -z "${FIREBASE_TOKEN:-}" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "FIREBASE_TOKEN is not set — skipping CI token deploy."
+            echo "Shop functions are deployed by 'Deploy Firebase from server' instead."
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - uses: actions/checkout@v4
+        if: steps.auth.outputs.skip != 'true'
 
       - uses: actions/setup-node@v4
+        if: steps.auth.outputs.skip != 'true'
         with:
           node-version: '20'
           cache: npm
           cache-dependency-path: petpal/functions/package-lock.json
 
       - name: Install function dependencies
+        if: steps.auth.outputs.skip != 'true'
         run: npm ci
         working-directory: petpal/functions
 
       - name: Deploy shop + subscription functions
+        if: steps.auth.outputs.skip != 'true'
         run: >
           npx firebase-tools@13.29.1 deploy
           --only functions:createJccCheckout,functions:jccPaymentReturn,functions:billingRenewal,functions:expireProviderBoosts,functions:assignSubscriptionImei,functions:linkTrackerSubscriptionPet,functions:createCustomerBooking,functions:sendBookingConfirmation
