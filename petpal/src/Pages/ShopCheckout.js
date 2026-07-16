@@ -264,6 +264,29 @@ export default function ShopCheckout() {
               </Link>
               .
             </p>
+            <div className="pp-shopCheckout__delivery" role="note">
+              <p className="pp-shopCheckout__deliveryText">{t('checkoutDetails.deliveryNote')}</p>
+              <div className="pp-shopCheckout__couriers" aria-label={t('checkoutDetails.deliveryCouriersAria')}>
+                <img
+                  className="pp-shopCheckout__courierLogo pp-shopCheckout__courierLogo--boxnow"
+                  src="/images/shipping/boxnow-logo.svg"
+                  alt="BOX NOW"
+                  width={70}
+                  height={51}
+                  loading="lazy"
+                  decoding="async"
+                />
+                <img
+                  className="pp-shopCheckout__courierLogo pp-shopCheckout__courierLogo--acs"
+                  src="/images/shipping/acs-logo.svg"
+                  alt="ACS"
+                  width={96}
+                  height={26}
+                  loading="lazy"
+                  decoding="async"
+                />
+              </div>
+            </div>
             <label className="pp-legalCheck pp-shopCheckout__termsCheck">
               <input
                 type="checkbox"

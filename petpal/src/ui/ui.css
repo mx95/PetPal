@@ -19217,6 +19217,44 @@ html[data-theme="dark"] .pp-nearby-list > li {
   margin: 0;
 }
 
+.pp-shopCheckout__delivery {
+  margin: 0 0 14px;
+  display: grid;
+  gap: 10px;
+}
+
+.pp-shopCheckout__deliveryText {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #475467;
+}
+
+.pp-shopCheckout__couriers {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 16px;
+}
+
+.pp-shopCheckout__courierLogo {
+  display: block;
+  object-fit: contain;
+  background: #fff;
+}
+
+.pp-shopCheckout__courierLogo--boxnow {
+  width: 70px;
+  height: 51px;
+  border-radius: 6px;
+}
+
+.pp-shopCheckout__courierLogo--acs {
+  width: 96px;
+  height: 26px;
+}
+
+
 @media (max-width: 860px) {
   .pp-shopCheckout {
     grid-template-columns: minmax(0, 1fr);

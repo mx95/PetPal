@@ -1687,6 +1687,9 @@ const en = {
     termsLink: 'Terms of service',
     termsAnd: 'and',
     privacyLink: 'Privacy policy',
+    deliveryNote:
+      'Hardware items are sent by BOX NOW or ACS. Expected delivery is 1–3 working days.',
+    deliveryCouriersAria: 'Delivery partners',
     termsError: 'Accept the Terms of service and Privacy policy to continue.',
   },
   ordersPage: {
