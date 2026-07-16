@@ -1,0 +1,89 @@
+# SSH into the Hetzner host and print deploy health (git SHA, assets, PM2).
+#
+# Run: Actions → Verify server deploy → Run workflow
+
+name: Verify server deploy
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/verify-server.yml'
+
+concurrency:
+  group: verify-server
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check server over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          command_timeout: 5m
+          script: |
+            set -euo pipefail
+            PETPAL_ROOT="${{ secrets.DEPLOY_PATH }}"
+            if [ -z "$PETPAL_ROOT" ]; then PETPAL_ROOT="/root/PetPal"; fi
+
+            echo "======== host ========"
+            hostname
+            date -u
+
+            echo "======== git ========"
+            cd "$PETPAL_ROOT"
+            git fetch origin main --quiet || true
+            echo "HEAD: $(git rev-parse --short HEAD) $(git log -1 --pretty=%s)"
+            echo "origin/main: $(git rev-parse --short origin/main 2>/dev/null || echo n/a)"
+            git status -sb
+
+            echo "======== shop assets ========"
+            TRACKER="$PETPAL_ROOT/petpal/public/images/shop/gps-tracker.png"
+            NFC_DIR="$PETPAL_ROOT/petpal/public/images/nfc-tags"
+            ls -la "$TRACKER"
+            ls -la "$NFC_DIR" | head -30
+            echo "nfc tag png count: $(ls -1 "$NFC_DIR"/nfc-tag-*.png 2>/dev/null | wc -l)"
+
+            echo "======== built SPA assets ========"
+            BUILD="$PETPAL_ROOT/petpal/build"
+            if [ -d "$BUILD" ]; then
+              ls -la "$BUILD/images/shop/gps-tracker.png" 2>/dev/null || echo "missing build tracker image"
+              echo "build nfc count: $(ls -1 "$BUILD/images/nfc-tags"/nfc-tag-*.png 2>/dev/null | wc -l)"
+              grep -RIl -E 'NfcDesignSelector|selectedDesignId|nfc-tag-01' "$BUILD/static/js" 2>/dev/null | head -5 || echo "no NFC strings found in build js"
+            else
+              echo "missing build dir"
+            fi
+
+            echo "======== source wiring ========"
+            test -f "$PETPAL_ROOT/petpal/src/components/shop/NfcDesignSelector.js" && echo "NfcDesignSelector.js: OK"
+            test -f "$PETPAL_ROOT/petpal/src/data/nfcTagDesigns.js" && echo "nfcTagDesigns.js: OK"
+            grep -Rn -E 'TRACKER_HARDWARE|selectedNfcDesignId|NfcDesignSelector' "$PETPAL_ROOT/petpal/src" --include='*.js' | head -20
+
+            echo "======== pm2 ========"
+            if command -v pm2 >/dev/null 2>&1; then
+              pm2 list
+            else
+              echo "pm2 not found"
+            fi
+
+            echo "======== local HTTP ========"
+            curl -sI -o /dev/null -w "tracker.png %{http_code}\n" http://127.0.0.1:5002/images/shop/gps-tracker.png || true
+            curl -sI -o /dev/null -w "nfc-01 %{http_code}\n" http://127.0.0.1:5002/images/nfc-tags/nfc-tag-01.png || true
+            curl -sI -o /dev/null -w "nfc-18 %{http_code}\n" http://127.0.0.1:5002/images/nfc-tags/nfc-tag-18.png || true
+            curl -sI -o /dev/null -w "home %{http_code}\n" http://127.0.0.1:5002/ || true
+
+            echo "======== firebase cli ========"
+            if command -v firebase >/dev/null 2>&1; then
+              firebase --version
+            else
+              echo "firebase CLI not on PATH"
+            fi
+
+            echo "======== verify done ========"
