@@ -19438,6 +19438,159 @@ html[data-theme="dark"] .pp-nearby-list > li {
   line-height: 1.2;
 }
 
+.pp-shopTrackerOpt--withImage {
+  align-items: center;
+}
+
+.pp-shopTrackerOpt__img {
+  width: 52px;
+  height: 40px;
+  object-fit: contain;
+  flex-shrink: 0;
+  border-radius: 8px;
+  background: #fff;
+  border: 1px solid rgba(16, 24, 40, 0.08);
+}
+
+.pp-shopCard__productImg {
+  display: block;
+  width: min(100%, 220px);
+  height: auto;
+  margin: 8px auto 12px;
+  object-fit: contain;
+}
+
+.pp-nfcDesignSelector {
+  margin-top: 14px;
+  padding: 14px 12px;
+  border-radius: 12px;
+  background: rgba(109, 76, 255, 0.04);
+  border: 1px solid rgba(109, 76, 255, 0.12);
+}
+
+.pp-nfcDesignSelector__title {
+  margin: 0 0 12px;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.pp-nfcDesignSelector__preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  padding: 12px;
+  border-radius: 12px;
+  background: #fff;
+  border: 1px solid rgba(16, 24, 40, 0.08);
+}
+
+.pp-nfcDesignSelector__previewLabel {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.pp-nfcDesignSelector__previewImg {
+  width: min(160px, 42vw);
+  height: auto;
+  object-fit: contain;
+}
+
+.pp-nfcDesignSelector__previewName {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.pp-nfcDesignSelector__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+@media (min-width: 640px) {
+  .pp-nfcDesignSelector__grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .pp-nfcDesignSelector__grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+
+.pp-nfcDesignCard {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 10px 8px 8px;
+  border-radius: 12px;
+  background: #fff;
+  border: 2px solid rgba(16, 24, 40, 0.1);
+  cursor: pointer;
+  transition:
+    border-color 0.18s ease,
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    background 0.18s ease;
+}
+
+.pp-nfcDesignCard:hover:not(:disabled):not(.is-selected) {
+  border-color: rgba(109, 76, 255, 0.35);
+}
+
+.pp-nfcDesignCard.is-selected {
+  border-color: #6d4cff;
+  transform: scale(1.04);
+  box-shadow: 0 8px 20px rgba(109, 76, 255, 0.22);
+  background: rgba(109, 76, 255, 0.04);
+}
+
+.pp-nfcDesignCard:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.pp-nfcDesignCard__img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+.pp-nfcDesignCard__name {
+  font-size: 0.72rem;
+  font-weight: 750;
+  color: #334155;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.pp-nfcDesignCard__check {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: #6d4cff;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 900;
+  box-shadow: 0 2px 8px rgba(109, 76, 255, 0.35);
+}
+
 .pp-shopProductsLead {
   margin-bottom: 14px;
 }

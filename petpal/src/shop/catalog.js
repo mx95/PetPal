@@ -1,4 +1,4 @@
-/** @typedef {{ id: string, title: string, subtitle: string, amountCents: number, currency: string, recurring: boolean, badge?: string }} ShopProduct */
+/** @typedef {{ id: string, title: string, subtitle: string, amountCents: number, currency: string, recurring: boolean, badge?: string, image?: string }} ShopProduct */
 
 /** Mirror functions/shopPricing.js + shop-pricing.json */
 export const PLUS_MONTHLY_CENTS = 499;
@@ -85,6 +85,16 @@ export const SHOP_PRODUCTS = [
     currency: '978',
     recurring: true,
     badge: 'Free tracker + NFC',
+  },
+  {
+    id: 'TRACKER_HARDWARE',
+    title: 'GPS tracker',
+    subtitle: 'Carbon-fiber GPS collar tracker for live location in PetPal.',
+    amountCents: TRACKER_ADDON_CENTS,
+    currency: '978',
+    recurring: false,
+    badge: 'Hardware',
+    image: '/images/shop/gps-tracker.png',
   },
   {
     id: 'NFC_TAG_HARDWARE',

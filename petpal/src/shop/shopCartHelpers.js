@@ -16,8 +16,10 @@ import { PLUS_SKUS, BOOST_SKUS, monthlyFirstPaymentCents, formatEur, NFC_TAG_ADD
  *   includeTracker?: boolean,
  *   includeNfc?: boolean,
  *   nfcPetIds?: string[],
+ *   selectedDesignId?: number,
  *   trackerImei?: string,
  *   recurring?: boolean,
+ *   productId?: string,
  * }} CartItem
  */
 
@@ -27,6 +29,7 @@ import { PLUS_SKUS, BOOST_SKUS, monthlyFirstPaymentCents, formatEur, NFC_TAG_ADD
  *   includeTracker?: boolean,
  *   includeNfc?: boolean,
  *   nfcPetIds?: string[],
+ *   selectedDesignId?: number,
  *   saveCard?: boolean,
  *   petNames?: string[],
  *   trackerImei?: string,
@@ -40,6 +43,8 @@ export function buildSubscriptionCartItem(product, opts) {
   const saveCard = Boolean(opts.saveCard);
   const petNames = Array.isArray(opts.petNames) ? opts.petNames : [];
   const trackerImei = opts.trackerImei ? String(opts.trackerImei).trim() : '';
+  const selectedDesignId =
+    includeNfc && opts.selectedDesignId != null ? Number(opts.selectedDesignId) : undefined;
 
   let priceCents = product.amountCents;
   let title = product.title;
@@ -55,20 +60,25 @@ export function buildSubscriptionCartItem(product, opts) {
     title = parts.join(' + ');
   } else if (product.id === 'PETPAL_PLUS_YEARLY') {
     title = 'Yearly + free GPS tracker & NFC tag';
+  } else if (product.id === 'TRACKER_HARDWARE') {
+    title = 'GPS tracker';
   } else if (product.id === 'NFC_TAG_HARDWARE') {
     priceCents = NFC_TAG_ADDON_CENTS * Math.max(1, nfcPetIds.length);
     title = nfcPetIds.length > 1 ? `NFC tag ×${nfcPetIds.length}` : 'NFC tag';
   }
 
-  const yearlyIncludeTracker = product.id === 'PETPAL_PLUS_YEARLY' ? true : includeTracker;
+  const yearlyIncludeTracker =
+    product.id === 'PETPAL_PLUS_YEARLY' || product.id === 'TRACKER_HARDWARE' ? true : includeTracker;
   const yearlyIncludeNfc =
     product.id === 'PETPAL_PLUS_YEARLY' ? true : includeNfc;
 
   const suffix = `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
   const key =
     product.id === 'NFC_TAG_HARDWARE'
-      ? `nfc-${nfcPetIds.slice().sort().join('-')}-${suffix}`
-      : `sub-${product.id}-${suffix}`;
+      ? `nfc-${nfcPetIds.slice().sort().join('-')}-d${selectedDesignId || 1}-${suffix}`
+      : product.id === 'TRACKER_HARDWARE'
+        ? `tracker-${suffix}`
+        : `sub-${product.id}-${suffix}`;
 
   /** @type {string | undefined} */
   let subtitle;
@@ -85,10 +95,12 @@ export function buildSubscriptionCartItem(product, opts) {
     priceCents,
     qty: 1,
     sku: product.id,
+    productId: product.id === 'NFC_TAG_HARDWARE' ? 'nfc-tag' : product.id,
     saveCard,
     includeTracker: yearlyIncludeTracker,
     includeNfc: yearlyIncludeNfc,
     nfcPetIds: nfcPetIds.length ? nfcPetIds : undefined,
+    selectedDesignId: selectedDesignId || undefined,
     trackerImei: trackerImei || undefined,
     recurring: Boolean(product.recurring),
   };
@@ -118,7 +130,13 @@ export function validateCartForCheckout(items, t) {
 /** Subscription / NFC lines should not merge quantities — one checkout config per row. */
 export function isSubscriptionCartLine(row) {
   const sku = row.sku || '';
-  return Boolean(sku && (PLUS_SKUS.includes(sku) || BOOST_SKUS.includes(sku) || sku === 'NFC_TAG_HARDWARE'));
+  return Boolean(
+    sku &&
+      (PLUS_SKUS.includes(sku) ||
+        BOOST_SKUS.includes(sku) ||
+        sku === 'NFC_TAG_HARDWARE' ||
+        sku === 'TRACKER_HARDWARE')
+  );
 }
 
 /** @param {ReturnType<typeof buildSubscriptionCartItem>} item */

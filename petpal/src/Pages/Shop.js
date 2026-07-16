@@ -9,6 +9,8 @@ import { subscribeProviderProfile } from '../bookings/providerDirectoryFirestore
 import { providerBookingsBoostIsActive, providerNearbyBoostIsActive } from '../bookings/bookingBrowseUtils';
 import ShopCartBar from '../components/shop/ShopCartBar';
 import ShopPetPicker from '../components/shop/ShopPetPicker';
+import NfcDesignSelector from '../components/shop/NfcDesignSelector';
+import { NFC_TAG_DESIGNS } from '../data/nfcTagDesigns';
 import {
   NFC_TAG_ADDON_CENTS,
   PLUS_SKUS,
@@ -29,7 +31,9 @@ import { buildSubscriptionCartItem } from '../shop/shopCartHelpers';
 import { subscribeShopSubscriptionState } from '../shop/shopSubscriptionsFirestore';
 import { normalizeTrackerImei } from '../tracking/trackerImeiIndex';
 
-const SUBSCRIPTION_PRODUCTS = SHOP_PRODUCTS.filter((p) => PLUS_SKUS.includes(p.id) || p.id === 'NFC_TAG_HARDWARE');
+const SUBSCRIPTION_PRODUCTS = SHOP_PRODUCTS.filter(
+  (p) => PLUS_SKUS.includes(p.id) || p.id === 'NFC_TAG_HARDWARE' || p.id === 'TRACKER_HARDWARE'
+);
 
 function petForImei(pets, imei) {
   const key = normalizeTrackerImei(imei);
@@ -74,6 +78,9 @@ export default function Shop() {
   const [monthlyNfcPetIds, setMonthlyNfcPetIds] = useState(/** @type {string[]} */ ([]));
   const [yearlyNfcPetIds, setYearlyNfcPetIds] = useState(/** @type {string[]} */ ([]));
   const [nfcHardwarePetIds, setNfcHardwarePetIds] = useState(/** @type {string[]} */ ([]));
+  const [selectedNfcDesignId, setSelectedNfcDesignId] = useState(
+    () => NFC_TAG_DESIGNS[0]?.id || 1
+  );
   const [activeTrackerSubs, setActiveTrackerSubs] = useState(/** @type {Array<{ id: string, sku?: string, status?: string, createdAt?: unknown }>} */ ([]));
   const [legacyMonthlyActive, setLegacyMonthlyActive] = useState(false);
   const [cancelBusy, setCancelBusy] = useState(null);
@@ -216,9 +223,10 @@ export default function Shop() {
     const petNames = petOptions.filter((p) => nfcPetIds.includes(p.id)).map((p) => p.name);
     addToCart(
       buildSubscriptionCartItem(product, {
-        includeTracker,
+        includeTracker: product.id === 'TRACKER_HARDWARE' ? true : includeTracker,
         includeNfc,
         nfcPetIds,
+        selectedDesignId: includeNfc ? selectedNfcDesignId : undefined,
         saveCard,
         petNames,
         trackerImei:
@@ -453,6 +461,13 @@ export default function Shop() {
                         {p.subtitle}
                       </p>
                     ) : null}
+                    {p.id === 'TRACKER_HARDWARE' ? (
+                      <img
+                        className="pp-shopCard__productImg"
+                        src="/images/shop/gps-tracker.png"
+                        alt={p.title}
+                      />
+                    ) : null}
                     {PLUS_SKUS.includes(p.id) ? (
                       <p className={`pp-shopCard__status${planActive ? ' pp-shopCard__status--on' : ''}`}>
                         {planActive ? t('shopPage.plusBadgeActive') : t('shopPage.plusBadgeInactive')}
@@ -503,12 +518,17 @@ export default function Shop() {
                             />
                           </label>
                         ) : null}
-                        <label className="pp-shopTrackerOpt">
+                        <label className="pp-shopTrackerOpt pp-shopTrackerOpt--withImage">
                           <input
                             type="checkbox"
                             checked={monthlyIncludeTracker}
                             disabled={isLoading || monthlyUseExistingImei}
                             onChange={(e) => setMonthlyIncludeTracker(e.target.checked)}
+                          />
+                          <img
+                            className="pp-shopTrackerOpt__img"
+                            src="/images/shop/gps-tracker.png"
+                            alt=""
                           />
                           <span className="pp-shopTrackerOpt__copy">
                             <strong>
@@ -555,24 +575,31 @@ export default function Shop() {
                       </div>
                     ) : null}
                     {showNfcPicker ? (
-                      <ShopPetPicker
-                        pets={petOptions}
-                        selectedIds={
-                          p.id === 'PETPAL_PLUS_MONTHLY'
-                            ? monthlyNfcPetIds
-                            : p.id === 'PETPAL_PLUS_YEARLY'
-                              ? yearlyNfcPetIds
-                              : nfcHardwarePetIds
-                        }
-                        disabled={isLoading}
-                        onChange={
-                          p.id === 'PETPAL_PLUS_MONTHLY'
-                            ? setMonthlyNfcPetIds
-                            : p.id === 'PETPAL_PLUS_YEARLY'
-                              ? setYearlyNfcPetIds
-                              : setNfcHardwarePetIds
-                        }
-                      />
+                      <>
+                        <ShopPetPicker
+                          pets={petOptions}
+                          selectedIds={
+                            p.id === 'PETPAL_PLUS_MONTHLY'
+                              ? monthlyNfcPetIds
+                              : p.id === 'PETPAL_PLUS_YEARLY'
+                                ? yearlyNfcPetIds
+                                : nfcHardwarePetIds
+                          }
+                          disabled={isLoading}
+                          onChange={
+                            p.id === 'PETPAL_PLUS_MONTHLY'
+                              ? setMonthlyNfcPetIds
+                              : p.id === 'PETPAL_PLUS_YEARLY'
+                                ? setYearlyNfcPetIds
+                                : setNfcHardwarePetIds
+                          }
+                        />
+                        <NfcDesignSelector
+                          selectedDesignId={selectedNfcDesignId}
+                          onChange={setSelectedNfcDesignId}
+                          disabled={isLoading}
+                        />
+                      </>
                     ) : null}
                     {p.id === 'PETPAL_PLUS_MONTHLY' && monthlyIncludeNfc && monthlyNfcPetIds.length > 0 ? (
                       <p className="pp-subtle pp-shopCard__nfcPerPet">

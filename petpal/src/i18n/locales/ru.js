@@ -1729,6 +1729,9 @@ const ru = {
     nfcPetPickerAria: 'Выбор питомцев для NFC-метки',
     nfcNoPets: 'Сначала добавьте питомца в Мои питомцы, чтобы привязать NFC-метку.',
     nfcSelectPetRequired: 'Выберите хотя бы одного питомца для NFC-метки.',
+    nfcDesignTitle: 'Выберите дизайн NFC-метки',
+    nfcDesignSelected: 'Выбранный дизайн',
+    nfcDesignAria: 'Варианты дизайна NFC-метки',
     productsLead:
       'Товары зарегистрированных бизнесов PetPal. Добавьте в корзину для проверки перед оплатой.',
     addToCart: 'В корзину',

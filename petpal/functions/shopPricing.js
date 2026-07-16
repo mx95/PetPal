@@ -116,6 +116,10 @@ function normalizeCartLine(row) {
   const nfcPetIds = Array.isArray(row.nfcPetIds)
     ? row.nfcPetIds.map(String).filter(Boolean).slice(0, 20)
     : undefined;
+  const selectedDesignId =
+    row.selectedDesignId != null && Number.isFinite(Number(row.selectedDesignId))
+      ? Math.max(1, Math.min(999, Number(row.selectedDesignId)))
+      : undefined;
   return {
     key: String(row.key || '').slice(0, 120),
     title: String(row.title || 'Item').slice(0, 120),
@@ -123,10 +127,12 @@ function normalizeCartLine(row) {
     priceCents: Math.max(0, Number(row.priceCents) || 0),
     qty: Math.max(1, Math.min(99, Number(row.qty) || 1)),
     sku: row.sku ? String(row.sku).slice(0, 64) : undefined,
+    productId: row.productId ? String(row.productId).slice(0, 64) : undefined,
     saveCard: Boolean(row.saveCard),
     includeTracker: Boolean(row.includeTracker),
     includeNfc: Boolean(row.includeNfc),
     nfcPetIds: nfcPetIds?.length ? nfcPetIds : undefined,
+    selectedDesignId,
     trackerImei: row.trackerImei ? String(row.trackerImei).trim().slice(0, 20) : undefined,
     recurring: Boolean(row.recurring),
   };

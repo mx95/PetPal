@@ -1761,6 +1761,9 @@ const el = {
     nfcPetPickerAria: 'Επιλογή κατοικιδίων για NFC tag',
     nfcNoPets: 'Προσθέστε πρώτα κατοικίδιο στα Κατοικίδια μου για σύνδεση NFC tag.',
     nfcSelectPetRequired: 'Επιλέξτε τουλάχιστον ένα κατοικίδιο για το NFC tag.',
+    nfcDesignTitle: 'Επιλέξτε σχέδιο NFC Tag',
+    nfcDesignSelected: 'Επιλεγμένο σχέδιο',
+    nfcDesignAria: 'Επιλογές σχεδίου NFC tag',
     productsLead:
       'Προϊόντα από εγγεγραμμένες επιχειρήσεις PetPal. Προσθέστε στο καλάθι για έλεγχο πριν το checkout.',
     addToCart: 'Προσθήκη στο καλάθι',

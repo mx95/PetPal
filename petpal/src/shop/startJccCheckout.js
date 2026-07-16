@@ -58,10 +58,15 @@ export async function startJccCheckout(opts) {
           priceCents: Number(row.priceCents) || 0,
           qty: Math.max(1, Number(row.qty) || 1),
           sku: row.sku ? String(row.sku) : undefined,
+          productId: row.productId ? String(row.productId) : undefined,
           saveCard: Boolean(row.saveCard),
           includeTracker: Boolean(row.includeTracker),
           includeNfc: Boolean(row.includeNfc),
           nfcPetIds: Array.isArray(row.nfcPetIds) ? row.nfcPetIds.map(String).filter(Boolean) : undefined,
+          selectedDesignId:
+            row.selectedDesignId != null && Number.isFinite(Number(row.selectedDesignId))
+              ? Number(row.selectedDesignId)
+              : undefined,
           recurring: Boolean(row.recurring),
         }))
       : undefined;
