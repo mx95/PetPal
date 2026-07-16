@@ -33,7 +33,7 @@ jobs:
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           command_timeout: 22m
-          script_stop: true
+          # Do not use script_stop: it runs lines separately and breaks if/case/functions.
           script: |
             set -euo pipefail
             PETPAL_ROOT="${{ secrets.DEPLOY_PATH }}"
@@ -76,10 +76,18 @@ jobs:
               npm ci
               cd "$PETPAL_ROOT/petpal"
               echo "[firebase-deploy] Deploying shop Cloud Functions"
+              set +e
               $FB deploy \
                 --only functions:createJccCheckout,functions:jccPaymentReturn,functions:billingRenewal,functions:expireProviderBoosts,functions:assignSubscriptionImei,functions:linkTrackerSubscriptionPet,functions:createCustomerBooking,functions:sendBookingConfirmation \
                 --project petpal-aecda \
                 --non-interactive
+              DEPLOY_RC=$?
+              set -e
+              if [ "$DEPLOY_RC" -ne 0 ]; then
+                echo "[firebase-deploy] Functions deploy failed with exit code $DEPLOY_RC"
+                exit "$DEPLOY_RC"
+              fi
+              echo "[firebase-deploy] Functions deploy finished OK"
             }
 
             case "$TARGETS" in
