@@ -39,9 +39,8 @@ jobs:
 
             echo "======== git ========"
             cd "$PETPAL_ROOT"
-            git fetch origin main --quiet || true
             echo "HEAD: $(git rev-parse --short HEAD) $(git log -1 --pretty=%s)"
-            echo "origin/main: $(git rev-parse --short origin/main 2>/dev/null || echo n/a)"
+            echo "origin/main (local): $(git rev-parse --short origin/main 2>/dev/null || echo n/a)"
             git status -sb
 
             echo "======== shop assets ========"
