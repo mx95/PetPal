@@ -35,7 +35,7 @@ function PostCard({ post, taggedPet, authorLetter }) {
   const feedKind = post.feedKind || 'community';
   const names = post.petNames?.length ? post.petNames : post.petName ? [post.petName] : [];
   const emoji = post.petEmoji || '🐾';
-  const bylinePets = names.length ? `with ${names.join(', ')}` : null;
+  const bylinePets = names.length ? t('community.authorWithPets', { names: names.join(', ') }) : null;
   const isCompany = post.authorKind === 'company';
   const hasImages = post.imageUrls && post.imageUrls.length > 0;
   const hasVideo = Boolean(post.videoUrl);
@@ -49,7 +49,7 @@ function PostCard({ post, taggedPet, authorLetter }) {
     if (!val) return;
     try {
       await navigator.clipboard.writeText(val);
-      showToast('Copied');
+      showToast(t('community.copied'));
     } catch {
       showToast(val);
     }
@@ -92,7 +92,7 @@ function PostCard({ post, taggedPet, authorLetter }) {
           </div>
           <div className="pp-post__meta">
           <div className="pp-post__title">
-            <button type="button" className="pp-post__human" onClick={copyAuthor} title="Copy author">
+            <button type="button" className="pp-post__human" onClick={copyAuthor} title={t('community.copyAuthor')}>
               {post.author}
               <span aria-hidden style={{ marginLeft: 6, opacity: 0.7, fontWeight: 900 }}>
                 ▾
@@ -101,7 +101,7 @@ function PostCard({ post, taggedPet, authorLetter }) {
             {isCompany ? (
               <>
                 <span className="pp-post__dot">·</span>
-                <span className="pp-post__pet">Business</span>
+                <span className="pp-post__pet">{t('community.business')}</span>
               </>
             ) : bylinePets ? (
               <>
@@ -130,7 +130,7 @@ function PostCard({ post, taggedPet, authorLetter }) {
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  Map
+                  {t('community.mapLink')}
                 </a>
               </>
             )}
@@ -158,7 +158,7 @@ function PostCard({ post, taggedPet, authorLetter }) {
         <div
           className={`pp-post__media pp-post__media--photos ${post.imageUrls.length > 1 ? 'pp-post__media--multi' : ''}`}
           role="img"
-          aria-label={names[0] ? `Photos with ${names[0]}` : 'Post photos'}
+          aria-label={names[0] ? t('community.photosWithPet', { name: names[0] }) : t('community.postPhotos')}
         >
           {post.imageUrls.length === 1 ? (
             <img src={post.imageUrls[0]} alt="" className="pp-post__img" />
@@ -179,7 +179,7 @@ function PostCard({ post, taggedPet, authorLetter }) {
             controls
             playsInline
             preload="metadata"
-            aria-label={names[0] ? `Video with ${names[0]}` : 'Post video'}
+            aria-label={names[0] ? t('community.videoWithPet', { name: names[0] }) : t('community.postVideo')}
           />
         </div>
       ) : null}
@@ -189,7 +189,7 @@ function PostCard({ post, taggedPet, authorLetter }) {
         </div>
       ) : null}
       {hasWalk && !hasImages && !hasVideo ? (
-        <div className="pp-post__media pp-post__media--walkOnly" role="img" aria-label="Latest walk">
+        <div className="pp-post__media pp-post__media--walkOnly" role="img" aria-label={t('community.latestWalk')}>
           <WalkPostEmbed walkEmbed={post.walkEmbed} />
         </div>
       ) : null}
@@ -198,7 +198,13 @@ function PostCard({ post, taggedPet, authorLetter }) {
           className="pp-post__media"
           style={{ background: post.imageTint }}
           role="img"
-          aria-label={isCompany ? 'Business post' : names[0] ? `Photo for ${names[0]}` : 'Post'}
+          aria-label={
+            isCompany
+              ? t('community.businessPost')
+              : names[0]
+                ? t('community.photoForPet', { name: names[0] })
+                : t('community.postMedia')
+          }
         >
           <span className="pp-post__mediaIcon" aria-hidden>
             {isCompany ? '🏢' : feedKind === 'lostPet' ? '🆘' : feedKind === 'stray' ? '🏡' : '🐾'}
@@ -253,18 +259,18 @@ function PostCard({ post, taggedPet, authorLetter }) {
               className="pp-input"
               value={commentDraft}
               onChange={(e) => setCommentDraft(e.target.value)}
-              placeholder="Write a comment…"
+              placeholder={t('community.writeComment')}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') submitComment();
               }}
             />
             <button type="button" className="pp-btn pp-btn--primary" onClick={submitComment}>
-              Post
+              {t('community.postComment')}
             </button>
           </div>
           {localComments.length === 0 ? (
             <div className="pp-muted" style={{ marginTop: 8, fontSize: 13 }}>
-              No comments yet.
+              {t('community.noComments')}
             </div>
           ) : (
             <div className="pp-stack" style={{ marginTop: 10 }}>
@@ -308,6 +314,7 @@ function PostCard({ post, taggedPet, authorLetter }) {
  */
 export default function Community() {
   const { show: showToast } = useToast();
+  const { t } = useI18n();
   const { user } = useAuth();
   const { isApprovedCompany, profile: companyProfile } = useCompany();
   const { pets, getCategory } = usePets();
@@ -340,9 +347,7 @@ export default function Community() {
     [picked]
   );
 
-  const displayName = user?.displayName || user?.email?.split('@')[0] || 'You';
-
-  const { t } = useI18n();
+  const displayName = user?.displayName || user?.email?.split('@')[0] || t('community.you');
   const { activeListings } = useLostPet();
   const { availableFeed: strayFeedRows } = useStrayListings();
 
@@ -451,7 +456,7 @@ export default function Community() {
           imageUrls = await filesToResizedDataUrls(photosSlice.slice(0, maxPh));
         }
       } catch (err) {
-        showToast(err?.message || 'Could not add your media. Try a smaller file.', { kind: 'error' });
+        showToast(err?.message || t('community.mediaAddError'), { kind: 'error' });
         return;
       } finally {
         setPostPhotoBusy(false);
@@ -542,22 +547,19 @@ export default function Community() {
       <div className="pp-col-12">
         <div className="pp-row" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
-            <div className="pp-badge">Community</div>
+            <div className="pp-badge">{t('community.badge')}</div>
             <h1 className="pp-h1" style={{ marginTop: 10 }}>
-              Sniff &amp; Share
+              {t('community.title')}
             </h1>
             <p className="pp-subtle" style={{ marginTop: 6, maxWidth: 560 }}>
-              Post as <strong>{displayName}</strong>, tag pet(s), add photos or a short video, and optionally attach a
-              walk card.
+              {t('community.intro', { name: displayName })}
               {isApprovedCompany ? (
                 <>
                   {' '}
-                  <strong>Approved businesses</strong> can switch to a business post, link their verified map pin, and
-                  mark <em>paid boost</em> (payment integration can be added later; boosted posts are highlighted for
-                  now).
+                  {t('community.introBusiness')}
                 </>
               ) : null}{' '}
-              (Feed is stored on this device for now; company verification uses Firestore.)
+              {t('community.introFeed')}
             </p>
           </div>
           <Link className="pp-link" to="/dashboard">
@@ -894,15 +896,15 @@ export default function Community() {
       ) : (
         <div className="pp-col-12">
           <p className="pp-subtle">
-            Add pets under{' '}
+            {t('community.noPetsCtaStart')}{' '}
             <Link className="pp-link" to="/pets" style={{ padding: 0, display: 'inline' }}>
-              My pets
+              {t('community.noPetsCtaMyPets')}
             </Link>{' '}
-            to post, or{' '}
+            {t('community.noPetsCtaMiddle')}{' '}
             <Link className="pp-link" to="/register" style={{ padding: 0, display: 'inline' }}>
-              register as a business
+              {t('community.noPetsCtaRegister')}
             </Link>{' '}
-            to apply for a map listing and promoted posts.
+            {t('community.noPetsCtaEnd')}
           </p>
         </div>
       )}

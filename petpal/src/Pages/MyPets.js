@@ -156,6 +156,15 @@ export default function MyPets() {
     ],
     [t]
   );
+  const friendlyWithOptions = useMemo(
+    () => [
+      ['dogs', t('petPublic.dogs')],
+      ['cats', t('petPublic.cats')],
+      ['people', t('petPublic.people')],
+      ['children', t('petPublic.children')],
+    ],
+    [t]
+  );
 
   const filteredPets = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -475,7 +484,7 @@ export default function MyPets() {
             <IconSearch />
             <input
               className="pp-input pp-myPetsToolbar__searchInput"
-              placeholder="Search pets"
+              placeholder={t('myPets.searchPets')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -538,7 +547,7 @@ export default function MyPets() {
                             type="button"
                             onClick={() => setFullscreenPhotoUrl(p.photoUrl || p.photoDataUrl || '')}
                             style={{ border: 0, padding: 0, background: 'transparent', cursor: p.photoUrl || p.photoDataUrl ? 'zoom-in' : 'default' }}
-                            aria-label={p.photoUrl || p.photoDataUrl ? 'Open photo fullscreen' : 'No photo'}
+                            aria-label={p.photoUrl || p.photoDataUrl ? t('myPets.openPhotoFullscreen') : t('myPets.noPhoto')}
                             disabled={!p.photoUrl && !p.photoDataUrl}
                           >
                             <PetAvatar pet={p} size={56} />
@@ -554,7 +563,7 @@ export default function MyPets() {
                                   color: p.linkedTracker ? '#166534' : '#991b1b',
                                 }}
                               >
-                                Linked Tracker: {p.linkedTracker ? 'Yes' : 'No'}
+                                {t('myPets.linkedTracker')}: {p.linkedTracker ? t('petPublic.yes') : t('petPublic.no')}
                               </span>
                               <span
                                 className="pp-petTag"
@@ -564,18 +573,18 @@ export default function MyPets() {
                                   color: p.nfcTag ? '#166534' : '#991b1b',
                                 }}
                               >
-                                NFC Tag: {p.nfcTag ? 'Yes' : 'No'}
+                                {t('myPets.nfcTag')}: {p.nfcTag ? t('petPublic.yes') : t('petPublic.no')}
                               </span>
                             </div>
 
                             {p.microchipNo ? (
                               <div className="pp-petList__meta" style={{ marginTop: 8 }}>
-                                <strong>Microchip:</strong> {p.microchipNo}
+                                <strong>{t('petPublic.microchip')}:</strong> {p.microchipNo}
                               </div>
                             ) : null}
                             {p.breed ? (
                               <div className="pp-petList__meta" style={{ marginTop: 4 }}>
-                                <strong>Breed:</strong> {p.breed}
+                                <strong>{t('petPublic.breed')}:</strong> {p.breed}
                               </div>
                             ) : null}
                             <div className="pp-petList__meta" style={{ marginTop: 4 }}>
@@ -700,7 +709,7 @@ export default function MyPets() {
                 <h2 id="add-pet-title" className="pp-sectionTitle" style={{ margin: 0 }}>
                   {t('myPets.addTitle')}
                 </h2>
-                <p className="pp-subtle" style={{ margin: '6px 0 0' }}>Fill in pet details and upload profile picture.</p>
+                <p className="pp-subtle" style={{ margin: '6px 0 0' }}>{t('myPets.addPetSub')}</p>
               </div>
               <button
                 type="button"
@@ -716,7 +725,7 @@ export default function MyPets() {
             <form className="pp-form pp-modalForm" onSubmit={submitAdd}>
               <div className="pp-modalGrid2">
                 <div>
-                  <div className="pp-label">Category *</div>
+                  <div className="pp-label">{t('myPets.category')} *</div>
                   <PrettySelect value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
                     {PET_CATEGORIES.map((c) => (
                       <option key={c.id} value={c.id}>
@@ -726,7 +735,7 @@ export default function MyPets() {
                   </PrettySelect>
                 </div>
                 <div>
-                  <div className="pp-label">Name *</div>
+                  <div className="pp-label">{t('myPets.name')} *</div>
                   <input
                     className="pp-input"
                     value={name}
@@ -740,11 +749,11 @@ export default function MyPets() {
 
               <div className="pp-modalGrid2">
                 <div>
-                  <div className="pp-label">Breed *</div>
+                  <div className="pp-label">{t('petPublic.breed')} *</div>
                   <input className="pp-input" value={breed} onChange={(e) => setBreed(e.target.value)} required />
                 </div>
                 <div>
-                  <div className="pp-label">Gender</div>
+                  <div className="pp-label">{t('petPublic.gender')}</div>
                   <PrettySelect value={gender} onChange={(e) => setGender(e.target.value)}>
                     {genderOptions.map(([value, label]) => (
                       <option key={value} value={value}>
@@ -757,11 +766,11 @@ export default function MyPets() {
 
               <div className="pp-modalGrid2">
                 <div>
-                  <div className="pp-label">Date of birth *</div>
+                  <div className="pp-label">{t('petPublic.dob')} *</div>
                   <input className="pp-input" type="date" value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)} required />
                 </div>
                 <div>
-                  <div className="pp-label">Color *</div>
+                  <div className="pp-label">{t('petPublic.color')} *</div>
                   <input
                     className="pp-input"
                     value={colorScheme}
@@ -773,14 +782,14 @@ export default function MyPets() {
                   />
                 </div>
                 <div>
-                  <div className="pp-label">Identifying Marks</div>
+                  <div className="pp-label">{t('petPublic.traits')}</div>
                   <input className="pp-input" value={identifyingMarks} onChange={(e) => setIdentifyingMarks(e.target.value)} />
                 </div>
               </div>
 
               <div className="pp-modalGrid2">
                 <div>
-                  <div className="pp-label">GPS device ID</div>
+                  <div className="pp-label">{t('myPets.gpsDeviceId')}</div>
                   <div className="pp-row" style={{ alignItems: 'stretch', gap: 8, flexWrap: 'wrap' }}>
                     <input
                       className="pp-input"
@@ -796,13 +805,13 @@ export default function MyPets() {
                   </div>
                 </div>
                 <div>
-                  <div className="pp-label">Microchip No.</div>
+                  <div className="pp-label">{t('myPets.microchipNo')}</div>
                   <input className="pp-input" value={microchipNo} onChange={(e) => setMicrochipNo(e.target.value)} />
                 </div>
               </div>
 
               <div>
-                <div className="pp-label">Medical notes</div>
+                <div className="pp-label">{t('petPublic.medicalNotes')}</div>
                 <textarea
                   className="pp-input"
                   value={medicalNotes}
@@ -815,32 +824,27 @@ export default function MyPets() {
               {accountType === 'vet' ? (
                 <div className="pp-modalGrid2">
                   <div>
-                    <div className="pp-label">Owner name</div>
+                    <div className="pp-label">{t('myPets.ownerName')}</div>
                     <input className="pp-input" value={ownerName} onChange={(e) => setOwnerName(e.target.value)} />
                   </div>
                   <div>
-                    <div className="pp-label">Owner phone</div>
+                    <div className="pp-label">{t('myPets.ownerPhone')}</div>
                     <input className="pp-input" value={ownerPhone} onChange={(e) => setOwnerPhone(e.target.value)} />
                   </div>
                   <div>
-                    <div className="pp-label">Owner email</div>
+                    <div className="pp-label">{t('myPets.ownerEmail')}</div>
                     <input className="pp-input" type="email" value={ownerEmail} onChange={(e) => setOwnerEmail(e.target.value)} />
                   </div>
                 </div>
               ) : null}
 
               <div>
-                <div className="pp-label">Friendly with</div>
+                <div className="pp-label">{t('petPublic.friendly')}</div>
                 <p className="pp-subtle" style={{ fontSize: 12, marginTop: 0, marginBottom: 6 }}>
-                  Select where this pet is comfortable and social.
+                  {t('myPets.friendlyHint')}
                 </p>
                 <div className="pp-row" style={{ gap: 8, flexWrap: 'wrap' }}>
-                  {[
-                    ['dogs', 'Dogs'],
-                    ['cats', 'Cats'],
-                    ['people', 'People'],
-                    ['children', 'Children'],
-                  ].map(([key, label]) => (
+                  {friendlyWithOptions.map(([key, label]) => (
                     <label key={key} className="pp-chipCheck">
                       <input
                         type="checkbox"
@@ -901,7 +905,7 @@ export default function MyPets() {
                   {t('myPets.edit')} {editingPet.name || ''}
                 </h2>
                 <p className="pp-subtle" style={{ margin: '6px 0 0' }}>
-                  Update pet details, tracker ID, and profile picture.
+                  {t('myPets.editPetSub')}
                 </p>
               </div>
               <button
@@ -918,7 +922,7 @@ export default function MyPets() {
             <form className="pp-form pp-modalForm" onSubmit={saveEdit}>
               <div className="pp-modalGrid2">
                 <div>
-                  <div className="pp-label">Category *</div>
+                  <div className="pp-label">{t('myPets.category')} *</div>
                   <PrettySelect value={editCategoryId} onChange={(e) => setEditCategoryId(e.target.value)}>
                     {PET_CATEGORIES.map((c) => (
                       <option key={c.id} value={c.id}>
@@ -928,7 +932,7 @@ export default function MyPets() {
                   </PrettySelect>
                 </div>
                 <div>
-                  <div className="pp-label">Name *</div>
+                  <div className="pp-label">{t('myPets.name')} *</div>
                   <input
                     className="pp-input"
                     value={editName}
@@ -943,11 +947,11 @@ export default function MyPets() {
 
               <div className="pp-modalGrid2">
                 <div>
-                  <div className="pp-label">Breed *</div>
+                  <div className="pp-label">{t('petPublic.breed')} *</div>
                   <input className="pp-input" value={editBreed} onChange={(e) => setEditBreed(e.target.value)} required />
                 </div>
                 <div>
-                  <div className="pp-label">Gender</div>
+                  <div className="pp-label">{t('petPublic.gender')}</div>
                   <PrettySelect value={editGender} onChange={(e) => setEditGender(e.target.value)}>
                     {genderOptions.map(([value, label]) => (
                       <option key={value} value={value}>
@@ -960,11 +964,11 @@ export default function MyPets() {
 
               <div className="pp-modalGrid2">
                 <div>
-                  <div className="pp-label">Date of birth *</div>
+                  <div className="pp-label">{t('petPublic.dob')} *</div>
                   <input className="pp-input" type="date" value={editDateOfBirth} onChange={(e) => setEditDateOfBirth(e.target.value)} required />
                 </div>
                 <div>
-                  <div className="pp-label">Color *</div>
+                  <div className="pp-label">{t('petPublic.color')} *</div>
                   <input
                     className="pp-input"
                     value={editColorScheme}
@@ -976,7 +980,7 @@ export default function MyPets() {
                   />
                 </div>
                 <div>
-                  <div className="pp-label">Identifying Marks</div>
+                  <div className="pp-label">{t('petPublic.traits')}</div>
                   <input className="pp-input" value={editIdentifyingMarks} onChange={(e) => setEditIdentifyingMarks(e.target.value)} />
                 </div>
               </div>
@@ -1033,13 +1037,13 @@ export default function MyPets() {
 
               <div className="pp-modalGrid2">
                 <div>
-                  <div className="pp-label">Microchip No.</div>
+                  <div className="pp-label">{t('myPets.microchipNo')}</div>
                   <input className="pp-input" value={editMicrochipNo} onChange={(e) => setEditMicrochipNo(e.target.value)} />
                 </div>
               </div>
 
               <div>
-                <div className="pp-label">Description</div>
+                <div className="pp-label">{t('myPets.descriptionLabel')}</div>
                 <textarea
                   className="pp-input"
                   value={editDescription}
@@ -1050,17 +1054,12 @@ export default function MyPets() {
               </div>
 
               <div>
-                <div className="pp-label">Friendly with</div>
+                <div className="pp-label">{t('petPublic.friendly')}</div>
                 <p className="pp-subtle" style={{ fontSize: 12, marginTop: 0, marginBottom: 6 }}>
-                  Select where this pet is comfortable and social.
+                  {t('myPets.friendlyHint')}
                 </p>
                 <div className="pp-row" style={{ gap: 8, flexWrap: 'wrap' }}>
-                  {[
-                    ['dogs', 'Dogs'],
-                    ['cats', 'Cats'],
-                    ['people', 'People'],
-                    ['children', 'Children'],
-                  ].map(([key, label]) => (
+                  {friendlyWithOptions.map(([key, label]) => (
                     <label key={key} className="pp-chipCheck">
                       <input
                         type="checkbox"
@@ -1168,7 +1167,7 @@ export default function MyPets() {
         <div
           role="dialog"
           aria-modal="true"
-          aria-label="Pet photo full screen"
+          aria-label={t('myPets.petPhotoFullScreen')}
           style={{ position: 'fixed', inset: 0, zIndex: 1200, background: 'rgba(0,0,0,0.94)', display: 'grid', placeItems: 'center', padding: 16 }}
         >
           <div style={{ position: 'relative', display: 'inline-block' }}>
@@ -1176,8 +1175,8 @@ export default function MyPets() {
               type="button"
               className="pp-btn"
               onClick={() => setFullscreenPhotoUrl('')}
-              aria-label="Close"
-              title="Close"
+              aria-label={t('myPets.closePhoto')}
+              title={t('myPets.closePhoto')}
               style={{
                 position: 'absolute',
                 top: 8,

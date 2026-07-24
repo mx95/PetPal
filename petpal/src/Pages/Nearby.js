@@ -253,7 +253,7 @@ function NearbyMap({ apiKey }) {
         if (!silent) {
           setLocationNote({
             kind: 'text',
-            message: 'Location needs HTTPS or localhost. Open the app on HTTPS, localhost, or the mobile app build.',
+            message: t('nearbyPage.locHttpsRequired'),
           });
         }
         return;
@@ -280,11 +280,11 @@ function NearbyMap({ apiKey }) {
             setSearchStatus('idle');
             const reason =
               err?.code === 1
-                ? 'Location permission was denied. Allow location access for this site/app and try again.'
+                ? t('nearbyPage.locPermissionDenied')
                 : err?.code === 2
-                  ? 'Your location is unavailable right now. Check GPS/location services and try again.'
+                  ? t('nearbyPage.locUnavailableNow')
                   : err?.code === 3
-                    ? 'Getting your location timed out. Move near a window or try again.'
+                    ? t('nearbyPage.locTimedOut')
                     : t('nearbyPage.locDenied');
             setLocationNote({ kind: 'text', message: reason });
           } else {
@@ -328,10 +328,10 @@ function NearbyMap({ apiKey }) {
   return (
     <div className="pp-nearby-page">
       {isBookingBrowseEnabled() && petpalPartners.length ? (
-        <section className="pp-sponsoredRail pp-nearbyPartners" aria-label="PetPal recommended businesses">
+        <section className="pp-sponsoredRail pp-nearbyPartners" aria-label={t('nearbyPage.recommendedBusinessesAria')}>
           <div className="pp-sponsoredRail__head">
-            <span>Recommended on PetPal</span>
-            <small>Boosted vet, groom, and hotel partners — book services from Bookings</small>
+            <span>{t('nearbyPage.recommendedTitle')}</span>
+            <small>{t('nearbyPage.recommendedSub')}</small>
           </div>
           <div className="pp-sponsoredRail__row pp-nearbyPartners__row">
             {petpalPartners.map(({ p, km }) => (
@@ -340,12 +340,13 @@ function NearbyMap({ apiKey }) {
                 to={`/bookings/provider/${encodeURIComponent(String(p.id))}`}
                 className="pp-nearbyPartnerCard"
               >
-                <span className="pp-nearbyPartnerCard__badge">Partner</span>
-                <strong className="pp-nearbyPartnerCard__name">{String(p.displayName || 'Business')}</strong>
+                <span className="pp-nearbyPartnerCard__badge">{t('nearbyPage.partnerBadge')}</span>
+                <strong className="pp-nearbyPartnerCard__name">{String(p.displayName || t('nearbyPage.businessFallback'))}</strong>
                 {p.address ? <span className="pp-nearbyPartnerCard__addr">{String(p.address)}</span> : null}
                 <span className="pp-nearbyPartnerCard__cta">
-                  {km != null ? `${km.toFixed(1)} km · ` : null}
-                  View and book →
+                  {km != null
+                    ? t('nearbyPage.partnerDistanceCta', { km: km.toFixed(1) })
+                    : t('nearbyPage.partnerViewAndBook')}
                 </span>
               </Link>
             ))}
@@ -387,7 +388,7 @@ function NearbyMap({ apiKey }) {
       </p>
 
       <div className="pp-nearby-body pp-nearby-body--separated">
-        <section className="pp-nearby-mapStage pp-card" aria-label="Nearby map">
+        <section className="pp-nearby-mapStage pp-card" aria-label={t('nearbyPage.nearbyMapAria')}>
           <div className="pp-nearby-mapWrap">
             <div className="pp-nearby-mapFloatingBar">
               <div className="pp-nearby-mapActions">
@@ -439,7 +440,7 @@ function NearbyMap({ apiKey }) {
               {userLocation ? (
                 <Marker
                   position={userLocation}
-                  title="Your location"
+                  title={t('nearbyPage.yourLocation')}
                   icon={{
                     path: window.google.maps.SymbolPath.CIRCLE,
                     scale: 8,
@@ -456,7 +457,7 @@ function NearbyMap({ apiKey }) {
                   onCloseClick={() => setActivePlace(null)}
                 >
                   <div className="pp-nearby-info">
-                    <button type="button" className="pp-nearby-info__close" onClick={() => setActivePlace(null)} aria-label="Close place preview">
+                    <button type="button" className="pp-nearby-info__close" onClick={() => setActivePlace(null)} aria-label={t('nearbyPage.closePlacePreview')}>
                       ×
                     </button>
                     <div className="pp-nearby-info__image">
@@ -467,7 +468,7 @@ function NearbyMap({ apiKey }) {
                       <span>{selectedCategory.label}</span>
                       {activePlace.rating != null ? <span>★ {Number(activePlace.rating).toFixed(1)}</span> : null}
                       {distanceKm(userLocation || searchCenter, activePlace) != null ? (
-                        <span>{distanceKm(userLocation || searchCenter, activePlace).toFixed(1)} km</span>
+                        <span>{t('nearbyPage.distanceKm', { km: distanceKm(userLocation || searchCenter, activePlace).toFixed(1) })}</span>
                       ) : null}
                     </div>
                     {activePlace.vicinity ? <div className="pp-nearby-info__addr">{activePlace.vicinity}</div> : null}
@@ -530,7 +531,7 @@ function NearbyMap({ apiKey }) {
                     <span className="pp-nearby-listItem__meta">
                       <span className="pp-nearby-listItem__chip">{selectedCategory.label}</span>
                       {p.rating != null ? <span className="pp-nearby-listItem__chip">★ {Number(p.rating).toFixed(1)}</span> : null}
-                      {km != null ? <span className="pp-nearby-listItem__chip">{km.toFixed(1)} km</span> : null}
+                      {km != null ? <span className="pp-nearby-listItem__chip">{t('nearbyPage.distanceKm', { km: km.toFixed(1) })}</span> : null}
                     </span>
                     {p.vicinity ? <span className="pp-nearby-listItem__vicinity">{p.vicinity}</span> : null}
                   </span>
@@ -547,10 +548,10 @@ function NearbyMap({ apiKey }) {
                       }
                     }}
                   >
-                    Preview
+                    {t('nearbyPage.preview')}
                   </button>
                   <a className="pp-nearby-listItem__maps" href={mapsUrl(p)} target="_blank" rel="noopener noreferrer">
-                    Open in Maps ↗
+                    {t('nearbyPage.openInMaps')}
                   </a>
                 </div>
               </li>
@@ -561,8 +562,8 @@ function NearbyMap({ apiKey }) {
       </div>
       <section className="pp-card pp-nearbyInfoCard">
         <button type="button" className="pp-nearbyInfoCard__toggle" onClick={() => setInfoOpen((v) => !v)} aria-expanded={infoOpen}>
-          <span>How nearby search works</span>
-          <strong>{infoOpen ? 'Close' : 'Learn more'}</strong>
+          <span>{t('nearbyPage.infoTitle')}</span>
+          <strong>{infoOpen ? t('nearbyPage.infoClose') : t('nearbyPage.infoLearnMore')}</strong>
         </button>
         {infoOpen ? (
           <div className="pp-nearbyInfoCard__body">
