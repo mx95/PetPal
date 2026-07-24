@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { formatTime24 } from '../../formatTime24';
 import { slotStartDate } from '../slotTime';
+import { useI18n } from '../../i18n/I18nContext';
 
 function pad2(n) {
   return String(n).padStart(2, '0');
@@ -34,10 +35,10 @@ function monthGrid(monthDate) {
   });
 }
 
-function calendarDowLabels() {
+function calendarDowLabels(language) {
   const monday = new Date(2024, 0, 1);
   return Array.from({ length: 7 }, (_, i) =>
-    addDays(monday, i).toLocaleDateString(undefined, { weekday: 'narrow' })
+    addDays(monday, i).toLocaleDateString(language, { weekday: 'narrow' })
   );
 }
 
@@ -61,8 +62,8 @@ export function BookingSchedulePicker({
   loading = false,
   error = '',
   isClosedDay = () => false,
-  t,
 }) {
+  const { t, language } = useI18n();
   const monthDays = useMemo(
     () =>
       monthGrid(monthDate).map((d) => ({
@@ -71,8 +72,8 @@ export function BookingSchedulePicker({
       })),
     [monthDate, isClosedDay]
   );
-  const dowLabels = useMemo(() => calendarDowLabels(), []);
-  const monthLabel = monthDate.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+  const dowLabels = useMemo(() => calendarDowLabels(language), [language]);
+  const monthLabel = monthDate.toLocaleDateString(language, { month: 'long', year: 'numeric' });
 
   const uniqueSlots = useMemo(() => {
     const seen = new Set();
@@ -96,12 +97,12 @@ export function BookingSchedulePicker({
       <div className="pp-book-field pp-book-calendar">
         <div className="pp-book-calendar__head">
           <span className="pp-book-field__label">{t('bookingsHub.modalPickDate')}</span>
-          <div className="pp-book-calendar__monthControls" aria-label="Change month">
-            <button type="button" onClick={() => onMonthDateChange(new Date(monthDate.getFullYear(), monthDate.getMonth() - 1, 1))}>
+          <div className="pp-book-calendar__monthControls" aria-label={t('bookingsHub.changeMonth')}>
+            <button type="button" aria-label={t('providerPortal.previousMonth')} onClick={() => onMonthDateChange(new Date(monthDate.getFullYear(), monthDate.getMonth() - 1, 1))}>
               ‹
             </button>
             <strong>{monthLabel}</strong>
-            <button type="button" onClick={() => onMonthDateChange(new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 1))}>
+            <button type="button" aria-label={t('providerPortal.nextMonth')} onClick={() => onMonthDateChange(new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 1))}>
               ›
             </button>
           </div>
@@ -138,7 +139,7 @@ export function BookingSchedulePicker({
                 }}
                 disabled={d.isPast || d.isClosed}
                 aria-label={
-                  d.isClosed ? t('bookingsHub.modalClosedDay', { date: d.date.toLocaleDateString() }) : undefined
+                  d.isClosed ? t('bookingsHub.modalClosedDay', { date: d.date.toLocaleDateString(language) }) : undefined
                 }
                 title={d.isClosed ? t('bookingsHub.modalClosedDayShort') : undefined}
               >
@@ -173,7 +174,7 @@ export function BookingSchedulePicker({
                   onClick={() => onSlotIdChange(sl.id)}
                 >
                   <strong>{formatTime24(startDate)}</strong>
-                  <span>{durationMin} mins</span>
+                  <span>{t('bookConfirm.mins', { n: durationMin })}</span>
                 </button>
               );
             })}

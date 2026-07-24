@@ -1006,7 +1006,6 @@ export default function BookService({ embedded = false }) {
                   loading={loadingSlots}
                   error={err}
                   isClosedDay={isClosedDay}
-                  t={t}
                 />
               </>
             ) : null}

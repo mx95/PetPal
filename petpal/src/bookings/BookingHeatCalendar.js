@@ -8,8 +8,18 @@ import {
   maxBookingsInPeriod,
   monthDays,
   startOfDay,
-  WEEKDAY_LABELS_MON_START,
 } from './bookingHeatMap';
+import { useI18n } from '../i18n/I18nContext';
+
+const WEEKDAY_KEYS_MON_START = [
+  'weekdayMonNarrow',
+  'weekdayTueNarrow',
+  'weekdayWedNarrow',
+  'weekdayThuNarrow',
+  'weekdayFriNarrow',
+  'weekdaySatNarrow',
+  'weekdaySunNarrow',
+];
 
 /**
  * Month calendar with optional green → red booking density heat.
@@ -19,12 +29,13 @@ export default function BookingHeatCalendar({
   dayCapacityByKey = null,
   selectedDate: controlledSelectedDate,
   onSelectedDateChange,
-  legendLabels = { fewer: 'Fewer', more: 'More' },
+  legendLabels = null,
   showLegend = true,
   showHeat = true,
   monthOnly = true,
   className = '',
 }) {
+  const { t, language } = useI18n();
   const [internalSelectedDate, setInternalSelectedDate] = useState(() => startOfDay(new Date()));
   const selectedDate = controlledSelectedDate ?? internalSelectedDate;
   const setSelectedDate = (day) => {
@@ -57,7 +68,11 @@ export default function BookingHeatCalendar({
   const hasCapacityHeat = Boolean(dayCapacityByKey && dayCapacityByKey.size > 0);
   const showHeatLegend = showLegend && showHeat && (hasCapacityHeat || maxHeat > 0);
 
-  const monthLabel = visibleMonth.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+  const monthLabel = visibleMonth.toLocaleDateString(language, { month: 'long', year: 'numeric' });
+  const weekdayLabels = useMemo(
+    () => WEEKDAY_KEYS_MON_START.map((key) => t(`availability.${key}`)),
+    [t]
+  );
 
   const selectDate = (day) => {
     setSelectedDate(day);
@@ -78,8 +93,14 @@ export default function BookingHeatCalendar({
         : undefined;
 
     const titleParts = [];
-    if (dayBookings.length) titleParts.push(`${dayBookings.length} booking${dayBookings.length === 1 ? '' : 's'}`);
-    if (hasCapacityHeat && capacity > 0) titleParts.push(`${capacity} slots available`);
+    if (dayBookings.length) {
+      titleParts.push(
+        t(dayBookings.length === 1 ? 'bookingsHub.bookingCountOne' : 'bookingsHub.bookingCountOther', {
+          count: dayBookings.length,
+        })
+      );
+    }
+    if (hasCapacityHeat && capacity > 0) titleParts.push(t('bookingsHub.slotsAvailable', { count: capacity }));
 
     return (
       <button
@@ -100,28 +121,28 @@ export default function BookingHeatCalendar({
     <div className={`pp-providerCalendarCard pp-bookingHeatCalendar ${monthOnly ? 'pp-bookingHeatCalendar--monthOnly' : ''} ${className}`.trim()}>
       <div className="pp-providerCalendarMobileMonth" aria-live="polite">
         <div className="pp-providerCalendarMobileNav">
-          <button type="button" aria-label="Previous month" onClick={() => setVisibleMonth((d) => new Date(d.getFullYear(), d.getMonth() - 1, 1))}>
+          <button type="button" aria-label={t('providerPortal.previousMonth')} onClick={() => setVisibleMonth((d) => new Date(d.getFullYear(), d.getMonth() - 1, 1))}>
             ‹
           </button>
           <strong>{monthLabel}</strong>
-          <button type="button" aria-label="Next month" onClick={() => setVisibleMonth((d) => new Date(d.getFullYear(), d.getMonth() + 1, 1))}>
+          <button type="button" aria-label={t('providerPortal.nextMonth')} onClick={() => setVisibleMonth((d) => new Date(d.getFullYear(), d.getMonth() + 1, 1))}>
             ›
           </button>
         </div>
       </div>
 
       <div className="pp-providerCalendarCard__top pp-providerCalendarCard__top--desktop">
-        <button type="button" aria-label="Previous month" onClick={() => setVisibleMonth((d) => new Date(d.getFullYear(), d.getMonth() - 1, 1))}>
+        <button type="button" aria-label={t('providerPortal.previousMonth')} onClick={() => setVisibleMonth((d) => new Date(d.getFullYear(), d.getMonth() - 1, 1))}>
           ‹
         </button>
         <strong>{monthLabel}</strong>
-        <button type="button" aria-label="Next month" onClick={() => setVisibleMonth((d) => new Date(d.getFullYear(), d.getMonth() + 1, 1))}>
+        <button type="button" aria-label={t('providerPortal.nextMonth')} onClick={() => setVisibleMonth((d) => new Date(d.getFullYear(), d.getMonth() + 1, 1))}>
           ›
         </button>
       </div>
 
       <div className="pp-providerCalendarWeek pp-providerCalendarWeek--desktop">
-        {WEEKDAY_LABELS_MON_START.map((d, idx) => (
+        {weekdayLabels.map((d, idx) => (
           <span key={`${d}-${idx}`}>{d}</span>
         ))}
       </div>
@@ -131,7 +152,10 @@ export default function BookingHeatCalendar({
       </div>
 
       {showHeatLegend ? (
-        <BookingHeatLegend fewerLabel={legendLabels.fewer} moreLabel={legendLabels.more} />
+        <BookingHeatLegend
+          fewerLabel={legendLabels?.fewer || t('businessWeek.bookingHeatFewer')}
+          moreLabel={legendLabels?.more || t('businessWeek.bookingHeatMore')}
+        />
       ) : null}
     </div>
   );

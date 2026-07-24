@@ -8,6 +8,7 @@ import {
   hasCalendarTimes,
 } from './calendarLinks';
 import { getDb, isFirebaseConfigured } from '../firebase';
+import { useI18n } from '../i18n/I18nContext';
 
 function GoogleCalIcon() {
   return (
@@ -109,43 +110,49 @@ function useProviderCalendarMeta(booking) {
 export default function CalendarAddButtons({
   booking,
   className = 'pp-bookConfirmCalRow',
-  googleLabel = 'Google',
-  appleLabel = 'Apple',
-  googleAria = 'Google Calendar',
-  appleAria = 'Apple Calendar',
-  groupAria = 'Add to calendar',
+  googleLabel,
+  appleLabel,
+  googleAria,
+  appleAria,
+  groupAria,
 }) {
+  const { t } = useI18n();
   const providerMeta = useProviderCalendarMeta(booking);
   const calendarBooking = useMemo(
     () => mergeBookingForCalendar(booking, providerMeta),
     [booking, providerMeta]
   );
-  const event = useMemo(() => (calendarBooking ? buildCalendarEvent(calendarBooking) : null), [calendarBooking]);
-  const googleUrl = useMemo(() => (event ? googleCalendarUrl(event) : ''), [event]);
+  const event = useMemo(() => (calendarBooking ? buildCalendarEvent(calendarBooking, t) : null), [calendarBooking, t]);
+  const googleUrl = useMemo(() => (event ? googleCalendarUrl(event, t) : ''), [event, t]);
   const ready = event && hasCalendarTimes(event) && googleUrl;
+  const resolvedGoogleLabel = googleLabel || t('bookConfirm.calGoogleShort');
+  const resolvedAppleLabel = appleLabel || t('bookConfirm.calAppleShort');
+  const resolvedGoogleAria = googleAria || t('bookConfirm.calGoogleAria');
+  const resolvedAppleAria = appleAria || t('bookConfirm.calAppleAria');
+  const resolvedGroupAria = groupAria || t('bookConfirm.calGroupAria');
 
   if (!ready) return null;
 
   return (
-    <div className={className} role="group" aria-label={groupAria}>
+    <div className={className} role="group" aria-label={resolvedGroupAria}>
       <a
         className="pp-bookConfirmCalBtn"
         href={googleUrl}
         target="_blank"
         rel="noopener noreferrer"
-        aria-label={googleAria}
+        aria-label={resolvedGoogleAria}
       >
         <GoogleCalIcon />
-        <span>{googleLabel}</span>
+        <span>{resolvedGoogleLabel}</span>
       </a>
       <button
         type="button"
         className="pp-bookConfirmCalBtn"
-        aria-label={appleAria}
+        aria-label={resolvedAppleAria}
         onClick={() => downloadAppleCalendar(event)}
       >
         <AppleCalIcon />
-        <span>{appleLabel}</span>
+        <span>{resolvedAppleLabel}</span>
       </button>
     </div>
   );

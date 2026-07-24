@@ -23,6 +23,10 @@ function escapeIcsText(value) {
     .replace(/;/g, '\\;');
 }
 
+function translate(t, key, fallback, params) {
+  return typeof t === 'function' ? t(key, params) : fallback;
+}
+
 function resolveEventTimes(event) {
   let start = asDate(event?.start);
   let end = asDate(event?.end);
@@ -38,16 +42,24 @@ function resolveEventTimes(event) {
   return { start, end };
 }
 
-function buildEventTitle({ storeName, serviceName, petName }) {
+function buildEventTitle({ storeName, serviceName, petName, t }) {
   const store = String(storeName || '').trim();
-  const service = String(serviceName || '').trim() || 'PetPal appointment';
-  const pet = String(petName || '').trim() || 'your pet';
+  const service =
+    String(serviceName || '').trim() ||
+    translate(t, 'bookConfirm.calendarAppointmentFallback', 'PetPal appointment');
+  const pet = String(petName || '').trim() || translate(t, 'bookConfirm.calendarPetFallback', 'your pet');
 
   if (store && service && store.toLowerCase() !== service.toLowerCase()) {
-    return `${store} — ${service} for ${pet}`;
+    return translate(t, 'bookConfirm.calendarTitleStoreServicePet', `${store} — ${service} for ${pet}`, {
+      store,
+      service,
+      pet,
+    });
   }
-  if (store) return `${store} — ${pet}`;
-  return `${service} for ${pet}`;
+  if (store) {
+    return translate(t, 'bookConfirm.calendarTitleStorePet', `${store} — ${pet}`, { store, pet });
+  }
+  return translate(t, 'bookConfirm.calendarTitleServicePet', `${service} for ${pet}`, { service, pet });
 }
 
 function buildEventDetails({
@@ -73,12 +85,18 @@ function buildEventDetails({
   return lines.join('\n');
 }
 
-export function buildCalendarEvent(booking) {
+export function buildCalendarEvent(booking, t) {
   const storeName = String(
     booking?.storeName || booking?.providerName || booking?.companyName || ''
   ).trim();
-  const serviceName = String(booking?.serviceName || booking?.serviceSnapshot?.name || 'PetPal appointment').trim();
-  const petName = String(booking?.petName || booking?.petSnapshot?.name || 'your pet').trim();
+  const serviceName = String(
+    booking?.serviceName ||
+      booking?.serviceSnapshot?.name ||
+      translate(t, 'bookConfirm.calendarAppointmentFallback', 'PetPal appointment')
+  ).trim();
+  const petName = String(
+    booking?.petName || booking?.petSnapshot?.name || translate(t, 'bookConfirm.calendarPetFallback', 'your pet')
+  ).trim();
   const variantLabel = String(booking?.variantSnapshot?.label || '').trim();
   const location = String(booking?.providerAddress || booking?.address || booking?.location || '').trim();
   const bookingId = booking?.bookingId || booking?.id || '';
@@ -91,7 +109,7 @@ export function buildCalendarEvent(booking) {
     end = new Date(start.getTime() + durationMin * 60000);
   }
 
-  const title = buildEventTitle({ storeName, serviceName, petName });
+  const title = buildEventTitle({ storeName, serviceName, petName, t });
   const details = buildEventDetails({
     storeName,
     serviceName,
@@ -143,7 +161,7 @@ export function buildIcsContent(event) {
     .join('\r\n');
 }
 
-export function googleCalendarUrl(event) {
+export function googleCalendarUrl(event, t) {
   const { start, end } = resolveEventTimes(event);
   const startStamp = googleDate(start);
   const endStamp = googleDate(end);
@@ -151,7 +169,7 @@ export function googleCalendarUrl(event) {
 
   const params = new URLSearchParams();
   params.set('action', 'TEMPLATE');
-  params.set('text', event.title || 'PetPal appointment');
+  params.set('text', event.title || translate(t, 'bookConfirm.calendarAppointmentFallback', 'PetPal appointment'));
   params.set('dates', `${startStamp}/${endStamp}`);
   params.set('sf', 'true');
   params.set('output', 'xml');

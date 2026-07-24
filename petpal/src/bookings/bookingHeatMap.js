@@ -1,6 +1,7 @@
 /**
  * Booking density helpers and green → red heat styling for calendar day cells.
  */
+import { useI18n } from '../i18n/I18nContext';
 
 export function startOfDay(date) {
   const d = new Date(date);
@@ -112,12 +113,16 @@ export function bookingHeatStylesFromMax(count, maxCount) {
   return bookingHeatStyles(n, Math.max(1, Number(maxCount) || 1));
 }
 
-export function BookingHeatLegend({ fewerLabel = 'Less busy', moreLabel = 'Fuller' }) {
+export function BookingHeatLegend({ fewerLabel, moreLabel }) {
+  const { t } = useI18n();
+  const fewer = fewerLabel || t('businessWeek.bookingHeatFewer');
+  const more = moreLabel || t('businessWeek.bookingHeatMore');
+
   return (
     <div className="pp-bookingHeatLegend" aria-hidden>
-      <span className="pp-bookingHeatLegend__label">{fewerLabel}</span>
+      <span className="pp-bookingHeatLegend__label">{fewer}</span>
       <span className="pp-bookingHeatLegend__bar" />
-      <span className="pp-bookingHeatLegend__label">{moreLabel}</span>
+      <span className="pp-bookingHeatLegend__label">{more}</span>
     </div>
   );
 }

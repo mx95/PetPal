@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { PrimaryButton } from '../../components/ui';
 import petpalLogo from '../../logo.png';
 import { providerBoostIsActive } from '../bookingBrowseUtils';
+import { useI18n } from '../../i18n/I18nContext';
 
 function categoryLabel(types, t) {
   const pt = types && typeof types === 'object' ? types : {};
@@ -19,17 +20,17 @@ function categoryLabel(types, t) {
  *   provider: Record<string, unknown>,
  *   distanceKm: number | null,
  *   onBook: () => void,
- *   t: (k: string, v?: object) => string,
  * }} props
  */
-export function ProviderCard({ provider, distanceKm, onBook, t }) {
+export function ProviderCard({ provider, distanceKm, onBook }) {
+  const { t } = useI18n();
   const rating = Number(provider.rating);
   const hasRating = Number.isFinite(rating) && rating > 0;
   const cat = useMemo(() => categoryLabel(provider.providerTypes, t), [provider.providerTypes, t]);
-  const providerName = String(provider.displayName || 'Provider');
+  const providerName = String(provider.displayName || t('bookConfirm.providerLabel'));
   const sponsored = providerBoostIsActive(provider);
-  const hours = provider.workingHours || 'Open today';
-  const nextSlot = provider.nextAvailable || 'Next slots today';
+  const hours = provider.workingHours || t('providerPortal.openToday');
+  const nextSlot = provider.nextAvailable || t('bookingsHub.nextSlotsToday');
   const servicesPreview = provider.servicesPreview || cat;
 
   return (
@@ -44,14 +45,14 @@ export function ProviderCard({ provider, distanceKm, onBook, t }) {
         <div className="absolute left-4 top-4 flex flex-wrap gap-2">
           {sponsored ? (
             <span className="rounded-full bg-gradient-to-r from-petpal-lilac to-petpal-blue px-3 py-1 text-xs font-black text-white shadow-glow">
-              Recommended
+              {t('bookingsHub.recommendedTitle')}
             </span>
           ) : null}
           <span className="rounded-full bg-white/90 px-3 py-1 text-xs font-black text-petpal-ink shadow-soft">
-            Verified
+            {t('discover.feed.verified')}
           </span>
           <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700 shadow-soft">
-            Available
+            {t('providerPortal.statusAvailable')}
           </span>
         </div>
       </div>
@@ -59,8 +60,8 @@ export function ProviderCard({ provider, distanceKm, onBook, t }) {
         <div className="flex items-start justify-between gap-3">
           <h3 className="text-xl font-black tracking-[-0.03em] text-petpal-ink">{providerName}</h3>
           {hasRating ? (
-            <span className="rounded-full bg-amber-50 px-3 py-1 text-sm font-black text-amber-700" aria-label={`Rating ${rating} of 5`}>
-              <span aria-hidden>Star</span> {rating.toFixed(1)}
+            <span className="rounded-full bg-amber-50 px-3 py-1 text-sm font-black text-amber-700" aria-label={t('bookingsHub.ratingAria', { rating: rating.toFixed(1) })}>
+              <span aria-hidden>{t('bookingsHub.ratingStar')}</span> {rating.toFixed(1)}
             </span>
           ) : (
             <span className="rounded-full bg-petpal-soft px-3 py-1 text-sm font-black text-petpal-lilac">{t('bookingsHub.newOnPetpal')}</span>
@@ -69,10 +70,10 @@ export function ProviderCard({ provider, distanceKm, onBook, t }) {
         <p className="mt-2 text-sm font-bold text-petpal-lilac">{servicesPreview}</p>
         <p className="mt-2 min-h-[2.5rem] text-sm leading-6 text-petpal-muted">{String(provider.address || '')}</p>
         <div className="mt-4 flex flex-wrap gap-2">
-          {distanceKm != null ? <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-black text-blue-700">About {distanceKm.toFixed(1)} km</span> : null}
+          {distanceKm != null ? <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-black text-blue-700">{t('bookingsHub.distanceAbout', { km: distanceKm.toFixed(1) })}</span> : null}
         </div>
         <div className="mt-4 grid grid-cols-2 gap-2 text-xs font-bold text-petpal-muted">
-          <span className="rounded-2xl bg-slate-50 px-3 py-2">Hours: {hours}</span>
+          <span className="rounded-2xl bg-slate-50 px-3 py-2">{t('bookingsHub.hoursSummary', { hours })}</span>
           <span className="rounded-2xl bg-emerald-50 px-3 py-2 text-emerald-700">{nextSlot}</span>
         </div>
         <div className="mt-5">

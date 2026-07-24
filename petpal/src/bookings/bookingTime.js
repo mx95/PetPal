@@ -29,8 +29,18 @@ export function formatBookingTimeRange(start, end) {
   return { startLabel, endLabel };
 }
 
-export function bookingStatusLabel(status) {
+export function bookingStatusKey(status) {
   const s = String(status || 'booked').toLowerCase();
+  if (s === 'completed') return 'providerPortal.statusCompleted';
+  if (s === 'cancelled') return 'providerPortal.statusCancelled';
+  if (s === 'booked') return 'providerPortal.statusBooked';
+  return '';
+}
+
+export function bookingStatusLabel(status, t) {
+  const s = String(status || 'booked').toLowerCase();
+  const key = bookingStatusKey(s);
+  if (key && typeof t === 'function') return t(key);
   if (s === 'completed') return 'Completed';
   if (s === 'cancelled') return 'Cancelled';
   if (s === 'booked') return 'Booked';

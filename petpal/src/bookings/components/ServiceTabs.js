@@ -1,4 +1,5 @@
 import React from 'react';
+import { useI18n } from '../../i18n/I18nContext';
 
 /** @typedef {{ id: 'vet'|'saloon'|'hotel'|'bath'|'walker', emoji: string, label: string }} ServiceTab */
 
@@ -6,8 +7,9 @@ import React from 'react';
  * @param {{ tabs: ServiceTab[], value: string, onChange: (id: string) => void }} props
  */
 export function ServiceTabs({ tabs, value, onChange }) {
+  const { t } = useI18n();
   return (
-    <div className="pp-book-serviceTabs" role="tablist" aria-label="Service type">
+    <div className="pp-book-serviceTabs" role="tablist" aria-label={t('bookingsHub.serviceTypeAria')}>
       {tabs.map((tab) => {
         const on = tab.id === value;
         return (

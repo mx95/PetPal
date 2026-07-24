@@ -1,6 +1,7 @@
 import React from 'react';
 import { formatDateTime24 } from '../formatTime24';
 import TimeRangeRow from '../components/TimeRangeRow';
+import { useI18n } from '../i18n/I18nContext';
 import {
   bookingEndDate,
   bookingStartDate,
@@ -14,18 +15,20 @@ import {
  */
 export default function ProviderBookingCard({
   booking,
-  serviceName = 'Service',
+  serviceName = '',
   busy = false,
   onComplete,
   onCancel,
   showActions = true,
 }) {
+  const { t } = useI18n();
   const start = bookingStartDate(booking);
   const end = bookingEndDate(booking);
   const { startLabel, endLabel } = formatBookingTimeRange(start, end);
   const status = String(booking?.status || 'booked').toLowerCase();
   const actionable = isBookingActionable(status);
-  const petName = booking?.petSnapshot?.name || 'Pet';
+  const displayServiceName = serviceName || t('providerPortal.serviceFallback');
+  const petName = booking?.petSnapshot?.name || t('providerPortal.petFallback');
   const ownerBits = [booking?.petSnapshot?.ownerName, booking?.petSnapshot?.ownerPhone].filter(Boolean);
 
   return (
@@ -33,12 +36,12 @@ export default function ProviderBookingCard({
       <div className="pp-bookingDetailCard__top">
         <div className="pp-bookingDetailCard__titleRow">
           <strong className="pp-bookingDetailCard__pet">{petName}</strong>
-          {booking?.walkIn ? <span className="pp-bookingDetailCard__pill">Walk-in</span> : null}
+          {booking?.walkIn ? <span className="pp-bookingDetailCard__pill">{t('providerPortal.walkInLabel')}</span> : null}
           <span className={`pp-bookingDetailCard__status pp-bookingDetailCard__status--${status}`}>
-            {bookingStatusLabel(status)}
+            {bookingStatusLabel(status, t)}
           </span>
         </div>
-        <div className="pp-bookingDetailCard__service">{serviceName}</div>
+        <div className="pp-bookingDetailCard__service">{displayServiceName}</div>
         {ownerBits.length ? (
           <div className="pp-bookingDetailCard__owner">{ownerBits.join(' · ')}</div>
         ) : null}
@@ -63,7 +66,7 @@ export default function ProviderBookingCard({
               disabled={busy}
               onClick={() => onComplete(booking.id)}
             >
-              {busy ? 'Saving…' : 'Complete'}
+              {busy ? t('providerPortal.saving') : t('providerPortal.complete')}
             </button>
           ) : null}
           {onCancel ? (
@@ -73,7 +76,7 @@ export default function ProviderBookingCard({
               disabled={busy}
               onClick={() => onCancel(booking.id)}
             >
-              Cancel
+              {t('common.cancel')}
             </button>
           ) : null}
         </div>

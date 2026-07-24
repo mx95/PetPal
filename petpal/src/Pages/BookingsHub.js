@@ -23,6 +23,7 @@ import { ServiceTabs } from '../bookings/components/ServiceTabs';
 import { ProviderCard } from '../bookings/components/ProviderCard';
 import { formatDateTime24 } from '../formatTime24';
 import CalendarAddButtons from '../bookings/CalendarAddButtons';
+import { bookingStatusLabel } from '../bookings/bookingTime';
 import { AppCard, EmptyState, PageContainer, SectionHeader, SkeletonCard } from '../components/ui';
 import ProviderProfile from './ProviderProfile';
 import BookService from './BookService';
@@ -219,14 +220,14 @@ function BrowseProviders() {
                 </div>
                 <div className="pp-sponsoredRail__row">
                   {recommended.map(({ p, km }) => (
-                    <ProviderCard key={`rec-${String(p.id)}`} provider={p} distanceKm={km} onBook={() => openBooking(p)} t={t} />
+                    <ProviderCard key={`rec-${String(p.id)}`} provider={p} distanceKm={km} onBook={() => openBooking(p)} />
                   ))}
                 </div>
               </section>
             ) : null}
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {sorted.map(({ p, km }) => (
-                <ProviderCard key={String(p.id)} provider={p} distanceKm={km} onBook={() => openBooking(p)} t={t} />
+                <ProviderCard key={String(p.id)} provider={p} distanceKm={km} onBook={() => openBooking(p)} />
               ))}
             </div>
           </>
@@ -262,7 +263,7 @@ function MyBookings({ uid }) {
                   {b.serviceSnapshot?.name || b.serviceName || b.petSnapshot?.name || 'Pet'}
                 </div>
                 <div className="pp-book-muted">
-                  {b.status}
+                  {bookingStatusLabel(b.status, t)}
                   {' · '}
                   {b.startAt?.toDate
                     ? formatDateTime24(b.startAt.toDate(), language)
@@ -275,8 +276,8 @@ function MyBookings({ uid }) {
                 <CalendarAddButtons
                   booking={b}
                   className="pp-bookConfirmCalRow pp-bookConfirmCalRow--inline"
-                  googleLabel="Google Calendar"
-                  appleLabel="Apple Calendar"
+                  googleLabel={t('bookConfirm.calGoogleAria')}
+                  appleLabel={t('bookConfirm.calAppleAria')}
                 />
                 <Link
                   className="pp-book-btn pp-book-btn--ghost"

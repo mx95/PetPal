@@ -9,8 +9,10 @@ import {
 } from '../bookings/bookingCatalog';
 import { getDb, isFirebaseConfigured } from '../firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
+import { useI18n } from '../i18n/I18nContext';
 
 export default function ProviderProfile() {
+  const { t } = useI18n();
   const { providerId } = useParams();
   const rawProviderId = String(providerId || '');
   const companyId = resolveCatalogProviderId(rawProviderId);
@@ -33,9 +35,9 @@ export default function ProviderProfile() {
           setProvider(null);
         }
       },
-      (e) => setErr(e?.message || 'failed')
+      (e) => setErr(e?.message || t('common.errorGeneric'))
     );
-  }, [companyId, useCatalog]);
+  }, [companyId, useCatalog, t]);
 
   useEffect(
     () =>
@@ -51,11 +53,11 @@ export default function ProviderProfile() {
           }
         },
       (e) => {
-        const msg = String(e?.message || 'failed');
-        setErr(/permission/i.test(msg) ? 'Could not load services for this provider.' : msg);
+        const msg = String(e?.message || t('common.errorGeneric'));
+        setErr(/permission/i.test(msg) ? t('bookingsHub.providerServicesLoadError') : msg);
       }
       ),
-    [companyId, useCatalog]
+    [companyId, useCatalog, t]
   );
 
   const grouped = useMemo(() => {
@@ -68,7 +70,16 @@ export default function ProviderProfile() {
     return g;
   }, [services]);
 
-  const groupLabels = { vet: 'Vet', saloon: 'Grooming', hotel: 'Hotel', bath: 'Bath', walker: 'Pet walkers' };
+  const groupLabels = useMemo(
+    () => ({
+      vet: t('bookingsHub.tabVet'),
+      saloon: t('bookingsHub.tabGroom'),
+      hotel: t('bookingsHub.tabHotel'),
+      bath: t('bookingsHub.tabBath'),
+      walker: t('bookingsHub.tabWalker'),
+    }),
+    [t]
+  );
 
   const groupOrder = ['vet', 'walker', 'bath', 'saloon', 'hotel'];
 
@@ -80,8 +91,8 @@ export default function ProviderProfile() {
     <div className="pp-pad">
       <div className="pp-pageHeader">
         <div className="pp-pageHeader__copy">
-          <div className="pp-badge">Provider</div>
-          <div className="pp-pageHeader__title">{provider?.displayName || 'Provider'}</div>
+          <div className="pp-badge">{t('bookConfirm.providerLabel')}</div>
+          <div className="pp-pageHeader__title">{provider?.displayName || t('bookConfirm.providerLabel')}</div>
           <div className="pp-pageHeader__subtitle">
             {provider?.address || ''} {provider?.phone ? `• ${provider.phone}` : ''}
           </div>
@@ -91,8 +102,8 @@ export default function ProviderProfile() {
       {err ? <div className="pp-error">{err}</div> : null}
 
       <div className="pp-card" style={{ marginTop: 14 }}>
-        <div className="pp-card__title">Services</div>
-        {services.length === 0 ? <div className="pp-muted">No services published yet.</div> : null}
+        <div className="pp-card__title">{t('providerPortal.servicesTitle')}</div>
+        {services.length === 0 ? <div className="pp-muted">{t('bookingsHub.providerNoServicesPublished')}</div> : null}
 
         <div className="pp-stack" style={{ marginTop: 10 }}>
           {groupOrder.map((k) =>
@@ -105,12 +116,12 @@ export default function ProviderProfile() {
                       <div>
                         <div style={{ fontWeight: 900 }}>{s.name}</div>
                         <div className="pp-muted" style={{ fontSize: 13 }}>
-                          {s.durationMin} min {s.price ? `• ${s.price}` : ''}{' '}
+                          {t('bookConfirm.mins', { n: s.durationMin })} {s.price ? `• ${s.price}` : ''}{' '}
                           {s.description ? `• ${s.description}` : ''}
                         </div>
                       </div>
                       <Link className="pp-btn pp-btn--primary" to={`/bookings/provider/${companyId}/book/${s.id}`}>
-                        Book
+                        {t('bookingsHub.bookServiceCta')}
                       </Link>
                     </div>
                   ))}
