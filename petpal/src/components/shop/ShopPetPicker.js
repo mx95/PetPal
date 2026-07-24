@@ -1,8 +1,14 @@
 import React from 'react';
 import { useI18n } from '../../i18n/I18nContext';
+import PetAvatar from '../PetAvatar';
 
 /**
- * @param {{ pets: Array<{ id: string, name: string }>, selectedIds: string[], onChange: (ids: string[]) => void, disabled?: boolean }} props
+ * @param {{
+ *   pets: Array<{ id: string, name: string, categoryId?: string, photoUrl?: string, photoDataUrl?: string }>,
+ *   selectedIds: string[],
+ *   onChange: (ids: string[]) => void,
+ *   disabled?: boolean,
+ * }} props
  */
 export default function ShopPetPicker({ pets, selectedIds, onChange, disabled }) {
   const { t } = useI18n();
@@ -34,7 +40,11 @@ export default function ShopPetPicker({ pets, selectedIds, onChange, disabled })
               disabled={disabled}
               onClick={() => toggle(pet.id)}
             >
+              <PetAvatar pet={pet} size={28} className="pp-shopPetPicker__avatar" />
               <span className="pp-shopPetPicker__chipName">{pet.name}</span>
+              <span className="pp-shopPetPicker__tick" aria-hidden>
+                {selected ? '✓' : ''}
+              </span>
             </button>
           );
         })}

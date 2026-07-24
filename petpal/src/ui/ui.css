@@ -17321,6 +17321,24 @@ html[data-theme="dark"] .pp-bookingDetailCard {
   cursor: pointer;
 }
 
+.pp-providerTypePills {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  width: 100%;
+}
+
+.pp-providerTypePill {
+  width: 100%;
+  justify-content: center;
+}
+
+@media (max-width: 420px) {
+  .pp-providerTypePills {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 .pp-availPreview__legend {
   grid-column: 1 / -1;
   display: flex;
@@ -19442,9 +19460,9 @@ html[data-theme="dark"] .pp-nearby-list > li {
 .pp-shopPetPicker__chip {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  min-height: 36px;
-  padding: 8px 14px;
+  gap: 8px;
+  min-height: 40px;
+  padding: 5px 8px 5px 5px;
   border-radius: 999px;
   background: #fff;
   border: 1.5px solid rgba(16, 24, 40, 0.12);
@@ -19461,10 +19479,10 @@ html[data-theme="dark"] .pp-nearby-list > li {
 }
 
 .pp-shopPetPicker__chip.is-selected {
-  background: linear-gradient(135deg, #6941c6 0%, #5b37ff 100%);
-  border-color: #6941c6;
-  color: #fff;
-  box-shadow: 0 4px 12px rgba(91, 55, 255, 0.28);
+  border-color: rgba(109, 76, 255, 0.55);
+  background: rgba(109, 76, 255, 0.08);
+  color: #3f2b96;
+  box-shadow: 0 0 0 1px rgba(109, 76, 255, 0.12);
 }
 
 .pp-shopPetPicker__chip:disabled {
@@ -19472,8 +19490,42 @@ html[data-theme="dark"] .pp-nearby-list > li {
   cursor: not-allowed;
 }
 
+.pp-shopPetPicker__avatar {
+  flex-shrink: 0;
+  border-radius: 999px;
+  object-fit: cover;
+}
+
 .pp-shopPetPicker__chipName {
   line-height: 1.2;
+  max-width: 9.5rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pp-shopPetPicker__tick {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  margin-left: 2px;
+  margin-right: 2px;
+  border-radius: 999px;
+  border: 1.5px solid rgba(16, 24, 40, 0.18);
+  background: #fff;
+  color: #16a34a;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.pp-shopPetPicker__chip.is-selected .pp-shopPetPicker__tick {
+  border-color: #16a34a;
+  background: #16a34a;
+  color: #fff;
 }
 
 .pp-shopTrackerOpt--withImage {

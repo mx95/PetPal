@@ -87,7 +87,17 @@ export default function Shop() {
   const [boostCancelBusy, setBoostCancelBusy] = useState('');
   const [cancelMsg, setCancelMsg] = useState('');
 
-  const petOptions = useMemo(() => pets.map((p) => ({ id: p.id, name: p.name })), [pets]);
+  const petOptions = useMemo(
+    () =>
+      pets.map((p) => ({
+        id: p.id,
+        name: p.name,
+        categoryId: p.categoryId,
+        photoUrl: p.photoUrl,
+        photoDataUrl: p.photoDataUrl,
+      })),
+    [pets]
+  )
 
   const [providerDoc, setProviderDoc] = useState(null);
 

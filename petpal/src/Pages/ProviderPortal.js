@@ -1079,29 +1079,36 @@ function PublicListingPanel({
             <p className="pp-muted" style={{ fontSize: 13, marginBottom: 8 }}>
               Select every service type customers can book from you.
             </p>
-            <div className="pp-providerTypeChecks">
+            <div className="pp-providerTypePills" role="group" aria-label="Service categories">
               {[
-                { key: 'vet', label: 'Vet' },
-                { key: 'walker', label: 'Pet walkers' },
-                { key: 'bath', label: 'Bath & wash' },
-                { key: 'saloon', label: 'Grooming' },
-                { key: 'hotel', label: 'Pet hotel' },
-              ].map(({ key, label }) => (
-                <label key={key} className="pp-field pp-field--checkbox">
-                  <input
-                    type="checkbox"
-                    checked={Boolean(publish.providerTypes?.[key])}
-                    onChange={(e) => {
+                { key: 'vet', label: 'Vet', emoji: '🩺' },
+                { key: 'walker', label: 'Pet walkers', emoji: '🦮' },
+                { key: 'bath', label: 'Bath & wash', emoji: '🛁' },
+                { key: 'saloon', label: 'Grooming', emoji: '✂️' },
+                { key: 'hotel', label: 'Pet hotel', emoji: '🏨' },
+              ].map(({ key, label, emoji }) => {
+                const on = Boolean(publish.providerTypes?.[key]);
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    className={`pp-book-pill pp-providerTypePill${on ? ' is-active' : ''}`}
+                    aria-pressed={on}
+                    onClick={() => {
                       markDirty();
                       setPublish((p) => ({
                         ...p,
-                        providerTypes: { ...p.providerTypes, [key]: e.target.checked },
+                        providerTypes: { ...p.providerTypes, [key]: !on },
                       }));
                     }}
-                  />
-                  <span>{label}</span>
-                </label>
-              ))}
+                  >
+                    <span className="pp-book-pill__emoji" aria-hidden>
+                      {emoji}
+                    </span>
+                    <span>{label}</span>
+                  </button>
+                );
+              })}
             </div>
           </fieldset>
           <div className="pp-field">
