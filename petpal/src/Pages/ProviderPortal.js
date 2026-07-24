@@ -16,6 +16,7 @@ import {
 import { createClientPet, deleteClientPet, patchClientPet, subscribeClientPets } from '../bookings/providerPetsFirestore';
 import PetMedicationModal from '../components/PetMedicationModal';
 import IconMedPill from '../components/icons/IconMedPill';
+import { useI18n } from '../i18n/I18nContext';
 import { publishProviderProfile, setProviderBookingEnabled, subscribeProviderProfile } from '../bookings/providerDirectoryFirestore';
 import { providerBookingsBoostIsActive, providerNearbyBoostIsActive } from '../bookings/bookingBrowseUtils';
 import { getDemoBusinessAccount, getDemoBusinessAccounts, getDemoSlots } from '../bookings/demoBookingData';
@@ -28,7 +29,7 @@ import {
 } from '../bookings/availability/availabilityFirestore';
 import BookingHeatCalendar from '../bookings/BookingHeatCalendar';
 import ProviderBookingCard from '../bookings/ProviderBookingCard';
-import { addDays, daysFromMonday, WEEKDAY_LABELS_MON_START } from '../bookings/bookingHeatMap';
+import { addDays, daysFromMonday } from '../bookings/bookingHeatMap';
 import ListingPlaceImportField from '../company/ListingPlaceImportField';
 import { cancelBusinessBoost } from '../shop/cancelBusinessBoost';
 import { formatDateTime24, formatTime24 } from '../formatTime24';
@@ -40,16 +41,16 @@ import {
   PET_SIZE_OPTIONS,
 } from '../bookings/bookingServiceVariants';
 
-function businessTypeLabel(providerTypes = {}) {
-  if (providerTypes.vet) return 'Vet';
-  if (providerTypes.shop) return 'Pet shop';
-  if (providerTypes.park) return 'Pet / dog park';
-  if (providerTypes.hotel) return 'Pet hotel & boarding';
-  if (providerTypes.bath || providerTypes.saloon) return 'Grooming & bath';
-  if (providerTypes.walker) return 'Pet walkers';
-  if (providerTypes.daycare) return 'Daycare';
-  if (providerTypes.cafe) return 'Pet cafe & events';
-  return 'All pet services';
+function businessTypeLabel(t, providerTypes = {}) {
+  if (providerTypes.vet) return t('providerPortal.businessTypeVet');
+  if (providerTypes.shop) return t('providerPortal.businessTypePetShop');
+  if (providerTypes.park) return t('providerPortal.businessTypePetDogPark');
+  if (providerTypes.hotel) return t('providerPortal.businessTypePetHotelBoarding');
+  if (providerTypes.bath || providerTypes.saloon) return t('providerPortal.businessTypeGroomingBath');
+  if (providerTypes.walker) return t('providerPortal.businessTypePetWalkers');
+  if (providerTypes.daycare) return t('providerPortal.businessTypeDaycare');
+  if (providerTypes.cafe) return t('providerPortal.businessTypePetCafeEvents');
+  return t('providerPortal.businessTypeAllPetServices');
 }
 
 function businessIcon(providerTypes = {}) {
@@ -74,6 +75,62 @@ function serviceIcon(type) {
   if (type === 'cafe') return '☕';
   if (type === 'park') return '🌳';
   return '🐾';
+}
+
+function serviceTypeLabel(t, type) {
+  const normalized = String(type || '').toLowerCase();
+  if (normalized === 'vet') return t('providerPortal.serviceTypeVet');
+  if (normalized === 'bath') return t('providerPortal.serviceTypeBath');
+  if (normalized === 'saloon') return t('providerPortal.serviceTypeSaloon');
+  if (normalized === 'hotel') return t('providerPortal.serviceTypeHotel');
+  if (normalized === 'walker') return t('providerPortal.serviceTypePetWalker');
+  if (normalized === 'shop') return t('providerPortal.serviceTypePetShop');
+  if (normalized === 'daycare') return t('providerPortal.serviceTypeDaycare');
+  if (normalized === 'cafe') return t('providerPortal.serviceTypePetCafe');
+  if (normalized === 'park') return t('providerPortal.serviceTypeDogPark');
+  return type || t('providerPortal.serviceFallback');
+}
+
+function bookingStatusText(t, status) {
+  const normalized = String(status || '').toLowerCase();
+  if (normalized === 'open') return t('providerPortal.statusAvailable');
+  if (normalized === 'booked') return t('providerPortal.statusBooked');
+  if (normalized === 'blocked') return t('providerPortal.statusBlocked');
+  if (normalized === 'completed') return t('providerPortal.statusCompleted');
+  if (normalized === 'cancelled') return t('providerPortal.statusCancelled');
+  return normalized ? normalized.charAt(0).toUpperCase() + normalized.slice(1) : t('providerPortal.statusAvailable');
+}
+
+function calendarPeriodLabel(t, period) {
+  if (period === 'morning') return t('providerPortal.calendarMorning');
+  if (period === 'afternoon') return t('providerPortal.calendarAfternoon');
+  return t('providerPortal.calendarEvening');
+}
+
+function todayOpenSlotCountLabel(t, count) {
+  return t(count === 1 ? 'providerPortal.todayOpenSlotCountOne' : 'providerPortal.todayOpenSlotCountOther', { count });
+}
+
+function visitCountLabel(t, count) {
+  return t(count === 1 ? 'providerPortal.visitCountOne' : 'providerPortal.visitCountOther', { count });
+}
+
+function durationMinutesValueLabel(t, count) {
+  return t('providerPortal.durationMinutesValue', { count });
+}
+
+function petSizeOptionLabel(t, sizeId) {
+  if (sizeId === 'small') return t('providerPortal.petSizeSmall');
+  if (sizeId === 'medium') return t('providerPortal.petSizeMedium');
+  if (sizeId === 'large') return t('providerPortal.petSizeLarge');
+  return sizeId;
+}
+
+function furLengthOptionLabel(t, furId) {
+  if (furId === 'short') return t('providerPortal.furLengthShort');
+  if (furId === 'medium') return t('providerPortal.furLengthMedium');
+  if (furId === 'long') return t('providerPortal.furLengthLong');
+  return furId;
 }
 
 function startOfDay(date) {
@@ -101,7 +158,7 @@ function dateKey(date) {
 
 const PROVIDER_TABS = ['bookings', 'availability', 'customers', 'services'];
 
-function buildPublishState(companyProfile, providerDoc) {
+function buildPublishState(companyProfile, providerDoc, t) {
   const limitRaw = providerDoc?.bookingLimitPerDay;
   const hasLimit = limitRaw != null && Number(limitRaw) > 0;
   return {
@@ -113,8 +170,8 @@ function buildPublishState(companyProfile, providerDoc) {
       providerDoc?.providerTypes && typeof providerDoc.providerTypes === 'object'
         ? providerDoc.providerTypes
         : { vet: true, saloon: false, hotel: false, walker: false, shop: false },
-    workingHours: providerDoc?.workingHours || companyProfile?.workingHours || 'Mon-Fri 09:00-18:00',
-    breakHours: providerDoc?.breakHours || '13:00-14:00',
+    workingHours: providerDoc?.workingHours || companyProfile?.workingHours || t('providerPortal.workingHoursPlaceholder'),
+    breakHours: providerDoc?.breakHours || t('providerPortal.breakHoursPlaceholder'),
     holidayClosures: providerDoc?.holidayClosures || '',
     staffCount: providerDoc?.staffCount || 1,
     slotIntervalMin: providerDoc?.slotIntervalMin || 30,
@@ -144,16 +201,16 @@ function slotEndDate(slot) {
 
 function slotTimeLabel(slot) {
   const start = slotDate(slot);
-  if (!start) return 'Slot';
+  if (!start) return '';
   return formatTime24(start);
 }
 
 function slotPeriod(slot) {
   const start = slotDate(slot);
   const hour = start ? start.getHours() : 9;
-  if (hour < 12) return 'Morning';
-  if (hour < 17) return 'Afternoon';
-  return 'Evening';
+  if (hour < 12) return 'morning';
+  if (hour < 17) return 'afternoon';
+  return 'evening';
 }
 
 function CalendarAvailabilityPanel({
@@ -162,13 +219,15 @@ function CalendarAvailabilityPanel({
   bookings = [],
   onToggleSlot,
   addPanel,
-  emptyText = 'No availability yet.',
+  emptyText,
   selectedDate: controlledSelectedDate,
   onSelectedDateChange,
   initialShowAdd = false,
   hideAdd = false,
-  heatLegendLabels = { fewer: 'Fewer', more: 'More' },
+  heatLegendLabels,
 }) {
+  const { t, language } = useI18n();
+  const locale = language || undefined;
   const firstSlotDate = slots.length ? slotDate(slots[0]) : null;
   const [internalSelectedDate, setInternalSelectedDate] = useState(() => firstSlotDate || new Date());
   const selectedDate = controlledSelectedDate ?? internalSelectedDate;
@@ -180,6 +239,7 @@ function CalendarAvailabilityPanel({
   const [view, setView] = useState('week');
   const [showAdd, setShowAdd] = useState(initialShowAdd);
   const [selectedSlotId, setSelectedSlotId] = useState('');
+  const weekdayHeaderDays = useMemo(() => weekDays(new Date()), []);
 
   const weekRowDays = useMemo(() => weekDays(selectedDate), [selectedDate]);
   const selectedKey = dateKey(selectedDate);
@@ -206,9 +266,10 @@ function CalendarAvailabilityPanel({
         : monthDays(visibleMonth);
   const mobileWeekDays = view === 'today' ? [startOfDay(new Date())] : weekRowDays;
   const selectedSlots = slotsByDay.get(selectedKey) || [];
-  const periods = ['Morning', 'Afternoon', 'Evening'];
-  const monthLabel = visibleMonth.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
-  const mobileMonthLabel = selectedDate.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+  const periods = ['morning', 'afternoon', 'evening'];
+  const monthLabel = visibleMonth.toLocaleDateString(locale, { month: 'long', year: 'numeric' });
+  const mobileMonthLabel = selectedDate.toLocaleDateString(locale, { month: 'long', year: 'numeric' });
+  const emptyLabel = emptyText || t('providerPortal.noAvailabilityYet');
 
   const selectDate = (day) => {
     setSelectedDate(day);
@@ -236,7 +297,7 @@ function CalendarAvailabilityPanel({
       >
         {compact ? (
           <>
-            <small>{day.toLocaleDateString(undefined, { weekday: 'short' })}</small>
+            <small>{day.toLocaleDateString(locale, { weekday: 'short' })}</small>
             <strong>{day.getDate()}</strong>
           </>
         ) : (
@@ -253,43 +314,43 @@ function CalendarAvailabilityPanel({
     <section className={`pp-providerPanel pp-providerCalendarPanel${view === 'month' ? ' pp-providerCalendarPanel--month' : ''}${view === 'today' ? ' pp-providerCalendarPanel--today' : ''}`}>
       <div className="pp-providerPanel__head">
         <div>
-          <h2>Availability</h2>
+          <h2>{t('providerPortal.tabAvailability')}</h2>
         </div>
         <div className="pp-providerCalendarControls">
-          <div className="pp-providerCalendarToggle" aria-label="Calendar view">
-            <button type="button" className={view === 'month' ? 'is-active' : ''} onClick={() => setView('month')}>Month</button>
-            <button type="button" className={view === 'week' ? 'is-active' : ''} onClick={() => setView('week')}>Week</button>
-            <button type="button" className={view === 'today' ? 'is-active' : ''} onClick={goToday}>Today</button>
+          <div className="pp-providerCalendarToggle" aria-label={t('providerPortal.calendarViewToggleAriaLabel')}>
+            <button type="button" className={view === 'month' ? 'is-active' : ''} onClick={() => setView('month')}>{t('providerPortal.viewMonth')}</button>
+            <button type="button" className={view === 'week' ? 'is-active' : ''} onClick={() => setView('week')}>{t('providerPortal.viewWeek')}</button>
+            <button type="button" className={view === 'today' ? 'is-active' : ''} onClick={goToday}>{t('providerPortal.viewToday')}</button>
           </div>
-          <button type="button" className="pp-btn pp-btn--primary" onClick={() => setShowAdd((v) => !v)} disabled={hideAdd} style={hideAdd ? { display: 'none' } : undefined}>+ Add availability</button>
+          <button type="button" className="pp-btn pp-btn--primary" onClick={() => setShowAdd((v) => !v)} disabled={hideAdd} style={hideAdd ? { display: 'none' } : undefined}>+ {t('providerPortal.addAvailability')}</button>
         </div>
       </div>
 
       {showAdd ? (
         <div className="pp-providerAddSheet">
           <div className="pp-providerAddSheet__head">
-            <strong>Quick add availability</strong>
-            <button type="button" onClick={() => setShowAdd(false)}>Close</button>
+            <strong>{t('providerPortal.quickAddAvailabilityTitle')}</strong>
+            <button type="button" onClick={() => setShowAdd(false)}>{t('common.cancel')}</button>
           </div>
-          {addPanel || <p>Choose a service, date, and time range to publish new bookable slots.</p>}
+          {addPanel || <p>{t('providerPortal.quickAddAvailabilityHint')}</p>}
         </div>
       ) : null}
 
       <div className={`pp-providerCalendarLayout${view === 'today' ? ' pp-providerCalendarLayout--today' : ''}`}>
         {view === 'today' ? (
           <div className="pp-providerTodayBanner">
-            <span className="pp-providerTodayBanner__label">Today</span>
-            <strong>{selectedDate.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</strong>
-            <em>{selectedSlots.length ? `${selectedSlots.length} open slot${selectedSlots.length === 1 ? '' : 's'}` : 'No slots published yet'}</em>
+            <span className="pp-providerTodayBanner__label">{t('providerPortal.viewToday')}</span>
+            <strong>{selectedDate.toLocaleDateString(locale, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</strong>
+            <em>{selectedSlots.length ? todayOpenSlotCountLabel(t, selectedSlots.length) : t('providerPortal.noSlotsPublishedYet')}</em>
           </div>
         ) : (
         <div className="pp-providerCalendarCard">
           <div className="pp-providerCalendarMobileMonth" aria-live="polite">
             {view === 'month' ? (
               <div className="pp-providerCalendarMobileNav">
-                <button type="button" aria-label="Previous month" onClick={() => setVisibleMonth((d) => new Date(d.getFullYear(), d.getMonth() - 1, 1))}>‹</button>
+                <button type="button" aria-label={t('providerPortal.previousMonth')} onClick={() => setVisibleMonth((d) => new Date(d.getFullYear(), d.getMonth() - 1, 1))}>‹</button>
                 <strong>{monthLabel}</strong>
-                <button type="button" aria-label="Next month" onClick={() => setVisibleMonth((d) => new Date(d.getFullYear(), d.getMonth() + 1, 1))}>›</button>
+                <button type="button" aria-label={t('providerPortal.nextMonth')} onClick={() => setVisibleMonth((d) => new Date(d.getFullYear(), d.getMonth() + 1, 1))}>›</button>
               </div>
             ) : (
               <strong>{mobileMonthLabel}</strong>
@@ -297,9 +358,9 @@ function CalendarAvailabilityPanel({
           </div>
           {view !== 'today' ? (
             <div className="pp-providerCalendarCard__top pp-providerCalendarCard__top--desktop">
-              <button type="button" aria-label="Previous month" onClick={() => setVisibleMonth((d) => new Date(d.getFullYear(), d.getMonth() - 1, 1))}>‹</button>
+              <button type="button" aria-label={t('providerPortal.previousMonth')} onClick={() => setVisibleMonth((d) => new Date(d.getFullYear(), d.getMonth() - 1, 1))}>‹</button>
               <strong>{monthLabel}</strong>
-              <button type="button" aria-label="Next month" onClick={() => setVisibleMonth((d) => new Date(d.getFullYear(), d.getMonth() + 1, 1))}>›</button>
+              <button type="button" aria-label={t('providerPortal.nextMonth')} onClick={() => setVisibleMonth((d) => new Date(d.getFullYear(), d.getMonth() + 1, 1))}>›</button>
             </div>
           ) : (
             <div className="pp-providerCalendarCard__top pp-providerCalendarCard__top--desktop pp-providerCalendarCard__top--today">
@@ -308,13 +369,15 @@ function CalendarAvailabilityPanel({
           )}
           {view === 'month' ? (
             <div className="pp-providerCalendarWeek pp-providerCalendarWeek--desktop">
-              {WEEKDAY_LABELS_MON_START.map((d, idx) => <span key={`${d}-${idx}`}>{d}</span>)}
+              {weekdayHeaderDays.map((day) => (
+                <span key={`desktop-head-${dateKey(day)}`}>{day.toLocaleDateString(locale, { weekday: 'narrow' })}</span>
+              ))}
             </div>
           ) : null}
           {view === 'week' ? (
             <div className="pp-providerCalendarWeek pp-providerCalendarWeek--mobile">
               {mobileWeekDays.map((day) => (
-                <span key={`head-${dateKey(day)}`}>{day.toLocaleDateString(undefined, { weekday: 'narrow' })}</span>
+                <span key={`head-${dateKey(day)}`}>{day.toLocaleDateString(locale, { weekday: 'narrow' })}</span>
               ))}
             </div>
           ) : null}
@@ -329,33 +392,34 @@ function CalendarAvailabilityPanel({
 
         <div className="pp-providerDaySchedule">
           <div className="pp-providerDaySchedule__head">
-            <span>Selected date</span>
-            <strong>{selectedDate.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}</strong>
+            <span>{t('providerPortal.selectedDate')}</span>
+            <strong>{selectedDate.toLocaleDateString(locale, { weekday: 'long', month: 'short', day: 'numeric' })}</strong>
           </div>
-          {selectedSlots.length === 0 ? <div className="pp-providerCalendarEmpty">{emptyText}</div> : null}
+          {selectedSlots.length === 0 ? <div className="pp-providerCalendarEmpty">{emptyLabel}</div> : null}
           {periods.map((period) => {
             const periodSlots = selectedSlots.filter((slot) => slotPeriod(slot) === period);
             if (!periodSlots.length) return null;
             return (
               <div key={period} className="pp-providerTimePeriod">
-                <div className="pp-providerTimePeriod__title">{period}</div>
+                <div className="pp-providerTimePeriod__title">{calendarPeriodLabel(t, period)}</div>
                 <div className="pp-providerTimeSlots">
                   {periodSlots.map((slot) => {
                     const status = slot.status || 'open';
                     const end = slotEndDate(slot);
+                    const serviceName = servicesById.get(slot.serviceId) || t('providerPortal.serviceFallback');
                     return (
                       <button
                         key={slot.id}
                         type="button"
                         className={`is-${status} ${selectedSlotId === slot.id ? 'is-selected' : ''}`}
-                        title={`${servicesById.get(slot.serviceId) || 'Service'}${end ? ` ends ${formatTime24(end)}` : ''}`}
+                        title={end ? t('providerPortal.serviceEndsTitle', { service: serviceName, time: formatTime24(end) }) : serviceName}
                         onClick={() => {
                           setSelectedSlotId(slot.id);
                           if (onToggleSlot) onToggleSlot(slot);
                         }}
                       >
-                        <strong>{slotTimeLabel(slot)}</strong>
-                        <small>{status === 'open' ? 'Available' : status}</small>
+                        <strong>{slotTimeLabel(slot) || t('providerPortal.slotFallback')}</strong>
+                        <small>{bookingStatusText(t, status)}</small>
                       </button>
                     );
                   })}
@@ -370,18 +434,19 @@ function CalendarAvailabilityPanel({
 }
 
 function DemoBusinessSwitcher({ businesses, onSelect, onSelectLive, activeId = '', compact = false, showLive = false }) {
+  const { t } = useI18n();
   return (
     <section className={`pp-card pp-demoBusiness ${compact ? 'pp-demoBusiness--compact' : ''}`}>
       <div className="pp-rowBetween" style={{ alignItems: 'flex-start', gap: 12 }}>
         <div>
-          <div className="pp-badge">{showLive && activeId ? 'Demo preview' : 'Demo business accounts'}</div>
+          <div className="pp-badge">{showLive && activeId ? t('providerPortal.demoPreviewBadge') : t('providerPortal.demoBusinessAccountsBadge')}</div>
           <h2 className="pp-sectionTitle" style={{ margin: '8px 0 4px' }}>
-            {showLive && activeId ? 'You are viewing a demo' : 'Preview business perspective'}
+            {showLive && activeId ? t('providerPortal.viewingDemoTitle') : t('providerPortal.previewBusinessPerspectiveTitle')}
           </h2>
           <p className="pp-subtle" style={{ margin: 0 }}>
             {showLive && activeId
-              ? 'Actions like adding services are disabled in demo mode. Switch back to your live business to manage bookings.'
-              : 'Open a ready-made business portal for each nearby category to see what providers can manage.'}
+              ? t('providerPortal.demoReadOnlyMessage')
+              : t('providerPortal.previewBusinessPerspectiveMessage')}
           </p>
         </div>
       </div>
@@ -393,17 +458,17 @@ function DemoBusinessSwitcher({ businesses, onSelect, onSelectLive, activeId = '
             onClick={() => onSelectLive?.()}
           >
             <span className="pp-demoBusiness__icon" aria-hidden>🏪</span>
-            <span className="pp-demoBusiness__type">Live account</span>
-            <strong>Your live business</strong>
-            <small>Manage services & availability</small>
+            <span className="pp-demoBusiness__type">{t('providerPortal.liveAccount')}</span>
+            <strong>{t('providerPortal.yourLiveBusiness')}</strong>
+            <small>{t('providerPortal.manageServicesAvailability')}</small>
           </button>
         ) : null}
         {businesses.map((b) => (
           <button key={b.id} type="button" className={`pp-demoBusiness__card ${b.id === activeId ? 'is-active' : ''}`} onClick={() => onSelect(b.id)}>
             <span className="pp-demoBusiness__icon" aria-hidden>{businessIcon(b.providerTypes)}</span>
-            <span className="pp-demoBusiness__type">{businessTypeLabel(b.providerTypes)}</span>
+            <span className="pp-demoBusiness__type">{businessTypeLabel(t, b.providerTypes)}</span>
             <strong>{b.displayName}</strong>
-            <small>{b.workingHours || 'Open today'}</small>
+            <small>{b.workingHours || t('providerPortal.openToday')}</small>
           </button>
         ))}
       </div>
@@ -412,6 +477,7 @@ function DemoBusinessSwitcher({ businesses, onSelect, onSelectLive, activeId = '
 }
 
 function ProviderDashboardHero({ business, companyId, bookingEnabled = false }) {
+  const { t } = useI18n();
   const customerPageTo = companyId
     ? `/bookings/provider/${encodeURIComponent(companyId)}`
     : '/bookings';
@@ -424,9 +490,9 @@ function ProviderDashboardHero({ business, companyId, bookingEnabled = false }) 
         <div className="pp-providerDashHero__avatar" aria-hidden>{businessIcon(business.providerTypes)}</div>
         <div className="pp-providerDashHero__copy">
           <div className="pp-providerDashHero__badges">
-            <span>{businessTypeLabel(business.providerTypes)}</span>
-            <span className="is-live">Open</span>
-            {bookingEnabled ? <span className="is-enabled">Active for booking</span> : null}
+            <span>{businessTypeLabel(t, business.providerTypes)}</span>
+            <span className="is-live">{t('providerPortal.statusOpen')}</span>
+            {bookingEnabled ? <span className="is-enabled">{t('providerPortal.activeForBooking')}</span> : null}
           </div>
           <h1>{business.displayName}</h1>
           <p>{business.address}</p>
@@ -434,12 +500,12 @@ function ProviderDashboardHero({ business, companyId, bookingEnabled = false }) 
       </div>
       <div className="pp-providerDashHero__side">
         <Link className="pp-btn pp-btn--primary" to={customerPageTo}>
-          View customer page
+          {t('providerPortal.viewCustomerPage')}
         </Link>
         <div className="pp-providerDashHero__miniStats">
-          <span><strong>{business.services.length}</strong> services</span>
-          <span><strong>{business.bookings.length}</strong> today</span>
-          <span><strong>{business.clientPets.length}</strong> clients</span>
+          <span>{t('providerPortal.heroServicesCount', { count: business.services.length })}</span>
+          <span>{t('providerPortal.heroTodayCount', { count: business.bookings.length })}</span>
+          <span>{t('providerPortal.heroClientsCount', { count: business.clientPets.length })}</span>
         </div>
       </div>
     </section>
@@ -447,26 +513,28 @@ function ProviderDashboardHero({ business, companyId, bookingEnabled = false }) 
 }
 
 function ProviderStats({ business }) {
-  const next = business.bookings[0]?.startAtLabel || business.nextAvailable || 'No upcoming';
+  const { t } = useI18n();
+  const next = business.bookings[0]?.startAtLabel || business.nextAvailable || t('providerPortal.noUpcoming');
   return (
     <section className="pp-providerStats">
-      <article><span aria-hidden>📅</span><small>Today's bookings</small><strong>{business.bookings.length}</strong><em>+2 from demo</em></article>
-      <article><span aria-hidden>🧾</span><small>Active services</small><strong>{business.services.filter((s) => s.active !== false).length}</strong><em>All bookable</em></article>
-      <article><span aria-hidden>⏰</span><small>Upcoming</small><strong>{next}</strong><em>Next appointment</em></article>
-      <article><span aria-hidden>🐾</span><small>Total clients</small><strong>{business.clientPets.length}</strong><em>2 tracked pets</em></article>
+      <article><span aria-hidden>📅</span><small>{t('providerPortal.todaysBookings')}</small><strong>{business.bookings.length}</strong><em>{t('providerPortal.demoIncrease')}</em></article>
+      <article><span aria-hidden>🧾</span><small>{t('providerPortal.activeServices')}</small><strong>{business.services.filter((s) => s.active !== false).length}</strong><em>{t('providerPortal.allBookable')}</em></article>
+      <article><span aria-hidden>⏰</span><small>{t('providerPortal.upcoming')}</small><strong>{next}</strong><em>{t('providerPortal.nextAppointment')}</em></article>
+      <article><span aria-hidden>🐾</span><small>{t('providerPortal.totalClients')}</small><strong>{business.clientPets.length}</strong><em>{t('providerPortal.trackedPetsDemo')}</em></article>
     </section>
   );
 }
 
 function ProviderTabs({ tab, setTab }) {
+  const { t } = useI18n();
   const tabs = [
-    ['bookings', 'Bookings'],
-    ['availability', 'Availability'],
-    ['customers', 'Customers'],
-    ['services', 'Services'],
+    ['bookings', t('providerPortal.tabBookings')],
+    ['availability', t('providerPortal.tabAvailability')],
+    ['customers', t('providerPortal.tabCustomers')],
+    ['services', t('providerPortal.tabServices')],
   ];
   return (
-    <div className="pp-providerTabs" role="tablist" aria-label="Provider sections">
+    <div className="pp-providerTabs" role="tablist" aria-label={t('providerPortal.providerSectionsAria')}>
       {tabs.map(([id, label]) => (
         <button
           key={id}
@@ -484,14 +552,15 @@ function ProviderTabs({ tab, setTab }) {
 }
 
 function DemoServicesPanel({ services }) {
+  const { t } = useI18n();
   return (
     <section className="pp-providerPanel">
       <div className="pp-providerPanel__head">
         <div>
-          <h2>Services</h2>
-          <p>Compact menu of what customers can book.</p>
+          <h2>{t('providerPortal.servicesTitle')}</h2>
+          <p>{t('providerPortal.servicesDemoDescription')}</p>
         </div>
-        <button type="button" className="pp-btn pp-btn--primary" disabled>+ Add service</button>
+        <button type="button" className="pp-btn pp-btn--primary" disabled>+ {t('providerPortal.addService')}</button>
       </div>
       <div className="pp-providerServiceGrid">
         {services.map((s) => (
@@ -500,18 +569,18 @@ function DemoServicesPanel({ services }) {
             <div className="pp-providerServiceCard__body">
               <div className="pp-providerServiceCard__top">
                 <h3>{s.name}</h3>
-                <span className={s.active === false ? 'is-off' : 'is-on'}>{s.active === false ? 'Inactive' : 'Active'}</span>
+                <span className={s.active === false ? 'is-off' : 'is-on'}>{s.active === false ? t('providerPortal.inactive') : t('providerPortal.active')}</span>
               </div>
-              <p>{s.description || 'No description yet.'}</p>
+              <p>{s.description || t('providerPortal.noDescriptionYet')}</p>
               <div className="pp-providerServiceCard__meta">
-                <span>{s.durationMin} min</span>
-                <span>{s.type}</span>
+                <span>{durationMinutesValueLabel(t, s.durationMin)}</span>
+                <span>{serviceTypeLabel(t, s.type)}</span>
               </div>
             </div>
             <div className="pp-providerServiceCard__actions">
-              <button type="button" disabled>Edit</button>
-              <button type="button" disabled>Disable</button>
-              <button type="button" disabled>Delete</button>
+              <button type="button" disabled>{t('providerPortal.edit')}</button>
+              <button type="button" disabled>{t('providerPortal.disable')}</button>
+              <button type="button" disabled>{t('providerPortal.delete')}</button>
             </div>
           </article>
         ))}
@@ -521,6 +590,7 @@ function DemoServicesPanel({ services }) {
 }
 
 function DemoAvailabilityPanel({ business, slots }) {
+  const { t } = useI18n();
   const servicesById = useMemo(() => {
     const m = new Map();
     business.services.forEach((s) => m.set(s.id, s.name));
@@ -530,18 +600,19 @@ function DemoAvailabilityPanel({ business, slots }) {
     <CalendarAvailabilityPanel
       slots={slots.map((slot, idx) => ({ ...slot, status: idx % 5 === 3 ? 'booked' : slot.status || 'open' }))}
       servicesById={servicesById}
-      emptyText="No demo slots on this date."
+      emptyText={t('providerPortal.demoSlotsEmptyState')}
     />
   );
 }
 
 function DemoBookingsPanel({ bookings }) {
+  const { t } = useI18n();
   return (
     <section className="pp-providerPanel">
       <div className="pp-providerPanel__head">
         <div>
-          <h2>Bookings</h2>
-          <p>Appointments with customer and pet context.</p>
+          <h2>{t('providerPortal.bookingsTitle')}</h2>
+          <p>{t('providerPortal.demoBookingsDescription')}</p>
         </div>
       </div>
       <div className="pp-providerBookingList">
@@ -553,10 +624,10 @@ function DemoBookingsPanel({ bookings }) {
               <p>{b.serviceName}</p>
               <small>{b.ownerName} · {b.startAtLabel}</small>
             </div>
-            <span className={`pp-providerStatus pp-providerStatus--${b.status}`}>{b.status}</span>
+            <span className={`pp-providerStatus pp-providerStatus--${b.status}`}>{bookingStatusText(t, b.status)}</span>
             <div className="pp-providerBookingCard__actions">
-              <button type="button" disabled>Complete</button>
-              <button type="button" disabled>Cancel</button>
+              <button type="button" disabled>{t('providerPortal.complete')}</button>
+              <button type="button" disabled>{t('common.cancel')}</button>
             </div>
           </article>
         ))}
@@ -566,12 +637,13 @@ function DemoBookingsPanel({ bookings }) {
 }
 
 function DemoClientPetsPanel({ pets }) {
+  const { t } = useI18n();
   return (
     <section className="pp-providerPanel">
       <div className="pp-providerPanel__head">
         <div>
-          <h2>Client pets</h2>
-          <p>Pets attached to bookings, owners, and tracker data.</p>
+          <h2>{t('providerPortal.clientPetsTitle')}</h2>
+          <p>{t('providerPortal.demoClientPetsDescription')}</p>
         </div>
       </div>
       <div className="pp-providerClientGrid">
@@ -581,9 +653,9 @@ function DemoClientPetsPanel({ pets }) {
             <div>
               <h3>{p.name}</h3>
               <p>{p.ownerName}</p>
-              <small>{p.ownerPhone || 'No phone'} · {p.trackingImei ? 'Tracker linked' : 'No tracker'}</small>
+              <small>{p.ownerPhone || t('providerPortal.noPhone')} · {p.trackingImei ? t('providerPortal.trackerLinked') : t('providerPortal.noTracker')}</small>
             </div>
-            <a href={`tel:${p.ownerPhone || ''}`} className="pp-btn pp-btn--ghost">Contact</a>
+            <a href={`tel:${p.ownerPhone || ''}`} className="pp-btn pp-btn--ghost">{t('providerPortal.contact')}</a>
           </article>
         ))}
       </div>
@@ -624,6 +696,7 @@ function DemoProviderPortal({ business, businesses, onChangeBusiness, onExitDemo
 }
 
 export default function ProviderPortal() {
+  const { t } = useI18n();
   const { user } = useAuth();
   const { profile, profileLoading, isApprovedCompany } = useCompany();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -657,7 +730,7 @@ export default function ProviderPortal() {
   const [boostCancelMsg, setBoostCancelMsg] = useState('');
   const [providerDoc, setProviderDoc] = useState(null);
   const listingDirtyRef = useRef(false);
-  const [publish, setPublish] = useState(() => buildPublishState(null, null));
+  const [publish, setPublish] = useState(() => buildPublishState(null, null, t));
 
   useEffect(() => {
     if (!companyId) return undefined;
@@ -668,8 +741,8 @@ export default function ProviderPortal() {
   useEffect(() => {
     if (profileLoading || !providerDoc) return;
     if (listingDirtyRef.current) return;
-    setPublish(buildPublishState(profile, providerDoc));
-  }, [profileLoading, profile, providerDoc]);
+    setPublish(buildPublishState(profile, providerDoc, t));
+  }, [profileLoading, profile, providerDoc, t]);
 
   if (demoBusiness) {
     return (
@@ -690,22 +763,22 @@ export default function ProviderPortal() {
 
   const canUse = Boolean(companyId) && isApprovedCompany;
   if (!user) return <Navigate to="/login" replace />;
-  if (profileLoading) return <div className="pp-pad">Loading…</div>;
+  if (profileLoading) return <div className="pp-pad">{t('common.loading')}</div>;
   if (!canUse) {
     return (
       <div className="pp-pad">
         <div className="pp-pageHeader">
           <div className="pp-pageHeader__copy">
-            <div className="pp-badge">Provider portal</div>
-            <div className="pp-pageHeader__title">Not available yet</div>
+            <div className="pp-badge">{t('providerPortal.providerPortalBadge')}</div>
+            <div className="pp-pageHeader__title">{t('providerPortal.notAvailableYet')}</div>
             <div className="pp-pageHeader__subtitle">
-              Your business account must be approved before you can manage bookings.
+              {t('providerPortal.businessApprovalRequired')}
             </div>
           </div>
         </div>
         <div style={{ marginTop: 12 }}>
           <Link className="pp-btn pp-btn--primary" to="/company/apply">
-            Apply as a business
+            {t('providerPortal.applyAsBusiness')}
           </Link>
         </div>
         <DemoBusinessSwitcher businesses={demoBusinesses} onSelect={(id) => setSearchParams({ demoBusiness: id })} />
@@ -720,17 +793,17 @@ export default function ProviderPortal() {
     if (!companyId || !user?.uid) return;
     const ok = window.confirm(
       kind === 'nearby'
-        ? 'Cancel Nearby boost? It will stop showing on your listing immediately and we will stop recurring billing.'
-        : 'Cancel Bookings boost? It will stop showing on your listing immediately and we will stop recurring billing.'
+        ? t('providerPortal.cancelNearbyBoostConfirm')
+        : t('providerPortal.cancelBookingsBoostConfirm')
     );
     if (!ok) return;
     setBoostCancelMsg('');
     setBoostCancelBusy(kind);
     try {
       await cancelBusinessBoost({ uid: user.uid, companyId, kind });
-      setBoostCancelMsg('Boost cancelled. Billing cancellation has been requested.');
+      setBoostCancelMsg(t('providerPortal.boostCancelledMessage'));
     } catch (e) {
-      setBoostCancelMsg(e?.message || 'Could not cancel boost.');
+      setBoostCancelMsg(e?.message || t('providerPortal.couldNotCancelBoost'));
     } finally {
       setBoostCancelBusy('');
     }
@@ -742,14 +815,14 @@ export default function ProviderPortal() {
         companyId={companyId}
         bookingEnabled={publish.bookingEnabled}
         business={{
-          displayName: profile?.businessName || publish.displayName || 'Business',
-          address: profile?.addressLine || publish.address || 'Business profile',
+          displayName: profile?.businessName || publish.displayName || t('providerPortal.businessFallback'),
+          address: profile?.addressLine || publish.address || t('providerPortal.businessProfileFallback'),
           providerTypes: publish.providerTypes,
           services: [],
           bookings: [],
           clientPets: [],
           workingHours: publish.workingHours,
-          nextAvailable: 'Manage live availability',
+          nextAvailable: t('providerPortal.manageLiveAvailability'),
         }}
       />
       {/* Demo business preview hidden for live providers — use Bookings/Availability tabs directly. */}
@@ -815,12 +888,13 @@ const EMPTY_SERVICE_FORM = {
 };
 
 function Services({ companyId }) {
+  const { t } = useI18n();
   const [services, setServices] = useState([]);
   const [err, setErr] = useState('');
   const [toggleBusyId, setToggleBusyId] = useState('');
   const [form, setForm] = useState(() => ({ ...EMPTY_SERVICE_FORM }));
 
-  useEffect(() => subscribeCompanyServices(companyId, setServices, (e) => setErr(e?.message || 'failed')), [companyId]);
+  useEffect(() => subscribeCompanyServices(companyId, setServices, (e) => setErr(e?.message || t('common.errorGeneric'))), [companyId, t]);
 
   const showSizeFurOptions = form.type === 'saloon' || form.type === 'bath';
   const askPetSize = showSizeFurOptions && form.askPetSize;
@@ -867,7 +941,7 @@ function Services({ companyId }) {
       await upsertCompanyService(companyId, null, payload);
       setForm({ ...EMPTY_SERVICE_FORM });
     } catch (e2) {
-      setErr(e2?.message || 'failed');
+      setErr(e2?.message || t('common.errorGeneric'));
     }
   };
 
@@ -875,28 +949,28 @@ function Services({ companyId }) {
     <section className="pp-providerPanel">
       <div className="pp-providerPanel__head">
         <div>
-          <h2>Services</h2>
-          <p>What customers can book — name, duration, price, and prep notes.</p>
+          <h2>{t('providerPortal.servicesTitle')}</h2>
+          <p>{t('providerPortal.servicesDescription')}</p>
         </div>
       </div>
 
       <div className="pp-providerFormCard">
-        <h3 className="pp-providerFormCard__title">Create service</h3>
+        <h3 className="pp-providerFormCard__title">{t('providerPortal.createServiceTitle')}</h3>
         {err ? <div className="pp-error">{err}</div> : null}
         <form onSubmit={onCreate} className="pp-form pp-providerForm">
           <div className="pp-modalGrid2">
             <label className="pp-field">
-              <span className="pp-field__label">Type</span>
+              <span className="pp-field__label">{t('providerPortal.typeLabel')}</span>
               <select className="pp-input" value={form.type} onChange={(e) => setForm((p) => ({ ...p, type: e.target.value }))}>
-                <option value="vet">Vet</option>
-                <option value="bath">Bath</option>
-                <option value="saloon">Saloon</option>
-                <option value="hotel">Hotel</option>
-                <option value="walker">Pet walker</option>
+                <option value="vet">{serviceTypeLabel(t, 'vet')}</option>
+                <option value="bath">{serviceTypeLabel(t, 'bath')}</option>
+                <option value="saloon">{serviceTypeLabel(t, 'saloon')}</option>
+                <option value="hotel">{serviceTypeLabel(t, 'hotel')}</option>
+                <option value="walker">{serviceTypeLabel(t, 'walker')}</option>
               </select>
             </label>
             <label className="pp-field">
-              <span className="pp-field__label">Duration (min)</span>
+              <span className="pp-field__label">{t('providerPortal.durationMinutesLabel')}</span>
               <input
                 className="pp-input"
                 type="number"
@@ -906,36 +980,36 @@ function Services({ companyId }) {
               />
             </label>
             <label className="pp-field">
-              <span className="pp-field__label">Price</span>
-              <input className="pp-input" value={form.price} onChange={(e) => setForm((p) => ({ ...p, price: e.target.value }))} placeholder="€25" />
+              <span className="pp-field__label">{t('providerPortal.priceLabel')}</span>
+              <input className="pp-input" value={form.price} onChange={(e) => setForm((p) => ({ ...p, price: e.target.value }))} placeholder={t('providerPortal.pricePlaceholder')} />
             </label>
           </div>
           <label className="pp-field">
-            <span className="pp-field__label">Name</span>
-            <input className="pp-input" value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} placeholder="Health checkup" />
+            <span className="pp-field__label">{t('providerPortal.nameLabel')}</span>
+            <input className="pp-input" value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} placeholder={t('providerPortal.serviceNamePlaceholder')} />
           </label>
           <label className="pp-field">
-            <span className="pp-field__label">Description</span>
+            <span className="pp-field__label">{t('providerPortal.descriptionLabel')}</span>
             <textarea
               className="pp-input"
               rows={3}
               value={form.description}
               onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
-              placeholder="General wellness exam"
+              placeholder={t('providerPortal.serviceDescriptionPlaceholder')}
             />
           </label>
           <label className="pp-field">
-            <span className="pp-field__label">Optional add-ons</span>
-            <textarea className="pp-input" rows={2} value={form.addOns} onChange={(e) => setForm((p) => ({ ...p, addOns: e.target.value }))} placeholder="Nail trim +€8, medicated shampoo +€10" />
+            <span className="pp-field__label">{t('providerPortal.optionalAddOnsLabel')}</span>
+            <textarea className="pp-input" rows={2} value={form.addOns} onChange={(e) => setForm((p) => ({ ...p, addOns: e.target.value }))} placeholder={t('providerPortal.addOnsPlaceholder')} />
           </label>
           <label className="pp-field">
-            <span className="pp-field__label">Preparation notes</span>
-            <textarea className="pp-input" rows={2} value={form.preparationNotes} onChange={(e) => setForm((p) => ({ ...p, preparationNotes: e.target.value }))} placeholder="Bring vaccination booklet, arrive 10 minutes early..." />
+            <span className="pp-field__label">{t('providerPortal.preparationNotesLabel')}</span>
+            <textarea className="pp-input" rows={2} value={form.preparationNotes} onChange={(e) => setForm((p) => ({ ...p, preparationNotes: e.target.value }))} placeholder={t('providerPortal.preparationNotesPlaceholder')} />
           </label>
           {showSizeFurOptions ? (
             <div className="pp-providerServiceOptions">
               <p className="pp-providerServiceOptions__lead">
-                Optional booking questions — only shown to customers when enabled.
+                {t('providerPortal.bookingQuestionsLead')}
               </p>
               <label className="pp-field pp-field--checkbox">
                 <input
@@ -943,7 +1017,7 @@ function Services({ companyId }) {
                   checked={form.askPetSize}
                   onChange={(e) => setForm((p) => ({ ...p, askPetSize: e.target.checked }))}
                 />
-                <span>Ask pet size (small / medium / large)</span>
+                <span>{t('providerPortal.askPetSize')}</span>
               </label>
               <label className="pp-field pp-field--checkbox">
                 <input
@@ -951,23 +1025,23 @@ function Services({ companyId }) {
                   checked={form.askFurLength}
                   onChange={(e) => setForm((p) => ({ ...p, askFurLength: e.target.checked }))}
                 />
-                <span>Ask fur length (short / medium / long)</span>
+                <span>{t('providerPortal.askFurLength')}</span>
               </label>
               {askPetSize || askFurLength ? (
                 <div className="pp-providerDurationMatrix">
-                  <span className="pp-field__label">Duration by selection (min)</span>
+                  <span className="pp-field__label">{t('providerPortal.durationBySelectionLabel')}</span>
                   <p className="pp-muted" style={{ fontSize: 12, margin: '0 0 8px' }}>
-                    Base duration seeds these values — adjust each combination as needed.
+                    {t('providerPortal.durationBySelectionHint')}
                   </p>
                   {askPetSize && askFurLength ? (
                     <div className="pp-providerDurationMatrix__tableWrap">
                       <table className="pp-providerDurationMatrix__table">
                         <thead>
                           <tr>
-                            <th scope="col">Size \\ Fur</th>
+                            <th scope="col">{t('providerPortal.sizeByFurHeader')}</th>
                             {FUR_LENGTH_OPTIONS.map((fur) => (
                               <th key={fur.id} scope="col">
-                                {fur.id}
+                                {furLengthOptionLabel(t, fur.id)}
                               </th>
                             ))}
                           </tr>
@@ -975,7 +1049,7 @@ function Services({ companyId }) {
                         <tbody>
                           {PET_SIZE_OPTIONS.map((size) => (
                             <tr key={size.id}>
-                              <th scope="row">{size.id}</th>
+                              <th scope="row">{petSizeOptionLabel(t, size.id)}</th>
                               {FUR_LENGTH_OPTIONS.map((fur) => {
                                 const key = durationMatrixKey(size.id, fur.id);
                                 return (
@@ -985,7 +1059,10 @@ function Services({ companyId }) {
                                       type="number"
                                       min={5}
                                       step={5}
-                                      aria-label={`${size.id} ${fur.id} minutes`}
+                                      aria-label={t('providerPortal.durationMatrixInputLabel', {
+                                        size: petSizeOptionLabel(t, size.id),
+                                        fur: furLengthOptionLabel(t, fur.id),
+                                      })}
                                       value={form.durationMatrix?.[key] ?? ''}
                                       onChange={(e) => {
                                         const n = Number(e.target.value);
@@ -1012,7 +1089,7 @@ function Services({ companyId }) {
                         const key = durationMatrixKey(askPetSize ? opt.id : '', askFurLength ? opt.id : '');
                         return (
                           <label key={key} className="pp-field pp-providerDurationMatrix__row">
-                            <span className="pp-field__label">{opt.id}</span>
+                            <span className="pp-field__label">{askPetSize ? petSizeOptionLabel(t, opt.id) : furLengthOptionLabel(t, opt.id)}</span>
                             <input
                               className="pp-input"
                               type="number"
@@ -1045,33 +1122,33 @@ function Services({ companyId }) {
               checked={form.active}
               onChange={(e) => setForm((p) => ({ ...p, active: e.target.checked }))}
             />
-            <span>Active — visible to customers</span>
+            <span>{t('providerPortal.activeVisibleToCustomers')}</span>
           </label>
           <button className="pp-btn pp-btn--primary" type="submit">
-            Add service
+            {t('providerPortal.addService')}
           </button>
         </form>
       </div>
 
       <div className="pp-providerServiceGrid" style={{ marginTop: 14 }}>
-        {services.length === 0 ? <div className="pp-providerEmptyCard">No services yet — add your first bookable service above.</div> : null}
+        {services.length === 0 ? <div className="pp-providerEmptyCard">{t('providerPortal.noServicesYet')}</div> : null}
         {services.map((s) => (
           <article key={s.id} className="pp-providerServiceCard">
             <div className="pp-providerServiceCard__icon" aria-hidden>{serviceIcon(s.type)}</div>
             <div className="pp-providerServiceCard__body">
               <div className="pp-providerServiceCard__top">
                 <h3>{s.name}</h3>
-                <span className={s.active === false ? 'is-off' : 'is-on'}>{s.active === false ? 'Inactive' : 'Active'}</span>
+                <span className={s.active === false ? 'is-off' : 'is-on'}>{s.active === false ? t('providerPortal.inactive') : t('providerPortal.active')}</span>
               </div>
-              <p>{s.description || 'No description yet.'}</p>
+              <p>{s.description || t('providerPortal.noDescriptionYet')}</p>
               <div className="pp-providerServiceCard__meta">
-                <span>{s.durationMin} min</span>
-                <span>{s.price || 'No price'}</span>
-                <span>{s.type}</span>
-                {s.askPetSize ? <span>Pet size</span> : null}
-                {s.askFurLength ? <span>Fur length</span> : null}
+                <span>{durationMinutesValueLabel(t, s.durationMin)}</span>
+                <span>{s.price || t('providerPortal.noPrice')}</span>
+                <span>{serviceTypeLabel(t, s.type)}</span>
+                {s.askPetSize ? <span>{t('providerPortal.petSize')}</span> : null}
+                {s.askFurLength ? <span>{t('providerPortal.furLength')}</span> : null}
                 {!s.askPetSize && !s.askFurLength && Array.isArray(s.variants) && s.variants.length ? (
-                  <span>{s.variants.length} options</span>
+                  <span>{t('providerPortal.variantOptionsCount', { count: s.variants.length })}</span>
                 ) : null}
               </div>
             </div>
@@ -1087,13 +1164,13 @@ function Services({ companyId }) {
                     const nextActive = s.active === false;
                     await upsertCompanyService(companyId, s.id, { active: nextActive });
                   } catch (e) {
-                    setErr(e?.message || 'Could not update service.');
+                    setErr(e?.message || t('providerPortal.couldNotUpdateService'));
                   } finally {
                     setToggleBusyId('');
                   }
                 }}
               >
-                {toggleBusyId === s.id ? 'Saving…' : s.active === false ? 'Enable' : 'Disable'}
+                {toggleBusyId === s.id ? t('providerPortal.saving') : s.active === false ? t('providerPortal.enable') : t('providerPortal.disable')}
               </button>
             </div>
           </article>
@@ -1120,6 +1197,7 @@ function PublicListingPanel({
   onListingDirty,
   onListingSaved,
 }) {
+  const { t } = useI18n();
   const [toggleBusy, setToggleBusy] = useState(false);
 
   const onBookingToggle = async (nextEnabled) => {
@@ -1130,7 +1208,7 @@ function PublicListingPanel({
       await setProviderBookingEnabled(companyId, nextEnabled);
     } catch (err) {
       setPublish((p) => ({ ...p, bookingEnabled: !nextEnabled }));
-      setPublishErr(err?.message || 'Could not update booking status.');
+      setPublishErr(err?.message || t('providerPortal.couldNotUpdateBookingStatus'));
     } finally {
       setToggleBusy(false);
     }
@@ -1142,8 +1220,8 @@ function PublicListingPanel({
     <section className="pp-providerPanel pp-providerListingSection">
       <div className="pp-providerPanel__head">
         <div>
-          <h2>Public listing</h2>
-          <p>Enable bookings to appear in customer search. You can still use tracking and all other features.</p>
+          <h2>{t('providerPortal.publicListingTitle')}</h2>
+          <p>{t('providerPortal.publicListingDescription')}</p>
         </div>
       </div>
 
@@ -1159,7 +1237,7 @@ function PublicListingPanel({
               await publishProviderProfile(companyId, publish);
               onListingSaved?.();
             } catch (err) {
-              setPublishErr(err?.message || 'failed');
+              setPublishErr(err?.message || t('common.errorGeneric'));
             } finally {
               setPublishBusy(false);
             }
@@ -1167,8 +1245,8 @@ function PublicListingPanel({
         >
           <div className="pp-providerBoostToggle pp-providerListingToggle">
             <div className="pp-providerBoostToggle__copy">
-              <strong>Active for booking</strong>
-              <small>Show in customer search and accept online bookings.</small>
+              <strong>{t('providerPortal.activeForBooking')}</strong>
+              <small>{t('providerPortal.activeForBookingDescription')}</small>
             </div>
             <label className={`pp-providerBoostSwitch${publish.bookingEnabled ? ' is-on' : ''}`}>
               <input
@@ -1181,17 +1259,17 @@ function PublicListingPanel({
             </label>
           </div>
           <fieldset className="pp-field">
-            <legend className="pp-field__label">Categories shown in Bookings search</legend>
+            <legend className="pp-field__label">{t('providerPortal.categoriesShownInBookingsSearch')}</legend>
             <p className="pp-muted" style={{ fontSize: 13, marginBottom: 8 }}>
-              Select every service type customers can book from you.
+              {t('providerPortal.categoriesShownHint')}
             </p>
-            <div className="pp-providerTypePills" role="group" aria-label="Service categories">
+            <div className="pp-providerTypePills" role="group" aria-label={t('providerPortal.serviceCategoriesAriaLabel')}>
               {[
-                { key: 'vet', label: 'Vet', emoji: '🩺' },
-                { key: 'walker', label: 'Pet walkers', emoji: '🦮' },
-                { key: 'bath', label: 'Bath & wash', emoji: '🛁' },
-                { key: 'saloon', label: 'Grooming', emoji: '✂️' },
-                { key: 'hotel', label: 'Pet hotel', emoji: '🏨' },
+                { key: 'vet', label: t('providerPortal.serviceTypeVet'), emoji: '🩺' },
+                { key: 'walker', label: t('providerPortal.businessTypePetWalkers'), emoji: '🦮' },
+                { key: 'bath', label: t('providerPortal.categoryBathWash'), emoji: '🛁' },
+                { key: 'saloon', label: t('providerPortal.categoryGrooming'), emoji: '✂️' },
+                { key: 'hotel', label: t('providerPortal.categoryPetHotel'), emoji: '🏨' },
               ].map(({ key, label, emoji }) => {
                 const on = Boolean(publish.providerTypes?.[key]);
                 return (
@@ -1218,7 +1296,7 @@ function PublicListingPanel({
             </div>
           </fieldset>
           <div className="pp-field">
-            <span className="pp-field__label">Import from your map pin</span>
+            <span className="pp-field__label">{t('providerPortal.importFromMapPin')}</span>
             <ListingPlaceImportField
               profile={profile}
               onImport={(data) => {
@@ -1235,7 +1313,7 @@ function PublicListingPanel({
           </div>
           <div className="pp-modalGrid2">
             <label className="pp-field">
-              <span className="pp-field__label">Display name</span>
+              <span className="pp-field__label">{t('providerPortal.displayNameLabel')}</span>
               <input
                 className="pp-input"
                 value={publish.displayName}
@@ -1246,7 +1324,7 @@ function PublicListingPanel({
               />
             </label>
             <label className="pp-field">
-              <span className="pp-field__label">Phone (optional)</span>
+              <span className="pp-field__label">{t('providerPortal.phoneOptionalLabel')}</span>
               <input
                 className="pp-input"
                 value={publish.phone}
@@ -1254,12 +1332,12 @@ function PublicListingPanel({
                   markDirty();
                   setPublish((p) => ({ ...p, phone: e.target.value }));
                 }}
-                placeholder="+357 …"
+                placeholder={t('providerPortal.phonePlaceholder')}
               />
             </label>
           </div>
           <label className="pp-field">
-            <span className="pp-field__label">Address (optional)</span>
+            <span className="pp-field__label">{t('providerPortal.addressOptionalLabel')}</span>
             <input
               className="pp-input"
               value={publish.address}
@@ -1271,7 +1349,7 @@ function PublicListingPanel({
           </label>
           <div className="pp-modalGrid2">
             <label className="pp-field">
-              <span className="pp-field__label">Working hours</span>
+              <span className="pp-field__label">{t('providerPortal.workingHoursLabel')}</span>
               <input
                 className="pp-input"
                 value={publish.workingHours}
@@ -1279,11 +1357,11 @@ function PublicListingPanel({
                   markDirty();
                   setPublish((p) => ({ ...p, workingHours: e.target.value }));
                 }}
-                placeholder="Mon-Fri 09:00-18:00"
+                placeholder={t('providerPortal.workingHoursPlaceholder')}
               />
             </label>
             <label className="pp-field">
-              <span className="pp-field__label">Break hours</span>
+              <span className="pp-field__label">{t('providerPortal.breakHoursLabel')}</span>
               <input
                 className="pp-input"
                 value={publish.breakHours}
@@ -1291,11 +1369,11 @@ function PublicListingPanel({
                   markDirty();
                   setPublish((p) => ({ ...p, breakHours: e.target.value }));
                 }}
-                placeholder="13:00-14:00"
+                placeholder={t('providerPortal.breakHoursPlaceholder')}
               />
             </label>
             <label className="pp-field">
-              <span className="pp-field__label">Available staff</span>
+              <span className="pp-field__label">{t('providerPortal.availableStaffLabel')}</span>
               <input
                 className="pp-input"
                 type="number"
@@ -1308,7 +1386,7 @@ function PublicListingPanel({
               />
             </label>
             <label className="pp-field">
-              <span className="pp-field__label">Slot interval (min)</span>
+              <span className="pp-field__label">{t('providerPortal.slotIntervalMinutesLabel')}</span>
               <input
                 className="pp-input"
                 type="number"
@@ -1330,11 +1408,11 @@ function PublicListingPanel({
                 setPublish((p) => ({ ...p, bookingLimitEnabled: e.target.checked }));
               }}
             />
-            <span>Cap daily appointments (optional — only if you want fewer bookings per day)</span>
+            <span>{t('providerPortal.capDailyAppointments')}</span>
           </label>
           {publish.bookingLimitEnabled ? (
             <label className="pp-field">
-              <span className="pp-field__label">Booking limit / day</span>
+              <span className="pp-field__label">{t('providerPortal.bookingLimitPerDayLabel')}</span>
               <input
                 className="pp-input"
                 type="number"
@@ -1348,7 +1426,7 @@ function PublicListingPanel({
             </label>
           ) : null}
           <label className="pp-field">
-            <span className="pp-field__label">Holiday closures</span>
+            <span className="pp-field__label">{t('providerPortal.holidayClosuresLabel')}</span>
             <textarea
               className="pp-input"
               rows={2}
@@ -1357,35 +1435,35 @@ function PublicListingPanel({
                 markDirty();
                 setPublish((p) => ({ ...p, holidayClosures: e.target.value }));
               }}
-              placeholder="Public holidays, renovation days, team leave…"
+              placeholder={t('providerPortal.holidayClosuresPlaceholder')}
             />
           </label>
           <button type="submit" className="pp-btn pp-btn--primary" disabled={publishBusy}>
-            {publishBusy ? 'Saving…' : 'Save listing'}
+            {publishBusy ? t('providerPortal.saving') : t('providerPortal.saveListing')}
           </button>
         </form>
       </div>
 
       <div className="pp-providerFormCard" style={{ marginTop: 14 }}>
-        <h3 className="pp-providerFormCard__title">Visibility boosts</h3>
+        <h3 className="pp-providerFormCard__title">{t('providerPortal.visibilityBoostsTitle')}</h3>
         <p className="pp-muted" style={{ marginTop: 0, marginBottom: 12, lineHeight: 1.5 }}>
-          Paid monthly via PetPal Shop. Renewals use your saved card on file.
+          {t('providerPortal.visibilityBoostsDescription')}
         </p>
         <div className="pp-providerBoostToggles">
           <div className="pp-providerBoostToggle">
             <div className="pp-providerBoostToggle__copy">
-              <strong>Boost in Nearby</strong>
-              <small>Appear first on the map strip for pet parents browsing locally.</small>
+              <strong>{t('providerPortal.boostNearbyTitle')}</strong>
+              <small>{t('providerPortal.boostNearbyDescription')}</small>
             </div>
             <div className="pp-providerBoostToggle__actions">
-              <span className="pp-providerBoostToggle__price">€2.99/mo</span>
+              <span className="pp-providerBoostToggle__price">{t('providerPortal.boostNearbyPriceShort')}</span>
               <label className={`pp-providerBoostSwitch${nearbyBoostActive ? ' is-on' : ''}`}>
                 <input type="checkbox" checked={nearbyBoostActive} readOnly tabIndex={-1} />
                 <span aria-hidden />
               </label>
               {!nearbyBoostActive ? (
                 <Link className="pp-providerBoostSubscribe" to="/shop?sku=STORE_BOOST_NEARBY_MONTHLY">
-                  Subscribe
+                  {t('providerPortal.subscribe')}
                 </Link>
               ) : (
                 <button
@@ -1394,25 +1472,25 @@ function PublicListingPanel({
                   disabled={boostCancelBusy === 'nearby'}
                   onClick={() => void onCancelBoost('nearby')}
                 >
-                  {boostCancelBusy === 'nearby' ? 'Cancelling…' : 'Cancel'}
+                  {boostCancelBusy === 'nearby' ? t('providerPortal.cancelling') : t('common.cancel')}
                 </button>
               )}
             </div>
           </div>
           <div className="pp-providerBoostToggle">
             <div className="pp-providerBoostToggle__copy">
-              <strong>Boost in Bookings</strong>
-              <small>Get recommended at the top of the Bookings hub for your area.</small>
+              <strong>{t('providerPortal.boostBookingsTitle')}</strong>
+              <small>{t('providerPortal.boostBookingsDescription')}</small>
             </div>
             <div className="pp-providerBoostToggle__actions">
-              <span className="pp-providerBoostToggle__price">€3.99/mo</span>
+              <span className="pp-providerBoostToggle__price">{t('providerPortal.boostBookingsPriceShort')}</span>
               <label className={`pp-providerBoostSwitch${bookingsBoostActive ? ' is-on' : ''}`}>
                 <input type="checkbox" checked={bookingsBoostActive} readOnly tabIndex={-1} />
                 <span aria-hidden />
               </label>
               {!bookingsBoostActive ? (
                 <Link className="pp-providerBoostSubscribe" to="/shop?sku=STORE_BOOST_BOOKINGS_MONTHLY">
-                  Subscribe
+                  {t('providerPortal.subscribe')}
                 </Link>
               ) : (
                 <button
@@ -1421,7 +1499,7 @@ function PublicListingPanel({
                   disabled={boostCancelBusy === 'bookings'}
                   onClick={() => void onCancelBoost('bookings')}
                 >
-                  {boostCancelBusy === 'bookings' ? 'Cancelling…' : 'Cancel'}
+                  {boostCancelBusy === 'bookings' ? t('providerPortal.cancelling') : t('common.cancel')}
                 </button>
               )}
             </div>
@@ -1429,7 +1507,7 @@ function PublicListingPanel({
         </div>
         {boostCancelMsg ? <p className="pp-muted" style={{ marginTop: 10, marginBottom: 0 }}>{boostCancelMsg}</p> : null}
         <Link className="pp-link" to="/shop" style={{ marginTop: 10, display: 'inline-block' }}>
-          Open PetPal Shop
+          {t('providerPortal.openPetPalShop')}
         </Link>
       </div>
     </section>
@@ -1457,6 +1535,7 @@ function Availability({
   onListingDirty,
   onListingSaved,
 }) {
+  const { t } = useI18n();
   const [services, setServices] = useState([]);
   const [slots, setSlots] = useState([]);
   const [computedSlots, setComputedSlots] = useState([]);
@@ -1465,10 +1544,10 @@ function Availability({
   const [err, setErr] = useState('');
   const [calendarDate, setCalendarDate] = useState(() => startOfDay(new Date()));
 
-  useEffect(() => subscribeCompanyServices(companyId, setServices, (e) => setErr(e?.message || 'failed')), [companyId]);
+  useEffect(() => subscribeCompanyServices(companyId, setServices, (e) => setErr(e?.message || t('common.errorGeneric'))), [companyId, t]);
   useEffect(
-    () => subscribeCompanyAvailability(companyId, setSlots, (e) => setErr(e?.message || 'failed')),
-    [companyId]
+    () => subscribeCompanyAvailability(companyId, setSlots, (e) => setErr(e?.message || t('common.errorGeneric'))),
+    [companyId, t]
   );
 
   useEffect(() => {
@@ -1537,7 +1616,7 @@ function Availability({
         selectedDate={calendarDate}
         onSelectedDateChange={setCalendarDate}
         initialShowAdd={openAddPanel && !useRules}
-        emptyText={useRules ? 'No bookable slots on this date — check your weekly schedule.' : 'No availability yet.'}
+        emptyText={useRules ? t('providerPortal.noBookableSlotsOnDate') : t('providerPortal.noAvailabilityYet')}
         onToggleSlot={useRules ? undefined : (s) => setSlotStatus(companyId, s.id, s.status === 'open' ? 'blocked' : 'open')}
         hideAdd={useRules}
       />
@@ -1563,6 +1642,8 @@ function Availability({
 }
 
 function Bookings({ companyId }) {
+  const { t, language } = useI18n();
+  const locale = language || undefined;
   const { user } = useAuth();
   const [rows, setRows] = useState([]);
   const [legacySlots, setLegacySlots] = useState([]);
@@ -1588,7 +1669,7 @@ function Bookings({ companyId }) {
     notes: '',
   });
 
-  useEffect(() => subscribeProviderBookings(companyId, setRows, (e) => setErr(e?.message || 'failed')), [companyId]);
+  useEffect(() => subscribeProviderBookings(companyId, setRows, (e) => setErr(e?.message || t('common.errorGeneric'))), [companyId, t]);
   useEffect(() => subscribeCompanyAvailability(companyId, setLegacySlots, () => {}), [companyId]);
   useEffect(() => subscribeCompanyServices(companyId, setServices, () => {}), [companyId]);
   useEffect(() => subscribeClientPets(companyId, setClientPets, () => {}), [companyId]);
@@ -1727,7 +1808,7 @@ function Bookings({ companyId }) {
       setSwapBookingId('');
       setSwapSlotId('');
     } catch (e) {
-      setErr(e?.message || 'failed');
+      setErr(e?.message || t('common.errorGeneric'));
     } finally {
       setBusyId('');
     }
@@ -1739,10 +1820,10 @@ function Bookings({ companyId }) {
     setBusyId(bookingId);
     try {
       await updateBookingStatus(bookingId, patch);
-      if (patch.status === 'completed') setOk('Booking marked complete.');
-      else if (patch.status === 'cancelled') setOk('Booking cancelled.');
+      if (patch.status === 'completed') setOk(t('providerPortal.bookingMarkedComplete'));
+      else if (patch.status === 'cancelled') setOk(t('providerPortal.bookingCancelled'));
     } catch (e) {
-      setErr(e?.message || 'Could not update booking.');
+      setErr(e?.message || t('providerPortal.couldNotUpdateBooking'));
     } finally {
       setBusyId('');
     }
@@ -1754,11 +1835,11 @@ function Bookings({ companyId }) {
     setOk('');
     const petName = String(walkIn.petName || '').trim();
     if (!petName) {
-      setErr('Enter the pet name for this appointment.');
+      setErr(t('providerPortal.enterPetNameForAppointment'));
       return;
     }
     if (!walkIn.serviceId || !walkIn.slotId || !walkInDate) {
-      setErr('Pick a date, service, and an open time slot.');
+      setErr(t('providerPortal.pickDateServiceAndOpenSlot'));
       return;
     }
     setBusyId('walkin');
@@ -1778,11 +1859,11 @@ function Bookings({ companyId }) {
           : null,
         notes: walkIn.notes,
       });
-      setOk('Appointment booked for walk-in customer.');
+      setOk(t('providerPortal.appointmentBookedForWalkIn'));
       setWalkIn((p) => ({ ...p, slotId: '', notes: '' }));
       setShowWalkIn(false);
     } catch (e2) {
-      setErr(e2?.message || 'failed');
+      setErr(e2?.message || t('common.errorGeneric'));
     } finally {
       setBusyId('');
     }
@@ -1792,8 +1873,8 @@ function Bookings({ companyId }) {
     <section className="pp-providerPanel">
       <div className="pp-providerPanel__head">
         <div>
-          <h2>Bookings</h2>
-          <p>Manage your schedule and book appointments for customers without the app.</p>
+          <h2>{t('providerPortal.bookingsTitle')}</h2>
+          <p>{t('providerPortal.bookingsDescription')}</p>
         </div>
         <button type="button" className="pp-btn pp-btn--primary" onClick={() => {
           setShowWalkIn((v) => {
@@ -1801,19 +1882,19 @@ function Bookings({ companyId }) {
             return !v;
           });
         }}>
-          {showWalkIn ? 'Close' : '+ Book walk-in'}
+          {showWalkIn ? t('common.cancel') : `+ ${t('providerPortal.bookWalkIn')}`}
         </button>
       </div>
 
       {showWalkIn ? (
         <div className="pp-providerFormCard" style={{ marginBottom: 14 }}>
-          <h3 className="pp-providerFormCard__title">Walk-in booking</h3>
+          <h3 className="pp-providerFormCard__title">{t('providerPortal.walkInBookingTitle')}</h3>
           <p className="pp-muted" style={{ marginTop: 0, marginBottom: 12, lineHeight: 1.5 }}>
-            Pick a date, then choose an open slot for a phone or walk-in customer.
+            {t('providerPortal.walkInBookingDescription')}
           </p>
           <form onSubmit={onWalkInBook} className="pp-form pp-providerForm">
             <div className="pp-field">
-              <span className="pp-field__label">Date</span>
+              <span className="pp-field__label">{t('providerPortal.dateLabel')}</span>
               <BookingHeatCalendar
                 bookings={[]}
                 selectedDate={walkInDate}
@@ -1828,13 +1909,13 @@ function Bookings({ companyId }) {
             </div>
             {clientPets.length ? (
               <label className="pp-field">
-                <span className="pp-field__label">Client on file (optional)</span>
+                <span className="pp-field__label">{t('providerPortal.clientOnFileOptional')}</span>
                 <select
                   className="pp-input"
                   value={walkIn.clientPetId}
                   onChange={(e) => setWalkIn((p) => ({ ...p, clientPetId: e.target.value }))}
                 >
-                  <option value="">New / manual entry</option>
+                  <option value="">{t('providerPortal.newManualEntry')}</option>
                   {clientPets.map((p) => (
                     <option key={p.id} value={p.id}>
                       {p.name}{p.ownerName ? ` — ${p.ownerName}` : ''}
@@ -1845,7 +1926,7 @@ function Bookings({ companyId }) {
             ) : null}
             <div className="pp-modalGrid2">
               <label className="pp-field">
-                <span className="pp-field__label">Pet name</span>
+                <span className="pp-field__label">{t('providerPortal.petNameLabel')}</span>
                 <input
                   className="pp-input"
                   value={walkIn.petName}
@@ -1854,7 +1935,7 @@ function Bookings({ companyId }) {
                 />
               </label>
               <label className="pp-field">
-                <span className="pp-field__label">Owner name</span>
+                <span className="pp-field__label">{t('providerPortal.ownerNameLabel')}</span>
                 <input
                   className="pp-input"
                   value={walkIn.ownerName}
@@ -1862,7 +1943,7 @@ function Bookings({ companyId }) {
                 />
               </label>
               <label className="pp-field">
-                <span className="pp-field__label">Owner phone</span>
+                <span className="pp-field__label">{t('providerPortal.ownerPhoneLabel')}</span>
                 <input
                   className="pp-input"
                   value={walkIn.ownerPhone}
@@ -1870,7 +1951,7 @@ function Bookings({ companyId }) {
                 />
               </label>
               <label className="pp-field">
-                <span className="pp-field__label">Service</span>
+                <span className="pp-field__label">{t('providerPortal.serviceFallback')}</span>
                 <select
                   className="pp-input"
                   value={walkIn.serviceId}
@@ -1883,11 +1964,11 @@ function Bookings({ companyId }) {
               </label>
             </div>
             <div className="pp-field">
-              <span className="pp-field__label">Open slot</span>
+              <span className="pp-field__label">{t('providerPortal.slotFallback')}</span>
               {!walkIn.serviceId ? (
-                <p className="pp-muted" style={{ margin: 0 }}>Select a service first.</p>
+                <p className="pp-muted" style={{ margin: 0 }}>{t('providerPortal.selectServiceFirst')}</p>
               ) : openSlotsForWalkIn.length ? (
-                <div className="pp-walkInSlotGrid" role="listbox" aria-label="Available time slots">
+                <div className="pp-walkInSlotGrid" role="listbox" aria-label={t('providerPortal.availableTimeSlotsAriaLabel')}>
                   {openSlotsForWalkIn.map((s) => {
                     const d = slotDate(s);
                     const isSelected = walkIn.slotId === s.id;
@@ -1907,14 +1988,14 @@ function Bookings({ companyId }) {
                 </div>
               ) : (
                 <p className="pp-muted" style={{ margin: 0 }}>
-                  No open slots on{' '}
-                  {walkInDate.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}.
-                  Add availability first.
+                  {t('providerPortal.noOpenSlotsOnDate', {
+                    date: walkInDate.toLocaleDateString(locale, { weekday: 'long', month: 'short', day: 'numeric' }),
+                  })}
                 </p>
               )}
             </div>
             <label className="pp-field">
-              <span className="pp-field__label">Notes (optional)</span>
+              <span className="pp-field__label">{t('providerPortal.notesOptionalLabel')}</span>
               <textarea
                 className="pp-input"
                 rows={2}
@@ -1923,7 +2004,7 @@ function Bookings({ companyId }) {
               />
             </label>
             <button className="pp-btn pp-btn--primary" type="submit" disabled={busyId === 'walkin' || !activeServices.length || !walkIn.slotId}>
-              {busyId === 'walkin' ? 'Booking…' : 'Confirm booking'}
+              {busyId === 'walkin' ? t('providerPortal.bookingInProgress') : t('providerPortal.confirmBooking')}
             </button>
           </form>
         </div>
@@ -1933,12 +2014,12 @@ function Bookings({ companyId }) {
       {ok ? <div className="pp-success">{ok}</div> : null}
       {displayedRows.length === 0 ? (
         <div className="pp-providerEmptyCard">
-          No bookings yet — book a walk-in or wait for customer requests.
+          {t('providerPortal.noBookingsYet')}
         </div>
       ) : null}
       <div className="pp-bookingDetailList" style={{ marginTop: displayedRows.length ? 10 : 0 }}>
         {displayedRows.map((b) => {
-          const serviceName = b.serviceSnapshot?.name || servicesById.get(b.serviceId) || 'Service';
+          const serviceName = b.serviceSnapshot?.name || servicesById.get(b.serviceId) || t('providerPortal.serviceFallback');
           const isSwapping = swapBookingId === b.id;
           return (
             <div key={b.id} className="pp-bookingDetailList__item">
@@ -1959,14 +2040,14 @@ function Bookings({ companyId }) {
                       setSwapSlotId('');
                     }}
                   >
-                    {isSwapping ? 'Close reschedule' : 'Reschedule'}
+                    {isSwapping ? t('providerPortal.closeReschedule') : t('providerPortal.reschedule')}
                   </button>
                 </div>
               ) : null}
               {isSwapping ? (
                 <div className="pp-providerSwapRow">
                   <select className="pp-input" value={swapSlotId} onChange={(e) => setSwapSlotId(e.target.value)}>
-                    <option value="">Pick new time…</option>
+                    <option value="">{t('providerPortal.pickNewTime')}</option>
                     {openSlotsForBooking.map((s) => {
                       const d = slotDate(s);
                       return (
@@ -1982,7 +2063,7 @@ function Bookings({ companyId }) {
                     disabled={!swapSlotId || busyId === b.id}
                     onClick={() => void onSwap()}
                   >
-                    {busyId === b.id ? 'Saving…' : 'Confirm swap'}
+                    {busyId === b.id ? t('providerPortal.saving') : t('providerPortal.confirmSwap')}
                   </button>
                 </div>
               ) : null}
@@ -1995,14 +2076,15 @@ function Bookings({ companyId }) {
 }
 
 function Customers({ companyId, clinicLabel = '' }) {
+  const { t } = useI18n();
   const [bookings, setBookings] = useState([]);
   const [clientPets, setClientPets] = useState([]);
   const [err, setErr] = useState('');
   const [medClient, setMedClient] = useState(/** @type {Record<string, unknown> | null} */ (null));
   const [form, setForm] = useState({ name: '', ownerName: '', ownerPhone: '', trackingImei: '' });
 
-  useEffect(() => subscribeProviderBookings(companyId, setBookings, (e) => setErr(e?.message || 'failed')), [companyId]);
-  useEffect(() => subscribeClientPets(companyId, setClientPets, (e) => setErr(e?.message || 'failed')), [companyId]);
+  useEffect(() => subscribeProviderBookings(companyId, setBookings, (e) => setErr(e?.message || t('common.errorGeneric'))), [companyId, t]);
+  useEffect(() => subscribeClientPets(companyId, setClientPets, (e) => setErr(e?.message || t('common.errorGeneric'))), [companyId, t]);
 
   const customersFromBookings = useMemo(() => {
     const map = new Map();
@@ -2010,8 +2092,10 @@ function Customers({ companyId, clinicLabel = '' }) {
       const key = String(b.customerUid || b.petSnapshot?.name || b.id);
       const row = map.get(key) || {
         key,
-        petName: b.petSnapshot?.name || 'Pet',
-        ownerLabel: b.customerUid ? `Customer ${String(b.customerUid).slice(0, 8)}…` : 'Walk-in',
+        petName: b.petSnapshot?.name || t('providerPortal.petFallback'),
+        ownerLabel: b.customerUid
+          ? t('providerPortal.customerLabelWithId', { id: String(b.customerUid).slice(0, 8) })
+          : t('providerPortal.walkInCustomer'),
         visits: 0,
         lastVisit: '',
       };
@@ -2021,7 +2105,7 @@ function Customers({ companyId, clinicLabel = '' }) {
       map.set(key, row);
     });
     return [...map.values()].sort((a, b) => String(b.lastVisit).localeCompare(String(a.lastVisit)));
-  }, [bookings]);
+  }, [bookings, t]);
 
   const onCreatePet = async (e) => {
     e.preventDefault();
@@ -2030,7 +2114,7 @@ function Customers({ companyId, clinicLabel = '' }) {
       await createClientPet(companyId, form);
       setForm({ name: '', ownerName: '', ownerPhone: '', trackingImei: '' });
     } catch (e2) {
-      setErr(e2?.message || 'failed');
+      setErr(e2?.message || t('common.errorGeneric'));
     }
   };
 
@@ -2070,45 +2154,45 @@ function Customers({ companyId, clinicLabel = '' }) {
       <section className="pp-providerPanel">
         <div className="pp-providerPanel__head">
           <div>
-            <h2>Customers</h2>
-            <p>Walk-in clients, pets on file, and repeat visitors from bookings.</p>
+            <h2>{t('providerPortal.customersTitle')}</h2>
+            <p>{t('providerPortal.customersDescription')}</p>
           </div>
         </div>
 
         {err ? <div className="pp-error" style={{ marginBottom: 10 }}>{err}</div> : null}
 
         <div className="pp-providerFormCard">
-          <h3 className="pp-providerFormCard__title">Add client pet</h3>
+          <h3 className="pp-providerFormCard__title">{t('providerPortal.addClientPetTitle')}</h3>
           <p className="pp-muted" style={{ marginTop: 0, marginBottom: 12 }}>
-            Save pets for phone or walk-in customers who do not use the app.
+            {t('providerPortal.addClientPetDescription')}
           </p>
           <form onSubmit={onCreatePet} className="pp-form pp-providerForm">
             <label className="pp-field">
-              <span className="pp-field__label">Pet name</span>
-              <input className="pp-input" value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} placeholder="Luna" required />
+              <span className="pp-field__label">{t('providerPortal.petNameLabel')}</span>
+              <input className="pp-input" value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} placeholder={t('providerPortal.petNamePlaceholder')} required />
             </label>
             <div className="pp-modalGrid2">
               <label className="pp-field">
-                <span className="pp-field__label">Owner name</span>
-                <input className="pp-input" value={form.ownerName} onChange={(e) => setForm((p) => ({ ...p, ownerName: e.target.value }))} placeholder="Maria P." />
+                <span className="pp-field__label">{t('providerPortal.ownerNameLabel')}</span>
+                <input className="pp-input" value={form.ownerName} onChange={(e) => setForm((p) => ({ ...p, ownerName: e.target.value }))} placeholder={t('providerPortal.ownerNamePlaceholder')} />
               </label>
               <label className="pp-field">
-                <span className="pp-field__label">Owner phone</span>
-                <input className="pp-input" type="tel" value={form.ownerPhone} onChange={(e) => setForm((p) => ({ ...p, ownerPhone: e.target.value }))} placeholder="+357 99 000000" />
+                <span className="pp-field__label">{t('providerPortal.ownerPhoneLabel')}</span>
+                <input className="pp-input" type="tel" value={form.ownerPhone} onChange={(e) => setForm((p) => ({ ...p, ownerPhone: e.target.value }))} placeholder={t('providerPortal.ownerPhonePlaceholder')} />
               </label>
             </div>
             <label className="pp-field">
-              <span className="pp-field__label">Tracker IMEI (optional)</span>
-              <input className="pp-input" value={form.trackingImei} onChange={(e) => setForm((p) => ({ ...p, trackingImei: e.target.value }))} placeholder="Link a GPS collar" />
+              <span className="pp-field__label">{t('providerPortal.trackerImeiOptional')}</span>
+              <input className="pp-input" value={form.trackingImei} onChange={(e) => setForm((p) => ({ ...p, trackingImei: e.target.value }))} placeholder={t('providerPortal.trackerImeiPlaceholder')} />
             </label>
-            <button className="pp-btn pp-btn--primary" type="submit">Add client pet</button>
+            <button className="pp-btn pp-btn--primary" type="submit">{t('providerPortal.addPet')}</button>
           </form>
         </div>
 
         <div className="pp-providerClientGrid" style={{ marginTop: 14 }}>
-          <h3 className="pp-providerFormCard__title" style={{ gridColumn: '1 / -1', margin: 0 }}>Customers from bookings</h3>
+          <h3 className="pp-providerFormCard__title" style={{ gridColumn: '1 / -1', margin: 0 }}>{t('providerPortal.customersFromBookingsTitle')}</h3>
           {customersFromBookings.length === 0 ? (
-            <div className="pp-providerEmptyCard" style={{ gridColumn: '1 / -1' }}>No customers from bookings yet.</div>
+            <div className="pp-providerEmptyCard" style={{ gridColumn: '1 / -1' }}>{t('providerPortal.noCustomersFromBookings')}</div>
           ) : (
             customersFromBookings.map((c) => (
               <article key={c.key} className="pp-providerClientCard">
@@ -2116,7 +2200,7 @@ function Customers({ companyId, clinicLabel = '' }) {
                 <div>
                   <h3>{c.petName}</h3>
                   <p>{c.ownerLabel}</p>
-                  <small>{c.visits} visit{c.visits === 1 ? '' : 's'}{c.lastVisit ? ` · ${formatDateTime24(new Date(c.lastVisit))}` : ''}</small>
+                  <small>{visitCountLabel(t, c.visits)}{c.lastVisit ? ` · ${formatDateTime24(new Date(c.lastVisit))}` : ''}</small>
                 </div>
               </article>
             ))
@@ -2124,26 +2208,26 @@ function Customers({ companyId, clinicLabel = '' }) {
         </div>
 
         <div className="pp-providerClientGrid" style={{ marginTop: 14 }}>
-          <h3 className="pp-providerFormCard__title" style={{ gridColumn: '1 / -1', margin: 0 }}>Client pets on file</h3>
+          <h3 className="pp-providerFormCard__title" style={{ gridColumn: '1 / -1', margin: 0 }}>{t('providerPortal.clientPetsOnFileTitle')}</h3>
           {clientPets.length === 0 ? (
-            <div className="pp-providerEmptyCard" style={{ gridColumn: '1 / -1' }}>No pets added yet.</div>
+            <div className="pp-providerEmptyCard" style={{ gridColumn: '1 / -1' }}>{t('providerPortal.noPetsAddedYet')}</div>
           ) : (
             clientPets.map((p) => (
               <article key={p.id} className="pp-providerClientCard">
                 <div className="pp-providerAvatar" aria-hidden>{p.name.charAt(0)}</div>
                 <div>
                   <h3>{p.name}</h3>
-                  <p>{p.ownerName || 'Walk-in customer'}</p>
-                  <small>{p.ownerPhone || 'No phone'}{p.trackingImei ? ' · Tracker linked' : ''}</small>
+                  <p>{p.ownerName || t('providerPortal.walkInCustomer')}</p>
+                  <small>{p.ownerPhone || t('providerPortal.noPhone')}{p.trackingImei ? ` · ${t('providerPortal.trackerLinked')}` : ''}</small>
                 </div>
                 <div className="pp-providerClientCard__actions">
                   {p.ownerPhone ? (
-                    <a href={`tel:${p.ownerPhone}`} className="pp-btn pp-btn--ghost">Call</a>
+                    <a href={`tel:${p.ownerPhone}`} className="pp-btn pp-btn--ghost">{t('providerPortal.call')}</a>
                   ) : null}
-                  <button type="button" className="pp-btn pp-iconBtn pp-iconBtn--outline" aria-label="Medication" onClick={() => setMedClient(p)}>
+                  <button type="button" className="pp-btn pp-iconBtn pp-iconBtn--outline" aria-label={t('providerPortal.medication')} onClick={() => setMedClient(p)}>
                     <IconMedPill size={16} />
                   </button>
-                  <button type="button" className="pp-btn pp-btn--ghost" onClick={() => deleteClientPet(companyId, p.id)}>Remove</button>
+                  <button type="button" className="pp-btn pp-btn--ghost" onClick={() => deleteClientPet(companyId, p.id)}>{t('providerPortal.remove')}</button>
                 </div>
               </article>
             ))
