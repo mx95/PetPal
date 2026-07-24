@@ -6,11 +6,13 @@ import { bookSlot, fetchCompanyService, fetchOpenSlots } from '../bookings/booki
 import { getProviderBookingStatus } from '../bookings/providerDirectoryFirestore';
 import {
   buildVariantSnapshot,
-  isCoatVariantService,
+  formatVariantLabel,
   resolveBookingDuration,
   resolveBookingPrice,
   resolveServiceVariants,
   resolveVariantById,
+  serviceAsksFurLength,
+  serviceAsksPetSize,
 } from '../bookings/bookingServiceVariants';
 import CalendarAddButtons from '../bookings/CalendarAddButtons';
 import {
@@ -271,7 +273,9 @@ export default function BookService({ embedded = false }) {
   const petOptions = pets;
 
   const coatVariants = useMemo(() => resolveServiceVariants(service), [service]);
-  const showCoatStep = coatVariants.length > 0 && isCoatVariantService(service);
+  const showCoatStep = coatVariants.length > 0;
+  const asksPetSize = serviceAsksPetSize(service);
+  const asksFurLength = serviceAsksFurLength(service);
   const addonOptions = useMemo(() => getCatalogAddons(companyId), [companyId]);
   const showServicesStep = addonOptions.length > 0;
   const selectedAddons = useMemo(
@@ -298,11 +302,15 @@ export default function BookService({ embedded = false }) {
       stepKeys.map((key) => {
         if (key === 'pet') return t('bookConfirm.stepPet');
         if (key === 'services') return t('bookConfirm.stepServices');
-        if (key === 'coat') return t('bookConfirm.stepCoat');
+        if (key === 'coat') {
+          if (asksPetSize && asksFurLength) return t('bookConfirm.stepSizeFur');
+          if (asksPetSize) return t('bookConfirm.stepSize');
+          return t('bookConfirm.stepCoat');
+        }
         if (key === 'schedule') return t('bookConfirm.stepSchedule');
         return t('bookConfirm.stepReview');
       }),
-    [stepKeys, t]
+    [stepKeys, t, asksPetSize, asksFurLength]
   );
 
   const stepKey = stepKeys[stepIndex] ?? stepKeys[0] ?? 'pet';
@@ -927,8 +935,20 @@ export default function BookService({ embedded = false }) {
 
             {stepKey === 'coat' ? (
               <>
-                <h2 className="pp-bookWizardPanel__title">{t('bookConfirm.coatStepTitle')}</h2>
-                <p className="pp-bookWizardPanel__lead">{t('bookConfirm.coatStepLead')}</p>
+                <h2 className="pp-bookWizardPanel__title">
+                  {asksPetSize && asksFurLength
+                    ? t('bookConfirm.sizeFurStepTitle')
+                    : asksPetSize
+                      ? t('bookConfirm.sizeStepTitle')
+                      : t('bookConfirm.coatStepTitle')}
+                </h2>
+                <p className="pp-bookWizardPanel__lead">
+                  {asksPetSize && asksFurLength
+                    ? t('bookConfirm.sizeFurStepLead')
+                    : asksPetSize
+                      ? t('bookConfirm.sizeStepLead')
+                      : t('bookConfirm.coatStepLead')}
+                </p>
                 <ul className="pp-bookVariantPick">
                   {coatVariants.map((v) => (
                     <li key={v.id}>
@@ -937,8 +957,8 @@ export default function BookService({ embedded = false }) {
                         className={`pp-bookVariantPick__card${variantId === v.id ? ' is-active' : ''}`}
                         onClick={() => setVariantId(v.id)}
                       >
-                        <span className="pp-bookVariantPick__name">{t(v.labelKey)}</span>
-                        {v.descriptionKey ? (
+                        <span className="pp-bookVariantPick__name">{formatVariantLabel(v, t)}</span>
+                        {v.descriptionKey && !(v.sizeId && v.furId) ? (
                           <span className="pp-bookVariantPick__desc">{t(v.descriptionKey)}</span>
                         ) : null}
                         <span className="pp-bookVariantPick__meta">
@@ -962,7 +982,7 @@ export default function BookService({ embedded = false }) {
                 </p>
                 {selectedVariant || selectedAddons.length ? (
                   <p className="pp-bookWizardPanel__hint">
-                    {selectedVariant ? `${t(selectedVariant.labelKey)} coat` : null}
+                    {selectedVariant ? formatVariantLabel(selectedVariant, t) : null}
                     {selectedVariant && selectedAddons.length ? ' · ' : null}
                     {selectedAddons.length
                       ? selectedAddons.map((a) => t(a.nameKey)).join(', ')
@@ -1025,7 +1045,7 @@ export default function BookService({ embedded = false }) {
                   {selectedVariant ? (
                     <div className="pp-bookReviewRows__row">
                       <dt>{t('bookConfirm.variantLabel')}</dt>
-                      <dd>{t(selectedVariant.labelKey)}</dd>
+                      <dd>{formatVariantLabel(selectedVariant, t)}</dd>
                     </div>
                   ) : null}
                   <div className="pp-bookReviewRows__row">

@@ -17321,6 +17321,81 @@ html[data-theme="dark"] .pp-bookingDetailCard {
   cursor: pointer;
 }
 
+.pp-providerServiceOptions {
+  display: grid;
+  gap: 8px;
+  margin: 4px 0 10px;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(91, 55, 255, 0.14);
+  background: rgba(91, 55, 255, 0.04);
+}
+
+.pp-providerServiceOptions__lead {
+  margin: 0 0 4px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--pp-text-2, #475467);
+}
+
+.pp-providerDurationMatrix {
+  margin-top: 6px;
+}
+
+.pp-providerDurationMatrix__tableWrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.pp-providerDurationMatrix__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.pp-providerDurationMatrix__table th,
+.pp-providerDurationMatrix__table td {
+  padding: 6px;
+  text-align: center;
+  border-bottom: 1px solid rgba(16, 24, 40, 0.06);
+}
+
+.pp-providerDurationMatrix__table th[scope='row'] {
+  text-align: left;
+  font-weight: 800;
+  text-transform: capitalize;
+}
+
+.pp-providerDurationMatrix__table thead th {
+  font-weight: 800;
+  text-transform: capitalize;
+  color: var(--pp-text-2, #475467);
+}
+
+.pp-providerDurationMatrix__input {
+  width: 4.5rem;
+  min-width: 0;
+  padding: 8px 6px;
+  text-align: center;
+}
+
+.pp-providerDurationMatrix__list {
+  display: grid;
+  gap: 8px;
+}
+
+.pp-providerDurationMatrix__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 6.5rem;
+  align-items: center;
+  gap: 10px;
+}
+
+.pp-providerDurationMatrix__row .pp-field__label {
+  text-transform: capitalize;
+  margin: 0;
+}
+
 .pp-providerTypePills {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

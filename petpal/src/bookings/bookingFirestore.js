@@ -97,6 +97,16 @@ export async function upsertCompanyService(companyId, serviceId, data) {
     }
     if (data?.description !== undefined) payload.description = data.description ? String(data.description).slice(0, 800) : '';
     if (data?.active !== undefined) payload.active = data.active !== false;
+    if (data?.askPetSize !== undefined) payload.askPetSize = data.askPetSize === true;
+    if (data?.askFurLength !== undefined) payload.askFurLength = data.askFurLength === true;
+    if (data?.durationMatrix !== undefined && data.durationMatrix && typeof data.durationMatrix === 'object') {
+      const matrix = {};
+      Object.entries(data.durationMatrix).forEach(([key, val]) => {
+        const n = Number(val);
+        if (key && Number.isFinite(n) && n >= 5) matrix[String(key).slice(0, 40)] = Math.round(n);
+      });
+      payload.durationMatrix = matrix;
+    }
     if (Array.isArray(data?.variants)) {
       payload.variants = data.variants
         .filter((v) => v && v.id)
@@ -106,6 +116,8 @@ export async function upsertCompanyService(companyId, serviceId, data) {
           durationMin: Number(v.durationMin) || payload.durationMin || 30,
           price: v.price ? String(v.price).slice(0, 40) : '',
           descriptionKey: v.descriptionKey ? String(v.descriptionKey).slice(0, 80) : '',
+          ...(v.sizeId ? { sizeId: String(v.sizeId).slice(0, 20) } : {}),
+          ...(v.furId ? { furId: String(v.furId).slice(0, 20) } : {}),
         }));
     }
     await updateDoc(ref, payload);
@@ -121,9 +133,19 @@ export async function upsertCompanyService(companyId, serviceId, data) {
     preparationNotes: data?.preparationNotes ? String(data.preparationNotes).trim().slice(0, 800) : '',
     description: data?.description ? String(data.description).slice(0, 800) : '',
     active: data?.active !== false,
+    askPetSize: data?.askPetSize === true,
+    askFurLength: data?.askFurLength === true,
     updatedAt: serverTimestamp(),
     createdAt: serverTimestamp(),
   };
+  if (data?.durationMatrix && typeof data.durationMatrix === 'object') {
+    const matrix = {};
+    Object.entries(data.durationMatrix).forEach(([key, val]) => {
+      const n = Number(val);
+      if (key && Number.isFinite(n) && n >= 5) matrix[String(key).slice(0, 40)] = Math.round(n);
+    });
+    payload.durationMatrix = matrix;
+  }
   if (Array.isArray(data?.variants)) {
     payload.variants = data.variants
       .filter((v) => v && v.id)
@@ -133,6 +155,8 @@ export async function upsertCompanyService(companyId, serviceId, data) {
         durationMin: Number(v.durationMin) || payload.durationMin,
         price: v.price ? String(v.price).slice(0, 40) : '',
         descriptionKey: v.descriptionKey ? String(v.descriptionKey).slice(0, 80) : '',
+        ...(v.sizeId ? { sizeId: String(v.sizeId).slice(0, 20) } : {}),
+        ...(v.furId ? { furId: String(v.furId).slice(0, 20) } : {}),
       }));
   }
   if (!payload.name) throw new Error('service_name_required');

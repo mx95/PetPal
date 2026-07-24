@@ -32,6 +32,13 @@ import { addDays, daysFromMonday, WEEKDAY_LABELS_MON_START } from '../bookings/b
 import ListingPlaceImportField from '../company/ListingPlaceImportField';
 import { cancelBusinessBoost } from '../shop/cancelBusinessBoost';
 import { formatDateTime24, formatTime24 } from '../formatTime24';
+import {
+  buildDefaultDurationMatrix,
+  buildSizeFurVariants,
+  durationMatrixKey,
+  FUR_LENGTH_OPTIONS,
+  PET_SIZE_OPTIONS,
+} from '../bookings/bookingServiceVariants';
 
 function businessTypeLabel(providerTypes = {}) {
   if (providerTypes.vet) return 'Vet';
@@ -793,75 +800,72 @@ export default function ProviderPortal() {
   );
 }
 
-function buildCoatVariants(durationMin, basePrice) {
-  const priceNum = parseFloat(String(basePrice || '').replace(/[^\d.]/g, '')) || 30;
-  const prefix = String(basePrice || '').includes('€') ? '€' : '';
-  const fmt = (n) => `${prefix}${n}`;
-  const dur = Math.max(5, Number(durationMin) || 30);
-  return [
-    {
-      id: 'short',
-      labelKey: 'bookConfirm.coatShort',
-      durationMin: Math.max(5, dur - 10),
-      price: fmt(Math.round(priceNum * 0.85)),
-      descriptionKey: 'bookConfirm.coatShortDesc',
-    },
-    {
-      id: 'medium',
-      labelKey: 'bookConfirm.coatMedium',
-      durationMin: dur,
-      price: String(basePrice || fmt(priceNum)),
-      descriptionKey: 'bookConfirm.coatMediumDesc',
-    },
-    {
-      id: 'long',
-      labelKey: 'bookConfirm.coatLong',
-      durationMin: dur + 20,
-      price: fmt(Math.round(priceNum * 1.2)),
-      descriptionKey: 'bookConfirm.coatLongDesc',
-    },
-  ];
-}
+const EMPTY_SERVICE_FORM = {
+  type: 'vet',
+  name: '',
+  durationMin: 30,
+  price: '',
+  description: '',
+  addOns: '',
+  preparationNotes: '',
+  active: true,
+  askPetSize: false,
+  askFurLength: false,
+  durationMatrix: {},
+};
 
 function Services({ companyId }) {
   const [services, setServices] = useState([]);
   const [err, setErr] = useState('');
   const [toggleBusyId, setToggleBusyId] = useState('');
-  const [form, setForm] = useState({
-    type: 'vet',
-    name: '',
-    durationMin: 30,
-    price: '',
-    description: '',
-    addOns: '',
-    preparationNotes: '',
-    active: true,
-    coatVariants: false,
-  });
+  const [form, setForm] = useState(() => ({ ...EMPTY_SERVICE_FORM }));
 
   useEffect(() => subscribeCompanyServices(companyId, setServices, (e) => setErr(e?.message || 'failed')), [companyId]);
+
+  const showSizeFurOptions = form.type === 'saloon' || form.type === 'bath';
+  const askPetSize = showSizeFurOptions && form.askPetSize;
+  const askFurLength = showSizeFurOptions && form.askFurLength;
+
+  useEffect(() => {
+    if (!showSizeFurOptions || (!form.askPetSize && !form.askFurLength)) return;
+    setForm((p) => {
+      const next = buildDefaultDurationMatrix(p.durationMin, p.askPetSize, p.askFurLength);
+      const merged = { ...next };
+      Object.keys(next).forEach((key) => {
+        const existing = Number(p.durationMatrix?.[key]);
+        if (Number.isFinite(existing) && existing >= 5) merged[key] = existing;
+      });
+      const same =
+        Object.keys(merged).length === Object.keys(p.durationMatrix || {}).length &&
+        Object.keys(merged).every((k) => Number(p.durationMatrix?.[k]) === Number(merged[k]));
+      if (same) return p;
+      return { ...p, durationMatrix: merged };
+    });
+  }, [showSizeFurOptions, form.askPetSize, form.askFurLength, form.durationMin]);
 
   const onCreate = async (e) => {
     e.preventDefault();
     setErr('');
     try {
       const payload = { ...form };
-      if (payload.coatVariants && (payload.type === 'saloon' || payload.type === 'bath')) {
-        payload.variants = buildCoatVariants(payload.durationMin, payload.price);
+      const isBathGroom = payload.type === 'saloon' || payload.type === 'bath';
+      payload.askPetSize = isBathGroom && Boolean(payload.askPetSize);
+      payload.askFurLength = isBathGroom && Boolean(payload.askFurLength);
+      if (payload.askPetSize || payload.askFurLength) {
+        payload.variants = buildSizeFurVariants({
+          baseDuration: payload.durationMin,
+          basePrice: payload.price,
+          askPetSize: payload.askPetSize,
+          askFurLength: payload.askFurLength,
+          durationMatrix: payload.durationMatrix,
+        });
+        payload.durationMatrix = { ...(payload.durationMatrix || {}) };
+      } else {
+        payload.variants = [];
+        payload.durationMatrix = {};
       }
-      delete payload.coatVariants;
       await upsertCompanyService(companyId, null, payload);
-      setForm({
-        type: 'vet',
-        name: '',
-        durationMin: 30,
-        price: '',
-        description: '',
-        addOns: '',
-        preparationNotes: '',
-        active: true,
-        coatVariants: false,
-      });
+      setForm({ ...EMPTY_SERVICE_FORM });
     } catch (e2) {
       setErr(e2?.message || 'failed');
     }
@@ -928,15 +932,112 @@ function Services({ companyId }) {
             <span className="pp-field__label">Preparation notes</span>
             <textarea className="pp-input" rows={2} value={form.preparationNotes} onChange={(e) => setForm((p) => ({ ...p, preparationNotes: e.target.value }))} placeholder="Bring vaccination booklet, arrive 10 minutes early..." />
           </label>
-          {form.type === 'saloon' || form.type === 'bath' ? (
-            <label className="pp-field pp-field--checkbox">
-              <input
-                type="checkbox"
-                checked={form.coatVariants}
-                onChange={(e) => setForm((p) => ({ ...p, coatVariants: e.target.checked }))}
-              />
-              <span>Coat length options (short / medium / long)</span>
-            </label>
+          {showSizeFurOptions ? (
+            <div className="pp-providerServiceOptions">
+              <p className="pp-providerServiceOptions__lead">
+                Optional booking questions — only shown to customers when enabled.
+              </p>
+              <label className="pp-field pp-field--checkbox">
+                <input
+                  type="checkbox"
+                  checked={form.askPetSize}
+                  onChange={(e) => setForm((p) => ({ ...p, askPetSize: e.target.checked }))}
+                />
+                <span>Ask pet size (small / medium / large)</span>
+              </label>
+              <label className="pp-field pp-field--checkbox">
+                <input
+                  type="checkbox"
+                  checked={form.askFurLength}
+                  onChange={(e) => setForm((p) => ({ ...p, askFurLength: e.target.checked }))}
+                />
+                <span>Ask fur length (short / medium / long)</span>
+              </label>
+              {askPetSize || askFurLength ? (
+                <div className="pp-providerDurationMatrix">
+                  <span className="pp-field__label">Duration by selection (min)</span>
+                  <p className="pp-muted" style={{ fontSize: 12, margin: '0 0 8px' }}>
+                    Base duration seeds these values — adjust each combination as needed.
+                  </p>
+                  {askPetSize && askFurLength ? (
+                    <div className="pp-providerDurationMatrix__tableWrap">
+                      <table className="pp-providerDurationMatrix__table">
+                        <thead>
+                          <tr>
+                            <th scope="col">Size \\ Fur</th>
+                            {FUR_LENGTH_OPTIONS.map((fur) => (
+                              <th key={fur.id} scope="col">
+                                {fur.id}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {PET_SIZE_OPTIONS.map((size) => (
+                            <tr key={size.id}>
+                              <th scope="row">{size.id}</th>
+                              {FUR_LENGTH_OPTIONS.map((fur) => {
+                                const key = durationMatrixKey(size.id, fur.id);
+                                return (
+                                  <td key={key}>
+                                    <input
+                                      className="pp-input pp-providerDurationMatrix__input"
+                                      type="number"
+                                      min={5}
+                                      step={5}
+                                      aria-label={`${size.id} ${fur.id} minutes`}
+                                      value={form.durationMatrix?.[key] ?? ''}
+                                      onChange={(e) => {
+                                        const n = Number(e.target.value);
+                                        setForm((p) => ({
+                                          ...p,
+                                          durationMatrix: {
+                                            ...p.durationMatrix,
+                                            [key]: Number.isFinite(n) ? n : p.durationMatrix?.[key],
+                                          },
+                                        }));
+                                      }}
+                                    />
+                                  </td>
+                                );
+                              })}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <div className="pp-providerDurationMatrix__list">
+                      {(askPetSize ? PET_SIZE_OPTIONS : FUR_LENGTH_OPTIONS).map((opt) => {
+                        const key = durationMatrixKey(askPetSize ? opt.id : '', askFurLength ? opt.id : '');
+                        return (
+                          <label key={key} className="pp-field pp-providerDurationMatrix__row">
+                            <span className="pp-field__label">{opt.id}</span>
+                            <input
+                              className="pp-input"
+                              type="number"
+                              min={5}
+                              step={5}
+                              value={form.durationMatrix?.[key] ?? ''}
+                              onChange={(e) => {
+                                const n = Number(e.target.value);
+                                setForm((p) => ({
+                                  ...p,
+                                  durationMatrix: {
+                                    ...p.durationMatrix,
+                                    [key]: Number.isFinite(n) ? n : p.durationMatrix?.[key],
+                                  },
+                                }));
+                              }}
+                            />
+                          </label>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              ) : null}
+            </div>
           ) : null}
           <label className="pp-field pp-field--checkbox">
             <input
@@ -967,6 +1068,11 @@ function Services({ companyId }) {
                 <span>{s.durationMin} min</span>
                 <span>{s.price || 'No price'}</span>
                 <span>{s.type}</span>
+                {s.askPetSize ? <span>Pet size</span> : null}
+                {s.askFurLength ? <span>Fur length</span> : null}
+                {!s.askPetSize && !s.askFurLength && Array.isArray(s.variants) && s.variants.length ? (
+                  <span>{s.variants.length} options</span>
+                ) : null}
               </div>
             </div>
             <div className="pp-providerServiceCard__actions">
