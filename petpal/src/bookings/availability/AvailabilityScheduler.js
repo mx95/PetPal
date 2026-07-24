@@ -414,7 +414,7 @@ export default function AvailabilityScheduler({ companyId, services = [], settin
           </div>
 
           <button type="button" className="pp-btn pp-btn--primary" disabled={busy} onClick={() => void saveWeeklyRule()}>
-            {busy ? t('availability.saving') : t('common.save')}
+            {busy ? t('availability.saving') : t('availability.saveWeeklySchedule')}
           </button>
         </section>
       ) : null}
