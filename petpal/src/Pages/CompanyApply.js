@@ -5,23 +5,46 @@ import { useCompany } from '../company/CompanyContext';
 import { saveCompanyApplication } from '../company/companyFirestore';
 import LocationPicker, { defaultMapCenter } from '../company/LocationPicker';
 import CompanyPlaceSearchField from '../company/CompanyPlaceSearchField';
+import { useI18n } from '../i18n/I18nContext';
 
 function mapsLink(lat, lng) {
   return `https://www.google.com/maps?q=${encodeURIComponent(`${lat},${lng}`)}`;
 }
 
 const BUSINESS_TYPES = [
-  { id: 'vet_clinic', label: 'Vet clinic' },
-  { id: 'pet_shop', label: 'Pet shop' },
-  { id: 'pet_hotel', label: 'Pet hotel' },
-  { id: 'pet_walker', label: 'Pet walkers' },
-  { id: 'other', label: 'Other' },
+  { id: 'vet_clinic', labelKey: 'businessTypeVetClinic' },
+  { id: 'pet_shop', labelKey: 'businessTypePetShop' },
+  { id: 'pet_hotel', labelKey: 'businessTypePetHotel' },
+  { id: 'pet_walker', labelKey: 'businessTypePetWalkers' },
+  { id: 'other', labelKey: 'businessTypeOther' },
 ];
+
+const BUSINESS_TYPE_KEY_BY_ID = BUSINESS_TYPES.reduce((map, type) => {
+  map[type.id] = type.labelKey;
+  return map;
+}, {});
+
+const STATUS_LABEL_KEYS = {
+  approved: 'statusApproved',
+  pending: 'statusPending',
+  rejected: 'statusRejected',
+};
+
+function getBusinessTypeLabel(t, businessType) {
+  const key = BUSINESS_TYPE_KEY_BY_ID[businessType] || 'businessTypeOther';
+  return t(`companyApply.${key}`);
+}
+
+function getStatusLabel(t, status) {
+  const key = STATUS_LABEL_KEYS[status];
+  return key ? t(`companyApply.${key}`) : status || '';
+}
 
 export default function CompanyApply() {
   const { user } = useAuth();
   const { state: locationState } = useLocation();
   const { profiles, profileLoading, firebaseReady } = useCompany();
+  const { t } = useI18n();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [businessName, setBusinessName] = useState(
@@ -96,11 +119,11 @@ export default function CompanyApply() {
     e.preventDefault();
     setError('');
     if (!user?.uid) {
-      setError('You must be signed in.');
+      setError(t('companyApply.signInRequired'));
       return;
     }
     if (!businessName.trim()) {
-      setError('Enter a business or venue name.');
+      setError(t('companyApply.businessNameRequired'));
       return;
     }
     setSubmitting(true);
@@ -130,11 +153,11 @@ export default function CompanyApply() {
     } catch (err) {
       const c = err?.code || err?.message || '';
       if (c.includes('permission') || c.includes('PERMISSION')) {
-        setError('Permission denied. Check Firestore security rules and that you are signed in.');
+        setError(t('companyApply.permissionDeniedDetailed'));
       } else if (c === 'firebase_unconfigured' || err?.message === 'firebase_unconfigured') {
-        setError('Firebase is not configured. Add REACT_APP_* keys in .env.local and deploy Firestore rules.');
+        setError(t('companyApply.firebaseEnvSetupErrorDetailed'));
       } else {
-        setError(err?.message || 'Could not save application.');
+        setError(err?.message || t('companyApply.couldNotSaveApplication'));
       }
     } finally {
       setSubmitting(false);
@@ -145,7 +168,7 @@ export default function CompanyApply() {
     return (
       <div className="pp-grid">
         <div className="pp-col-12">
-          <p className="pp-subtle">Loading businesses…</p>
+          <p className="pp-subtle">{t('companyApply.loadingBusinesses')}</p>
         </div>
       </div>
     );
@@ -155,7 +178,7 @@ export default function CompanyApply() {
     return (
       <div className="pp-grid">
         <div className="pp-col-12" style={{ maxWidth: 640 }}>
-          <div className="pp-error">Firebase is not configured. Add your web app keys to the environment, then try again.</div>
+          <div className="pp-error">{t('companyApply.firebaseNotConfiguredDetailed')}</div>
         </div>
       </div>
     );
@@ -165,25 +188,24 @@ export default function CompanyApply() {
     <div className="pp-grid">
       <div className="pp-col-12" style={{ maxWidth: 960 }}>
         <h1 className="pp-h1" style={{ marginTop: 10 }}>
-          Grow your business on PetPal
+          {t('companyApply.heroTitle')}
         </h1>
         <p className="pp-subtle" style={{ marginTop: 6, maxWidth: 760 }}>
-          Add your business to PetPal to increase visibility, reach more pet parents, and become part of the pet
-          community.
+          {t('companyApply.heroDescription')}
         </p>
 
         <div className="pp-row" style={{ marginTop: 12 }}>
           <button type="button" className="pp-btn pp-btnPrimary" onClick={() => setModalOpen(true)} style={{ marginLeft: 'auto' }}>
-            + Add Business
+            + {t('companyApply.addBusiness')}
           </button>
         </div>
       </div>
 
       <div className="pp-col-12" style={{ maxWidth: 960 }}>
         <div className="pp-card pp-pad">
-          <h2 className="pp-sectionTitle">Your businesses ({sortedProfiles.length})</h2>
+          <h2 className="pp-sectionTitle">{t('companyApply.yourBusinessesTitle', { count: sortedProfiles.length })}</h2>
           {sortedProfiles.length === 0 ? (
-            <p className="pp-subtle">No businesses yet. Click “Add Business” to submit your first listing.</p>
+            <p className="pp-subtle">{t('companyApply.noBusinessesYetDescription')}</p>
           ) : (
             <ul className="pp-petList">
               {sortedProfiles.map((c) => (
@@ -192,7 +214,7 @@ export default function CompanyApply() {
                     <div style={{ minWidth: 0 }}>
                       <div className="pp-petList__name">🏪 {c.businessName}</div>
                       <div className="pp-petList__tags" style={{ marginTop: 8 }}>
-                        <span className="pp-petTag">{c.businessType || 'other'}</span>
+                        <span className="pp-petTag">{getBusinessTypeLabel(t, c.businessType)}</span>
                         <span
                           className="pp-petTag"
                           style={{
@@ -216,30 +238,30 @@ export default function CompanyApply() {
                                   : '#991b1b',
                           }}
                         >
-                          {c.status}
+                          {getStatusLabel(t, c.status)}
                         </span>
                       </div>
                       {c.addressLine ? <div className="pp-petList__meta" style={{ marginTop: 8 }}>{c.addressLine}</div> : null}
                       {c.publicEmail ? (
                         <div className="pp-petList__meta" style={{ marginTop: 4 }}>
-                          <strong>Email:</strong> {c.publicEmail}
+                          <strong>{t('companyApply.emailLabel')}:</strong> {c.publicEmail}
                         </div>
                       ) : null}
                       {c.phoneNumber ? (
                         <div className="pp-petList__meta" style={{ marginTop: 4 }}>
-                          <strong>Phone:</strong> {c.phoneNumber}
+                          <strong>{t('companyApply.phoneLabel')}:</strong> {c.phoneNumber}
                         </div>
                       ) : null}
                       {c.workingHours ? <p className="pp-petList__desc">{c.workingHours}</p> : null}
                       {c.status === 'rejected' && c.rejectionNote ? (
                         <p className="pp-error" style={{ marginTop: 8, marginBottom: 0 }}>
-                          Previous request was not approved: {c.rejectionNote}
+                          {t('companyApply.rejectionMessage', { note: c.rejectionNote })}
                         </p>
                       ) : null}
                       {c.lat != null && c.lng != null ? (
                         <p style={{ marginTop: 8, marginBottom: 0 }}>
                           <a className="pp-link" href={mapsLink(c.lat, c.lng)} target="_blank" rel="noopener noreferrer">
-                            Preview in Google Maps
+                            {t('companyApply.previewInGoogleMaps')}
                           </a>
                         </p>
                       ) : null}
@@ -254,49 +276,55 @@ export default function CompanyApply() {
 
       {modalOpen ? (
         <div className="pp-modalWrap" role="dialog" aria-modal="true" aria-labelledby="add-business-title">
-          <button type="button" className="pp-modalBackdrop" aria-label="Close" onClick={() => setModalOpen(false)} />
+          <button type="button" className="pp-modalBackdrop" aria-label={t('companyApply.close')} onClick={() => setModalOpen(false)} />
           <div className="pp-modalCard pp-modalCard--petAdd" style={{ maxWidth: 1120, width: 'min(1120px, calc(100vw - 24px))' }}>
             <div className="pp-modalHead">
               <div>
                 <h2 id="add-business-title" className="pp-sectionTitle" style={{ margin: 0 }}>
-                  Add business
+                  {t('companyApply.addBusinessTitle')}
                 </h2>
               </div>
-              <button type="button" className="pp-btn" onClick={() => setModalOpen(false)} aria-label="Close" title="Close">
+              <button
+                type="button"
+                className="pp-btn"
+                onClick={() => setModalOpen(false)}
+                aria-label={t('companyApply.close')}
+                title={t('companyApply.close')}
+              >
                 ✕
               </button>
             </div>
 
             <form className="pp-form pp-modalForm" onSubmit={onSubmit}>
               <div className="pp-companyMapSection">
-                <div className="pp-label">Find your business on the map</div>
+                <div className="pp-label">{t('companyApply.findBusinessOnMap')}</div>
                 <p className="pp-subtle" style={{ marginTop: 0, marginBottom: 10, fontSize: 13 }}>
-                  Search first — we will pre-fill name, address, phone, and hours when available.
+                  {t('companyApply.prefillFromSearchHint')}
                 </p>
                 <CompanyPlaceSearchField onPicked={onPlacePicked} businessName={businessName} addressLine={addressLine} />
-                <div className="pp-label" style={{ marginTop: 14 }}>Pin position</div>
+                <div className="pp-label" style={{ marginTop: 14 }}>{t('companyApply.pinPosition')}</div>
                 <LocationPicker lat={lat} lng={lng} onChange={setPos} recenterSignal={recenterSignal} />
                 <p className="pp-subtle" style={{ fontSize: 12, marginTop: 6, marginBottom: 0 }}>
                   <a className="pp-link" style={{ display: 'inline' }} href={mapsLink(lat, lng)} target="_blank" rel="noopener noreferrer">
-                    Preview in Google Maps
+                    {t('companyApply.previewInGoogleMaps')}
                   </a>
                 </p>
               </div>
 
               <div>
-                <div className="pp-label">Business or venue name</div>
+                <div className="pp-label">{t('companyApply.businessOrVenueName')}</div>
                 <input
                   className="pp-input"
                   value={businessName}
                   onChange={(e) => setBusinessName(e.target.value)}
                   required
                   maxLength={120}
-                  placeholder="e.g. Happy Paws Daycare"
+                  placeholder={t('companyApply.businessNamePlaceholder')}
                 />
               </div>
 
               <div>
-                <div className="pp-label">Business type</div>
+                <div className="pp-label">{t('companyApply.businessTypeLabel')}</div>
                 <div className="pp-row" style={{ gap: 10, flexWrap: 'wrap' }}>
                   {BUSINESS_TYPES.map((type) => (
                     <button
@@ -305,57 +333,62 @@ export default function CompanyApply() {
                       className={`pp-btn ${businessType === type.id ? 'pp-btnPrimary' : ''}`}
                       onClick={() => setBusinessType(type.id)}
                     >
-                      {type.label}
+                      {t(`companyApply.${type.labelKey}`)}
                     </button>
                   ))}
                 </div>
               </div>
 
               <div>
-                <div className="pp-label">Business logo URL</div>
-                <input className="pp-input" value={logoUrl} onChange={(e) => setLogoUrl(e.target.value)} placeholder="https://…" />
+                <div className="pp-label">{t('companyApply.businessLogoUrl')}</div>
+                <input
+                  className="pp-input"
+                  value={logoUrl}
+                  onChange={(e) => setLogoUrl(e.target.value)}
+                  placeholder={t('companyApply.logoUrlPlaceholder')}
+                />
               </div>
 
               <div>
-                <div className="pp-label">Address</div>
+                <div className="pp-label">{t('companyApply.addressLabel')}</div>
                 <input
                   className="pp-input"
                   value={addressLine}
                   onChange={(e) => setAddressLine(e.target.value)}
                   maxLength={200}
-                  placeholder="Street, city"
+                  placeholder={t('companyApply.addressPlaceholder')}
                 />
               </div>
 
               <div>
-                <div className="pp-label">Contact email</div>
+                <div className="pp-label">{t('companyApply.contactEmail')}</div>
                 <input
                   className="pp-input"
                   type="email"
                   value={publicEmail}
                   onChange={(e) => setPublicEmail(e.target.value)}
-                  placeholder="hello@example.com"
+                  placeholder={t('companyApply.contactEmailPlaceholder')}
                 />
               </div>
 
               <div>
-                <div className="pp-label">Phone number</div>
+                <div className="pp-label">{t('companyApply.phoneNumber')}</div>
                 <input
                   className="pp-input"
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(e.target.value)}
-                  placeholder="e.g. +357 99 123456"
+                  placeholder={t('companyApply.phoneNumberPlaceholder')}
                 />
               </div>
 
               <div>
-                <div className="pp-label">Working hours</div>
+                <div className="pp-label">{t('companyApply.workingHoursLabel')}</div>
                 <textarea
                   className="pp-input"
                   value={workingHours}
                   onChange={(e) => setWorkingHours(e.target.value)}
                   style={{ minHeight: 80, resize: 'vertical' }}
-                  placeholder="e.g. Mon–Fri 10:00–18:00, Sat 11:00–19:00, Sun closed"
+                  placeholder={t('companyApply.workingHoursPlaceholder')}
                 />
               </div>
 
@@ -363,10 +396,10 @@ export default function CompanyApply() {
 
               <div className="pp-modalActions">
                 <button type="button" className="pp-btn" onClick={() => setModalOpen(false)}>
-                  Cancel
+                  {t('companyApply.cancel')}
                 </button>
                 <button type="submit" className="pp-btn pp-btnPrimary" disabled={submitting}>
-                  {submitting ? 'Submitting…' : 'Submit for review'}
+                  {submitting ? t('companyApply.submitting') : t('companyApply.submitForReview')}
                 </button>
               </div>
             </form>
