@@ -3,101 +3,88 @@ import { Link } from 'react-router-dom';
 import { LegalPageShell } from '../components/LegalPageShell';
 import { useI18n } from '../i18n/I18nContext';
 
+const cookieUseItems = [
+  ['strictlyLabel', 'strictlyBody'],
+  ['functionalLabel', 'functionalBody'],
+  ['analyticsLabel', 'analyticsBody'],
+];
+
+const cookieRows = [
+  ['sessionName', 'sessionPurpose', 'sessionDuration'],
+  ['storageName', 'storagePurpose', 'storageDuration'],
+  ['analyticsName', 'analyticsPurpose', 'analyticsDuration'],
+];
+
 export default function CookiePolicy() {
   const { t } = useI18n();
   return (
     <LegalPageShell title={t('legal.cookieTitle')} lastUpdated={new Date().toISOString().slice(0, 10)}>
       <section>
-        <h2>1. What are cookies and similar technologies?</h2>
+        <h2>{t('legal.cookies.whatTitle')}</h2>
         <p>
-          “Cookies” are small text files placed on your device. We also use similar technologies (e.g. local storage,
-          session storage, pixels) for the same purposes. Together we refer to them as “<strong>cookies</strong>”
-          in this policy.
+          {t('legal.cookies.whatBodyBeforeStrong')}
+          <strong>{t('legal.cookies.whatStrong')}</strong>
+          {t('legal.cookies.whatBodyAfterStrong')}
         </p>
-        <p>
-          On first visit, a banner may ask you to allow optional analytics. Your choice is stored in your browser
-          as “essential only” or “accept analytics”, until you change it or clear site data.
-        </p>
+        <p>{t('legal.cookies.firstVisit')}</p>
       </section>
 
       <section>
-        <h2>2. Why we use them</h2>
-        <p>We use cookies to:</p>
+        <h2>{t('legal.cookies.whyTitle')}</h2>
+        <p>{t('legal.cookies.whyIntro')}</p>
         <ul>
-          <li>
-            <strong>Strictly necessary:</strong> e.g. keep you signed in, maintain security, load the application.
-          </li>
-          <li>
-            <strong>Functional / preferences:</strong> remember settings where we implement them.
-          </li>
-          <li>
-            <strong>Analytics / performance:</strong> understand how the Service is used in aggregate, if you consent
-            where required (e.g. analytics tools, if enabled).
-          </li>
+          {cookieUseItems.map(([labelKey, bodyKey]) => (
+            <li key={labelKey}>
+              <strong>{t(`legal.cookies.${labelKey}`)}</strong> {t(`legal.cookies.${bodyKey}`)}
+            </li>
+          ))}
         </ul>
-        <p>We will not use non-essential cookies (or read/write to non-essential local storage) without consent where EU law requires it.</p>
+        <p>{t('legal.cookies.nonEssential')}</p>
       </section>
 
       <section>
-        <h2>3. Types of cookies we may use</h2>
+        <h2>{t('legal.cookies.typesTitle')}</h2>
         <table className="pp-legalTable">
           <thead>
             <tr>
-              <th>Name / category</th>
-              <th>Purpose</th>
-              <th>Duration / notes</th>
+              <th>{t('legal.cookies.tableName')}</th>
+              <th>{t('legal.cookies.tablePurpose')}</th>
+              <th>{t('legal.cookies.tableDuration')}</th>
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td>Session / auth (necessary)</td>
-              <td>Maintain your authenticated session (often via the authentication provider).</td>
-              <td>Session or as set by the provider; see our Privacy policy.</td>
-            </tr>
-            <tr>
-              <td>localStorage / app storage (necessary / functional)</td>
-              <td>Store app preferences and offline-first data for your account on this device.</td>
-              <td>Until cleared by you or the app (e.g. preferences or drafts).</td>
-            </tr>
-            <tr>
-              <td>Analytics (optional)</td>
-              <td>If enabled, to measure traffic and app usage.</td>
-              <td>As per provider; typically requires consent in the EEA/UK where not strictly necessary.</td>
-            </tr>
+            {cookieRows.map(([nameKey, purposeKey, durationKey]) => (
+              <tr key={nameKey}>
+                <td>{t(`legal.cookies.${nameKey}`)}</td>
+                <td>{t(`legal.cookies.${purposeKey}`)}</td>
+                <td>{t(`legal.cookies.${durationKey}`)}</td>
+              </tr>
+            ))}
           </tbody>
         </table>
         <p className="pp-subtle" style={{ marginTop: 12 }}>
-          Third-party providers maintain their own documentation. You can also use your browser settings to view and
-          delete cookies and site data.
+          {t('legal.cookies.providerNote')}
         </p>
       </section>
 
       <section>
-        <h2>4. Legal basis and consent (GDPR / ePrivacy)</h2>
-        <p>
-          Strictly necessary cookies and similar storage required to deliver a service you request may rely on our
-          legitimate interest or the performance of a contract, depending on context. For analytics, marketing, or
-          other non-essential storage, we will request your consent where required before activation.
-        </p>
+        <h2>{t('legal.cookies.legalBasisTitle')}</h2>
+        <p>{t('legal.cookies.legalBasisBody')}</p>
       </section>
 
       <section>
-        <h2>5. How to control cookies</h2>
-        <p>
-          You can set your browser to refuse cookies or delete them. This may break login or other features. You can
-          also clear “site data” for our origin in your browser. Where we provide a cookie banner or settings panel, use
-          it to withdraw consent for non-essential categories at any time.
-        </p>
+        <h2>{t('legal.cookies.controlTitle')}</h2>
+        <p>{t('legal.cookies.controlBody')}</p>
       </section>
 
       <section>
-        <h2>6. Further information</h2>
+        <h2>{t('legal.cookies.furtherTitle')}</h2>
         <p>
-          For more on how we use personal data, see our{' '}
+          {t('legal.cookies.furtherBeforePrivacy')}{' '}
           <Link to="/privacy" className="pp-link" style={{ display: 'inline', padding: 0 }}>
-            Privacy policy
+            {t('legal.cookies.furtherPrivacyLink')}
           </Link>
-          . For rights and the Cyprus supervisory authority, see the same document.
+          {t('legal.cookies.furtherAfterPrivacy')}
         </p>
       </section>
     </LegalPageShell>

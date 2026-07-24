@@ -248,7 +248,7 @@ export default function Register() {
                   autoComplete="username"
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
-                  placeholder="e.g. pawlover87"
+                  placeholder={t('register.usernamePlaceholder')}
                 />
               </div>
             ) : (
@@ -261,7 +261,7 @@ export default function Register() {
                   autoComplete="organization"
                   value={businessName}
                   onChange={(e) => setBusinessName(e.target.value)}
-                  placeholder="e.g. Riverside Dog Daycare"
+                  placeholder={t('register.businessNamePlaceholder')}
                 />
               </div>
             )}

@@ -539,6 +539,233 @@ const en = {
     backHome: '← Back to home',
     backLogin: '← Back to login',
     lastUpdated: 'Last updated:',
+    privacy: {
+      whoTitle: '1. Who we are',
+      controllerLabel: 'Data controller:',
+      controllerBody:
+        '{legalName}, registered in the Republic of Cyprus, with registered address at {address} (“we”, “us”, “our”).',
+      generalContactLabel: 'Contact (general):',
+      privacyContactLabel: 'Contact (data protection / privacy):',
+      scopeTitle: '2. Scope',
+      scopeBody:
+        'This policy describes how we process personal data in connection with the PetPal Care Hub web application and related services (the “Service”). It applies to users in the European Economic Area (EEA) and, where the UK GDPR applies, to users in the United Kingdom, in each case in addition to any local law that applies to you.',
+      dataTitle: '3. What personal data we process',
+      dataIntro: 'Depending on how you use the Service, we may process:',
+      dataAccountLabel: 'Account and identity:',
+      dataAccountBody:
+        'email address, display name, authentication identifiers (e.g. user ID from our authentication provider), password hash (held by the authentication provider, not in plain text).',
+      dataPetLabel: 'Pet and activity data you enter:',
+      dataPetBody:
+        'pet names, categories, optional device/tracker identifiers you associate with a pet, walk distances or logs you record, optional photos you attach to a walk log, and content you post in community features.',
+      dataBookingsLabel: 'Bookings:',
+      dataBookingsBody:
+        'appointment details you create or receive (e.g. provider/store, service, pet, time, and status) and related communications (e.g. confirmation emails and calendar invitations).',
+      dataShopLabel: 'Shop and subscriptions:',
+      dataShopBody:
+        'purchases, subscription status (monthly/yearly), renewal and cancellation events, delivery/shipping details for physical items (e.g. GPS trackers or NFC tags), and customer support messages about orders.',
+      dataTechnicalLabel: 'Technical and usage data:',
+      dataTechnicalBody:
+        'IP address, device/browser type, approximate location derived from IP if available, timestamps, and diagnostic or security logs, including via hosting and service providers. If we enable optional analytics, we will ask for consent where required before loading it.',
+      dataMapsLabel: 'Maps / places:',
+      dataMapsBody:
+        'if you use location-based features, we may process queries (e.g. map centre or place search) and results through third-party APIs (e.g. Google) under their terms and privacy policies.',
+      dataLeaderboardLabel: 'Public leaderboard (opt-in):',
+      dataLeaderboardBody:
+        'if you choose to share, we may process your display name and aggregated walk statistics you explicitly publish to a public leaderboard.',
+      dataSpecialCategories:
+        'We do not ask you to provide special categories of data (e.g. health) as a condition of use.',
+      basesTitle: '4. Purposes and legal bases (GDPR Articles 6 & 9)',
+      basesIntro: 'We process personal data on the following legal bases, as applicable:',
+      basisContractLabel: 'Performance of a contract (Art. 6(1)(b)):',
+      basisContractBody:
+        'to provide, operate, and support the Service, including authentication, security, and features you request.',
+      basisLegitimateLabel: 'Legitimate interests (Art. 6(1)(f)):',
+      basisLegitimateBody:
+        'to secure the Service, prevent abuse, improve performance, analyse aggregated usage, and communicate service-related messages; where required, we balance these interests with your rights.',
+      basisConsentLabel: 'Consent (Art. 6(1)(a)):',
+      basisConsentBody:
+        'for optional features such as non-essential cookies / similar technologies, marketing communications where required, and any optional public sharing (e.g. leaderboard); you may withdraw consent at any time without affecting the lawfulness of processing before withdrawal.',
+      basisLegalLabel: 'Legal obligation (Art. 6(1)(c)):',
+      basisLegalBody: 'to comply with applicable law, or respond to lawful requests from public authorities.',
+      recipientsTitle: '5. Recipients and processors',
+      recipientsIntro:
+        'We use trusted service providers who process data on our instructions, including (non-exhaustive):',
+      processorFirebaseLabel: 'Google Firebase / Google Cloud (Google Ireland Limited / Google LLC):',
+      processorFirebaseBody:
+        'authentication, database, and related infrastructure, potentially including analytics if enabled.',
+      processorJccLabel: 'JCC Payment Systems Ltd:',
+      processorJccBody:
+        'payment processing for shop purchases and subscriptions. Payment details are entered on JCC’s hosted checkout pages; we do not receive your full card number.',
+      processorMapsLabel: 'Maps, geocoding, or Places providers',
+      processorMapsBody: '(e.g. Google Maps Platform) where such features are used.',
+      processorHostingLabel: 'Hosting, email, and error monitoring',
+      processorHostingBody: 'providers used to operate the Service.',
+      recipientsTransfers:
+        'We enter into data processing terms (including Standard Contractual Clauses where required) with providers that transfer or access personal data from outside the EEA, in line with EU requirements.',
+      paymentsTitle: '6. Payments (JCC) and subscriptions',
+      paymentsBody1:
+        'When you purchase items or subscriptions in the PetPal Care Hub shop, your card payment is processed by JCC Payment Systems Ltd. PetPal Care Hub does not store your full card number.',
+      paymentsBody2:
+        'We may receive and store limited payment-related information needed to operate the shop and subscriptions, such as the status of a payment (successful/failed), order reference, subscription status (active/cancelled), and whether a saved payment token exists for renewals. Where required, we use this information to provide customer support, process cancellations, and comply with accounting and tax obligations.',
+      transfersTitle: '7. International transfers',
+      transfersBody:
+        'Data may be processed in the EEA and, where a provider is located in a country not subject to an EU adequacy decision, we rely on appropriate safeguards (such as the EU Commission-approved Standard Contractual Clauses) and supplementary measures where needed.',
+      retentionTitle: '8. Retention',
+      retentionIntro: 'We keep personal data only as long as necessary for the purposes above, including:',
+      retentionAccountLabel: 'Account data:',
+      retentionAccountBody: 'for the life of your account, unless a longer period is required by law.',
+      retentionBookingsLabel: 'Bookings:',
+      retentionBookingsBody:
+        'to manage your appointments and provide history, and as needed for customer support and dispute handling.',
+      retentionOrdersLabel: 'Orders and billing records:',
+      retentionOrdersBody: 'as required for accounting, tax, and legal compliance.',
+      retentionSecurityLabel: 'Security logs:',
+      retentionSecurityBody: 'typically a limited period unless needed for an investigation.',
+      retentionLocalLabel: 'Local device storage:',
+      retentionLocalBody:
+        'some information may be stored in your browser; clearing site data may remove it from your device.',
+      retentionMinimise:
+        'Where possible, we minimise data and delete or anonymise it when it is no longer needed for the purposes above.',
+      rightsTitle: '9. Your rights',
+      rightsIntro: 'Subject to applicable law, you may have the right to:',
+      rightAccess: 'Request access to your personal data and certain information about processing (Art. 15 GDPR).',
+      rightRectification: 'Request rectification of inaccurate data (Art. 16).',
+      rightErasure: 'Request erasure (“right to be forgotten”) in certain cases (Art. 17).',
+      rightRestriction: 'Request restriction of processing in certain cases (Art. 18).',
+      rightPortability: 'Data portability, where processing is based on contract or consent and is automated (Art. 20).',
+      rightObject: 'Object to processing based on legitimate interests (Art. 21).',
+      rightConsent: 'Withdraw consent at any time, where we rely on consent (Art. 7(3)).',
+      rightComplaintBefore: 'Lodge a complaint with a supervisory authority — in Cyprus, the',
+      rightComplaintLink: 'Office of the Commissioner for Personal Data Protection',
+      rightComplaintAfter: '.',
+      rightsContact:
+        'To exercise your rights, contact us at the privacy email above. We may need to verify your identity. You will not have to pay a fee unless your request is manifestly unfounded or excessive; if so, we may charge a reasonable fee or refuse the request, as permitted by law.',
+      securityTitle: '10. Security',
+      securityBody:
+        'We implement appropriate technical and organisational measures appropriate to the risk, including industry-standard transport encryption where applicable, access control principles, and reliance on established cloud providers. No method of transmission or storage is 100% secure.',
+      childrenTitle: '11. Children',
+      childrenBody:
+        'The Service is not directed at children under the age at which they may provide consent for information society services under local law (often 16 in the EU, with Member State variations; Cyprus implements conditions under national law). We do not knowingly process personal data of children below that age without parental authority as required. If you believe we have, please contact us and we will take appropriate steps.',
+      changesTitle: '12. Changes',
+      changesBody:
+        'We may update this policy. We will post the new version with an updated “Last updated” date and, where required, provide a more prominent notice (e.g. in-app or by email) for material changes.',
+    },
+    terms: {
+      agreementTitle: '1. Agreement',
+      agreementBeforePrivacy:
+        'These Terms of Service (“Terms”) govern your access to and use of the PetPal Care Hub web application and related services (the “Service”) operated by {legalName}, {address} (“we”, “us”). By creating an account or using the Service, you agree to these Terms and our',
+      privacyLink: 'Privacy policy',
+      agreementBetweenPolicies: 'and',
+      cookiesLink: 'Cookie policy',
+      agreementAfterPolicies: '.',
+      agreementChanges:
+        'If you do not agree, do not use the Service. We may modify these Terms; the “Last updated” date above will change, and continued use after changes constitutes acceptance where permitted by law.',
+      eligibilityTitle: '2. Eligibility',
+      eligibilityBody:
+        'You must be able to enter into a binding contract under the laws of Cyprus (or your country of residence) and meet any minimum age required for consent to online services in your jurisdiction. You are responsible for the accuracy of information you provide.',
+      accountsTitle: '3. Accounts and security',
+      accountsBeforeEmail: 'You are responsible for safeguarding your credentials and for activity under your account. Notify us promptly at',
+      accountsAfterEmail:
+        'if you suspect unauthorised access. We may suspend or terminate accounts that violate these Terms or pose a security risk.',
+      licenceTitle: '4. Licence to use the Service',
+      licenceBody:
+        'We grant you a personal, non-exclusive, non-transferable, revocable licence to use the Service for your own non-commercial pet-care and related purposes, subject to these Terms. You may not reverse engineer, scrape (except as allowed by applicable law), resell, or misuse the Service or our infrastructure.',
+      contentTitle: '5. User content and conduct',
+      contentBody:
+        'You retain rights to content you submit, but you grant us a worldwide, non-exclusive licence to host, store, process, and display such content solely to operate and improve the Service. You must not upload unlawful, harmful, harassing, infringing, or misleading content. We may remove content or restrict features to comply with law or protect users.',
+      thirdPartyTitle: '6. Third-party services',
+      thirdPartyBody:
+        'The Service may integrate third parties (e.g. authentication, maps, hosting). Your use may be subject to their terms and privacy policies. We are not responsible for third-party services we do not control.',
+      locationTitle: '7. Location, maps, and tracking',
+      locationBody:
+        'Map and place information may be provided by third parties and may be incomplete or change over time. Any live tracking or device features are provided for convenience only. You remain responsible for your pet’s safety and compliance with local rules.',
+      locationNoServices: 'We do not provide veterinary, legal, or emergency services.',
+      shopTitle: '8. Shop, payments, and subscriptions',
+      shopIntroBeforeGateway:
+        'Card payments for the PetPal Care Hub shop are processed securely by the',
+      shopGatewayLabel: 'JCC payment gateway',
+      shopIntroAfterGateway: '(3-D Secure where supported). Please review the following before you complete a purchase.',
+      shopCardBody:
+        'Your card details are entered on JCC’s hosted payment page — PetPal Care Hub does not store your full card number.',
+      shopRenewalBeforeLink:
+        'Subscription plans renew automatically on the billing cycle (monthly or yearly) until you cancel from',
+      shopSubscriptionsLink: 'Shop → Your subscriptions',
+      shopRenewalAfterLink:
+        '. If you chose “Save card until cancelled”, your card is tokenised by JCC for renewals only.',
+      shopShipping:
+        'GPS trackers and NFC tags are shipped to the delivery address you provide at checkout after payment, via BOX NOW or ACS. Expected delivery is 1–3 working days.',
+      shopCancel:
+        'You can request subscription cancellation in the shop at any time. After cancellation, billing stops and tracker SIM service is disabled as described in your plan.',
+      shopConsumer:
+        'If you are an EU/EEA consumer, you have statutory rights for distance contracts, including pre-contractual information and withdrawal where applicable. See the sections below on governing law and contact for complaints, refunds, and the European Commission ODR platform.',
+      shopPricing:
+        'Pricing, billing intervals, and any promotional first-year or renewal rates are shown at the point of purchase in the shop and on your order confirmation.',
+      disclaimersTitle: '9. Disclaimers',
+      disclaimersBody:
+        'THE SERVICE IS PROVIDED “AS IS” AND “AS AVAILABLE” TO THE MAXIMUM EXTENT PERMITTED BY LAW. WE DISCLAIM ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT. We do not warrant that the Service will be uninterrupted, error-free, or free of harmful components.',
+      liabilityTitle: '10. Limitation of liability',
+      liabilityBody1:
+        'To the maximum extent permitted by applicable law (including mandatory consumer rights in the EU/EEA that cannot be waived), we are not liable for any indirect, incidental, special, consequential, or punitive damages, or any loss of profits, data, or goodwill, arising from your use of the Service. Our total liability for any claim relating to the Service is limited to the greater of (a) the amounts you paid us for the Service in the twelve (12) months before the event giving rise to liability, or (b) €50 if you have not paid us, unless a stricter limit applies under law.',
+      liabilityBody2:
+        'Nothing in these Terms limits liability for death or personal injury caused by negligence, fraud, or other liability that cannot be excluded under law.',
+      indemnityTitle: '11. Indemnity',
+      indemnityBody:
+        'You will defend and indemnify us against third-party claims and liabilities arising from your content, your violation of these Terms, or your violation of law, subject to the limitations above and applicable defences.',
+      governingTitle: '12. Governing law and disputes',
+      governingBeforeOdr:
+        'These Terms are governed by the laws of the Republic of Cyprus, without regard to conflict-of-law rules. If you are a consumer in the EEA, you also benefit from any mandatory rules of the country where you live. Disputes may be brought before the courts of Cyprus, or where you are a consumer, you may also have the right to bring proceedings in your country of residence. The European Commission provides an ODR platform for out-of-court resolution:',
+      governingAfterOdr: '; participation in ODR is voluntary for businesses unless required by law.',
+      contactTitle: '13. Contact',
+      contactBeforeEmail: 'Questions:',
+      contactAfterEmail: '. For data protection, see the Privacy policy.',
+    },
+    cookies: {
+      whatTitle: '1. What are cookies and similar technologies?',
+      whatBodyBeforeStrong:
+        '“Cookies” are small text files placed on your device. We also use similar technologies (e.g. local storage, session storage, pixels) for the same purposes. Together we refer to them as “',
+      whatStrong: 'cookies',
+      whatBodyAfterStrong: '” in this policy.',
+      firstVisit:
+        'On first visit, a banner may ask you to allow optional analytics. Your choice is stored in your browser as “essential only” or “accept analytics”, until you change it or clear site data.',
+      whyTitle: '2. Why we use them',
+      whyIntro: 'We use cookies to:',
+      strictlyLabel: 'Strictly necessary:',
+      strictlyBody: 'e.g. keep you signed in, maintain security, load the application.',
+      functionalLabel: 'Functional / preferences:',
+      functionalBody: 'remember settings where we implement them.',
+      analyticsLabel: 'Analytics / performance:',
+      analyticsBody:
+        'understand how the Service is used in aggregate, if you consent where required (e.g. analytics tools, if enabled).',
+      nonEssential:
+        'We will not use non-essential cookies (or read/write to non-essential local storage) without consent where EU law requires it.',
+      typesTitle: '3. Types of cookies we may use',
+      tableName: 'Name / category',
+      tablePurpose: 'Purpose',
+      tableDuration: 'Duration / notes',
+      sessionName: 'Session / auth (necessary)',
+      sessionPurpose: 'Maintain your authenticated session (often via the authentication provider).',
+      sessionDuration: 'Session or as set by the provider; see our Privacy policy.',
+      storageName: 'localStorage / app storage (necessary / functional)',
+      storagePurpose: 'Store app preferences and offline-first data for your account on this device.',
+      storageDuration: 'Until cleared by you or the app (e.g. preferences or drafts).',
+      analyticsName: 'Analytics (optional)',
+      analyticsPurpose: 'If enabled, to measure traffic and app usage.',
+      analyticsDuration:
+        'As per provider; typically requires consent in the EEA/UK where not strictly necessary.',
+      providerNote:
+        'Third-party providers maintain their own documentation. You can also use your browser settings to view and delete cookies and site data.',
+      legalBasisTitle: '4. Legal basis and consent (GDPR / ePrivacy)',
+      legalBasisBody:
+        'Strictly necessary cookies and similar storage required to deliver a service you request may rely on our legitimate interest or the performance of a contract, depending on context. For analytics, marketing, or other non-essential storage, we will request your consent where required before activation.',
+      controlTitle: '5. How to control cookies',
+      controlBody:
+        'You can set your browser to refuse cookies or delete them. This may break login or other features. You can also clear “site data” for our origin in your browser. Where we provide a cookie banner or settings panel, use it to withdraw consent for non-essential categories at any time.',
+      furtherTitle: '6. Further information',
+      furtherBeforePrivacy: 'For more on how we use personal data, see our',
+      furtherPrivacyLink: 'Privacy policy',
+      furtherAfterPrivacy:
+        '. For rights and the Cyprus supervisory authority, see the same document.',
+    },
   },
   app: {
     loadingTracker: 'Loading tracker…',
@@ -631,8 +858,10 @@ const en = {
     businessHint:
       'Businesses set a real map pin; an admin must approve you before you can run paid boosted community posts.',
     nameOptional: 'Username',
+    usernamePlaceholder: 'e.g. pawlover87',
     nameHint: 'Enter your real name (minimum 2 characters).',
     businessName: 'Business or venue name',
+    businessNamePlaceholder: 'e.g. Riverside Dog Daycare',
     businessNameHint: 'Enter your legal/public business name (minimum 2 characters).',
     termsError: 'Please accept the Terms of service and Privacy policy to continue.',
     businessNameError: 'Enter a business or venue name, or choose Individual account.',
@@ -1593,6 +1822,22 @@ const en = {
     needFirebaseSub: 'We need to finish connecting payments — check back shortly or contact us.',
     checkoutFail: 'Payment was not completed. You can try again when you are ready.',
     checkoutError: 'We could not confirm your payment. If you were charged, contact us with your receipt.',
+    checkoutErrFirebaseNotConfigured:
+      'Firebase is not configured; add REACT_APP_FIREBASE_* env vars.',
+    checkoutErrFunctionNotFound:
+      'Checkout is not available: deploy the createJccCheckout function to europe-west1 (or enable the Functions emulator).',
+    checkoutErrFunctionUnavailable:
+      'Cannot reach Cloud Functions. Check your network, project, and REACT_APP_FUNCTIONS_REGION (default europe-west1).',
+    checkoutErrUnauthenticated: 'Please sign in again, then retry checkout.',
+    checkoutErrBackendOutOfDate:
+      'Checkout backend is out of date (cart checkout not supported yet). Deploy the latest Firebase shop functions: cd petpal && npm run deploy:shop-functions',
+    checkoutErrRejected: 'Checkout was rejected. Check JCC credentials and return URL on the server.',
+    checkoutErrServerFailed: 'Checkout failed on the server. Inspect Cloud Function logs for createJccCheckout.',
+    checkoutErrGeneric: 'Checkout failed.',
+    checkoutErrMissingPaymentUrl:
+      'Checkout did not return a payment URL. Check createJccCheckout logs and JCC register.do response.',
+    checkoutErrPriceMismatch:
+      'Payment server sent {charged} but this plan should be {expected}. Deploy the latest Cloud Functions (createJccCheckout) — the live server may still be on old €4.99 pricing.',
     saveCardRequired: 'Turn on “Save card securely” for subscription plans so renewals can run automatically.',
     saveCardLabel: 'Save card until cancelled',
     saveCardHint: '',

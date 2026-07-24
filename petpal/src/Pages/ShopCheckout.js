@@ -109,6 +109,7 @@ export default function ShopCheckout() {
       await startJccCheckout({
         ...pending.payload,
         shippingContact: shipping,
+        t,
       });
       clearPendingCheckout();
       clearShopCartItems();
