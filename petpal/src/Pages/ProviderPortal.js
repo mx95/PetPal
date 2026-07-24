@@ -1221,7 +1221,6 @@ function PublicListingPanel({
       <div className="pp-providerPanel__head">
         <div>
           <h2>{t('providerPortal.publicListingTitle')}</h2>
-          <p>{t('providerPortal.publicListingDescription')}</p>
         </div>
       </div>
 
@@ -1259,7 +1258,7 @@ function PublicListingPanel({
             </label>
           </div>
           <fieldset className="pp-field">
-            <legend className="pp-field__label">{t('providerPortal.categoriesShownInBookingsSearch')}</legend>
+            <legend className="pp-sr">{t('providerPortal.serviceCategoriesAriaLabel')}</legend>
             <p className="pp-muted" style={{ fontSize: 13, marginBottom: 8 }}>
               {t('providerPortal.categoriesShownHint')}
             </p>

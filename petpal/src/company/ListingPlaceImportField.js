@@ -181,11 +181,6 @@ function VerifiedGoogleListingImport({ apiKey, profile, onImport }) {
       preview={preview}
       onLoad={loadListing}
       disabled={!isLoaded && !loadError}
-      hint={
-        storedPlaceId
-          ? t('companyApply.importGoogleStoredHint')
-          : t('companyApply.importGoogleFindHint')
-      }
     />
   );
 }
@@ -234,16 +229,14 @@ function VerifiedOsmListingImport({ profile, onImport }) {
       err={err}
       preview={preview}
       onLoad={loadListing}
-      hint={t('companyApply.importOsmHint')}
     />
   );
 }
 
-function VerifiedImportUi({ businessName, pinLabel, busy, err, preview, onLoad, disabled, hint }) {
+function VerifiedImportUi({ businessName, pinLabel, busy, err, preview, onLoad, disabled }) {
   const { t } = useI18n();
   return (
     <div className="pp-listingPlaceImport">
-      <p className="pp-subtle pp-listingPlaceImport__hint">{hint}</p>
       <div className="pp-listingPlaceImport__card">
         <div className="pp-listingPlaceImport__meta">
           <strong>{businessName}</strong>
