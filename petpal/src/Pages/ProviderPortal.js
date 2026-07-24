@@ -1259,9 +1259,6 @@ function PublicListingPanel({
           </div>
           <fieldset className="pp-field">
             <legend className="pp-sr">{t('providerPortal.serviceCategoriesAriaLabel')}</legend>
-            <p className="pp-muted" style={{ fontSize: 13, marginBottom: 8 }}>
-              {t('providerPortal.categoriesShownHint')}
-            </p>
             <div className="pp-providerTypePills" role="group" aria-label={t('providerPortal.serviceCategoriesAriaLabel')}>
               {[
                 { key: 'vet', label: t('providerPortal.serviceTypeVet'), emoji: '🩺' },
@@ -2154,7 +2151,6 @@ function Customers({ companyId, clinicLabel = '' }) {
         <div className="pp-providerPanel__head">
           <div>
             <h2>{t('providerPortal.customersTitle')}</h2>
-            <p>{t('providerPortal.customersDescription')}</p>
           </div>
         </div>
 
@@ -2162,9 +2158,6 @@ function Customers({ companyId, clinicLabel = '' }) {
 
         <div className="pp-providerFormCard">
           <h3 className="pp-providerFormCard__title">{t('providerPortal.addClientPetTitle')}</h3>
-          <p className="pp-muted" style={{ marginTop: 0, marginBottom: 12 }}>
-            {t('providerPortal.addClientPetDescription')}
-          </p>
           <form onSubmit={onCreatePet} className="pp-form pp-providerForm">
             <label className="pp-field">
               <span className="pp-field__label">{t('providerPortal.petNameLabel')}</span>
