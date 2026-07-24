@@ -1,7 +1,8 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import TimeRangeRow from '../../components/TimeRangeRow';
 import NumericSettingInput from '../../components/NumericSettingInput';
-import { dateKey, monthDays, WEEKDAY_LABELS_MON_START } from '../bookingHeatMap';
+import { useI18n } from '../../i18n/I18nContext';
+import { dateKey, monthDays } from '../bookingHeatMap';
 import { HOLIDAY_COUNTRY_OPTIONS } from '../publicHolidays';
 import {
   buildCalendarPreview,
@@ -12,7 +13,6 @@ import {
 import {
   defaultWeeklyRule,
   deleteAvailabilityOverride,
-  deleteAvailabilityRule,
   deleteBlockedPeriod,
   deleteVacation,
   ensureDefaultAvailabilityRules,
@@ -27,23 +27,45 @@ import {
   upsertBlockedPeriod,
   upsertVacation,
 } from './availabilityFirestore';
-import { formatYmdInZone } from './timezoneUtils';
 
 const WEEKDAYS = [
-  { dow: 1, label: 'Mon' },
-  { dow: 2, label: 'Tue' },
-  { dow: 3, label: 'Wed' },
-  { dow: 4, label: 'Thu' },
-  { dow: 5, label: 'Fri' },
-  { dow: 6, label: 'Sat' },
-  { dow: 0, label: 'Sun' },
+  { dow: 1, shortKey: 'weekdayMonShort', narrowKey: 'weekdayMonNarrow' },
+  { dow: 2, shortKey: 'weekdayTueShort', narrowKey: 'weekdayTueNarrow' },
+  { dow: 3, shortKey: 'weekdayWedShort', narrowKey: 'weekdayWedNarrow' },
+  { dow: 4, shortKey: 'weekdayThuShort', narrowKey: 'weekdayThuNarrow' },
+  { dow: 5, shortKey: 'weekdayFriShort', narrowKey: 'weekdayFriNarrow' },
+  { dow: 6, shortKey: 'weekdaySatShort', narrowKey: 'weekdaySatNarrow' },
+  { dow: 0, shortKey: 'weekdaySunShort', narrowKey: 'weekdaySunNarrow' },
 ];
 
 function emptyPeriod() {
   return { startTime: '09:00', endTime: '17:00' };
 }
 
-function PreviewCalendar({ days }) {
+function emptyVacationDraft(t) {
+  return { startDate: '', endDate: '', label: t('availability.vacationDefaultLabel') };
+}
+
+function emptyBlockDraft(t) {
+  return { date: '', start: '13:00', end: '14:30', label: t('availability.breakDefaultLabel') };
+}
+
+function previewStatusLabel(status, t) {
+  switch (status) {
+    case 'working':
+      return t('availability.previewWorking');
+    case 'override':
+      return t('availability.previewOverride');
+    case 'vacation':
+      return t('availability.previewTimeOff');
+    case 'holiday':
+      return t('availability.previewHoliday');
+    default:
+      return t('availability.previewClosed');
+  }
+}
+
+function PreviewCalendar({ days, t, language, weekdayLabels }) {
   const anchor = useMemo(() => {
     const keys = Object.keys(days || {}).sort();
     if (!keys.length) return new Date();
@@ -53,40 +75,45 @@ function PreviewCalendar({ days }) {
 
   const monthGrid = useMemo(() => monthDays(anchor), [anchor]);
   const visibleMonth = anchor.getMonth();
-  const monthLabel = anchor.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+  const monthLabel = anchor.toLocaleDateString(language, { month: 'long', year: 'numeric' });
 
   return (
     <div className="pp-availPreviewWrap">
       <div className="pp-availPreview__head">
         <strong className="pp-availPreview__title">{monthLabel}</strong>
-        <span className="pp-availPreview__subtitle">Schedule preview from today</span>
+        <span className="pp-availPreview__subtitle">{t('availability.schedulePreviewFromToday')}</span>
       </div>
       <div className="pp-availPreviewWeekdays" aria-hidden>
-        {WEEKDAY_LABELS_MON_START.map((label, idx) => (
+        {weekdayLabels.map((label, idx) => (
           <span key={`${label}-${idx}`} className="pp-availPreview__weekday">
             {label}
           </span>
         ))}
       </div>
-      <div className="pp-availPreview" aria-label="Schedule preview">
+      <div className="pp-availPreview" aria-label={t('availability.schedulePreviewAriaLabel')}>
         {monthGrid.map((day) => {
           const key = dateKey(day);
           const inMonth = day.getMonth() === visibleMonth;
           const status = days?.[key] || 'closed';
+          const statusLabel = previewStatusLabel(status, t);
           if (!inMonth) {
             return <span key={key} className="pp-availPreview__day is-outside" aria-hidden />;
           }
           return (
-            <span key={key} className={`pp-availPreview__day is-${status}`} title={`${key}: ${status}`}>
+            <span
+              key={key}
+              className={`pp-availPreview__day is-${status}`}
+              title={t('availability.previewDayTitle', { date: key, status: statusLabel })}
+            >
               {day.getDate()}
             </span>
           );
         })}
         <div className="pp-availPreview__legend">
-          <span className="is-working">Working</span>
-          <span className="is-override">Override</span>
-          <span className="is-vacation">Time off</span>
-          <span className="is-holiday">Holiday</span>
+          <span className="is-working">{t('availability.previewWorking')}</span>
+          <span className="is-override">{t('availability.previewOverride')}</span>
+          <span className="is-vacation">{t('availability.previewTimeOff')}</span>
+          <span className="is-holiday">{t('availability.previewHoliday')}</span>
         </div>
       </div>
     </div>
@@ -94,6 +121,7 @@ function PreviewCalendar({ days }) {
 }
 
 export default function AvailabilityScheduler({ companyId, services = [], settings: initialSettings, onSettingsChange }) {
+  const { t, language } = useI18n();
   const [rules, setRules] = useState([]);
   const [overrides, setOverrides] = useState([]);
   const [vacations, setVacations] = useState([]);
@@ -107,8 +135,21 @@ export default function AvailabilityScheduler({ companyId, services = [], settin
 
   const [weeklyDraft, setWeeklyDraft] = useState(() => defaultWeeklyRule());
   const [overrideDraft, setOverrideDraft] = useState({ date: '', unavailable: false, periods: [emptyPeriod()] });
-  const [vacationDraft, setVacationDraft] = useState({ startDate: '', endDate: '', label: 'Vacation' });
-  const [blockDraft, setBlockDraft] = useState({ date: '', start: '13:00', end: '14:30', label: 'Break' });
+  const [vacationDraft, setVacationDraft] = useState(() => emptyVacationDraft(t));
+  const [blockDraft, setBlockDraft] = useState(() => emptyBlockDraft(t));
+  const genericError = t('common.errorGeneric');
+  const errorMessage = useCallback(
+    (e) => (e?.message && e.message !== 'failed' ? e.message : genericError),
+    [genericError]
+  );
+  const weekdayButtonLabels = useMemo(
+    () => WEEKDAYS.map(({ dow, shortKey }) => ({ dow, label: t(`availability.${shortKey}`) })),
+    [t]
+  );
+  const previewWeekdayLabels = useMemo(
+    () => WEEKDAYS.map(({ narrowKey }) => t(`availability.${narrowKey}`)),
+    [t]
+  );
 
   useEffect(() => {
     if (!companyId) return;
@@ -123,9 +164,9 @@ export default function AvailabilityScheduler({ companyId, services = [], settin
           setRules(rows);
           setErr('');
         },
-        (e) => setErr(e?.message || 'failed')
+        (e) => setErr(errorMessage(e))
       ),
-    [companyId]
+    [companyId, errorMessage]
   );
   useEffect(() => subscribeAvailabilityOverrides(companyId, setOverrides, () => {}), [companyId]);
   useEffect(() => subscribeVacations(companyId, setVacations, () => {}), [companyId]);
@@ -161,9 +202,9 @@ export default function AvailabilityScheduler({ companyId, services = [], settin
     try {
       const existing = rules.find((r) => !r.serviceId && !r.employeeId && r.recurrenceType === 'weekly');
       await upsertAvailabilityRule(companyId, existing?.id || null, weeklyDraft);
-      setOk('Weekly schedule saved.');
+      setOk(t('availability.weeklyScheduleSaved'));
     } catch (e) {
-      setErr(e?.message || 'failed');
+      setErr(errorMessage(e));
     } finally {
       setBusy(false);
     }
@@ -204,9 +245,9 @@ export default function AvailabilityScheduler({ companyId, services = [], settin
     try {
       await upsertAvailabilityOverride(companyId, null, overrideDraft);
       setOverrideDraft({ date: '', unavailable: false, periods: [emptyPeriod()] });
-      setOk('Date override saved.');
+      setOk(t('availability.dateOverrideSaved'));
     } catch (e) {
-      setErr(e?.message || 'failed');
+      setErr(errorMessage(e));
     } finally {
       setBusy(false);
     }
@@ -217,10 +258,10 @@ export default function AvailabilityScheduler({ companyId, services = [], settin
     setBusy(true);
     try {
       await upsertVacation(companyId, null, vacationDraft);
-      setVacationDraft({ startDate: '', endDate: '', label: 'Vacation' });
-      setOk('Vacation saved.');
+      setVacationDraft(emptyVacationDraft(t));
+      setOk(t('availability.vacationSaved'));
     } catch (e) {
-      setErr(e?.message || 'failed');
+      setErr(errorMessage(e));
     } finally {
       setBusy(false);
     }
@@ -233,9 +274,10 @@ export default function AvailabilityScheduler({ companyId, services = [], settin
       const startAt = new Date(`${blockDraft.date}T${blockDraft.start}:00`);
       const endAt = new Date(`${blockDraft.date}T${blockDraft.end}:00`);
       await upsertBlockedPeriod(companyId, null, { startAt, endAt, label: blockDraft.label });
-      setOk('Blocked time saved.');
+      setBlockDraft(emptyBlockDraft(t));
+      setOk(t('availability.blockedTimeSaved'));
     } catch (e) {
-      setErr(e?.message || 'failed');
+      setErr(errorMessage(e));
     } finally {
       setBusy(false);
     }
@@ -248,9 +290,9 @@ export default function AvailabilityScheduler({ companyId, services = [], settin
 
       <div className="pp-availScheduler__tabs" role="tablist">
         {[
-          ['weekly', 'Weekly schedule'],
-          ['overrides', 'Overrides & time off'],
-          ['settings', 'Booking rules'],
+          ['weekly', t('availability.weeklyScheduleTab')],
+          ['overrides', t('availability.overridesTimeOffTab')],
+          ['settings', t('availability.bookingRulesTab')],
         ].map(([id, label]) => (
           <button key={id} type="button" className={panel === id ? 'is-active' : ''} onClick={() => setPanel(id)}>
             {label}
@@ -258,20 +300,20 @@ export default function AvailabilityScheduler({ companyId, services = [], settin
         ))}
       </div>
 
-      <PreviewCalendar days={previewDays} />
+      <PreviewCalendar days={previewDays} t={t} language={language} weekdayLabels={previewWeekdayLabels} />
 
       {panel === 'weekly' ? (
         <section className="pp-card pp-pad">
-          <h3 className="pp-sectionTitle">Weekly recurring schedule</h3>
+          <h3 className="pp-sectionTitle">{t('availability.weeklyRecurringScheduleTitle')}</h3>
 
           <label className="pp-field">
-            <span className="pp-field__label">Service (optional)</span>
+            <span className="pp-field__label">{t('availability.serviceOptionalLabel')}</span>
             <select
               className="pp-input"
               value={weeklyDraft.serviceId || ''}
               onChange={(e) => setWeeklyDraft((d) => ({ ...d, serviceId: e.target.value || null }))}
             >
-              <option value="">All services (default)</option>
+              <option value="">{t('availability.allServicesDefault')}</option>
               {services.map((s) => (
                 <option key={s.id} value={s.id}>{s.name}</option>
               ))}
@@ -280,13 +322,13 @@ export default function AvailabilityScheduler({ companyId, services = [], settin
 
           {employees.length ? (
             <label className="pp-field">
-              <span className="pp-field__label">Staff member (optional)</span>
+              <span className="pp-field__label">{t('availability.staffMemberOptionalLabel')}</span>
               <select
                 className="pp-input"
                 value={weeklyDraft.employeeId || ''}
                 onChange={(e) => setWeeklyDraft((d) => ({ ...d, employeeId: e.target.value || null }))}
               >
-                <option value="">Any staff</option>
+                <option value="">{t('availability.anyStaff')}</option>
                 {employees.map((e) => (
                   <option key={e.id} value={e.id}>{e.name}</option>
                 ))}
@@ -296,7 +338,7 @@ export default function AvailabilityScheduler({ companyId, services = [], settin
 
           <div className="pp-field pp-availWeekdayField">
             <div className="pp-providerWeekdayToggle">
-              {WEEKDAYS.map(({ dow, label }) => (
+              {weekdayButtonLabels.map(({ dow, label }) => (
                 <button
                   key={dow}
                   type="button"
@@ -310,7 +352,7 @@ export default function AvailabilityScheduler({ companyId, services = [], settin
           </div>
 
           <div className="pp-field">
-            <span className="pp-field__label">Working periods</span>
+            <span className="pp-field__label">{t('availability.workingPeriodsLabel')}</span>
             {(weeklyDraft.periods || []).map((p, idx) => (
               <AvailTimeRange
                 key={`period-${idx}`}
@@ -330,25 +372,25 @@ export default function AvailabilityScheduler({ companyId, services = [], settin
                 onRemove={() => removePeriod(idx)}
               />
             ))}
-            <button type="button" className="pp-btn pp-btn--ghost" onClick={addPeriod}>+ Add period</button>
+            <button type="button" className="pp-btn pp-btn--ghost" onClick={addPeriod}>+ {t('availability.addPeriod')}</button>
           </div>
 
           <div className="pp-modalGrid2">
             <label className="pp-field">
-              <span className="pp-field__label">Effective</span>
+              <span className="pp-field__label">{t('availability.effectiveLabel')}</span>
               <select
                 className="pp-input"
                 value={weeklyDraft.effectiveMode || EFFECTIVE_MODES.FOREVER}
                 onChange={(e) => setWeeklyDraft((d) => ({ ...d, effectiveMode: e.target.value }))}
               >
-                <option value={EFFECTIVE_MODES.FOREVER}>Forever</option>
-                <option value={EFFECTIVE_MODES.UNTIL}>Until date</option>
-                <option value={EFFECTIVE_MODES.RANGE}>Date range</option>
+                <option value={EFFECTIVE_MODES.FOREVER}>{t('availability.forever')}</option>
+                <option value={EFFECTIVE_MODES.UNTIL}>{t('availability.untilDate')}</option>
+                <option value={EFFECTIVE_MODES.RANGE}>{t('availability.dateRange')}</option>
               </select>
             </label>
             {weeklyDraft.effectiveMode === EFFECTIVE_MODES.UNTIL ? (
               <label className="pp-field">
-                <span className="pp-field__label">Until</span>
+                <span className="pp-field__label">{t('availability.untilLabel')}</span>
                 <input
                   className="pp-input"
                   type="date"
@@ -360,11 +402,11 @@ export default function AvailabilityScheduler({ companyId, services = [], settin
             {weeklyDraft.effectiveMode === EFFECTIVE_MODES.RANGE ? (
               <>
                 <label className="pp-field">
-                  <span className="pp-field__label">From</span>
+                  <span className="pp-field__label">{t('availability.fromLabel')}</span>
                   <input className="pp-input" type="date" value={weeklyDraft.effectiveFrom || ''} onChange={(e) => setWeeklyDraft((d) => ({ ...d, effectiveFrom: e.target.value }))} />
                 </label>
                 <label className="pp-field">
-                  <span className="pp-field__label">To</span>
+                  <span className="pp-field__label">{t('availability.toLabel')}</span>
                   <input className="pp-input" type="date" value={weeklyDraft.effectiveTo || ''} onChange={(e) => setWeeklyDraft((d) => ({ ...d, effectiveTo: e.target.value }))} />
                 </label>
               </>
@@ -372,7 +414,7 @@ export default function AvailabilityScheduler({ companyId, services = [], settin
           </div>
 
           <button type="button" className="pp-btn pp-btn--primary" disabled={busy} onClick={() => void saveWeeklyRule()}>
-            {busy ? 'Saving…' : 'Save weekly schedule'}
+            {busy ? t('availability.saving') : t('common.save')}
           </button>
         </section>
       ) : null}
@@ -380,15 +422,15 @@ export default function AvailabilityScheduler({ companyId, services = [], settin
       {panel === 'overrides' ? (
         <div className="pp-stack">
           <section className="pp-card pp-pad">
-            <h3 className="pp-sectionTitle">Date override</h3>
+            <h3 className="pp-sectionTitle">{t('availability.dateOverrideTitle')}</h3>
             <div className="pp-modalGrid2">
               <label className="pp-field">
-                <span className="pp-field__label">Date</span>
+                <span className="pp-field__label">{t('availability.dateLabel')}</span>
                 <input className="pp-input" type="date" value={overrideDraft.date} onChange={(e) => setOverrideDraft((d) => ({ ...d, date: e.target.value }))} />
               </label>
               <label className="pp-field pp-field--checkbox" style={{ alignSelf: 'end' }}>
                 <input type="checkbox" checked={overrideDraft.unavailable} onChange={(e) => setOverrideDraft((d) => ({ ...d, unavailable: e.target.checked }))} />
-                <span>Unavailable all day</span>
+                <span>{t('availability.unavailableAllDay')}</span>
               </label>
             </div>
             {!overrideDraft.unavailable ? (
@@ -400,14 +442,16 @@ export default function AvailabilityScheduler({ companyId, services = [], settin
               />
             ) : null}
             <div className="pp-availFormActions">
-              <button type="button" className="pp-btn pp-btn--primary" disabled={busy} onClick={() => void saveOverride()}>Save override</button>
+              <button type="button" className="pp-btn pp-btn--primary" disabled={busy} onClick={() => void saveOverride()}>
+                {busy ? t('availability.saving') : t('common.save')}
+              </button>
             </div>
             {overrides.length ? (
               <ul className="pp-availList">
                 {overrides.map((o) => (
                   <li key={o.id}>
-                    <span>{o.date} — {o.unavailable ? 'Closed' : `${o.periods?.[0]?.startTime}-${o.periods?.[0]?.endTime}`}</span>
-                    <button type="button" className="pp-link" onClick={() => void deleteAvailabilityOverride(companyId, o.id)}>Remove</button>
+                    <span>{o.date} — {o.unavailable ? t('availability.previewClosed') : `${o.periods?.[0]?.startTime}-${o.periods?.[0]?.endTime}`}</span>
+                    <button type="button" className="pp-link" onClick={() => void deleteAvailabilityOverride(companyId, o.id)}>{t('availability.removeLabel')}</button>
                   </li>
                 ))}
               </ul>
@@ -415,25 +459,27 @@ export default function AvailabilityScheduler({ companyId, services = [], settin
           </section>
 
           <section className="pp-card pp-pad">
-            <h3 className="pp-sectionTitle">Vacation / time off</h3>
+            <h3 className="pp-sectionTitle">{t('availability.vacationTimeOffTitle')}</h3>
             <div className="pp-modalGrid2">
-              <label className="pp-field"><span className="pp-field__label">Start</span><input className="pp-input" type="date" value={vacationDraft.startDate} onChange={(e) => setVacationDraft((d) => ({ ...d, startDate: e.target.value }))} /></label>
-              <label className="pp-field"><span className="pp-field__label">End</span><input className="pp-input" type="date" value={vacationDraft.endDate} onChange={(e) => setVacationDraft((d) => ({ ...d, endDate: e.target.value }))} /></label>
+              <label className="pp-field"><span className="pp-field__label">{t('availability.startLabel')}</span><input className="pp-input" type="date" value={vacationDraft.startDate} onChange={(e) => setVacationDraft((d) => ({ ...d, startDate: e.target.value }))} /></label>
+              <label className="pp-field"><span className="pp-field__label">{t('availability.endLabel')}</span><input className="pp-input" type="date" value={vacationDraft.endDate} onChange={(e) => setVacationDraft((d) => ({ ...d, endDate: e.target.value }))} /></label>
             </div>
-            <button type="button" className="pp-btn pp-btn--primary" disabled={busy} onClick={() => void saveVacation()}>Save vacation</button>
+            <button type="button" className="pp-btn pp-btn--primary" disabled={busy} onClick={() => void saveVacation()}>
+              {busy ? t('availability.saving') : t('common.save')}
+            </button>
             {vacations.length ? (
               <ul className="pp-availList">
                 {vacations.map((v) => (
-                  <li key={v.id}><span>{v.startDate} – {v.endDate}</span><button type="button" className="pp-link" onClick={() => void deleteVacation(companyId, v.id)}>Remove</button></li>
+                  <li key={v.id}><span>{v.startDate} – {v.endDate}</span><button type="button" className="pp-link" onClick={() => void deleteVacation(companyId, v.id)}>{t('availability.removeLabel')}</button></li>
                 ))}
               </ul>
             ) : null}
           </section>
 
           <section className="pp-card pp-pad">
-            <h3 className="pp-sectionTitle">Blocked time</h3>
+            <h3 className="pp-sectionTitle">{t('availability.blockedTimeTitle')}</h3>
             <div className="pp-modalGrid2">
-              <label className="pp-field"><span className="pp-field__label">Date</span><input className="pp-input" type="date" value={blockDraft.date} onChange={(e) => setBlockDraft((d) => ({ ...d, date: e.target.value }))} /></label>
+              <label className="pp-field"><span className="pp-field__label">{t('availability.dateLabel')}</span><input className="pp-input" type="date" value={blockDraft.date} onChange={(e) => setBlockDraft((d) => ({ ...d, date: e.target.value }))} /></label>
             </div>
             <TimeRangeRow
               startTime={blockDraft.start}
@@ -442,12 +488,14 @@ export default function AvailabilityScheduler({ companyId, services = [], settin
               onEndChange={(v) => setBlockDraft((d) => ({ ...d, end: v }))}
             />
             <div className="pp-availFormActions">
-              <button type="button" className="pp-btn pp-btn--primary" disabled={busy} onClick={() => void saveBlock()}>Save blocked time</button>
+              <button type="button" className="pp-btn pp-btn--primary" disabled={busy} onClick={() => void saveBlock()}>
+                {busy ? t('availability.saving') : t('common.save')}
+              </button>
             </div>
             {blocked.length ? (
               <ul className="pp-availList">
                 {blocked.map((b) => (
-                  <li key={b.id}><span>{b.label || 'Blocked'}</span><button type="button" className="pp-link" onClick={() => void deleteBlockedPeriod(companyId, b.id)}>Remove</button></li>
+                  <li key={b.id}><span>{b.label || t('availability.blockedFallbackLabel')}</span><button type="button" className="pp-link" onClick={() => void deleteBlockedPeriod(companyId, b.id)}>{t('availability.removeLabel')}</button></li>
                 ))}
               </ul>
             ) : null}
@@ -457,27 +505,27 @@ export default function AvailabilityScheduler({ companyId, services = [], settin
 
       {panel === 'settings' ? (
         <section className="pp-card pp-pad">
-          <h3 className="pp-sectionTitle">Booking rules</h3>
+          <h3 className="pp-sectionTitle">{t('availability.bookingRulesTab')}</h3>
           <div className="pp-modalGrid2">
             <label className="pp-field">
-              <span className="pp-field__label">Timezone</span>
+              <span className="pp-field__label">{t('availability.timezoneLabel')}</span>
               <input className="pp-input" value={settings.timezone || 'Europe/Nicosia'} onChange={(e) => void saveSettings({ timezone: e.target.value })} />
             </label>
             <label className="pp-field">
-              <span className="pp-field__label">Public holidays</span>
+              <span className="pp-field__label">{t('availability.publicHolidaysLabel')}</span>
               <select className="pp-input" value={settings.holidayCountry || 'CY'} onChange={(e) => void saveSettings({ holidayCountry: e.target.value })}>
                 {HOLIDAY_COUNTRY_OPTIONS.map((c) => <option key={c.code} value={c.code}>{c.label}</option>)}
               </select>
             </label>
             <label className="pp-field">
-              <span className="pp-field__label">Holiday mode</span>
+              <span className="pp-field__label">{t('availability.holidayModeLabel')}</span>
               <select className="pp-input" value={settings.holidayMode || HOLIDAY_MODES.CLOSED} onChange={(e) => void saveSettings({ holidayMode: e.target.value })}>
-                <option value={HOLIDAY_MODES.IGNORE}>Ignore holidays</option>
-                <option value={HOLIDAY_MODES.CLOSED}>Closed on holidays</option>
+                <option value={HOLIDAY_MODES.IGNORE}>{t('availability.ignoreHolidays')}</option>
+                <option value={HOLIDAY_MODES.CLOSED}>{t('availability.closedOnHolidays')}</option>
               </select>
             </label>
             <label className="pp-field">
-              <span className="pp-field__label">Advance notice (minutes)</span>
+              <span className="pp-field__label">{t('availability.advanceNoticeMinutesLabel')}</span>
               <NumericSettingInput
                 value={settings.advanceNoticeMin ?? 120}
                 min={0}
@@ -485,7 +533,7 @@ export default function AvailabilityScheduler({ companyId, services = [], settin
               />
             </label>
             <label className="pp-field">
-              <span className="pp-field__label">Max booking window (days)</span>
+              <span className="pp-field__label">{t('availability.maxBookingWindowDaysLabel')}</span>
               <NumericSettingInput
                 value={settings.maxBookingDaysAhead ?? 90}
                 min={1}
@@ -493,7 +541,7 @@ export default function AvailabilityScheduler({ companyId, services = [], settin
               />
             </label>
             <label className="pp-field">
-              <span className="pp-field__label">Buffer before (min)</span>
+              <span className="pp-field__label">{t('availability.bufferBeforeMinutesLabel')}</span>
               <NumericSettingInput
                 value={settings.bufferBeforeMin ?? 0}
                 min={0}
@@ -501,7 +549,7 @@ export default function AvailabilityScheduler({ companyId, services = [], settin
               />
             </label>
             <label className="pp-field">
-              <span className="pp-field__label">Buffer after (min)</span>
+              <span className="pp-field__label">{t('availability.bufferAfterMinutesLabel')}</span>
               <NumericSettingInput
                 value={settings.bufferAfterMin ?? 0}
                 min={0}
@@ -510,8 +558,8 @@ export default function AvailabilityScheduler({ companyId, services = [], settin
             </label>
           </div>
           <p className="pp-muted" style={{ marginTop: 10 }}>
-            Slots are calculated from your rules when customers book — no need to pre-create every time slot.
-            {employees.length ? ` ${employees.length} staff members configured.` : ''}
+            {t('availability.slotsCalculatedHint')}
+            {employees.length ? ` ${t('availability.staffConfiguredCount', { count: employees.length })}` : ''}
           </p>
         </section>
       ) : null}

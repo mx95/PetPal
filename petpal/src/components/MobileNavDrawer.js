@@ -1,10 +1,13 @@
 import React, { useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { useI18n } from '../i18n/I18nContext';
 
 /**
  * Full-screen navigation drawer for phones and tablets (< lg breakpoint).
  */
 export function MobileNavDrawer({ open, onClose, title, children }) {
+  const { t } = useI18n();
+
   useEffect(() => {
     if (!open) return undefined;
     const prev = document.body.style.overflow;
@@ -23,11 +26,11 @@ export function MobileNavDrawer({ open, onClose, title, children }) {
 
   return createPortal(
     <div className="pp-mobileNav" role="dialog" aria-modal="true" aria-label={title}>
-      <button type="button" className="pp-mobileNav__backdrop" aria-label="Close menu" onClick={onClose} />
+      <button type="button" className="pp-mobileNav__backdrop" aria-label={t('mobileNavDrawer.closeMenu')} onClick={onClose} />
       <nav className="pp-mobileNav__panel">
         <div className="pp-mobileNav__head">
           <span className="pp-mobileNav__title">{title}</span>
-          <button type="button" className="pp-mobileNav__close" onClick={onClose} aria-label="Close menu">
+          <button type="button" className="pp-mobileNav__close" onClick={onClose} aria-label={t('mobileNavDrawer.closeMenu')}>
             ×
           </button>
         </div>

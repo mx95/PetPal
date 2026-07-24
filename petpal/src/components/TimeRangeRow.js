@@ -1,4 +1,5 @@
 import React from 'react';
+import { useI18n } from '../i18n/I18nContext';
 import TimeInput24 from './TimeInput24';
 
 /**
@@ -12,14 +13,18 @@ export default function TimeRangeRow({
   onRemove,
   canRemove = false,
   readOnly = false,
-  startLabel = 'From',
-  endLabel = 'To',
+  startLabel,
+  endLabel,
   className = '',
 }) {
+  const { t } = useI18n();
+  const resolvedStartLabel = startLabel || t('availability.fromLabel');
+  const resolvedEndLabel = endLabel || t('availability.toLabel');
+
   return (
     <div className={`pp-timeRangeRow ${readOnly ? 'pp-timeRangeRow--readOnly' : ''} ${className}`.trim()}>
       <label className="pp-timeRangeRow__col">
-        <span className="pp-timeRangeRow__label">{startLabel}</span>
+        <span className="pp-timeRangeRow__label">{resolvedStartLabel}</span>
         <div className="pp-timeRangeRow__control">
           {readOnly ? (
             <span className="pp-timeRangeRow__value">{startTime}</span>
@@ -28,7 +33,7 @@ export default function TimeRangeRow({
               className="pp-timeInput24--boxed"
               value={startTime}
               onChange={onStartChange}
-              aria-label={`${startLabel} time`}
+              aria-label={t('availability.timeInputAriaLabel', { label: resolvedStartLabel })}
             />
           )}
         </div>
@@ -39,7 +44,7 @@ export default function TimeRangeRow({
       </span>
 
       <label className="pp-timeRangeRow__col">
-        <span className="pp-timeRangeRow__label">{endLabel}</span>
+        <span className="pp-timeRangeRow__label">{resolvedEndLabel}</span>
         <div className="pp-timeRangeRow__control">
           {readOnly ? (
             <span className="pp-timeRangeRow__value">{endTime}</span>
@@ -48,14 +53,14 @@ export default function TimeRangeRow({
               className="pp-timeInput24--boxed"
               value={endTime}
               onChange={onEndChange}
-              aria-label={`${endLabel} time`}
+              aria-label={t('availability.timeInputAriaLabel', { label: resolvedEndLabel })}
             />
           )}
         </div>
       </label>
 
       {!readOnly && canRemove ? (
-        <button type="button" className="pp-timeRangeRow__remove" aria-label="Remove period" onClick={onRemove}>
+        <button type="button" className="pp-timeRangeRow__remove" aria-label={t('availability.removePeriod')} onClick={onRemove}>
           ×
         </button>
       ) : null}
