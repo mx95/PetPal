@@ -1,6 +1,7 @@
 import L from 'leaflet';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from 'react-leaflet';
+import { useI18n } from '../i18n/I18nContext';
 
 import icon2x from 'leaflet/dist/images/marker-icon-2x.png';
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -58,6 +59,7 @@ function MapInstanceBridge({ onMap }) {
  * @param {{ lat: number, lng: number, onChange: (lat: number, lng: number) => void, disabled?: boolean, recenterSignal?: number }} props
  */
 export default function LocationPicker({ lat, lng, onChange, disabled, recenterSignal = 0 }) {
+  const { t } = useI18n();
   const [mapReady, setMapReady] = useState(false);
   const [locating, setLocating] = useState(false);
   const [locError, setLocError] = useState('');
@@ -80,7 +82,7 @@ export default function LocationPicker({ lat, lng, onChange, disabled, recenterS
   const goToCurrentLocation = useCallback(() => {
     if (disabled || locating) return;
     if (!navigator?.geolocation) {
-      setLocError('Geolocation is not available in this browser/device.');
+      setLocError(t('companyApply.geoUnavailable'));
       return;
     }
     setLocError('');
@@ -96,26 +98,26 @@ export default function LocationPicker({ lat, lng, onChange, disabled, recenterS
       (err) => {
         const msg =
           err?.code === 1
-            ? 'Location permission denied. Please allow location access in your browser settings.'
+            ? t('companyApply.geoPermissionDenied')
             : err?.code === 2
-              ? 'Could not detect your location. Try again in an open-sky area or with better network.'
-              : 'Location request timed out. Please try again.';
+              ? t('companyApply.geoPositionUnavailable')
+              : t('companyApply.geoTimeout');
         setLocError(msg);
         setLocating(false);
       },
       { enableHighAccuracy: true, maximumAge: 20_000, timeout: 12_000 }
     );
-  }, [disabled, locating, onChange]);
+  }, [disabled, locating, onChange, t]);
 
   return (
     <div
       className="pp-leaflet-wrap pp-companyMap"
       role="application"
-      aria-label="Choose business location on map"
+      aria-label={t('companyApply.chooseLocationAria')}
       style={{ position: 'relative' }}
     >
       <p className="pp-subtle" style={{ fontSize: 12, marginBottom: 8 }}>
-        Search for your business, then fine-tune by dragging the pin or clicking the map.
+        {t('companyApply.locationPickerHint')}
       </p>
       {!mapReady ? (
         <div
@@ -148,8 +150,8 @@ export default function LocationPicker({ lat, lng, onChange, disabled, recenterS
         className="pp-btn"
         onClick={goToCurrentLocation}
         disabled={!!disabled || locating}
-        aria-label="Use my current location"
-        title="Use my current location"
+        aria-label={t('companyApply.useCurrentLocation')}
+        title={t('companyApply.useCurrentLocation')}
         style={{
           position: 'absolute',
           right: 12,

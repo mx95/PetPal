@@ -8,6 +8,7 @@ import { useI18n } from '../i18n/I18nContext';
 import { formatEur } from '../shop/catalog';
 import { clearPendingCheckout, readPendingCheckout } from '../shop/pendingCheckout';
 import { clearShopCartItems } from '../shop/shopCartStorage';
+import { localizeCartItem } from '../shop/shopCartHelpers';
 import { buildShippingContact, splitPhoneForForm, validateShippingForm } from '../shop/shippingContact';
 import { startJccCheckout } from '../shop/startJccCheckout';
 
@@ -327,15 +328,18 @@ export default function ShopCheckout() {
         <div className="pp-shopCheckout__summaryCard">
           <h2 className="pp-shopCheckout__summaryTitle">{t('checkoutDetails.summaryTitle')}</h2>
           <ul className="pp-shopCheckout__summaryList">
-            {pending.cartItems.map((row) => (
-              <li key={row.key} className="pp-shopCheckout__summaryRow">
-                <div className="pp-shopCheckout__summaryName">
-                  {row.title}
-                  {(row.qty || 1) > 1 ? <span className="pp-shopCheckout__summaryQty">×{row.qty}</span> : null}
-                </div>
-                <strong>{formatEur(row.priceCents * (row.qty || 1))}</strong>
-              </li>
-            ))}
+            {pending.cartItems.map((row) => {
+              const displayRow = localizeCartItem(row, t);
+              return (
+                <li key={row.key} className="pp-shopCheckout__summaryRow">
+                  <div className="pp-shopCheckout__summaryName">
+                    {displayRow.title}
+                    {(row.qty || 1) > 1 ? <span className="pp-shopCheckout__summaryQty">×{row.qty}</span> : null}
+                  </div>
+                  <strong>{formatEur(row.priceCents * (row.qty || 1))}</strong>
+                </li>
+              );
+            })}
           </ul>
           <div className="pp-shopCheckout__summaryTotal">
             <span>{t('checkoutDetails.summaryItems', { count: itemCount })}</span>

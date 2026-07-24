@@ -15,6 +15,45 @@ export const BOOST_SKUS = [
   'STORE_BOOST_MONTHLY',
 ];
 
+export const SHOP_PRODUCT_COPY_KEYS = {
+  PETPAL_PLUS_MONTHLY: {
+    title: 'shopPage.products.monthly.title',
+    subtitle: 'shopPage.products.monthly.subtitle',
+    badge: 'shopPage.products.monthly.badge',
+  },
+  PETPAL_PLUS_YEARLY: {
+    title: 'shopPage.products.yearly.title',
+    subtitle: 'shopPage.products.yearly.subtitle',
+    badge: 'shopPage.products.yearly.badge',
+  },
+  TRACKER_HARDWARE: {
+    title: 'shopPage.products.gpsTracker.title',
+    subtitle: 'shopPage.products.gpsTracker.subtitle',
+    badge: 'shopPage.products.gpsTracker.badge',
+  },
+  NFC_TAG_HARDWARE: {
+    title: 'shopPage.products.nfcTag.title',
+    subtitle: 'shopPage.products.nfcTag.subtitle',
+    badge: 'shopPage.products.nfcTag.badge',
+  },
+  STORE_BOOST_NEARBY_MONTHLY: {
+    title: 'shopPage.products.nearbyBoost.title',
+    subtitle: 'shopPage.products.nearbyBoost.subtitle',
+    badge: 'shopPage.products.nearbyBoost.badge',
+  },
+  STORE_BOOST_BOOKINGS_MONTHLY: {
+    title: 'shopPage.products.bookingsBoost.title',
+    subtitle: 'shopPage.products.bookingsBoost.subtitle',
+    badge: 'shopPage.products.bookingsBoost.badge',
+  },
+};
+
+export function translateShopCopy(t, key, params, fallback = '') {
+  if (typeof t !== 'function' || !key) return fallback;
+  const translated = t(key, params);
+  return translated === key ? fallback : translated;
+}
+
 /**
  * @param {{ includeTracker?: boolean, includeNfc?: boolean, nfcPetIds?: string[], nfcPetCount?: number } | boolean} [opts]
  */
@@ -135,9 +174,27 @@ export function formatEur(amountCents) {
 }
 
 /** @param {ShopProduct} product */
-export function formatShopPrice(product) {
-  if (product.id === 'PETPAL_PLUS_MONTHLY') return `${formatEur(product.amountCents)}/mo`;
-  if (product.id === 'PETPAL_PLUS_YEARLY') return `${formatEur(product.amountCents)}/year`;
-  if (BOOST_SKUS.includes(product.id)) return `${formatEur(product.amountCents)}/mo`;
+export function localizeShopProduct(product, t) {
+  const keys = SHOP_PRODUCT_COPY_KEYS[product.id] || {};
+  return {
+    ...product,
+    title: translateShopCopy(t, keys.title, undefined, product.title),
+    subtitle: translateShopCopy(t, keys.subtitle, undefined, product.subtitle || ''),
+    badge: translateShopCopy(t, keys.badge, undefined, product.badge || ''),
+  };
+}
+
+/** @param {ShopProduct} product */
+export function formatShopPrice(product, t) {
+  const amount = formatEur(product.amountCents);
+  if (product.id === 'PETPAL_PLUS_MONTHLY') {
+    return translateShopCopy(t, 'shopPage.pricePerMonth', { amount }, `${amount}/mo`);
+  }
+  if (product.id === 'PETPAL_PLUS_YEARLY') {
+    return translateShopCopy(t, 'shopPage.pricePerYear', { amount }, `${amount}/year`);
+  }
+  if (BOOST_SKUS.includes(product.id)) {
+    return translateShopCopy(t, 'shopPage.pricePerMonth', { amount }, `${amount}/mo`);
+  }
   return formatEur(product.amountCents);
 }

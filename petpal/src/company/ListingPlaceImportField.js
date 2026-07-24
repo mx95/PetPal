@@ -1,6 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { useJsApiLoader } from '@react-google-maps/api';
 import { haversineKm } from '../bookings/bookingBrowseUtils';
+import { useI18n } from '../i18n/I18nContext';
 import { searchOsmPlaces } from './placeSearch';
 
 const mapsLib = ['places'];
@@ -42,10 +43,11 @@ function distanceKmToPlace(place, lat, lng) {
  * @param {{ profile: import('./companyTypes').CompanyProfile | null, onImport: Function }} props
  */
 export default function ListingPlaceImportField({ profile, onImport }) {
+  const { t } = useI18n();
   if (!hasRegisteredPin(profile)) {
     return (
       <p className="pp-subtle pp-listingPlaceImport__hint">
-        Map pin required. Apply for a business account and set your location on the map to unlock listing import.
+        {t('companyApply.importMapPinRequired')}
       </p>
     );
   }
@@ -58,6 +60,7 @@ export default function ListingPlaceImportField({ profile, onImport }) {
 }
 
 function VerifiedGoogleListingImport({ apiKey, profile, onImport }) {
+  const { t } = useI18n();
   const { isLoaded, loadError } = useJsApiLoader({
     id: mapsScriptId,
     googleMapsApiKey: apiKey,
@@ -97,23 +100,23 @@ function VerifiedGoogleListingImport({ apiKey, profile, onImport }) {
           },
           (place, status) => {
             if (status !== window.google.maps.places.PlacesServiceStatus.OK || !place) {
-              reject(new Error('Could not load your Google listing.'));
+              reject(new Error(t('companyApply.importGoogleListingLoadFailed')));
               return;
             }
             if (distanceKmToPlace(place, lat, lng) > MAX_PIN_DISTANCE_KM) {
-              reject(new Error('That listing is too far from your registered map pin.'));
+              reject(new Error(t('companyApply.importListingTooFar')));
               return;
             }
             resolve(place);
           }
         );
       }),
-    [lat, lng]
+    [lat, lng, t]
   );
 
   const findPlaceAtPin = useCallback(() => {
     if (!isLoaded || !window.google?.maps?.places) {
-      return Promise.reject(new Error('Maps are still loading…'));
+      return Promise.reject(new Error(t('companyApply.mapsStillLoading')));
     }
     const query = businessName || profile.addressLine || 'business';
     return new Promise((resolve, reject) => {
@@ -128,7 +131,7 @@ function VerifiedGoogleListingImport({ apiKey, profile, onImport }) {
         },
         (results, status) => {
           if (status !== window.google.maps.places.PlacesServiceStatus.OK || !results?.length) {
-            reject(new Error('No Google listing found at your registered map pin.'));
+            reject(new Error(t('companyApply.importNoGoogleListingAtPin')));
             return;
           }
           const nearest = results
@@ -136,42 +139,42 @@ function VerifiedGoogleListingImport({ apiKey, profile, onImport }) {
             .filter(({ dist }) => dist <= MAX_PIN_DISTANCE_KM)
             .sort((a, b) => a.dist - b.dist)[0];
           if (!nearest) {
-            reject(new Error('No Google listing matches your registered map pin.'));
+            reject(new Error(t('companyApply.importNoGoogleListingMatch')));
             return;
           }
           resolve(nearest.place);
         }
       );
     });
-  }, [businessName, isLoaded, lat, lng, profile.addressLine]);
+  }, [businessName, isLoaded, lat, lng, profile.addressLine, t]);
 
   const loadListing = useCallback(async () => {
     setErr('');
     setBusy(true);
     setPreview(null);
     try {
-      if (loadError) throw new Error('Google Maps could not load.');
+      if (loadError) throw new Error(t('companyApply.importGoogleMapsLoadFailed'));
       let place;
       if (storedPlaceId) {
         place = await fetchPlaceDetails(storedPlaceId);
       } else {
         const found = await findPlaceAtPin();
-        if (!found.place_id) throw new Error('No verified listing at your pin.');
+        if (!found.place_id) throw new Error(t('companyApply.importNoVerifiedListingAtPin'));
         place = await fetchPlaceDetails(found.place_id);
       }
       const payload = placeImportPayload(place);
       setPreview(payload);
       onImport(payload);
     } catch (e) {
-      setErr(e?.message || 'Import failed.');
+      setErr(e?.message || t('companyApply.importFailed'));
     } finally {
       setBusy(false);
     }
-  }, [fetchPlaceDetails, findPlaceAtPin, loadError, onImport, storedPlaceId]);
+  }, [fetchPlaceDetails, findPlaceAtPin, loadError, onImport, storedPlaceId, t]);
 
   return (
     <VerifiedImportUi
-      businessName={businessName || 'Your business'}
+      businessName={businessName || t('companyApply.yourBusinessFallback')}
       pinLabel={pinLabel}
       busy={busy}
       err={err}
@@ -180,14 +183,15 @@ function VerifiedGoogleListingImport({ apiKey, profile, onImport }) {
       disabled={!isLoaded && !loadError}
       hint={
         storedPlaceId
-          ? 'Loads data only from your verified Google listing at the map pin you set when applying.'
-          : 'Finds the Google listing at your registered map pin — you cannot import other stores.'
+          ? t('companyApply.importGoogleStoredHint')
+          : t('companyApply.importGoogleFindHint')
       }
     />
   );
 }
 
 function VerifiedOsmListingImport({ profile, onImport }) {
+  const { t } = useI18n();
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
   const [preview, setPreview] = useState(null);
@@ -205,7 +209,7 @@ function VerifiedOsmListingImport({ profile, onImport }) {
       const q = [businessName, profile.addressLine].filter(Boolean).join(', ').trim();
       const list = await searchOsmPlaces(q || `${lat}, ${lng}`);
       const match = list.find((p) => haversineKm(lat, lng, p.lat, p.lng) <= MAX_PIN_DISTANCE_KM);
-      if (!match) throw new Error('No listing found near your registered map pin.');
+      if (!match) throw new Error(t('companyApply.importNoListingNearPin'));
       const payload = {
         displayName: match.label.split(',')[0]?.trim() || businessName,
         address: match.label,
@@ -216,26 +220,27 @@ function VerifiedOsmListingImport({ profile, onImport }) {
       setPreview(payload);
       onImport(payload);
     } catch (e) {
-      setErr(e?.message || 'Import failed.');
+      setErr(e?.message || t('companyApply.importFailed'));
     } finally {
       setBusy(false);
     }
-  }, [businessName, lat, lng, onImport, profile.addressLine]);
+  }, [businessName, lat, lng, onImport, profile.addressLine, t]);
 
   return (
     <VerifiedImportUi
-      businessName={businessName || 'Your business'}
+      businessName={businessName || t('companyApply.yourBusinessFallback')}
       pinLabel={pinLabel}
       busy={busy}
       err={err}
       preview={preview}
       onLoad={loadListing}
-      hint="Loads address data from OpenStreetMap at your registered map pin only."
+      hint={t('companyApply.importOsmHint')}
     />
   );
 }
 
 function VerifiedImportUi({ businessName, pinLabel, busy, err, preview, onLoad, disabled, hint }) {
+  const { t } = useI18n();
   return (
     <div className="pp-listingPlaceImport">
       <p className="pp-subtle pp-listingPlaceImport__hint">{hint}</p>
@@ -245,12 +250,15 @@ function VerifiedImportUi({ businessName, pinLabel, busy, err, preview, onLoad, 
           <span className="pp-muted">{pinLabel}</span>
         </div>
         <button type="button" className="pp-btn pp-btn--ghost" disabled={busy || disabled} onClick={() => void onLoad()}>
-          {busy ? 'Loading…' : 'Load listing data'}
+          {busy ? t('common.loading') : t('companyApply.loadListingData')}
         </button>
       </div>
       {preview ? (
         <p className="pp-success pp-listingPlaceImport__ok">
-          Loaded {preview.displayName}{preview.address ? ` — ${preview.address}` : ''}
+          {t('companyApply.importLoaded', {
+            name: preview.displayName,
+            address: preview.address ? ` — ${preview.address}` : '',
+          })}
         </p>
       ) : null}
       {err ? <p className="pp-error pp-listingPlaceImport__err">{err}</p> : null}

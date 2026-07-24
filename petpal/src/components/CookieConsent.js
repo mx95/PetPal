@@ -73,7 +73,7 @@ export function CookieConsent() {
     <div className="pp-cookieBanner" role="dialog" aria-labelledby="cookie-banner-title-ga" aria-modal="false">
       <div className="pp-cookieBanner__text">
         <h2 id="cookie-banner-title-ga" className="pp-cookieBanner__title">
-          Manage Consent 🍪
+          {t('cookie.consentTitle')}
         </h2>
         <p>{withAnalytics ? t('cookie.bodyGA') : t('cookie.bodyNoGA')}</p>
       </div>
@@ -87,7 +87,7 @@ export function CookieConsent() {
           onClick={() => setShowCustomize((prev) => !prev)}
           aria-expanded={showCustomize}
         >
-          {showCustomize ? 'Close customization' : 'Customize'}
+          {showCustomize ? t('cookie.closeCustomization') : t('cookie.customize')}
         </button>
       </div>
 
@@ -98,7 +98,7 @@ export function CookieConsent() {
               <label className="pp-cookieBanner__opt">
                 <input type="checkbox" checked disabled />
                 <span>
-                  <strong>Functional</strong>
+                  <strong>{t('cookie.functionalTitle')}</strong>
                 </span>
               </label>
               <button
@@ -114,10 +114,7 @@ export function CookieConsent() {
             </div>
             {openInfo.functional ? (
               <p className="pp-cookieBanner__optDesc">
-                The technical storage or access is strictly necessary for the legitimate purpose of enabling
-                the use of a specific service explicitly requested by the subscriber or user, or for the sole
-                purpose of carrying out the transmission of a communication over an electronic communications
-                network.
+                {t('cookie.functionalDesc')}
               </p>
             ) : null}
           </div>
@@ -131,7 +128,7 @@ export function CookieConsent() {
                   onChange={(e) => setStatisticsEnabled(e.target.checked)}
                 />
                 <span>
-                  <strong>Statistics</strong>
+                  <strong>{t('cookie.statisticsTitle')}</strong>
                 </span>
               </label>
               <button
@@ -147,7 +144,7 @@ export function CookieConsent() {
             </div>
             {openInfo.statistics ? (
               <p className="pp-cookieBanner__optDesc">
-                The technical storage or access that is used exclusively for statistical purposes.
+                {t('cookie.statisticsDesc')}
               </p>
             ) : null}
           </div>
@@ -161,7 +158,7 @@ export function CookieConsent() {
                   onChange={(e) => setMarketingEnabled(e.target.checked)}
                 />
                 <span>
-                  <strong>Marketing</strong>
+                  <strong>{t('cookie.marketingTitle')}</strong>
                 </span>
               </label>
               <button
@@ -177,14 +174,13 @@ export function CookieConsent() {
             </div>
             {openInfo.marketing ? (
               <p className="pp-cookieBanner__optDesc">
-                The technical storage or access is required to create user profiles to send advertising, or to
-                track the user on a website or across several websites for similar marketing purposes.
+                {t('cookie.marketingDesc')}
               </p>
             ) : null}
           </div>
 
           <button type="button" className="pp-btn pp-btnPrimary" onClick={savePreferences}>
-            Save preferences
+            {t('cookie.savePreferences')}
           </button>
         </div>
       ) : null}

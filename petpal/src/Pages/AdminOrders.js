@@ -5,7 +5,8 @@ import { useCompany } from '../company/CompanyContext';
 import { useI18n } from '../i18n/I18nContext';
 import { PrettySelect } from '../components/PrettySelect';
 import { formatEur } from '../shop/catalog';
-import { ADMIN_FULFILLMENT_STATUSES, ORDER_STATUS_LABELS, adminUpdateOrder, subscribeAllOrders } from '../shop/ordersFirestore';
+import { ADMIN_FULFILLMENT_STATUSES, formatOrderStatusLabel, adminUpdateOrder, subscribeAllOrders } from '../shop/ordersFirestore';
+import { localizeCartItem } from '../shop/shopCartHelpers';
 import { adminAssignSubscriptionImei } from '../shop/subscriptionImeiClient';
 import { formatDateTime24 } from '../formatTime24';
 
@@ -144,7 +145,7 @@ export default function AdminOrders() {
           <option value="all">{t('adminOrders.filterAll')}</option>
           {ADMIN_FULFILLMENT_STATUSES.concat(['pending_payment', 'payment_failed']).map((s) => (
             <option key={s} value={s}>
-              {ORDER_STATUS_LABELS[s] || s}
+              {formatOrderStatusLabel(s, t)}
             </option>
           ))}
         </PrettySelect>
@@ -170,7 +171,7 @@ export default function AdminOrders() {
                     {orderWhen(row)} · {formatEur(row.amountCents)} · {row.sku}
                   </div>
                 </div>
-                <span className="pp-badge">{ORDER_STATUS_LABELS[row.status] || row.status}</span>
+                <span className="pp-badge">{formatOrderStatusLabel(row.status, t)}</span>
               </button>
               {open ? (
                 <div className="pp-adminOrdersList__body">
@@ -194,17 +195,20 @@ export default function AdminOrders() {
                   </div>
                   <h3 className="pp-sectionTitle">{t('adminOrders.itemsTitle')}</h3>
                   <ul className="pp-ordersList__lines">
-                    {row.items.map((item) => (
-                      <li key={item.key}>
-                        {item.title} ×{item.qty} — {formatEur(item.priceCents * item.qty)}
-                        {item.subPaymentId ? (
-                          <span className="pp-subtle">
-                            {' '}
-                            · subPaymentID {item.subPaymentId}
-                          </span>
-                        ) : null}
-                      </li>
-                    ))}
+                    {row.items.map((item) => {
+                      const displayItem = localizeCartItem(item, t);
+                      return (
+                        <li key={item.key}>
+                          {displayItem.title} ×{item.qty} — {formatEur(item.priceCents * item.qty)}
+                          {item.subPaymentId ? (
+                            <span className="pp-subtle">
+                              {' '}
+                              · subPaymentID {item.subPaymentId}
+                            </span>
+                          ) : null}
+                        </li>
+                      );
+                    })}
                   </ul>
                   {row.trackerSubscriptions?.length ? (
                     <div className="pp-adminOrdersList__trackers">
@@ -273,7 +277,7 @@ export default function AdminOrders() {
                       >
                         {ADMIN_FULFILLMENT_STATUSES.concat(['pending_payment', 'payment_failed']).map((s) => (
                           <option key={s} value={s}>
-                            {ORDER_STATUS_LABELS[s] || s}
+                            {formatOrderStatusLabel(s, t)}
                           </option>
                         ))}
                       </PrettySelect>

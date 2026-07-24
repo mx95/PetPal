@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { useJsApiLoader } from '@react-google-maps/api';
+import { useI18n } from '../i18n/I18nContext';
 import { defaultMapCenter } from './locationDefaults';
 import { searchOsmPlaces } from './placeSearch';
 import FillFromAboveButton from './FillFromAboveButton';
@@ -28,6 +29,7 @@ export default function CompanyPlaceSearchField({ onPicked, businessName, addres
  * @param {{ apiKey: string, onPicked: (lat: number, lng: number) => void, businessName: string, addressLine: string }} props
  */
 function GooglePlaceSearch({ apiKey, onPicked, businessName, addressLine }) {
+  const { t } = useI18n();
   const { isLoaded, loadError } = useJsApiLoader({
     id: mapsScriptId,
     googleMapsApiKey: apiKey,
@@ -53,21 +55,21 @@ function GooglePlaceSearch({ apiKey, onPicked, businessName, addressLine }) {
           lng: p.lng,
         }))
       );
-      if (list.length === 0) setErr('No results. Refine the name or set the pin on the map.');
+      if (list.length === 0) setErr(t('companyApply.mapSearchNoResultsGoogleFallback'));
     } catch (e) {
-      setErr(e?.message || 'Search failed.');
+      setErr(e?.message || t('companyApply.mapSearchFailed'));
       setRows([]);
     } finally {
       setBusy(false);
     }
-  }, []);
+  }, [t]);
 
   const runGoogle = useCallback(() => {
     if (!isLoaded || !window.google?.maps?.places) return;
     setErr('');
-    const t = q.trim();
-    if (t.length < 2) {
-      setErr('Type at least 2 characters.');
+    const text = q.trim();
+    if (text.length < 2) {
+      setErr(t('companyApply.mapSearchMinChars'));
       return;
     }
     setBusy(true);
@@ -75,7 +77,7 @@ function GooglePlaceSearch({ apiKey, onPicked, businessName, addressLine }) {
     const center = new window.google.maps.LatLng(defaultMapCenter.lat, defaultMapCenter.lng);
     const locationBias = new window.google.maps.Circle({ center, radius: 200_000 });
     const req = {
-      input: t,
+      input: text,
       componentRestrictions: { country: 'cy' },
       locationBias,
     };
@@ -85,13 +87,13 @@ function GooglePlaceSearch({ apiKey, onPicked, businessName, addressLine }) {
         status !== window.google.maps.places.PlacesServiceStatus.ZERO_RESULTS
       ) {
         setBusy(false);
-        runOsm(t);
+        runOsm(text);
         return;
       }
       if (!predictions || predictions.length === 0) {
         setRows([]);
         setBusy(false);
-        runOsm(t);
+        runOsm(text);
         return;
       }
       setRows(
@@ -105,21 +107,21 @@ function GooglePlaceSearch({ apiKey, onPicked, businessName, addressLine }) {
       );
       setBusy(false);
     });
-  }, [q, isLoaded, runOsm]);
+  }, [q, isLoaded, runOsm, t]);
 
   const run = useCallback(() => {
-    const t = q.trim();
-    if (t.length < 2) {
-      setErr('Type at least 2 characters.');
+    const text = q.trim();
+    if (text.length < 2) {
+      setErr(t('companyApply.mapSearchMinChars'));
       return;
     }
     if (loadError) {
-      runOsm(t);
+      runOsm(text);
       return;
     }
     if (isLoaded) runGoogle();
-    else setErr('Maps are still loading…');
-  }, [loadError, isLoaded, runGoogle, runOsm, q]);
+    else setErr(t('companyApply.mapsStillLoading'));
+  }, [loadError, isLoaded, runGoogle, runOsm, q, t]);
 
   const onSelect = useCallback(
     (r) => {
@@ -162,11 +164,11 @@ function GooglePlaceSearch({ apiKey, onPicked, businessName, addressLine }) {
             setRows([]);
             return;
           }
-          setErr('Could not load that place. Try another result or the map.');
+          setErr(t('companyApply.mapSearchPlaceLoadFailed'));
         }
       );
     },
-    [isLoaded, onPicked]
+    [isLoaded, onPicked, t]
   );
 
   const canFill = useMemo(
@@ -181,17 +183,15 @@ function GooglePlaceSearch({ apiKey, onPicked, businessName, addressLine }) {
   return (
     <div className="pp-companyMapSearch pp-companyMapSearch--google">
       <p className="pp-subtle pp-companyMapSearch__hint">
-        Search uses <strong>Google Places</strong> in Cyprus, then the map to fine-tune. If nothing matches, we try
-        OpenStreetMap.
+        {t('companyApply.mapSearchGoogleHint')}
       </p>
       {loadError ? (
         <p className="pp-subtle" style={{ fontSize: 12, marginTop: 4 }}>
-          Google could not load ({loadError.message || 'error'}). Using OpenStreetMap search only — check your API key
-          and that Places is enabled in Google Cloud.
+          {t('companyApply.googleLoadError', { reason: loadError.message || t('common.error') })}
         </p>
       ) : !isLoaded ? (
         <p className="pp-subtle" style={{ fontSize: 12, marginTop: 4 }}>
-          Loading map services…
+          {t('companyApply.loadingMapServices')}
         </p>
       ) : null}
       <div className="pp-companyMapSearch__row">
@@ -200,19 +200,19 @@ function GooglePlaceSearch({ apiKey, onPicked, businessName, addressLine }) {
           value={q}
           onChange={(e) => setQ(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), run())}
-          placeholder="Business name, street, or city in Cyprus"
-          aria-label="Search for your business"
+          placeholder={t('companyApply.mapSearchGooglePlaceholder')}
+          aria-label={t('companyApply.mapSearchAria')}
         />
         <div className="pp-companyMapSearch__actions">
           <button type="button" className="pp-btn pp-companyMapSearch__btn" disabled={busy} onClick={run}>
-            {busy ? '…' : 'Search'}
+            {busy ? '…' : t('companyApply.mapSearchButton')}
           </button>
           <FillFromAboveButton onClick={fill} disabled={!canFill} />
         </div>
       </div>
       {err ? <p className="pp-error pp-companyMapSearch__err">{err}</p> : null}
       {rows.length > 0 ? (
-        <ul className="pp-companyMapSearch__results" role="listbox" aria-label="Search results">
+        <ul className="pp-companyMapSearch__results" role="listbox" aria-label={t('companyApply.mapSearchResultsAria')}>
           {rows.map((r) => (
             <li key={r._key}>
               <button type="button" className="pp-companyMapSearch__resultBtn" onClick={() => onSelect(r)}>
@@ -231,6 +231,7 @@ function GooglePlaceSearch({ apiKey, onPicked, businessName, addressLine }) {
  * @param {{ onPicked: (lat: number, lng: number) => void, businessName: string, addressLine: string }} props
  */
 function OsmPlaceSearch({ onPicked, businessName, addressLine }) {
+  const { t } = useI18n();
   const [q, setQ] = useState('');
   const [rows, setRows] = useState(/** @type {any[]} */ ([]));
   const [busy, setBusy] = useState(false);
@@ -238,14 +239,14 @@ function OsmPlaceSearch({ onPicked, businessName, addressLine }) {
 
   const run = useCallback(async () => {
     setErr('');
-    const t = q.trim();
-    if (t.length < 2) {
-      setErr('Type at least 2 characters.');
+    const text = q.trim();
+    if (text.length < 2) {
+      setErr(t('companyApply.mapSearchMinChars'));
       return;
     }
     setBusy(true);
     try {
-      const list = await searchOsmPlaces(t);
+      const list = await searchOsmPlaces(text);
       setRows(
         list.map((p, i) => ({
           _key: `o-${i}`,
@@ -256,14 +257,14 @@ function OsmPlaceSearch({ onPicked, businessName, addressLine }) {
           lng: p.lng,
         }))
       );
-      if (list.length === 0) setErr('No results. Add a city or set the pin manually on the map.');
+      if (list.length === 0) setErr(t('companyApply.mapSearchNoResultsOsm'));
     } catch (e) {
-      setErr(e?.message || 'Search failed.');
+      setErr(e?.message || t('companyApply.mapSearchFailed'));
       setRows([]);
     } finally {
       setBusy(false);
     }
-  }, [q]);
+  }, [q, t]);
 
   const canFill = useMemo(
     () => Boolean([businessName, addressLine].filter(Boolean).join(' ').trim()),
@@ -277,7 +278,7 @@ function OsmPlaceSearch({ onPicked, businessName, addressLine }) {
   return (
     <div className="pp-companyMapSearch">
       <p className="pp-subtle pp-companyMapSearch__hint">
-        Search with <strong>OpenStreetMap</strong> (free; not every business is listed). You can also drag the pin.
+        {t('companyApply.mapSearchOsmHint')}
       </p>
       <div className="pp-companyMapSearch__row">
         <input
@@ -285,19 +286,19 @@ function OsmPlaceSearch({ onPicked, businessName, addressLine }) {
           value={q}
           onChange={(e) => setQ(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), run())}
-          placeholder="e.g. Pet shop, Makarios, Limassol…"
-          aria-label="Search for your business on the map"
+          placeholder={t('companyApply.mapSearchOsmPlaceholder')}
+          aria-label={t('companyApply.mapSearchOsmAria')}
         />
         <div className="pp-companyMapSearch__actions">
           <button type="button" className="pp-btn pp-companyMapSearch__btn" disabled={busy} onClick={run}>
-            {busy ? '…' : 'Search'}
+            {busy ? '…' : t('companyApply.mapSearchButton')}
           </button>
           <FillFromAboveButton onClick={fill} disabled={!canFill} />
         </div>
       </div>
       {err ? <p className="pp-error pp-companyMapSearch__err">{err}</p> : null}
       {rows.length > 0 ? (
-        <ul className="pp-companyMapSearch__results" role="listbox" aria-label="Map search results">
+        <ul className="pp-companyMapSearch__results" role="listbox" aria-label={t('companyApply.mapSearchMapResultsAria')}>
           {rows.map((r) => (
             <li key={r._key}>
               <button

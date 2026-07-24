@@ -4,7 +4,7 @@ import { useLocation } from 'react-router-dom';
 import { formatEur } from '../../shop/catalog';
 import { useI18n } from '../../i18n/I18nContext';
 import { useShopCartOptional } from '../../shop/ShopCartContext';
-import { isSubscriptionCartLine } from '../../shop/shopCartHelpers';
+import { isSubscriptionCartLine, localizeCartItem } from '../../shop/shopCartHelpers';
 
 export default function ShopCartMobilePanel() {
   const { t } = useI18n();
@@ -39,14 +39,15 @@ export default function ShopCartMobilePanel() {
           <ul className="pp-shopCart__list">
             {cart.cartItems.map((row) => {
               const lockQty = lockQtyForKeys.includes(row.key);
+              const displayRow = localizeCartItem(row, t);
               return (
                 <li key={`mobile-${row.key}`} className="pp-shopCart__row">
                   <div className="pp-shopCart__rowMain">
                     <div className="pp-shopCart__rowTitle">
-                      {row.title}
+                      {displayRow.title}
                       {!lockQty ? <span className="pp-shopCart__qtyBadge">×{row.qty}</span> : null}
                     </div>
-                    {row.subtitle ? <div className="pp-subtle pp-shopCart__rowSub">{row.subtitle}</div> : null}
+                    {displayRow.subtitle ? <div className="pp-subtle pp-shopCart__rowSub">{displayRow.subtitle}</div> : null}
                     <div className="pp-subtle pp-shopCart__unitPrice">
                       {formatEur(row.priceCents)} {t('shopPage.cartEach')}
                     </div>

@@ -12,17 +12,24 @@ import { getDb, isFirebaseConfigured } from '../firebase';
 
 /** @typedef {'pending_payment'|'paid'|'processing'|'shipped'|'delivered'|'cancelled'|'payment_failed'} OrderStatus */
 
-export const ORDER_STATUS_LABELS = {
-  pending_payment: 'Awaiting payment',
-  paid: 'Paid',
-  processing: 'Processing',
-  shipped: 'Shipped',
-  delivered: 'Delivered',
-  cancelled: 'Cancelled',
-  payment_failed: 'Payment failed',
+export const ORDER_STATUS_LABEL_KEYS = {
+  pending_payment: 'ordersPage.status.pendingPayment',
+  paid: 'ordersPage.status.paid',
+  processing: 'ordersPage.status.processing',
+  shipped: 'ordersPage.status.shipped',
+  delivered: 'ordersPage.status.delivered',
+  cancelled: 'ordersPage.status.cancelled',
+  payment_failed: 'ordersPage.status.paymentFailed',
 };
 
 export const ADMIN_FULFILLMENT_STATUSES = ['paid', 'processing', 'shipped', 'delivered', 'cancelled'];
+
+export function formatOrderStatusLabel(status, t) {
+  const key = ORDER_STATUS_LABEL_KEYS[status];
+  if (!key || typeof t !== 'function') return status;
+  const label = t(key);
+  return label === key ? status : label;
+}
 
 /**
  * @param {import('firebase/firestore').QueryDocumentSnapshot} d

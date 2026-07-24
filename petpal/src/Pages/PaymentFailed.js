@@ -3,7 +3,8 @@ import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
 import { useI18n } from '../i18n/I18nContext';
 import { formatEur } from '../shop/catalog';
-import { ORDER_STATUS_LABELS, subscribeUserOrder } from '../shop/ordersFirestore';
+import { formatOrderStatusLabel, subscribeUserOrder } from '../shop/ordersFirestore';
+import { localizeCartItem } from '../shop/shopCartHelpers';
 
 export default function PaymentFailed() {
   const { t } = useI18n();
@@ -52,16 +53,19 @@ export default function PaymentFailed() {
         {order ? (
           <div className="pp-shopBanner pp-shopBanner--warn pp-paymentResult__detail" role="status">
             <p style={{ margin: 0 }}>
-              <strong>{ORDER_STATUS_LABELS[order.status] || order.status}</strong>
+              <strong>{formatOrderStatusLabel(order.status, t)}</strong>
               {order.amountCents ? ` · ${formatEur(order.amountCents)}` : ''}
             </p>
             {order.items?.length ? (
               <ul className="pp-paymentResult__items">
-                {order.items.map((item) => (
-                  <li key={item.key}>
-                    {item.title} ×{item.qty}
-                  </li>
-                ))}
+                {order.items.map((item) => {
+                  const displayItem = localizeCartItem(item, t);
+                  return (
+                    <li key={item.key}>
+                      {displayItem.title} ×{item.qty}
+                    </li>
+                  );
+                })}
               </ul>
             ) : null}
           </div>

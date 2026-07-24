@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
 import { useI18n } from '../i18n/I18nContext';
 import { formatEur } from '../shop/catalog';
-import { ORDER_STATUS_LABELS, subscribeUserOrders } from '../shop/ordersFirestore';
+import { formatOrderStatusLabel, subscribeUserOrders } from '../shop/ordersFirestore';
+import { localizeCartItem } from '../shop/shopCartHelpers';
 import { formatDateTime24 } from '../formatTime24';
 
 function orderWhen(row) {
@@ -86,18 +87,21 @@ export default function MyOrders() {
                   <div className="pp-subtle">{orderWhen(row)} · {formatEur(row.amountCents)}</div>
                 </div>
                 <span className="pp-badge" style={statusStyle(row.status)}>
-                  {ORDER_STATUS_LABELS[row.status] || row.status}
+                  {formatOrderStatusLabel(row.status, t)}
                 </span>
               </button>
               {open ? (
                 <div className="pp-ordersList__body">
                   <p className="pp-subtle">{t('ordersPage.itemsTitle')}</p>
                   <ul className="pp-ordersList__lines">
-                    {row.items.map((item) => (
-                      <li key={item.key}>
-                        {item.title} ×{item.qty} — {formatEur(item.priceCents * item.qty)}
-                      </li>
-                    ))}
+                    {row.items.map((item) => {
+                      const displayItem = localizeCartItem(item, t);
+                      return (
+                        <li key={item.key}>
+                          {displayItem.title} ×{item.qty} — {formatEur(item.priceCents * item.qty)}
+                        </li>
+                      );
+                    })}
                   </ul>
                   {row.shipping?.address ? (
                     <>

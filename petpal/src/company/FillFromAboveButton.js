@@ -1,6 +1,5 @@
 import React from 'react';
-
-const FILL_LABEL = 'Fill from name and address above';
+import { useI18n } from '../i18n/I18nContext';
 
 function FillIcon() {
   return (
@@ -36,14 +35,16 @@ function FillIcon() {
  * @param {{ onClick: () => void, disabled?: boolean }} props
  */
 export default function FillFromAboveButton({ onClick, disabled }) {
+  const { t } = useI18n();
+  const label = t('companyApply.fillFromAbove');
   return (
     <button
       type="button"
       className="pp-companyMapSearch__fill"
       onClick={onClick}
       disabled={disabled}
-      title={FILL_LABEL}
-      aria-label={FILL_LABEL}
+      title={label}
+      aria-label={label}
     >
       <span className="pp-companyMapSearch__fillIcon">
         <FillIcon />

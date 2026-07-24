@@ -1,4 +1,14 @@
-import { PLUS_SKUS, BOOST_SKUS, monthlyFirstPaymentCents, formatEur, NFC_TAG_ADDON_CENTS } from './catalog';
+import {
+  PLUS_SKUS,
+  BOOST_SKUS,
+  SHOP_PRODUCTS,
+  BUSINESS_BOOST_PRODUCTS,
+  monthlyFirstPaymentCents,
+  formatEur,
+  NFC_TAG_ADDON_CENTS,
+  localizeShopProduct,
+  translateShopCopy,
+} from './catalog';
 
 /**
  * @typedef {import('./catalog').ShopProduct} ShopProduct
@@ -33,6 +43,7 @@ import { PLUS_SKUS, BOOST_SKUS, monthlyFirstPaymentCents, formatEur, NFC_TAG_ADD
  *   saveCard?: boolean,
  *   petNames?: string[],
  *   trackerImei?: string,
+ *   t?: (key: string, params?: object) => string,
  * }} opts
  * @returns {CartItem}
  */
@@ -48,16 +59,9 @@ export function buildSubscriptionCartItem(product, opts) {
 
   let priceCents = product.amountCents;
   let title = product.title;
-  const parts = [product.title];
 
   if (product.id === 'PETPAL_PLUS_MONTHLY') {
     priceCents = monthlyFirstPaymentCents({ includeTracker, nfcPetIds });
-    if (trackerImei) parts.push('Existing GPS tracker');
-    else if (includeTracker) parts.push('GPS tracker');
-    if (includeNfc) {
-      parts.push(nfcPetIds.length === 1 ? 'NFC tag' : `${nfcPetIds.length} NFC tags`);
-    }
-    title = parts.join(' + ');
   } else if (product.id === 'PETPAL_PLUS_YEARLY') {
     title = 'Yearly + free GPS tracker & NFC tag';
   } else if (product.id === 'TRACKER_HARDWARE') {
@@ -88,7 +92,7 @@ export function buildSubscriptionCartItem(product, opts) {
     subtitle = petNames.join(', ');
   }
 
-  return {
+  const item = {
     key,
     title,
     subtitle,
@@ -104,6 +108,7 @@ export function buildSubscriptionCartItem(product, opts) {
     trackerImei: trackerImei || undefined,
     recurring: Boolean(product.recurring),
   };
+  return { ...item, title: localizeCartItemTitle(item, opts.t) };
 }
 
 /**
@@ -137,6 +142,64 @@ export function isSubscriptionCartLine(row) {
         sku === 'NFC_TAG_HARDWARE' ||
         sku === 'TRACKER_HARDWARE')
   );
+}
+
+function productForSku(sku) {
+  return [...SHOP_PRODUCTS, ...BUSINESS_BOOST_PRODUCTS].find((product) => product.id === sku) || null;
+}
+
+function localizedProductTitle(sku, t, fallback) {
+  const product = productForSku(sku);
+  return product ? localizeShopProduct(product, t).title : fallback;
+}
+
+function nfcTagLabel(count, t) {
+  const n = Math.max(1, Number(count) || 1);
+  if (n > 1) {
+    return translateShopCopy(t, 'shopPage.cartLines.nfcTagCount', { count: n }, `NFC tag ×${n}`);
+  }
+  return translateShopCopy(t, 'shopPage.cartLines.nfcTag', undefined, 'NFC tag');
+}
+
+export function localizeCartItemTitle(item, t) {
+  const sku = item.sku || '';
+  if (sku === 'PETPAL_PLUS_MONTHLY') {
+    const title = localizedProductTitle(sku, t, item.title || 'Monthly');
+    const parts = [title];
+    if (item.trackerImei) {
+      parts.push(translateShopCopy(t, 'shopPage.cartLines.existingGpsTracker', undefined, 'Existing GPS tracker'));
+    } else if (item.includeTracker) {
+      parts.push(translateShopCopy(t, 'shopPage.cartLines.gpsTracker', undefined, 'GPS tracker'));
+    }
+    if (item.includeNfc) {
+      parts.push(nfcTagLabel(item.nfcPetIds?.length || 1, t));
+    }
+    const joiner = translateShopCopy(t, 'shopPage.cartLines.joiner', undefined, ' + ');
+    return parts.join(joiner);
+  }
+  if (sku === 'PETPAL_PLUS_YEARLY') {
+    return translateShopCopy(
+      t,
+      'shopPage.cartLines.yearlyWithHardware',
+      undefined,
+      item.title || 'Yearly + free GPS tracker & NFC tag'
+    );
+  }
+  if (sku === 'TRACKER_HARDWARE') {
+    return localizedProductTitle(sku, t, item.title || 'GPS tracker');
+  }
+  if (sku === 'NFC_TAG_HARDWARE') {
+    return nfcTagLabel(item.nfcPetIds?.length || 1, t);
+  }
+  if (BOOST_SKUS.includes(sku)) {
+    return localizedProductTitle(sku, t, item.title);
+  }
+  return item.title;
+}
+
+export function localizeCartItem(item, t) {
+  if (!isSubscriptionCartLine(item)) return item;
+  return { ...item, title: localizeCartItemTitle(item, t) };
 }
 
 /** @param {ReturnType<typeof buildSubscriptionCartItem>} item */

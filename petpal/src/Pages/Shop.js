@@ -21,6 +21,7 @@ import {
   TRACKER_ADDON_CENTS,
   formatEur,
   formatShopPrice,
+  localizeShopProduct,
   monthlyFirstPaymentCents,
 } from '../shop/catalog';
 import { MARKETPLACE_PRODUCTS } from '../shop/marketplaceProducts';
@@ -61,6 +62,15 @@ export default function Shop() {
 
   const [shopTab, setShopTab] = useState('subscriptions');
   const { addToCart, setCheckoutError, cartItems } = useShopCart();
+
+  const localizedSubscriptionProducts = useMemo(
+    () => SUBSCRIPTION_PRODUCTS.map((product) => localizeShopProduct(product, t)),
+    [t]
+  );
+  const localizedBoostProducts = useMemo(
+    () => BUSINESS_BOOST_PRODUCTS.map((product) => localizeShopProduct(product, t)),
+    [t]
+  );
 
   useEffect(() => {
     if (checkout !== 'success') return;
@@ -239,6 +249,7 @@ export default function Shop() {
         selectedDesignId: includeNfc ? selectedNfcDesignId : undefined,
         saveCard,
         petNames,
+        t,
         trackerImei:
           product.id === 'PETPAL_PLUS_MONTHLY' && monthlyUseExistingImei
             ? normalizeTrackerImei(monthlyExistingImei)
@@ -363,7 +374,7 @@ export default function Shop() {
             <section className="pp-shopBoostSection" style={{ marginBottom: 18 }}>
               <h2 className="pp-sectionTitle">{t('shopPage.boostSectionTitle')}</h2>
               <div className="pp-shopGrid" style={{ marginTop: 12 }}>
-                {BUSINESS_BOOST_PRODUCTS.map((p) => {
+                {localizedBoostProducts.map((p) => {
                     const boostActive =
                       p.id === 'STORE_BOOST_NEARBY_MONTHLY'
                         ? providerNearbyBoostIsActive(providerDoc)
@@ -393,7 +404,7 @@ export default function Shop() {
                           <p className={`pp-shopCard__status${boostActive ? ' pp-shopCard__status--on' : ''}`}>
                             {boostActive ? t('shopPage.boostActive') : t('shopPage.plusBadgeInactive')}
                           </p>
-                          <div className="pp-shopCard__price">{formatShopPrice(p)}</div>
+                          <div className="pp-shopCard__price">{formatShopPrice(p, t)}</div>
                           <p className="pp-shopCard__dueToday">{t('shopPage.dueToday', { amount: formatEur(p.amountCents) })}</p>
                         </div>
                         <div className="pp-shopCard__foot">
@@ -427,7 +438,7 @@ export default function Shop() {
           ) : null}
 
           <div className="pp-shopGrid">
-            {SUBSCRIPTION_PRODUCTS.map((p) => {
+            {localizedSubscriptionProducts.map((p) => {
               const planActive = PLUS_SKUS.includes(p.id)
                 ? p.id === 'PETPAL_PLUS_MONTHLY'
                   ? monthlySubCount > 0
@@ -622,7 +633,7 @@ export default function Shop() {
                     {p.id === 'PETPAL_PLUS_YEARLY' ? (
                       <p className="pp-shopCard__highlight">{t('shopPage.yearlyFreeHardwareIncluded')}</p>
                     ) : null}
-                    <div className="pp-shopCard__price">{formatShopPrice(p)}</div>
+                    <div className="pp-shopCard__price">{formatShopPrice(p, t)}</div>
                     {p.id === 'PETPAL_PLUS_YEARLY' ? (
                       <p className="pp-subtle pp-shopCard__renewalNote">
                         {t('shopPage.yearlyRenewalNote', { amount: formatEur(PLUS_YEARLY_RENEWAL_CENTS) })}

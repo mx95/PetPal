@@ -2,6 +2,7 @@ import React, { useId, useMemo, useState } from 'react';
 import { Link, useOutletContext } from 'react-router-dom';
 import PetAvatar from '../components/PetAvatar';
 import { PrettySelect } from '../components/PrettySelect';
+import { useI18n } from '../i18n/I18nContext';
 import { useLostPet } from '../lostPet/LostPetContext';
 import { usePets } from '../pets/PetsContext';
 
@@ -9,15 +10,16 @@ function mapsLink(lat, lng) {
   return `https://www.google.com/maps?q=${encodeURIComponent(`${lat},${lng}`)}`;
 }
 
-function formatWhen(iso) {
+function formatWhen(iso, language) {
   try {
-    return new Date(iso).toLocaleString();
+    return new Date(iso).toLocaleString(language === 'el' ? 'el-CY' : language === 'ru' ? 'ru-RU' : 'en-GB');
   } catch {
     return iso;
   }
 }
 
 export default function LostPetAlerts() {
+  const { t, language } = useI18n();
   const outletCtx = useOutletContext();
   const embedded = outletCtx?.embedded === true;
 
@@ -43,7 +45,7 @@ export default function LostPetAlerts() {
     e.preventDefault();
     setFormError('');
     if (!petId) {
-      setFormError('Select a pet.');
+      setFormError(t('lostPet.errSelectPet'));
       return;
     }
     setSubmitting(true);
@@ -58,9 +60,9 @@ export default function LostPetAlerts() {
         contactPhone,
       });
       if (!r.ok) {
-        if (r.error === 'description') setFormError('Add a short description (appearance, collar, name response).');
-        else if (r.error === 'lastSeen') setFormError('Add where and when the pet was last seen.');
-        else setFormError('Could not create alert. Try again.');
+        if (r.error === 'description') setFormError(t('lostPet.errDesc'));
+        else if (r.error === 'lastSeen') setFormError(t('lostPet.errLast'));
+        else setFormError(t('lostPet.errGeneric'));
         return;
       }
       setDescription('');
@@ -81,22 +83,21 @@ export default function LostPetAlerts() {
         <div className="pp-col-12">
           <div className="pp-row" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
-              <div className="pp-badge pp-badge--premium">Premium</div>
+              <div className="pp-badge pp-badge--premium">{t('lostPet.premium')}</div>
               <h1 className="pp-h1" style={{ marginTop: 10 }}>
-                Lost pet alerts
+                {t('lostPet.title')}
               </h1>
               <p className="pp-subtle" style={{ marginTop: 6, maxWidth: 640 }}>
-                Urgent, structured posts to help get your pet home: last known area, how to contact you, and an optional
-                reward. Data stays on <strong>this device</strong> for now; cloud sync and wider sharing can be added
-                later. Add profile photos to pets in{' '}
+                {t('lostPet.intro')}{' '}
+                {t('lostPet.introPets')}{' '}
                 <Link className="pp-link" to="/pets" style={{ display: 'inline', padding: 0 }}>
-                  My pets
+                  {t('nav.myPets')}
                 </Link>
                 .
               </p>
             </div>
             <Link className="pp-link" to="/dashboard">
-              ← Dashboard
+              {t('lostPet.backDash')}
             </Link>
           </div>
         </div>
@@ -104,28 +105,33 @@ export default function LostPetAlerts() {
 
       <div className="pp-col-12">
         <div className="pp-card pp-pad pp-lostPetPremiumCta" style={{ borderColor: 'rgba(180, 120, 32, 0.35)' }}>
-          <h2 className="pp-sectionTitle">What you get (preview)</h2>
+          <h2 className="pp-sectionTitle">{t('lostPet.ctaTitle')}</h2>
           <ul className="pp-subtle" style={{ margin: '0 0 12px 18px', lineHeight: 1.5 }}>
-            <li>One-tap call from your public phone number (shown on the alert only here — be mindful of privacy)</li>
-            <li>Last seen / area text plus optional map coordinates</li>
-            <li>Reward line for finders (optional)</li>
+            <li>{t('lostPet.cta1')}</li>
+            <li>{t('lostPet.cta2')}</li>
+            <li>{t('lostPet.cta3')}</li>
           </ul>
           {!premiumUnlocked ? (
             <p style={{ margin: 0 }}>
               <button type="button" className="pp-btn pp-btnPremium" onClick={() => setPremium(true)}>
-                Enable Premium (preview)
+                {t('lostPet.enablePremium')}
               </button>
               <span className="pp-subtle" style={{ marginLeft: 10, fontSize: 12 }}>
-                No payment in this build — for testing the experience only.
+                {t('lostPet.noPayment')}
               </span>
             </p>
           ) : (
             <p className="pp-subtle" style={{ margin: 0, fontSize: 13 }}>
-              Premium preview is on. You can create and manage alerts below, or{' '}
-              <button type="button" className="pp-link" style={{ display: 'inline', padding: 0, border: 0, background: 'none', font: 'inherit' }} onClick={() => setPremium(false)}>
-                turn off preview
+              {t('lostPet.premiumOnBefore')}{' '}
+              <button
+                type="button"
+                className="pp-link"
+                style={{ display: 'inline', padding: 0, border: 0, background: 'none', font: 'inherit' }}
+                onClick={() => setPremium(false)}
+              >
+                {t('lostPet.turnOff')}
               </button>
-              .
+              {t('lostPet.premiumOnAfter')}
             </p>
           )}
         </div>
@@ -145,11 +151,9 @@ export default function LostPetAlerts() {
                 {createAlertExpanded ? '−' : '+'}
               </span>
               <span className="pp-expandTrigger__text">
-                <span className="pp-expandTrigger__title">Create alert</span>
+                <span className="pp-expandTrigger__title">{t('lostPet.createTitle')}</span>
                 <span className="pp-expandTrigger__desc">
-                  {createAlertExpanded
-                    ? 'Fill in the form below. Tap the header to collapse.'
-                    : 'Open to start a lost-pet alert: pick a pet, describe them, where they were last seen, and optional map pin, reward, and phone.'}
+                  {createAlertExpanded ? t('lostPet.createExpandedHint') : t('lostPet.createCollapsedHint')}
                 </span>
               </span>
               <span className={`pp-expandTrigger__chev ${createAlertExpanded ? 'is-open' : ''}`} aria-hidden>
@@ -158,16 +162,11 @@ export default function LostPetAlerts() {
             </button>
             {createAlertExpanded ? (
               <div className="pp-expandPanel" role="region" aria-labelledby="create-alert-expand">
-                <p className="pp-subtle pp-expandIntro">
-                  Urgent, structured help to get your pet home: a clear <strong>description</strong> and <strong>last
-                  seen</strong> details (required), plus optional <strong>coordinates</strong> for a map link,{' '}
-                  <strong>reward</strong>, and <strong>phone</strong> for one-tap contact on this device. Your pet’s photo
-                  comes from <Link to="/pets">My pets</Link> if you added one.
-                </p>
+                <p className="pp-subtle pp-expandIntro">{t('lostPet.createIntro')}</p>
                 <form className="pp-form" onSubmit={onSubmit} style={{ gap: 12 }}>
                   <div>
                     <div className="pp-label" id={`${petSelectId}-label`}>
-                      Pet
+                      {t('lostPet.pet')}
                     </div>
                     <PrettySelect
                       id={petSelectId}
@@ -175,7 +174,7 @@ export default function LostPetAlerts() {
                       value={petId}
                       onChange={(e) => setPetId(e.target.value)}
                     >
-                      <option value="">Select…</option>
+                      <option value="">{t('lostPet.select')}</option>
                       {sortedPets.map((p) => (
                         <option key={p.id} value={p.id}>
                           {getCategory(p).emoji} {p.name}
@@ -184,7 +183,7 @@ export default function LostPetAlerts() {
                     </PrettySelect>
                   </div>
                   <div>
-                    <div className="pp-label">Description (what helps people recognize your pet?)</div>
+                    <div className="pp-label">{t('lostPet.descLabel')}</div>
                     <textarea
                       className="pp-input"
                       style={{ minHeight: 100, resize: 'vertical' }}
@@ -192,11 +191,11 @@ export default function LostPetAlerts() {
                       onChange={(e) => setDescription(e.target.value)}
                       required
                       maxLength={2000}
-                      placeholder="Breed, size, collar, behaviour…"
+                      placeholder={t('lostPet.descPh')}
                     />
                   </div>
                   <div>
-                    <div className="pp-label">Last place / time seen</div>
+                    <div className="pp-label">{t('lostPet.lastSeen')}</div>
                     <textarea
                       className="pp-input"
                       style={{ minHeight: 72, resize: 'vertical' }}
@@ -204,61 +203,61 @@ export default function LostPetAlerts() {
                       onChange={(e) => setLastSeenText(e.target.value)}
                       required
                       maxLength={1000}
-                      placeholder="e.g. This morning, near the north gate of the park on …"
+                      placeholder={t('lostPet.lastSeenPh')}
                     />
                   </div>
                   <div className="pp-row" style={{ flexWrap: 'wrap', gap: 12, alignItems: 'flex-end' }}>
                     <div style={{ flex: '1 1 140px' }}>
-                      <div className="pp-label">Latitude (optional, maps link)</div>
+                      <div className="pp-label">{t('lostPet.lat')}</div>
                       <input
                         className="pp-input"
                         value={lastSeenLat}
                         onChange={(e) => setLastSeenLat(e.target.value)}
-                        placeholder="e.g. 35.173"
+                        placeholder={t('lostPet.latPh')}
                         inputMode="decimal"
                         autoComplete="off"
                       />
                     </div>
                     <div style={{ flex: '1 1 140px' }}>
-                      <div className="pp-label">Longitude (optional)</div>
+                      <div className="pp-label">{t('lostPet.lng')}</div>
                       <input
                         className="pp-input"
                         value={lastSeenLng}
                         onChange={(e) => setLastSeenLng(e.target.value)}
-                        placeholder="e.g. 33.364"
+                        placeholder={t('lostPet.lngPh')}
                         inputMode="decimal"
                         autoComplete="off"
                       />
                     </div>
                   </div>
                   <div>
-                    <div className="pp-label">Reward (optional)</div>
+                    <div className="pp-label">{t('lostPet.reward')}</div>
                     <input
                       className="pp-input"
                       value={reward}
                       onChange={(e) => setReward(e.target.value)}
                       maxLength={200}
-                      placeholder="e.g. €50 thank-you for safe return"
+                      placeholder={t('lostPet.rewardPh')}
                     />
                   </div>
                   <div>
-                    <div className="pp-label">Contact phone (optional — public on this device)</div>
+                    <div className="pp-label">{t('lostPet.phone')}</div>
                     <input
                       className="pp-input"
                       type="tel"
                       value={contactPhone}
                       onChange={(e) => setContactPhone(e.target.value)}
                       maxLength={40}
-                      placeholder="+357 …"
+                      placeholder={t('lostPet.phonePh')}
                     />
                     <p className="pp-subtle" style={{ fontSize: 12, marginTop: 4, marginBottom: 0 }}>
-                      Only add a number you are comfortable sharing. Shown on your alert for quick calls.
+                      {t('lostPet.phoneHint')}
                     </p>
                   </div>
                   {formError ? <div className="pp-error">{formError}</div> : null}
                   <div>
                     <button type="submit" className="pp-btn pp-btnPrimary" disabled={submitting || !petId}>
-                      {submitting ? 'Saving…' : 'Publish alert'}
+                      {submitting ? t('lostPet.saving') : t('lostPet.publish')}
                     </button>
                   </div>
                 </form>
@@ -271,7 +270,7 @@ export default function LostPetAlerts() {
       {premiumUnlocked && !hasPets ? (
         <div className="pp-col-12">
           <p className="pp-subtle">
-            <Link to="/pets">Add a pet first</Link> with a name and (recommended) a profile photo.
+            <Link to="/pets">{t('lostPet.addPetsLink')}</Link> {t('lostPet.withPhoto')}
           </p>
         </div>
       ) : null}
@@ -279,51 +278,74 @@ export default function LostPetAlerts() {
       {!premiumUnlocked ? null : (
         <div className="pp-col-12">
           <h2 className="pp-sectionTitle" style={{ marginBottom: 12 }}>
-            Your active alerts
+            {t('lostPet.yourAlerts')}
           </h2>
           {activeListings.length === 0 ? (
-            <p className="pp-subtle">No active alerts. Create one when you need it — we hope you never do.</p>
+            <p className="pp-subtle">{t('lostPet.noAlerts')}</p>
           ) : (
-            <ul className="pp-lostPetList" style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <ul
+              className="pp-lostPetList"
+              style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 16 }}
+            >
               {activeListings.map((L) => (
                 <li key={L.id} className="pp-card pp-pad" style={{ borderColor: 'rgba(180, 50, 50, 0.25)' }}>
                   <div className="pp-row" style={{ alignItems: 'flex-start', gap: 16, flexWrap: 'wrap' }}>
-                    <PetAvatar pet={{ categoryId: L.categoryId, photoDataUrl: L.photoDataUrl }} size={96} className="pp-petAvatar--lg" />
+                    <PetAvatar
+                      pet={{ categoryId: L.categoryId, photoDataUrl: L.photoDataUrl }}
+                      size={96}
+                      className="pp-petAvatar--lg"
+                    />
                     <div style={{ flex: '1 1 240px' }}>
                       <div className="pp-h1" style={{ fontSize: 20, margin: '0 0 6px' }}>
-                        {L.petName} <span className="pp-subtle" style={{ fontSize: 13, fontWeight: 600 }}>lost</span>
+                        {L.petName}{' '}
+                        <span className="pp-subtle" style={{ fontSize: 13, fontWeight: 600 }}>
+                          {t('lostPet.lost')}
+                        </span>
                       </div>
-                      <p className="pp-subtle" style={{ margin: '0 0 8px', fontSize: 12 }}>{formatWhen(L.createdAt)}</p>
+                      <p className="pp-subtle" style={{ margin: '0 0 8px', fontSize: 12 }}>
+                        {formatWhen(L.createdAt, language)}
+                      </p>
                       <p style={{ margin: '0 0 8px', lineHeight: 1.5 }}>{L.description}</p>
                       <p style={{ margin: '0 0 8px' }}>
-                        <strong>Last seen:</strong> {L.lastSeenText}
+                        <strong>{t('lostPet.lastSeenLabel')}</strong> {L.lastSeenText}
                       </p>
                       {L.lastSeenLat != null && L.lastSeenLng != null ? (
                         <p style={{ margin: '0 0 8px' }}>
-                          <a className="pp-link" href={mapsLink(L.lastSeenLat, L.lastSeenLng)} target="_blank" rel="noopener noreferrer">
-                            Open map for coordinates
+                          <a
+                            className="pp-link"
+                            href={mapsLink(L.lastSeenLat, L.lastSeenLng)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            {t('lostPet.mapLink')}
                           </a>
                         </p>
                       ) : null}
                       {L.reward ? (
                         <p style={{ margin: '0 0 8px' }}>
-                          <strong>Reward:</strong> {L.reward}
+                          <strong>{t('lostPet.rewardLabel')}</strong> {L.reward}
                         </p>
                       ) : null}
                       {L.contactPhone ? (
                         <p style={{ margin: 0 }}>
-                          <a className="pp-btn pp-btnPrimary" style={{ display: 'inline-block', textDecoration: 'none' }} href={`tel:${L.contactPhone.replace(/\s/g, '')}`}>
-                            Call {L.contactPhone}
+                          <a
+                            className="pp-btn pp-btnPrimary"
+                            style={{ display: 'inline-block', textDecoration: 'none' }}
+                            href={`tel:${L.contactPhone.replace(/\s/g, '')}`}
+                          >
+                            {t('lostPet.call')} {L.contactPhone}
                           </a>
                         </p>
                       ) : (
-                        <p className="pp-subtle" style={{ margin: 0, fontSize: 12 }}>No phone on this alert</p>
+                        <p className="pp-subtle" style={{ margin: 0, fontSize: 12 }}>
+                          {t('lostPet.noPhone')}
+                        </p>
                       )}
                     </div>
                   </div>
                   <div style={{ marginTop: 12 }}>
                     <button type="button" className="pp-btn" onClick={() => resolveAlert(L.id)}>
-                      Mark as found
+                      {t('lostPet.markFound')}
                     </button>
                   </div>
                 </li>
