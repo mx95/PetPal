@@ -12,21 +12,29 @@ import {
 } from '../tracking/adminDeviceApi';
 import { fetchImeiPetLinks } from '../tracking/imeiPetLinks';
 import { normalizeTrackerImei } from '../tracking/trackerImeiIndex';
+import { useI18n } from '../i18n/I18nContext';
 
-function providerLabel(id) {
-  const opt = PROVIDER_OPTIONS.find((p) => p.id === id);
-  return opt?.label || id;
+function protocolLabel(id, t) {
+  if (id === 'g365') return t('admin.devices.protocolG365');
+  if (id === 'gpspos') return t('admin.devices.protocolGpspos');
+  return id;
 }
 
-function formatInterval(sec) {
+function providerLabel(id, t) {
+  if (id === 'auto') return t('admin.devices.providerAuto');
+  return protocolLabel(id, t);
+}
+
+function formatInterval(sec, t) {
   const n = Number(sec);
   if (!Number.isFinite(n) || n <= 0) return '—';
-  if (n < 60) return `${n}s`;
-  if (n < 3600) return `${Math.round(n / 60)} min`;
-  return `${Math.round(n / 3600)} h`;
+  if (n < 60) return t('admin.devices.intervalSeconds', { n });
+  if (n < 3600) return t('admin.devices.intervalMinutes', { n: Math.round(n / 60) });
+  return t('admin.devices.intervalHours', { n: Math.round(n / 3600) });
 }
 
 export default function AdminDeviceRegistry() {
+  const { t } = useI18n();
   const { user } = useAuth();
   const { isAdmin, firebaseReady } = useCompany();
 
@@ -58,11 +66,11 @@ export default function AdminDeviceRegistry() {
       setDevices(Array.isArray(data?.devices) ? data.devices : []);
       if (data?.defaults) setDefaults(data.defaults);
     } catch (e) {
-      setErr(e?.message || 'Failed to load devices.');
+      setErr(e?.message || t('admin.devices.errLoad'));
     } finally {
       setLoading(false);
     }
-  }, [apiReady]);
+  }, [apiReady, t]);
 
   useEffect(() => {
     void load();
@@ -83,7 +91,7 @@ export default function AdminDeviceRegistry() {
       .catch((e) => {
         if (!cancelled) {
           setPetLinks({});
-          setPetLinksError(e?.message || 'Could not load app pet links.');
+          setPetLinksError(e?.message || t('admin.devices.errPetLinks'));
         }
       })
       .finally(() => {
@@ -92,7 +100,7 @@ export default function AdminDeviceRegistry() {
     return () => {
       cancelled = true;
     };
-  }, [devices, user]);
+  }, [devices, user, t]);
 
   const filteredDevices = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -153,9 +161,9 @@ export default function AdminDeviceRegistry() {
         delete copy[imei];
         return copy;
       });
-      setOk(`Saved ${imei}. Link the same IMEI on My pets for users to see it in Tracker.`);
+      setOk(t('admin.devices.saved', { imei }));
     } catch (e) {
-      setErr(e?.message || 'Save failed.');
+      setErr(e?.message || t('admin.devices.errSave'));
     } finally {
       setBusyImei('');
     }
@@ -165,12 +173,12 @@ export default function AdminDeviceRegistry() {
     e.preventDefault();
     const imei = String(newImei || '').trim();
     if (!/^\d{10,20}$/.test(imei)) {
-      setErr('Enter a valid IMEI (10–20 digits).');
+      setErr(t('admin.devices.errValidImei'));
       return;
     }
     const protocolOpt = PROTOCOL_OPTIONS.find((p) => p.id === newProtocol);
     if (!protocolOpt) {
-      setErr('Choose a protocol.');
+      setErr(t('admin.devices.errChooseProtocol'));
       return;
     }
 
@@ -185,11 +193,9 @@ export default function AdminDeviceRegistry() {
       });
       setNewImei('');
       await load();
-      setOk(
-        `Added ${imei} as ${protocolOpt.label}. Users must also enter this IMEI on My pets → edit pet → GPS device.`
-      );
+      setOk(t('admin.devices.added', { imei, protocol: protocolLabel(protocolOpt.id, t) }));
     } catch (e) {
-      setErr(e?.message || 'Could not add device.');
+      setErr(e?.message || t('admin.devices.errAdd'));
     } finally {
       setBusyImei('');
     }
@@ -200,7 +206,7 @@ export default function AdminDeviceRegistry() {
     return (
       <div className="pp-grid">
         <div className="pp-col-12">
-          <p className="pp-error">Firebase is not configured.</p>
+          <p className="pp-error">{t('admin.firebaseNotConfigured')}</p>
         </div>
       </div>
     );
@@ -213,19 +219,18 @@ export default function AdminDeviceRegistry() {
         <div className="pp-row" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
             <div className="pp-badge" style={{ background: 'rgba(180, 35, 24, 0.1)', color: '#b42318' }}>
-              Admin
+              {t('admin.badge')}
             </div>
             <h1 className="pp-h1" style={{ marginTop: 10 }}>
-              Device registry
+              {t('admin.devices.title')}
             </h1>
             <p className="pp-subtle" style={{ maxWidth: 760 }}>
-              View every IMEI on the tracker server, register new collars, and assign <strong>365GPS</strong> or{' '}
-              <strong>GPSPOS</strong>. After saving here, link the same IMEI on each pet under My pets so it appears in
-              Tracker.
+              {t('admin.devices.subPrefix')} <strong>365GPS</strong> {t('admin.devices.subOr')}{' '}
+              <strong>GPSPOS</strong>. {t('admin.devices.subSuffix')}
             </p>
           </div>
           <Link className="pp-link" to="/admin">
-            ← Admin hub
+            {t('admin.backAdminHub')}
           </Link>
         </div>
       </div>
@@ -234,9 +239,10 @@ export default function AdminDeviceRegistry() {
         <div className="pp-col-12">
           <div className="pp-card pp-pad">
             <p className="pp-error">
-              Tracker admin API is not configured. Set <code>REACT_APP_XEXUN_HTTP_BASE_URL</code> (or{' '}
-              <code>same</code>) and <code>REACT_APP_TRACKER_ADMIN_TOKEN</code> matching server{' '}
-              <code>TRACKER_ADMIN_TOKEN</code>, then rebuild the app.
+              {t('admin.devices.apiNotConfiguredPrefix')} <code>REACT_APP_XEXUN_HTTP_BASE_URL</code>{' '}
+              {t('admin.devices.apiNotConfiguredMiddle')} <code>same</code>{t('admin.devices.apiNotConfiguredAnd')}{' '}
+              <code>REACT_APP_TRACKER_ADMIN_TOKEN</code> {t('admin.devices.apiNotConfiguredSuffix')}{' '}
+              <code>TRACKER_ADMIN_TOKEN</code>, {t('admin.devices.apiNotConfiguredEnd')}
             </p>
           </div>
         </div>
@@ -245,7 +251,7 @@ export default function AdminDeviceRegistry() {
       <div className="pp-col-12">
         <div className="pp-card pp-pad">
           <h2 className="pp-h2" style={{ marginTop: 0 }}>
-            Add IMEI
+            {t('admin.devices.addImeiTitle')}
           </h2>
           <form
             className="pp-adminDeviceCard__grid"
@@ -253,7 +259,7 @@ export default function AdminDeviceRegistry() {
             onSubmit={(e) => void addDevice(e)}
           >
             <label className="pp-field">
-              <span className="pp-field__label">IMEI</span>
+              <span className="pp-field__label">{t('admin.devices.imeiLabel')}</span>
               <input
                 className="pp-input"
                 inputMode="numeric"
@@ -265,7 +271,7 @@ export default function AdminDeviceRegistry() {
               />
             </label>
             <label className="pp-field">
-              <span className="pp-field__label">Protocol</span>
+              <span className="pp-field__label">{t('admin.devices.protocolLabel')}</span>
               <select
                 className="pp-input"
                 value={newProtocol}
@@ -274,13 +280,13 @@ export default function AdminDeviceRegistry() {
               >
                 {PROTOCOL_OPTIONS.map((opt) => (
                   <option key={opt.id} value={opt.id}>
-                    {opt.label}
+                    {protocolLabel(opt.id, t)}
                   </option>
                 ))}
               </select>
             </label>
             <button type="submit" className="pp-btn pp-btnPrimary" disabled={!apiReady || Boolean(busyImei)}>
-              Add device
+              {t('admin.devices.addDevice')}
             </button>
           </form>
         </div>
@@ -305,10 +311,10 @@ export default function AdminDeviceRegistry() {
         <div className="pp-card pp-pad">
           <div className="pp-row" style={{ justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
             <h2 className="pp-h2" style={{ margin: 0 }}>
-              All devices ({devices.length})
+              {t('admin.devices.allDevices', { count: devices.length })}
             </h2>
             <label className="pp-field" style={{ margin: 0, minWidth: 220 }}>
-              <span className="pp-field__label">Search IMEI</span>
+              <span className="pp-field__label">{t('admin.devices.searchImei')}</span>
               <input
                 className="pp-input"
                 value={search}
@@ -319,12 +325,12 @@ export default function AdminDeviceRegistry() {
             </label>
           </div>
 
-          {loading ? <p className="pp-subtle">Loading…</p> : null}
+          {loading ? <p className="pp-subtle">{t('admin.loading')}</p> : null}
           {!loading && devices.length === 0 ? (
-            <p className="pp-subtle">No devices yet. Add an IMEI above or wait for a collar to check in.</p>
+            <p className="pp-subtle">{t('admin.devices.empty')}</p>
           ) : null}
           {!loading && devices.length > 0 && filteredDevices.length === 0 ? (
-            <p className="pp-subtle">No IMEI matches your search.</p>
+            <p className="pp-subtle">{t('admin.devices.emptySearch')}</p>
           ) : null}
 
           <div className="pp-adminDeviceList">
@@ -343,15 +349,20 @@ export default function AdminDeviceRegistry() {
                       {device.name ? <span className="pp-subtle"> — {device.name}</span> : null}
                     </div>
                     <div className="pp-adminDeviceCard__meta pp-subtle">
-                      Protocol: <strong>{device.effectiveProvider || 'unknown'}</strong>
+                      {t('admin.devices.protocolLabel')}: <strong>{device.effectiveProvider || t('admin.devices.unknown')}</strong>
                       {device.observedProvider && device.observedProvider !== device.effectiveProvider ? (
-                        <span> (observed: {device.observedProvider})</span>
+                        <span> {t('admin.devices.observedProvider', { provider: device.observedProvider })}</span>
                       ) : null}
-                      <span> · {hasFix ? `Last fix ${device.lastUpdate}` : 'No position yet'}</span>
+                      <span>
+                        {' · '}
+                        {hasFix
+                          ? t('admin.devices.lastFix', { when: device.lastUpdate })
+                          : t('admin.devices.noPosition')}
+                      </span>
                     </div>
                     <div className="pp-adminDeviceCard__owner">
                       {petLinksLoading ? (
-                        <span className="pp-subtle">Checking app links…</span>
+                        <span className="pp-subtle">{t('admin.devices.checkingLinks')}</span>
                       ) : petLinksError ? (
                         <span className="pp-subtle" style={{ color: '#b42318' }}>
                           {petLinksError}
@@ -359,7 +370,7 @@ export default function AdminDeviceRegistry() {
                       ) : links.length ? (
                         links.map((link) => (
                           <div key={`${link.uid}-${link.petId}`} className="pp-adminDeviceCard__ownerRow">
-                            <span className="pp-adminDeviceCard__ownerBadge">Linked in app</span>
+                            <span className="pp-adminDeviceCard__ownerBadge">{t('admin.devices.linkedInApp')}</span>
                             <span>
                               {link.petName ? `${link.petName} · ` : ''}
                               <code>{link.uid}</code>
@@ -371,20 +382,20 @@ export default function AdminDeviceRegistry() {
                                   </a>
                                 </>
                               ) : (
-                                <span className="pp-subtle"> · no email on profile</span>
+                                <span className="pp-subtle"> · {t('admin.devices.noEmail')}</span>
                               )}
                             </span>
                           </div>
                         ))
                       ) : (
-                        <span className="pp-subtle">Not linked to any user — assign on My pets.</span>
+                        <span className="pp-subtle">{t('admin.devices.notLinked')}</span>
                       )}
                     </div>
                   </header>
 
                   <div className="pp-adminDeviceCard__grid">
                     <label className="pp-field">
-                      <span className="pp-field__label">Protocol</span>
+                      <span className="pp-field__label">{t('admin.devices.protocolLabel')}</span>
                       <select
                         className="pp-input"
                         value={draft.providerId}
@@ -393,7 +404,7 @@ export default function AdminDeviceRegistry() {
                       >
                         {PROVIDER_OPTIONS.map((opt) => (
                           <option key={opt.id} value={opt.id}>
-                            {providerLabel(opt.id)}
+                            {providerLabel(opt.id, t)}
                           </option>
                         ))}
                       </select>
@@ -402,12 +413,12 @@ export default function AdminDeviceRegistry() {
                     {isGpspos ? (
                       <>
                         <label className="pp-field">
-                          <span className="pp-field__label">GPSPOS platform ID (optional)</span>
+                          <span className="pp-field__label">{t('admin.devices.gpsposPlatformId')}</span>
                           <input
                             className="pp-input"
                             value={draft.gpsposPlatformImei}
                             onChange={(e) => updateDraft(device.imei, { gpsposPlatformImei: e.target.value })}
-                            placeholder="If different from IMEI suffix"
+                            placeholder={t('admin.devices.gpsposPlatformPlaceholder')}
                             disabled={saving}
                           />
                         </label>
@@ -419,11 +430,11 @@ export default function AdminDeviceRegistry() {
                             onChange={(e) => updateDraft(device.imei, { gpsposPollEnabled: e.target.checked })}
                             disabled={saving}
                           />
-                          <span>Enable automatic cloud polling</span>
+                          <span>{t('admin.devices.enablePolling')}</span>
                         </label>
 
                         <label className="pp-field">
-                          <span className="pp-field__label">Poll every</span>
+                          <span className="pp-field__label">{t('admin.devices.pollEvery')}</span>
                           <select
                             className="pp-input"
                             value={String(draft.gpsposPollIntervalSec)}
@@ -434,7 +445,7 @@ export default function AdminDeviceRegistry() {
                           >
                             {GPSPOS_POLL_PRESETS.map(({ id, seconds }) => (
                               <option key={id} value={seconds}>
-                                {formatInterval(seconds)}
+                                {formatInterval(seconds, t)}
                               </option>
                             ))}
                           </select>
@@ -450,7 +461,7 @@ export default function AdminDeviceRegistry() {
                       disabled={saving}
                       onClick={() => void saveDevice(device.imei)}
                     >
-                      {saving ? 'Saving…' : 'Save'}
+                      {saving ? t('admin.saving') : t('admin.save')}
                     </button>
                   </div>
                 </article>

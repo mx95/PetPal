@@ -1,12 +1,19 @@
 import React from 'react';
 import { cx } from './classNames';
+import { useI18n } from '../../i18n/I18nContext';
 
-export function PetIllustration({ variant = 'pet', className = '' }) {
+export function PetIllustration({ variant = 'pet', className = '', alt }) {
+  const { t } = useI18n();
   const isCat = variant === 'cat';
   const isTrophy = variant === 'trophy';
   if (isTrophy) {
     return (
-      <svg className={cx('animate-float', className)} viewBox="0 0 120 120" role="img" aria-label="PetPal trophy illustration">
+      <svg
+        className={cx('animate-float', className)}
+        viewBox="0 0 120 120"
+        role="img"
+        aria-label={alt || t('petIllustration.trophyAlt')}
+      >
         <defs>
           <linearGradient id="pp-trophy-g" x1="20" x2="100" y1="10" y2="110">
             <stop stopColor="#F4B740" />
@@ -22,7 +29,12 @@ export function PetIllustration({ variant = 'pet', className = '' }) {
     );
   }
   return (
-    <svg className={cx('animate-float', className)} viewBox="0 0 120 120" role="img" aria-label="PetPal pet illustration">
+    <svg
+      className={cx('animate-float', className)}
+      viewBox="0 0 120 120"
+      role="img"
+      aria-label={alt || (isCat ? t('petIllustration.catAlt') : t('petIllustration.petAlt'))}
+    >
       <defs>
         <linearGradient id="pp-pet-g" x1="18" x2="102" y1="10" y2="110">
           <stop stopColor="#5B37FF" />

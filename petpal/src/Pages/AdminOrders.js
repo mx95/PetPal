@@ -44,11 +44,11 @@ export default function AdminOrders() {
         setLoading(false);
       },
       (e) => {
-        setErr(e?.message || 'Failed to load orders.');
+        setErr(e?.message || t('adminOrders.errLoad'));
         setLoading(false);
       }
     );
-  }, [firebaseReady, isAdmin]);
+  }, [firebaseReady, isAdmin, t]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -74,7 +74,7 @@ export default function AdminOrders() {
   }, [rows, search, statusFilter]);
 
   if (!user) return <Navigate to="/login" replace />;
-  if (!firebaseReady) return <p className="pp-error">Firebase is not configured.</p>;
+  if (!firebaseReady) return <p className="pp-error">{t('admin.firebaseNotConfigured')}</p>;
   if (!isAdmin) return <Navigate to="/dashboard" replace />;
 
   async function saveStatus(row, status) {
@@ -96,7 +96,7 @@ export default function AdminOrders() {
     const key = `${row.id}:${line.subscriptionId}`;
     const imei = String(imeiDrafts[key] || '').trim();
     if (!imei) {
-      setErr('Enter a collar IMEI.');
+      setErr(t('adminOrders.errEnterCollarImei'));
       return;
     }
     setImeiBusyKey(key);
@@ -110,7 +110,10 @@ export default function AdminOrders() {
         subscriptionId: line.subscriptionId,
         imei,
       });
-      setOk(`IMEI assigned for payment ${line.paymentId || row.paymentId} · sub ${line.subPaymentId}.`);
+      setOk(t('adminOrders.trackerImeiAssignedForPayment', {
+        payment: line.paymentId || row.paymentId,
+        sub: line.subPaymentId,
+      }));
       setImeiDrafts((prev) => ({ ...prev, [key]: '' }));
     } catch (e) {
       setErr(e?.message || String(e));

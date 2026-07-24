@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
 import { useCompany } from '../company/CompanyContext';
+import { useI18n } from '../i18n/I18nContext';
 
 function xexunBase() {
   const raw = process.env.REACT_APP_XEXUN_HTTP_BASE_URL;
@@ -19,6 +20,7 @@ async function readJsonSafe(res) {
 }
 
 export default function AdminTrackerSetup() {
+  const { t } = useI18n();
   const { user } = useAuth();
   const { isAdmin, firebaseReady } = useCompany();
 
@@ -36,7 +38,7 @@ export default function AdminTrackerSetup() {
     return (
       <div className="pp-grid">
         <div className="pp-col-12">
-          <p className="pp-error">Firebase is not configured.</p>
+          <p className="pp-error">{t('admin.firebaseNotConfigured')}</p>
         </div>
       </div>
     );
@@ -53,21 +55,21 @@ export default function AdminTrackerSetup() {
     const portNum = Number(String(port || '').trim());
 
     if (!imeiTrim) {
-      setErr('IMEI is required.');
+      setErr(t('admin.trackerSetup.errImeiRequired'));
       return;
     }
     if (!hostTrim) {
-      setErr('Host is required (your public domain or IPv4).');
+      setErr(t('admin.trackerSetup.errHostRequired'));
       return;
     }
     if (!Number.isFinite(portNum) || portNum <= 0 || portNum > 65535) {
-      setErr('Port must be a number between 1 and 65535.');
+      setErr(t('admin.trackerSetup.errPortInvalid'));
       return;
     }
 
     const base = xexunBase();
     if (base == null) {
-      setErr('Missing REACT_APP_XEXUN_HTTP_BASE_URL. Set it to your tracker HTTP API base (or "same").');
+      setErr(t('admin.trackerSetup.errMissingBase'));
       return;
     }
 
@@ -84,12 +86,16 @@ export default function AdminTrackerSetup() {
       const data = await readJsonSafe(res);
       if (!res.ok) {
         const code = data?.error ? String(data.error) : '';
-        throw new Error(code ? `Command API ${res.status} (${code})` : `Command API ${res.status}`);
+        throw new Error(
+          code
+            ? t('admin.trackerSetup.commandApiErrorWithCode', { status: res.status, code })
+            : t('admin.trackerSetup.commandApiError', { status: res.status })
+        );
       }
-      setOk('Queued ip-transfer. The device will switch on its next uplink/check-in.');
+      setOk(t('admin.trackerSetup.queued'));
       setImei('');
     } catch (e2) {
-      setErr(e2?.message || 'Failed to queue ip-transfer.');
+      setErr(e2?.message || t('admin.trackerSetup.errQueue'));
     } finally {
       setBusy(false);
     }
@@ -101,23 +107,23 @@ export default function AdminTrackerSetup() {
         <div className="pp-row" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
             <div className="pp-badge" style={{ background: 'rgba(180, 35, 24, 0.1)', color: '#b42318' }}>
-              Admin
+              {t('admin.badge')}
             </div>
             <h1 className="pp-h1" style={{ marginTop: 10 }}>
-              Tracker setup (ip-transfer)
+              {t('admin.trackerSetup.title')}
             </h1>
             <p className="pp-subtle" style={{ maxWidth: 760 }}>
-              This queues an <code>ip-transfer</code> command on your tracker backend so the collar will reconnect to your
-              TCP ingest. Use your public hostname/IP and the TCP port you expose for the tracker (usually <code>5001</code>).
+              {t('admin.trackerSetup.subPrefix')} <code>ip-transfer</code>{' '}
+              {t('admin.trackerSetup.subMiddle')} <code>5001</code>{t('admin.trackerSetup.subSuffix')}
             </p>
             {baseHint != null ? (
               <p className="pp-subtle" style={{ marginTop: 6 }}>
-                Command API base: <code>{baseHint === '' ? '(same origin)' : baseHint}</code>
+                {t('admin.trackerSetup.commandApiBase')}: <code>{baseHint === '' ? t('admin.trackerSetup.sameOrigin') : baseHint}</code>
               </p>
             ) : null}
           </div>
           <Link className="pp-link" to="/admin">
-            ← Admin
+            {t('admin.backAdmin')}
           </Link>
         </div>
       </div>
@@ -135,28 +141,28 @@ export default function AdminTrackerSetup() {
             </p>
           ) : null}
 
-          <div className="pp-label">IMEI</div>
+          <div className="pp-label">{t('admin.trackerSetup.imeiLabel')}</div>
           <input
             className="pp-input"
             value={imei}
             onChange={(e) => setImei(e.target.value)}
-            placeholder="15-digit IMEI"
+            placeholder={t('admin.trackerSetup.imeiPlaceholder')}
             style={{ marginTop: 6 }}
           />
 
           <div className="pp-label" style={{ marginTop: 12 }}>
-            Host
+            {t('admin.trackerSetup.hostLabel')}
           </div>
           <input
             className="pp-input"
             value={host}
             onChange={(e) => setHost(e.target.value)}
-            placeholder="e.g. tracker.petpal.com.cy or 116.203.209.68"
+            placeholder={t('admin.trackerSetup.hostPlaceholder')}
             style={{ marginTop: 6 }}
           />
 
           <div className="pp-label" style={{ marginTop: 12 }}>
-            TCP Port
+            {t('admin.trackerSetup.portLabel')}
           </div>
           <input
             className="pp-input"
@@ -168,16 +174,15 @@ export default function AdminTrackerSetup() {
 
           <div className="pp-row" style={{ marginTop: 14, gap: 10, flexWrap: 'wrap' }}>
             <button type="submit" className="pp-btn pp-btnPrimary" disabled={busy}>
-              {busy ? '…' : 'Queue ip-transfer'}
+              {busy ? t('admin.busyShort') : t('admin.trackerSetup.queue')}
             </button>
             <Link className="pp-link" to="/admin">
-              Cancel
+              {t('admin.cancel')}
             </Link>
           </div>
 
           <p className="pp-subtle" style={{ marginTop: 10, marginBottom: 0 }}>
-            Note: this UI does not “register” an IMEI in your DB. The IMEI appears automatically after the device connects
-            and sends uplinks to your TCP server.
+            {t('admin.trackerSetup.note')}
           </p>
         </form>
       </div>

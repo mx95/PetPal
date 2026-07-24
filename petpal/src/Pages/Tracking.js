@@ -762,7 +762,7 @@ export default function Tracking() {
         setHistoryPoints([]);
         setHistoryTotalInRange(null);
         setHistoryTruncated(false);
-        setHistoryError(e?.message || 'Could not load tracker history.');
+        setHistoryError(e?.message || t('trackingPage.errLoadHistory'));
       })
       .finally(() => {
         if (!cancelled) setHistoryLoading(false);
@@ -770,7 +770,7 @@ export default function Tracking() {
     return () => {
       cancelled = true;
     };
-  }, [trackerTab, effectiveDeviceId, historyReloadTick, historyRange]);
+  }, [trackerTab, effectiveDeviceId, historyReloadTick, historyRange, t]);
 
   useEffect(() => {
     try {
@@ -1653,9 +1653,9 @@ export default function Tracking() {
                         <small>
                           {p.address || `${p.lat.toFixed(5)}, ${p.lng.toFixed(5)}`}
                           {event.count > 1
-                            ? ` · ${event.count} reports`
+                            ? ` · ${t('trackingPage.timelineReports', { count: event.count })}`
                             : sanitizeSpeedKmh(p.speed) != null
-                              ? ` · ${sanitizeSpeedKmh(p.speed).toFixed(1)} km/h`
+                              ? ` · ${sanitizeSpeedKmh(p.speed).toFixed(1)} ${t('trackingPage.speedUnitKmh')}`
                               : ''}
                         </small>
                       </button>
@@ -1669,15 +1669,27 @@ export default function Tracking() {
             </div>
           </div>
 
-          <div className="pp-trackHistoryStats pp-trackHistoryStats--footer" aria-label="Route summary">
-            <article><span>↗</span><small>Distance</small><strong>{historyAnalytics.distanceKm.toFixed(2)} km</strong></article>
+          <div className="pp-trackHistoryStats pp-trackHistoryStats--footer" aria-label={t('trackingPage.routeSummaryAria')}>
+            <article>
+              <span>↗</span>
+              <small>{t('trackingPage.historyDistance')}</small>
+              <strong>{historyAnalytics.distanceKm.toFixed(2)} km</strong>
+            </article>
             <article>
               <span>⏱</span>
-              <small>Active time</small>
+              <small>{t('trackingPage.historyActiveTime')}</small>
               <strong>{formatDurationMinutes(historyAnalytics.activeMinutes, t)}</strong>
             </article>
-            <article><span>⚡</span><small>Avg speed</small><strong>{historyAnalytics.averageSpeed.toFixed(1)} km/h</strong></article>
-            <article><span>•</span><small>Stops</small><strong>{historyAnalytics.stops}</strong></article>
+            <article>
+              <span>⚡</span>
+              <small>{t('trackingPage.historyAvgSpeed')}</small>
+              <strong>{historyAnalytics.averageSpeed.toFixed(1)} {t('trackingPage.speedUnitKmh')}</strong>
+            </article>
+            <article>
+              <span>•</span>
+              <small>{t('trackingPage.historyStops')}</small>
+              <strong>{historyAnalytics.stops}</strong>
+            </article>
           </div>
         </section>
 

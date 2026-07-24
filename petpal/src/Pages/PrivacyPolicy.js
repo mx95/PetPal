@@ -1,10 +1,12 @@
 import React from 'react';
 import { LegalPageShell } from '../components/LegalPageShell';
 import { BRAND } from '../config/brand';
+import { useI18n } from '../i18n/I18nContext';
 
 export default function PrivacyPolicy() {
+  const { t } = useI18n();
   return (
-    <LegalPageShell title="Privacy policy" lastUpdated={new Date().toISOString().slice(0, 10)}>
+    <LegalPageShell title={t('legal.privacyTitle')} lastUpdated={new Date().toISOString().slice(0, 10)}>
       <section>
         <h2>1. Who we are</h2>
         <p>

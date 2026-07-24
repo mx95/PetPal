@@ -7,12 +7,14 @@ import {
   adminRejectCompany,
   fetchPendingCompanyApplications,
 } from '../company/companyFirestore';
+import { useI18n } from '../i18n/I18nContext';
 
 function mapsLink(lat, lng) {
   return `https://www.google.com/maps?q=${encodeURIComponent(`${lat},${lng}`)}`;
 }
 
 export default function AdminCompanyQueue() {
+  const { t } = useI18n();
   const { user } = useAuth();
   const { isAdmin, firebaseReady } = useCompany();
   const [list, setList] = useState(/** @type {import('../company/companyTypes').CompanyProfile[]} */ ([]));
@@ -28,11 +30,11 @@ export default function AdminCompanyQueue() {
       const rows = await fetchPendingCompanyApplications();
       setList(rows);
     } catch (e) {
-      setErr(e?.message || 'Failed to load queue.');
+      setErr(e?.message || t('admin.companyQueue.errLoad'));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     if (!isAdmin) return;
@@ -46,7 +48,7 @@ export default function AdminCompanyQueue() {
     return (
       <div className="pp-grid">
         <div className="pp-col-12">
-          <p className="pp-error">Firebase is not configured.</p>
+          <p className="pp-error">{t('admin.firebaseNotConfigured')}</p>
         </div>
       </div>
     );
@@ -62,7 +64,7 @@ export default function AdminCompanyQueue() {
       await adminApproveCompany(id, noteById[id] || '');
       await refresh();
     } catch (e) {
-      setErr(e?.message || 'Approve failed. Check rules and that your UID has an /admins doc.');
+      setErr(e?.message || t('admin.companyQueue.errApprove'));
     } finally {
       setActionId(null);
     }
@@ -72,10 +74,10 @@ export default function AdminCompanyQueue() {
     setActionId(id);
     setErr('');
     try {
-      await adminRejectCompany(id, noteById[id] || 'Please review and resubmit.');
+      await adminRejectCompany(id, noteById[id] || t('admin.companyQueue.defaultRejectNote'));
       await refresh();
     } catch (e) {
-      setErr(e?.message || 'Reject failed.');
+      setErr(e?.message || t('admin.companyQueue.errReject'));
     } finally {
       setActionId(null);
     }
@@ -87,19 +89,18 @@ export default function AdminCompanyQueue() {
         <div className="pp-row" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
             <div className="pp-badge" style={{ background: 'rgba(180, 35, 24, 0.1)', color: '#b42318' }}>
-              Admin
+              {t('admin.badge')}
             </div>
             <h1 className="pp-h1" style={{ marginTop: 10 }}>
-              Business applications
+              {t('admin.companyQueue.title')}
             </h1>
             <p className="pp-subtle" style={{ maxWidth: 640 }}>
-              Approve a pin only when the business and map location are legitimate. Reject with a short note; the
-              business can resubmit. Create a document in Firestore <code>admins/&lt;yourUid&gt;</code> (any field) to
-              unlock this page for your account.
+              {t('admin.companyQueue.subPrefix')}{' '}
+              <code>admins/&lt;yourUid&gt;</code> {t('admin.companyQueue.subSuffix')}
             </p>
           </div>
           <Link className="pp-link" to="/dashboard">
-            ← Dashboard
+            {t('admin.backDashboard')}
           </Link>
         </div>
       </div>
@@ -112,9 +113,9 @@ export default function AdminCompanyQueue() {
       ) : null}
       <div className="pp-col-12">
         {loading ? (
-          <p className="pp-subtle">Loading…</p>
+          <p className="pp-subtle">{t('admin.loading')}</p>
         ) : list.length === 0 ? (
-          <p className="pp-subtle">No pending applications.</p>
+          <p className="pp-subtle">{t('admin.companyQueue.empty')}</p>
         ) : (
           <ul className="pp-adminCompanyList" style={{ listStyle: 'none', padding: 0, margin: 0 }}>
             {list.map((c) => {
@@ -126,11 +127,11 @@ export default function AdminCompanyQueue() {
                     {c.businessName}
                   </h2>
                   <p className="pp-subtle" style={{ marginTop: 4, marginBottom: 4 }}>
-                    Application ID: <code style={{ fontSize: 12 }}>{id}</code>
+                    {t('admin.companyQueue.applicationId')}: <code style={{ fontSize: 12 }}>{id}</code>
                   </p>
                   {c.ownerUid ? (
                     <p className="pp-subtle" style={{ marginTop: 4, marginBottom: 4 }}>
-                      Owner UID: <code style={{ fontSize: 12 }}>{c.ownerUid}</code>
+                      {t('admin.companyQueue.ownerUid')}: <code style={{ fontSize: 12 }}>{c.ownerUid}</code>
                     </p>
                   ) : null}
                   {c.addressLine ? (
@@ -140,7 +141,7 @@ export default function AdminCompanyQueue() {
                   ) : null}
                   {c.publicEmail ? (
                     <p className="pp-subtle" style={{ marginTop: 4 }}>
-                      Email: {c.publicEmail}
+                      {t('admin.companyQueue.email')}: {c.publicEmail}
                     </p>
                   ) : null}
                   {c.lat != null && c.lng != null ? (
@@ -151,20 +152,20 @@ export default function AdminCompanyQueue() {
                         target="_blank"
                         rel="noopener noreferrer"
                       >
-                        Open pin in Google Maps
+                        {t('admin.companyQueue.openPin')}
                       </a>
                     </p>
                   ) : null}
                   <div style={{ marginTop: 10 }}>
                     <div className="pp-label" style={{ fontSize: 12 }}>
-                      Note (optional, stored on approve / reject)
+                      {t('admin.companyQueue.noteLabel')}
                     </div>
                     <input
                       className="pp-input"
                       style={{ maxWidth: 480, marginTop: 4, fontSize: 14 }}
                       value={noteById[id] || ''}
                       onChange={(e) => setNoteById((m) => ({ ...m, [id]: e.target.value }))}
-                      placeholder="e.g. Verified via phone call / Does not match listing"
+                      placeholder={t('admin.companyQueue.notePlaceholder')}
                     />
                   </div>
                   <div className="pp-row" style={{ marginTop: 12, gap: 10, flexWrap: 'wrap' }}>
@@ -174,10 +175,10 @@ export default function AdminCompanyQueue() {
                       disabled={actionId === id}
                       onClick={() => approve(id)}
                     >
-                      {actionId === id ? '…' : 'Approve'}
+                      {actionId === id ? t('admin.busyShort') : t('admin.companyQueue.approve')}
                     </button>
                     <button type="button" className="pp-btn" disabled={actionId === id} onClick={() => reject(id)}>
-                      {actionId === id ? '…' : 'Reject'}
+                      {actionId === id ? t('admin.busyShort') : t('admin.companyQueue.reject')}
                     </button>
                   </div>
                 </li>

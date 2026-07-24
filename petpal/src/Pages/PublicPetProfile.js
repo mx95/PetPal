@@ -83,7 +83,7 @@ export default function PublicPetProfile() {
 
         setProfile({
           id: petId,
-          name: getSafe(raw.name, 'Unknown'),
+          name: getSafe(raw.name, t('petPublic.unknown')),
           breed: getSafe(raw.breed),
           gender: raw.gender === 'female' ? 'female' : 'male',
           dob: firstNonEmpty(raw.dob, raw.dateOfBirth),

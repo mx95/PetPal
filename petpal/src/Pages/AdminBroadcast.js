@@ -3,8 +3,10 @@ import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
 import { useCompany } from '../company/CompanyContext';
 import { createBroadcastMessage } from '../inbox/inboxFirestore';
+import { useI18n } from '../i18n/I18nContext';
 
 export default function AdminBroadcast() {
+  const { t } = useI18n();
   const { user } = useAuth();
   const { isAdmin, firebaseReady } = useCompany();
   const [title, setTitle] = useState('');
@@ -18,7 +20,7 @@ export default function AdminBroadcast() {
     return (
       <div className="pp-grid">
         <div className="pp-col-12">
-          <p className="pp-error">Firebase is not configured.</p>
+          <p className="pp-error">{t('admin.firebaseNotConfigured')}</p>
         </div>
       </div>
     );
@@ -39,9 +41,9 @@ export default function AdminBroadcast() {
       });
       setTitle('');
       setBody('');
-      setOk('Message sent to all users.');
+      setOk(t('admin.broadcast.sent'));
     } catch (ex) {
-      setErr(ex?.message || 'Could not send message.');
+      setErr(ex?.message || t('admin.broadcast.errSend'));
     } finally {
       setSending(false);
     }
@@ -53,18 +55,17 @@ export default function AdminBroadcast() {
         <div className="pp-row" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
             <div className="pp-badge" style={{ background: 'rgba(180, 35, 24, 0.1)', color: '#b42318' }}>
-              Admin
+              {t('admin.badge')}
             </div>
             <h1 className="pp-h1" style={{ marginTop: 10 }}>
-              Broadcast message
+              {t('admin.broadcast.title')}
             </h1>
             <p className="pp-subtle" style={{ maxWidth: 640 }}>
-              Send an announcement to every signed-in user. It appears in their profile inbox with an unread badge until
-              they open it.
+              {t('admin.broadcast.sub')}
             </p>
           </div>
           <Link className="pp-link" to="/admin">
-            ← Admin tools
+            {t('admin.backAdminTools')}
           </Link>
         </div>
       </div>
@@ -72,18 +73,18 @@ export default function AdminBroadcast() {
       <div className="pp-col-12 pp-col-md-8">
         <form className="pp-card pp-pad pp-inboxBroadcastForm" onSubmit={(e) => void handleSubmit(e)}>
           <label className="pp-field">
-            <span className="pp-field__label">Subject</span>
+            <span className="pp-field__label">{t('admin.broadcast.subject')}</span>
             <input
               className="pp-input"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               maxLength={120}
               required
-              placeholder="e.g. Scheduled maintenance tonight"
+              placeholder={t('admin.broadcast.subjectPlaceholder')}
             />
           </label>
           <label className="pp-field">
-            <span className="pp-field__label">Message</span>
+            <span className="pp-field__label">{t('admin.broadcast.message')}</span>
             <textarea
               className="pp-input"
               rows={8}
@@ -91,14 +92,14 @@ export default function AdminBroadcast() {
               onChange={(e) => setBody(e.target.value)}
               maxLength={4000}
               required
-              placeholder="Write the message everyone should see…"
+              placeholder={t('admin.broadcast.messagePlaceholder')}
             />
           </label>
           {err ? <p className="pp-error">{err}</p> : null}
           {ok ? <p className="pp-subtle" style={{ color: '#15803d', fontWeight: 700 }}>{ok}</p> : null}
           <div className="pp-row" style={{ gap: 10, marginTop: 8 }}>
             <button type="submit" className="pp-btn pp-btnPrimary" disabled={sending}>
-              {sending ? 'Sending…' : 'Send to everyone'}
+              {sending ? t('admin.broadcast.sending') : t('admin.broadcast.send')}
             </button>
           </div>
         </form>

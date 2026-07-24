@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { fetchDiscoverFeedPage } from '../data/discoverFeed';
 import { fetchDiscoverFeedHybrid } from './discoverFeedFirestore';
 
-export function useDiscoverFeed({ pageSize = 4 } = {}) {
+export function useDiscoverFeed({ pageSize = 4, t } = {}) {
   const [items, setItems] = useState([]);
   const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -67,14 +67,14 @@ export function useDiscoverFeed({ pageSize = 4 } = {}) {
       setHasMore(Boolean(result.hasMore));
       setPage(pageIndex);
     } catch (e) {
-      setError(e?.message || 'Could not load feed');
+      setError(e?.message || (typeof t === 'function' ? t('discover.feed.errLoad') : 'discover.feed.errLoad'));
       setHasMore(false);
     } finally {
       setLoading(false);
       setLoadingMore(false);
       loadingRef.current = false;
     }
-  }, []);
+  }, [t]);
 
   const loadPageRef = useRef(loadPage);
   loadPageRef.current = loadPage;

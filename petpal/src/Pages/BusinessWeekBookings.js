@@ -135,7 +135,7 @@ export default function BusinessWeekBookings() {
     try {
       await updateBookingStatus(bookingId, patch);
     } catch (e) {
-      setActionErr(e?.message || 'Could not update booking.');
+      setActionErr(e?.message || t('businessWeek.errUpdateBooking'));
     } finally {
       setBusyId('');
     }

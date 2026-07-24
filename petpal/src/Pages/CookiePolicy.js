@@ -1,10 +1,12 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { LegalPageShell } from '../components/LegalPageShell';
+import { useI18n } from '../i18n/I18nContext';
 
 export default function CookiePolicy() {
+  const { t } = useI18n();
   return (
-    <LegalPageShell title="Cookie policy" lastUpdated={new Date().toISOString().slice(0, 10)}>
+    <LegalPageShell title={t('legal.cookieTitle')} lastUpdated={new Date().toISOString().slice(0, 10)}>
       <section>
         <h2>1. What are cookies and similar technologies?</h2>
         <p>

@@ -19,7 +19,7 @@ export default function DiscoverHome() {
   const { user } = useAuth();
   const { pets } = usePets();
   const { profile, isApprovedCompany } = useCompany();
-  const { items, loading, loadingMore, hasMore, error, loadMore, refresh } = useDiscoverFeed();
+  const { items, loading, loadingMore, hasMore, error, loadMore, refresh } = useDiscoverFeed({ t });
   const [promoteOpen, setPromoteOpen] = useState(false);
   const sentinelRef = useRef(null);
 

@@ -215,9 +215,9 @@ function providerInitials(name) {
 }
 
 
-function WizardProgress({ steps, currentIndex }) {
+function WizardProgress({ steps, currentIndex, ariaLabel }) {
   return (
-    <ol className="pp-bookWizardProgress" aria-label="Booking steps">
+    <ol className="pp-bookWizardProgress" aria-label={ariaLabel}>
       {steps.map((label, i) => (
         <li
           key={`${label}-${i}`}
@@ -863,7 +863,7 @@ export default function BookService({ embedded = false }) {
         </>
       ) : (
         <>
-          <WizardProgress steps={wizardSteps} currentIndex={stepIndex} />
+          <WizardProgress steps={wizardSteps} currentIndex={stepIndex} ariaLabel={t('bookConfirm.bookingStepsAria')} />
 
           <section className="pp-bookWizardPanel">
             {stepKey === 'pet' ? (

@@ -2,6 +2,7 @@ import React from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
 import { useCompany } from '../company/CompanyContext';
+import { useI18n } from '../i18n/I18nContext';
 
 function AdminActionCard({ to, icon, title, desc }) {
   return (
@@ -21,6 +22,7 @@ function AdminActionCard({ to, icon, title, desc }) {
 }
 
 export default function AdminHub() {
+  const { t } = useI18n();
   const { user } = useAuth();
   const { isAdmin, firebaseReady } = useCompany();
 
@@ -29,7 +31,7 @@ export default function AdminHub() {
     return (
       <div className="pp-grid">
         <div className="pp-col-12">
-          <p className="pp-error">Firebase is not configured.</p>
+          <p className="pp-error">{t('admin.firebaseNotConfigured')}</p>
         </div>
       </div>
     );
@@ -42,18 +44,18 @@ export default function AdminHub() {
         <div className="pp-row" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
             <div className="pp-badge" style={{ background: 'rgba(180, 35, 24, 0.1)', color: '#b42318' }}>
-              Admin
+              {t('admin.badge')}
             </div>
             <h1 className="pp-h1" style={{ marginTop: 10 }}>
-              Admin tools
+              {t('admin.hub.title')}
             </h1>
             <p className="pp-subtle" style={{ maxWidth: 700 }}>
-              These actions can affect live user accounts and devices. Only accounts with a Firestore document in{' '}
-              <code>admins/&lt;uid&gt;</code> can access this page.
+              {t('admin.hub.introPrefix')}{' '}
+              <code>admins/&lt;uid&gt;</code> {t('admin.hub.introSuffix')}
             </p>
           </div>
           <Link className="pp-link" to="/dashboard">
-            ← Dashboard
+            {t('admin.backDashboard')}
           </Link>
         </div>
       </div>
@@ -63,32 +65,32 @@ export default function AdminHub() {
           <AdminActionCard
             to="/admin/company-approvals"
             icon="🏪"
-            title="Company approvals"
-            desc="Review pending venue applications."
+            title={t('admin.hub.companyApprovalsTitle')}
+            desc={t('admin.hub.companyApprovalsDesc')}
           />
           <AdminActionCard
             to="/admin/devices"
             icon="🛰️"
-            title="Device registry"
-            desc="View all IMEIs, add collars, assign 365GPS or GPSPOS protocol."
+            title={t('admin.hub.deviceRegistryTitle')}
+            desc={t('admin.hub.deviceRegistryDesc')}
           />
           <AdminActionCard
             to="/admin/broadcast"
             icon="📬"
-            title="Broadcast inbox"
-            desc="Send a message to every user’s profile inbox."
+            title={t('admin.hub.broadcastTitle')}
+            desc={t('admin.hub.broadcastDesc')}
           />
           <AdminActionCard
             to="/admin/bookings"
             icon="📅"
-            title="All bookings"
-            desc="Live Firestore feed of every appointment — search by customer, provider, or booking id."
+            title={t('admin.hub.bookingsTitle')}
+            desc={t('admin.hub.bookingsDesc')}
           />
           <AdminActionCard
             to="/admin/orders"
             icon="📦"
-            title="Shop orders"
-            desc="Track payments, shipping, and GPS tracker fulfilment — update status per customer."
+            title={t('admin.hub.ordersTitle')}
+            desc={t('admin.hub.ordersDesc')}
           />
         </div>
       </div>

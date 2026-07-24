@@ -2,10 +2,12 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { LegalPageShell } from '../components/LegalPageShell';
 import { BRAND } from '../config/brand';
+import { useI18n } from '../i18n/I18nContext';
 
 export default function TermsOfService() {
+  const { t } = useI18n();
   return (
-    <LegalPageShell title="Terms of service" lastUpdated={new Date().toISOString().slice(0, 10)}>
+    <LegalPageShell title={t('legal.termsTitle')} lastUpdated={new Date().toISOString().slice(0, 10)}>
       <section>
         <h2>1. Agreement</h2>
         <p>

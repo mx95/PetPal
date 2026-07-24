@@ -5,6 +5,7 @@ import { useCompany } from '../company/CompanyContext';
 import { subscribeAllBookings } from '../bookings/bookingFirestore';
 import { formatDateTime24 } from '../formatTime24';
 import { PrettySelect } from '../components/PrettySelect';
+import { useI18n } from '../i18n/I18nContext';
 
 function bookingWhen(b) {
   if (b.startAt?.toDate) return formatDateTime24(b.startAt.toDate());
@@ -37,6 +38,7 @@ function serializeBooking(b) {
 }
 
 export default function AdminBookings() {
+  const { t } = useI18n();
   const { user } = useAuth();
   const { isAdmin, firebaseReady } = useCompany();
 
@@ -59,12 +61,12 @@ export default function AdminBookings() {
         setLoading(false);
       },
       (e) => {
-        setErr(e?.message || 'Failed to load bookings.');
+        setErr(e?.message || t('admin.bookings.errLoad'));
         setLoading(false);
       }
     );
     return unsub;
-  }, [firebaseReady, isAdmin]);
+  }, [firebaseReady, isAdmin, t]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -94,7 +96,7 @@ export default function AdminBookings() {
     return (
       <div className="pp-grid">
         <div className="pp-col-12">
-          <p className="pp-error">Firebase is not configured.</p>
+          <p className="pp-error">{t('admin.firebaseNotConfigured')}</p>
         </div>
       </div>
     );
@@ -107,18 +109,17 @@ export default function AdminBookings() {
         <div className="pp-row" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
             <div className="pp-badge" style={{ background: 'rgba(180, 35, 24, 0.1)', color: '#b42318' }}>
-              Admin
+              {t('admin.badge')}
             </div>
             <h1 className="pp-h1" style={{ marginTop: 10 }}>
-              All bookings
+              {t('admin.bookings.title')}
             </h1>
             <p className="pp-subtle" style={{ maxWidth: 720 }}>
-              Live view of every appointment in Firestore for troubleshooting and customer support. Shows the latest 200
-              bookings by start time.
+              {t('admin.bookings.sub')}
             </p>
           </div>
           <Link className="pp-link" to="/admin">
-            ← Admin tools
+            {t('admin.backAdminTools')}
           </Link>
         </div>
       </div>
@@ -129,7 +130,7 @@ export default function AdminBookings() {
             <input
               className="pp-input"
               style={{ flex: '1 1 220px', minWidth: 0 }}
-              placeholder="Search by booking id, user, company, pet…"
+              placeholder={t('admin.bookings.searchPlaceholder')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -138,24 +139,35 @@ export default function AdminBookings() {
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
             >
-              <option value="all">All statuses</option>
-              <option value="booked">Booked</option>
-              <option value="completed">Completed</option>
-              <option value="cancelled">Cancelled</option>
+              <option value="all">{t('admin.bookings.statusAll')}</option>
+              <option value="booked">{t('admin.bookings.statusBooked')}</option>
+              <option value="completed">{t('admin.bookings.statusCompleted')}</option>
+              <option value="cancelled">{t('admin.bookings.statusCancelled')}</option>
             </PrettySelect>
           </div>
 
           {err ? <div className="pp-error">{err}</div> : null}
-          {loading ? <div className="pp-muted">Loading bookings…</div> : null}
+          {loading ? <div className="pp-muted">{t('admin.bookings.loading')}</div> : null}
           {!loading && filtered.length === 0 ? (
-            <div className="pp-muted">{rows.length === 0 ? 'No bookings in Firestore yet.' : 'No bookings match your filters.'}</div>
+            <div className="pp-muted">
+              {rows.length === 0 ? t('admin.bookings.empty') : t('admin.bookings.emptyFiltered')}
+            </div>
           ) : null}
 
           <div className="pp-stack" style={{ marginTop: 10 }}>
             {filtered.map((b) => {
-              const serviceName = b.serviceSnapshot?.name || b.serviceId || 'Service';
-              const petName = b.petSnapshot?.name || b.petId || 'Pet';
+              const serviceName = b.serviceSnapshot?.name || b.serviceId || t('admin.bookings.serviceFallback');
+              const petName = b.petSnapshot?.name || b.petId || t('admin.bookings.petFallback');
               const expanded = expandedId === b.id;
+              const status = String(b.status || '').toLowerCase();
+              const statusLabel =
+                status === 'booked'
+                  ? t('admin.bookings.statusBooked')
+                  : status === 'completed'
+                    ? t('admin.bookings.statusCompleted')
+                    : status === 'cancelled'
+                      ? t('admin.bookings.statusCancelled')
+                      : b.status || t('admin.bookings.statusUnknown');
               return (
                 <div key={b.id} className="pp-providerBookingCard" style={{ padding: 12 }}>
                   <div className="pp-rowBetween" style={{ alignItems: 'flex-start', gap: 10, flexWrap: 'wrap' }}>
@@ -165,23 +177,27 @@ export default function AdminBookings() {
                         {serviceName} · {bookingWhen(b)}
                       </div>
                       <div className="pp-muted" style={{ fontSize: 12, marginTop: 4, wordBreak: 'break-all' }}>
-                        <span title="Booking document id">ID: {b.id}</span>
+                        <span title={t('admin.bookings.bookingIdTitle')}>{t('admin.bookings.idLabel')}: {b.id}</span>
                         {' · '}
-                        <span title="Customer UID">Customer: {b.customerUid || '—'}</span>
+                        <span title={t('admin.bookings.customerUidTitle')}>
+                          {t('admin.bookings.customerLabel')}: {b.customerUid || '—'}
+                        </span>
                         {' · '}
-                        <span title="Provider company id">Company: {b.companyId || '—'}</span>
+                        <span title={t('admin.bookings.companyIdTitle')}>
+                          {t('admin.bookings.companyLabel')}: {b.companyId || '—'}
+                        </span>
                       </div>
                     </div>
                     <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                       <span className={statusBadgeClass(b.status)} style={statusBadgeStyle(b.status)}>
-                        {b.status || 'unknown'}
+                        {statusLabel}
                       </span>
                       <button
                         type="button"
                         className="pp-btn pp-btn--ghost"
                         onClick={() => setExpandedId(expanded ? '' : b.id)}
                       >
-                        {expanded ? 'Hide details' : 'Details'}
+                        {expanded ? t('admin.bookings.hideDetails') : t('admin.bookings.details')}
                       </button>
                     </div>
                   </div>
