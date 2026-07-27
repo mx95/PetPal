@@ -485,7 +485,7 @@ export default function Shop() {
                     {p.id === 'TRACKER_HARDWARE' ? (
                       <img
                         className="pp-shopCard__productImg"
-                        src="/images/shop/gps-tracker.png"
+                        src="/images/shop/gps-tracker-v2.png"
                         alt={p.title}
                       />
                     ) : null}
@@ -548,7 +548,7 @@ export default function Shop() {
                           />
                           <img
                             className="pp-shopTrackerOpt__img"
-                            src="/images/shop/gps-tracker.png"
+                            src="/images/shop/gps-tracker-v2.png"
                             alt=""
                           />
                           <span className="pp-shopTrackerOpt__copy">
