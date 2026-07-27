@@ -69,6 +69,14 @@ function App() {
   const { initializing } = useAuth();
   const location = useLocation();
   const mainAlignsWithNav = location.pathname === '/docs';
+  const isShopRoute = location.pathname === '/shop' || location.pathname.startsWith('/shop/');
+  const mainClassName = [
+    'pp-main',
+    mainAlignsWithNav ? 'pp-main--alignNav' : '',
+    isShopRoute ? 'pp-main--shop' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
 
   const { t } = useI18n();
 
@@ -83,7 +91,7 @@ function App() {
       <ShopCartMobilePanel />
       <CheckoutSuccessBridge />
       <div className="pp-pageScroll">
-        <div className={mainAlignsWithNav ? 'pp-main pp-main--alignNav' : 'pp-main'}>
+        <div className={mainClassName}>
           <Routes>
           <Route path="/" element={<HomeScreen />} />
           <Route path="/discover" element={<DiscoverHome />} />
