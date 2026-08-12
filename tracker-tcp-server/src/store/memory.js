@@ -237,6 +237,30 @@ function createMemoryStore() {
     get(imei) {
       return devices.get(String(imei)) || null;
     },
+    remove(imei) {
+      const k = String(imei);
+      const existed = devices.has(k);
+      devices.delete(k);
+      commandQueues.delete(k);
+      seqByImei.delete(k);
+      socketsByImei.delete(k);
+      return existed;
+    },
+    clearLiveLocation(imei) {
+      const k = String(imei);
+      const prev = devices.get(k);
+      if (!prev) return false;
+      devices.set(k, {
+        ...prev,
+        imei: k,
+        location: null,
+        source: null,
+        atHomeWifi: false,
+        lastUpdate: null,
+        gps: { lat: null, lng: null, speedKmh: null, timestamp: null },
+      });
+      return true;
+    },
     /** Queue a 0x21 command string (e.g. ip=host:port) for the next uplink. */
     enqueueCommand(imei, command, { atFront = false } = {}) {
       const k = String(imei);

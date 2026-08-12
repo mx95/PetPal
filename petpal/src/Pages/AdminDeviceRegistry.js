@@ -6,6 +6,7 @@ import {
   GPSPOS_POLL_PRESETS,
   PROTOCOL_OPTIONS,
   PROVIDER_OPTIONS,
+  deleteAdminDevice,
   isTrackerAdminApiAvailable,
   listAdminDevices,
   patchAdminDevice,
@@ -48,6 +49,7 @@ export default function AdminDeviceRegistry() {
 
   const [newImei, setNewImei] = useState('');
   const [newProtocol, setNewProtocol] = useState('g365');
+  const [newEmnifyCard, setNewEmnifyCard] = useState('');
   const [drafts, setDrafts] = useState({});
   const [petLinks, setPetLinks] = useState({});
   const [petLinksLoading, setPetLinksLoading] = useState(false);
@@ -106,22 +108,26 @@ export default function AdminDeviceRegistry() {
     const q = search.trim().toLowerCase();
     const list = [...devices].sort((a, b) => String(a.imei).localeCompare(String(b.imei)));
     if (!q) return list;
-    return list.filter((d) => String(d.imei || '').includes(q));
+    return list.filter((d) => {
+      const imei = String(d.imei || '').toLowerCase();
+      const card = String(d.emnifyCard || '').toLowerCase();
+      return imei.includes(q) || card.includes(q);
+    });
   }, [devices, search]);
 
   function draftFor(device) {
-    const imei = device.imei;
-    if (drafts[imei]) return drafts[imei];
     const override = device.providerOverride;
     const providerId =
       override === 'g365' || override === 'gpspos' ? override : 'auto';
-    return {
+    const base = {
       providerId,
       gpsposPlatformImei: device.gpsposPlatformImei || '',
       gpsposPollEnabled: Boolean(device.gpsposPollEnabled),
       gpsposPollIntervalSec:
         device.gpsposPollIntervalSec ?? defaults.gpsposPollIntervalSec ?? 60,
+      emnifyCard: device.emnifyCard || '',
     };
+    return drafts[device.imei] ? { ...base, ...drafts[device.imei] } : base;
   }
 
   function updateDraft(imei, patch) {
@@ -143,6 +149,7 @@ export default function AdminDeviceRegistry() {
       gpsposPlatformImei: draft.gpsposPlatformImei?.trim() || null,
       gpsposPollEnabled: draft.gpsposPollEnabled,
       gpsposPollIntervalSec: Number(draft.gpsposPollIntervalSec) || defaults.gpsposPollIntervalSec,
+      emnifyCard: draft.emnifyCard?.trim() || null,
     };
 
     setBusyImei(imei);
@@ -190,12 +197,37 @@ export default function AdminDeviceRegistry() {
         providerOverride: protocolOpt.value,
         gpsposPollEnabled: protocolOpt.value === 'gpspos',
         gpsposPollIntervalSec: defaults.gpsposPollIntervalSec ?? 60,
+        emnifyCard: newEmnifyCard.trim() || null,
       });
       setNewImei('');
+      setNewEmnifyCard('');
       await load();
       setOk(t('admin.devices.added', { imei, protocol: protocolLabel(protocolOpt.id, t) }));
     } catch (e) {
       setErr(e?.message || t('admin.devices.errAdd'));
+    } finally {
+      setBusyImei('');
+    }
+  }
+
+  async function removeDevice(imei) {
+    const okConfirm = window.confirm(t('admin.devices.confirmRemove', { imei }));
+    if (!okConfirm) return;
+
+    setBusyImei(imei);
+    setErr('');
+    setOk('');
+    try {
+      await deleteAdminDevice(imei);
+      setDevices((prev) => prev.filter((d) => d.imei !== imei));
+      setDrafts((prev) => {
+        const copy = { ...prev };
+        delete copy[imei];
+        return copy;
+      });
+      setOk(t('admin.devices.removed', { imei }));
+    } catch (e) {
+      setErr(e?.message || t('admin.devices.errRemove'));
     } finally {
       setBusyImei('');
     }
@@ -285,6 +317,16 @@ export default function AdminDeviceRegistry() {
                 ))}
               </select>
             </label>
+            <label className="pp-field">
+              <span className="pp-field__label">{t('admin.devices.emnifyCard')}</span>
+              <input
+                className="pp-input"
+                value={newEmnifyCard}
+                onChange={(e) => setNewEmnifyCard(e.target.value)}
+                placeholder={t('admin.devices.emnifyCardPlaceholder')}
+                disabled={!apiReady || Boolean(busyImei)}
+              />
+            </label>
             <button type="submit" className="pp-btn pp-btnPrimary" disabled={!apiReady || Boolean(busyImei)}>
               {t('admin.devices.addDevice')}
             </button>
@@ -353,6 +395,12 @@ export default function AdminDeviceRegistry() {
                       {device.observedProvider && device.observedProvider !== device.effectiveProvider ? (
                         <span> {t('admin.devices.observedProvider', { provider: device.observedProvider })}</span>
                       ) : null}
+                      {device.emnifyCard ? (
+                        <span>
+                          {' · '}
+                          {t('admin.devices.emnifyCard')}: <code>{device.emnifyCard}</code>
+                        </span>
+                      ) : null}
                       <span>
                         {' · '}
                         {hasFix
@@ -410,6 +458,17 @@ export default function AdminDeviceRegistry() {
                       </select>
                     </label>
 
+                    <label className="pp-field">
+                      <span className="pp-field__label">{t('admin.devices.emnifyCard')}</span>
+                      <input
+                        className="pp-input"
+                        value={draft.emnifyCard}
+                        onChange={(e) => updateDraft(device.imei, { emnifyCard: e.target.value })}
+                        placeholder={t('admin.devices.emnifyCardPlaceholder')}
+                        disabled={saving}
+                      />
+                    </label>
+
                     {isGpspos ? (
                       <>
                         <label className="pp-field">
@@ -462,6 +521,14 @@ export default function AdminDeviceRegistry() {
                       onClick={() => void saveDevice(device.imei)}
                     >
                       {saving ? t('admin.saving') : t('admin.save')}
+                    </button>
+                    <button
+                      type="button"
+                      className="pp-btn pp-adminDeviceCard__remove"
+                      disabled={saving}
+                      onClick={() => void removeDevice(device.imei)}
+                    >
+                      {t('admin.devices.remove')}
                     </button>
                   </div>
                 </article>

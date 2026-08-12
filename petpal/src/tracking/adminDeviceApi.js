@@ -73,6 +73,26 @@ export async function patchAdminDevice(imei, patch) {
   return data;
 }
 
+export async function deleteAdminDevice(imei) {
+  const base = trackerBase();
+  const headers = adminHeaders();
+  if (base == null || !headers) {
+    const err = new Error('Tracker admin API is not configured.');
+    err.code = 'TRACKER_ADMIN_NOT_CONFIGURED';
+    throw err;
+  }
+  const path = `/api/admin/devices/${encodeURIComponent(String(imei).trim())}`;
+  const url = base === '' ? path : `${base}${path}`;
+  const res = await fetch(url, { method: 'DELETE', headers });
+  const data = await readJsonSafe(res);
+  if (!res.ok) {
+    const err = new Error(data?.error || data?.message || `HTTP ${res.status}`);
+    err.code = data?.error || 'admin_delete_failed';
+    throw err;
+  }
+  return data;
+}
+
 /** Poll interval presets (seconds) for GPSPOS cloud devices. */
 export const GPSPOS_POLL_PRESETS = [
   { id: '30', seconds: 30 },

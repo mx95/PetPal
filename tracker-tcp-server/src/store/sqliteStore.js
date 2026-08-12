@@ -97,6 +97,7 @@ function deviceConfigFromRow(row) {
     gpsposPollIntervalSec:
       row.gpspos_poll_interval_sec != null ? Number(row.gpspos_poll_interval_sec) : null,
     gpsposPollEnabled: Boolean(Number(row.gpspos_poll_enabled)),
+    emnifyCard: row.emnify_card ?? null,
   };
 }
 
@@ -400,7 +401,27 @@ function createSqliteStore({ dbPath }) {
           patch.gpspos_poll_enabled !== undefined
             ? patch.gpspos_poll_enabled
             : current.gpspos_poll_enabled ?? 0,
+        emnify_card:
+          patch.emnify_card !== undefined ? patch.emnify_card : current.emnify_card ?? null,
       });
+    },
+
+    deleteDevice(imei) {
+      const k = String(imei);
+      const existed = Boolean(sqlite.getDevice.get(k) || mem.get(k));
+      sqlite.deleteDevicePositions.run(k);
+      sqlite.deleteDeviceCommands.run(k);
+      sqlite.deleteDeviceRow.run(k);
+      if (typeof mem.remove === "function") mem.remove(k);
+      return existed;
+    },
+
+    clearDevicePositions(imei) {
+      const k = String(imei);
+      const info = sqlite.deleteDevicePositions.run(k);
+      sqlite.clearDeviceLastFix.run(k);
+      if (typeof mem.clearLiveLocation === "function") mem.clearLiveLocation(k);
+      return info.changes;
     },
 
     close() {

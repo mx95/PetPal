@@ -29,6 +29,10 @@ on:
         description: Branch to deploy
         required: false
         default: main
+      clear_imei:
+        description: Optional IMEI — wipe all position history after deploy
+        required: false
+        default: ''
 
 concurrency:
   group: deploy-server
@@ -52,4 +56,13 @@ jobs:
             if [ -z "$PETPAL_ROOT" ]; then PETPAL_ROOT="/root/PetPal"; fi
             export PETPAL_ROOT
             export DEPLOY_BRANCH="${{ github.event.inputs.branch || github.ref_name }}"
+            export CLEAR_DEVICE_POSITIONS_IMEI="${{ github.event.inputs.clear_imei || '' }}"
             bash "$PETPAL_ROOT/scripts/deploy-server.sh"
+            # If the pre-pull deploy script ignored CLEAR_*, clear here after git update.
+            CLEAR_IMEI="${CLEAR_DEVICE_POSITIONS_IMEI:-}"
+            if [ -n "$CLEAR_IMEI" ]; then
+              TRACKER_DB="${PETPAL_TRACKER_DB:-/var/lib/petpal/petpal.sqlite}"
+              echo "[deploy] Clearing positions for IMEI $CLEAR_IMEI (post-deploy)"
+              (cd "$PETPAL_ROOT/tracker-tcp-server" && SQLITE_PATH="$TRACKER_DB" node scripts/clear-imei-positions.js --imei "$CLEAR_IMEI")
+              (cd "$PETPAL_ROOT/tracker-tcp-server" && pm2 restart tracker)
+            fi

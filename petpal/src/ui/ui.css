@@ -22242,6 +22242,21 @@ html[data-theme="dark"] .pp-nearbyPartnerCard__name {
 
 .pp-adminDeviceCard__actions {
   margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.pp-adminDeviceCard__remove {
+  color: #b42318;
+  border-color: rgba(180, 35, 24, 0.35);
+  background: rgba(180, 35, 24, 0.06);
+}
+
+.pp-adminDeviceCard__remove:hover:not(:disabled) {
+  background: rgba(180, 35, 24, 0.12);
+  border-color: rgba(180, 35, 24, 0.5);
 }
 
 /* Bookings hub — inline wizard (replaces bottom-sheet modal) */

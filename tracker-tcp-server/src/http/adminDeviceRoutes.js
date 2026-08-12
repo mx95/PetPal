@@ -31,6 +31,12 @@ function normalizeProvider(value) {
   return p;
 }
 
+function normalizeEmnifyCard(value) {
+  if (value == null) return null;
+  const s = String(value).trim();
+  return s === "" ? null : s;
+}
+
 function deviceConfigPayload(row, live) {
   if (!row && !live) return null;
   const imei = String(row?.imei || live?.imei || "").trim();
@@ -45,6 +51,7 @@ function deviceConfigPayload(row, live) {
     gpsposPollEnabled: Boolean(Number(row?.gpspos_poll_enabled)),
     gpsposPollIntervalSec:
       row?.gpspos_poll_interval_sec != null ? Number(row.gpspos_poll_interval_sec) : null,
+    emnifyCard: row?.emnify_card ?? null,
     lastUpdate: live?.lastUpdate ?? row?.last_update ?? null,
     battery: live?.battery ?? row?.battery ?? null,
     signal: live?.signal ?? row?.signal ?? null,
@@ -119,6 +126,10 @@ function registerAdminDeviceRoutes(app, store) {
       patch.gpspos_poll_interval_sec = Math.floor(n);
     }
 
+    if ("emnifyCard" in body || "emnify_card" in body) {
+      patch.emnify_card = normalizeEmnifyCard(body.emnifyCard ?? body.emnify_card);
+    }
+
     if (!Object.keys(patch).length) {
       return res.status(400).json({ error: "empty_patch" });
     }
@@ -130,13 +141,49 @@ function registerAdminDeviceRoutes(app, store) {
     res.json({ ok: true, device: deviceConfigPayload(row, live) });
   });
 
+  app.delete("/api/admin/devices/:imei", requireTrackerAdmin, (req, res) => {
+    const imei = String(req.params.imei || "").trim();
+    if (!/^\d{10,20}$/.test(imei)) {
+      return res.status(400).json({ error: "invalid_imei" });
+    }
+    if (typeof store.deleteDevice !== "function") {
+      return res.status(503).json({ error: "delete_unsupported" });
+    }
+    const existed = store.deleteDevice(imei);
+    if (!existed) return res.status(404).json({ error: "not_found" });
+    console.log(`${logPrefix({ dir: "in", tag: "admin" })} device deleted ${imei}`);
+    res.json({ ok: true, imei, deleted: true });
+  });
+
+  app.delete("/api/admin/devices/:imei/positions", requireTrackerAdmin, (req, res) => {
+    const imei = String(req.params.imei || "").trim();
+    if (!/^\d{10,20}$/.test(imei)) {
+      return res.status(400).json({ error: "invalid_imei" });
+    }
+    if (typeof store.clearDevicePositions !== "function") {
+      return res.status(503).json({ error: "clear_unsupported" });
+    }
+    const row = store.getDeviceConfig(imei);
+    const live = store.get(imei);
+    if (!row && !live) return res.status(404).json({ error: "not_found" });
+    const deleted = store.clearDevicePositions(imei);
+    console.log(`${logPrefix({ dir: "in", tag: "admin" })} cleared positions ${imei} (${deleted})`);
+    res.json({ ok: true, imei, deleted });
+  });
+
   app.get("/api/admin", requireTrackerAdmin, (_req, res) => {
     res.json({
       service: "PetPal tracker admin",
       endpoints: [
         { method: "GET", path: "/api/admin/devices" },
         { method: "GET", path: "/api/admin/devices/:imei" },
-        { method: "PATCH", path: "/api/admin/devices/:imei", body: "providerOverride, gpsposPlatformImei, gpsposPollEnabled, gpsposPollIntervalSec" },
+        {
+          method: "PATCH",
+          path: "/api/admin/devices/:imei",
+          body: "providerOverride, gpsposPlatformImei, gpsposPollEnabled, gpsposPollIntervalSec, emnifyCard",
+        },
+        { method: "DELETE", path: "/api/admin/devices/:imei" },
+        { method: "DELETE", path: "/api/admin/devices/:imei/positions" },
       ],
       auth: "Header X-PetPal-Admin-Token: TRACKER_ADMIN_TOKEN",
     });

@@ -137,6 +137,11 @@ function openSqlite(dbPath) {
   } catch {
     /* column exists */
   }
+  try {
+    db.exec(`ALTER TABLE devices ADD COLUMN emnify_card TEXT`);
+  } catch {
+    /* column exists */
+  }
   db.exec(`
     UPDATE positions
     SET received_at = timestamp
@@ -206,7 +211,7 @@ function openSqlite(dbPath) {
 
   const deviceSelectCols = `
     imei, name, last_lat, last_lng, home_lat, home_lng, battery, signal, source, provider, last_update,
-    provider_override, gpspos_platform_imei, gpspos_poll_interval_sec, gpspos_poll_enabled
+    provider_override, gpspos_platform_imei, gpspos_poll_interval_sec, gpspos_poll_enabled, emnify_card
   `;
 
   const listDevices = db.prepare(`
@@ -232,8 +237,18 @@ function openSqlite(dbPath) {
       provider_override = @provider_override,
       gpspos_platform_imei = @gpspos_platform_imei,
       gpspos_poll_interval_sec = @gpspos_poll_interval_sec,
-      gpspos_poll_enabled = @gpspos_poll_enabled
+      gpspos_poll_enabled = @gpspos_poll_enabled,
+      emnify_card = @emnify_card
     WHERE imei = @imei
+  `);
+
+  const deleteDevicePositions = db.prepare(`DELETE FROM positions WHERE imei = ?`);
+  const deleteDeviceCommands = db.prepare(`DELETE FROM commands WHERE imei = ?`);
+  const deleteDeviceRow = db.prepare(`DELETE FROM devices WHERE imei = ?`);
+  const clearDeviceLastFix = db.prepare(`
+    UPDATE devices
+    SET last_lat = NULL, last_lng = NULL, source = NULL, last_update = NULL
+    WHERE imei = ?
   `);
 
   const listGpsposPollTargets = db.prepare(`
@@ -302,6 +317,10 @@ function openSqlite(dbPath) {
     getDevice,
     ensureDevice,
     updateDeviceConfig,
+    deleteDevicePositions,
+    deleteDeviceCommands,
+    deleteDeviceRow,
+    clearDeviceLastFix,
     listGpsposPollTargets,
     getLastGpsPosition,
     insertCommandQueued,

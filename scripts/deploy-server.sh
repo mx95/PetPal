@@ -264,6 +264,15 @@ if [ -f "$TRACKER_DIR/scripts/purge-flipped-latitude-positions.js" ]; then
   (cd "$TRACKER_DIR" && SQLITE_PATH="$TRACKER_DB" node scripts/purge-flipped-latitude-positions.js)
 fi
 
+CLEAR_IMEI="${CLEAR_DEVICE_POSITIONS_IMEI:-}"
+if [ -n "$CLEAR_IMEI" ]; then
+  if [[ ! "$CLEAR_IMEI" =~ ^[0-9]{10,20}$ ]]; then
+    die "CLEAR_DEVICE_POSITIONS_IMEI must be 10–20 digits (got: $CLEAR_IMEI)"
+  fi
+  log "Clearing all positions for IMEI $CLEAR_IMEI"
+  (cd "$TRACKER_DIR" && SQLITE_PATH="$TRACKER_DB" node scripts/clear-imei-positions.js --imei "$CLEAR_IMEI")
+fi
+
 log "Starting pm2:$PM2_APP from ecosystem.config.cjs (DB: $TRACKER_DB)"
 cd "$TRACKER_DIR"
 # reload alone can keep stale SQLITE_PATH — delete+start ensures ecosystem env is applied
