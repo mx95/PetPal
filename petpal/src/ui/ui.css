@@ -11686,7 +11686,7 @@ select.pp-bookConfirmField__control {
   top: 0;
   right: 0;
   bottom: 0;
-  left: 42%;
+  left: 52%;
   margin: 0;
   display: block;
   border-radius: 0;
@@ -11819,11 +11819,11 @@ select.pp-bookConfirmField__control {
     max-width: min(100%, 17.5rem);
   }
   .pp-authPage__welcomeArt {
-    left: 28%;
+    left: 36%;
   }
   .pp-authPage__welcomeArt img {
     object-fit: cover;
-    object-position: 82% 40%;
+    object-position: 90% 40%;
     transform: none;
   }
 }
