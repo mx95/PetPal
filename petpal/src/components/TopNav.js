@@ -7,18 +7,9 @@ import { useI18n } from '../i18n/I18nContext';
 import { LanguageSwitcher } from '../i18n/LanguageSwitcher';
 import ShopCartHeaderButton from './shop/ShopCartHeaderButton';
 import UserAvatar from './UserAvatar';
-import { MobileNavDrawer } from './MobileNavDrawer';
 import petpalLogo from '../logo.png';
 import { BRAND } from '../config/brand';
 import { MVP_NAV } from '../config/mvpNav';
-
-function MenuGlyph() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
-      <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-    </svg>
-  );
-}
 
 function navItemClassName({ isActive }) {
   return [
@@ -37,7 +28,6 @@ export default function TopNav() {
   const { t } = useI18n();
   const navigate = useNavigate();
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
-  const [guestMenuOpen, setGuestMenuOpen] = useState(false);
   const accountMenuRef = useRef(null);
 
   useEffect(() => {
@@ -219,49 +209,21 @@ export default function TopNav() {
           ) : (
             <>
               <NavLink
-                className="pp-topNavGuestCta hidden items-center justify-center rounded-full border border-slate-200 px-3 py-2 text-sm font-bold text-petpal-ink no-underline sm:inline-flex"
+                className="hidden items-center justify-center rounded-full border border-slate-200 px-3 py-2 text-sm font-bold text-petpal-ink no-underline sm:inline-flex"
                 to="/login"
               >
                 {t('nav.login')}
               </NavLink>
               <NavLink
-                className="pp-topNavGuestCta hidden items-center justify-center rounded-full bg-petpal-ink px-4 py-2 text-sm font-black text-white no-underline shadow-soft transition hover:-translate-y-0.5 hover:shadow-lift sm:inline-flex"
-                to="/register"
+                className="inline-flex items-center justify-center rounded-full bg-petpal-ink px-4 py-2 text-sm font-black text-white no-underline shadow-soft transition hover:-translate-y-0.5 hover:shadow-lift"
+                to="/login"
               >
                 {t('nav.getStarted')}
               </NavLink>
-              <button
-                type="button"
-                className="pp-topNavMenuBtn sm:hidden"
-                aria-label={t('nav.menu')}
-                aria-expanded={guestMenuOpen}
-                onClick={() => setGuestMenuOpen(true)}
-              >
-                <MenuGlyph />
-              </button>
             </>
           )}
         </div>
       </div>
-
-      {!user ? (
-        <MobileNavDrawer open={guestMenuOpen} onClose={() => setGuestMenuOpen(false)} title={t('nav.menu')}>
-          <div className="pp-mobileNav__links">
-            <Link className="pp-mobileNav__link" to="/login" onClick={() => setGuestMenuOpen(false)}>
-              {t('nav.login')}
-            </Link>
-            <Link className="pp-mobileNav__link" to="/register" onClick={() => setGuestMenuOpen(false)}>
-              {t('nav.getStarted')}
-            </Link>
-            <Link className="pp-mobileNav__link" to="/contact" onClick={() => setGuestMenuOpen(false)}>
-              {t('nav.contact')}
-            </Link>
-            <Link className="pp-mobileNav__link" to="/privacy" onClick={() => setGuestMenuOpen(false)}>
-              {t('footer.privacyPolicy')}
-            </Link>
-          </div>
-        </MobileNavDrawer>
-      ) : null}
     </header>
   );
 }
