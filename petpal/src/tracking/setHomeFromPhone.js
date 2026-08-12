@@ -21,13 +21,12 @@ export function setHomeFromPhone(imei) {
       async (pos) => {
         const lat = pos.coords.latitude;
         const lng = pos.coords.longitude;
-        saveHomeAnchor(id, lat, lng, { source: 'phone' });
         try {
-          await saveHomeLocation(id, lat, lng);
-        } catch {
-          /* saved locally; server sync optional */
+          await setHomeCoords(id, lat, lng, { source: 'phone' });
+          resolve({ lat, lng });
+        } catch (err) {
+          reject(err);
         }
-        resolve({ lat, lng });
       },
       () => {
         reject(Object.assign(new Error('geo_denied'), { code: 'geo_denied' }));
@@ -35,4 +34,30 @@ export function setHomeFromPhone(imei) {
       { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
     );
   });
+}
+
+/**
+ * Save home from explicit map pin / coords (local + tracker server).
+ * @param {string} imei
+ * @param {number} lat
+ * @param {number} lng
+ * @param {{ source?: string }} [meta]
+ */
+export async function setHomeCoords(imei, lat, lng, meta = {}) {
+  const id = String(imei || '').trim();
+  if (!id) {
+    throw Object.assign(new Error('missing_imei'), { code: 'missing_imei' });
+  }
+  const la = Number(lat);
+  const ln = Number(lng);
+  if (!Number.isFinite(la) || !Number.isFinite(ln)) {
+    throw Object.assign(new Error('missing_home_coordinates'), { code: 'missing_home_coordinates' });
+  }
+  saveHomeAnchor(id, la, ln, { source: meta.source || 'map-pin' });
+  try {
+    await saveHomeLocation(id, la, ln);
+  } catch {
+    /* saved locally; server sync optional */
+  }
+  return { lat: la, lng: ln };
 }

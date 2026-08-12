@@ -6,6 +6,7 @@ import {
   GPSPOS_POLL_PRESETS,
   PROTOCOL_OPTIONS,
   PROVIDER_OPTIONS,
+  clearAdminDeviceHistory,
   deleteAdminDevice,
   isTrackerAdminApiAvailable,
   listAdminDevices,
@@ -228,6 +229,38 @@ export default function AdminDeviceRegistry() {
       setOk(t('admin.devices.removed', { imei }));
     } catch (e) {
       setErr(e?.message || t('admin.devices.errRemove'));
+    } finally {
+      setBusyImei('');
+    }
+  }
+
+  async function clearHistory(imei) {
+    const okConfirm = window.confirm(t('admin.devices.confirmClearHistory', { imei }));
+    if (!okConfirm) return;
+
+    setBusyImei(imei);
+    setErr('');
+    setOk('');
+    try {
+      const data = await clearAdminDeviceHistory(imei);
+      const deleted = Number(data?.deleted);
+      setDevices((prev) =>
+        prev.map((d) =>
+          d.imei === imei
+            ? {
+                ...d,
+                lastUpdate: null,
+              }
+            : d
+        )
+      );
+      setOk(
+        Number.isFinite(deleted)
+          ? t('admin.devices.clearedHistoryCount', { imei, count: deleted })
+          : t('admin.devices.clearedHistory', { imei })
+      );
+    } catch (e) {
+      setErr(e?.message || t('admin.devices.errClearHistory'));
     } finally {
       setBusyImei('');
     }
@@ -524,7 +557,15 @@ export default function AdminDeviceRegistry() {
                     </button>
                     <button
                       type="button"
-                      className="pp-btn pp-adminDeviceCard__remove"
+                      className="pp-btn pp-adminDeviceCard__danger"
+                      disabled={saving}
+                      onClick={() => void clearHistory(device.imei)}
+                    >
+                      {t('admin.devices.clearHistory')}
+                    </button>
+                    <button
+                      type="button"
+                      className="pp-btn pp-adminDeviceCard__danger"
                       disabled={saving}
                       onClick={() => void removeDevice(device.imei)}
                     >

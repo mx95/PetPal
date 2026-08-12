@@ -26,6 +26,13 @@ import {
   buildMapPetPinHtml,
   buildLeafletPetMarkerIcon,
 } from './mapPetMarker';
+import {
+  HOME_GEOFENCE_METERS,
+  HOME_ACCENT,
+  buildMapHomePinHtml,
+  buildLeafletHomeMarkerIcon,
+  homeGeofencePathOptions,
+} from './mapHomeMarker';
 
 import 'leaflet/dist/leaflet.css';
 
@@ -462,6 +469,38 @@ function liveAccuracyStyle(sourceKind) {
   return { color: LIVE_ACCENT, weight: 1.5, opacity: 0.4, fillColor: LIVE_ACCENT, fillOpacity: 0.08 };
 }
 
+function LeafletMapClick({ onMapClick }) {
+  useMapEvents({
+    click(e) {
+      if (!onMapClick || !e?.latlng) return;
+      onMapClick({ lat: e.latlng.lat, lng: e.latlng.lng });
+    },
+  });
+  return null;
+}
+
+function LeafletHomeLayers({ homeLocation, atHome = false }) {
+  const home = homeLocation && Number.isFinite(homeLocation.lat) && Number.isFinite(homeLocation.lng)
+    ? homeLocation
+    : null;
+  const icon = useMemo(() => buildLeafletHomeMarkerIcon({ atHome }), [atHome]);
+  if (!home) return null;
+  return (
+    <>
+      <Circle
+        center={[home.lat, home.lng]}
+        radius={HOME_GEOFENCE_METERS}
+        pathOptions={homeGeofencePathOptions()}
+      />
+      <LeafletMarker
+        position={[home.lat, home.lng]}
+        icon={icon}
+        zIndexOffset={atHome ? 200 : 400}
+      />
+    </>
+  );
+}
+
 function LeafletLiveLayers({
   lat,
   lng,
@@ -471,6 +510,8 @@ function LeafletLiveLayers({
   markerLabel,
   liveTrail = [],
   petMarker = null,
+  homeLocation = null,
+  atHome = false,
 }) {
   const smooth = useAnimatedLatLng(lat, lng, { enabled: true });
 
@@ -501,6 +542,7 @@ function LeafletLiveLayers({
           pathOptions={{ color: LIVE_TRAIL, weight: 3, opacity: 0.85, lineCap: 'round', lineJoin: 'round' }}
         />
       ) : null}
+      <LeafletHomeLayers homeLocation={homeLocation} atHome={atHome} />
       {accuracyM != null && accuracyM > 0 ? (
         <Circle center={[smooth.lat, smooth.lng]} radius={accuracyM} pathOptions={accStyle} />
       ) : null}
@@ -534,6 +576,9 @@ function LeafletPositionMap({
   recenterLabel = 'Follow pet',
   showRouteVertices = false,
   petMarker = null,
+  homeLocation = null,
+  atHome = false,
+  onMapClick = null,
   mapActive = true,
   layoutTick = 0,
 }) {
@@ -613,6 +658,7 @@ function LeafletPositionMap({
             />
           </LayersControl.BaseLayer>
         </LayersControl>
+        {onMapClick ? <LeafletMapClick onMapClick={onMapClick} /> : null}
         {liveMode && !hasPath ? (
           <LeafletLiveLayers
             lat={lat}
@@ -623,8 +669,11 @@ function LeafletPositionMap({
             markerLabel={markerLabel}
             liveTrail={liveTrail}
             petMarker={petMarker}
+            homeLocation={homeLocation}
+            atHome={atHome}
           />
         ) : null}
+        {!liveMode ? <LeafletHomeLayers homeLocation={homeLocation} atHome={false} /> : null}
         {!hasPath && accuracyM != null && accuracyM > 0 ? (
           <Circle
             center={[lat, lng]}
@@ -714,7 +763,7 @@ function LeafletPositionMap({
               />
             ) : null}
           </>
-        ) : !liveMode ? (
+        ) : !liveMode && !homeLocation && !onMapClick ? (
           <LeafletMarker position={[lat, lng]}>
             <Popup>{markerLabel || 'Last reported position'}</Popup>
           </LeafletMarker>
@@ -792,6 +841,90 @@ function GooglePetPinOverlay({ lat, lng, petMarker, markerLabel }) {
   return null;
 }
 
+function GoogleHomeOverlay({ lat, lng, atHome = false }) {
+  const map = useGoogleMap();
+  const overlayRef = useRef(null);
+  const positionRef = useRef({ lat, lng });
+  positionRef.current = { lat, lng };
+  const pinHtml = useMemo(() => buildMapHomePinHtml({ atHome }), [atHome]);
+
+  useEffect(() => {
+    if (!map || !window.google?.maps || !Number.isFinite(lat) || !Number.isFinite(lng)) return undefined;
+    const gm = window.google.maps;
+    const size = atHome ? 40 : 32;
+    const half = size / 2;
+
+    class HomePinOverlay extends gm.OverlayView {
+      onAdd() {
+        const div = document.createElement('div');
+        div.className = 'pp-mapHomePin-wrap pp-mapHomePin-wrap--google';
+        div.innerHTML = pinHtml;
+        div.style.position = 'absolute';
+        div.style.pointerEvents = 'none';
+        div.style.zIndex = atHome ? '2' : '4';
+        this.container = div;
+        this.getPanes().overlayMouseTarget.appendChild(div);
+      }
+
+      draw() {
+        if (!this.container) return;
+        const projection = this.getProjection();
+        if (!projection) return;
+        const { lat: la, lng: ln } = positionRef.current;
+        const point = projection.fromLatLngToDivPixel(new gm.LatLng(la, ln));
+        if (!point) return;
+        this.container.style.left = `${point.x - half}px`;
+        this.container.style.top = `${point.y - half}px`;
+      }
+
+      onRemove() {
+        this.container?.remove();
+        this.container = null;
+      }
+    }
+
+    const overlay = new HomePinOverlay();
+    overlay.setMap(map);
+    overlayRef.current = overlay;
+    return () => {
+      overlay.setMap(null);
+      overlayRef.current = null;
+    };
+  }, [map, pinHtml, atHome, lat, lng]);
+
+  useEffect(() => {
+    overlayRef.current?.draw();
+  }, [lat, lng, pinHtml]);
+
+  return null;
+}
+
+function GoogleHomeLayers({ homeLocation, atHome = false }) {
+  const home =
+    homeLocation && Number.isFinite(homeLocation.lat) && Number.isFinite(homeLocation.lng)
+      ? homeLocation
+      : null;
+  if (!home) return null;
+  return (
+    <>
+      <GoogleCircle
+        center={{ lat: home.lat, lng: home.lng }}
+        radius={HOME_GEOFENCE_METERS}
+        options={{
+          strokeColor: HOME_ACCENT,
+          strokeOpacity: 0.75,
+          strokeWeight: 2,
+          fillColor: HOME_ACCENT,
+          fillOpacity: 0.12,
+          clickable: false,
+          zIndex: 0,
+        }}
+      />
+      <GoogleHomeOverlay lat={home.lat} lng={home.lng} atHome={atHome} />
+    </>
+  );
+}
+
 function GoogleLiveMapInner({
   lat,
   lng,
@@ -802,6 +935,8 @@ function GoogleLiveMapInner({
   follow,
   onUserPan,
   petMarker = null,
+  homeLocation = null,
+  atHome = false,
 }) {
   const smooth = useAnimatedLatLng(lat, lng, { enabled: true });
 
@@ -820,6 +955,7 @@ function GoogleLiveMapInner({
       <GoogleUserPanDetector onUserPan={onUserPan} />
       <GoogleFollowPan lat={smooth.lat} lng={smooth.lng} follow={follow} zoom={LIVE_MAP_ZOOM} />
       {trailPath.length > 1 ? <GoogleLiveTrail path={trailPath} /> : null}
+      <GoogleHomeLayers homeLocation={homeLocation} atHome={atHome} />
       {accuracyM != null && accuracyM > 0 ? (
         <GoogleCircle
           center={{ lat: smooth.lat, lng: smooth.lng }}
@@ -872,6 +1008,9 @@ function GooglePositionMap({
   recenterLabel = 'Follow pet',
   showRouteVertices = false,
   petMarker = null,
+  homeLocation = null,
+  atHome = false,
+  onMapClick = null,
   mapActive = true,
   layoutTick = 0,
 }) {
@@ -936,6 +1075,9 @@ function GooglePositionMap({
         recenterLabel={recenterLabel}
         showRouteVertices={showRouteVertices}
         petMarker={petMarker}
+        homeLocation={homeLocation}
+        atHome={atHome}
+        onMapClick={onMapClick}
         mapActive={mapActive}
         layoutTick={layoutTick}
       />
@@ -970,6 +1112,15 @@ function GooglePositionMap({
           center={{ lat: displayLat, lng: displayLng }}
           zoom={liveMode && !hasPath ? LIVE_MAP_ZOOM : 16}
           options={googleMapOptions}
+          onClick={
+            onMapClick
+              ? (e) => {
+                  const la = e?.latLng?.lat?.();
+                  const ln = e?.latLng?.lng?.();
+                  if (Number.isFinite(la) && Number.isFinite(ln)) onMapClick({ lat: la, lng: ln });
+                }
+              : undefined
+          }
         >
           {fill ? <GoogleMapResize /> : null}
         {hasPath ? (
@@ -978,6 +1129,10 @@ function GooglePositionMap({
           <GoogleFitRoute path={[{ lat, lng }]} zoom={liveMode ? LIVE_MAP_ZOOM : 16} />
         ) : liveMode ? (
           <GoogleFitRoute path={[{ lat, lng }]} zoom={LIVE_MAP_ZOOM} />
+        ) : homeLocation && Number.isFinite(homeLocation.lat) ? (
+          <GoogleFitRoute path={[{ lat: homeLocation.lat, lng: homeLocation.lng }]} zoom={17} />
+        ) : Number.isFinite(lat) && Number.isFinite(lng) ? (
+          <GoogleFitRoute path={[{ lat, lng }]} zoom={17} />
         ) : null}
         {hasPath && playbackPointIndex != null ? (
           <GoogleFollowPan lat={smoothPlayback.lat} lng={smoothPlayback.lng} follow />
@@ -993,8 +1148,11 @@ function GooglePositionMap({
             follow={followEnabled}
             onUserPan={() => setFollowEnabled(false)}
             petMarker={petMarker}
+            homeLocation={homeLocation}
+            atHome={atHome}
           />
         ) : null}
+        {!liveMode ? <GoogleHomeLayers homeLocation={homeLocation} atHome={false} /> : null}
         {!hasPath && accuracyM != null && accuracyM > 0 ? (
           <GoogleCircle
             center={{ lat, lng }}
@@ -1040,7 +1198,7 @@ function GooglePositionMap({
               />
             ) : null}
           </>
-        ) : !liveMode ? (
+        ) : !liveMode && !homeLocation && !onMapClick ? (
           <Marker position={center} title={markerLabel || 'Last reported position'} />
         ) : null}
         </GoogleMap>
@@ -1075,6 +1233,9 @@ export default function PositionMap({
   recenterLabel = 'Follow pet',
   showRouteVertices = false,
   petMarker = null,
+  homeLocation = null,
+  atHome = false,
+  onMapClick = null,
   mapActive = true,
   layoutTick = 0,
 }) {
@@ -1101,6 +1262,9 @@ export default function PositionMap({
           recenterLabel={recenterLabel}
           showRouteVertices={showRouteVertices}
           petMarker={petMarker}
+          homeLocation={homeLocation}
+          atHome={atHome}
+          onMapClick={onMapClick}
           mapActive={mapActive}
           layoutTick={layoutTick}
         />
@@ -1122,6 +1286,9 @@ export default function PositionMap({
           recenterLabel={recenterLabel}
           showRouteVertices={showRouteVertices}
           petMarker={petMarker}
+          homeLocation={homeLocation}
+          atHome={atHome}
+          onMapClick={onMapClick}
           mapActive={mapActive}
           layoutTick={layoutTick}
         />

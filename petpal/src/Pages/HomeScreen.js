@@ -8,41 +8,73 @@ const HOME_HERO_SRC = `${process.env.PUBLIC_URL || ''}/images/home-hero.png`;
 const LIVE_TRACKING_SRC = `${process.env.PUBLIC_URL || ''}/images/home-live-tracking.png`;
 const NFC_FEATURE_SRC = `${process.env.PUBLIC_URL || ''}/images/home-nfc-feature.png`;
 
-const ALL_FEATURES = [
-  { key: 'pets', to: '/pets', icon: '🐾', accent: 'pets' },
-  { key: 'track', to: '/tracking', icon: '📍', accent: 'tracking' },
-  { key: 'activity', to: '/dashboard', icon: '🚶', accent: 'dashboard', mvp: MVP_NAV.showDashboard },
-  { key: 'nearby', to: '/nearby', icon: '🗺️', accent: 'nearby' },
-  { key: 'book', to: '/bookings', icon: '📅', accent: 'bookings', mvp: MVP_NAV.showBookings },
-  { key: 'community', to: '/community', icon: '💬', accent: 'community', mvp: MVP_NAV.showCommunity },
-];
-
-const FEATURES = ALL_FEATURES.filter((f) => f.mvp !== false);
-
-const VALUE_PILLARS = [
-  { key: 'value1', icon: 'shield' },
-  { key: 'value2', icon: 'heart' },
-  { key: 'value3', icon: 'globe' },
-];
+const APP_CAPABILITIES = [
+  { key: 'gps', to: '/tracking', accent: 'gps' },
+  { key: 'nfc', to: '/shop', accent: 'nfc', mvp: MVP_NAV.showShop },
+  { key: 'nearby', to: '/nearby', accent: 'nearby' },
+  { key: 'booking', to: '/bookings', accent: 'booking', mvp: MVP_NAV.showBookings },
+  { key: 'shop', to: '/shop', accent: 'shop', mvp: MVP_NAV.showShop },
+].filter((item) => item.mvp !== false);
 
 const SHOWCASE_ITEMS = [
   { key: 'live', src: LIVE_TRACKING_SRC, altKey: 'home.welcome.showcase.liveAlt' },
   { key: 'nfc', src: NFC_FEATURE_SRC, altKey: 'home.welcome.showcase.nfcAlt' },
 ];
 
-function ValuePillarIcon({ type }) {
-  if (type === 'heart') {
+function CapabilityIcon({ type }) {
+  const common = { width: 22, height: 22, viewBox: '0 0 24 24', fill: 'none', 'aria-hidden': true };
+  if (type === 'gps') {
     return (
-      <svg className="pp-homeWelcome__heartIcon" viewBox="0 0 24 24" width="22" height="22" aria-hidden>
-        <path
-          fill="currentColor"
-          d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
-        />
+      <svg {...common}>
+        <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.8" />
+        <path d="M12 3v2.5M12 18.5V21M3 12h2.5M18.5 12H21" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+        <circle cx="12" cy="12" r="7.5" stroke="currentColor" strokeWidth="1.5" opacity="0.45" />
       </svg>
     );
   }
-  if (type === 'shield') return '🛡️';
-  return '🌍';
+  if (type === 'nfc') {
+    return (
+      <svg {...common}>
+        <rect x="4" y="3.5" width="16" height="17" rx="3.5" stroke="currentColor" strokeWidth="1.8" />
+        <path d="M9 9.5c1.2-1.1 4.8-1.1 6 0M9.8 12.2c.8-.7 3.4-.7 4.2 0M11 14.8c.4-.35 1.6-.35 2 0" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+        <circle cx="12" cy="17.6" r="1" fill="currentColor" />
+      </svg>
+    );
+  }
+  if (type === 'nearby') {
+    return (
+      <svg {...common}>
+        <path
+          d="M12 21s6.5-5.2 6.5-10.2A6.5 6.5 0 0 0 12 4.3a6.5 6.5 0 0 0-6.5 6.5C5.5 15.8 12 21 12 21Z"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinejoin="round"
+        />
+        <circle cx="12" cy="10.8" r="2.2" stroke="currentColor" strokeWidth="1.6" />
+      </svg>
+    );
+  }
+  if (type === 'booking') {
+    return (
+      <svg {...common}>
+        <rect x="3.5" y="5" width="17" height="15" rx="2.5" stroke="currentColor" strokeWidth="1.8" />
+        <path d="M8 3.5V7M16 3.5V7M3.5 10h17" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+        <rect x="7.5" y="13" width="3" height="3" rx="0.6" fill="currentColor" />
+        <rect x="13.5" y="13" width="3" height="3" rx="0.6" fill="currentColor" opacity="0.45" />
+      </svg>
+    );
+  }
+  return (
+    <svg {...common}>
+      <path
+        d="M7.5 8.5h9l1.2 9.2a1.8 1.8 0 0 1-1.8 2H8.1a1.8 1.8 0 0 1-1.8-2L7.5 8.5Z"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinejoin="round"
+      />
+      <path d="M9 8.5V7a3 3 0 0 1 6 0v1.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  );
 }
 
 export default function HomeScreen() {
@@ -87,20 +119,19 @@ export default function HomeScreen() {
               {t('home.publicHero.ctaSecondary')}
             </Link>
           </div>
-          <p className="pp-homeWelcome__trust">{t('home.publicHero.trustLine')}</p>
         </div>
       </section>
 
-      <ul className="pp-homeWelcome__values" role="list">
-        {VALUE_PILLARS.map(({ key, icon }) => (
-          <li key={key} className="pp-homeWelcome__value">
-            <span className={`pp-homeWelcome__valueIcon${icon === 'heart' ? ' pp-homeWelcome__valueIcon--heart' : ''}`} aria-hidden>
-              <ValuePillarIcon type={icon} />
-            </span>
-            <div>
-              <strong>{t(`home.welcome.${key}Title`)}</strong>
-              <p>{t(`home.welcome.${key}Desc`)}</p>
-            </div>
+      <ul className="pp-homeWelcome__capabilities" role="list">
+        {APP_CAPABILITIES.map(({ key, to, accent }) => (
+          <li key={key}>
+            <Link to={to} className={`pp-homeWelcome__capability pp-homeWelcome__capability--${accent}`}>
+              <span className="pp-homeWelcome__capabilityIcon" aria-hidden>
+                <CapabilityIcon type={accent} />
+              </span>
+              <strong>{t(`home.welcome.capability.${key}.title`)}</strong>
+              <span>{t(`home.welcome.capability.${key}.desc`)}</span>
+            </Link>
           </li>
         ))}
       </ul>
@@ -111,7 +142,6 @@ export default function HomeScreen() {
           <h2 id="home-showcase-title" className="pp-homeWelcome__showcaseTitle">
             {t('home.welcome.showcase.title')}
           </h2>
-          <p className="pp-homeWelcome__showcaseSub">{t('home.welcome.showcase.sub')}</p>
         </header>
         <div className="pp-homeWelcome__showcaseGrid">
           {SHOWCASE_ITEMS.map(({ key, src, altKey }) => (
@@ -120,31 +150,6 @@ export default function HomeScreen() {
             </figure>
           ))}
         </div>
-      </section>
-
-      <section className="pp-homeWelcome__section" aria-labelledby="home-features-title">
-        <h2 id="home-features-title" className="pp-homeWelcome__sectionTitle">
-          {t('home.welcome.featuresTitle')}
-        </h2>
-        <p className="pp-homeWelcome__sectionSub">{t('home.welcome.featuresSub')}</p>
-        <ul className="pp-homeWelcome__features" role="list">
-          {FEATURES.map(({ key, to, icon, accent }) => (
-            <li key={key}>
-              <Link to={to} className={`pp-homeWelcome__feature pp-homeWelcome__feature--${accent}`}>
-                <span className="pp-homeWelcome__featureIcon" aria-hidden>
-                  {icon}
-                </span>
-                <span className="pp-homeWelcome__featureBody">
-                  <strong>{t(`home.welcome.feature.${key}.title`)}</strong>
-                  <span>{t(`home.welcome.feature.${key}.desc`)}</span>
-                </span>
-                <span className="pp-homeWelcome__featureArrow" aria-hidden>
-                  →
-                </span>
-              </Link>
-            </li>
-          ))}
-        </ul>
       </section>
     </div>
   );

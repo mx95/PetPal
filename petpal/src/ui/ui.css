@@ -4782,6 +4782,26 @@ html[data-theme="dark"] .pp-timeRangeRow--readOnly .pp-timeRangeRow__control {
   align-items: start;
 }
 
+.pp-footer__grid--brandOnly {
+  grid-template-columns: 1fr;
+}
+
+.pp-footer__inlineLink {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  background: none;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  cursor: pointer;
+}
+
+.pp-footer__inlineLink:hover {
+  color: #5b37ff;
+}
+
 .pp-footer__linkCols {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -6297,10 +6317,108 @@ html[data-theme="dark"] .pp-timeRangeRow--readOnly .pp-timeRangeRow__control {
   gap: 12px;
 }
 
+.pp-homeWelcome__capabilities {
+  list-style: none;
+  margin: 0 0 clamp(28px, 4vw, 36px);
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+}
+
+@media (max-width: 960px) {
+  .pp-homeWelcome__capabilities {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 720px) {
   .pp-homeWelcome__values {
     grid-template-columns: minmax(0, 1fr);
   }
+
+  .pp-homeWelcome__capabilities {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+}
+
+@media (max-width: 420px) {
+  .pp-homeWelcome__capabilities {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.pp-homeWelcome__capability {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  min-height: 100%;
+  padding: 16px 14px;
+  border-radius: 16px;
+  text-decoration: none;
+  color: inherit;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.12s ease;
+}
+
+.pp-homeWelcome__capability:hover {
+  border-color: rgba(91, 55, 255, 0.22);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+  transform: translateY(-1px);
+}
+
+.pp-homeWelcome__capabilityIcon {
+  flex: 0 0 auto;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #5b37ff;
+  background: linear-gradient(145deg, #f0ebff, #e8e0ff);
+}
+
+.pp-homeWelcome__capability--nfc .pp-homeWelcome__capabilityIcon {
+  color: #0f9f6e;
+  background: linear-gradient(145deg, #e8faf2, #d9f5e8);
+}
+
+.pp-homeWelcome__capability--nearby .pp-homeWelcome__capabilityIcon {
+  color: #2563eb;
+  background: linear-gradient(145deg, #ebf3ff, #dbeafe);
+}
+
+.pp-homeWelcome__capability--booking .pp-homeWelcome__capabilityIcon {
+  color: #c2410c;
+  background: linear-gradient(145deg, #fff4eb, #ffedd5);
+}
+
+.pp-homeWelcome__capability--shop .pp-homeWelcome__capabilityIcon {
+  color: #a21caf;
+  background: linear-gradient(145deg, #fdf2ff, #fae8ff);
+}
+
+.pp-homeWelcome__capability strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+}
+
+.pp-homeWelcome__capability span:last-child {
+  font-size: 13px;
+  line-height: 1.45;
+  color: #64748b;
+  font-weight: 500;
 }
 
 .pp-homeWelcome__value {
@@ -6388,7 +6506,7 @@ html[data-theme="dark"] .pp-timeRangeRow--readOnly .pp-timeRangeRow__control {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
-  margin-bottom: 12px;
+  margin-bottom: 0;
 }
 
 .pp-homeWelcome__trust {
@@ -9396,6 +9514,71 @@ body,
   flex-wrap: wrap;
   gap: 8px;
   margin-top: 10px;
+}
+
+.pp-trackDeviceHome__map {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pp-trackDeviceHome__mapHint {
+  margin: 0;
+  font-size: 12px;
+}
+
+.pp-trackDeviceHome__mapFrame {
+  height: 220px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(15, 159, 110, 0.25);
+  background: #e8f5ef;
+}
+
+.pp-trackDeviceHome__mapFrame .pp-leaflet-wrap,
+.pp-trackDeviceHome__mapFrame .pp-positionMap,
+.pp-trackDeviceHome__mapFrame .pp-mapSizeGate--fill {
+  height: 100%;
+  min-height: 220px;
+}
+
+.pp-mapHomePin-wrap.leaflet-marker-icon {
+  background: transparent !important;
+  border: 0 !important;
+}
+
+.pp-mapHomePin-wrap--google {
+  pointer-events: none;
+}
+
+.pp-mapHomePin {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+}
+
+.pp-mapHomePin--atHome {
+  width: 40px;
+  height: 40px;
+}
+
+.pp-mapHomePin__glyph {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  color: #fff;
+  background: #0f9f6e;
+  box-shadow: 0 2px 8px rgba(15, 159, 110, 0.35);
+}
+
+.pp-mapHomePin--atHome .pp-mapHomePin__glyph {
+  width: 34px;
+  height: 34px;
+  opacity: 0.92;
 }
 
 .pp-trackDeviceWifi__list {
@@ -19672,21 +19855,81 @@ html[data-theme="dark"] .pp-nearby-list > li {
   color: #0f172a;
 }
 
-.pp-nfcDesignSelector__grid {
+.pp-nfcDesignSelector__carousel {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 6px;
+}
+
+.pp-nfcDesignSelector__track {
+  display: flex;
   gap: 10px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: 8px;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  touch-action: pan-x;
+  scrollbar-width: thin;
+  padding: 6px 4px 10px;
+  min-width: 0;
 }
 
-@media (min-width: 640px) {
-  .pp-nfcDesignSelector__grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+.pp-nfcDesignSelector__track::-webkit-scrollbar {
+  height: 6px;
+}
+
+.pp-nfcDesignSelector__track::-webkit-scrollbar-thumb {
+  background: rgba(109, 76, 255, 0.35);
+  border-radius: 999px;
+}
+
+.pp-nfcDesignSelector__slide {
+  flex: 0 0 auto;
+  width: min(118px, 42vw);
+  scroll-snap-align: center;
+  min-width: 0;
+}
+
+.pp-nfcDesignSelector__nav {
+  width: 36px;
+  height: 36px;
+  margin: 0;
+  padding: 0;
+  border-radius: 999px;
+  border: 1px solid rgba(109, 76, 255, 0.25);
+  background: #fff;
+  color: #6d4cff;
+  font-size: 1.35rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 2px 8px rgba(16, 24, 40, 0.08);
+}
+
+.pp-nfcDesignSelector__nav:hover:not(:disabled) {
+  background: rgba(109, 76, 255, 0.08);
+}
+
+.pp-nfcDesignSelector__nav:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+@media (max-width: 420px) {
+  .pp-nfcDesignSelector__nav {
+    width: 32px;
+    height: 32px;
+    font-size: 1.2rem;
   }
-}
 
-@media (min-width: 1024px) {
-  .pp-nfcDesignSelector__grid {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
+  .pp-nfcDesignSelector__slide {
+    width: min(108px, 46vw);
   }
 }
 
@@ -19696,6 +19939,7 @@ html[data-theme="dark"] .pp-nearby-list > li {
   flex-direction: column;
   align-items: center;
   gap: 6px;
+  width: 100%;
   margin: 0;
   padding: 10px 8px 8px;
   border-radius: 12px;
@@ -19704,7 +19948,6 @@ html[data-theme="dark"] .pp-nearby-list > li {
   cursor: pointer;
   transition:
     border-color 0.18s ease,
-    transform 0.18s ease,
     box-shadow 0.18s ease,
     background 0.18s ease;
 }
@@ -19715,9 +19958,9 @@ html[data-theme="dark"] .pp-nearby-list > li {
 
 .pp-nfcDesignCard.is-selected {
   border-color: #6d4cff;
-  transform: scale(1.04);
   box-shadow: 0 8px 20px rgba(109, 76, 255, 0.22);
   background: rgba(109, 76, 255, 0.04);
+  z-index: 1;
 }
 
 .pp-nfcDesignCard:disabled {
@@ -19738,6 +19981,11 @@ html[data-theme="dark"] .pp-nearby-list > li {
   color: #334155;
   text-align: center;
   line-height: 1.2;
+  max-width: 100%;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .pp-nfcDesignCard__check {
@@ -21940,6 +22188,15 @@ html[data-theme="dark"] .pp-nearbyPartnerCard__name {
     gap: 12px;
   }
 
+  .pp-homeWelcome__capabilities {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .pp-homeWelcome__capability {
+    padding: 14px 12px;
+  }
+
   .pp-homeWelcome__value {
     padding: 14px 16px;
   }
@@ -22150,9 +22407,23 @@ html[data-theme="dark"] .pp-nearbyPartnerCard__name {
     text-align: left;
   }
 
-  .pp-shopPage .pp-nfcDesignSelector__grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 6px;
+  .pp-shopPage .pp-nfcDesignSelector__carousel {
+    gap: 4px;
+  }
+
+  .pp-shopPage .pp-nfcDesignSelector__track {
+    gap: 8px;
+    padding: 4px 2px 8px;
+  }
+
+  .pp-shopPage .pp-nfcDesignSelector__slide {
+    width: 84px;
+  }
+
+  .pp-shopPage .pp-nfcDesignSelector__nav {
+    width: 28px;
+    height: 28px;
+    font-size: 1.1rem;
   }
 
   .pp-shopPage .pp-nfcDesignCard {
@@ -22168,13 +22439,13 @@ html[data-theme="dark"] .pp-nearbyPartnerCard__name {
   }
 
   .pp-shopPage .pp-nfcDesignCard__img {
-    width: 44px;
-    height: 44px;
+    width: 52px;
+    height: 52px;
     aspect-ratio: 1;
   }
 
   .pp-shopPage .pp-nfcDesignCard__name {
-    font-size: 0.58rem;
+    font-size: 0.62rem;
     line-height: 1.1;
     max-width: 100%;
     display: -webkit-box;
@@ -22248,13 +22519,15 @@ html[data-theme="dark"] .pp-nearbyPartnerCard__name {
   align-items: center;
 }
 
-.pp-adminDeviceCard__remove {
+.pp-adminDeviceCard__remove,
+.pp-adminDeviceCard__danger {
   color: #b42318;
   border-color: rgba(180, 35, 24, 0.35);
   background: rgba(180, 35, 24, 0.06);
 }
 
-.pp-adminDeviceCard__remove:hover:not(:disabled) {
+.pp-adminDeviceCard__remove:hover:not(:disabled),
+.pp-adminDeviceCard__danger:hover:not(:disabled) {
   background: rgba(180, 35, 24, 0.12);
   border-color: rgba(180, 35, 24, 0.5);
 }

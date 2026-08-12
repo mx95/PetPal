@@ -1,10 +1,10 @@
-import React, { useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useI18n } from '../../i18n/I18nContext';
 import { getNfcTagDesignById, NFC_TAG_DESIGNS } from '../../data/nfcTagDesigns';
 import NfcDesignCard from './NfcDesignCard';
 
 /**
- * Reusable NFC tag design picker. Add designs only in NFC_TAG_DESIGNS.
+ * NFC tag design picker — horizontal snap carousel (touch + arrow controls).
  *
  * @param {{
  *   selectedDesignId: number,
@@ -20,10 +20,36 @@ export default function NfcDesignSelector({
   designs = NFC_TAG_DESIGNS,
 }) {
   const { t } = useI18n();
+  const trackRef = useRef(null);
   const selected = useMemo(
     () => getNfcTagDesignById(selectedDesignId) || designs[0],
     [selectedDesignId, designs]
   );
+
+  const scrollByCards = useCallback((dir) => {
+    const el = trackRef.current;
+    if (!el) return;
+    const card = el.querySelector('.pp-nfcDesignCard');
+    const step = card ? card.getBoundingClientRect().width + 10 : Math.max(120, el.clientWidth * 0.7);
+    el.scrollBy({ left: dir * step, behavior: 'smooth' });
+  }, []);
+
+  useEffect(() => {
+    const el = trackRef.current;
+    if (!el || !selected?.id) return;
+    const card = el.querySelector(`[data-nfc-design-id="${selected.id}"]`);
+    if (!(card instanceof HTMLElement)) return;
+    const reduceMotion =
+      typeof window !== 'undefined' &&
+      window.matchMedia &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const target =
+      card.offsetLeft - (el.clientWidth - card.offsetWidth) / 2;
+    el.scrollTo({
+      left: Math.max(0, target),
+      behavior: reduceMotion ? 'auto' : 'smooth',
+    });
+  }, [selected?.id]);
 
   if (!designs.length) return null;
 
@@ -41,16 +67,43 @@ export default function NfcDesignSelector({
         <div className="pp-nfcDesignSelector__previewName">{selected.name}</div>
       </div>
 
-      <div className="pp-nfcDesignSelector__grid">
-        {designs.map((design) => (
-          <NfcDesignCard
-            key={design.id}
-            design={design}
-            selected={design.id === selected.id}
-            disabled={disabled}
-            onSelect={onChange}
-          />
-        ))}
+      <div className="pp-nfcDesignSelector__carousel">
+        <button
+          type="button"
+          className="pp-nfcDesignSelector__nav pp-nfcDesignSelector__nav--prev"
+          aria-label={t('shopPage.nfcDesignPrev')}
+          disabled={disabled}
+          onClick={() => scrollByCards(-1)}
+        >
+          ‹
+        </button>
+
+        <div className="pp-nfcDesignSelector__track" ref={trackRef} tabIndex={0}>
+          {designs.map((design) => (
+            <div
+              key={design.id}
+              className="pp-nfcDesignSelector__slide"
+              data-nfc-design-id={design.id}
+            >
+              <NfcDesignCard
+                design={design}
+                selected={design.id === selected.id}
+                disabled={disabled}
+                onSelect={onChange}
+              />
+            </div>
+          ))}
+        </div>
+
+        <button
+          type="button"
+          className="pp-nfcDesignSelector__nav pp-nfcDesignSelector__nav--next"
+          aria-label={t('shopPage.nfcDesignNext')}
+          disabled={disabled}
+          onClick={() => scrollByCards(1)}
+        >
+          ›
+        </button>
       </div>
     </div>
   );

@@ -66,6 +66,13 @@ const el = {
       value3Desc: 'Κτηνίατροι, groomers, κρατήσεις και κοινότητα — όλα σε ένα μέρος.',
       featuresTitle: 'Τι προσφέρει η εφαρμογή',
       featuresSub: 'Απλά εργαλεία για την καθημερινή φροντίδα — το καθένα με έναν σκοπό.',
+      capability: {
+        gps: { title: 'Ζωντανό GPS', desc: 'Δείτε το κατοικίδιο στον χάρτη σε πραγματικό χρόνο.' },
+        nfc: { title: 'Κολάρο NFC', desc: 'Άμεση επικοινωνία αν χαθεί.' },
+        nearby: { title: 'Κοντινά pet-friendly μέρη', desc: 'Κτηνίατροι, πάρκα και σημεία κοντά σας.' },
+        booking: { title: 'Κρατήσεις', desc: 'Grooming, κτηνίατρος και άλλα.' },
+        shop: { title: 'Κατάστημα', desc: 'Κολάρα, NFC tags και πακέτα φροντίδας.' },
+      },
       stayLine: 'Για καθημερινούς φροντιστές — δωρεάν εκκίνηση, χωρίς clutter.',
       ctaPets: 'Τα κατοικίδιά μου',
       ctaActivity: 'Κέντρο δραστηριότητας',
@@ -1269,6 +1276,7 @@ const el = {
     mapOneTapHomeBusy: 'Λήψη θέσης…',
     mapOneTapHomeLead: 'Ένα πάτημα ενώ είστε στο σπίτι — χωρίς διεύθυνση.',
     mapHomeLocationBanner: 'Εμφάνιση της αποθηκευμένης περιοχής σπιτιού στον χάρτη',
+    mapAtHomeBanner: 'Στο σπίτι — το κατοικίδιο εμφανίζεται μέσα στη ζώνη σπιτιού',
     mapHomeProvisionalBanner:
       'Κατά προσέγγιση περιοχή σπιτιού από αναφορές Wi‑Fi — βγείτε λίγο έξω για ακριβή GPS',
     mapWifiDetectedNetworks: 'Ο ιχνηλάτης βλέπει Wi‑Fi: {networks}',
@@ -1584,7 +1592,23 @@ const el = {
     deviceMode_wifi_priority_desc: 'Wi‑Fi σπιτιού μέσα, GPS έξω, μετά σήμα κινητής',
     devicePanelApplyHome: 'Ρύθμιση εντοπισμού σπιτιού',
     devicePanelHomeNeedsHttps:
-      'Το «Ορισμός σπιτιού στον χάρτη» χρειάζεται HTTPS (ή localhost). Μπορείτε ακόμα να ρυθμίσετε Wi‑Fi και λειτουργία παρακολούθησης.',
+      'Το «Χρήση θέσης τηλεφώνου» χρειάζεται HTTPS (ή localhost). Μπορείτε ακόμα να ορίσετε σπίτι με καρφίτσα στον χάρτη.',
+    deviceHomeTitle: 'Τοποθεσία σπιτιού',
+    deviceHomeLead:
+      'Καρφιτσώστε το σπίτι στον χάρτη. Στο Live εμφανίζεται εικονίδιο σπιτιού και ζώνη {meters} μ. Όταν το κατοικίδιο είναι μέσα στη ζώνη, η καρφίτσα του μπαίνει στο σπίτι.',
+    deviceHomeNone: 'Δεν έχει οριστεί σπίτι ακόμα.',
+    deviceHomeUsePhone: 'Χρήση θέσης τηλεφώνου',
+    deviceHomePickMap: 'Ορισμός με καρφίτσα στον χάρτη',
+    deviceHomeHideMap: 'Απόκρυψη χάρτη',
+    deviceHomeSavePin: 'Αποθήκευση καρφίτσας σπιτιού',
+    deviceHomeClear: 'Καθαρισμός τοπικού σπιτιού',
+    deviceHomeMapHint: 'Πατήστε τον χάρτη για να τοποθετήσετε την καρφίτσα και αποθηκεύστε.',
+    deviceHomePinLabel: 'Σπίτι',
+    deviceHomeSaved: 'Η τοποθεσία σπιτιού αποθηκεύτηκε.',
+    deviceHomeSaveFailed: 'Αποτυχία αποθήκευσης τοποθεσίας σπιτιού.',
+    deviceHomeClearedLocal: 'Καθαρίστηκε το σπίτι σε αυτό το τηλέφωνο (στον server μπορεί να παραμένει).',
+    devicePanelHomeGeoUnsupported: 'Αυτό το πρόγραμμα περιήγησης δεν μπορεί να διαβάσει τη θέση σας.',
+    devicePanelHomeGeoDenied: 'Απορρίφθηκε η άδεια τοποθεσίας. Επιτρέψτε την ή ορίστε σπίτι με καρφίτσα στον χάρτη.',
     devicePanelFoot:
       'Κρατήστε το κολάρο φορτισμένο. LBS χρησιμοποιείται όταν δεν υπάρχει Wi‑Fi/GPS.',
   },
@@ -2153,6 +2177,8 @@ const el = {
     nfcDesignTitle: 'Επιλέξτε σχέδιο NFC Tag',
     nfcDesignSelected: 'Επιλεγμένο σχέδιο',
     nfcDesignAria: 'Επιλογές σχεδίου NFC tag',
+    nfcDesignPrev: 'Προηγούμενα σχέδια NFC',
+    nfcDesignNext: 'Επόμενα σχέδια NFC',
     productsLead:
       'Προϊόντα από εγγεγραμμένες επιχειρήσεις PetPal. Προσθέστε στο καλάθι για έλεγχο πριν το checkout.',
     addToCart: 'Προσθήκη στο καλάθι',
@@ -2471,6 +2497,12 @@ const el = {
         'Αφαίρεση της συσκευής {imei} από τον tracker server; Το ιστορικό θέσης για αυτό το IMEI θα διαγραφεί επίσης. Οι συνδέσεις κατοικιδίων στην εφαρμογή δεν αλλάζουν.',
       removed: 'Αφαιρέθηκε το {imei}.',
       errRemove: 'Δεν ήταν δυνατή η αφαίρεση της συσκευής.',
+      clearHistory: 'Καθαρισμός ιστορικού',
+      confirmClearHistory:
+        'Διαγραφή όλων των θέσεων για το {imei}; Η συσκευή παραμένει καταχωρημένη· καθαρίζεται μόνο το ιστορικό και το τελευταίο fix.',
+      clearedHistory: 'Καθαρίστηκε το ιστορικό για το {imei}.',
+      clearedHistoryCount: 'Καθαρίστηκαν {count} θέσεις για το {imei}.',
+      errClearHistory: 'Δεν ήταν δυνατός ο καθαρισμός ιστορικού.',
     },
   },
   lifetime: {

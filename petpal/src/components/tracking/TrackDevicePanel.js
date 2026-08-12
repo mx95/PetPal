@@ -20,6 +20,7 @@ import { fetchDeviceMeta, normalizeProvider } from '../../tracking/deviceMetaCli
 import { loadDevicePlan, saveDevicePlan } from '../../tracking/devicePlanStorage';
 import { loadWifiNetworks } from '../../tracking/wifiNetworkStorage';
 import TrackDeviceAdvanced from './TrackDeviceAdvanced';
+import TrackDeviceHome from './TrackDeviceHome';
 import TrackDeviceWifi from './TrackDeviceWifi';
 
 /** User-facing plans — maps to upload + status intervals on 365GPS collars. */
@@ -83,9 +84,27 @@ function applyBatteryPlanToState(plan, setters) {
 }
 
 /**
- * @param {{ imei: string, petName?: string, provider?: string|null, scannedBssids?: string[]|null }} props
+ * @param {{
+ *   imei: string,
+ *   petName?: string,
+ *   provider?: string|null,
+ *   scannedBssids?: string[]|null,
+ *   position?: object|null,
+ *   fallbackLat?: number|null,
+ *   fallbackLng?: number|null,
+ *   onHomeChanged?: () => void,
+ * }} props
  */
-export default function TrackDevicePanel({ imei, petName = '', provider = null, scannedBssids = null }) {
+export default function TrackDevicePanel({
+  imei,
+  petName = '',
+  provider = null,
+  scannedBssids = null,
+  position = null,
+  fallbackLat = null,
+  fallbackLng = null,
+  onHomeChanged,
+}) {
   const { t } = useI18n();
   const commandsAvailable = isTrackerCommandsAvailable();
   const propProvider = normalizeProvider(provider);
@@ -452,6 +471,14 @@ export default function TrackDevicePanel({ imei, petName = '', provider = null, 
             ) : null}
           </fieldset>
         ) : null}
+
+        <TrackDeviceHome
+          imei={imei}
+          position={position}
+          fallbackLat={fallbackLat}
+          fallbackLng={fallbackLng}
+          onHomeChanged={onHomeChanged}
+        />
 
         <TrackDeviceWifi
           imei={imei}

@@ -9,6 +9,7 @@ import { formatDateTime24, formatTime24 } from '../formatTime24';
 import PositionMap from '../tracking/PositionMap';
 import TrackDevicePanel from '../components/tracking/TrackDevicePanel';
 import { accuracyRadiusMeters } from '../tracking/mapLiveUtils';
+import { HOME_GEOFENCE_METERS, isPetAtHome } from '../tracking/mapHomeMarker';
 import { usePets } from '../pets/PetsContext';
 import { getLatestPositionWithSync, getPositionHistory, getTrackingDataSource, mapsLink } from '../tracking/petpalVendorClient';
 import { fetchDeviceMeta } from '../tracking/deviceMetaClient';
@@ -939,7 +940,28 @@ export default function Tracking() {
     });
   }, [trackerTab, liveMapCoords]);
 
+  const liveHomeLocation = useMemo(() => {
+    const fromApi = homeCoordsFromPosition(displayPosition || position);
+    if (fromApi) return fromApi;
+    return loadHomeAnchor(effectiveDeviceId);
+  }, [displayPosition, position, effectiveDeviceId, homeAnchorTick]);
+
+  const petAtHome = useMemo(() => {
+    if (!liveHomeLocation || !liveMapCoords) return false;
+    if (liveMapCoords.mode === 'home') return true;
+    return isPetAtHome(liveMapCoords, liveHomeLocation, HOME_GEOFENCE_METERS);
+  }, [liveHomeLocation, liveMapCoords]);
+
+  const liveDisplayCoords = useMemo(() => {
+    if (!liveMapCoords) return null;
+    if (petAtHome && liveHomeLocation) {
+      return { lat: liveHomeLocation.lat, lng: liveHomeLocation.lng, mode: liveMapCoords.mode };
+    }
+    return liveMapCoords;
+  }, [liveMapCoords, petAtHome, liveHomeLocation]);
+
   const liveMapAccuracyM = useMemo(() => {
+    if (petAtHome) return null;
     if (liveMapCoords?.mode === 'home') return 48;
     const fix = position;
     if (fix && !isTrustedGpsFix(fix) && liveMapCoords?.mode === 'lastKnown') {
@@ -949,7 +971,7 @@ export default function Tracking() {
       return Math.max(accuracyRadiusMeters(fix) || 0, 180);
     }
     return accuracyRadiusMeters(mapPosition || position);
-  }, [mapPosition, position, liveMapCoords]);
+  }, [mapPosition, position, liveMapCoords, petAtHome]);
 
   const filteredHistory = useMemo(
     () => filterHistoryPoints(resolvedHistory, historyRange),
@@ -1177,6 +1199,7 @@ export default function Tracking() {
   const liveMapBanner = (() => {
     if (!liveMapCoords && displayPosition?.atHomeWifi) return t('trackingPage.mapWifiHomeBanner');
     if (!liveMapCoords) return null;
+    if (petAtHome && liveHomeLocation) return t('trackingPage.mapAtHomeBanner');
     if (liveMapCoords.mode === 'home') return t('trackingPage.mapHomeLocationBanner');
     if (liveMapCoords.mode === 'lastKnown' && displayPosition?.atHomeWifi) return t('trackingPage.mapHomeLocationBanner');
     if (liveMapCoords.mode === 'lastKnown' || liveMapCoords.mode === 'approximate') {
@@ -1301,12 +1324,14 @@ export default function Tracking() {
                   fill
                   mapActive={liveMapActive}
                   layoutTick={mapLayoutTick}
-                  lat={liveMapCoords.lat}
-                  lng={liveMapCoords.lng}
+                  lat={liveDisplayCoords.lat}
+                  lng={liveDisplayCoords.lng}
                   accuracyM={liveMapAccuracyM}
                   markerLabel={selectedPet?.name || t('trackingPage.liveMarkerDefault')}
                   liveTrail={liveTrail}
                   petMarker={livePetMarker}
+                  homeLocation={liveHomeLocation}
+                  atHome={petAtHome}
                   recenterLabel={t('trackingPage.mapFollowPet')}
                 />
               </div>
@@ -1314,7 +1339,7 @@ export default function Tracking() {
             <div className="pp-trackLiveSheet">
               <div className="pp-trackLiveSheet__coords">
                 <strong>
-                  {liveMapCoords.lat.toFixed(5)}, {liveMapCoords.lng.toFixed(5)}
+                  {liveDisplayCoords.lat.toFixed(5)}, {liveDisplayCoords.lng.toFixed(5)}
                 </strong>
                 {displaySpeedKmh != null ? (
                   <span className="pp-subtle">
@@ -1333,7 +1358,7 @@ export default function Tracking() {
                 </button>
                 <a
                   className="pp-btn pp-btn--ghost"
-                  href={mapsLink(liveMapCoords.lat, liveMapCoords.lng)}
+                  href={mapsLink(liveDisplayCoords.lat, liveDisplayCoords.lng)}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
@@ -1699,6 +1724,13 @@ export default function Tracking() {
           petName={selectedPet?.name || ''}
           provider={position?.provider ?? deviceProvider ?? null}
           scannedBssids={displayPosition?.wifiBssids ?? null}
+          position={displayPosition || position}
+          fallbackLat={liveMapCoords?.lat ?? null}
+          fallbackLng={liveMapCoords?.lng ?? null}
+          onHomeChanged={() => {
+            setHomeAnchorTick((n) => n + 1);
+            void refresh();
+          }}
         />
       ) : null}
 

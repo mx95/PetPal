@@ -66,6 +66,13 @@ const ru = {
       value3Desc: 'Ветеринары, грумеры, записи и сообщество — в одном месте.',
       featuresTitle: 'Что умеет PetPal',
       featuresSub: 'Простые инструменты для повседневной заботы — у каждого своя задача.',
+      capability: {
+        gps: { title: 'Живой GPS', desc: 'Питомец на карте в реальном времени.' },
+        nfc: { title: 'NFC-ошейник', desc: 'Связь одним касанием, если потерялся.' },
+        nearby: { title: 'Pet-friendly места рядом', desc: 'Ветеринары, парки и точки рядом с домом.' },
+        booking: { title: 'Записи', desc: 'Груминг, ветеринар и другое.' },
+        shop: { title: 'Магазин', desc: 'Ошейники, NFC-метки и планы ухода.' },
+      },
       stayLine: 'Для обычных владельцев — бесплатный старт, без лишнего шума.',
       ctaPets: 'Мои питомцы',
       ctaActivity: 'Центр активности',
@@ -1252,6 +1259,7 @@ const ru = {
     mapOneTapHomeBusy: 'Определяем местоположение…',
     mapOneTapHomeLead: 'Одно нажатие дома — адрес вводить не нужно.',
     mapHomeLocationBanner: 'На карте показана сохранённая зона «дома»',
+    mapAtHomeBanner: 'Дома — питомец показан внутри домашней зоны',
     mapHomeProvisionalBanner:
       'Приблизительная зона дома по Wi‑Fi — выйдите на улицу для точной GPS-метки',
     mapWifiDetectedNetworks: 'Ошейник видит Wi‑Fi: {networks}',
@@ -1561,7 +1569,23 @@ const ru = {
     deviceMode_wifi_priority_desc: 'Домашний Wi‑Fi в помещении, GPS на улице, затем сотовая сеть',
     devicePanelApplyHome: 'Настроить домашнее отслеживание',
     devicePanelHomeNeedsHttps:
-      '«Указать дом на карте» работает только по HTTPS (или на localhost). Wi‑Fi и режим отслеживания ниже доступны.',
+      '«Использовать геолокацию телефона» работает только по HTTPS (или на localhost). Дом можно задать и меткой на карте.',
+    deviceHomeTitle: 'Домашняя точка',
+    deviceHomeLead:
+      'Отметьте дом на карте. В Live появится иконка дома и зона {meters} м. Если питомец внутри зоны, его метка совмещается с домом.',
+    deviceHomeNone: 'Дом ещё не задан.',
+    deviceHomeUsePhone: 'Использовать геолокацию телефона',
+    deviceHomePickMap: 'Задать меткой на карте',
+    deviceHomeHideMap: 'Скрыть карту',
+    deviceHomeSavePin: 'Сохранить домашнюю метку',
+    deviceHomeClear: 'Очистить локальный дом',
+    deviceHomeMapHint: 'Нажмите на карту, чтобы поставить метку, затем сохраните.',
+    deviceHomePinLabel: 'Дом',
+    deviceHomeSaved: 'Домашняя точка сохранена.',
+    deviceHomeSaveFailed: 'Не удалось сохранить домашнюю точку.',
+    deviceHomeClearedLocal: 'Дом очищен на этом телефоне (на сервере может остаться).',
+    devicePanelHomeGeoUnsupported: 'Этот браузер не может определить ваше местоположение.',
+    devicePanelHomeGeoDenied: 'Доступ к геолокации запрещён. Разрешите его или задайте дом меткой на карте.',
     devicePanelFoot: 'Держите ошейник заряженным. LBS используется, когда нет Wi‑Fi/GPS.',
   },
   inbox: {
@@ -2120,6 +2144,8 @@ const ru = {
     nfcDesignTitle: 'Выберите дизайн NFC-метки',
     nfcDesignSelected: 'Выбранный дизайн',
     nfcDesignAria: 'Варианты дизайна NFC-метки',
+    nfcDesignPrev: 'Предыдущие дизайны NFC',
+    nfcDesignNext: 'Следующие дизайны NFC',
     productsLead:
       'Товары зарегистрированных бизнесов PetPal. Добавьте в корзину для проверки перед оплатой.',
     addToCart: 'В корзину',
@@ -2433,6 +2459,12 @@ const ru = {
         'Удалить устройство {imei} с сервера трекеров? История позиций для этого IMEI тоже будет удалена. Привязки питомцев в приложении не изменятся.',
       removed: 'Удалено {imei}.',
       errRemove: 'Не удалось удалить устройство.',
+      clearHistory: 'Очистить историю',
+      confirmClearHistory:
+        'Удалить все точки для {imei}? Устройство останется в реестре; очистится только история и последний фикс.',
+      clearedHistory: 'История для {imei} очищена.',
+      clearedHistoryCount: 'Удалено {count} точек для {imei}.',
+      errClearHistory: 'Не удалось очистить историю.',
     },
   },
   lifetime: {
