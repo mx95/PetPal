@@ -6174,7 +6174,7 @@ html[data-theme="dark"] .pp-timeRangeRow--readOnly .pp-timeRangeRow__control {
   position: relative;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
   min-height: clamp(360px, 48vw, 480px);
   margin-bottom: clamp(24px, 4vw, 36px);
   padding: 0;
@@ -6236,14 +6236,16 @@ html[data-theme="dark"] .pp-timeRangeRow--readOnly .pp-timeRangeRow__control {
 .pp-homeWelcome__bannerActions {
   position: relative;
   z-index: 2;
-  margin-top: 0;
+  margin-top: auto;
   max-width: min(34rem, 52%);
-  padding: 8px clamp(18px, 2.4vw, 28px) clamp(24px, 3.4vw, 36px) clamp(22px, 3.2vw, 36px);
+  padding: 12px clamp(18px, 2.4vw, 28px) clamp(18px, 2.8vw, 28px) clamp(22px, 3.2vw, 36px);
 }
 
 @media (max-width: 820px) {
   .pp-homeWelcome__banner {
-    display: block;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
     min-height: clamp(420px, 118vw, 560px);
     padding: 0;
     gap: 0;
@@ -6315,8 +6317,9 @@ html[data-theme="dark"] .pp-timeRangeRow--readOnly .pp-timeRangeRow__control {
     order: unset;
     position: relative;
     z-index: 2;
+    margin-top: auto;
     max-width: none;
-    padding: 10px 16px 20px;
+    padding: 10px 16px 18px;
     background: transparent;
   }
 
@@ -11700,7 +11703,7 @@ select.pp-bookConfirmField__control {
   height: 100%;
   max-height: none;
   object-fit: cover;
-  object-position: 72% 42%;
+  object-position: 58% 45%;
   display: block;
   filter: none;
 }
