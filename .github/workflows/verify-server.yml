@@ -6,6 +6,11 @@ name: Verify server deploy
 
 on:
   workflow_dispatch:
+    inputs:
+      imei:
+        description: Optional IMEI to check for TCP inbound / device rows
+        required: false
+        default: ''
   push:
     branches:
       - main
@@ -32,6 +37,8 @@ jobs:
             set -euo pipefail
             PETPAL_ROOT="${{ secrets.DEPLOY_PATH }}"
             if [ -z "$PETPAL_ROOT" ]; then PETPAL_ROOT="/root/PetPal"; fi
+            IMEI="${{ github.event.inputs.imei }}"
+            DB="${PETPAL_TRACKER_DB:-/var/lib/petpal/petpal.sqlite}"
 
             echo "======== host ========"
             hostname
@@ -43,46 +50,46 @@ jobs:
             echo "origin/main (local): $(git rev-parse --short origin/main 2>/dev/null || echo n/a)"
             git status -sb
 
-            echo "======== shop assets ========"
-            TRACKER="$PETPAL_ROOT/petpal/public/images/shop/gps-tracker.png"
-            NFC_DIR="$PETPAL_ROOT/petpal/public/images/nfc-tags"
-            ls -la "$TRACKER"
-            ls -la "$NFC_DIR" | head -30
-            echo "nfc tag png count: $(ls -1 "$NFC_DIR"/nfc-tag-*.png 2>/dev/null | wc -l)"
-
-            echo "======== built SPA assets ========"
-            BUILD="$PETPAL_ROOT/petpal/build"
-            if [ -d "$BUILD" ]; then
-              ls -la "$BUILD/images/shop/gps-tracker.png" 2>/dev/null || echo "missing build tracker image"
-              echo "build nfc count: $(ls -1 "$BUILD/images/nfc-tags"/nfc-tag-*.png 2>/dev/null | wc -l)"
-              grep -RIl -E 'NfcDesignSelector|selectedDesignId|nfc-tag-01' "$BUILD/static/js" 2>/dev/null | head -5 || echo "no NFC strings found in build js"
-            else
-              echo "missing build dir"
-            fi
-
-            echo "======== source wiring ========"
-            test -f "$PETPAL_ROOT/petpal/src/components/shop/NfcDesignSelector.js" && echo "NfcDesignSelector.js: OK"
-            test -f "$PETPAL_ROOT/petpal/src/data/nfcTagDesigns.js" && echo "nfcTagDesigns.js: OK"
-            grep -Rn -E 'TRACKER_HARDWARE|selectedNfcDesignId|NfcDesignSelector' "$PETPAL_ROOT/petpal/src" --include='*.js' | head -20
-
             echo "======== pm2 ========"
             if command -v pm2 >/dev/null 2>&1; then
               pm2 list
+              pm2 describe tracker 2>/dev/null | grep -E 'status|script path|exec cwd|GPS365|TCP_PORT|5003' || true
             else
               echo "pm2 not found"
             fi
 
-            echo "======== local HTTP ========"
-            curl -sI -o /dev/null -w "tracker.png %{http_code}\n" http://127.0.0.1:5002/images/shop/gps-tracker.png || true
-            curl -sI -o /dev/null -w "nfc-01 %{http_code}\n" http://127.0.0.1:5002/images/nfc-tags/nfc-tag-01.png || true
-            curl -sI -o /dev/null -w "nfc-18 %{http_code}\n" http://127.0.0.1:5002/images/nfc-tags/nfc-tag-18.png || true
-            curl -sI -o /dev/null -w "home %{http_code}\n" http://127.0.0.1:5002/ || true
+            echo "======== listeners ========"
+            ss -lntp 2>/dev/null | grep -E '5001|5002|5003' || netstat -lntp 2>/dev/null | grep -E '5001|5002|5003' || true
 
-            echo "======== firebase cli ========"
-            if command -v firebase >/dev/null 2>&1; then
-              firebase --version
-            else
-              echo "firebase CLI not on PATH"
+            if [ -n "$IMEI" ]; then
+              echo "======== device $IMEI ========"
+              if command -v sqlite3 >/dev/null 2>&1 && [ -f "$DB" ]; then
+                echo "-- devices row --"
+                sqlite3 -header -column "$DB" "SELECT imei, provider, provider_override, last_update, last_lat, last_lng, source FROM devices WHERE imei='$IMEI';"
+                echo "-- positions count --"
+                sqlite3 "$DB" "SELECT COUNT(*) AS positions FROM positions WHERE imei='$IMEI';"
+                echo "-- latest positions --"
+                sqlite3 -header -column "$DB" "SELECT id, COALESCE(received_at, timestamp) AS ts, lat, lng, source FROM positions WHERE imei='$IMEI' ORDER BY id DESC LIMIT 5;"
+                echo "-- tcp_inbound by imei (last 30) --"
+                sqlite3 -header -column "$DB" "SELECT ts, event, remote_address, remote_port, message_id, byte_length, substr(COALESCE(note,''),1,80) AS note FROM tcp_inbound_requests WHERE imei='$IMEI' ORDER BY ts DESC LIMIT 30;"
+                echo "-- tcp_inbound count by imei --"
+                sqlite3 "$DB" "SELECT COUNT(*) FROM tcp_inbound_requests WHERE imei='$IMEI';"
+                echo "-- recent tcp_inbound with this IMEI in raw/ascii (last 20) --"
+                sqlite3 -header -column "$DB" "SELECT ts, event, remote_address, byte_length, substr(COALESCE(raw_hex,''),1,64) AS raw_hex FROM tcp_inbound_requests WHERE imei='$IMEI' OR IFNULL(raw_hex,'') LIKE '%' || '$IMEI' || '%' OR IFNULL(ascii_preview,'') LIKE '%' || '$IMEI' || '%' ORDER BY ts DESC LIMIT 20;"
+                echo "-- recent tcp_inbound any (last 15) --"
+                sqlite3 -header -column "$DB" "SELECT ts, imei, event, remote_address, byte_length, substr(COALESCE(note,''),1,100) AS note FROM tcp_inbound_requests WHERE event IN ('data','frame_parse_error','frame_unparsed','connection') ORDER BY ts DESC LIMIT 15;"
+              else
+                echo "sqlite3 or DB missing ($DB)"
+              fi
+
+              echo "======== pm2 logs matching IMEI ========"
+              pm2 logs tracker --lines 400 --nostream 2>&1 | grep -F "$IMEI" | tail -50 || echo "(no IMEI matches in last 400 log lines)"
+              echo "======== pm2 logs 365GPS recent ========"
+              pm2 logs tracker --lines 200 --nostream 2>&1 | grep -E '365GPS|RAW HEX|Warning:' | tail -40 || true
             fi
+
+            echo "======== local HTTP ========"
+            curl -sI -o /dev/null -w "home %{http_code}\n" http://127.0.0.1:5002/ || true
+            curl -s -o /dev/null -w "devices %{http_code}\n" http://127.0.0.1:5002/api/app/devices || true
 
             echo "======== verify done ========"
