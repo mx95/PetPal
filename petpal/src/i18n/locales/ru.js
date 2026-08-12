@@ -874,7 +874,7 @@ const ru = {
       unauthorizedDomain:
         'Этот домен не разрешён для входа. Добавьте его в Firebase Authentication → Settings → Authorized domains.',
       providerDisabled:
-        'Вход через Google или Apple ещё не включён. Включите провайдера в Firebase Authentication или используйте email и пароль.',
+        'Вход через Google или Apple отключён в Firebase. Откройте Console → Authentication → Sign-in method, включите Google (и Apple при необходимости), сохраните и попробуйте снова.',
     },
   },
   login: {

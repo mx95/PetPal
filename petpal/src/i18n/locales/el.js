@@ -882,7 +882,7 @@ const el = {
       unauthorizedDomain:
         'Αυτός ο τομέας δεν είναι εξουσιοδοτημένος για σύνδεση. Προσθέστε τον στο Firebase Authentication → Settings → Authorized domains.',
       providerDisabled:
-        'Η σύνδεση με Google ή Apple δεν είναι ενεργοποιημένη ακόμη. Ενεργοποιήστε τον πάροχο στο Firebase Authentication ή χρησιμοποιήστε email και κωδικό.',
+        'Η σύνδεση με Google ή Apple είναι απενεργοποιημένη στο Firebase. Στην κονσόλα: Authentication → Sign-in method, ενεργοποιήστε το Google (και το Apple αν χρειάζεται), αποθηκεύστε και δοκιμάστε ξανά.',
     },
   },
   login: {

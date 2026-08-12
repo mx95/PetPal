@@ -68,8 +68,9 @@ export async function ensureSocialUserProfile(user) {
 }
 
 /**
- * @param {'google'|'apple'} providerId
- * @returns {Promise<import('firebase/auth').UserCredential>}
+ * Google / Apple popup sign-in.
+ * Requires the provider to be enabled in Firebase Console → Authentication → Sign-in method.
+ * Production web config must use project petpal-aecda (authDomain petpal-aecda.firebaseapp.com).
  */
 export async function signInWithSocialProvider(providerId) {
   if (!auth) {

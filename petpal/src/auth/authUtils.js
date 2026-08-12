@@ -18,6 +18,15 @@ export function mapAuthError(err, t, mode = 'login') {
   }
   if (code === 'auth/unauthorized-domain') return t('auth.errors.unauthorizedDomain');
   if (code === 'auth/operation-not-allowed' || code === 'auth/admin-restricted-operation') {
+    if (typeof console !== 'undefined') {
+      // Helpful when diagnosing Google/Apple setup (config is public on web).
+      // eslint-disable-next-line no-console
+      console.warn('[auth] provider disabled — enable it in Firebase Authentication → Sign-in method', {
+        code,
+        projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID,
+        authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
+      });
+    }
     return t('auth.errors.providerDisabled');
   }
   if (code === 'auth/firebase-not-configured') return t('auth.errors.firebaseNotConfigured');

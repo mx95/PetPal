@@ -805,7 +805,7 @@ const en = {
       unauthorizedDomain:
         'This domain is not authorized for sign-in. Add it under Firebase Authentication → Settings → Authorized domains.',
       providerDisabled:
-        'Google or Apple sign-in is not enabled yet. Turn on the provider in Firebase Authentication, or use email and password.',
+        'Google or Apple sign-in is turned off in Firebase. Open Firebase Console → Authentication → Sign-in method, enable Google (and Apple if you use it), save, then try again.',
     },
   },
   login: {
