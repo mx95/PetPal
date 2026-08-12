@@ -11617,9 +11617,7 @@ select.pp-bookConfirmField__control {
   flex-direction: column;
   justify-content: flex-start;
   gap: 0;
-  background:
-    radial-gradient(520px 320px at 100% 80%, rgba(255, 255, 255, 0.28), transparent 55%),
-    #d1caf8;
+  background: #eeeafe;
   border: 1px solid rgba(101, 70, 232, 0.12);
   box-shadow: 0 28px 56px -32px rgba(55, 28, 140, 0.28);
   overflow: hidden;
@@ -11707,8 +11705,8 @@ select.pp-bookConfirmField__control {
   z-index: 1;
   pointer-events: none;
   background:
-    linear-gradient(90deg, #d1caf8 0%, rgba(209, 202, 248, 0.88) 22%, rgba(209, 202, 248, 0.35) 48%, transparent 72%),
-    linear-gradient(180deg, #d1caf8 0%, rgba(209, 202, 248, 0.4) 18%, transparent 38%);
+    linear-gradient(90deg, #eeeafe 0%, rgba(238, 234, 254, 0.75) 18%, rgba(238, 234, 254, 0.2) 40%, transparent 62%),
+    linear-gradient(180deg, #eeeafe 0%, rgba(238, 234, 254, 0.25) 14%, transparent 32%);
 }
 
 .pp-authPage__welcomeArt::before {
@@ -11726,8 +11724,6 @@ select.pp-bookConfirmField__control {
   display: block;
   filter: none;
   transform: none;
-  -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 16%, #000 100%);
-  mask-image: linear-gradient(90deg, transparent 0%, #000 16%, #000 100%);
 }
 
 .pp-authPage--login .pp-authFormCard {
