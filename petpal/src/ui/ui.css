@@ -11686,7 +11686,7 @@ select.pp-bookConfirmField__control {
   top: 0;
   right: 0;
   bottom: 0;
-  left: 34%;
+  left: 42%;
   margin: 0;
   display: block;
   border-radius: 0;
@@ -11719,7 +11719,7 @@ select.pp-bookConfirmField__control {
   height: 100%;
   max-height: none;
   object-fit: cover;
-  object-position: 78% 42%;
+  object-position: 88% 42%;
   display: block;
   filter: none;
   transform: none;
