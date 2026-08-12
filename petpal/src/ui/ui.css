@@ -6172,11 +6172,10 @@ html[data-theme="dark"] .pp-timeRangeRow--readOnly .pp-timeRangeRow__control {
 
 .pp-homeWelcome__banner {
   position: relative;
-  display: grid;
-  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
-  grid-template-rows: auto auto;
-  gap: 0;
-  align-items: stretch;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: clamp(360px, 48vw, 480px);
   margin-bottom: clamp(24px, 4vw, 36px);
   padding: 0;
   border-radius: 24px;
@@ -6190,74 +6189,102 @@ html[data-theme="dark"] .pp-timeRangeRow--readOnly .pp-timeRangeRow__control {
     0 2px 8px rgba(15, 23, 42, 0.04);
 }
 
+.pp-homeWelcome__bannerArt {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  min-height: 0;
+  height: auto;
+  border-radius: inherit;
+  overflow: hidden;
+  grid-column: auto;
+  grid-row: auto;
+}
+
+.pp-homeWelcome__heroImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 72% 42%;
+  display: block;
+  transform: none;
+}
+
+.pp-homeWelcome__heroFade {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(100deg, rgba(255, 255, 255, 0.94) 0%, rgba(248, 247, 255, 0.82) 26%, rgba(248, 247, 255, 0.28) 48%, transparent 68%),
+    linear-gradient(0deg, rgba(248, 247, 255, 0.4) 0%, transparent 42%);
+}
+
 .pp-homeWelcome__bannerOverlay {
-  grid-column: 1;
-  grid-row: 1;
   position: relative;
   z-index: 2;
   min-width: 0;
-  padding: clamp(22px, 3.2vw, 34px) clamp(12px, 2vw, 18px) 8px clamp(22px, 3.2vw, 34px);
-  max-width: 34rem;
+  max-width: min(34rem, 52%);
+  padding: clamp(26px, 3.6vw, 40px) clamp(18px, 2.4vw, 28px) 10px clamp(22px, 3.2vw, 36px);
+}
+
+.pp-homeWelcome__bannerCopy {
+  position: relative;
+  z-index: 1;
+  padding: 0;
 }
 
 .pp-homeWelcome__bannerActions {
-  grid-column: 1;
-  grid-row: 2;
   position: relative;
   z-index: 2;
   margin-top: 0;
-  padding: 8px clamp(22px, 3.2vw, 34px) clamp(22px, 3.2vw, 34px);
+  max-width: min(34rem, 52%);
+  padding: 8px clamp(18px, 2.4vw, 28px) clamp(24px, 3.4vw, 36px) clamp(22px, 3.2vw, 36px);
 }
 
 @media (max-width: 820px) {
   .pp-homeWelcome__banner {
-    display: flex;
-    flex-direction: column;
+    display: block;
+    min-height: clamp(420px, 118vw, 560px);
     padding: 0;
     gap: 0;
     overflow: hidden;
   }
 
   .pp-homeWelcome__bannerArt {
-    order: 1;
-    flex: 0 0 auto;
-    width: 100%;
-    height: clamp(220px, 58vw, 300px);
+    position: absolute;
+    inset: 0;
+    order: unset;
+    flex: unset;
+    width: auto;
+    height: auto;
     min-height: 0;
-    border-radius: 0;
-    grid-column: auto;
-    grid-row: auto;
+    border-radius: inherit;
   }
 
   .pp-homeWelcome__heroImg {
     height: 100%;
     min-height: 0;
-    object-position: center 38%;
-    transform: scale(1.06);
+    object-position: 70% 38%;
+    transform: none;
   }
 
   .pp-homeWelcome__heroFade {
-    background: linear-gradient(
-      180deg,
-      transparent 0%,
-      transparent 55%,
-      rgba(248, 247, 255, 0.55) 100%
-    );
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.88) 0%, rgba(248, 247, 255, 0.72) 34%, rgba(248, 247, 255, 0.35) 58%, rgba(248, 247, 255, 0.55) 100%),
+      linear-gradient(105deg, rgba(255, 255, 255, 0.7) 0%, rgba(255, 255, 255, 0.25) 42%, transparent 70%);
   }
 
   .pp-homeWelcome__bannerOverlay {
-    order: 2;
+    order: unset;
     position: relative;
     top: auto;
     left: auto;
     right: auto;
     height: auto;
-    z-index: 1;
+    z-index: 2;
     pointer-events: auto;
-    padding: 18px 18px 0;
-    max-width: none;
-    grid-column: auto;
-    grid-row: auto;
+    padding: 20px 18px 8px;
+    max-width: min(100%, 26rem);
   }
 
   .pp-homeWelcome__bannerCopy {
@@ -6285,13 +6312,12 @@ html[data-theme="dark"] .pp-timeRangeRow--readOnly .pp-timeRangeRow__control {
   }
 
   .pp-homeWelcome__bannerActions {
-    order: 3;
+    order: unset;
     position: relative;
-    z-index: 1;
-    padding: 14px 16px 18px;
+    z-index: 2;
+    max-width: none;
+    padding: 10px 16px 20px;
     background: transparent;
-    grid-column: auto;
-    grid-row: auto;
   }
 
   .pp-homeWelcome__bannerActions .pp-homeWelcome__ctaRow {
@@ -6338,41 +6364,6 @@ html[data-theme="dark"] .pp-timeRangeRow--readOnly .pp-timeRangeRow__control {
     margin-top: 10px;
     text-align: center;
   }
-}
-
-.pp-homeWelcome__bannerArt {
-  position: relative;
-  min-height: clamp(240px, 36vw, 320px);
-  border-radius: 0;
-  overflow: hidden;
-  grid-column: 2;
-  grid-row: 1 / span 2;
-  align-self: stretch;
-  height: 100%;
-}
-
-.pp-homeWelcome__heroImg {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: 68% 40%;
-  display: block;
-  transform: scale(1.04);
-}
-
-.pp-homeWelcome__heroFade {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background:
-    linear-gradient(100deg, rgba(248, 247, 255, 0.97) 0%, rgba(248, 247, 255, 0.72) 22%, rgba(248, 247, 255, 0.28) 48%, transparent 68%),
-    linear-gradient(0deg, rgba(248, 247, 255, 0.35) 0%, transparent 36%);
-}
-
-.pp-homeWelcome__bannerCopy {
-  position: relative;
-  z-index: 1;
-  padding: clamp(4px, 1vw, 8px) 0;
 }
 
 .pp-homeWelcome__values {
@@ -11596,22 +11587,21 @@ select.pp-bookConfirmField__control {
   padding: 0;
 }
 
-/* Login / register — Care Hub two-column with blended pack scene */
+/* Login / register — Care Hub two-column with pack scene behind copy */
 .pp-authPage--login {
   gap: 28px;
   align-items: stretch;
 }
 
 .pp-authPage--login .pp-authPage__welcome {
-  min-height: 0;
-  padding: 28px 28px 0;
+  position: relative;
+  min-height: clamp(460px, 62vh, 580px);
+  padding: 28px 26px 30px;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  gap: 14px;
-  background:
-    linear-gradient(180deg, rgba(255,255,255,0.42) 0%, rgba(233,228,250,0.2) 42%, rgba(203,196,247,0) 72%),
-    #cbc4f7;
+  justify-content: flex-start;
+  gap: 0;
+  background: #cbc4f7;
   border: 1px solid rgba(101, 70, 232, 0.16);
   box-shadow: 0 28px 56px -32px rgba(55, 28, 140, 0.38);
   overflow: hidden;
@@ -11622,7 +11612,8 @@ select.pp-bookConfirmField__control {
   gap: 12px;
   position: relative;
   z-index: 2;
-  padding-right: 8px;
+  max-width: min(100%, 22.5rem);
+  padding: 4px 8px 8px 2px;
 }
 
 .pp-authPage--login .pp-authPage__welcomeTitle {
@@ -11633,7 +11624,7 @@ select.pp-bookConfirmField__control {
 
 .pp-authPage--login .pp-authPage__welcomeSub {
   margin: 0;
-  max-width: 36ch;
+  max-width: 34ch;
   color: #4b5568;
   font-size: 15.5px;
   line-height: 1.5;
@@ -11641,7 +11632,7 @@ select.pp-bookConfirmField__control {
 
 .pp-authPage--login .pp-authPage__welcomeList {
   gap: 12px;
-  margin-top: 2px;
+  margin-top: 4px;
 }
 
 .pp-authPage--login .pp-authPage__welcomeList li {
@@ -11661,7 +11652,7 @@ select.pp-bookConfirmField__control {
   height: 40px;
   flex: 0 0 auto;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 0.72);
   color: #6546e8;
   font-size: 18px;
   line-height: 1;
@@ -11674,18 +11665,28 @@ select.pp-bookConfirmField__control {
 }
 
 .pp-authPage__welcomeArt {
-  margin: 0 -28px -1px;
-  position: relative;
-  z-index: 1;
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  z-index: 0;
   width: auto;
-  height: clamp(220px, 32vw, 300px);
-  display: grid;
-  place-items: end center;
-  border-radius: 0 0 22px 22px;
+  height: auto;
+  display: block;
+  border-radius: inherit;
   overflow: hidden;
   line-height: 0;
   background: #cbc4f7;
   box-shadow: none;
+}
+
+.pp-authPage__welcomeArt::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(105deg, rgba(233, 228, 250, 0.92) 0%, rgba(233, 228, 250, 0.78) 28%, rgba(203, 196, 247, 0.28) 52%, transparent 70%),
+    linear-gradient(180deg, rgba(233, 228, 250, 0.35) 0%, transparent 28%);
 }
 
 .pp-authPage__welcomeArt::before {
@@ -11693,13 +11694,13 @@ select.pp-bookConfirmField__control {
 }
 
 .pp-authPage__welcomeArt img {
-  position: relative;
-  z-index: 1;
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   max-height: none;
   object-fit: cover;
-  object-position: center 35%;
+  object-position: 72% 42%;
   display: block;
   filter: none;
 }
@@ -11791,15 +11792,14 @@ select.pp-bookConfirmField__control {
 @media (max-width: 720px) {
   .pp-authPage { grid-template-columns: 1fr; }
   .pp-authPage--login .pp-authPage__welcome {
-    min-height: 0;
-    padding: 22px 20px 0;
+    min-height: clamp(380px, 78vw, 460px);
+    padding: 20px 18px 22px;
   }
-  .pp-authPage__welcomeArt {
-    margin: 4px -20px -1px;
-    height: clamp(180px, 48vw, 230px);
+  .pp-authPage--login .pp-authPage__welcomeTop {
+    max-width: min(100%, 20rem);
   }
   .pp-authPage__welcomeArt img {
-    object-position: center 30%;
+    object-position: 68% 40%;
   }
 }
 

@@ -107,6 +107,9 @@ export default function Login() {
       <div className="pp-col-12">
         <div className="pp-authPage pp-authPage--login">
           <aside className="pp-authPage__welcome">
+            <figure className="pp-authPage__welcomeArt" aria-hidden>
+              <img src={AUTH_PACK_SRC} alt="" loading="lazy" decoding="async" />
+            </figure>
             <div className="pp-authPage__welcomeTop">
               <span className="pp-authPage__welcomeEyebrow">{t('login.welcomeEyebrow')}</span>
               <h1 className="pp-authPage__welcomeTitle">{t('login.welcome')}</h1>
@@ -122,9 +125,6 @@ export default function Login() {
                 ))}
               </ul>
             </div>
-            <figure className="pp-authPage__welcomeArt">
-              <img src={AUTH_PACK_SRC} alt={t('login.packImageAlt')} loading="lazy" decoding="async" />
-            </figure>
           </aside>
 
           <div className="pp-card pp-pad pp-authFormCard">
