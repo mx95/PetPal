@@ -12,26 +12,14 @@ function GoogleGlyph() {
   );
 }
 
-function AppleGlyph() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <path
-        fill="currentColor"
-        d="M16.4 12.6c0-2.1 1.7-3.1 1.8-3.2-1-1.4-2.5-1.6-3-1.7-1.3-.1-2.5.8-3.1.8-.7 0-1.7-.7-2.8-.7-1.4 0-2.8.9-3.5 2.2-1.5 2.6-.4 6.5 1.1 8.6.7 1 1.6 2.2 2.7 2.1 1.1 0 1.5-.7 2.8-.7s1.6.7 2.8.7 1.9-1.1 2.6-2.1c.8-1.2 1.1-2.3 1.1-2.4-.1 0-2.2-.8-2.2-3.6zM14.1 6.5c.6-.7 1-1.7.9-2.7-0.9.1-1.9.6-2.5 1.3-.6.6-1.1 1.7-1 2.6 1 .1 1.9-.5 2.6-1.2z"
-      />
-    </svg>
-  );
-}
-
 /**
  * @param {{
  *   busy?: boolean,
  *   disabled?: boolean,
  *   onGoogle: () => void,
- *   onApple: () => void,
  * }} props
  */
-export default function AuthSocialButtons({ busy = false, disabled = false, onGoogle, onApple }) {
+export default function AuthSocialButtons({ busy = false, disabled = false, onGoogle }) {
   const { t } = useI18n();
   const locked = busy || disabled;
 
@@ -49,15 +37,6 @@ export default function AuthSocialButtons({ busy = false, disabled = false, onGo
         >
           <GoogleGlyph />
           <span>{t('auth.continueGoogle')}</span>
-        </button>
-        <button
-          type="button"
-          className="pp-btn pp-authSocial__btn pp-authSocial__btn--apple"
-          disabled={locked}
-          onClick={onApple}
-        >
-          <AppleGlyph />
-          <span>{t('auth.continueApple')}</span>
         </button>
       </div>
     </div>

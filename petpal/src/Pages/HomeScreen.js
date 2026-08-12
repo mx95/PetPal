@@ -14,6 +14,7 @@ const APP_CAPABILITIES = [
   { key: 'nearby', to: '/nearby', accent: 'nearby' },
   { key: 'booking', to: '/bookings', accent: 'booking', mvp: MVP_NAV.showBookings },
   { key: 'shop', to: '/shop', accent: 'shop', mvp: MVP_NAV.showShop },
+  { key: 'achievements', to: '/dashboard', accent: 'achievements' },
 ].filter((item) => item.mvp !== false);
 
 const SHOWCASE_ITEMS = [
@@ -61,6 +62,15 @@ function CapabilityIcon({ type }) {
         <path d="M8 3.5V7M16 3.5V7M3.5 10h17" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
         <rect x="7.5" y="13" width="3" height="3" rx="0.6" fill="currentColor" />
         <rect x="13.5" y="13" width="3" height="3" rx="0.6" fill="currentColor" opacity="0.45" />
+      </svg>
+    );
+  }
+  if (type === 'achievements') {
+    return (
+      <svg {...common}>
+        <circle cx="12" cy="9" r="4.2" stroke="currentColor" strokeWidth="1.8" />
+        <path d="M12 13.2V17M9.2 20l2.8-3 2.8 3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M8.2 7.2 5.5 5.8M15.8 7.2l2.7-1.4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
       </svg>
     );
   }

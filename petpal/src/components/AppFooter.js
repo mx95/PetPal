@@ -42,12 +42,12 @@ function SocialGlyph({ id }) {
       </svg>
     );
   }
+  // Instagram glyph
   return (
     <svg {...common}>
-      <path
-        fill="currentColor"
-        d="M12 7.2A4.8 4.8 0 1 0 12 16.8 4.8 4.8 0 0 0 12 7.2Zm0 7.9a3.1 3.1 0 1 1 0-6.2 3.1 3.1 0 0 1 0 6.2Zm6.3-8.2a1.1 1.1 0 1 1-2.2 0 1.1 1.1 0 0 1 2.2 0ZM12 2.5c-2.4 0-2.7 0-3.7.1-2.5.1-3.7 1.3-3.8 3.8-.1 1-.1 1.3-.1 3.7s0 2.7.1 3.7c.1 2.5 1.3 3.7 3.8 3.8 1 .1 1.3.1 3.7.1s2.7 0 3.7-.1c2.5-.1 3.7-1.3 3.8-3.8.1-1 .1-1.3.1-3.7s0-2.7-.1-3.7c-.1-2.5-1.3-3.7-3.8-3.8-1-.1-1.3-.1-3.7-.1Zm0 1.5c2.3 0 2.6 0 3.5.1 1.8.1 2.6.9 2.7 2.7.1.9.1 1.2.1 3.5s0 2.6-.1 3.5c-.1 1.8-.9 2.6-2.7 2.7-.9.1-1.2.1-3.5.1s-2.6 0-3.5-.1c-1.8-.1-2.6-.9-2.7-2.7-.1-.9-.1-1.2-.1-3.5s0-2.6.1-3.5c.1-1.8.9-2.6 2.7-2.7.9-.1 1.2-.1 3.5-.1Z"
-      />
+      <rect x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="currentColor" strokeWidth="1.7" />
+      <circle cx="12" cy="12" r="4.2" fill="none" stroke="currentColor" strokeWidth="1.7" />
+      <circle cx="17.2" cy="6.8" r="1.15" fill="currentColor" />
     </svg>
   );
 }
@@ -93,6 +93,10 @@ export function AppFooter() {
           {' · '}
           <Link className="pp-footer__inlineLink" to="/terms">
             {t('footer.terms')}
+          </Link>
+          {' · '}
+          <Link className="pp-footer__inlineLink" to="/contact">
+            {t('footer.contact')}
           </Link>
           {' · '}
           <button type="button" className="pp-footer__inlineLink pp-footer__linkBtn" onClick={reopenCookieSettings}>

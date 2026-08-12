@@ -419,7 +419,6 @@ export default function Register() {
               busy={busy}
               disabled={!acceptedTerms}
               onGoogle={() => void finishSocial('google')}
-              onApple={() => void finishSocial('apple')}
             />
 
             <p className="pp-subtle pp-authSwitchHint">

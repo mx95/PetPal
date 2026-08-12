@@ -221,7 +221,6 @@ export default function Login() {
                 busy={busy}
                 disabled={isCoolingDown}
                 onGoogle={() => void finishSocial('google')}
-                onApple={() => void finishSocial('apple')}
               />
 
               <p className="pp-authTrust">{t('login.securityHint')}</p>
