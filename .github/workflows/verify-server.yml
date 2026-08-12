@@ -63,6 +63,11 @@ jobs:
 
             if [ -n "$IMEI" ]; then
               echo "======== device $IMEI ========"
+              # 365GPS/Xexun login frames carry IMEI as 8-byte BCD (leading 0 pad), not ASCII digits.
+              IMEI_DIGITS="$(echo "$IMEI" | tr -cd '0-9' | cut -c1-15)"
+              IMEI_BCD="$(printf '%016s' "$IMEI_DIGITS" | tr ' ' '0')"
+              IMEI_BCD_F="$(printf '%-16s' "$IMEI_DIGITS" | tr ' ' 'F')"
+              echo "ascii_imei=$IMEI_DIGITS bcd_hex=$IMEI_BCD bcd_f_pad=$IMEI_BCD_F"
               if command -v sqlite3 >/dev/null 2>&1 && [ -f "$DB" ]; then
                 echo "-- devices row --"
                 sqlite3 -header -column "$DB" "SELECT imei, provider, provider_override, last_update, last_lat, last_lng, source FROM devices WHERE imei='$IMEI';"
@@ -70,20 +75,24 @@ jobs:
                 sqlite3 "$DB" "SELECT COUNT(*) AS positions FROM positions WHERE imei='$IMEI';"
                 echo "-- latest positions --"
                 sqlite3 -header -column "$DB" "SELECT id, COALESCE(received_at, timestamp) AS ts, lat, lng, source FROM positions WHERE imei='$IMEI' ORDER BY id DESC LIMIT 5;"
-                echo "-- tcp_inbound by imei (last 30) --"
+                echo "-- tcp_inbound by imei column (last 30) --"
                 sqlite3 -header -column "$DB" "SELECT ts, event, remote_address, remote_port, message_id, byte_length, substr(COALESCE(note,''),1,80) AS note FROM tcp_inbound_requests WHERE imei='$IMEI' ORDER BY ts DESC LIMIT 30;"
-                echo "-- tcp_inbound count by imei --"
+                echo "-- tcp_inbound count by imei column --"
                 sqlite3 "$DB" "SELECT COUNT(*) FROM tcp_inbound_requests WHERE imei='$IMEI';"
-                echo "-- recent tcp_inbound with this IMEI in raw/ascii (last 20) --"
-                sqlite3 -header -column "$DB" "SELECT ts, event, remote_address, byte_length, substr(COALESCE(raw_hex,''),1,64) AS raw_hex FROM tcp_inbound_requests WHERE imei='$IMEI' OR IFNULL(raw_hex,'') LIKE '%' || '$IMEI' || '%' OR IFNULL(ascii_preview,'') LIKE '%' || '$IMEI' || '%' ORDER BY ts DESC LIMIT 20;"
+                echo "-- tcp_inbound matching ASCII or BCD in raw_hex/ascii (last 30) --"
+                sqlite3 -header -column "$DB" "SELECT ts, imei, event, remote_address, byte_length, substr(COALESCE(raw_hex,''),1,96) AS raw_hex FROM tcp_inbound_requests WHERE imei='$IMEI' OR IFNULL(raw_hex,'') LIKE '%' || '$IMEI_DIGITS' || '%' OR upper(IFNULL(raw_hex,'')) LIKE '%' || '$IMEI_BCD' || '%' OR upper(IFNULL(raw_hex,'')) LIKE '%' || '$IMEI_BCD_F' || '%' OR IFNULL(ascii_preview,'') LIKE '%' || '$IMEI_DIGITS' || '%' OR IFNULL(parsed_json,'') LIKE '%' || '$IMEI_DIGITS' || '%' ORDER BY ts DESC LIMIT 30;"
+                echo "-- tcp_inbound BCD/ASCII match count --"
+                sqlite3 "$DB" "SELECT COUNT(*) FROM tcp_inbound_requests WHERE imei='$IMEI' OR IFNULL(raw_hex,'') LIKE '%' || '$IMEI_DIGITS' || '%' OR upper(IFNULL(raw_hex,'')) LIKE '%' || '$IMEI_BCD' || '%' OR upper(IFNULL(raw_hex,'')) LIKE '%' || '$IMEI_BCD_F' || '%' OR IFNULL(ascii_preview,'') LIKE '%' || '$IMEI_DIGITS' || '%' OR IFNULL(parsed_json,'') LIKE '%' || '$IMEI_DIGITS' || '%';"
                 echo "-- recent tcp_inbound any (last 15) --"
                 sqlite3 -header -column "$DB" "SELECT ts, imei, event, remote_address, byte_length, substr(COALESCE(note,''),1,100) AS note FROM tcp_inbound_requests WHERE event IN ('data','frame_parse_error','frame_unparsed','connection') ORDER BY ts DESC LIMIT 15;"
+                echo "-- recent 7878-framed data (last 10) --"
+                sqlite3 -header -column "$DB" "SELECT ts, imei, remote_address, byte_length, substr(COALESCE(raw_hex,''),1,80) AS raw_hex FROM tcp_inbound_requests WHERE event='data' AND upper(IFNULL(raw_hex,'')) LIKE '7878%' ORDER BY ts DESC LIMIT 10;"
               else
                 echo "sqlite3 or DB missing ($DB)"
               fi
 
-              echo "======== pm2 logs matching IMEI ========"
-              pm2 logs tracker --lines 400 --nostream 2>&1 | grep -F "$IMEI" | tail -50 || echo "(no IMEI matches in last 400 log lines)"
+              echo "======== pm2 logs matching IMEI / BCD ========"
+              pm2 logs tracker --lines 800 --nostream 2>&1 | grep -E "$IMEI_DIGITS|$IMEI_BCD|$IMEI_BCD_F" | tail -60 || echo "(no IMEI/BCD matches in last 800 log lines)"
               echo "======== pm2 logs 365GPS recent ========"
               pm2 logs tracker --lines 200 --nostream 2>&1 | grep -E '365GPS|RAW HEX|Warning:' | tail -40 || true
             fi
