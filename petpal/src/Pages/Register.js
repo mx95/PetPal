@@ -9,7 +9,7 @@ import { signInWithSocialProvider } from '../auth/socialAuth';
 import AuthSocialButtons from '../components/AuthSocialButtons';
 import { useI18n } from '../i18n/I18nContext';
 
-const AUTH_PACK_SRC = `${process.env.PUBLIC_URL || ''}/images/auth-pack-pets.png`;
+const AUTH_PACK_SRC = `${process.env.PUBLIC_URL || ''}/images/auth-pack-pets.jpg`;
 
 function normalizeAccountName(value) {
   return String(value || '').trim().toLocaleLowerCase();
