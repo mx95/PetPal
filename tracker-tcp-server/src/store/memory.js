@@ -149,9 +149,8 @@ function mergeDeviceRecord(prev, incoming) {
   if (incoming.homeLocation && hasValidGps(incoming.homeLocation)) {
     merged.homeLocation = incoming.homeLocation;
   }
-  if (incoming.source === "gps" && incoming.gpsValid !== false && hasValidGps(incoming.location)) {
-    merged.homeLocation = { lat: incoming.location.lat, lng: incoming.location.lng };
-  }
+  if (incoming.homeExplicit != null) merged.homeExplicit = incoming.homeExplicit;
+  else if (prev?.homeExplicit != null && merged.homeLocation) merged.homeExplicit = prev.homeExplicit;
   const incomingWifi = incoming.atHomeWifi || incoming.source === "wifi";
   const prevWifi = prev?.atHomeWifi || prev?.source === "wifi";
   if (
@@ -307,6 +306,7 @@ function createMemoryStore() {
         ...prev,
         imei: k,
         homeLocation: { lat: Number(lat), lng: Number(lng) },
+        homeExplicit: true,
       });
       return true;
     },

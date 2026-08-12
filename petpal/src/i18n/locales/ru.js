@@ -603,6 +603,10 @@ const ru = {
     brandDesc:
       'Поддерживаем семьи с питомцами надёжными инструментами заботы и проверенными местными сервисами.',
     rightsAndByline: 'Все права защищены · Создано с ❤️ любящими владельцами питомцев.',
+    socialNav: 'PetPal в соцсетях',
+    instagram: 'Instagram',
+    facebook: 'Facebook',
+    tiktok: 'TikTok',
   },
   legal: {
     privacyTitle: 'Политика конфиденциальности',
@@ -849,6 +853,9 @@ const ru = {
     loading: 'Загрузка…',
   },
   auth: {
+    continueWith: 'Или продолжить с',
+    continueGoogle: 'Продолжить с Google',
+    continueApple: 'Продолжить с Apple',
     errors: {
       incorrect: 'Неверный email или пароль.',
       invalidEmail: 'Введите корректный email.',
@@ -861,18 +868,26 @@ const ru = {
         'Регистрация не завершена: Firestore отклонил запись профиля. Временный пользователь Authentication был откатан, поэтому аккаунт не сохранён. Разверните правила Firestore для /users и попробуйте снова.',
       firebaseNotConfigured:
         'Firebase не настроен. Добавьте все REACT_APP_FIREBASE_* из консоли Firebase в .env.local и перезапустите dev-сервер.',
+      popupClosed: 'Вход отменён. Можно попробовать снова, когда будете готовы.',
+      accountExistsDifferent:
+        'Аккаунт с этим email уже есть через другой способ входа. Войдите тем способом.',
+      unauthorizedDomain:
+        'Этот домен не разрешён для входа. Добавьте его в Firebase Authentication → Settings → Authorized domains.',
+      providerDisabled:
+        'Вход через Google или Apple ещё не включён. Включите провайдера в Firebase Authentication или используйте email и пароль.',
     },
   },
   login: {
     welcomeEyebrow: 'С возвращением',
     welcome: 'Стая ждёт вас 🐾',
-    subtitle: 'Записывайте прогулки, открывайте достижения и берегите каждого питомца.',
-    benefit1: 'Записывайте прогулки и держите серию',
-    benefit2: 'Получайте пожизненные значки',
-    benefit3: 'Найдите ветклиники и парки рядом',
+    subtitle: 'Держите питомцев счастливыми, здоровыми и в безопасности — всё в одном месте.',
+    benefit1: 'Живой GPS-трекинг на каждой прогулке',
+    benefit2: 'NFC-профили ошейника и тревоги о пропаже',
+    benefit3: 'Найдите ветклиники, парки и места рядом',
+    packImageAlt: 'Золотистый ретривер и полосатый кот рядом',
     trustLine: 'Бесплатно во время бета · Отмена в любой момент',
-    formTitle: 'Вход',
-    formSubtitle: 'Используйте email и пароль.',
+    formTitle: 'С возвращением',
+    formSubtitle: 'Войдите, чтобы продолжить заботу о питомцах.',
     email: 'Email',
     password: 'Пароль',
     showPassword: 'Показать',
@@ -884,8 +899,8 @@ const ru = {
     cooldown: 'Слишком много попыток. Повторите через {sec}с.',
     loggingIn: 'Вход…',
     logIn: 'Войти',
-    securityHint: 'Вход зашифрован и защищён Firebase Auth.',
-    noAccountQ: 'Ещё нет аккаунта?',
+    securityHint: 'Ваши данные надёжно защищены.',
+    noAccountQ: 'Новичок в PetPal?',
     createAccount: 'Создать аккаунт',
   },
   forgotPassword: {
@@ -941,6 +956,8 @@ const ru = {
     businessNamePlaceholder: 'например, Riverside Dog Daycare',
     businessNameHint: 'Укажите официальное/публичное название бизнеса (минимум 2 символа).',
     termsError: 'Примите Условия и Политику конфиденциальности.',
+    socialIndividualOnly:
+      'Регистрация через Google и Apple — для аккаунтов владельцев питомцев. Выберите «Pet parent» или создайте бизнес-аккаунт по email.',
     businessNameError: 'Введите название бизнеса или выберите «Владелец».',
     nameRequired: 'Введите имя (минимум 2 символа).',
     usernameTaken: 'Это имя пользователя уже занято. Попробуйте другое.',

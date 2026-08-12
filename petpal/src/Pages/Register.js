@@ -5,7 +5,11 @@ import { doc, runTransaction, serverTimestamp, setDoc } from 'firebase/firestore
 import { auth, getDb, isFirebaseConfigured } from '../firebase';
 import { useAuth } from '../auth/AuthProvider';
 import { mapAuthError, normalizeEmail, trackAuthEvent } from '../auth/authUtils';
+import { signInWithSocialProvider } from '../auth/socialAuth';
+import AuthSocialButtons from '../components/AuthSocialButtons';
 import { useI18n } from '../i18n/I18nContext';
+
+const AUTH_PACK_SRC = `${process.env.PUBLIC_URL || ''}/images/auth-pack-pets.png`;
 
 function normalizeAccountName(value) {
   return String(value || '').trim().toLocaleLowerCase();
@@ -38,16 +42,46 @@ export default function Register() {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [accountType, setAccountType] = useState(/** @type {'individual' | 'company'} */ ('individual'));
   const [businessName, setBusinessName] = useState('');
+  const [socialBusy, setSocialBusy] = useState('');
 
   const passwordChecks = {
     len: password.length >= 8,
     upper: /[A-Z]/.test(password),
     number: /\d/.test(password),
   };
+  const busy = submitting || Boolean(socialBusy);
+
+  async function finishSocial(providerId) {
+    if (busy) return;
+    setError('');
+    setInfo('');
+    if (!acceptedTerms) {
+      setError(t('register.termsError'));
+      return;
+    }
+    if (accountType === 'company') {
+      setError(t('register.socialIndividualOnly'));
+      return;
+    }
+    setSocialBusy(providerId);
+    beginRegistrationTransaction();
+    try {
+      await signInWithSocialProvider(providerId);
+      completeRegistrationTransaction(true);
+      trackAuthEvent('register_social_success', { provider: providerId });
+      navigate('/', { replace: true });
+    } catch (err) {
+      completeRegistrationTransaction(false);
+      trackAuthEvent('register_social_failure', { provider: providerId, code: err?.code || 'unknown' });
+      setError(mapAuthError(err, t, 'register'));
+    } finally {
+      setSocialBusy('');
+    }
+  }
 
   async function onSubmit(e) {
     e.preventDefault();
-    if (submitting) return;
+    if (busy) return;
     setError('');
     setInfo('');
     const trimmedDisplayName = displayName.trim();
@@ -186,28 +220,41 @@ export default function Register() {
   return (
     <div className="pp-grid">
       <div className="pp-col-12">
-        <div className="pp-authPage">
+        <div className="pp-authPage pp-authPage--login">
           <aside className="pp-authPage__welcome">
-            <span className="pp-authPage__welcomeEyebrow">{t('register.welcomeEyebrow')}</span>
-            <div>
+            <div className="pp-authPage__welcomeTop">
+              <span className="pp-authPage__welcomeEyebrow">{t('register.welcomeEyebrow')}</span>
               <h1 className="pp-authPage__welcomeTitle">{t('register.title')}</h1>
-              <p className="pp-authPage__welcomeSub" style={{ marginTop: 8 }}>
-                {t('register.subtitle')}
-              </p>
+              <p className="pp-authPage__welcomeSub">{t('register.subtitle')}</p>
+              <ul className="pp-authPage__welcomeList">
+                <li>
+                  <span className="pp-authPage__welcomeIcon" aria-hidden>
+                    🐾
+                  </span>
+                  <span>{t('register.benefit1')}</span>
+                </li>
+                <li>
+                  <span className="pp-authPage__welcomeIcon" aria-hidden>
+                    🏅
+                  </span>
+                  <span>{t('register.benefit2')}</span>
+                </li>
+                <li>
+                  <span className="pp-authPage__welcomeIcon" aria-hidden>
+                    📍
+                  </span>
+                  <span>{t('register.benefit3')}</span>
+                </li>
+              </ul>
             </div>
-            <ul className="pp-authPage__welcomeList">
-              <li><span aria-hidden>🐶</span><span>{t('register.benefit1')}</span></li>
-              <li><span aria-hidden>🏅</span><span>{t('register.benefit2')}</span></li>
-              <li><span aria-hidden>🚨</span><span>{t('register.benefit3')}</span></li>
-            </ul>
-            <p className="pp-subtle" style={{ fontSize: 13, margin: 0 }}>{t('register.trustLine')}</p>
+            <figure className="pp-authPage__welcomeArt">
+              <img src={AUTH_PACK_SRC} alt={t('login.packImageAlt')} loading="lazy" decoding="async" />
+            </figure>
           </aside>
 
           <div className="pp-card pp-pad pp-authFormCard">
             <h2 className="pp-sectionTitle pp-authFormTitle">{t('register.formTitle')}</h2>
-            <p className="pp-subtle pp-authFormSubtitle">
-              {t('register.formSubtitle')}
-            </p>
+            <p className="pp-subtle pp-authFormSubtitle">{t('register.formSubtitle')}</p>
 
           <form className="pp-form" onSubmit={onSubmit}>
             <div>
@@ -219,6 +266,7 @@ export default function Register() {
                     name="accountType"
                     checked={accountType === 'individual'}
                     onChange={() => setAccountType('individual')}
+                    disabled={busy}
                   />
                   <span aria-hidden>🐾</span>
                   {t('register.accountOwner')}
@@ -229,6 +277,7 @@ export default function Register() {
                     name="accountType"
                     checked={accountType === 'company'}
                     onChange={() => setAccountType('company')}
+                    disabled={busy}
                   />
                   <span aria-hidden>🏪</span>
                   {t('register.accountBusiness')}
@@ -362,9 +411,17 @@ export default function Register() {
               </span>
             </label>
 
-            <button className="pp-btn pp-btnPrimary pp-btn--lg" disabled={submitting || !acceptedTerms}>
+            <button className="pp-btn pp-btnPrimary pp-btn--lg" disabled={busy || !acceptedTerms}>
               {submitting ? t('register.creating') : t('register.createAccount')}
             </button>
+
+            <AuthSocialButtons
+              busy={busy}
+              disabled={!acceptedTerms}
+              onGoogle={() => void finishSocial('google')}
+              onApple={() => void finishSocial('apple')}
+            />
+
             <p className="pp-subtle pp-authSwitchHint">
               {t('register.haveAccountQ')}{' '}
               <Link className="pp-link pp-link--inline" to="/login">

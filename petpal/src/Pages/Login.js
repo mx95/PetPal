@@ -3,7 +3,44 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../firebase';
 import { mapAuthError, normalizeEmail, trackAuthEvent } from '../auth/authUtils';
+import { signInWithSocialProvider } from '../auth/socialAuth';
+import AuthSocialButtons from '../components/AuthSocialButtons';
 import { useI18n } from '../i18n/I18nContext';
+
+const AUTH_PACK_SRC = `${process.env.PUBLIC_URL || ''}/images/auth-pack-pets.png`;
+
+const LOGIN_BENEFITS = [
+  { key: 'benefit1', icon: 'gps' },
+  { key: 'benefit2', icon: 'nfc' },
+  { key: 'benefit3', icon: 'nearby' },
+];
+
+function BenefitIcon({ type }) {
+  const common = { width: 18, height: 18, viewBox: '0 0 24 24', fill: 'none', 'aria-hidden': true };
+  if (type === 'nfc') {
+    return (
+      <svg {...common}>
+        <rect x="4" y="3.5" width="16" height="17" rx="3.5" stroke="currentColor" strokeWidth="1.8" />
+        <path d="M9 9.5c1.2-1.1 4.8-1.1 6 0M9.8 12.2c.8-.7 3.4-.7 4.2 0" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      </svg>
+    );
+  }
+  if (type === 'nearby') {
+    return (
+      <svg {...common}>
+        <path d="M12 21s6.5-5.2 6.5-10.2A6.5 6.5 0 0 0 12 4.3a6.5 6.5 0 0 0-6.5 6.5C5.5 15.8 12 21 12 21Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+        <circle cx="12" cy="10.8" r="2.2" stroke="currentColor" strokeWidth="1.6" />
+      </svg>
+    );
+  }
+  return (
+    <svg {...common}>
+      <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.8" />
+      <path d="M12 3v2.5M12 18.5V21M3 12h2.5M18.5 12H21" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <circle cx="12" cy="12" r="7.5" stroke="currentColor" strokeWidth="1.5" opacity="0.45" />
+    </svg>
+  );
+}
 
 export default function Login() {
   const { t } = useI18n();
@@ -15,6 +52,7 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [socialBusy, setSocialBusy] = useState('');
   const [cooldownUntil, setCooldownUntil] = useState(0);
   const [error, setError] = useState('');
 
@@ -23,10 +61,28 @@ export default function Login() {
   const formIsValid = emailIsValid && password.length > 0;
   const cooldownLeftSec = Math.max(0, Math.ceil((cooldownUntil - Date.now()) / 1000));
   const isCoolingDown = cooldownLeftSec > 0;
+  const busy = submitting || Boolean(socialBusy);
+
+  async function finishSocial(providerId) {
+    if (busy || isCoolingDown) return;
+    setError('');
+    setSocialBusy(providerId);
+    try {
+      await signInWithSocialProvider(providerId);
+      trackAuthEvent('login_social_success', { provider: providerId });
+      navigate(redirectTo, { replace: true });
+    } catch (err) {
+      if (err?.code === 'auth/too-many-requests') setCooldownUntil(Date.now() + 30_000);
+      trackAuthEvent('login_social_failure', { provider: providerId, code: err?.code || 'unknown' });
+      setError(mapAuthError(err, t, 'login'));
+    } finally {
+      setSocialBusy('');
+    }
+  }
 
   async function onSubmit(e) {
     e.preventDefault();
-    if (submitting || isCoolingDown) return;
+    if (busy || isCoolingDown) return;
     setError('');
     if (!auth) {
       setError(t('auth.errors.firebaseNotConfigured'));
@@ -49,28 +105,32 @@ export default function Login() {
   return (
     <div className="pp-grid">
       <div className="pp-col-12">
-        <div className="pp-authPage">
+        <div className="pp-authPage pp-authPage--login">
           <aside className="pp-authPage__welcome">
-            <span className="pp-authPage__welcomeEyebrow">{t('login.welcomeEyebrow')}</span>
-            <div>
+            <div className="pp-authPage__welcomeTop">
+              <span className="pp-authPage__welcomeEyebrow">{t('login.welcomeEyebrow')}</span>
               <h1 className="pp-authPage__welcomeTitle">{t('login.welcome')}</h1>
-              <p className="pp-authPage__welcomeSub" style={{ marginTop: 8 }}>
-                {t('login.subtitle')}
-              </p>
+              <p className="pp-authPage__welcomeSub">{t('login.subtitle')}</p>
+              <ul className="pp-authPage__welcomeList">
+                {LOGIN_BENEFITS.map(({ key, icon }) => (
+                  <li key={key}>
+                    <span className="pp-authPage__welcomeIcon" aria-hidden>
+                      <BenefitIcon type={icon} />
+                    </span>
+                    <span>{t(`login.${key}`)}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
-            <ul className="pp-authPage__welcomeList">
-              <li><span aria-hidden>🐾</span><span>{t('login.benefit1')}</span></li>
-              <li><span aria-hidden>🔥</span><span>{t('login.benefit2')}</span></li>
-              <li><span aria-hidden>📍</span><span>{t('login.benefit3')}</span></li>
-            </ul>
-            <p className="pp-subtle" style={{ fontSize: 13, margin: 0 }}>{t('login.trustLine')}</p>
+            <figure className="pp-authPage__welcomeArt">
+              <img src={AUTH_PACK_SRC} alt={t('login.packImageAlt')} loading="lazy" decoding="async" />
+            </figure>
           </aside>
 
           <div className="pp-card pp-pad pp-authFormCard">
             <h2 className="pp-sectionTitle pp-authFormTitle">{t('login.formTitle')}</h2>
-            <p className="pp-subtle pp-authFormSubtitle">
-              {t('login.formSubtitle')}
-            </p>
+            <p className="pp-subtle pp-authFormSubtitle">{t('login.formSubtitle')}</p>
+
             <form className="pp-form" onSubmit={onSubmit}>
               <div>
                 <div className="pp-label">{t('login.email')}</div>
@@ -86,6 +146,7 @@ export default function Login() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com"
+                  disabled={busy}
                 />
               </div>
               <div>
@@ -99,6 +160,7 @@ export default function Login() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
+                    disabled={busy}
                   />
                   <button
                     type="button"
@@ -135,7 +197,11 @@ export default function Login() {
                 </div>
               </div>
 
-              {error ? <div className="pp-error" role="alert">{error}</div> : null}
+              {error ? (
+                <div className="pp-error" role="alert">
+                  {error}
+                </div>
+              ) : null}
               {isCoolingDown ? <div className="pp-subtle">{t('login.cooldown', { sec: cooldownLeftSec })}</div> : null}
 
               <div className="pp-authRow">
@@ -144,9 +210,22 @@ export default function Login() {
                 </Link>
               </div>
 
-              <button className="pp-btn pp-btnPrimary pp-btn--lg" disabled={submitting || !formIsValid || isCoolingDown}>
+              <button
+                className="pp-btn pp-btnPrimary pp-btn--lg"
+                disabled={busy || !formIsValid || isCoolingDown}
+              >
                 {submitting ? t('login.loggingIn') : t('login.logIn')}
               </button>
+
+              <AuthSocialButtons
+                busy={busy}
+                disabled={isCoolingDown}
+                onGoogle={() => void finishSocial('google')}
+                onApple={() => void finishSocial('apple')}
+              />
+
+              <p className="pp-authTrust">{t('login.securityHint')}</p>
+
               <p className="pp-subtle pp-authSwitchHint">
                 {t('login.noAccountQ')}{' '}
                 <Link className="pp-link pp-link--inline" to="/register">

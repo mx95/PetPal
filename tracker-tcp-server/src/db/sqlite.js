@@ -142,6 +142,18 @@ function openSqlite(dbPath) {
   } catch {
     /* column exists */
   }
+  try {
+    db.exec(`ALTER TABLE devices ADD COLUMN home_explicit INTEGER NOT NULL DEFAULT 0`);
+  } catch {
+    /* column exists */
+  }
+  // Auto-learned homes (from GPS) must not be used until the user sets home explicitly.
+  db.exec(`
+    UPDATE devices
+    SET home_lat = NULL, home_lng = NULL
+    WHERE COALESCE(home_explicit, 0) = 0
+      AND (home_lat IS NOT NULL OR home_lng IS NOT NULL)
+  `);
   db.exec(`
     UPDATE positions
     SET received_at = timestamp
@@ -153,14 +165,15 @@ function openSqlite(dbPath) {
   `);
 
   const upsertDevice = db.prepare(`
-    INSERT INTO devices (imei, name, last_lat, last_lng, home_lat, home_lng, battery, signal, source, provider, last_update)
-    VALUES (@imei, @name, @last_lat, @last_lng, @home_lat, @home_lng, @battery, @signal, @source, @provider, @last_update)
+    INSERT INTO devices (imei, name, last_lat, last_lng, home_lat, home_lng, home_explicit, battery, signal, source, provider, last_update)
+    VALUES (@imei, @name, @last_lat, @last_lng, @home_lat, @home_lng, COALESCE(@home_explicit, 0), @battery, @signal, @source, @provider, @last_update)
     ON CONFLICT(imei) DO UPDATE SET
       name = COALESCE(excluded.name, devices.name),
       last_lat = COALESCE(excluded.last_lat, devices.last_lat),
       last_lng = COALESCE(excluded.last_lng, devices.last_lng),
       home_lat = COALESCE(excluded.home_lat, devices.home_lat),
       home_lng = COALESCE(excluded.home_lng, devices.home_lng),
+      home_explicit = COALESCE(excluded.home_explicit, devices.home_explicit),
       battery = COALESCE(excluded.battery, devices.battery),
       signal = COALESCE(excluded.signal, devices.signal),
       source = COALESCE(excluded.source, devices.source),
@@ -210,7 +223,7 @@ function openSqlite(dbPath) {
   `);
 
   const deviceSelectCols = `
-    imei, name, last_lat, last_lng, home_lat, home_lng, battery, signal, source, provider, last_update,
+    imei, name, last_lat, last_lng, home_lat, home_lng, home_explicit, battery, signal, source, provider, last_update,
     provider_override, gpspos_platform_imei, gpspos_poll_interval_sec, gpspos_poll_enabled, emnify_card
   `;
 

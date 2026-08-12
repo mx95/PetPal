@@ -536,6 +536,10 @@ const en = {
     brandDesc:
       'Supporting pet families with reliable care tools and trusted local resources.',
     rightsAndByline: 'All rights reserved · Created with ❤️ by fellow pet parents.',
+    socialNav: 'PetPal on social media',
+    instagram: 'Instagram',
+    facebook: 'Facebook',
+    tiktok: 'TikTok',
   },
   legal: {
     privacyTitle: 'Privacy policy',
@@ -780,6 +784,9 @@ const en = {
   },
   requireAuth: { loading: 'Loading…' },
   auth: {
+    continueWith: 'Or continue with',
+    continueGoogle: 'Continue with Google',
+    continueApple: 'Continue with Apple',
     errors: {
       incorrect: 'Incorrect email or password.',
       invalidEmail: 'Please enter a valid email address.',
@@ -792,18 +799,26 @@ const en = {
         'Registration could not be completed because Firestore denied the profile write. Any temporary auth user was rolled back, so no account was kept. Deploy Firestore rules for /users and try again.',
       firebaseNotConfigured:
         'Firebase is not configured. Add all REACT_APP_FIREBASE_* keys from the Firebase console to .env.local and restart the dev server.',
+      popupClosed: 'Sign-in was cancelled. You can try again when you’re ready.',
+      accountExistsDifferent:
+        'An account already exists with this email using a different sign-in method. Sign in with that method, then link providers in settings if needed.',
+      unauthorizedDomain:
+        'This domain is not authorized for sign-in. Add it under Firebase Authentication → Settings → Authorized domains.',
+      providerDisabled:
+        'Google or Apple sign-in is not enabled yet. Turn on the provider in Firebase Authentication, or use email and password.',
     },
   },
   login: {
     welcomeEyebrow: 'Welcome back',
     welcome: 'Your pack is waiting 🐾',
-    subtitle: 'Log walks, unlock achievements, and keep every pet safe — all in one place.',
-    benefit1: 'Track walks and build a streak',
-    benefit2: 'Earn lifetime achievements',
-    benefit3: 'Find vets, parks and cafés nearby',
+    subtitle: 'Keep your pets happy, healthy and safe — all in one place.',
+    benefit1: 'Live GPS tracking for every walk',
+    benefit2: 'NFC collar profiles and lost-pet alerts',
+    benefit3: 'Find vets, parks and pet-friendly places nearby',
+    packImageAlt: 'A golden retriever and a tabby cat sitting together',
     trustLine: 'Free to start · No credit card · Cancel anytime',
-    formTitle: 'Sign in',
-    formSubtitle: 'Use your email and password.',
+    formTitle: 'Welcome back',
+    formSubtitle: 'Sign in to continue caring for your pets.',
     email: 'Email',
     password: 'Password',
     showPassword: 'Show',
@@ -815,9 +830,9 @@ const en = {
     cooldown: 'Too many attempts. Try again in {sec}s.',
     loggingIn: 'Signing in…',
     logIn: 'Sign in',
-    securityHint: 'Your sign-in is encrypted and protected by Firebase Auth.',
-    noAccountQ: 'New here?',
-    createAccount: 'Create an account',
+    securityHint: 'Your information is securely protected.',
+    noAccountQ: 'New to PetPal?',
+    createAccount: 'Create your account',
   },
   forgotPassword: {
     title: 'Reset your password',
@@ -871,6 +886,8 @@ const en = {
     businessNamePlaceholder: 'e.g. Riverside Dog Daycare',
     businessNameHint: 'Enter your legal/public business name (minimum 2 characters).',
     termsError: 'Please accept the Terms of service and Privacy policy to continue.',
+    socialIndividualOnly:
+      'Google and Apple sign-up are for pet-parent accounts. Choose Pet parent, or create a business account with email.',
     businessNameError: 'Enter a business or venue name, or choose Individual account.',
     nameRequired: 'Enter your name (minimum 2 characters).',
     usernameTaken: 'That username is already in use. Try another one.',

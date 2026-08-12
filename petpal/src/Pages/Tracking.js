@@ -85,14 +85,12 @@ function pickLastKnownMapCoords(deviceId, liveHistoryFallback, lastKnownRef) {
   return null;
 }
 
-/** Map pin when collar reports home Wi‑Fi (saved home area from last GPS). */
-function pickHomeMapCoords(deviceId, position, liveHistoryFallback, lastKnownRef) {
+/** Map pin only when the user has set a home location for this device. */
+function pickHomeMapCoords(deviceId, position) {
   const fromApi = homeCoordsFromPosition(position);
   if (fromApi) return { lat: fromApi.lat, lng: fromApi.lng, mode: 'home' };
   const stored = loadHomeAnchor(deviceId);
   if (stored) return { lat: stored.lat, lng: stored.lng, mode: 'home' };
-  const last = pickLastKnownMapCoords(deviceId, liveHistoryFallback, lastKnownRef);
-  if (last) return { lat: last.lat, lng: last.lng, mode: 'home' };
   return null;
 }
 
@@ -818,12 +816,13 @@ export default function Tracking() {
     }
     lastKnownLiveRef.current = { deviceId: effectiveDeviceId, lat, lng };
     saveStoredLastCoords(effectiveDeviceId, lat, lng, { trusted: true });
-    saveHomeAnchor(effectiveDeviceId, lat, lng);
   }, [mapPosition, position, effectiveDeviceId]);
 
   useEffect(() => {
     const home = homeCoordsFromPosition(position);
-    if (home && effectiveDeviceId) saveHomeAnchor(effectiveDeviceId, home.lat, home.lng);
+    if (home && effectiveDeviceId) {
+      saveHomeAnchor(effectiveDeviceId, home.lat, home.lng, { source: 'api' });
+    }
   }, [position?.homeLat, position?.homeLng, effectiveDeviceId]);
 
   const hasImmediateLiveCoords = useMemo(() => {
@@ -862,7 +861,6 @@ export default function Tracking() {
               at: pointReceivedIso(p),
             });
             saveStoredLastCoords(effectiveDeviceId, Number(p.lat), Number(p.lng), { trusted: true });
-            saveHomeAnchor(effectiveDeviceId, Number(p.lat), Number(p.lng));
             return;
           }
         }
@@ -897,12 +895,7 @@ export default function Tracking() {
       return { lat: Number(position.lat), lng: Number(position.lng), mode: 'live' };
     }
     if (wifiTrackingEnabled && displayPosition?.atHomeWifi) {
-      const home = pickHomeMapCoords(
-        effectiveDeviceId,
-        displayPosition,
-        liveHistoryFallback,
-        lastKnownLiveRef
-      );
+      const home = pickHomeMapCoords(effectiveDeviceId, displayPosition);
       if (home) return home;
       return null;
     }

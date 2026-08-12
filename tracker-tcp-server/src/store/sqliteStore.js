@@ -15,16 +15,14 @@ function toDeviceRow(rec) {
   const loc = rec.location || rec.gps || null;
   const last_lat = hasFiniteLatLng(loc) ? Number(loc.lat) : null;
   const last_lng = hasFiniteLatLng(loc) ? Number(loc.lng) : null;
-  const isGpsHome =
-    rec.source === "gps" && rec.gpsValid !== false && hasFiniteLatLng(loc);
   let home_lat = null;
   let home_lng = null;
-  if (rec.homeLocation && hasFiniteLatLng(rec.homeLocation)) {
+  let home_explicit = null;
+  // Only persist home when the user explicitly set it (never auto-learn from GPS).
+  if (rec.homeExplicit && rec.homeLocation && hasFiniteLatLng(rec.homeLocation)) {
     home_lat = Number(rec.homeLocation.lat);
     home_lng = Number(rec.homeLocation.lng);
-  } else if (isGpsHome) {
-    home_lat = Number(loc.lat);
-    home_lng = Number(loc.lng);
+    home_explicit = 1;
   }
 
   return {
@@ -34,6 +32,7 @@ function toDeviceRow(rec) {
     last_lng,
     home_lat,
     home_lng,
+    home_explicit,
     battery: rec.battery ?? null,
     signal: rec.signal ?? null,
     source: rec.source ?? null,
@@ -121,8 +120,9 @@ function deviceFromRow(row) {
   const hasLoc = !wifiSource && lat != null && lng != null && isPlausibleLatLng(lat, lng);
   const homeLat = row.home_lat != null ? Number(row.home_lat) : null;
   const homeLng = row.home_lng != null ? Number(row.home_lng) : null;
+  const homeExplicit = Number(row.home_explicit) === 1;
   const homeLocation =
-    homeLat != null && homeLng != null && isPlausibleLatLng(homeLat, homeLng)
+    homeExplicit && homeLat != null && homeLng != null && isPlausibleLatLng(homeLat, homeLng)
       ? { lat: homeLat, lng: homeLng }
       : null;
   return {
@@ -134,6 +134,7 @@ function deviceFromRow(row) {
     provider: row.provider ?? null,
     atHomeWifi: wifiSource,
     homeLocation,
+    homeExplicit: homeExplicit || undefined,
     lastUpdate: row.last_update ?? null,
     location: hasLoc ? { lat, lng } : null,
     gps: hasLoc
@@ -143,20 +144,19 @@ function deviceFromRow(row) {
 }
 
 /**
- * Store contract used by HTTP routes and TCP handler:
- * - keep command queues / sockets in memory
- * - persist device snapshots + positions into SQLite
+ * Attach user-set home only — never invent home from last GPS.
  */
 function attachHomeIfMissing(device, imei, sqlite) {
   if (!device || device.homeLocation) return;
   const row = sqlite.getDevice.get(String(imei));
-  if (row?.home_lat != null && row?.home_lng != null && isPlausibleLatLng(row.home_lat, row.home_lng)) {
+  if (
+    Number(row?.home_explicit) === 1 &&
+    row?.home_lat != null &&
+    row?.home_lng != null &&
+    isPlausibleLatLng(row.home_lat, row.home_lng)
+  ) {
     device.homeLocation = { lat: Number(row.home_lat), lng: Number(row.home_lng) };
-    return;
-  }
-  const gps = sqlite.getLastGpsPosition.get(String(imei));
-  if (gps && isPlausibleLatLng(gps.lat, gps.lng)) {
-    device.homeLocation = { lat: Number(gps.lat), lng: Number(gps.lng) };
+    device.homeExplicit = true;
   }
 }
 
@@ -360,6 +360,7 @@ function createSqliteStore({ dbPath }) {
         last_lng: row?.last_lng ?? null,
         home_lat: Number(lat),
         home_lng: Number(lng),
+        home_explicit: 1,
         battery: row?.battery ?? null,
         signal: row?.signal ?? null,
         source: row?.source ?? null,

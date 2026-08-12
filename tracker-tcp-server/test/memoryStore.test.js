@@ -101,3 +101,26 @@ test("memory store — GPS fix clears stale atHomeWifi and returns coords with w
   assert.equal(payload.lng, 33.08);
   assert.equal(payload.source, "gps");
 });
+
+test("memory store — GPS uplink does not invent home location", () => {
+  const store = createMemoryStore();
+  const imei = "861261021497999";
+
+  store.upsert(imei, {
+    imei,
+    provider: "g365",
+    source: "gps",
+    gpsValid: true,
+    location: { lat: 34.71, lng: 33.07 },
+    receivedAt: new Date().toISOString(),
+  });
+
+  const rec = store.get(imei);
+  assert.equal(rec.homeLocation, undefined);
+  assert.ok(!rec.homeExplicit);
+
+  store.setHomeLocation(imei, 35.0, 33.5);
+  const withHome = store.get(imei);
+  assert.equal(withHome.homeLocation?.lat, 35.0);
+  assert.equal(withHome.homeExplicit, true);
+});

@@ -2,6 +2,9 @@ import { hasPlausibleMapCoords } from './positionFilter';
 
 const HOME_ANCHOR_KEY = 'petpal_home_anchor_v1';
 
+/** Only anchors the user (or device after user set) explicitly saved — never auto GPS. */
+const EXPLICIT_HOME_SOURCES = new Set(['phone', 'map-pin', 'api', 'device', 'user']);
+
 function readAll() {
   try {
     return JSON.parse(localStorage.getItem(HOME_ANCHOR_KEY) || '{}');
@@ -10,11 +13,18 @@ function readAll() {
   }
 }
 
+/** @param {{ source?: string }|null|undefined} entry */
+export function isExplicitHomeAnchor(entry) {
+  if (!entry) return false;
+  return EXPLICIT_HOME_SOURCES.has(String(entry.source || ''));
+}
+
 /** @returns {{ lat: number, lng: number, source?: string }|null} */
 export function loadHomeAnchor(imei) {
   if (!imei) return null;
   const entry = readAll()[imei];
   if (!entry || !hasPlausibleMapCoords(entry)) return null;
+  if (!isExplicitHomeAnchor(entry)) return null;
   if (isLikelyBadCellHomeAnchor(entry)) return null;
   return { lat: Number(entry.lat), lng: Number(entry.lng), source: entry.source };
 }
