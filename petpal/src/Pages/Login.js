@@ -7,15 +7,24 @@ import { signInWithSocialProvider } from '../auth/socialAuth';
 import AuthSocialButtons from '../components/AuthSocialButtons';
 import { useI18n } from '../i18n/I18nContext';
 
-const AUTH_PACK_SRC = `${process.env.PUBLIC_URL || ''}/images/auth-pack-pets.jpg`;
+const AUTH_PACK_SRC = `${process.env.PUBLIC_URL || ''}/images/auth-pack-pets.png`;
 
-const LOGIN_BENEFITS = [
-  { key: 'benefit1', icon: 'gps' },
-  { key: 'benefit2', icon: 'nfc' },
-  { key: 'benefit3', icon: 'nearby' },
+const DESKTOP_FEATURES = [
+  { key: 'benefit1', descKey: 'benefit1Desc', icon: 'gps' },
+  { key: 'benefit2', descKey: 'benefit2Desc', icon: 'nfc' },
+  { key: 'benefit3', descKey: 'benefit3Desc', icon: 'nearby' },
 ];
 
-function BenefitIcon({ type }) {
+const MOBILE_FEATURES = [
+  { key: 'mobileGps', icon: 'gps' },
+  { key: 'mobileNfc', icon: 'nfc' },
+  { key: 'mobileBooking', icon: 'booking' },
+  { key: 'mobileNearby', icon: 'nearby' },
+  { key: 'mobileShop', icon: 'shop' },
+  { key: 'mobileAchievements', icon: 'achievements' },
+];
+
+function FeatureIcon({ type }) {
   const common = { width: 18, height: 18, viewBox: '0 0 24 24', fill: 'none', 'aria-hidden': true };
   if (type === 'nfc') {
     return (
@@ -30,6 +39,30 @@ function BenefitIcon({ type }) {
       <svg {...common}>
         <path d="M12 21s6.5-5.2 6.5-10.2A6.5 6.5 0 0 0 12 4.3a6.5 6.5 0 0 0-6.5 6.5C5.5 15.8 12 21 12 21Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
         <circle cx="12" cy="10.8" r="2.2" stroke="currentColor" strokeWidth="1.6" />
+      </svg>
+    );
+  }
+  if (type === 'booking') {
+    return (
+      <svg {...common}>
+        <rect x="3.5" y="5" width="17" height="15" rx="2.5" stroke="currentColor" strokeWidth="1.8" />
+        <path d="M8 3.5V7M16 3.5V7M3.5 10h17" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      </svg>
+    );
+  }
+  if (type === 'shop') {
+    return (
+      <svg {...common}>
+        <path d="M7.5 8.5h9l1.2 9.2a1.8 1.8 0 0 1-1.8 2H8.1a1.8 1.8 0 0 1-1.8-2L7.5 8.5Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+        <path d="M9 8.5V7a3 3 0 0 1 6 0v1.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      </svg>
+    );
+  }
+  if (type === 'achievements') {
+    return (
+      <svg {...common}>
+        <circle cx="12" cy="9" r="4.2" stroke="currentColor" strokeWidth="1.8" />
+        <path d="M12 13.2V17M9.2 20l2.8-3 2.8 3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     );
   }
@@ -103,39 +136,57 @@ export default function Login() {
   }
 
   return (
-    <div className="pp-grid">
-      <div className="pp-col-12">
-        <div className="pp-authPage pp-authPage--login">
-          <aside className="pp-authPage__welcome">
-            <div className="pp-authPage__welcomeTop">
-              <span className="pp-authPage__welcomeEyebrow">{t('login.welcomeEyebrow')}</span>
-              <h1 className="pp-authPage__welcomeTitle">{t('login.welcome')}</h1>
-              <p className="pp-authPage__welcomeSub">{t('login.subtitle')}</p>
-              <ul className="pp-authPage__welcomeList">
-                {LOGIN_BENEFITS.map(({ key, icon }) => (
-                  <li key={key}>
-                    <span className="pp-authPage__welcomeIcon" aria-hidden>
-                      <BenefitIcon type={icon} />
-                    </span>
-                    <span>{t(`login.${key}`)}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <figure className="pp-authPage__welcomeArt">
-              <img src={AUTH_PACK_SRC} alt={t('login.packImageAlt')} loading="lazy" decoding="async" />
-            </figure>
-          </aside>
+    <div className="pp-authLogin">
+      <div className="pp-authLogin__layout">
+        <aside className="pp-authLogin__hero" aria-labelledby="login-hero-title">
+          <div className="pp-authLogin__heroGlow" aria-hidden />
+          <div className="pp-authLogin__heroCopy">
+            <span className="pp-authLogin__eyebrow">{t('login.welcomeEyebrow')}</span>
+            <h1 id="login-hero-title" className="pp-authLogin__title">
+              {t('login.welcome')}
+            </h1>
+            <p className="pp-authLogin__sub">{t('login.subtitle')}</p>
+            <ul className="pp-authLogin__desktopFeatures">
+              {DESKTOP_FEATURES.map(({ key, descKey, icon }) => (
+                <li key={key}>
+                  <span className="pp-authLogin__featureIcon" aria-hidden>
+                    <FeatureIcon type={icon} />
+                  </span>
+                  <div>
+                    <strong>{t(`login.${key}`)}</strong>
+                    <span>{t(`login.${descKey}`)}</span>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <figure className="pp-authLogin__art">
+            <img src={AUTH_PACK_SRC} alt={t('login.packImageAlt')} loading="eager" decoding="async" />
+          </figure>
+        </aside>
 
-          <div className="pp-card pp-pad pp-authFormCard">
-            <h2 className="pp-sectionTitle pp-authFormTitle">{t('login.formTitle')}</h2>
+        <ul className="pp-authLogin__mobileFeatures" aria-label={t('login.mobileFeaturesAria')}>
+          {MOBILE_FEATURES.map(({ key, icon }) => (
+            <li key={key}>
+              <span className="pp-authLogin__featureIcon" aria-hidden>
+                <FeatureIcon type={icon} />
+              </span>
+              <strong>{t(`login.${key}.title`)}</strong>
+              <span>{t(`login.${key}.desc`)}</span>
+            </li>
+          ))}
+        </ul>
+
+        <div className="pp-authLogin__formCol">
+          <div className="pp-authFormCard pp-authLogin__card">
+            <h2 className="pp-authFormTitle">{t('login.formTitle')}</h2>
             <p className="pp-subtle pp-authFormSubtitle">{t('login.formSubtitle')}</p>
 
-            <form className="pp-form" onSubmit={onSubmit}>
+            <form className="pp-form pp-authLogin__form" onSubmit={onSubmit}>
               <div>
                 <div className="pp-label">{t('login.email')}</div>
                 <input
-                  className="pp-input"
+                  className="pp-input pp-authLogin__input"
                   type="email"
                   required
                   inputMode="email"
@@ -153,7 +204,7 @@ export default function Login() {
                 <div className="pp-label">{t('login.password')}</div>
                 <div className="pp-authPasswordWrap">
                   <input
-                    className="pp-input pp-input--withRightIcon"
+                    className="pp-input pp-input--withRightIcon pp-authLogin__input"
                     type={showPassword ? 'text' : 'password'}
                     required
                     autoComplete="current-password"
@@ -211,7 +262,7 @@ export default function Login() {
               </div>
 
               <button
-                className="pp-btn pp-btnPrimary pp-btn--lg"
+                className="pp-btn pp-btnPrimary pp-btn--lg pp-authLogin__submit"
                 disabled={busy || !formIsValid || isCoolingDown}
               >
                 {submitting ? t('login.loggingIn') : t('login.logIn')}
@@ -221,9 +272,8 @@ export default function Login() {
                 busy={busy}
                 disabled={isCoolingDown}
                 onGoogle={() => void finishSocial('google')}
+                onApple={() => void finishSocial('apple')}
               />
-
-              <p className="pp-authTrust">{t('login.securityHint')}</p>
 
               <p className="pp-subtle pp-authSwitchHint">
                 {t('login.noAccountQ')}{' '}
@@ -231,6 +281,8 @@ export default function Login() {
                   {t('login.createAccount')}
                 </Link>
               </p>
+
+              <p className="pp-authTrust">{t('login.securityHint')}</p>
             </form>
           </div>
         </div>

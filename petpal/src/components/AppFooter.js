@@ -42,7 +42,6 @@ function SocialGlyph({ id }) {
       </svg>
     );
   }
-  // Instagram glyph
   return (
     <svg {...common}>
       <rect x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="currentColor" strokeWidth="1.7" />
@@ -84,25 +83,25 @@ export function AppFooter() {
           </section>
         </div>
 
-        <p className="pp-footer__note">
-          © {new Date().getFullYear()} PetPal. {t('footer.rightsAndByline')}
-          {' · '}
-          <Link className="pp-footer__inlineLink" to="/privacy">
-            {t('footer.privacyPolicy')}
-          </Link>
-          {' · '}
-          <Link className="pp-footer__inlineLink" to="/terms">
-            {t('footer.terms')}
-          </Link>
-          {' · '}
-          <Link className="pp-footer__inlineLink" to="/contact">
-            {t('footer.contact')}
-          </Link>
-          {' · '}
-          <button type="button" className="pp-footer__inlineLink pp-footer__linkBtn" onClick={reopenCookieSettings}>
-            {t('footer.cookieSettings')}
-          </button>
-        </p>
+        <div className="pp-footer__bottom">
+          <p className="pp-footer__copy">
+            © {new Date().getFullYear()} PetPal. {t('footer.rightsAndByline')}
+          </p>
+          <nav className="pp-footer__legal" aria-label={t('footer.legal')}>
+            <Link className="pp-footer__inlineLink" to="/privacy">
+              {t('footer.privacyPolicy')}
+            </Link>
+            <Link className="pp-footer__inlineLink" to="/terms">
+              {t('footer.terms')}
+            </Link>
+            <Link className="pp-footer__inlineLink" to="/contact">
+              {t('footer.contact')}
+            </Link>
+            <button type="button" className="pp-footer__inlineLink pp-footer__linkBtn" onClick={reopenCookieSettings}>
+              {t('footer.cookieSettings')}
+            </button>
+          </nav>
+        </div>
       </div>
     </footer>
   );
