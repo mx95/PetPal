@@ -793,7 +793,10 @@ const en = {
     errors: {
       incorrect: 'Incorrect email or password.',
       invalidEmail: 'Please enter a valid email address.',
+      missingPassword: 'Please enter your password.',
       tooMany: 'Too many attempts. Try again later.',
+      userDisabled: 'This account has been disabled. Contact support if you need help.',
+      network: 'Network error. Check your connection and try again.',
       loginGeneric: 'Login failed. Please try again.',
       emailInUse: 'That email is already registered.',
       weakPassword: 'Password must be at least 6 characters.',
