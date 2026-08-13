@@ -245,6 +245,7 @@ export default function Profile() {
     ...(isAdmin ? [{ key: 'admin', to: '/admin', icon: ICONS.admin, accent: 'admin' }] : []),
     ...(isAdmin ? [{ key: 'adminBookings', to: '/admin/bookings', icon: ICONS.adminBookings, accent: 'admin' }] : []),
     ...(isAdmin ? [{ key: 'adminOrders', to: '/admin/orders', icon: ICONS.orders, accent: 'admin' }] : []),
+    ...(isAdmin ? [{ key: 'adminSupport', to: '/admin/support', icon: ICONS.admin, accent: 'admin' }] : []),
   ];
 
   async function onPickPhoto(e) {

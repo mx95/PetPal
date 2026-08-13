@@ -4,6 +4,7 @@ import { useAuth } from '../auth/AuthProvider';
 import { useCompany } from '../company/CompanyContext';
 import { useI18n } from '../i18n/I18nContext';
 import AdminRecentOrdersPanel from '../admin/AdminRecentOrdersPanel';
+import AdminRecentSupportPanel from '../admin/AdminRecentSupportPanel';
 import AdminUsersNfcPanel from '../admin/AdminUsersNfcPanel';
 
 function AdminActionCard({ to, icon, title, desc }) {
@@ -95,6 +96,12 @@ export default function AdminHub() {
             desc={t('admin.hub.bookingsDesc')}
           />
           <AdminActionCard
+            to="/admin/support"
+            icon="💬"
+            title={t('admin.hub.supportTitle')}
+            desc={t('admin.hub.supportDesc')}
+          />
+          <AdminActionCard
             to="/admin/orders"
             icon="📦"
             title={t('admin.hub.ordersTitle')}
@@ -105,6 +112,10 @@ export default function AdminHub() {
 
       <div className="pp-col-12">
         <AdminUsersNfcPanel enabled={Boolean(isAdmin && firebaseReady)} />
+      </div>
+
+      <div className="pp-col-12">
+        <AdminRecentSupportPanel enabled={Boolean(isAdmin && firebaseReady)} />
       </div>
 
       <div className="pp-col-12">

@@ -22763,6 +22763,10 @@ html[data-theme="dark"] .pp-nearbyPartnerCard__name {
   font-size: 2rem;
 }
 
+.pp-contactPage__mailto {
+  margin: 12px 0 0;
+}
+
 .pp-shopCard--hardware {
   border-color: rgba(91, 55, 255, 0.2);
 }
@@ -23533,5 +23537,18 @@ html[lang='ru'] .pp-brand {
   .pp-adminBookingsIds__label {
     grid-column: 1 / -1;
   }
+}
+
+.pp-adminSupportMessage {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  margin: 0 0 12px;
+  line-height: 1.45;
+}
+
+.pp-adminSupportActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
