@@ -20449,10 +20449,8 @@ html[data-theme="dark"] .pp-nearby-list > li {
 }
 
 .pp-nfcDesignSelector__carousel {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 6px;
+  display: block;
+  min-width: 0;
 }
 
 .pp-nfcDesignSelector__track {
@@ -20466,8 +20464,9 @@ html[data-theme="dark"] .pp-nearby-list > li {
   overscroll-behavior-x: contain;
   touch-action: pan-x;
   scrollbar-width: thin;
-  padding: 6px 4px 10px;
+  padding: 6px 2px 10px;
   min-width: 0;
+  width: 100%;
 }
 
 .pp-nfcDesignSelector__track::-webkit-scrollbar {
@@ -20481,48 +20480,14 @@ html[data-theme="dark"] .pp-nearby-list > li {
 
 .pp-nfcDesignSelector__slide {
   flex: 0 0 auto;
-  width: min(118px, 42vw);
+  width: min(132px, 46vw);
   scroll-snap-align: center;
   min-width: 0;
 }
 
-.pp-nfcDesignSelector__nav {
-  width: 36px;
-  height: 36px;
-  margin: 0;
-  padding: 0;
-  border-radius: 999px;
-  border: 1px solid rgba(109, 76, 255, 0.25);
-  background: #fff;
-  color: #6d4cff;
-  font-size: 1.35rem;
-  font-weight: 700;
-  line-height: 1;
-  cursor: pointer;
-  flex-shrink: 0;
-  display: grid;
-  place-items: center;
-  box-shadow: 0 2px 8px rgba(16, 24, 40, 0.08);
-}
-
-.pp-nfcDesignSelector__nav:hover:not(:disabled) {
-  background: rgba(109, 76, 255, 0.08);
-}
-
-.pp-nfcDesignSelector__nav:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
 @media (max-width: 420px) {
-  .pp-nfcDesignSelector__nav {
-    width: 32px;
-    height: 32px;
-    font-size: 1.2rem;
-  }
-
   .pp-nfcDesignSelector__slide {
-    width: min(108px, 46vw);
+    width: min(120px, 48vw);
   }
 }
 
@@ -23014,13 +22979,7 @@ html[data-theme="dark"] .pp-nearbyPartnerCard__name {
   }
 
   .pp-shopPage .pp-nfcDesignSelector__slide {
-    width: 84px;
-  }
-
-  .pp-shopPage .pp-nfcDesignSelector__nav {
-    width: 28px;
-    height: 28px;
-    font-size: 1.1rem;
+    width: 92px;
   }
 
   .pp-shopPage .pp-nfcDesignCard {

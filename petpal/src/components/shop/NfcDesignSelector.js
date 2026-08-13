@@ -1,10 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useRef } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { useI18n } from '../../i18n/I18nContext';
 import { getNfcTagDesignById, NFC_TAG_DESIGNS } from '../../data/nfcTagDesigns';
 import NfcDesignCard from './NfcDesignCard';
 
 /**
- * NFC tag design picker — horizontal snap carousel (touch + arrow controls).
+ * NFC tag design picker — horizontal snap carousel (touch / scroll only).
  *
  * @param {{
  *   selectedDesignId: number,
@@ -26,14 +26,6 @@ export default function NfcDesignSelector({
     [selectedDesignId, designs]
   );
 
-  const scrollByCards = useCallback((dir) => {
-    const el = trackRef.current;
-    if (!el) return;
-    const card = el.querySelector('.pp-nfcDesignCard');
-    const step = card ? card.getBoundingClientRect().width + 10 : Math.max(120, el.clientWidth * 0.7);
-    el.scrollBy({ left: dir * step, behavior: 'smooth' });
-  }, []);
-
   useEffect(() => {
     const el = trackRef.current;
     if (!el || !selected?.id) return;
@@ -43,8 +35,7 @@ export default function NfcDesignSelector({
       typeof window !== 'undefined' &&
       window.matchMedia &&
       window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const target =
-      card.offsetLeft - (el.clientWidth - card.offsetWidth) / 2;
+    const target = card.offsetLeft - (el.clientWidth - card.offsetWidth) / 2;
     el.scrollTo({
       left: Math.max(0, target),
       behavior: reduceMotion ? 'auto' : 'smooth',
@@ -68,16 +59,6 @@ export default function NfcDesignSelector({
       </div>
 
       <div className="pp-nfcDesignSelector__carousel">
-        <button
-          type="button"
-          className="pp-nfcDesignSelector__nav pp-nfcDesignSelector__nav--prev"
-          aria-label={t('shopPage.nfcDesignPrev')}
-          disabled={disabled}
-          onClick={() => scrollByCards(-1)}
-        >
-          ‹
-        </button>
-
         <div className="pp-nfcDesignSelector__track" ref={trackRef} tabIndex={0}>
           {designs.map((design) => (
             <div
@@ -94,16 +75,6 @@ export default function NfcDesignSelector({
             </div>
           ))}
         </div>
-
-        <button
-          type="button"
-          className="pp-nfcDesignSelector__nav pp-nfcDesignSelector__nav--next"
-          aria-label={t('shopPage.nfcDesignNext')}
-          disabled={disabled}
-          onClick={() => scrollByCards(1)}
-        >
-          ›
-        </button>
       </div>
     </div>
   );
