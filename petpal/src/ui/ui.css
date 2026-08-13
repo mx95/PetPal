@@ -15008,48 +15008,73 @@ select.pp-bookConfirmField__control {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.pp-book-filtersCard {
+  padding: 16px !important;
+}
+
 .pp-book-filtersCard__title {
-  margin: 0 0 8px;
+  margin: 0 0 10px;
   font-size: 14px;
   font-weight: 900;
   letter-spacing: -0.03em;
   color: var(--book-text);
+  line-height: 1.2;
 }
 
 .pp-book-filtersCard__title--service {
-  margin-top: 12px;
-  margin-bottom: 8px;
-  padding-top: 10px;
+  margin-top: 14px;
+  margin-bottom: 10px;
+  padding-top: 12px;
   border-top: 1px solid rgba(16, 24, 40, 0.06);
 }
 
 .pp-book-field--search {
   margin-bottom: 0;
+  gap: 0;
 }
 
 .pp-book-searchWrap {
   position: relative;
   display: block;
+  width: 100%;
 }
 
 .pp-book-searchWrap__icon {
   position: absolute;
-  left: 12px;
+  left: 14px;
   top: 50%;
   transform: translateY(-50%);
   display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
   color: #667085;
   pointer-events: none;
+  z-index: 1;
 }
 
 .pp-book-input--search {
-  padding-left: 40px;
-  min-height: 44px;
-  padding-top: 9px;
-  padding-bottom: 9px;
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 11px 14px 11px 44px;
+  min-height: 46px;
+  line-height: 1.35;
   background: #fff;
-  border-color: rgba(79, 70, 229, 0.18);
-  box-shadow: inset 0 0 0 1px rgba(79, 70, 229, 0.04);
+  border: 1px solid rgba(79, 70, 229, 0.2);
+  border-radius: 12px;
+  box-shadow: inset 0 0 0 1px rgba(79, 70, 229, 0.03);
+}
+
+.pp-book-input--search::-webkit-search-decoration,
+.pp-book-input--search::-webkit-search-cancel-button,
+.pp-book-input--search::-webkit-search-results-button,
+.pp-book-input--search::-webkit-search-results-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+  display: none;
 }
 
 .pp-book-input--search::placeholder {

@@ -17,7 +17,9 @@ export function SectionHeader({ eyebrow, title, subtitle, subtitleClassName, act
             {eyebrow}
           </div>
         ) : null}
-        <h1 className="text-3xl font-black tracking-[-0.04em] text-petpal-ink sm:text-4xl lg:text-5xl">{title}</h1>
+        {title ? (
+          <h1 className="text-3xl font-black tracking-[-0.04em] text-petpal-ink sm:text-4xl lg:text-5xl">{title}</h1>
+        ) : null}
         {subtitle ? (
           <p className={cx('mt-4 text-base leading-7 text-petpal-muted sm:text-lg', subtitleClassName)}>{subtitle}</p>
         ) : null}
