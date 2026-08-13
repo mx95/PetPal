@@ -2484,6 +2484,13 @@ const el = {
       companyLabel: 'Εταιρεία',
       details: 'Λεπτομέρειες',
       hideDetails: 'Απόκρυψη λεπτομερειών',
+      colWhen: 'Πότε',
+      colPet: 'Κατοικίδιο',
+      colCustomer: 'Πελάτης',
+      colService: 'Υπηρεσία',
+      colProvider: 'Πάροχος',
+      colStatus: 'Κατάσταση',
+      walkIn: 'Walk-in',
     },
     companyQueue: {
       title: 'Αιτήσεις επιχειρήσεων',

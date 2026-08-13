@@ -2447,6 +2447,13 @@ const ru = {
       companyLabel: 'Компания',
       details: 'Детали',
       hideDetails: 'Скрыть детали',
+      colWhen: 'Когда',
+      colPet: 'Питомец',
+      colCustomer: 'Клиент',
+      colService: 'Услуга',
+      colProvider: 'Провайдер',
+      colStatus: 'Статус',
+      walkIn: 'Без записи',
     },
     companyQueue: {
       title: 'Заявки компаний',

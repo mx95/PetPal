@@ -2303,6 +2303,13 @@ const en = {
       companyLabel: 'Company',
       details: 'Details',
       hideDetails: 'Hide details',
+      colWhen: 'When',
+      colPet: 'Pet',
+      colCustomer: 'Customer',
+      colService: 'Service',
+      colProvider: 'Provider',
+      colStatus: 'Status',
+      walkIn: 'Walk-in',
     },
     companyQueue: {
       title: 'Business applications',
