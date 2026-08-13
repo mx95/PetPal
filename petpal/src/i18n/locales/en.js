@@ -1627,6 +1627,7 @@ const en = {
     recommendedBusinessesAria: 'PetPal recommended businesses',
     recommendedTitle: 'Recommended on PetPal',
     recommendedSub: 'Boosted vet, groom, and hotel partners — book services from Bookings',
+    recommendedBadge: 'Recommended',
     partnerBadge: 'Partner',
     businessFallback: 'Business',
     partnerDistanceCta: '{km} km · View and book →',

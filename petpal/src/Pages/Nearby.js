@@ -339,20 +339,29 @@ function NearbyMap({ apiKey }) {
   return (
     <div className="pp-nearby-page">
       {isBookingBrowseEnabled() && petpalPartners.length ? (
-        <section className="pp-sponsoredRail pp-nearbyPartners" aria-label={t('nearbyPage.recommendedBusinessesAria')}>
-          <div className="pp-sponsoredRail__head">
-            <span>{t('nearbyPage.recommendedTitle')}</span>
-            <small>{t('nearbyPage.recommendedSub')}</small>
-          </div>
-          <div className="pp-sponsoredRail__row pp-nearbyPartners__row">
+        <section
+          className={`pp-nearbyPartners${petpalPartners.length > 1 ? ' pp-nearbyPartners--carousel' : ''}`}
+          aria-label={t('nearbyPage.recommendedBusinessesAria')}
+        >
+          <div className="pp-nearbyPartners__row" role="list">
             {petpalPartners.map(({ p, km }) => (
               <Link
                 key={String(p.id)}
                 to={`/bookings/provider/${encodeURIComponent(String(p.id))}`}
                 className="pp-nearbyPartnerCard"
+                role="listitem"
               >
-                <span className="pp-nearbyPartnerCard__badge">{t('nearbyPage.partnerBadge')}</span>
-                <strong className="pp-nearbyPartnerCard__name">{String(p.displayName || t('nearbyPage.businessFallback'))}</strong>
+                <div className="pp-nearbyPartnerCard__tags">
+                  <span className="pp-nearbyPartnerCard__badge pp-nearbyPartnerCard__badge--recommended">
+                    {t('nearbyPage.recommendedBadge')}
+                  </span>
+                  <span className="pp-nearbyPartnerCard__badge pp-nearbyPartnerCard__badge--partner">
+                    {t('nearbyPage.partnerBadge')}
+                  </span>
+                </div>
+                <strong className="pp-nearbyPartnerCard__name">
+                  {String(p.displayName || t('nearbyPage.businessFallback'))}
+                </strong>
                 {p.address ? <span className="pp-nearbyPartnerCard__addr">{String(p.address)}</span> : null}
                 <span className="pp-nearbyPartnerCard__cta">
                   {km != null
