@@ -27,6 +27,7 @@ export default function PaymentFailed() {
     if (reason === 'unknown_session') return t('paymentFailed.reasonUnknown');
     if (reason === 'status') return t('paymentFailed.reasonStatus');
     if (reason === 'config') return t('paymentFailed.reasonConfig');
+    if (reason === 'no_binding') return t('paymentFailed.reasonNoBinding');
     return t('paymentFailed.reasonDefault');
   }, [reason, t]);
 
@@ -72,8 +73,10 @@ export default function PaymentFailed() {
         ) : null}
         <p className="pp-subtle pp-paymentResult__hint">{t('paymentFailed.hint')}</p>
         <div className="pp-paymentResult__actions">
-          <Link className="pp-btn pp-btn--primary" to="/shop">
-            {t('paymentFailed.ctaShop')}
+          <Link className="pp-btn pp-btn--primary" to={reason === 'no_binding' || reason === 'card_update' ? '/profile' : '/shop'}>
+            {reason === 'no_binding' || reason === 'card_update'
+              ? t('paymentFailed.ctaProfile')
+              : t('paymentFailed.ctaShop')}
           </Link>
           <Link className="pp-btn pp-btn--ghost" to="/profile/orders">
             {t('paymentFailed.ctaOrders')}

@@ -11268,6 +11268,38 @@ select.pp-bookConfirmField__control {
 .pp-actionCard--docs .pp-actionCard__icon { background: rgba(102, 112, 133, 0.14); color: #475467; }
 .pp-actionCard--admin .pp-actionCard__icon { background: rgba(91, 55, 255, 0.12); color: #5b37ff; }
 
+/* Profile — saved payment method */
+.pp-profilePayment {
+  align-items: flex-start;
+  gap: 12px;
+}
+.pp-profilePayment__card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 8px 0 4px;
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #101828;
+}
+.pp-profilePayment__brand {
+  font-size: 1.25rem;
+}
+.pp-profilePayment__pan {
+  font-variant-numeric: tabular-nums;
+}
+.pp-profilePayment__actions {
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.pp-profilePayment__note {
+  margin: 10px 0 0;
+  max-width: 42rem;
+}
+
 /* Stat tile (used in Profile + dashboards) */
 .pp-statTile {
   display: flex;

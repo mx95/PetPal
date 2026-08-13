@@ -14,6 +14,7 @@ import UserAvatar from '../components/UserAvatar';
 import { useToast } from '../components/Toast';
 import { getEffectiveProfilePhotoUrl, removeUserProfilePhoto, saveUserProfilePhoto } from '../profile/userProfilePhoto';
 import { MVP_NAV } from '../config/mvpNav';
+import ProfilePaymentMethod from '../components/ProfilePaymentMethod';
 
 const ICONS = {
   pets: '🐾',
@@ -387,6 +388,10 @@ export default function Profile() {
             </div>
           </div>
         </div>
+      </div>
+
+      <div className="pp-col-12">
+        <ProfilePaymentMethod />
       </div>
 
       <div className="pp-col-12">
