@@ -535,7 +535,7 @@ const en = {
       addCta: 'Add card',
       updateCta: 'Update card',
       updating: 'Redirecting…',
-      note: 'You will enter card details on JCC’s secure page. A €0.01 verification charge may appear. We never store your full card number.',
+      note: 'You will enter card details on JCC’s secure page. Verification is €0 — we never store your full card number.',
       toastUpdated: 'Payment card updated.',
       errSignIn: 'Please sign in again, then retry.',
       errRejected: 'Could not start card update.',

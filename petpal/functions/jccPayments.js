@@ -647,7 +647,7 @@ async function fulfillMarketplaceCart(db, uid, orderNumber, cartItems, bindingId
 
 /**
  * Start a JCC hosted flow to create/replace the saved card binding (Account → Payment method).
- * Charges CARD_UPDATE_CENTS (default €0.01) with FORCE_CREATE_BINDING, then updates defaultMethod
+ * Starts a €0 JCC verification with FORCE_CREATE_BINDING, then updates defaultMethod
  * and active subscription bindingIds on return.
  */
 exports.createJccUpdateCard = functions.region('europe-west1').https.onCall(async (data, context) => {
@@ -803,6 +803,12 @@ exports.createJccCheckout = functions.region('europe-west1').https.onCall(async 
     }
     const uid = context.auth.uid;
     const sku = String(data?.sku || '').trim();
+    if (sku === CARD_UPDATE_SKU) {
+      throw new functions.https.HttpsError(
+        'invalid-argument',
+        'Use createJccUpdateCard to update a saved card from your account.'
+      );
+    }
     const saveCard = Boolean(data?.saveCard);
     const companyId = data?.companyId ? String(data.companyId).trim() : '';
     const includeTracker = Boolean(data?.includeTracker);
