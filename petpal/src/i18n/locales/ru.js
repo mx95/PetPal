@@ -2371,6 +2371,8 @@ const ru = {
     save: 'Сохранить',
     cancel: 'Отмена',
     busyShort: '…',
+    accessDenied:
+      'Этот аккаунт не админ. В Firestore создайте документ admins/<your-uid> для текущего пользователя и обновите страницу.',
     backDashboard: '← Панель',
     backAdmin: '← Админ',
     backAdminTools: '← Инструменты админа',

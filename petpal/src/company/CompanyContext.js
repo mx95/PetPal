@@ -14,6 +14,8 @@ export function CompanyProvider({ children }) {
   const [profileLoading, setProfileLoading] = useState(!!isFirebaseConfigured() && !!uid);
   const [userAccountType, setUserAccountType] = useState(/** @type {'individual' | 'company' | null} */ (null));
   const [isAdmin, setIsAdmin] = useState(false);
+  /** False until the first admins/{uid} snapshot (avoids bouncing signed-in admins to /dashboard). */
+  const [adminReady, setAdminReady] = useState(() => !isFirebaseConfigured());
 
   useEffect(() => {
     if (!uid || !isFirebaseConfigured()) {
@@ -50,9 +52,14 @@ export function CompanyProvider({ children }) {
   useEffect(() => {
     if (!uid || !isFirebaseConfigured()) {
       setIsAdmin(false);
+      setAdminReady(true);
       return undefined;
     }
-    return subscribeIsAdmin(uid, setIsAdmin);
+    setAdminReady(false);
+    return subscribeIsAdmin(uid, (next) => {
+      setIsAdmin(Boolean(next));
+      setAdminReady(true);
+    });
   }, [uid]);
 
   useEffect(() => {
@@ -96,6 +103,7 @@ export function CompanyProvider({ children }) {
       isPendingCompany,
       isRejectedCompany,
       isAdmin,
+      adminReady,
       firebaseReady: isFirebaseConfigured(),
     }),
     [
@@ -109,6 +117,7 @@ export function CompanyProvider({ children }) {
       isPendingCompany,
       isRejectedCompany,
       isAdmin,
+      adminReady,
     ]
   );
 
