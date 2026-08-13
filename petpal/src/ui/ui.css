@@ -7994,6 +7994,16 @@ a.pp-publicPet__metaValue {
 .pp-quickAction--walk:hover  { border-color: rgba(18, 183, 106, 0.35); background: linear-gradient(180deg, #ffffff, #ecfdf3); }
 .pp-quickAction--manage:hover { border-color: rgba(105, 65, 198, 0.35); background: linear-gradient(180deg, #ffffff, #f4f3ff); }
 .pp-quickAction--alert:hover { border-color: rgba(180, 35, 24, 0.35); background: linear-gradient(180deg, #ffffff, #fef3f2); }
+.pp-quickAction--disabled,
+.pp-quickAction--disabled:hover,
+.pp-quickAction--disabled:active {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+  pointer-events: none;
+  filter: grayscale(0.15);
+}
 
 /* Pet dot pagination */
 .pp-feed__petDots {
@@ -10316,19 +10326,20 @@ body,
 }
 
 .pp-sponsoredRail {
-  margin-bottom: 24px;
+  margin-bottom: 18px;
 }
 
 .pp-sponsoredRail__head {
   display: flex;
   justify-content: space-between;
-  gap: 16px;
-  align-items: end;
-  margin-bottom: 12px;
+  gap: 12px;
+  align-items: baseline;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
 }
 
 .pp-sponsoredRail__head span {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 950;
   letter-spacing: -0.03em;
   color: #101828;
@@ -10336,7 +10347,9 @@ body,
 
 .pp-sponsoredRail__head small {
   color: #667085;
-  font-weight: 800;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.01em;
 }
 
 .pp-sponsoredRail__row {
@@ -14869,6 +14882,34 @@ select.pp-bookConfirmField__control {
   min-height: 60vh;
 }
 
+.pp-book-homeHeader .mb-3 {
+  margin-bottom: 8px;
+}
+
+.pp-book-homeHeader h1 {
+  font-size: clamp(30px, 7.2vw, 34px);
+  line-height: 1.12;
+  letter-spacing: -0.04em;
+}
+
+@media (max-width: 640px) {
+  .pp-book-homeHeader {
+    gap: 10px !important;
+  }
+
+  .pp-book-heroTabs {
+    width: 100%;
+  }
+
+  .pp-book-layout {
+    gap: 12px;
+  }
+
+  .pp-sponsoredRail__head span {
+    font-size: 18px;
+  }
+}
+
 .pp-book-hero {
   margin-bottom: 28px;
 }
@@ -14904,35 +14945,44 @@ select.pp-bookConfirmField__control {
 }
 
 .pp-book-heroTabs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  width: min(100%, 320px);
+  padding: 4px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(79, 70, 229, 0.12);
+  box-shadow: 0 8px 20px -16px rgba(16, 24, 40, 0.35);
 }
 
 .pp-book-hubTab {
-  border: 1px solid rgba(0, 0, 0, 0.06);
-  background: #fff;
+  border: 1px solid transparent;
+  background: transparent;
   color: var(--book-text);
-  font-weight: 700;
-  font-size: 14px;
-  padding: 10px 18px;
+  font-weight: 800;
+  font-size: 13px;
+  padding: 8px 12px;
+  min-height: 40px;
   border-radius: 10px;
   cursor: pointer;
   transition:
     transform 0.18s ease,
     background 0.18s ease,
-    box-shadow 0.18s ease;
+    box-shadow 0.18s ease,
+    color 0.18s ease;
 }
 
 .pp-book-hubTab:hover {
-  transform: scale(1.02);
+  transform: none;
+  background: rgba(79, 70, 229, 0.06);
 }
 
 .pp-book-hubTab.is-active {
   background: var(--book-primary);
   color: #fff;
   border-color: rgba(79, 70, 229, 0.35);
-  box-shadow: 0 6px 18px rgba(79, 70, 229, 0.35);
+  box-shadow: 0 6px 16px rgba(79, 70, 229, 0.28);
 }
 
 .pp-book-body {
@@ -14942,7 +14992,7 @@ select.pp-bookConfirmField__control {
 .pp-book-layout {
   display: grid;
   grid-template-columns: 280px 1fr;
-  gap: 24px;
+  gap: 16px;
   align-items: start;
 }
 
@@ -14951,11 +15001,61 @@ select.pp-bookConfirmField__control {
   top: 72px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 10px;
 }
 
 .pp-book-servicesCard .pp-book-serviceTabs {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.pp-book-filtersCard__title {
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  color: var(--book-text);
+}
+
+.pp-book-filtersCard__title--service {
+  margin-top: 12px;
+  margin-bottom: 8px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(16, 24, 40, 0.06);
+}
+
+.pp-book-field--search {
+  margin-bottom: 0;
+}
+
+.pp-book-searchWrap {
+  position: relative;
+  display: block;
+}
+
+.pp-book-searchWrap__icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  color: #667085;
+  pointer-events: none;
+}
+
+.pp-book-input--search {
+  padding-left: 40px;
+  min-height: 44px;
+  padding-top: 9px;
+  padding-bottom: 9px;
+  background: #fff;
+  border-color: rgba(79, 70, 229, 0.18);
+  box-shadow: inset 0 0 0 1px rgba(79, 70, 229, 0.04);
+}
+
+.pp-book-input--search::placeholder {
+  color: #667085;
+  font-weight: 600;
+  opacity: 1;
 }
 
 .pp-book-sideBlock {
@@ -15136,6 +15236,16 @@ select.pp-bookConfirmField__control {
 .pp-book-serviceTabs .pp-book-pill {
   width: 100%;
   justify-content: center;
+  min-height: 52px;
+  padding: 8px 12px;
+  font-size: 13px;
+  border-radius: 999px;
+}
+
+.pp-book-serviceTabs .pp-book-pill:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+  width: min(100%, 220px);
+  justify-self: center;
 }
 
 .pp-book-pill {
@@ -15143,9 +15253,9 @@ select.pp-bookConfirmField__control {
   align-items: center;
   gap: 8px;
   border-radius: 999px;
-  padding: 9px 16px;
+  padding: 8px 14px;
   font-weight: 800;
-  font-size: 14px;
+  font-size: 13px;
   border: 1px solid rgba(0, 0, 0, 0.08);
   background: #fff;
   color: var(--book-text);

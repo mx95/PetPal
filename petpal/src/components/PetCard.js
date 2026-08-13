@@ -75,10 +75,17 @@ export default function PetCard({ pet, statusKey, statusValue }) {
           </span>
           <span className="pp-quickAction__label">{t('home.feed.quickManage')}</span>
         </Link>
-        <Link className="pp-quickAction pp-quickAction--alert" to="/premium/lost" aria-label={t('home.feed.quickAlert')}>
+        <button
+          type="button"
+          className="pp-quickAction pp-quickAction--alert pp-quickAction--disabled"
+          disabled
+          aria-disabled="true"
+          aria-label={t('home.feed.quickAlert')}
+          title={t('home.feed.quickAlert')}
+        >
           <span className="pp-quickAction__icon" aria-hidden>🚨</span>
           <span className="pp-quickAction__label">{t('home.feed.quickAlert')}</span>
-        </Link>
+        </button>
       </div>
     </article>
   );
