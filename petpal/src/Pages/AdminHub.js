@@ -3,6 +3,8 @@ import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
 import { useCompany } from '../company/CompanyContext';
 import { useI18n } from '../i18n/I18nContext';
+import AdminRecentOrdersPanel from '../admin/AdminRecentOrdersPanel';
+import AdminUsersNfcPanel from '../admin/AdminUsersNfcPanel';
 
 function AdminActionCard({ to, icon, title, desc }) {
   return (
@@ -63,6 +65,12 @@ export default function AdminHub() {
       <div className="pp-col-12">
         <div className="pp-actionGrid">
           <AdminActionCard
+            to="#admin-nfc"
+            icon="🏷️"
+            title={t('admin.hub.usersNfcTitle')}
+            desc={t('admin.hub.usersNfcDesc')}
+          />
+          <AdminActionCard
             to="/admin/company-approvals"
             icon="🏪"
             title={t('admin.hub.companyApprovalsTitle')}
@@ -94,7 +102,14 @@ export default function AdminHub() {
           />
         </div>
       </div>
+
+      <div className="pp-col-12">
+        <AdminUsersNfcPanel enabled={Boolean(isAdmin && firebaseReady)} />
+      </div>
+
+      <div className="pp-col-12">
+        <AdminRecentOrdersPanel enabled={Boolean(isAdmin && firebaseReady)} />
+      </div>
     </div>
   );
 }
-

@@ -23220,3 +23220,113 @@ html[lang='ru'] .pp-topNavBrand__name,
 html[lang='ru'] .pp-brand {
   letter-spacing: normal;
 }
+
+.pp-adminHubSection {
+  margin-top: 28px;
+  scroll-margin-top: 88px;
+}
+
+.pp-adminHubSection__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.pp-adminUserList,
+.pp-adminHubOrders,
+.pp-adminPetNfcList {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.pp-adminUserCard {
+  padding: 16px 18px;
+}
+
+.pp-adminUserCard__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.pp-adminUserCard__uid {
+  margin-top: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+}
+
+.pp-adminPetNfc {
+  padding: 12px 0 0;
+  border-top: 1px solid var(--pp-border, rgba(16, 24, 40, 0.08));
+}
+
+.pp-adminPetNfc:first-child {
+  border-top: none;
+  padding-top: 4px;
+}
+
+.pp-adminPetNfc__chip {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(18, 183, 106, 0.12);
+  color: #039855;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.pp-adminPetNfc__id {
+  margin-top: 8px;
+}
+
+.pp-adminPetNfc__label {
+  display: inline-block;
+  margin-right: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--pp-muted, #667085);
+}
+
+.pp-adminPetNfc__code {
+  font-size: 0.95rem;
+  word-break: break-all;
+}
+
+.pp-adminPetNfc__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.pp-adminPetNfc__url {
+  margin-top: 6px;
+  word-break: break-all;
+}
+
+.pp-adminCopyBtn {
+  min-height: 32px;
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
+.pp-adminHubOrder {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+}
+
