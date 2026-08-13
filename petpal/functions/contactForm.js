@@ -149,55 +149,37 @@ exports.saveSupportSmtpConfig = functions.region('europe-west1').https.onCall(as
 });
 
 /**
- * One-time HTTP bootstrap for SMTP when Admin Email UI is unreachable.
- * Requires Authorization: Bearer <SMTP_BOOTSTRAP_TOKEN> (or body.token).
+ * One-time callable bootstrap for SMTP when Admin Email UI is unreachable.
+ * Pass { token, user, pass, host?, port?, to?, fromName?, sendTest? }.
  * Disables itself after a successful write (adminConfig/smtpBootstrap.used).
  * Remove this export after production SMTP is configured.
  */
 const SMTP_BOOTSTRAP_TOKEN =
   process.env.SMTP_BOOTSTRAP_TOKEN || '6a7066226f54926c3f9cb57e02266612d76249280a2eb604';
 
-exports.bootstrapSupportSmtp = functions.region('europe-west1').https.onRequest(async (req, res) => {
-  res.set('Access-Control-Allow-Origin', '*');
-  res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  if (req.method === 'OPTIONS') {
-    res.status(204).send('');
-    return;
-  }
-  if (req.method !== 'POST') {
-    res.status(405).json({ error: 'method_not_allowed' });
-    return;
-  }
-
-  const authHeader = String(req.get('authorization') || '');
-  const bearer = authHeader.toLowerCase().startsWith('bearer ') ? authHeader.slice(7).trim() : '';
-  const body = typeof req.body === 'object' && req.body ? req.body : {};
-  const token = bearer || String(body.token || '').trim();
+exports.bootstrapSupportSmtp = functions.region('europe-west1').https.onCall(async (data) => {
+  const token = String(data?.token || '').trim();
   if (!token || token !== SMTP_BOOTSTRAP_TOKEN) {
-    res.status(403).json({ error: 'forbidden' });
-    return;
+    throw new functions.https.HttpsError('permission-denied', 'Forbidden.');
   }
 
   const db = admin.firestore();
   const gateRef = db.doc('adminConfig/smtpBootstrap');
   const gateSnap = await gateRef.get();
   if (gateSnap.exists && gateSnap.data()?.used === true) {
-    res.status(409).json({ error: 'already_used' });
-    return;
+    throw new functions.https.HttpsError('failed-precondition', 'Bootstrap already used.');
   }
 
-  const user = String(body.user || '').trim();
-  const pass = String(body.pass || '').replace(/\s+/g, '');
-  const host = String(body.host || 'smtp.gmail.com').trim() || 'smtp.gmail.com';
-  const port = Number(body.port) || 587;
-  const to = String(body.to || 'info@petpal.com.cy, sotiris9515@gmail.com').trim();
-  const fromName = String(body.fromName || 'PetPal').trim() || 'PetPal';
-  const sendTest = body.sendTest !== false;
+  const user = String(data?.user || '').trim();
+  const pass = String(data?.pass || '').replace(/\s+/g, '');
+  const host = String(data?.host || 'smtp.gmail.com').trim() || 'smtp.gmail.com';
+  const port = Number(data?.port) || 587;
+  const to = String(data?.to || 'info@petpal.com.cy, sotiris9515@gmail.com').trim();
+  const fromName = String(data?.fromName || 'PetPal').trim() || 'PetPal';
+  const sendTest = data?.sendTest !== false;
 
   if (!user || !user.includes('@') || !pass || pass.length < 8) {
-    res.status(400).json({ error: 'invalid_smtp_credentials' });
-    return;
+    throw new functions.https.HttpsError('invalid-argument', 'Invalid SMTP credentials.');
   }
 
   await db.doc('adminConfig/smtp').set(
@@ -224,12 +206,10 @@ exports.bootstrapSupportSmtp = functions.region('europe-west1').https.onRequest(
         html: '<p>PetPal support email is configured correctly.</p>',
       });
     } catch (err) {
-      res.status(500).json({ error: 'smtp_test_failed', message: err?.message || String(err) });
-      return;
+      throw new functions.https.HttpsError('internal', err?.message || 'SMTP test failed.');
     }
     if (!test.emailed) {
-      res.status(500).json({ error: 'smtp_test_failed', message: test.skipReason || 'not_sent' });
-      return;
+      throw new functions.https.HttpsError('failed-precondition', test.skipReason || 'SMTP test did not send.');
     }
   }
 
@@ -245,10 +225,10 @@ exports.bootstrapSupportSmtp = functions.region('europe-west1').https.onRequest(
     { merge: true }
   );
 
-  res.status(200).json({
+  return {
     ok: true,
     testSent: Boolean(test.emailed),
     to: test.to || to,
     source: 'firestore',
-  });
+  };
 });
