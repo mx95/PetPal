@@ -7,6 +7,7 @@ const {
   extractFramesFromStream,
   toHex
 } = require("../protocol/g365");
+const { isGt06Frame, processGt06Frame } = require("./gt06Handler");
 const { logPrefix, formatCyprusTime } = require("../logging/time");
 const { parseG365LbsCellsFromHex } = require("../geo/g365Lbs");
 const { geocodeLbsTowers, LBS_GEOCODE_ENABLED } = require("../geo/lbsGeocode");
@@ -171,6 +172,14 @@ function createG365TcpServer({ port, store }) {
 
       for (const frame of frames) {
         const receivedAt = new Date();
+
+        // Same TCP port serves 365GPS and GT06 (CRC-ITU). Prefer GT06 when CRC matches
+        // so login/status get the correct serial+CRC ACK instead of the 365GPS short ACK.
+        if (isGt06Frame(frame)) {
+          processGt06Frame({ store, socket, frame, port, receivedAt });
+          continue;
+        }
+
         let parsed;
         try {
           parsed = parseG365Packet(frame, socket._g365Imei);
@@ -285,7 +294,12 @@ function createG365TcpServer({ port, store }) {
     });
   });
 
-  server.listen(port, () => logListenerReady(DEVICE.G365, port));
+  server.listen(port, () => {
+    logListenerReady(DEVICE.G365, port);
+    console.log(
+      `[listen] GT06 demux enabled on TCP ${port} (CRC-ITU frames → provider gt06; others → 365GPS)`
+    );
+  });
   return server;
 }
 

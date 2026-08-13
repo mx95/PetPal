@@ -2297,7 +2297,7 @@ const en = {
       subOr: 'or',
       subSuffix: 'After saving here, link the same IMEI on each pet under My pets so it appears in Tracker.',
       protocolG365: '365GPS (TCP 7878… port 5003)',
-      protocolGt06: 'GT06 / GPSPOS direct (TCP port 5004)',
+      protocolGt06: 'GT06 / GPSPOS direct (TCP port 5003)',
       protocolGpspos: 'GPSPOS (cloud poll)',
       providerAuto: 'Auto (from last ingest)',
       intervalSeconds: '{n}s',

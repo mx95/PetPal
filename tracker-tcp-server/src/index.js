@@ -22,14 +22,15 @@ function withProvider(d) {
 }
 
 const GPS365_TCP_PORT = Number(process.env.GPS365_TCP_PORT || 5003);
+/** Optional dedicated GT06 port (default off — GT06 is demuxed on GPS365_TCP_PORT). */
 const GT06_TCP_PORT = Number(process.env.GT06_TCP_PORT || 5004);
 const HTTP_PORT = Number(process.env.HTTP_PORT || 5002);
 const GPS365_TCP_ENABLED =
   String(process.env.GPS365_TCP_ENABLED ?? "1").trim() !== "0" &&
   String(process.env.GPS365_TCP_ENABLED ?? "1").trim().toLowerCase() !== "false";
 const GT06_TCP_ENABLED =
-  String(process.env.GT06_TCP_ENABLED ?? "1").trim() !== "0" &&
-  String(process.env.GT06_TCP_ENABLED ?? "1").trim().toLowerCase() !== "false";
+  String(process.env.GT06_TCP_ENABLED ?? "0").trim() !== "0" &&
+  String(process.env.GT06_TCP_ENABLED ?? "0").trim().toLowerCase() !== "false";
 
 /** Production path is set in ecosystem.config.cjs (/var/lib/petpal). Local dev default: */
 const SERVER_ROOT = path.join(__dirname, "..");
@@ -108,19 +109,18 @@ seedSampleDeviceFromEnv();
 if (GPS365_TCP_ENABLED) {
   createG365TcpServer({ port: GPS365_TCP_PORT, store });
 } else {
-  console.log("[365GPS] GPS365_TCP_ENABLED=0 — 365GPS listener disabled");
+  console.log("[365GPS] GPS365_TCP_ENABLED=0 — 365GPS/GT06 listener disabled");
 }
 if (GT06_TCP_ENABLED) {
   createGt06TcpServer({ port: GT06_TCP_PORT, store });
-} else {
-  console.log("[GT06] GT06_TCP_ENABLED=0 — GT06 listener disabled");
+  console.log(`[GT06] Extra dedicated listener on TCP ${GT06_TCP_PORT} (optional; demux already on ${GPS365_TCP_PORT})`);
 }
 const GPSPOS_ENABLED =
   String(process.env.GPSPOS_ENABLED ?? "0").trim() !== "0" &&
   String(process.env.GPSPOS_ENABLED ?? "0").trim().toLowerCase() !== "false";
 
 console.log(
-  `[tracker] Device listeners: 365GPS → TCP ${GPS365_TCP_ENABLED ? GPS365_TCP_PORT : "disabled"} (7878…0D0A) | GT06 → TCP ${GT06_TCP_ENABLED ? GT06_TCP_PORT : "disabled"} (7878…0D0A) | gpspos cloud → ${GPSPOS_ENABLED ? "enabled" : "disabled"} | HTTP API → ${HTTP_PORT}`
+  `[tracker] Device listeners: 365GPS+GT06 → TCP ${GPS365_TCP_ENABLED ? GPS365_TCP_PORT : "disabled"} (7878…0D0A, CRC-ITU→gt06) | gpspos cloud → ${GPSPOS_ENABLED ? "enabled" : "disabled"} | HTTP API → ${HTTP_PORT}`
 );
 
 const app = express();

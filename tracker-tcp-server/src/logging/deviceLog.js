@@ -19,15 +19,15 @@ const DEVICE_META = {
     tag: "365GPS",
     portEnv: "GPS365_TCP_PORT",
     defaultPort: 5003,
-    frameHint: "7878…0D0A",
-    label: "365GPS collar (7878…0D0A frames, port 5003)",
+    frameHint: "7878…0D0A (+ GT06 CRC-ITU demux)",
+    label: "365GPS + GT06 collar TCP (7878…0D0A, port 5003)",
   },
   [DEVICE.GT06]: {
     tag: "GT06",
     portEnv: "GT06_TCP_PORT",
     defaultPort: 5004,
     frameHint: "7878…0D0A (GT06)",
-    label: "GT06 / GPSPOS direct (7878…0D0A frames, port 5004)",
+    label: "GT06 dedicated listener (optional; demux already on 5003)",
   },
 };
 

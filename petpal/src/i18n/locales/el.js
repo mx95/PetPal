@@ -2478,7 +2478,7 @@ const el = {
       subSuffix:
         'Μετά την αποθήκευση εδώ, συνδέστε το ίδιο IMEI σε κάθε κατοικίδιο στα Κατοικίδιά μου ώστε να εμφανίζεται στο Tracker.',
       protocolG365: '365GPS (TCP 7878… θύρα 5003)',
-      protocolGt06: 'GT06 / GPSPOS απευθείας (TCP θύρα 5004)',
+      protocolGt06: 'GT06 / GPSPOS απευθείας (TCP θύρα 5003)',
       protocolGpspos: 'GPSPOS (cloud poll)',
       providerAuto: 'Αυτόματο (από το τελευταίο ingest)',
       intervalSeconds: '{n}δ',

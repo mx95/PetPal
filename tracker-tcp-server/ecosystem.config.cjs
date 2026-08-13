@@ -55,8 +55,8 @@ module.exports = {
         TCP_PORT: "5001",
         GPS365_TCP_PORT: "5003",
         GPS365_TCP_ENABLED: "1",
-        GT06_TCP_PORT: "5004",
-        GT06_TCP_ENABLED: "1",
+        // GT06 is demuxed on 5003; dedicated 5004 stays off unless explicitly enabled
+        GT06_TCP_ENABLED: "0",
         HTTP_PORT: "5002",
         GPSPOS_ENABLED: "1",
         GPSPOS_API_URL: "https://www.gpspos.net/AppJson.asp",

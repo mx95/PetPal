@@ -5,7 +5,7 @@ Some pet GPS collars report to a **gpspos-style cloud platform** (JSONP API at `
 Many of the same collars also speak **GT06** over TCP. Prefer pointing them at PetPal directly:
 
 - Protocol notes: [GT06_PROTOCOL.md](./GT06_PROTOCOL.md)
-- TCP port **5004** (`GT06_TCP_PORT`)
+- TCP port **5003** (same as 365GPS; CRC-ITU demux)
 - Admin provider **`gt06`**
 
 Use the cloud poll path below only when the collar cannot leave gpspos.net (or while migrating).
@@ -18,7 +18,7 @@ On the manufacturer app or SMS portal:
 2. Note the device **IMEI** shown in the app. The API may use a short ID (e.g. `00012836`) or the full 15-digit IMEI — use whichever `Proc_GetLastPosition` accepts.
 3. Ensure the SIM has data and the device is **online on the platform** (not only on PetPal).
 
-To use **direct GT06** instead: set the collar server to your public IP and port **5004** (not `5001` / `5003`). You do not need platform polling for those devices.
+To use **direct GT06** instead: set the collar server to your public IP and port **5003** (same port as 365GPS). You do not need platform polling for those devices.
 
 ## 2. Server environment
 
@@ -35,11 +35,11 @@ GPSPOS_IMEI_MAP=861397052428990:9705242899
 # Poll every 60 seconds (0 = manual sync only)
 GPSPOS_POLL_INTERVAL_SEC=60
 
-# Direct GT06 TCP (recommended when firmware allows custom IP)
-GT06_TCP_ENABLED=1
-GT06_TCP_PORT=5004
+# Direct GT06 TCP (recommended when firmware allows custom IP — same port as 365GPS)
+GPS365_TCP_ENABLED=1
+GPS365_TCP_PORT=5003
+GT06_TCP_ENABLED=0
 ```
-
 Restart the server:
 
 ```bash
@@ -91,4 +91,4 @@ Charging status is **not** shown for GPSPOS cloud collars — the platform `nTES
 | Symptom | Check |
 |---------|-------|
 | Sync returns empty / offline | Device online on gpspos.net? Correct platform IMEI mapping? |
-| Want live TCP instead | Open port 5004, redirect collar to GT06, see [GT06_PROTOCOL.md](./GT06_PROTOCOL.md) |
+| Want live TCP instead | Open port 5003, redirect collar to GT06, see [GT06_PROTOCOL.md](./GT06_PROTOCOL.md) |

@@ -141,3 +141,11 @@ test("gt06 — buildGt06Command wraps ASCII SERVERFLAG + cmd", () => {
   assert.equal(verifyFrameCrc(cmd), true);
   assert.ok(toHex(cmd).includes(Buffer.from("DYD#", "ascii").toString("hex")));
 });
+
+test("gt06 — demux: CRC-ITU distinguishes GT06 from 365GPS login", () => {
+  const { isGt06Frame } = require("../src/tcp/gt06Handler");
+  const gt06Login = hex("78 78 0D 01 01 23 45 67 89 01 23 45 00 01 8C DD 0D 0A");
+  const g365Login = hex("78780A010123456789012345010D0A");
+  assert.equal(isGt06Frame(gt06Login), true);
+  assert.equal(isGt06Frame(g365Login), false);
+});

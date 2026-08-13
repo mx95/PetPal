@@ -4,18 +4,20 @@ Concox-compatible **GT06** framing for collars that speak the vendor GT06 packet
 
 Vendor PDF: [GT06_protocol.pdf](./GT06_protocol.pdf)
 
-## Why a separate port from 365GPS?
+## Port
 
-Both use `7878 … 0D0A`, but **message IDs and ACK rules differ**:
+**GT06 shares TCP port 5003** with 365GPS (`GPS365_TCP_PORT`).
 
-| | 365GPS (port 5003) | GT06 (port 5004) |
-|--|--------------------|------------------|
-| Login ACK | Short `787801010D0A`-style | `78780501` + serial + CRC-ITU |
+Both use `7878 … 0D0A`, but message IDs and ACK rules differ. The listener demuxes by **CRC-ITU**:
+
+| | 365GPS | GT06 |
+|--|--------|------|
+| Detection | Frame does **not** pass CRC-ITU | Frame **passes** CRC-ITU (length…serial) |
+| Login ACK | Short 365GPS ACK (+ optional expiry/time) | `78780501` + serial + CRC-ITU |
 | GPS | `0x10` / `0x11` (and variants) | `0x12` location |
 | Heartbeat | Device-specific | `0x13` status (needs ACK) |
-| CRC | Protocol-specific | **CRC-ITU** (CRC-16/X-25) over length…serial |
 
-Point GT06 / GPSPOS hardware at **TCP port 5004**, not 5003.
+Point GT06 / GPSPOS hardware at **TCP port 5003** (same as 365GPS). An optional dedicated port (`GT06_TCP_PORT`, default 5004) exists only if `GT06_TCP_ENABLED=1`.
 
 ## Frame layout
 
@@ -41,19 +43,21 @@ Point GT06 / GPSPOS hardware at **TCP port 5004**, not 5003.
 ## Server config
 
 ```env
-GT06_TCP_ENABLED=1
-GT06_TCP_PORT=5004
+GPS365_TCP_ENABLED=1
+GPS365_TCP_PORT=5003
+# Optional second listener (normally leave off):
+GT06_TCP_ENABLED=0
 ```
 
-PM2 (`ecosystem.config.cjs`) enables this by default. Firewall must allow inbound **TCP 5004**.
+Firewall must allow inbound **TCP 5003**.
 
-On ingest, devices are stored with `provider: "gt06"`. Admin override: `PATCH /api/admin/devices/:imei` `{ "providerOverride": "gt06" }`.
+On ingest, GT06 devices are stored with `provider: "gt06"`. Admin override: `PATCH /api/admin/devices/:imei` `{ "providerOverride": "gt06" }`.
 
 ## Pointing a GPSPOS collar at PetPal
 
-1. Open port **5004** on the tracker host (e.g. `116.203.209.68`).
-2. On the collar / SMS / vendor app, set server IP to your public host and port **5004** (GT06 IP transfer / `SERVER` SMS — exact command varies by firmware).
-3. Wait for a login (`0x01`) then location/status packets.
+1. Open port **5003** on the tracker host.
+2. On the collar / SMS / vendor app, set server IP to your public host and port **5003**.
+3. Wait for a login (`0x01`) then location/status packets (`[GT06]` in logs).
 4. In `/admin/devices`, confirm observed provider **gt06** (or set override).
 5. Use the same PetPal map APIs: `/api/app/position`, `/api/app/history`.
 
@@ -62,5 +66,6 @@ Devices that **remain** on gpspos.net can keep using cloud poll (`provider: gpsp
 ## Implementation
 
 - Protocol: `src/protocol/gt06.js`, CRC: `src/protocol/crc16itu.js`
-- TCP listener: `src/tcp/gt06Handler.js`
+- Demux on 5003: `src/tcp/g365Handler.js` → `isGt06Frame` / `processGt06Frame`
+- Optional dedicated listener: `src/tcp/gt06Handler.js`
 - Tests: `test/gt06.test.js`

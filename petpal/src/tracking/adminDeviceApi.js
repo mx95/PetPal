@@ -127,7 +127,7 @@ export const GPSPOS_POLL_PRESETS = [
 /** Protocol choices for admin registry (Xexun removed). */
 export const PROTOCOL_OPTIONS = [
   { id: 'g365', value: 'g365', label: '365GPS (TCP 7878… port 5003)' },
-  { id: 'gt06', value: 'gt06', label: 'GT06 / GPSPOS direct (TCP port 5004)' },
+  { id: 'gt06', value: 'gt06', label: 'GT06 / GPSPOS direct (TCP port 5003)' },
   { id: 'gpspos', value: 'gpspos', label: 'GPSPOS (cloud poll)' },
 ];
 

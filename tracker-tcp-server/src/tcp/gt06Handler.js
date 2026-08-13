@@ -3,6 +3,7 @@ const {
   parseGt06Packet,
   buildGt06AckForParsed,
   extractFramesFromStream,
+  verifyFrameCrc,
   toHex,
   PROTO,
 } = require("../protocol/gt06");
@@ -54,6 +55,123 @@ function gt06ProtocolLabel(protocol) {
   return names[protocol] ? `${hex} (${names[protocol]})` : hex;
 }
 
+/** True when frame has GT06 length + CRC-ITU (distinct from 365GPS). */
+function isGt06Frame(frame) {
+  return verifyFrameCrc(frame);
+}
+
+/**
+ * Parse one GT06 frame, upsert store, bind socket, send ACK.
+ * @returns {boolean} true if handled as GT06 (including rejected CRC/parse)
+ */
+function processGt06Frame({ store, socket, frame, port, receivedAt = new Date() }) {
+  let parsed;
+  try {
+    parsed = parseGt06Packet(frame, socket._gt06Imei || socket._g365Imei || null);
+  } catch (e) {
+    console.log(
+      `${logPrefix({ dir: "in", tag: "GT06", at: receivedAt })} Parse error: ${e?.message || String(e)} frame=${toHex(frame)}`
+    );
+    recordTcpInbound(store, socket, "frame_parse_error", {
+      byteLength: frame.length,
+      rawHex: toHex(frame),
+      note: e?.message || String(e),
+    });
+    return true;
+  }
+
+  if (!parsed?.ok) {
+    console.log(
+      `${logPrefix({ dir: "in", tag: "GT06", at: receivedAt })} Rejected frame: ${parsed?.error || "unknown"} ${toHex(frame)}`
+    );
+    recordTcpInbound(store, socket, "frame_rejected", {
+      byteLength: frame.length,
+      rawHex: toHex(frame),
+      note: parsed?.error || "parse_failed",
+    });
+    return true;
+  }
+
+  if (parsed.imei) {
+    socket._gt06Imei = parsed.imei;
+    // Share IMEI with demuxed 365GPS session fields on the same socket.
+    if (!socket._g365Imei) socket._g365Imei = parsed.imei;
+  }
+
+  const imei = parsed.imei || socket._gt06Imei || socket._g365Imei;
+  if (!imei) {
+    console.log(
+      `${logPrefix({ dir: "in", tag: "GT06", at: receivedAt })} Frame ${gt06ProtocolLabel(parsed.protocol)} before login (no IMEI yet)`
+    );
+  }
+
+  const logObj = {
+    receivedAtCyprus: formatCyprusTime(receivedAt),
+    receivedAtUtc: receivedAt.toISOString(),
+    provider: "gt06",
+    deviceType: "GT06",
+    listenerPort: port,
+    imei: imei ?? null,
+    protocol: parsed.protocol,
+    protocolLabel: gt06ProtocolLabel(parsed.protocol),
+    kind: parsed.kind ?? null,
+    source: parsed.source ?? null,
+    gpsValid: parsed.gpsValid ?? null,
+    battery: parsed.battery ?? parsed.deviceStatus?.battery ?? null,
+    signal: parsed.signal ?? parsed.deviceStatus?.signal ?? null,
+    charging: parsed.charging ?? parsed.deviceStatus?.chargingStatus ?? null,
+    alarm: parsed.alarm ?? parsed.deviceStatus?.alarm ?? null,
+    timestamp: parsed.deviceStatus?.timestamp ?? parsed.gps?.timestamp ?? null,
+    lat: parsed.gps?.lat ?? null,
+    lng: parsed.gps?.lng ?? null,
+    raw: parsed.rawHex,
+  };
+  console.log(`${logPrefix({ dir: "in", tag: "GT06", at: receivedAt })} PARSED: ${JSON.stringify(logObj)}`);
+  if (imei) {
+    logDeviceIdentified(DEVICE.GT06, {
+      imei,
+      message: `protocol=${gt06ProtocolLabel(parsed.protocol)}`,
+      port,
+    });
+  }
+  recordTcpInbound(store, socket, "frame_parsed", {
+    provider: "gt06",
+    imei: imei ?? null,
+    messageId: parsed.protocol ?? null,
+    byteLength: frame.length,
+    rawHex: toHex(frame),
+    parsedJson: safeJson(logObj),
+    note: "gt06",
+  });
+
+  if (imei) {
+    store.upsert(imei, {
+      ...parsed,
+      imei,
+      provider: "gt06",
+      battery: parsed.battery ?? parsed.deviceStatus?.battery ?? undefined,
+      signal: parsed.signal ?? parsed.deviceStatus?.signal ?? undefined,
+      charging: parsed.charging ?? parsed.deviceStatus?.chargingStatus ?? undefined,
+      receivedAt: receivedAt.toISOString(),
+    });
+    store.bindSocket(imei, socket);
+  }
+
+  try {
+    const ack = buildGt06AckForParsed(parsed);
+    if (ack) {
+      socket.write(ack);
+      console.log(`${logPrefix({ dir: "out", tag: "GT06", at: new Date() })} ACK HEX: ${toHex(ack)}`);
+    } else if (parsed.protocol === PROTO.LOGIN) {
+      console.log(`${logPrefix({ dir: "out", tag: "GT06" })} Warning: login frame received but no ACK built`);
+    }
+  } catch (e) {
+    console.log(`${logPrefix({ dir: "out", tag: "GT06" })} Failed to send ACK:`, e?.message || String(e));
+  }
+
+  return true;
+}
+
 function createGt06TcpServer({ port, store }) {
   const server = net.createServer((socket) => {
     socket.setKeepAlive(true);
@@ -91,108 +209,7 @@ function createGt06TcpServer({ port, store }) {
       }
 
       for (const frame of frames) {
-        const receivedAt = new Date();
-        let parsed;
-        try {
-          parsed = parseGt06Packet(frame, socket._gt06Imei);
-        } catch (e) {
-          console.log(
-            `${logPrefix({ dir: "in", tag: "GT06", at: receivedAt })} Parse error: ${e?.message || String(e)} frame=${toHex(frame)}`
-          );
-          recordTcpInbound(store, socket, "frame_parse_error", {
-            byteLength: frame.length,
-            rawHex: toHex(frame),
-            note: e?.message || String(e),
-          });
-          continue;
-        }
-
-        if (!parsed?.ok) {
-          console.log(
-            `${logPrefix({ dir: "in", tag: "GT06", at: receivedAt })} Rejected frame: ${parsed?.error || "unknown"} ${toHex(frame)}`
-          );
-          recordTcpInbound(store, socket, "frame_rejected", {
-            byteLength: frame.length,
-            rawHex: toHex(frame),
-            note: parsed?.error || "parse_failed",
-          });
-          continue;
-        }
-
-        if (parsed.imei) {
-          socket._gt06Imei = parsed.imei;
-        }
-
-        const imei = parsed.imei || socket._gt06Imei;
-        if (!imei) {
-          console.log(
-            `${logPrefix({ dir: "in", tag: "GT06", at: receivedAt })} Frame ${gt06ProtocolLabel(parsed.protocol)} before login (no IMEI yet)`
-          );
-        }
-
-        const logObj = {
-          receivedAtCyprus: formatCyprusTime(receivedAt),
-          receivedAtUtc: receivedAt.toISOString(),
-          provider: "gt06",
-          deviceType: "GT06",
-          listenerPort: port,
-          imei: imei ?? null,
-          protocol: parsed.protocol,
-          protocolLabel: gt06ProtocolLabel(parsed.protocol),
-          kind: parsed.kind ?? null,
-          source: parsed.source ?? null,
-          gpsValid: parsed.gpsValid ?? null,
-          battery: parsed.battery ?? parsed.deviceStatus?.battery ?? null,
-          signal: parsed.signal ?? parsed.deviceStatus?.signal ?? null,
-          charging: parsed.charging ?? parsed.deviceStatus?.chargingStatus ?? null,
-          alarm: parsed.alarm ?? parsed.deviceStatus?.alarm ?? null,
-          timestamp: parsed.deviceStatus?.timestamp ?? parsed.gps?.timestamp ?? null,
-          lat: parsed.gps?.lat ?? null,
-          lng: parsed.gps?.lng ?? null,
-          raw: parsed.rawHex,
-        };
-        console.log(`${logPrefix({ dir: "in", tag: "GT06", at: receivedAt })} PARSED: ${JSON.stringify(logObj)}`);
-        if (imei) {
-          logDeviceIdentified(DEVICE.GT06, {
-            imei,
-            message: `protocol=${gt06ProtocolLabel(parsed.protocol)}`,
-            port,
-          });
-        }
-        recordTcpInbound(store, socket, "frame_parsed", {
-          provider: "gt06",
-          imei: imei ?? null,
-          messageId: parsed.protocol ?? null,
-          byteLength: frame.length,
-          rawHex: toHex(frame),
-          parsedJson: safeJson(logObj),
-          note: "gt06",
-        });
-
-        if (imei) {
-          store.upsert(imei, {
-            ...parsed,
-            imei,
-            provider: "gt06",
-            battery: parsed.battery ?? parsed.deviceStatus?.battery ?? undefined,
-            signal: parsed.signal ?? parsed.deviceStatus?.signal ?? undefined,
-            charging: parsed.charging ?? parsed.deviceStatus?.chargingStatus ?? undefined,
-            receivedAt: receivedAt.toISOString(),
-          });
-          store.bindSocket(imei, socket);
-        }
-
-        try {
-          const ack = buildGt06AckForParsed(parsed);
-          if (ack) {
-            socket.write(ack);
-            console.log(`${logPrefix({ dir: "out", tag: "GT06", at: new Date() })} ACK HEX: ${toHex(ack)}`);
-          } else if (parsed.protocol === PROTO.LOGIN) {
-            console.log(`${logPrefix({ dir: "out", tag: "GT06" })} Warning: login frame received but no ACK built`);
-          }
-        } catch (e) {
-          console.log(`${logPrefix({ dir: "out", tag: "GT06" })} Failed to send ACK:`, e?.message || String(e));
-        }
+        processGt06Frame({ store, socket, frame, port, receivedAt: new Date() });
       }
     });
 
@@ -211,4 +228,10 @@ function createGt06TcpServer({ port, store }) {
   return server;
 }
 
-module.exports = { createGt06TcpServer, extractFramesFromStream };
+module.exports = {
+  createGt06TcpServer,
+  extractFramesFromStream,
+  processGt06Frame,
+  isGt06Frame,
+  gt06ProtocolLabel,
+};
