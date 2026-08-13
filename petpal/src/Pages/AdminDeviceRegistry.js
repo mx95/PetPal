@@ -18,6 +18,7 @@ import { useI18n } from '../i18n/I18nContext';
 
 function protocolLabel(id, t) {
   if (id === 'g365') return t('admin.devices.protocolG365');
+  if (id === 'gt06') return t('admin.devices.protocolGt06');
   if (id === 'gpspos') return t('admin.devices.protocolGpspos');
   return id;
 }

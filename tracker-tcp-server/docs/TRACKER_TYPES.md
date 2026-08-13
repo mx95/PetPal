@@ -1,14 +1,15 @@
-# PetPal tracker types — Xexun, 365GPS, GPSPOS
+# PetPal tracker types — Xexun, 365GPS, GT06, GPSPOS
 
 How each collar backend connects to **tracker-tcp-server** and what the PetPal app shows.
 
 | Provider | How data arrives | Default TCP port | PetPal Device tab |
 |----------|------------------|------------------|-------------------|
 | **xexun** | Collar → your server (binary FC…CF) | 5001 | Battery plans, GPS-only mode, Wi‑Fi home |
-| **g365** | Collar → your server (7878…0D0A) | 5003 | Upload/status presets, locate, ring, restart |
+| **g365** | Collar → your server (7878…0D0A, 365GPS) | 5003 | Upload/status presets, locate, ring, restart |
+| **gt06** | Collar → your server (7878…0D0A, GT06 / GPSPOS direct) | 5004 | Live map + battery/signal from TCP status |
 | **gpspos** | Server polls gpspos.net API | — (cloud) | Refresh from cloud + poll status |
 
-All three use the same **read** endpoints for maps:
+All four use the same **read** endpoints for maps:
 
 - `GET /api/app/position?deviceId={imei}`
 - `GET /api/app/history?deviceId={imei}&from=&to=&limit=`
@@ -24,7 +25,7 @@ All three use the same **read** endpoints for maps:
 
 | Field | Purpose |
 |-------|---------|
-| `providerOverride` | `null` (auto), `xexun`, `g365`, or `gpspos` |
+| `providerOverride` | `null` (auto), `xexun`, `g365`, `gt06`, or `gpspos` |
 | `gpsposPlatformImei` | Platform login id when it differs from the 15-digit IMEI |
 | `gpsposPollEnabled` | `true` to auto-pull from gpspos.net |
 | `gpsposPollIntervalSec` | 15–86400 (presets: 30s, 1m, 2m, 5m, 10m, 30m, 1h) |
@@ -80,7 +81,31 @@ Base: `/api/tracker/commands/*` or `/commands/*`
 
 ### Inference
 
-- `provider = g365` when `protocol` field is numeric or raw starts with `7878`
+- `provider = g365` when `protocol` field is numeric (non-GT06 ids) or raw starts with `7878` without a GT06 stamp
+
+---
+
+## GT06 (GPSPOS direct TCP)
+
+### Wire protocol
+
+- Same outer framing as 365GPS (`7878 … 0D0A`) but **GT06** message set + **CRC-ITU**
+- TCP port **5004** (`GT06_TCP_PORT`)
+- Login `0x01`, location `0x12`, status `0x13`, alarm `0x16`
+- Full notes: [GT06_PROTOCOL.md](./GT06_PROTOCOL.md)
+
+### Onboarding (GPSPOS hardware)
+
+1. Open firewall TCP **5004**
+2. Redirect collar server IP/port from gpspos.net → your host:`5004`
+3. Confirm login + GPS in tracker logs (`[GT06]`)
+4. Admin provider **gt06** (auto after first packet, or set override)
+
+Cloud poll (`gpspos`) remains available for units that stay on gpspos.net.
+
+### Inference
+
+- `provider = gt06` when stamped on TCP upsert, override set, or protocol is `0x12` / `0x13` / `0x16`
 
 ---
 
@@ -112,6 +137,8 @@ The poller runs **one timer per IMEI** with its own interval. Config is reloaded
 
 Setup details: [GPSPOS_SETUP.md](./GPSPOS_SETUP.md)
 
+Prefer **GT06 direct TCP** (port 5004) when the collar firmware allows a custom server IP — lower latency and no platform account.
+
 ### Inference
 
 - `provider = gpspos` when override set, after cloud sync metadata, or `gpspos` object on device record
@@ -128,6 +155,8 @@ See in-app **/docs** or `petpal/src/config/appRouteCatalog.js` for every path in
 
 ```bash
 TRACKER_ADMIN_TOKEN=your-secret-token
+GT06_TCP_ENABLED=1
+GT06_TCP_PORT=5004
 GPSPOS_ENABLED=1
 GPSPOS_API_URL=https://www.gpspos.net/AppJson.asp
 GPSPOS_USER=...

@@ -2441,7 +2441,8 @@ const ru = {
       subOr: 'или',
       subSuffix:
         'После сохранения здесь привяжите тот же IMEI к каждому питомцу в Моих питомцах, чтобы он появился в Трекере.',
-      protocolG365: '365GPS (TCP 7878…)',
+      protocolG365: '365GPS (TCP 7878… порт 5003)',
+      protocolGt06: 'GT06 / GPSPOS напрямую (TCP порт 5004)',
       protocolGpspos: 'GPSPOS (cloud poll)',
       providerAuto: 'Авто (по последнему ingest)',
       intervalSeconds: '{n}с',
