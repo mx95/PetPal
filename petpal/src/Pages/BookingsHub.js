@@ -170,7 +170,7 @@ function BrowseProviders() {
   return (
     <div className="pp-book-layout">
       <aside className="pp-book-sidebar">
-        <AppCard hover={false} className="pp-book-filtersCard !p-4 sm:!p-4">
+        <AppCard hover={false} className="pp-book-filtersCard">
           <h3 className="pp-book-filtersCard__title">{t('bookingsHub.filtersTitle')}</h3>
           <label className="pp-book-field pp-book-field--search">
             <span className="pp-sr">{t('bookingsHub.searchPlaceholder')}</span>
@@ -183,7 +183,10 @@ function BrowseProviders() {
               </span>
               <input
                 className="pp-book-input pp-book-input--search"
-                type="search"
+                type="text"
+                inputMode="search"
+                autoComplete="off"
+                enterKeyHint="search"
                 placeholder={t('bookingsHub.searchPlaceholder')}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -315,9 +318,9 @@ function BookingsBrowseHome() {
       <SectionHeader
         className="pp-book-homeHeader !mb-3 !gap-2 sm:!mb-3.5 sm:!gap-2.5"
         eyebrow={t('bookingsHub.badge')}
-        title={t('bookingsHub.title')}
+        title=""
         action={
-          <div className="pp-book-heroTabs" role="tablist" aria-label={t('bookingsHub.title')}>
+          <div className="pp-book-heroTabs" role="tablist" aria-label={t('bookingsHub.badge')}>
             <TabButton active={tab === 'browse'} onClick={() => setTab('browse')}>
               {t('bookingsHub.tabBrowse')}
             </TabButton>
