@@ -1720,6 +1720,7 @@ const ru = {
     recommendedBusinessesAria: 'Рекомендованные компании PetPal',
     recommendedTitle: 'Рекомендуем в PetPal',
     recommendedSub: 'Продвигаемые ветклиники, грумеры и отели — записывайтесь через раздел Записи',
+    recommendedBadge: 'Рекомендуем',
     partnerBadge: 'Партнёр',
     businessFallback: 'Бизнес',
     partnerDistanceCta: '{km} км · Посмотреть и записаться →',

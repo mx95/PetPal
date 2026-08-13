@@ -20697,26 +20697,52 @@ html[data-theme="dark"] .pp-paymentSuccess__icon {
 
 /* --- Nearby: PetPal partner strip --- */
 .pp-nearbyPartners {
-  margin-top: 1.25rem;
+  margin-top: 0.75rem;
+  margin-bottom: 0.25rem;
 }
 
 .pp-nearbyPartners__row {
-  align-items: stretch;
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: 4px;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  touch-action: pan-x;
+  padding: 4px 2px 10px;
+  scrollbar-width: thin;
+}
+
+.pp-nearbyPartners__row::-webkit-scrollbar {
+  height: 5px;
+}
+
+.pp-nearbyPartners__row::-webkit-scrollbar-thumb {
+  background: rgba(91, 55, 255, 0.28);
+  border-radius: 999px;
+}
+
+.pp-nearbyPartners--carousel .pp-nearbyPartnerCard {
+  flex: 0 0 min(250px, 78vw);
 }
 
 .pp-nearbyPartnerCard {
-  flex: 0 0 min(260px, 82vw);
+  flex: 0 0 min(100%, 320px);
+  scroll-snap-align: start;
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
-  padding: 1rem 1.1rem;
-  border-radius: 1.25rem;
+  gap: 0.3rem;
+  padding: 0.85rem 1rem;
+  border-radius: 1.15rem;
   border: 1px solid rgba(148, 163, 184, 0.35);
   background: rgba(255, 255, 255, 0.92);
   text-decoration: none;
   color: inherit;
   box-shadow: 0 8px 22px -14px rgba(15, 23, 42, 0.35);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  min-width: 0;
 }
 
 .pp-nearbyPartnerCard:hover {
@@ -20724,16 +20750,32 @@ html[data-theme="dark"] .pp-paymentSuccess__icon {
   box-shadow: 0 14px 28px -12px rgba(91, 55, 255, 0.35);
 }
 
+.pp-nearbyPartnerCard__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 2px;
+}
+
 .pp-nearbyPartnerCard__badge {
   align-self: flex-start;
-  font-size: 0.65rem;
+  font-size: 0.62rem;
   font-weight: 900;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   padding: 0.2rem 0.5rem;
   border-radius: 999px;
+}
+
+.pp-nearbyPartnerCard__badge--recommended {
   background: linear-gradient(90deg, #5b37ff, #2f80ff);
   color: #fff;
+}
+
+.pp-nearbyPartnerCard__badge--partner {
+  background: rgba(91, 55, 255, 0.1);
+  color: #5b37ff;
+  border: 1px solid rgba(91, 55, 255, 0.22);
 }
 
 .pp-nearbyPartnerCard__name {
@@ -20756,6 +20798,7 @@ html[data-theme="dark"] .pp-paymentSuccess__icon {
 
 .pp-nearbyPartnerCard__cta {
   margin-top: auto;
+  padding-top: 4px;
   font-size: 0.78rem;
   font-weight: 800;
   color: #5b37ff;
@@ -20768,6 +20811,12 @@ html[data-theme="dark"] .pp-nearbyPartnerCard {
 
 html[data-theme="dark"] .pp-nearbyPartnerCard__name {
   color: #f8fafc;
+}
+
+html[data-theme="dark"] .pp-nearbyPartnerCard__badge--partner {
+  background: rgba(91, 55, 255, 0.22);
+  color: #d6ceff;
+  border-color: rgba(214, 206, 255, 0.25);
 }
 
 /* Gmail-style notification badge (profile menu + inbox) */

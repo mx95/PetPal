@@ -1743,6 +1743,7 @@ const el = {
     recommendedTitle: 'Προτεινόμενα στο PetPal',
     recommendedSub:
       'Ενισχυμένοι συνεργάτες κτηνίατροι, groomers και ξενοδοχεία — κλείστε υπηρεσίες από τις Κρατήσεις',
+    recommendedBadge: 'Προτεινόμενο',
     partnerBadge: 'Συνεργάτης',
     businessFallback: 'Επιχείρηση',
     partnerDistanceCta: '{km} χλμ · Προβολή και κράτηση →',
