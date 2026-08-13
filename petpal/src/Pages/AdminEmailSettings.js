@@ -8,14 +8,14 @@ import { fetchSupportEmailStatus, saveSupportSmtpConfig } from '../admin/support
 export default function AdminEmailSettings() {
   const { t } = useI18n();
   const { user } = useAuth();
-  const { isAdmin, firebaseReady } = useCompany();
+  const { isAdmin, adminReady, firebaseReady } = useCompany();
   const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
   const [ok, setOk] = useState('');
   const [form, setForm] = useState({
-    user: '',
+    user: 'sotiris9515@gmail.com',
     pass: '',
     host: 'smtp.gmail.com',
     port: '587',
@@ -25,7 +25,7 @@ export default function AdminEmailSettings() {
   });
 
   useEffect(() => {
-    if (!firebaseReady || !isAdmin) {
+    if (!firebaseReady || !adminReady || !isAdmin) {
       setLoading(false);
       return undefined;
     }
@@ -40,7 +40,7 @@ export default function AdminEmailSettings() {
           host: data.host || prev.host,
           port: String(data.port || prev.port),
           to: data.to || prev.to,
-          user: data.user?.includes('…') ? '' : data.user || prev.user,
+          user: data.user?.includes('…') ? prev.user : data.user || prev.user,
         }));
       })
       .catch((e) => {
@@ -53,11 +53,23 @@ export default function AdminEmailSettings() {
     return () => {
       alive = false;
     };
-  }, [firebaseReady, isAdmin, t]);
+  }, [firebaseReady, adminReady, isAdmin, t]);
 
   if (!user) return <Navigate to="/login" replace />;
   if (!firebaseReady) return <p className="pp-error">{t('admin.firebaseNotConfigured')}</p>;
-  if (!isAdmin) return <Navigate to="/dashboard" replace />;
+  if (!adminReady) return <p className="pp-subtle">{t('admin.loading')}</p>;
+  if (!isAdmin) {
+    return (
+      <div className="pp-grid">
+        <div className="pp-col-12">
+          <p className="pp-error">{t('admin.accessDenied')}</p>
+          <Link className="pp-link" to="/dashboard">
+            {t('admin.backDashboard')}
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   async function onSave(e) {
     e.preventDefault();

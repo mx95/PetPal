@@ -27,7 +27,7 @@ function AdminActionCard({ to, icon, title, desc }) {
 export default function AdminHub() {
   const { t } = useI18n();
   const { user } = useAuth();
-  const { isAdmin, firebaseReady } = useCompany();
+  const { isAdmin, adminReady, firebaseReady } = useCompany();
 
   if (!user) return <Navigate to="/login" replace />;
   if (!firebaseReady) {
@@ -39,7 +39,27 @@ export default function AdminHub() {
       </div>
     );
   }
-  if (!isAdmin) return <Navigate to="/dashboard" replace />;
+  if (!adminReady) {
+    return (
+      <div className="pp-grid">
+        <div className="pp-col-12">
+          <p className="pp-subtle">{t('admin.loading')}</p>
+        </div>
+      </div>
+    );
+  }
+  if (!isAdmin) {
+    return (
+      <div className="pp-grid">
+        <div className="pp-col-12">
+          <p className="pp-error">{t('admin.accessDenied')}</p>
+          <Link className="pp-link" to="/dashboard">
+            {t('admin.backDashboard')}
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="pp-grid">

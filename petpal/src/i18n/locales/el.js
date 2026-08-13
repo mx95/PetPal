@@ -2405,6 +2405,8 @@ const el = {
     save: 'Αποθήκευση',
     cancel: 'Ακύρωση',
     busyShort: '…',
+    accessDenied:
+      'Αυτός ο λογαριασμός δεν είναι διαχειριστής. Στο Firestore δημιουργήστε admins/<your-uid> για τον συνδεδεμένο χρήστη και φορτώστε ξανά.',
     backDashboard: '← Πίσω στον πίνακα',
     backAdmin: '← Διαχείριση',
     backAdminTools: '← Εργαλεία διαχείρισης',

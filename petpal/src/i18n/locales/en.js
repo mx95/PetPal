@@ -2225,6 +2225,8 @@ const en = {
     save: 'Save',
     cancel: 'Cancel',
     busyShort: '…',
+    accessDenied:
+      'This account is not an admin. In Firestore, create admins/<your-uid> (any fields) for the signed-in user, then reload.',
     backDashboard: '← Dashboard',
     backAdmin: '← Admin',
     backAdminTools: '← Admin tools',
