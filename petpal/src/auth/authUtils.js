@@ -2,11 +2,36 @@ export function normalizeEmail(value) {
   return String(value || '').trim().toLocaleLowerCase();
 }
 
+/** Firebase AuthError.code, or a code parsed from "Firebase: Error (auth/…)." */
+export function extractAuthErrorCode(err) {
+  const fromCode = typeof err?.code === 'string' ? err.code.trim() : '';
+  if (fromCode.startsWith('auth/') || fromCode === 'permission-denied') return fromCode;
+  const msg = String(err?.message || err || '');
+  const match = msg.match(/\b(auth\/[\w-]+)\b/i);
+  if (match) return match[1].toLowerCase();
+  if (/permission-denied/i.test(msg)) return 'permission-denied';
+  return fromCode;
+}
+
 export function mapAuthError(err, t, mode = 'login') {
-  const code = err?.code || '';
-  if (code === 'auth/invalid-credential') return t('auth.errors.incorrect');
-  if (code === 'auth/invalid-email') return t('auth.errors.invalidEmail');
+  const code = extractAuthErrorCode(err);
+  const generic = t(mode === 'register' ? 'auth.errors.registerGeneric' : 'auth.errors.loginGeneric');
+
+  if (
+    code === 'auth/invalid-credential' ||
+    code === 'auth/invalid-login-credentials' ||
+    code === 'auth/wrong-password' ||
+    code === 'auth/user-not-found'
+  ) {
+    return t('auth.errors.incorrect');
+  }
+  if (code === 'auth/invalid-email' || code === 'auth/missing-email') {
+    return t('auth.errors.invalidEmail');
+  }
+  if (code === 'auth/missing-password') return t('auth.errors.missingPassword');
   if (code === 'auth/too-many-requests') return t('auth.errors.tooMany');
+  if (code === 'auth/user-disabled') return t('auth.errors.userDisabled');
+  if (code === 'auth/network-request-failed') return t('auth.errors.network');
   if (code === 'auth/email-already-in-use') return t('auth.errors.emailInUse');
   if (code === 'auth/weak-password') return t('auth.errors.weakPassword');
   if (code === 'permission-denied') return t('auth.errors.firestorePermissionDenied');
@@ -30,7 +55,8 @@ export function mapAuthError(err, t, mode = 'login') {
     return t('auth.errors.providerDisabled');
   }
   if (code === 'auth/firebase-not-configured') return t('auth.errors.firebaseNotConfigured');
-  return err?.message || t(mode === 'register' ? 'auth.errors.registerGeneric' : 'auth.errors.loginGeneric');
+  // Never surface raw Firebase strings like "Firebase: Error (auth/wrong-password)."
+  return generic;
 }
 
 export function trackAuthEvent(eventName, payload = {}) {
