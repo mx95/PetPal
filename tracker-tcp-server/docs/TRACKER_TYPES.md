@@ -99,9 +99,9 @@ Base: `/api/tracker/commands/*` or `/commands/*`
 1. Open firewall TCP **5003** (already used for 365GPS)
 2. Redirect collar server IP/port from gpspos.net → your host:`5003`
 3. Confirm login + GPS in tracker logs (`[GT06]`)
-4. Admin provider **gt06** (auto after first packet, or set override)
+4. **No admin step required:** the first GT06 TCP packet auto-switches the IMEI from gpspos cloud poll to `gt06` (poll off). Users see live TCP in the app. Admin → Device registry shows “Switched to GT06 (was GPSPOS cloud) at …”.
 
-Cloud poll (`gpspos`) remains available for units that stay on gpspos.net.
+Cloud poll (`gpspos`) remains for units that stay on gpspos.net. Setting protocol back to GPSPOS in admin resumes polling.
 
 ### Inference
 

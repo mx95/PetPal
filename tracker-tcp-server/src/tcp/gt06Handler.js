@@ -9,6 +9,7 @@ const {
 } = require("../protocol/gt06");
 const { logPrefix, formatCyprusTime } = require("../logging/time");
 const { DEVICE, logDeviceConnect, logDeviceIdentified, logListenerReady } = require("../logging/deviceLog");
+const { promoteCloudDeviceToDirectTcp } = require("../directTcpPromote");
 
 function asciiPreview(buf, max = 160) {
   if (!Buffer.isBuffer(buf) || buf.length === 0) return null;
@@ -155,6 +156,12 @@ function processGt06Frame({ store, socket, frame, port, receivedAt = new Date() 
       receivedAt: receivedAt.toISOString(),
     });
     store.bindSocket(imei, socket);
+    const promoted = promoteCloudDeviceToDirectTcp(store, imei, "gt06");
+    if (promoted?.switched) {
+      console.log(
+        `${logPrefix({ dir: "in", tag: "GT06" })} Auto-switched ${imei} from ${promoted.from} cloud poll → gt06 TCP (users now see live TCP)`
+      );
+    }
   }
 
   try {

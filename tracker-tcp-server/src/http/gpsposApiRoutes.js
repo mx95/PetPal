@@ -12,6 +12,7 @@ const {
 } = require("../protocol/gpspos");
 const { buildPositionPayload } = require("./positionPayload");
 const { logPrefix } = require("../logging/time");
+const { shouldSkipGpsposPoll } = require("../directTcpPromote");
 
 function gpsposConfigFromEnv(env = process.env) {
   const enabled =
@@ -49,9 +50,10 @@ async function syncGpsposLastPosition(store, client, requestedImei, { imeiMap = 
   store.upsert(storeImei, mapped);
   if (typeof store.updateDeviceConfig === "function") {
     const cfg = store.getDeviceConfig?.(storeImei);
+    const alreadyDirectTcp = shouldSkipGpsposPoll(cfg);
     const pollEnabled =
       Number(cfg?.gpspos_poll_enabled) === 1 || cfg?.provider_override === "gpspos";
-    if (!pollEnabled) {
+    if (!alreadyDirectTcp && !pollEnabled) {
       const defaultInterval = Math.max(15, Number(process.env.GPSPOS_POLL_INTERVAL_SEC || 60) || 60);
       store.updateDeviceConfig(storeImei, {
         provider_override: "gpspos",
@@ -109,7 +111,7 @@ function collectPollTargets(store, config) {
       const imei = String(row.imei || "").trim();
       if (!imei) continue;
       const enabled = Number(row.gpspos_poll_enabled) === 1 || row.provider_override === "gpspos";
-      if (!enabled) continue;
+      if (!enabled || shouldSkipGpsposPoll(row)) continue;
       targets.set(imei, {
         intervalSec: Math.max(15, Number(row.gpspos_poll_interval_sec) || defaultInterval),
         platformImei: row.gpspos_platform_imei ?? null,
@@ -120,6 +122,8 @@ function collectPollTargets(store, config) {
   for (const imei of config.deviceIds) {
     const k = String(imei).trim();
     if (!k || targets.has(k)) continue;
+    const row = typeof store?.getDeviceConfig === "function" ? store.getDeviceConfig(k) : null;
+    if (shouldSkipGpsposPoll(row)) continue;
     targets.set(k, { intervalSec: defaultInterval, platformImei: null });
   }
 

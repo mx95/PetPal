@@ -2472,6 +2472,7 @@ const ru = {
       emptySearch: 'Устройство не найдено по вашему поиску.',
       unknown: 'неизвестно',
       observedProvider: '(наблюдалось: {provider})',
+      switchedToDirectTcp: 'Переключено на {provider} (было {from} cloud) в {when}',
       lastFix: 'Последняя точка {when}',
       noPosition: 'Позиции пока нет',
       checkingLinks: 'Проверяем привязки приложения…',
