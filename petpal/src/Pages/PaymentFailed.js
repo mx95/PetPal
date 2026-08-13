@@ -27,6 +27,7 @@ export default function PaymentFailed() {
     if (reason === 'unknown_session') return t('paymentFailed.reasonUnknown');
     if (reason === 'status') return t('paymentFailed.reasonStatus');
     if (reason === 'config') return t('paymentFailed.reasonConfig');
+    if (reason === 'no_binding') return t('paymentFailed.reasonNoBinding');
     return t('paymentFailed.reasonDefault');
   }, [reason, t]);
 

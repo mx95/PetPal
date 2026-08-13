@@ -53,6 +53,15 @@ const SKUS = {
     title: 'Bookings recommended boost (monthly)',
     recurring: true,
   },
+  /** Small verification charge to create/replace a JCC card binding from Account. */
+  CARD_UPDATE: {
+    amountCents: Number.isFinite(Number(PRICES.CARD_UPDATE_CENTS))
+      ? Math.max(0, Number(PRICES.CARD_UPDATE_CENTS))
+      : 0,
+    currency: '978',
+    title: 'Card update verification',
+    recurring: false,
+  },
 };
 
 const PLUS_SKUS = new Set(['PETPAL_PLUS_MONTHLY', 'PETPAL_PLUS_YEARLY']);

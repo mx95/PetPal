@@ -65,7 +65,7 @@ jobs:
         working-directory: petpal
         run: >
           npx firebase-tools@13.29.1 deploy
-          --only functions:createJccCheckout,functions:jccPaymentReturn,functions:billingRenewal,functions:expireProviderBoosts,functions:assignSubscriptionImei,functions:linkTrackerSubscriptionPet,functions:createCustomerBooking,functions:sendBookingConfirmation
+          --only functions:createJccCheckout,functions:createJccUpdateCard,functions:jccPaymentReturn,functions:billingRenewal,functions:expireProviderBoosts,functions:assignSubscriptionImei,functions:linkTrackerSubscriptionPet,functions:createCustomerBooking,functions:sendBookingConfirmation
           --project petpal-aecda
           --non-interactive
         env:

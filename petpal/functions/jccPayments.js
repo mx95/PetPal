@@ -213,6 +213,67 @@ function nextRenewalDate(from, sku) {
   return next;
 }
 
+const CARD_UPDATE_SKU = 'CARD_UPDATE';
+
+/**
+ * Persist JCC binding as the user's default card and refresh active subscriptions
+ * so renewals charge the new card.
+ */
+async function saveDefaultPaymentMethodAndPropagate(db, uid, bindingId, maskedPan) {
+  if (!uid || !bindingId) return;
+  await db
+    .collection('users')
+    .doc(uid)
+    .collection('billing')
+    .doc('defaultMethod')
+    .set(
+      {
+        bindingId,
+        maskedPan: maskedPan || null,
+        provider: 'jcc',
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      },
+      { merge: true }
+    );
+
+  const patch = {
+    bindingId,
+    clientId: uid,
+    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+  };
+
+  // Doc ids are `{uid}_{sku}` — update known subscription SKUs without a composite index.
+  const billingSkus = [
+    'PETPAL_PLUS_MONTHLY',
+    'PETPAL_PLUS_YEARLY',
+    'STORE_BOOST_MONTHLY',
+    'STORE_BOOST_NEARBY_MONTHLY',
+    'STORE_BOOST_BOOKINGS_MONTHLY',
+  ];
+  for (const sku of billingSkus) {
+    const ref = db.collection('billingSubscriptions').doc(`${uid}_${sku}`);
+    const snap = await ref.get();
+    if (snap.exists && snap.data()?.status === 'active') {
+      await ref.set(patch, { merge: true });
+    }
+  }
+
+  const trackerSnap = await db
+    .collection('users')
+    .doc(uid)
+    .collection('trackerSubscriptions')
+    .where('status', '==', 'active')
+    .limit(40)
+    .get();
+  for (const docSnap of trackerSnap.docs) {
+    await docSnap.ref.set(patch, { merge: true });
+  }
+}
+
+function isCardUpdateSession(session) {
+  return session?.purpose === 'update_card' || session?.sku === CARD_UPDATE_SKU;
+}
+
 /** One monthly subscription per tracker — stored under users/{uid}/trackerSubscriptions/{subscriptionId}. */
 async function createMonthlyTrackerSubscription(db, payload) {
   const {
@@ -584,6 +645,157 @@ async function fulfillMarketplaceCart(db, uid, orderNumber, cartItems, bindingId
   }
 }
 
+/**
+ * Start a JCC hosted flow to create/replace the saved card binding (Account → Payment method).
+ * Starts a €0 JCC verification with FORCE_CREATE_BINDING, then updates defaultMethod
+ * and active subscription bindingIds on return.
+ */
+exports.createJccUpdateCard = functions.region('europe-west1').https.onCall(async (data, context) => {
+  try {
+    if (!context.auth?.uid) {
+      throw new functions.https.HttpsError('unauthenticated', 'Sign in to update your card.');
+    }
+    const uid = context.auth.uid;
+    const email = String(context.auth.token?.email || data?.email || '')
+      .trim()
+      .toLowerCase();
+    if (!email || !email.includes('@')) {
+      throw new functions.https.HttpsError(
+        'failed-precondition',
+        'Your account needs a valid email before you can update the card.'
+      );
+    }
+
+    ensureAdmin();
+    const db = admin.firestore();
+    const userSnap = await db.collection('users').doc(uid).get();
+    const profile = userSnap.exists ? userSnap.data() || {} : {};
+    const phone = String(profile.phone || data?.phone || '').trim();
+    if (!phone) {
+      throw new functions.https.HttpsError(
+        'failed-precondition',
+        'Add a phone number in Edit profile before updating your card.'
+      );
+    }
+
+    const firstName = String(profile.firstName || '').trim() || 'PetPal';
+    const lastName = String(profile.lastName || '').trim() || 'Customer';
+    const location = String(profile.location || '').trim();
+    const shipping = normalizeShipping({
+      firstName,
+      lastName,
+      email,
+      phone,
+      addressLine1: location || 'Cyprus',
+      city: 'Nicosia',
+      postalCode: '1000',
+      country: 'CY',
+    });
+
+    const pricing = resolveCheckoutPricing(CARD_UPDATE_SKU);
+    if (!pricing) {
+      throw new functions.https.HttpsError('failed-precondition', 'Card update is not configured.');
+    }
+
+    const { userName, password, restBase, returnUrl, frontendUrl } = jccCredentials();
+    const orderNumber = uniqueOrderNumber('PC');
+    const sessionRef = db.collection('paymentSessions').doc(orderNumber);
+    await sessionRef.set(
+      omitUndefined({
+        orderNumber,
+        uid,
+        sku: CARD_UPDATE_SKU,
+        purpose: 'update_card',
+        saveCard: true,
+        includeTracker: false,
+        includeNfc: false,
+        nfcPetIds: null,
+        cartItems: null,
+        shippingContact: shipping,
+        companyId: null,
+        amountCents: pricing.chargeCents,
+        renewalAmountCents: null,
+        currency: '978',
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        status: 'pending_register',
+      })
+    );
+
+    await createPendingOrder(db, {
+      orderNumber,
+      uid,
+      sku: CARD_UPDATE_SKU,
+      pricing,
+      shipping,
+      sessionCartItems: null,
+      includeTracker: false,
+      includeNfc: false,
+      nfcPetIds: [],
+      currency: '978',
+    });
+
+    const params = {
+      userName,
+      password,
+      orderNumber,
+      amount: String(pricing.chargeCents),
+      currency: '978',
+      returnUrl: `${returnUrl.replace(/\/$/, '')}?orderNumber=${encodeURIComponent(orderNumber)}`,
+      failUrl: `${frontendUrl}/payment/failed?orderNumber=${encodeURIComponent(orderNumber)}&reason=card_update`,
+      description: pricing.title.slice(0, 240),
+      language: 'en',
+      clientId: uid,
+      features: 'FORCE_CREATE_BINDING',
+      jsonParams: buildJccJsonParams(frontendUrl),
+      ...buildJccRegisterCustomerParams(shipping),
+    };
+
+    const reg = await jccPost(restBase, 'register.do', params);
+    if (!jccRegisterDoSucceeded(reg)) {
+      await sessionRef.set(
+        {
+          status: 'register_failed',
+          jccError: reg?.errorMessage || reg?.error || String(reg?.errorCode),
+          raw: reg,
+        },
+        { merge: true }
+      );
+      throw new functions.https.HttpsError(
+        'failed-precondition',
+        reg?.errorMessage || reg?.error || 'Could not start card update with JCC.'
+      );
+    }
+
+    await sessionRef.set(
+      {
+        status: 'awaiting_payment',
+        jccOrderId: reg.orderId,
+        formUrl: reg.formUrl,
+      },
+      { merge: true }
+    );
+
+    return {
+      formUrl: reg.formUrl,
+      orderNumber,
+      jccOrderId: reg.orderId,
+      amountCents: pricing.chargeCents,
+      purpose: 'update_card',
+    };
+  } catch (e) {
+    if (e instanceof functions.https.HttpsError) throw e;
+    const msg = typeof e?.message === 'string' ? e.message : String(e);
+    if (/JCC credentials missing|JCC return URL missing/i.test(msg)) {
+      throw new functions.https.HttpsError('failed-precondition', msg);
+    }
+    functions.logger.error('createJccUpdateCard failed', { message: msg, stack: e?.stack, uid: context.auth?.uid });
+    throw new functions.https.HttpsError(
+      'internal',
+      msg && !/^internal$/i.test(msg.trim()) ? msg.slice(0, 400) : 'Could not start card update.'
+    );
+  }
+});
+
 exports.createJccCheckout = functions.region('europe-west1').https.onCall(async (data, context) => {
   try {
     if (!context.auth?.uid) {
@@ -591,6 +803,12 @@ exports.createJccCheckout = functions.region('europe-west1').https.onCall(async 
     }
     const uid = context.auth.uid;
     const sku = String(data?.sku || '').trim();
+    if (sku === CARD_UPDATE_SKU) {
+      throw new functions.https.HttpsError(
+        'invalid-argument',
+        'Use createJccUpdateCard to update a saved card from your account.'
+      );
+    }
     const saveCard = Boolean(data?.saveCard);
     const companyId = data?.companyId ? String(data.companyId).trim() : '';
     const includeTracker = Boolean(data?.includeTracker);
@@ -842,21 +1060,40 @@ exports.jccPaymentReturn = functions.region('europe-west1').https.onRequest(asyn
   const sku = session.sku;
   const uid = session.uid;
 
-  if (session.saveCard && bindingId) {
-    await db
-      .collection('users')
-      .doc(uid)
-      .collection('billing')
-      .doc('defaultMethod')
-      .set(
-        {
-          bindingId,
-          maskedPan,
-          provider: 'jcc',
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-        },
-        { merge: true }
+  if (isCardUpdateSession(session)) {
+    if (!bindingId) {
+      await sessionRef.set({ status: 'paid_no_binding' }, { merge: true });
+      await updateOrderStatus(db, orderNumber, 'payment_failed');
+      redirect(
+        res,
+        `${frontendUrl}/payment/failed?reason=no_binding&orderNumber=${encodeURIComponent(orderNumber)}`
       );
+      return;
+    }
+    await saveDefaultPaymentMethodAndPropagate(db, uid, bindingId, maskedPan);
+    await updateOrderStatus(db, orderNumber, 'paid', {
+      paidAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+    await recordCustomerPaymentIndex(db, orderNumber);
+    await sessionRef.set(
+      {
+        status: 'paid',
+        purpose: 'update_card',
+        bindingId,
+        maskedPan: maskedPan || null,
+        paidAt: admin.firestore.FieldValue.serverTimestamp(),
+      },
+      { merge: true }
+    );
+    redirect(
+      res,
+      `${frontendUrl}/shop?card=updated&orderNumber=${encodeURIComponent(orderNumber)}`
+    );
+    return;
+  }
+
+  if (session.saveCard && bindingId) {
+    await saveDefaultPaymentMethodAndPropagate(db, uid, bindingId, maskedPan);
   }
 
   const catalog = SKUS[sku];
