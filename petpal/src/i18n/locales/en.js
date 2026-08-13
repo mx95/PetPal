@@ -2099,7 +2099,7 @@ const en = {
     reasonStatus: 'We could not verify payment status with JCC. If you were charged, contact us with your order reference.',
     reasonConfig: 'Payment server is not configured correctly. Please try again later or contact support.',
     reasonNoBinding:
-      'Payment completed but the bank did not return a saved-card token. Try Update card again from your profile, or contact support with your order reference.',
+      'Payment completed but the bank did not return a saved-card token. Try Update card again from the shop, or contact support with your order reference.',
     orderRef: 'Order reference: {ref}',
     hint: 'You can retry from the shop. Pending orders stay in My orders until payment succeeds or expires.',
     ctaShop: 'Back to shop',

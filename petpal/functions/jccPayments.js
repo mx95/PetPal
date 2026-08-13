@@ -1087,7 +1087,7 @@ exports.jccPaymentReturn = functions.region('europe-west1').https.onRequest(asyn
     );
     redirect(
       res,
-      `${frontendUrl}/profile?card=updated&orderNumber=${encodeURIComponent(orderNumber)}`
+      `${frontendUrl}/shop?card=updated&orderNumber=${encodeURIComponent(orderNumber)}`
     );
     return;
   }

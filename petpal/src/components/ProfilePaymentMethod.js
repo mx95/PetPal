@@ -66,44 +66,43 @@ export default function ProfilePaymentMethod() {
   const hasCard = Boolean(method?.bindingId);
 
   return (
-    <section className="pp-heroCard pp-profilePayment" aria-label={t('profile.payment.aria')}>
-      <div className="pp-heroCard__copy" style={{ flex: 1, minWidth: 0 }}>
-        <span className="pp-heroCard__eyebrow">{t('profile.payment.eyebrow')}</span>
-        <h2 className="pp-heroCard__title" style={{ fontSize: '1.15rem' }}>
-          {t('profile.payment.title')}
-        </h2>
+    <section className="pp-card pp-pad pp-shopPayment" aria-label={t('profile.payment.aria')}>
+      <div className="pp-shopPayment__copy">
+        <strong className="pp-shopPayment__title">{t('profile.payment.title')}</strong>
         {!loaded ? (
-          <p className="pp-heroCard__sub">{t('profile.payment.loading')}</p>
+          <span className="pp-subtle">{t('profile.payment.loading')}</span>
         ) : hasCard ? (
           <>
-            <p className="pp-profilePayment__card" aria-live="polite">
-              <span className="pp-profilePayment__brand" aria-hidden>
+            <p className="pp-shopPayment__card" aria-live="polite">
+              <span className="pp-shopPayment__brand" aria-hidden>
                 💳
               </span>
-              <span className="pp-profilePayment__pan">{masked || t('profile.payment.cardOnFile')}</span>
+              <span className="pp-shopPayment__pan">{masked || t('profile.payment.cardOnFile')}</span>
             </p>
-            <p className="pp-heroCard__sub">{t('profile.payment.hintUpdate')}</p>
+            <span className="pp-subtle pp-shopPayment__hint">{t('profile.payment.hintUpdate')}</span>
           </>
         ) : (
-          <p className="pp-heroCard__sub">{t('profile.payment.hintEmpty')}</p>
+          <span className="pp-subtle pp-shopPayment__hint">{t('profile.payment.hintEmpty')}</span>
         )}
-        {err ? <div className="pp-error" style={{ marginTop: 10 }}>{err}</div> : null}
-        <div className="pp-profilePayment__actions">
-          <button
-            type="button"
-            className="pp-btn pp-btnPrimary"
-            disabled={busy || !loaded}
-            onClick={onUpdateCard}
-          >
-            {busy
-              ? t('profile.payment.updating')
-              : hasCard
-                ? t('profile.payment.updateCta')
-                : t('profile.payment.addCta')}
-          </button>
-        </div>
-        <p className="pp-subtle pp-profilePayment__note">{t('profile.payment.note')}</p>
+        {err ? (
+          <div className="pp-error" style={{ marginTop: 8 }}>
+            {err}
+          </div>
+        ) : null}
+        <p className="pp-subtle pp-shopPayment__note">{t('profile.payment.note')}</p>
       </div>
+      <button
+        type="button"
+        className="pp-btn pp-btn--primary"
+        disabled={busy || !loaded}
+        onClick={onUpdateCard}
+      >
+        {busy
+          ? t('profile.payment.updating')
+          : hasCard
+            ? t('profile.payment.updateCta')
+            : t('profile.payment.addCta')}
+      </button>
     </section>
   );
 }

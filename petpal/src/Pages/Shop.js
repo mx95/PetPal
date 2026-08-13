@@ -31,6 +31,7 @@ import { cancelBusinessBoost } from '../shop/cancelBusinessBoost';
 import { buildSubscriptionCartItem } from '../shop/shopCartHelpers';
 import { subscribeShopSubscriptionState } from '../shop/shopSubscriptionsFirestore';
 import { normalizeTrackerImei } from '../tracking/trackerImeiIndex';
+import ProfilePaymentMethod from '../components/ProfilePaymentMethod';
 
 const SUBSCRIPTION_PRODUCTS = SHOP_PRODUCTS.filter(
   (p) => PLUS_SKUS.includes(p.id) || p.id === 'NFC_TAG_HARDWARE' || p.id === 'TRACKER_HARDWARE'
@@ -124,6 +125,12 @@ export default function Shop() {
       setShopTab('subscriptions');
     }
   }, [focusSku]);
+
+  useEffect(() => {
+    if (searchParams.get('card') === 'updated') {
+      setShopTab('subscriptions');
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (!focusSku) return;
@@ -677,6 +684,8 @@ export default function Shop() {
               );
             })}
           </div>
+
+          <ProfilePaymentMethod />
 
           {manageRows.length || plusActiveBySku.PETPAL_PLUS_YEARLY ? (
             <section className="pp-card pp-pad pp-shopManage pp-shopManage--prominent">
