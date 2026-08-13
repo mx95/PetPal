@@ -87,9 +87,11 @@ export default function LifetimeAchievements({ variant = 'full' }) {
           <h2 id="pp-lifetimeTitle" className="pp-sectionTitle" style={{ marginTop: 6 }}>
             {t('lifetime.title')}
           </h2>
-          <p className="pp-subtle" style={{ marginTop: 6, maxWidth: 640 }}>
-            {hub ? t('activityHub.badgesLead') : t('lifetime.subtitle')}
-          </p>
+          {hub ? null : (
+            <p className="pp-subtle" style={{ marginTop: 6, maxWidth: 640 }}>
+              {t('lifetime.subtitle')}
+            </p>
+          )}
         </div>
         <div className="pp-lifetime__summary" role="status" aria-live="polite">
           <div className="pp-lifetime__summaryStat">

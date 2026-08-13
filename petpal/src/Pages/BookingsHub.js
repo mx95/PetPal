@@ -170,23 +170,33 @@ function BrowseProviders() {
   return (
     <div className="pp-book-layout">
       <aside className="pp-book-sidebar">
-        <AppCard hover={false}>
-          <h3 className="mb-3 text-base font-black tracking-[-0.03em] text-petpal-ink">{t('bookingsHub.filtersTitle')}</h3>
-          <label className="pp-book-field">
+        <AppCard hover={false} className="pp-book-filtersCard !p-4 sm:!p-4">
+          <h3 className="pp-book-filtersCard__title">{t('bookingsHub.filtersTitle')}</h3>
+          <label className="pp-book-field pp-book-field--search">
             <span className="pp-sr">{t('bookingsHub.searchPlaceholder')}</span>
-            <input
-              className="pp-book-input"
-              type="search"
-              placeholder={t('bookingsHub.searchPlaceholder')}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
+            <span className="pp-book-searchWrap">
+              <span className="pp-book-searchWrap__icon" aria-hidden>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="11" cy="11" r="6.5" stroke="currentColor" strokeWidth="1.8" />
+                  <path d="M16.2 16.2 20 20" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                </svg>
+              </span>
+              <input
+                className="pp-book-input pp-book-input--search"
+                type="search"
+                placeholder={t('bookingsHub.searchPlaceholder')}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </span>
           </label>
-        </AppCard>
 
-        <AppCard hover={false} className="pp-book-servicesCard">
-          <h3 className="mb-3 text-base font-black tracking-[-0.03em] text-petpal-ink">{t('bookingsHub.categoryLabel')}</h3>
-          <ServiceTabs tabs={serviceTabs} value={serviceTab} onChange={setServiceTab} />
+          <h3 className="pp-book-filtersCard__title pp-book-filtersCard__title--service">
+            {t('bookingsHub.categoryLabel')}
+          </h3>
+          <div className="pp-book-servicesCard">
+            <ServiceTabs tabs={serviceTabs} value={serviceTab} onChange={setServiceTab} />
+          </div>
         </AppCard>
       </aside>
 
@@ -301,13 +311,13 @@ function BookingsBrowseHome() {
   const [tab, setTab] = useState('browse');
 
   return (
-    <PageContainer className="!py-4 sm:!py-5 lg:!py-6">
+    <PageContainer className="pp-book-home !py-3 sm:!py-4 lg:!py-5">
       <SectionHeader
-        className="!mb-4 !gap-2 sm:!mb-5 sm:!gap-3"
+        className="pp-book-homeHeader !mb-3 !gap-2 sm:!mb-3.5 sm:!gap-2.5"
         eyebrow={t('bookingsHub.badge')}
         title={t('bookingsHub.title')}
         action={
-          <div className="pp-book-heroTabs">
+          <div className="pp-book-heroTabs" role="tablist" aria-label={t('bookingsHub.title')}>
             <TabButton active={tab === 'browse'} onClick={() => setTab('browse')}>
               {t('bookingsHub.tabBrowse')}
             </TabButton>

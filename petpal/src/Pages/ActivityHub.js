@@ -153,9 +153,7 @@ export default function ActivityHub() {
           <span className="pp-hubMission__xp">+{m.xp} XP</span>
           {m.description ? <span className="pp-hubMission__desc">{m.description}</span> : null}
         </div>
-        {done ? (
-          <span className="pp-hubMission__tag">{t('activityHub.doneTag')}</span>
-        ) : needKm != null ? (
+        {done ? null : needKm != null ? (
           <button type="button" className="pp-btn pp-btnPrimary" disabled={!walkMet} onClick={() => completeDaily(m.id)}>
             {walkMet ? t('activityHub.claimReward') : t('activityHub.needKm', { n: needKm })}
           </button>
@@ -286,9 +284,6 @@ export default function ActivityHub() {
       {/* 4. Daily missions */}
       <section className="pp-activityHub__block">
         <h2 className="pp-feed__sectionTitle">{t('activityHub.dailyTitle')}</h2>
-        <p className="pp-subtle" style={{ marginBottom: 12 }}>
-          {t('activityHub.dailySub')}
-        </p>
         <div className="pp-hubMissionGrid">{DAILY_MISSIONS.map((m) => renderMission(m))}</div>
       </section>
 
