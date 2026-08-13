@@ -102,6 +102,12 @@ export default function AdminHub() {
             desc={t('admin.hub.supportDesc')}
           />
           <AdminActionCard
+            to="/admin/email"
+            icon="✉️"
+            title={t('admin.hub.emailTitle')}
+            desc={t('admin.hub.emailDesc')}
+          />
+          <AdminActionCard
             to="/admin/orders"
             icon="📦"
             title={t('admin.hub.ordersTitle')}

@@ -6,6 +6,7 @@ import { useI18n } from '../i18n/I18nContext';
 import { PrettySelect } from '../components/PrettySelect';
 import { formatDateTime24 } from '../formatTime24';
 import { adminUpdateContactMessage, subscribeContactMessages } from '../admin/contactMessagesFirestore';
+import { fetchSupportEmailStatus } from '../admin/supportEmailApi';
 import { contactMailtoHref } from '../contact/contactFormUtils';
 
 const STATUSES = ['new', 'in_progress', 'done'];
@@ -33,6 +34,7 @@ export default function AdminSupport() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [expandedId, setExpandedId] = useState('');
   const [busyId, setBusyId] = useState('');
+  const [smtpConfigured, setSmtpConfigured] = useState(null);
 
   useEffect(() => {
     if (!firebaseReady || !isAdmin) {
@@ -51,6 +53,21 @@ export default function AdminSupport() {
       }
     );
   }, [firebaseReady, isAdmin, t]);
+
+  useEffect(() => {
+    if (!firebaseReady || !isAdmin) return undefined;
+    let alive = true;
+    fetchSupportEmailStatus()
+      .then((data) => {
+        if (alive) setSmtpConfigured(Boolean(data?.configured));
+      })
+      .catch(() => {
+        if (alive) setSmtpConfigured(null);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [firebaseReady, isAdmin]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -101,6 +118,14 @@ export default function AdminSupport() {
 
       <div className="pp-col-12">
         <div className="pp-card pp-pad pp-adminBookings">
+          {smtpConfigured === false ? (
+            <div className="pp-error" style={{ marginBottom: 12 }}>
+              {t('admin.email.statusMissing')}{' '}
+              <Link className="pp-link" to="/admin/email">
+                {t('admin.hub.emailTitle')}
+              </Link>
+            </div>
+          ) : null}
           <div className="pp-adminBookingsFilters">
             <input
               className="pp-input"

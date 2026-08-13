@@ -2278,6 +2278,8 @@ const en = {
       supportIntro: 'Latest support messages. Open the inbox to reply and mark them done.',
       supportViewAll: 'View all messages →',
       supportOpenCount: '{n} open',
+      emailTitle: 'Email / SMTP',
+      emailDesc: 'Configure outgoing mail for support and booking emails.',
     },
     broadcast: {
       title: 'Broadcast message',
@@ -2346,6 +2348,28 @@ const en = {
       emailSkip: 'Email note',
       reply: 'Reply',
       noSubject: 'No subject',
+    },
+    email: {
+      title: 'Email / SMTP',
+      sub:
+        'Support form and booking confirmation emails need an SMTP account. For Gmail, create an App Password and paste it here, then send a test.',
+      errLoad: 'Could not load email settings.',
+      errSave: 'Could not save SMTP settings.',
+      statusConfigured: 'SMTP is configured ({source}). Mail goes to {to}.',
+      statusMissing:
+        'SMTP is not configured yet — support messages are saved in Admin tools, but no email is sent.',
+      smtpUser: 'SMTP username (email)',
+      smtpPass: 'SMTP password / app password',
+      smtpPassPh: 'Gmail App Password (16 characters)',
+      smtpHost: 'SMTP host',
+      smtpPort: 'Port',
+      to: 'Notify these addresses',
+      sendTest: 'Send a test email after saving',
+      save: 'Save SMTP settings',
+      saved: 'SMTP settings saved.',
+      savedAndTested: 'SMTP saved and test email sent to {to}.',
+      gmailHint:
+        'Gmail: Google Account → Security → 2-Step Verification → App passwords. Use that 16-character password here (not your normal Gmail password).',
     },
     companyQueue: {
       title: 'Business applications',
@@ -2892,6 +2916,7 @@ const en = {
       adminDevices: { label: 'Device registry', desc: '' },
       adminBroadcast: { label: 'Admin broadcast', desc: 'Send messages to users.' },
       adminSupport: { label: 'Support inbox', desc: 'Messages from the public contact form.' },
+      adminEmail: { label: 'Email / SMTP', desc: 'Configure outgoing support and booking email.' },
       docs: { label: 'Documentation', desc: 'Help page.' },
       privacy: { label: 'Privacy policy', desc: 'Legal privacy text.' },
       terms: { label: 'Terms of service', desc: 'Legal terms.' },

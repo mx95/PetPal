@@ -328,6 +328,11 @@ service cloud.firestore {
       allow update: if isAdmin();
     }
 
+    // SMTP settings for support/booking emails — Admin SDK + admin UI only.
+    match /adminConfig/{docId} {
+      allow read, write: if isAdmin();
+    }
+
     match /orders/{orderId} {
       allow read: if request.auth != null && (resource.data.uid == request.auth.uid || isAdmin());
       allow create: if false;

@@ -1,25 +1,23 @@
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 const { buildInviteFromBooking } = require('./bookingCalendar');
-
-function getConfig(path, fallback = null) {
-  try {
-    const cfg = functions.config && functions.config();
-    if (!cfg) return fallback;
-    return path.split('.').reduce((o, k) => (o && o[k] != null ? o[k] : null), cfg) ?? fallback;
-  } catch {
-    return fallback;
-  }
-}
-
-function getSmtpFrom() {
-  return process.env.CONTACT_SMTP_USER || getConfig('contact.smtp_user') || '';
-}
+const { sendTransactionalEmail } = require('./mailTransport');
 
 async function sendMail({ to, subject, text, html, icsContent, icsFilename = 'petpal-booking.ics' }) {
-  const smtpUser = getSmtpFrom();
-  const smtpPass = process.env.CONTACT_SMTP_PASS || getConfig('contact.smtp_pass');
-  if (!smtpUser || !smtpPass) {
+  // ICS attachments still need a direct nodemailer send; prefer shared transport when no ICS.
+  if (!icsContent) {
+    return sendTransactionalEmail({
+      to,
+      subject,
+      text,
+      html,
+      fromLabel: 'PetPal Bookings',
+    });
+  }
+
+  const { loadSmtpSettings } = require('./mailTransport');
+  const smtp = await loadSmtpSettings();
+  if (!smtp.configured) {
     functions.logger.warn('Booking email skipped — SMTP not configured');
     return { emailed: false };
   }
@@ -32,35 +30,32 @@ async function sendMail({ to, subject, text, html, icsContent, icsFilename = 'pe
   }
 
   const transporter = nodemailer.createTransport({
-    host: process.env.CONTACT_SMTP_HOST || getConfig('contact.smtp_host') || 'smtp.gmail.com',
-    port: Number(process.env.CONTACT_SMTP_PORT || getConfig('contact.smtp_port') || 587),
-    secure: false,
-    auth: { user: smtpUser, pass: smtpPass },
+    host: smtp.host,
+    port: smtp.port,
+    secure: Number(smtp.port) === 465,
+    auth: { user: smtp.user, pass: smtp.pass },
   });
 
   const mail = {
-    from: `"PetPal Bookings" <${smtpUser}>`,
+    from: `"PetPal Bookings" <${smtp.user}>`,
     to,
     subject,
     text,
     html,
-  };
-
-  if (icsContent) {
-    mail.alternatives = [
+    alternatives: [
       {
         contentType: 'text/calendar; charset=UTF-8; method=REQUEST',
         content: icsContent,
       },
-    ];
-    mail.attachments = [
+    ],
+    attachments: [
       {
         filename: icsFilename,
         content: icsContent,
         contentType: 'text/calendar; method=REQUEST; charset=UTF-8',
       },
-    ];
-  }
+    ],
+  };
 
   await transporter.sendMail(mail);
   return { emailed: true };

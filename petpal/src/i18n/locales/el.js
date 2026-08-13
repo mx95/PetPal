@@ -2462,6 +2462,8 @@ const el = {
       supportIntro: 'Τελευταία μηνύματα υποστήριξης. Ανοίξτε τα εισερχόμενα για απάντηση και ολοκλήρωση.',
       supportViewAll: 'Όλα τα μηνύματα →',
       supportOpenCount: '{n} ανοιχτά',
+      emailTitle: 'Email / SMTP',
+      emailDesc: 'Ρύθμιση εξερχόμενης αλληλογραφίας για υποστήριξη και κρατήσεις.',
     },
     broadcast: {
       title: 'Μήνυμα ανακοίνωσης',
@@ -2530,6 +2532,28 @@ const el = {
       emailSkip: 'Σημείωση email',
       reply: 'Απάντηση',
       noSubject: 'Χωρίς θέμα',
+    },
+    email: {
+      title: 'Email / SMTP',
+      sub:
+        'Η φόρμα υποστήριξης και τα email κρατήσεων χρειάζονται λογαριασμό SMTP. Για Gmail, δημιουργήστε App Password, επικολλήστε το εδώ και στείλτε δοκιμή.',
+      errLoad: 'Δεν ήταν δυνατή η φόρτωση ρυθμίσεων email.',
+      errSave: 'Δεν ήταν δυνατή η αποθήκευση SMTP.',
+      statusConfigured: 'Το SMTP είναι ρυθμισμένο ({source}). Τα email πάνε στο {to}.',
+      statusMissing:
+        'Το SMTP δεν είναι ρυθμισμένο — τα μηνύματα αποθηκεύονται στα Εργαλεία διαχείρισης, αλλά δεν αποστέλλεται email.',
+      smtpUser: 'Όνομα χρήστη SMTP (email)',
+      smtpPass: 'Κωδικός SMTP / app password',
+      smtpPassPh: 'Gmail App Password (16 χαρακτήρες)',
+      smtpHost: 'Διακομιστής SMTP',
+      smtpPort: 'Θύρα',
+      to: 'Ειδοποίηση σε αυτές τις διευθύνσεις',
+      sendTest: 'Αποστολή δοκιμαστικού email μετά την αποθήκευση',
+      save: 'Αποθήκευση SMTP',
+      saved: 'Οι ρυθμίσεις SMTP αποθηκεύτηκαν.',
+      savedAndTested: 'SMTP αποθηκεύτηκε και στάλθηκε δοκιμή στο {to}.',
+      gmailHint:
+        'Gmail: Λογαριασμός Google → Ασφάλεια → Επαλήθευση σε 2 βήματα → Κωδικοί εφαρμογής. Χρησιμοποιήστε αυτόν τον κωδικό 16 χαρακτήρων (όχι τον κανονικό κωδικό Gmail).',
     },
     companyQueue: {
       title: 'Αιτήσεις επιχειρήσεων',
@@ -3281,6 +3305,10 @@ const el = {
       adminSupport: {
         label: 'Εισερχόμενα υποστήριξης',
         desc: 'Μηνύματα από τη δημόσια φόρμα επικοινωνίας.',
+      },
+      adminEmail: {
+        label: 'Email / SMTP',
+        desc: 'Ρύθμιση εξερχόμενων email υποστήριξης και κρατήσεων.',
       },
       docs: {
         label: 'Τεκμηρίωση',

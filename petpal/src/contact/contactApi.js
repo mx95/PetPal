@@ -26,7 +26,8 @@ export async function submitContactMessage(payload) {
   }
   const fn = httpsCallable(functions, 'submitContactForm');
   try {
-    await fn(body);
+    const res = await fn(body);
+    return res?.data || { ok: true };
   } catch (e) {
     const key = mapContactCallableError(e);
     const err = new Error(key);
