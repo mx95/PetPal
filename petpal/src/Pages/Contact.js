@@ -2,7 +2,9 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
 import { useI18n } from '../i18n/I18nContext';
+import { BRAND } from '../config/brand';
 import { submitContactMessage } from '../contact/contactApi';
+import { contactMailtoHref, validateContactPayload } from '../contact/contactFormUtils';
 
 export default function Contact() {
   const { t } = useI18n();
@@ -15,15 +17,23 @@ export default function Contact() {
   const [error, setError] = useState('');
   const [sent, setSent] = useState(false);
 
+  const mailto = contactMailtoHref({ name, email, subject, message }, BRAND.contactEmail);
+
   async function onSubmit(e) {
     e.preventDefault();
     setError('');
+    const invalid = validateContactPayload({ name, email, subject, message });
+    if (invalid) {
+      setError(t(invalid));
+      return;
+    }
     setBusy(true);
     try {
       await submitContactMessage({ name, email, subject, message });
       setSent(true);
     } catch (err) {
-      setError(err?.message || t('contactPage.failed'));
+      const key = err?.message && t(err.message) !== err.message ? err.message : 'contactPage.failed';
+      setError(t(key));
     } finally {
       setBusy(false);
     }
@@ -63,6 +73,7 @@ export default function Contact() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
+                minLength={2}
                 autoComplete="name"
               />
             </div>
@@ -91,6 +102,7 @@ export default function Contact() {
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
               required
+              minLength={3}
               placeholder={t('contactPage.subjectPh')}
             />
           </div>
@@ -105,6 +117,7 @@ export default function Contact() {
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               required
+              minLength={10}
               placeholder={t('contactPage.messagePh')}
             />
           </div>
@@ -116,6 +129,12 @@ export default function Contact() {
           <button type="submit" className="pp-btn pp-btnPrimary pp-btn--lg" disabled={busy}>
             {busy ? t('contactPage.sending') : t('contactPage.send')}
           </button>
+          <p className="pp-subtle pp-contactPage__mailto">
+            {t('contactPage.orEmail')}{' '}
+            <a className="pp-link" href={mailto || `mailto:${BRAND.contactEmail}`}>
+              {BRAND.contactEmail}
+            </a>
+          </p>
         </form>
       )}
     </div>

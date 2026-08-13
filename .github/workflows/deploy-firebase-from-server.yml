@@ -78,7 +78,7 @@ jobs:
               echo "[firebase-deploy] Deploying shop Cloud Functions"
               set +e
               $FB deploy \
-                --only functions:createJccCheckout,functions:createJccUpdateCard,functions:jccPaymentReturn,functions:billingRenewal,functions:expireProviderBoosts,functions:assignSubscriptionImei,functions:linkTrackerSubscriptionPet,functions:createCustomerBooking,functions:sendBookingConfirmation \
+                --only functions:createJccCheckout,functions:createJccUpdateCard,functions:jccPaymentReturn,functions:billingRenewal,functions:expireProviderBoosts,functions:assignSubscriptionImei,functions:linkTrackerSubscriptionPet,functions:createCustomerBooking,functions:sendBookingConfirmation,functions:submitContactForm \
                 --project petpal-aecda \
                 --non-interactive
               DEPLOY_RC=$?

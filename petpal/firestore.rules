@@ -321,10 +321,11 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    // Contact form submissions — written by Cloud Functions only.
+    // Contact form submissions — written by Cloud Functions; admins review in Admin tools.
     match /contactMessages/{messageId} {
       allow read: if isAdmin();
-      allow write: if false;
+      allow create, delete: if false;
+      allow update: if isAdmin();
     }
 
     match /orders/{orderId} {

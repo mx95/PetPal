@@ -6,18 +6,20 @@ import { subscribeAllBookings } from '../bookings/bookingFirestore';
 import { formatDateTime24 } from '../formatTime24';
 import { PrettySelect } from '../components/PrettySelect';
 import { useI18n } from '../i18n/I18nContext';
+import AdminCopyButton from '../admin/AdminCopyButton';
+import {
+  bookingCustomerName,
+  bookingCustomerPhone,
+  bookingPetName,
+  bookingProviderName,
+  bookingSearchHaystack,
+  bookingServiceName,
+  isWalkInBooking,
+} from '../admin/adminBookingRow';
 
-function bookingWhen(b) {
-  if (b.startAt?.toDate) return formatDateTime24(b.startAt.toDate());
+function bookingWhen(b, lang) {
+  if (b.startAt?.toDate) return formatDateTime24(b.startAt.toDate(), lang);
   return '—';
-}
-
-function statusBadgeClass(status) {
-  const s = String(status || '').toLowerCase();
-  if (s === 'booked') return 'pp-badge';
-  if (s === 'completed') return 'pp-badge';
-  if (s === 'cancelled') return 'pp-badge';
-  return 'pp-badge';
 }
 
 function statusBadgeStyle(status) {
@@ -37,8 +39,29 @@ function serializeBooking(b) {
   return copy;
 }
 
+function statusLabel(status, t) {
+  const s = String(status || '').toLowerCase();
+  if (s === 'booked') return t('admin.bookings.statusBooked');
+  if (s === 'completed') return t('admin.bookings.statusCompleted');
+  if (s === 'cancelled') return t('admin.bookings.statusCancelled');
+  return status || t('admin.bookings.statusUnknown');
+}
+
+function IdRow({ label, value, title }) {
+  if (!value) return null;
+  return (
+    <div className="pp-adminBookingsIds__row">
+      <span className="pp-adminBookingsIds__label" title={title}>
+        {label}
+      </span>
+      <code className="pp-adminBookingsIds__value">{value}</code>
+      <AdminCopyButton value={value} />
+    </div>
+  );
+}
+
 export default function AdminBookings() {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const { user } = useAuth();
   const { isAdmin, firebaseReady } = useCompany();
 
@@ -73,21 +96,7 @@ export default function AdminBookings() {
     return rows.filter((b) => {
       if (statusFilter !== 'all' && String(b.status || '').toLowerCase() !== statusFilter) return false;
       if (!q) return true;
-      const hay = [
-        b.id,
-        b.customerUid,
-        b.companyId,
-        b.slotId,
-        b.serviceId,
-        b.petId,
-        b.petSnapshot?.name,
-        b.serviceSnapshot?.name,
-        b.status,
-      ]
-        .filter(Boolean)
-        .join(' ')
-        .toLowerCase();
-      return hay.includes(q);
+      return bookingSearchHaystack(b).includes(q);
     });
   }, [rows, search, statusFilter]);
 
@@ -125,20 +134,15 @@ export default function AdminBookings() {
       </div>
 
       <div className="pp-col-12">
-        <div className="pp-card pp-pad">
-          <div className="pp-row" style={{ gap: 10, flexWrap: 'wrap', marginBottom: 12 }}>
+        <div className="pp-card pp-pad pp-adminBookings">
+          <div className="pp-adminBookingsFilters">
             <input
               className="pp-input"
-              style={{ flex: '1 1 220px', minWidth: 0 }}
               placeholder={t('admin.bookings.searchPlaceholder')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
-            <PrettySelect
-              style={{ flex: '0 0 auto', minWidth: 148 }}
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-            >
+            <PrettySelect value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
               <option value="all">{t('admin.bookings.statusAll')}</option>
               <option value="booked">{t('admin.bookings.statusBooked')}</option>
               <option value="completed">{t('admin.bookings.statusCompleted')}</option>
@@ -154,75 +158,99 @@ export default function AdminBookings() {
             </div>
           ) : null}
 
-          <div className="pp-stack" style={{ marginTop: 10 }}>
-            {filtered.map((b) => {
-              const serviceName = b.serviceSnapshot?.name || b.serviceId || t('admin.bookings.serviceFallback');
-              const petName = b.petSnapshot?.name || b.petId || t('admin.bookings.petFallback');
-              const expanded = expandedId === b.id;
-              const status = String(b.status || '').toLowerCase();
-              const statusLabel =
-                status === 'booked'
-                  ? t('admin.bookings.statusBooked')
-                  : status === 'completed'
-                    ? t('admin.bookings.statusCompleted')
-                    : status === 'cancelled'
-                      ? t('admin.bookings.statusCancelled')
-                      : b.status || t('admin.bookings.statusUnknown');
-              return (
-                <div key={b.id} className="pp-providerBookingCard" style={{ padding: 12 }}>
-                  <div className="pp-rowBetween" style={{ alignItems: 'flex-start', gap: 10, flexWrap: 'wrap' }}>
-                    <div style={{ flex: '1 1 240px', minWidth: 0 }}>
-                      <div style={{ fontWeight: 900 }}>{petName}</div>
-                      <div className="pp-muted" style={{ fontSize: 13 }}>
-                        {serviceName} · {bookingWhen(b)}
-                      </div>
-                      <div className="pp-muted" style={{ fontSize: 12, marginTop: 4, wordBreak: 'break-all' }}>
-                        <span title={t('admin.bookings.bookingIdTitle')}>{t('admin.bookings.idLabel')}: {b.id}</span>
-                        {' · '}
-                        <span title={t('admin.bookings.customerUidTitle')}>
-                          {t('admin.bookings.customerLabel')}: {b.customerUid || '—'}
-                        </span>
-                        {' · '}
-                        <span title={t('admin.bookings.companyIdTitle')}>
-                          {t('admin.bookings.companyLabel')}: {b.companyId || '—'}
-                        </span>
-                      </div>
-                    </div>
-                    <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-                      <span className={statusBadgeClass(b.status)} style={statusBadgeStyle(b.status)}>
-                        {statusLabel}
-                      </span>
-                      <button
-                        type="button"
-                        className="pp-btn pp-btn--ghost"
-                        onClick={() => setExpandedId(expanded ? '' : b.id)}
-                      >
-                        {expanded ? t('admin.bookings.hideDetails') : t('admin.bookings.details')}
-                      </button>
-                    </div>
-                  </div>
-                  {expanded ? (
-                    <pre
-                      className="pp-muted"
-                      style={{
-                        marginTop: 10,
-                        padding: 10,
-                        borderRadius: 8,
-                        background: 'rgba(0,0,0,0.04)',
-                        fontSize: 11,
-                        overflow: 'auto',
-                        maxHeight: 320,
-                        whiteSpace: 'pre-wrap',
-                        wordBreak: 'break-word',
-                      }}
-                    >
-                      {JSON.stringify(serializeBooking(b), null, 2)}
-                    </pre>
-                  ) : null}
-                </div>
-              );
-            })}
-          </div>
+          {filtered.length ? (
+            <div className="pp-adminBookingsTableWrap">
+              <table className="pp-adminBookingsTable">
+                <thead>
+                  <tr>
+                    <th>{t('admin.bookings.colWhen')}</th>
+                    <th>{t('admin.bookings.colPet')}</th>
+                    <th>{t('admin.bookings.colCustomer')}</th>
+                    <th>{t('admin.bookings.colService')}</th>
+                    <th>{t('admin.bookings.colProvider')}</th>
+                    <th>{t('admin.bookings.colStatus')}</th>
+                    <th className="pp-adminBookingsTable__actionsHead">
+                      <span className="pp-srOnly">{t('admin.bookings.details')}</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map((b) => {
+                    const petName = bookingPetName(b) || t('admin.bookings.petFallback');
+                    const customer = bookingCustomerName(b);
+                    const phone = bookingCustomerPhone(b);
+                    const serviceName = bookingServiceName(b) || t('admin.bookings.serviceFallback');
+                    const provider = bookingProviderName(b) || b.companyId || '—';
+                    const expanded = expandedId === b.id;
+                    const walkIn = isWalkInBooking(b);
+                    return (
+                      <React.Fragment key={b.id}>
+                        <tr>
+                          <td data-label={t('admin.bookings.colWhen')} className="pp-adminBookingsTable__when">
+                            {bookingWhen(b, language)}
+                          </td>
+                          <td data-label={t('admin.bookings.colPet')}>
+                            <strong>{petName}</strong>
+                            {walkIn ? (
+                              <span className="pp-adminPetNfc__chip">{t('admin.bookings.walkIn')}</span>
+                            ) : null}
+                          </td>
+                          <td data-label={t('admin.bookings.colCustomer')}>
+                            <div>{customer || (walkIn ? t('admin.bookings.walkIn') : '—')}</div>
+                            {phone ? <div className="pp-subtle">{phone}</div> : null}
+                          </td>
+                          <td data-label={t('admin.bookings.colService')}>{serviceName}</td>
+                          <td data-label={t('admin.bookings.colProvider')} title={provider}>
+                            {provider}
+                          </td>
+                          <td data-label={t('admin.bookings.colStatus')}>
+                            <span className="pp-badge" style={statusBadgeStyle(b.status)}>
+                              {statusLabel(b.status, t)}
+                            </span>
+                          </td>
+                          <td className="pp-adminBookingsTable__actions">
+                            <button
+                              type="button"
+                              className="pp-btn pp-btn--ghost"
+                              onClick={() => setExpandedId(expanded ? '' : b.id)}
+                            >
+                              {expanded ? t('admin.bookings.hideDetails') : t('admin.bookings.details')}
+                            </button>
+                          </td>
+                        </tr>
+                        {expanded ? (
+                          <tr className="pp-adminBookingsTable__details">
+                            <td colSpan={7}>
+                              <div className="pp-adminBookingsIds">
+                                <IdRow
+                                  label={t('admin.bookings.idLabel')}
+                                  value={b.id}
+                                  title={t('admin.bookings.bookingIdTitle')}
+                                />
+                                <IdRow
+                                  label={t('admin.bookings.customerLabel')}
+                                  value={b.customerUid}
+                                  title={t('admin.bookings.customerUidTitle')}
+                                />
+                                <IdRow
+                                  label={t('admin.bookings.companyLabel')}
+                                  value={b.companyId}
+                                  title={t('admin.bookings.companyIdTitle')}
+                                />
+                              </div>
+                              <pre className="pp-adminBookingsJson">
+                                {JSON.stringify(serializeBooking(b), null, 2)}
+                              </pre>
+                            </td>
+                          </tr>
+                        ) : null}
+                      </React.Fragment>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          ) : null}
         </div>
       </div>
     </div>

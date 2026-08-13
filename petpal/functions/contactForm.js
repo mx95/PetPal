@@ -1,7 +1,7 @@
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 
-const DEFAULT_TO = 'sotiris9515@gmail.com';
+const DEFAULT_TO = 'info@petpal.com.cy, sotiris9515@gmail.com';
 
 function getConfig(path, fallback = null) {
   try {
@@ -26,7 +26,7 @@ async function sendContactEmail({ name, email, subject, message }) {
   const smtpPass = process.env.CONTACT_SMTP_PASS || getConfig('contact.smtp_pass');
   if (!smtpUser || !smtpPass) {
     functions.logger.warn('Contact email skipped — set CONTACT_SMTP_USER and CONTACT_SMTP_PASS');
-    return { emailed: false };
+    return { emailed: false, skipReason: 'smtp_not_configured' };
   }
 
   let nodemailer;
@@ -34,7 +34,7 @@ async function sendContactEmail({ name, email, subject, message }) {
     nodemailer = require('nodemailer');
   } catch {
     functions.logger.warn('nodemailer not installed — contact saved to Firestore only');
-    return { emailed: false };
+    return { emailed: false, skipReason: 'nodemailer_missing' };
   }
 
   const transporter = nodemailer.createTransport({
@@ -90,14 +90,22 @@ exports.submitContactForm = functions.region('europe-west1').https.onCall(async 
   };
   await ref.set(record);
 
+  let mail = { emailed: false, skipReason: 'unknown' };
   try {
-    const mail = await sendContactEmail({ name, email, subject, message });
-    if (mail.emailed) {
-      await ref.set({ emailedAt: admin.firestore.FieldValue.serverTimestamp(), emailTo: mail.to }, { merge: true });
-    }
+    mail = await sendContactEmail({ name, email, subject, message });
   } catch (err) {
     functions.logger.error('Contact email failed', { err, id: ref.id });
+    mail = { emailed: false, skipReason: err?.message || 'send_failed' };
   }
+  await ref.set(
+    {
+      emailed: Boolean(mail.emailed),
+      emailTo: mail.to || contactToEmail(),
+      emailSkipReason: mail.emailed ? null : mail.skipReason || 'smtp_skipped',
+      ...(mail.emailed ? { emailedAt: admin.firestore.FieldValue.serverTimestamp() } : {}),
+    },
+    { merge: true }
+  );
 
   return { ok: true, id: ref.id };
 });
