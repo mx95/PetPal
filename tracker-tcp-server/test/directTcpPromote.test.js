@@ -4,6 +4,8 @@ const {
   isCloudGpsposConfig,
   promoteCloudDeviceToDirectTcp,
   shouldSkipGpsposPoll,
+  inferTcpProviderFromLiveDevice,
+  promoteLiveCloudDevicesAlreadyOnTcp,
 } = require("../src/directTcpPromote");
 
 function fakeStore(initial) {
@@ -65,4 +67,38 @@ test("isCloudGpsposConfig / shouldSkipGpsposPoll", () => {
   assert.equal(shouldSkipGpsposPoll({ direct_tcp_switched_at: "2026-08-13T09:14:42.000Z" }), true);
   assert.equal(shouldSkipGpsposPoll({ provider_override: "gt06" }), true);
   assert.equal(shouldSkipGpsposPoll({ provider_override: "gpspos", gpspos_poll_enabled: 1 }), false);
+});
+
+test("inferTcpProviderFromLiveDevice — GT06 location even when enriched as gpspos", () => {
+  assert.equal(
+    inferTcpProviderFromLiveDevice({
+      provider: "gpspos",
+      protocol: 18,
+      kind: "location",
+      rawHex: "78781f121a080d0c1706c003c0f20c03a18c8400040001180a0155b89801003417520d0a",
+    }),
+    "gt06"
+  );
+});
+
+test("promoteLiveCloudDevicesAlreadyOnTcp — switches gpspos override for live GT06", () => {
+  const store = fakeStore({
+    provider_override: "gpspos",
+    gpspos_poll_enabled: 1,
+  });
+  store.list = () => [
+    {
+      imei: "868022030666528",
+      provider: "gpspos",
+      protocol: 18,
+      kind: "location",
+      rawHex: "78781f12",
+    },
+  ];
+  const switched = promoteLiveCloudDevicesAlreadyOnTcp(store);
+  assert.equal(switched.length, 1);
+  assert.equal(switched[0].imei, "868022030666528");
+  assert.equal(switched[0].to, "gt06");
+  assert.equal(store._row().provider_override, "gt06");
+  assert.equal(store._row().gpspos_poll_enabled, 0);
 });

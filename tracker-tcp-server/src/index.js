@@ -78,6 +78,18 @@ if (PERSIST_TO_SQLITE) {
   console.warn("[db] PERSIST_TO_SQLITE=0 — all GPS data is in RAM only and is LOST on pm2 restart");
 }
 
+try {
+  const { promoteLiveCloudDevicesAlreadyOnTcp } = require("./directTcpPromote");
+  const promoted = promoteLiveCloudDevicesAlreadyOnTcp(store);
+  for (const row of promoted) {
+    console.log(
+      `[tracker] Auto-switched ${row.imei} from ${row.from} cloud poll → ${row.to} TCP (already live on listener)`
+    );
+  }
+} catch (err) {
+  console.warn("[tracker] Direct-TCP promote on boot skipped:", err.message || err);
+}
+
 /** Optional demo/fixture: preload one IMEI so GET /devices and /position work before TCP connects. */
 function seedSampleDeviceFromEnv() {
   const imei = String(process.env.SEED_DEVICE_IMEI || "").trim();

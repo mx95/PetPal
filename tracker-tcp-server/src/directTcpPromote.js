@@ -59,10 +59,53 @@ function shouldSkipGpsposPoll(row) {
   return false;
 }
 
+/**
+ * Detect live TCP even when admin override still says gpspos (enricher uses override).
+ * @param {object} device
+ * @returns {'gt06'|'g365'|'xexun'|null}
+ */
+function inferTcpProviderFromLiveDevice(device) {
+  if (!device || typeof device !== "object") return null;
+  const proto = device.protocol != null ? Number(device.protocol) : NaN;
+  if (proto === 0x12 || proto === 0x13 || proto === 0x16) return "gt06";
+  if (proto === 0x10 || proto === 0x11 || proto === 0x17 || proto === 0x18) return "g365";
+  const raw = String(device.rawHex || device.raw || "")
+    .replace(/\s+/g, "")
+    .toLowerCase();
+  if (raw.startsWith("fc")) return "xexun";
+  if (raw.startsWith("7878")) {
+    const kind = String(device.kind || "").toLowerCase();
+    if (kind === "location" || kind === "status" || kind === "alarm") return "gt06";
+    return "g365";
+  }
+  const stored = String(device.provider || "").trim().toLowerCase();
+  if (TCP_PROVIDERS.has(stored) && stored !== "gpspos") return stored;
+  return null;
+}
+
+/**
+ * After restart, promote collars that already have GT06/365GPS TCP in the live snapshot.
+ * @param {object} store
+ * @returns {Array<{ imei: string, from: string, to: string, at: string }>}
+ */
+function promoteLiveCloudDevicesAlreadyOnTcp(store) {
+  if (typeof store?.list !== "function") return [];
+  const switched = [];
+  for (const device of store.list() || []) {
+    const tcp = inferTcpProviderFromLiveDevice(device);
+    if (!tcp) continue;
+    const result = promoteCloudDeviceToDirectTcp(store, device.imei, tcp);
+    if (result?.switched) switched.push({ imei: String(device.imei), ...result });
+  }
+  return switched;
+}
+
 module.exports = {
   TCP_PROVIDERS,
   isCloudGpsposConfig,
   alreadyPromotedTo,
   promoteCloudDeviceToDirectTcp,
   shouldSkipGpsposPoll,
+  inferTcpProviderFromLiveDevice,
+  promoteLiveCloudDevicesAlreadyOnTcp,
 };
