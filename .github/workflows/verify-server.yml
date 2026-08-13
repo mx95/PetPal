@@ -44,6 +44,18 @@ jobs:
             hostname
             date -u
 
+            echo "======== disk ========"
+            df -hT / /var /root 2>/dev/null || df -hT
+            echo "-- largest under /root (top 15) --"
+            du -xh /root --max-depth=2 2>/dev/null | sort -hr | head -15 || true
+            echo "-- PetPal tree --"
+            if [ -d "$PETPAL_ROOT" ]; then
+              du -xh "$PETPAL_ROOT" --max-depth=2 2>/dev/null | sort -hr | head -20 || true
+              du -sh "$PETPAL_ROOT/petpal/build" "$PETPAL_ROOT/petpal/node_modules" "$PETPAL_ROOT/tracker-tcp-server/node_modules" "$PETPAL_ROOT/tracker-tcp-server/data" /var/lib/petpal 2>/dev/null || true
+            fi
+            echo "-- docker / images (if any) --"
+            docker system df 2>/dev/null || echo "docker not installed or no access"
+
             echo "======== git ========"
             cd "$PETPAL_ROOT"
             echo "HEAD: $(git rev-parse --short HEAD) $(git log -1 --pretty=%s)"
