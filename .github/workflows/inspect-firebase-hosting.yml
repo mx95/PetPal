@@ -1,0 +1,103 @@
+# Read-only inspection of Firebase CLI + Hosting on the Hetzner host.
+# Does NOT deploy, does NOT modify DNS/Auth/app files.
+
+name: Inspect Firebase Hosting
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/inspect-firebase-hosting.yml'
+
+concurrency:
+  group: inspect-firebase-hosting
+  cancel-in-progress: true
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Inspect Firebase on server (read-only)
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          command_timeout: 8m
+          script: |
+            set -euo pipefail
+            PETPAL_ROOT="${{ secrets.DEPLOY_PATH }}"
+            if [ -z "$PETPAL_ROOT" ]; then PETPAL_ROOT="/root/PetPal"; fi
+
+            echo "======== hostname / date ========"
+            hostname
+            date -u
+
+            echo "======== firebase CLI ========"
+            if command -v firebase >/dev/null 2>&1; then
+              echo "firebase_path=$(command -v firebase)"
+              firebase --version || true
+            else
+              echo "firebase_cli=NOT_FOUND"
+              if command -v npx >/dev/null 2>&1; then
+                echo "trying npx firebase-tools version..."
+                npx --yes firebase-tools@13.29.1 --version || true
+              fi
+            fi
+
+            if command -v firebase >/dev/null 2>&1; then
+              FB=firebase
+            else
+              FB="npx --yes firebase-tools@13.29.1"
+            fi
+
+            echo "======== firebase projects:list ========"
+            set +e
+            $FB projects:list --non-interactive
+            PL_RC=$?
+            set -e
+            echo "projects_list_exit=$PL_RC"
+            if [ "$PL_RC" -ne 0 ]; then
+              echo "AUTH_OR_PROJECTS_FAILED"
+              echo "If interactive login is required, run on the server:"
+              echo "  firebase login"
+              echo "or for CI-style token:"
+              echo "  firebase login:ci"
+              exit 0
+            fi
+
+            echo "======== project petpal-aecda ========"
+            $FB use petpal-aecda --non-interactive || true
+            $FB projects:list --non-interactive | grep -E 'petpal-aecda|Project ID' || true
+
+            echo "======== hosting sites:list ========"
+            set +e
+            $FB hosting:sites:list --project petpal-aecda --non-interactive
+            HS_RC=$?
+            set -e
+            echo "hosting_sites_list_exit=$HS_RC"
+
+            echo "======== local firebase.json / .firebaserc ========"
+            for f in \
+              "$PETPAL_ROOT/petpal/firebase.json" \
+              "$PETPAL_ROOT/petpal/.firebaserc" \
+              "$PETPAL_ROOT/firebase.json" \
+              "$PETPAL_ROOT/.firebaserc" \
+              "$PETPAL_ROOT/firebase-auth-hosting/firebase.json" \
+              "$PETPAL_ROOT/firebase-auth-hosting/.firebaserc"
+            do
+              if [ -f "$f" ]; then
+                echo "----- $f -----"
+                cat "$f"
+              else
+                echo "missing: $f"
+              fi
+            done
+
+            echo "======== dir firebase-auth-hosting ========"
+            ls -la "$PETPAL_ROOT/firebase-auth-hosting" 2>/dev/null || echo "firebase-auth-hosting: absent"
+
+            echo "======== inspect done ========"
