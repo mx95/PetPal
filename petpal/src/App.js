@@ -42,6 +42,7 @@ import AdminDeviceRegistry from './Pages/AdminDeviceRegistry';
 import AdminBroadcast from './Pages/AdminBroadcast';
 import AdminBookings from './Pages/AdminBookings';
 import AdminSupport from './Pages/AdminSupport';
+import AdminEmailSettings from './Pages/AdminEmailSettings';
 import Inbox from './Pages/Inbox';
 import Tracking from './Pages/Tracking';
 import { useI18n } from './i18n/I18nContext';
@@ -163,6 +164,14 @@ function App() {
             element={
               <RequireAuth>
                 <AdminSupport />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/admin/email"
+            element={
+              <RequireAuth>
+                <AdminEmailSettings />
               </RequireAuth>
             }
           />

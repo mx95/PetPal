@@ -2425,6 +2425,8 @@ const ru = {
       supportIntro: 'Последние обращения. Откройте входящие, чтобы ответить и отметить выполненными.',
       supportViewAll: 'Все сообщения →',
       supportOpenCount: '{n} открытых',
+      emailTitle: 'Email / SMTP',
+      emailDesc: 'Настройка исходящей почты для поддержки и бронирований.',
     },
     broadcast: {
       title: 'Сообщение рассылки',
@@ -2493,6 +2495,28 @@ const ru = {
       emailSkip: 'Заметка об email',
       reply: 'Ответить',
       noSubject: 'Без темы',
+    },
+    email: {
+      title: 'Email / SMTP',
+      sub:
+        'Форма поддержки и письма о записях требуют SMTP. Для Gmail создайте пароль приложения, вставьте его здесь и отправьте тест.',
+      errLoad: 'Не удалось загрузить настройки email.',
+      errSave: 'Не удалось сохранить SMTP.',
+      statusConfigured: 'SMTP настроен ({source}). Письма идут на {to}.',
+      statusMissing:
+        'SMTP ещё не настроен — сообщения сохраняются в инструментах админа, но email не отправляется.',
+      smtpUser: 'SMTP логин (email)',
+      smtpPass: 'SMTP пароль / пароль приложения',
+      smtpPassPh: 'Gmail App Password (16 символов)',
+      smtpHost: 'SMTP хост',
+      smtpPort: 'Порт',
+      to: 'Уведомлять эти адреса',
+      sendTest: 'Отправить тестовое письмо после сохранения',
+      save: 'Сохранить SMTP',
+      saved: 'Настройки SMTP сохранены.',
+      savedAndTested: 'SMTP сохранён, тест отправлен на {to}.',
+      gmailHint:
+        'Gmail: аккаунт Google → Безопасность → 2-этапная аутентификация → Пароли приложений. Используйте 16-символьный пароль (не обычный пароль Gmail).',
     },
     companyQueue: {
       title: 'Заявки компаний',
@@ -3243,6 +3267,10 @@ const ru = {
       adminSupport: {
         label: 'Входящие поддержки',
         desc: 'Сообщения с публичной формы связи.',
+      },
+      adminEmail: {
+        label: 'Email / SMTP',
+        desc: 'Настройка исходящей почты поддержки и бронирований.',
       },
       docs: {
         label: 'Документация',

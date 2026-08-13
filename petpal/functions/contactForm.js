@@ -1,60 +1,6 @@
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
-
-const DEFAULT_TO = 'info@petpal.com.cy, sotiris9515@gmail.com';
-
-function getConfig(path, fallback = null) {
-  try {
-    const cfg = functions.config && functions.config();
-    if (!cfg) return fallback;
-    return path.split('.').reduce((o, k) => (o && o[k] != null ? o[k] : null), cfg) ?? fallback;
-  } catch {
-    return fallback;
-  }
-}
-
-function contactToEmail() {
-  return (
-    process.env.CONTACT_TO_EMAIL ||
-    getConfig('contact.to_email') ||
-    DEFAULT_TO
-  ).trim();
-}
-
-async function sendContactEmail({ name, email, subject, message }) {
-  const smtpUser = process.env.CONTACT_SMTP_USER || getConfig('contact.smtp_user');
-  const smtpPass = process.env.CONTACT_SMTP_PASS || getConfig('contact.smtp_pass');
-  if (!smtpUser || !smtpPass) {
-    functions.logger.warn('Contact email skipped — set CONTACT_SMTP_USER and CONTACT_SMTP_PASS');
-    return { emailed: false, skipReason: 'smtp_not_configured' };
-  }
-
-  let nodemailer;
-  try {
-    nodemailer = require('nodemailer');
-  } catch {
-    functions.logger.warn('nodemailer not installed — contact saved to Firestore only');
-    return { emailed: false, skipReason: 'nodemailer_missing' };
-  }
-
-  const transporter = nodemailer.createTransport({
-    host: process.env.CONTACT_SMTP_HOST || getConfig('contact.smtp_host') || 'smtp.gmail.com',
-    port: Number(process.env.CONTACT_SMTP_PORT || getConfig('contact.smtp_port') || 587),
-    secure: false,
-    auth: { user: smtpUser, pass: smtpPass },
-  });
-
-  const to = contactToEmail();
-  await transporter.sendMail({
-    from: `"PetPal Contact" <${smtpUser}>`,
-    to,
-    replyTo: email,
-    subject: `[PetPal] ${subject}`,
-    text: `From: ${name} <${email}>\n\n${message}`,
-    html: `<p><strong>From:</strong> ${name} &lt;${email}&gt;</p><p>${String(message).replace(/\n/g, '<br>')}</p>`,
-  });
-  return { emailed: true, to };
-}
+const { loadSmtpSettings, sendTransactionalEmail } = require('./mailTransport');
 
 exports.submitContactForm = functions.region('europe-west1').https.onCall(async (data, context) => {
   const name = String(data?.name || '').trim();
@@ -92,20 +38,112 @@ exports.submitContactForm = functions.region('europe-west1').https.onCall(async 
 
   let mail = { emailed: false, skipReason: 'unknown' };
   try {
-    mail = await sendContactEmail({ name, email, subject, message });
+    mail = await sendTransactionalEmail({
+      fromLabel: 'PetPal Contact',
+      replyTo: email,
+      subject: `[PetPal] ${subject}`,
+      text: `From: ${name} <${email}>\n\n${message}`,
+      html: `<p><strong>From:</strong> ${name} &lt;${email}&gt;</p><p>${String(message).replace(/\n/g, '<br>')}</p>`,
+    });
   } catch (err) {
-    functions.logger.error('Contact email failed', { err, id: ref.id });
+    functions.logger.error('Contact email failed', { err: err?.message || String(err), id: ref.id });
     mail = { emailed: false, skipReason: err?.message || 'send_failed' };
   }
+
   await ref.set(
     {
       emailed: Boolean(mail.emailed),
-      emailTo: mail.to || contactToEmail(),
+      emailTo: mail.to || null,
       emailSkipReason: mail.emailed ? null : mail.skipReason || 'smtp_skipped',
+      emailSource: mail.smtpSource || null,
       ...(mail.emailed ? { emailedAt: admin.firestore.FieldValue.serverTimestamp() } : {}),
     },
     { merge: true }
   );
 
-  return { ok: true, id: ref.id };
+  return {
+    ok: true,
+    id: ref.id,
+    emailed: Boolean(mail.emailed),
+    emailSkipReason: mail.emailed ? null : mail.skipReason || 'smtp_skipped',
+  };
+});
+
+/** Admin: read whether SMTP is configured (never returns the password). */
+exports.getSupportEmailStatus = functions.region('europe-west1').https.onCall(async (_data, context) => {
+  if (!context.auth?.uid) {
+    throw new functions.https.HttpsError('unauthenticated', 'Sign in required.');
+  }
+  const adminSnap = await admin.firestore().doc(`admins/${context.auth.uid}`).get();
+  if (!adminSnap.exists) {
+    throw new functions.https.HttpsError('permission-denied', 'Admin only.');
+  }
+  const smtp = await loadSmtpSettings();
+  return {
+    configured: smtp.configured,
+    source: smtp.source,
+    host: smtp.host,
+    port: smtp.port,
+    user: smtp.user ? `${smtp.user.slice(0, 2)}…${smtp.user.includes('@') ? smtp.user.slice(smtp.user.indexOf('@')) : ''}` : '',
+    to: smtp.to,
+  };
+});
+
+/** Admin: save SMTP settings used for support + booking emails. */
+exports.saveSupportSmtpConfig = functions.region('europe-west1').https.onCall(async (data, context) => {
+  if (!context.auth?.uid) {
+    throw new functions.https.HttpsError('unauthenticated', 'Sign in required.');
+  }
+  const adminSnap = await admin.firestore().doc(`admins/${context.auth.uid}`).get();
+  if (!adminSnap.exists) {
+    throw new functions.https.HttpsError('permission-denied', 'Admin only.');
+  }
+
+  const user = String(data?.user || '').trim();
+  const pass = String(data?.pass || '').trim();
+  const host = String(data?.host || 'smtp.gmail.com').trim() || 'smtp.gmail.com';
+  const port = Number(data?.port) || 587;
+  const to = String(data?.to || 'info@petpal.com.cy, sotiris9515@gmail.com').trim();
+  const fromName = String(data?.fromName || 'PetPal').trim() || 'PetPal';
+  const sendTest = data?.sendTest === true;
+
+  if (!user || !user.includes('@')) {
+    throw new functions.https.HttpsError('invalid-argument', 'Enter the SMTP username (email).');
+  }
+  if (!pass || pass.length < 8) {
+    throw new functions.https.HttpsError('invalid-argument', 'Enter the SMTP password / app password.');
+  }
+
+  await admin.firestore().doc('adminConfig/smtp').set(
+    {
+      user,
+      pass,
+      host,
+      port,
+      to,
+      fromName,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedBy: context.auth.uid,
+    },
+    { merge: true }
+  );
+
+  let test = { emailed: false };
+  if (sendTest) {
+    try {
+      test = await sendTransactionalEmail({
+        fromLabel: fromName,
+        subject: '[PetPal] SMTP test',
+        text: 'PetPal support email is configured correctly.',
+        html: '<p>PetPal support email is configured correctly.</p>',
+      });
+    } catch (err) {
+      throw new functions.https.HttpsError('internal', err?.message || 'SMTP test failed.');
+    }
+    if (!test.emailed) {
+      throw new functions.https.HttpsError('failed-precondition', test.skipReason || 'SMTP test did not send.');
+    }
+  }
+
+  return { ok: true, testSent: Boolean(test.emailed), to: test.to || to };
 });
