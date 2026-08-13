@@ -6,6 +6,8 @@ import {
   NEARBY_CATEGORIES,
   NEARBY_SEARCH_RADIUS_M,
 } from '../config/nearbyPlaceCategories';
+import { nearbyCategoryForPlace } from '../nearby/classifyNearbyPlace';
+import NearbyCategoryPin from '../nearby/NearbyCategoryPin';
 import { GOOGLE_MAPS_LOADER_ID } from '../config/googleMapsLoaderId';
 import { subscribeGoogleMapsAuthFailure } from '../config/googleMapsAuthFailure';
 import { useI18n } from '../i18n/I18nContext';
@@ -171,7 +173,7 @@ function NearbyMap({ apiKey }) {
           setSearchStatus('error');
           return;
         }
-        /** @type {Map<string, google.maps.places.PlaceResult>} */
+        /** @type {Map<string, google.maps.places.PlaceResult & { nearbySourceCategoryIds?: string[] }>} */
         const byId = new Map();
         let pending = sources.length;
         if (!pending) {
@@ -191,7 +193,11 @@ function NearbyMap({ apiKey }) {
           service.nearbySearch(request, (results, status) => {
             if (status === window.google.maps.places.PlacesServiceStatus.OK && results) {
               results.forEach((place) => {
-                if (place.place_id) byId.set(place.place_id, place);
+                if (!place.place_id) return;
+                const prev = byId.get(place.place_id);
+                const ids = new Set(prev?.nearbySourceCategoryIds || []);
+                ids.add(entry.id);
+                byId.set(place.place_id, { ...place, nearbySourceCategoryIds: [...ids] });
               });
             }
             pending -= 1;
@@ -221,7 +227,12 @@ function NearbyMap({ apiKey }) {
 
       service.nearbySearch(request, (results, status) => {
         if (status === window.google.maps.places.PlacesServiceStatus.OK && results) {
-          setPlaces(results.slice(0, 20));
+          setPlaces(
+            results.slice(0, 20).map((place) => ({
+              ...place,
+              nearbySourceCategoryIds: [cat.id],
+            }))
+          );
           setSearchStatus('ok');
           return;
         }
@@ -418,25 +429,18 @@ function NearbyMap({ apiKey }) {
               options={mapOptions}
               onClick={() => setActivePlace(null)}
             >
-              {places.map((p) =>
-                p.geometry?.location ? (
-                  <Marker
+              {places.map((p) => {
+                const pinCategory = nearbyCategoryForPlace(p, selectedCategoryId, t);
+                return p.geometry?.location ? (
+                  <NearbyCategoryPin
                     key={p.place_id}
-                    position={p.geometry.location}
-                    title={p.name}
-                    animation={activePlace?.place_id === p.place_id ? window.google.maps.Animation.BOUNCE : window.google.maps.Animation.DROP}
-                    icon={{
-                      path: window.google.maps.SymbolPath.CIRCLE,
-                      scale: activePlace?.place_id === p.place_id ? 9 : 7,
-                      fillColor: activePlace?.place_id === p.place_id ? '#5b37ff' : '#ffffff',
-                      fillOpacity: 1,
-                      strokeColor: '#5b37ff',
-                      strokeWeight: 3,
-                    }}
+                    place={p}
+                    category={pinCategory}
+                    active={activePlace?.place_id === p.place_id}
                     onClick={() => setActivePlace(p)}
                   />
-                ) : null
-              )}
+                ) : null;
+              })}
               {userLocation ? (
                 <Marker
                   position={userLocation}
@@ -461,11 +465,17 @@ function NearbyMap({ apiKey }) {
                       ×
                     </button>
                     <div className="pp-nearby-info__image">
-                      {placePhotoUrl(activePlace, 260, 160) ? <img src={placePhotoUrl(activePlace, 260, 160)} alt="" /> : <span aria-hidden>{selectedCategory.icon}</span>}
+                      {placePhotoUrl(activePlace, 260, 160) ? (
+                        <img src={placePhotoUrl(activePlace, 260, 160)} alt="" />
+                      ) : (
+                        <span aria-hidden>
+                          {nearbyCategoryForPlace(activePlace, selectedCategoryId, t).icon}
+                        </span>
+                      )}
                     </div>
                     <strong>{activePlace.name}</strong>
                     <div className="pp-nearby-info__chips">
-                      <span>{selectedCategory.label}</span>
+                      <span>{nearbyCategoryForPlace(activePlace, selectedCategoryId, t).label}</span>
                       {activePlace.rating != null ? <span>★ {Number(activePlace.rating).toFixed(1)}</span> : null}
                       {distanceKm(userLocation || searchCenter, activePlace) != null ? (
                         <span>{t('nearbyPage.distanceKm', { km: distanceKm(userLocation || searchCenter, activePlace).toFixed(1) })}</span>
@@ -510,6 +520,7 @@ function NearbyMap({ apiKey }) {
               const photo = placePhotoUrl(p);
               const km = distanceKm(userLocation || searchCenter, p);
               const active = activePlace?.place_id === p.place_id;
+              const placeCategory = nearbyCategoryForPlace(p, selectedCategoryId, t);
               return (
               <li key={p.place_id} className={active ? 'is-active' : ''}>
                 <button
@@ -524,12 +535,12 @@ function NearbyMap({ apiKey }) {
                   }}
                 >
                   <span className="pp-nearby-listItem__thumb">
-                    {photo ? <img src={photo} alt="" /> : <span aria-hidden>{selectedCategory.icon}</span>}
+                    {photo ? <img src={photo} alt="" /> : <span aria-hidden>{placeCategory.icon}</span>}
                   </span>
                   <span className="pp-nearby-listItem__body">
                     <span className="pp-nearby-listItem__name">{p.name}</span>
                     <span className="pp-nearby-listItem__meta">
-                      <span className="pp-nearby-listItem__chip">{selectedCategory.label}</span>
+                      <span className="pp-nearby-listItem__chip">{placeCategory.label}</span>
                       {p.rating != null ? <span className="pp-nearby-listItem__chip">★ {Number(p.rating).toFixed(1)}</span> : null}
                       {km != null ? <span className="pp-nearby-listItem__chip">{t('nearbyPage.distanceKm', { km: km.toFixed(1) })}</span> : null}
                     </span>

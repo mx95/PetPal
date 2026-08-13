@@ -1,0 +1,92 @@
+import { getCategoryById } from '../config/nearbyPlaceCategories';
+
+const GOOGLE_TYPE_TO_CATEGORY = {
+  pet_store: 'pet_store',
+  veterinary_care: 'veterinary_care',
+  veterinarian: 'veterinary_care',
+  park: 'park',
+};
+
+/** Distinctive services first so mixed “shop + grooming” pins show scissors. */
+const NAME_RULES = [
+  { id: 'veterinary_care', re: /\b(vet(?:erinar(?:y|ian)?)?s?|animal hospital|κτηνίατρ|ветеринар)\b/i },
+  { id: 'grooming', re: /\b(groom(?:er|ing)?s?|pet spa|dog wash|κουρέμα|γκρουμ|груминг)\b/i },
+  { id: 'pet_hotel', re: /\b(board(?:ing)?|kennel|pet hotel|cattery|πανσιόν|ξενοδοχείο)\b/i },
+  { id: 'daycare', re: /\b(day\s?care|doggy day|cr[eè]che)\b/i },
+  { id: 'trainer', re: /\b(train(?:er|ing)|obedience|agility|behaviour|behavior|εκπαιδευτ)\b/i },
+  { id: 'pet_cafe', re: /\b(caf[eé]|coffee|cat cafe)\b/i },
+  { id: 'park', re: /\b(dog park|pet park|off[- ]leash)\b/i },
+  { id: 'pet_store', re: /\b(pet shop|pet store|pet supplies|accessories|zooshop)\b/i },
+];
+
+const SPECIFICITY = [
+  'veterinary_care',
+  'grooming',
+  'pet_hotel',
+  'daycare',
+  'trainer',
+  'pet_cafe',
+  'park',
+  'pet_store',
+];
+
+function placeText(place) {
+  return `${place?.name || ''} ${place?.vicinity || ''} ${place?.formatted_address || ''}`;
+}
+
+function categoryFromName(place) {
+  const hay = placeText(place);
+  for (const rule of NAME_RULES) {
+    if (rule.re.test(hay)) return rule.id;
+  }
+  return null;
+}
+
+function categoryFromGoogleTypes(place) {
+  const types = Array.isArray(place?.types) ? place.types : [];
+  for (const type of types) {
+    const id = GOOGLE_TYPE_TO_CATEGORY[type];
+    if (id) return id;
+  }
+  return null;
+}
+
+function categoryFromSearchSources(place) {
+  const sources = Array.isArray(place?.nearbySourceCategoryIds)
+    ? place.nearbySourceCategoryIds.filter(Boolean)
+    : [];
+  if (sources.length === 1) return sources[0];
+  if (sources.length > 1) {
+    for (const id of SPECIFICITY) {
+      if (sources.includes(id)) return id;
+    }
+    return sources[0];
+  }
+  return null;
+}
+
+/**
+ * Pick a Nearby category for a Google Place so map pins can use the matching icon.
+ * When the user already filtered to one category (not “All pet services”), keep that.
+ *
+ * @param {google.maps.places.PlaceResult & { nearbySourceCategoryIds?: string[] }} place
+ * @param {{ fallbackId?: string }} [options]
+ * @returns {string}
+ */
+export function classifyNearbyPlace(place, options = {}) {
+  const fallbackId = options.fallbackId;
+  if (fallbackId && fallbackId !== 'more') return fallbackId;
+
+  return (
+    categoryFromName(place) ||
+    categoryFromGoogleTypes(place) ||
+    categoryFromSearchSources(place) ||
+    fallbackId ||
+    'more'
+  );
+}
+
+export function nearbyCategoryForPlace(place, selectedCategoryId, t) {
+  const id = classifyNearbyPlace(place, { fallbackId: selectedCategoryId });
+  return getCategoryById(id, t);
+}
