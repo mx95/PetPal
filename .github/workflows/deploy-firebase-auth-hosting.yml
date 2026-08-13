@@ -1,0 +1,183 @@
+# Create + deploy ONLY the secondary Hosting site petpal-auth.
+# Does not touch petpal.com.cy, default petpal-aecda Hosting, Auth, or DNS.
+
+name: Deploy Firebase auth hosting
+
+on:
+  push:
+    branches:
+      - cursor/firebase-auth-hosting-d742
+    paths:
+      - 'firebase-auth-hosting/**'
+      - '.github/workflows/deploy-firebase-auth-hosting.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-firebase-auth-hosting
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create site + deploy petpal-auth only
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          command_timeout: 12m
+          script: |
+            set -euo pipefail
+            PETPAL_ROOT="${{ secrets.DEPLOY_PATH }}"
+            if [ -z "$PETPAL_ROOT" ]; then PETPAL_ROOT="/root/PetPal"; fi
+            AUTH_DIR="$PETPAL_ROOT/firebase-auth-hosting"
+
+            if command -v firebase >/dev/null 2>&1; then
+              FB=firebase
+            else
+              FB="npx --yes firebase-tools@13.29.1"
+            fi
+
+            echo "======== firebase version ========"
+            $FB --version
+
+            echo "======== ensure petpal-auth site exists ========"
+            set +e
+            LIST_OUT="$($FB hosting:sites:list --project petpal-aecda --non-interactive 2>&1)"
+            LIST_RC=$?
+            set -e
+            echo "$LIST_OUT"
+            if [ "$LIST_RC" -ne 0 ]; then
+              echo "Cannot list hosting sites — aborting without deploy"
+              exit 1
+            fi
+            if echo "$LIST_OUT" | grep -q 'petpal-auth'; then
+              echo "Site petpal-auth already exists"
+            else
+              echo "Creating site petpal-auth"
+              $FB hosting:sites:create petpal-auth --project petpal-aecda --non-interactive
+            fi
+
+            echo "======== sync dedicated hosting directory ========"
+            mkdir -p "$AUTH_DIR/public"
+            # Write files from this workflow run via base64 to avoid depending on main pull.
+            # Files are also in git on the feature branch.
+
+            cat > "$AUTH_DIR/.firebaserc" <<'EOF'
+            {
+              "projects": {
+                "default": "petpal-aecda"
+              }
+            }
+            EOF
+
+            cat > "$AUTH_DIR/firebase.json" <<'EOF'
+            {
+              "hosting": {
+                "site": "petpal-auth",
+                "public": "public",
+                "ignore": ["firebase.json", "**/.*", "**/node_modules/**"]
+              }
+            }
+            EOF
+
+            cat > "$AUTH_DIR/public/index.html" <<'EOF'
+            <!DOCTYPE html>
+            <html lang="en">
+              <head>
+                <meta charset="utf-8" />
+                <meta name="viewport" content="width=device-width, initial-scale=1" />
+                <title>PetPal authentication domain</title>
+                <style>
+                  body {
+                    margin: 0;
+                    min-height: 100vh;
+                    display: grid;
+                    place-items: center;
+                    font-family: Georgia, "Times New Roman", serif;
+                    background: #0f172a;
+                    color: #e2e8f0;
+                  }
+                  main {
+                    max-width: 36rem;
+                    padding: 2rem;
+                    text-align: center;
+                  }
+                  h1 {
+                    font-size: 1.5rem;
+                    font-weight: 600;
+                    margin: 0 0 0.75rem;
+                  }
+                  p {
+                    margin: 0;
+                    line-height: 1.5;
+                    color: #94a3b8;
+                  }
+                </style>
+              </head>
+              <body>
+                <main>
+                  <h1>PetPal authentication domain</h1>
+                  <p>
+                    This Firebase Hosting site (<code>petpal-auth</code>) is reserved for the Firebase
+                    Authentication custom-domain helper. It is not the PetPal application.
+                  </p>
+                </main>
+              </body>
+            </html>
+            EOF
+
+            # Strip accidental leading indentation from heredocs if any
+            python3 - <<'PY'
+            from pathlib import Path
+            root = Path("'"$AUTH_DIR"'")
+            # AUTH_DIR expanded by shell below differently — use env
+            PY
+            AUTH_DIR="$AUTH_DIR" python3 - <<'PY'
+            import os
+            from pathlib import Path
+            root = Path(os.environ["AUTH_DIR"])
+            for rel in [".firebaserc", "firebase.json", "public/index.html"]:
+                p = root / rel
+                text = p.read_text()
+                # If every non-empty line starts with 12 spaces (heredoc indent), strip once.
+                lines = text.splitlines()
+                nonempty = [ln for ln in lines if ln.strip()]
+                if nonempty and all(ln.startswith("            ") for ln in nonempty):
+                    p.write_text("\n".join(ln[12:] if ln.startswith("            ") else ln for ln in lines) + "\n")
+            print("files_written", list(root.rglob("*")))
+            PY
+
+            echo "======== configs ========"
+            echo "----- firebase.json -----"
+            cat "$AUTH_DIR/firebase.json"
+            echo "----- .firebaserc -----"
+            cat "$AUTH_DIR/.firebaserc"
+
+            echo "======== confirm default site NOT in deploy target ========"
+            grep -q '"site": "petpal-auth"' "$AUTH_DIR/firebase.json"
+            ! grep -q '"site": "petpal-aecda"' "$AUTH_DIR/firebase.json"
+
+            echo "======== deploy ONLY hosting (petpal-auth) ========"
+            cd "$AUTH_DIR"
+            # Exact command:
+            $FB deploy --only hosting --project petpal-aecda --non-interactive
+
+            echo "======== post-deploy sites list ========"
+            $FB hosting:sites:list --project petpal-aecda --non-interactive
+
+            echo "======== verify URLs ========"
+            curl -sS -o /tmp/petpal-auth-body.html -w "petpal-auth.web.app %{http_code}\n" https://petpal-auth.web.app/ || true
+            head -c 400 /tmp/petpal-auth-body.html || true
+            echo
+            curl -sS -o /tmp/default-hosting.html -w "petpal-aecda.web.app %{http_code}\n" https://petpal-aecda.web.app/ || true
+            # Default should still be Site Not Found (unchanged)
+            head -c 200 /tmp/default-hosting.html || true
+            echo
+            curl -sS -o /dev/null -w "petpal.com.cy %{http_code}\n" https://petpal.com.cy/ || true
+
+            echo "======== deploy auth hosting done ========"
