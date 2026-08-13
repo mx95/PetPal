@@ -143,6 +143,16 @@ function openSqlite(dbPath) {
     /* column exists */
   }
   try {
+    db.exec(`ALTER TABLE devices ADD COLUMN direct_tcp_switched_at TEXT`);
+  } catch {
+    /* column exists */
+  }
+  try {
+    db.exec(`ALTER TABLE devices ADD COLUMN direct_tcp_from_provider TEXT`);
+  } catch {
+    /* column exists */
+  }
+  try {
     db.exec(`ALTER TABLE devices ADD COLUMN home_explicit INTEGER NOT NULL DEFAULT 0`);
   } catch {
     /* column exists */
@@ -224,7 +234,8 @@ function openSqlite(dbPath) {
 
   const deviceSelectCols = `
     imei, name, last_lat, last_lng, home_lat, home_lng, home_explicit, battery, signal, source, provider, last_update,
-    provider_override, gpspos_platform_imei, gpspos_poll_interval_sec, gpspos_poll_enabled, emnify_card
+    provider_override, gpspos_platform_imei, gpspos_poll_interval_sec, gpspos_poll_enabled, emnify_card,
+    direct_tcp_switched_at, direct_tcp_from_provider
   `;
 
   const listDevices = db.prepare(`
@@ -251,7 +262,9 @@ function openSqlite(dbPath) {
       gpspos_platform_imei = @gpspos_platform_imei,
       gpspos_poll_interval_sec = @gpspos_poll_interval_sec,
       gpspos_poll_enabled = @gpspos_poll_enabled,
-      emnify_card = @emnify_card
+      emnify_card = @emnify_card,
+      direct_tcp_switched_at = @direct_tcp_switched_at,
+      direct_tcp_from_provider = @direct_tcp_from_provider
     WHERE imei = @imei
   `);
 
@@ -265,9 +278,12 @@ function openSqlite(dbPath) {
   `);
 
   const listGpsposPollTargets = db.prepare(`
-    SELECT imei, gpspos_platform_imei, gpspos_poll_interval_sec, provider_override, gpspos_poll_enabled
+    SELECT imei, gpspos_platform_imei, gpspos_poll_interval_sec, provider_override, gpspos_poll_enabled,
+           direct_tcp_switched_at, direct_tcp_from_provider
     FROM devices
-    WHERE gpspos_poll_enabled = 1 OR provider_override = 'gpspos'
+    WHERE (gpspos_poll_enabled = 1 OR provider_override = 'gpspos')
+      AND (direct_tcp_switched_at IS NULL OR direct_tcp_switched_at = '')
+      AND (provider_override IS NULL OR provider_override = '' OR provider_override = 'gpspos')
   `);
 
   const getLastGpsPosition = db.prepare(`

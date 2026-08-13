@@ -12,6 +12,7 @@ const { logPrefix, formatCyprusTime } = require("../logging/time");
 const { parseG365LbsCellsFromHex } = require("../geo/g365Lbs");
 const { geocodeLbsTowers, LBS_GEOCODE_ENABLED } = require("../geo/lbsGeocode");
 const { DEVICE, logDeviceConnect, logDeviceIdentified, logListenerReady } = require("../logging/deviceLog");
+const { promoteCloudDeviceToDirectTcp } = require("../directTcpPromote");
 
 function scheduleG365LbsGeocode(store, imei, parsed) {
   if (!LBS_GEOCODE_ENABLED || !imei || parsed?.source !== "lbs") return;
@@ -263,6 +264,12 @@ function createG365TcpServer({ port, store }) {
           });
           store.bindSocket(imei, socket);
           scheduleG365LbsGeocode(store, imei, parsed);
+          const promoted = promoteCloudDeviceToDirectTcp(store, imei, "g365");
+          if (promoted?.switched) {
+            console.log(
+              `${logPrefix({ dir: "in", tag: "365GPS" })} Auto-switched ${imei} from ${promoted.from} cloud poll → g365 TCP`
+            );
+          }
         }
 
         try {

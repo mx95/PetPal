@@ -97,6 +97,8 @@ function deviceConfigFromRow(row) {
       row.gpspos_poll_interval_sec != null ? Number(row.gpspos_poll_interval_sec) : null,
     gpsposPollEnabled: Boolean(Number(row.gpspos_poll_enabled)),
     emnifyCard: row.emnify_card ?? null,
+    directTcpSwitchedAt: row.direct_tcp_switched_at ?? null,
+    directTcpFromProvider: row.direct_tcp_from_provider ?? null,
   };
 }
 
@@ -404,6 +406,14 @@ function createSqliteStore({ dbPath }) {
             : current.gpspos_poll_enabled ?? 0,
         emnify_card:
           patch.emnify_card !== undefined ? patch.emnify_card : current.emnify_card ?? null,
+        direct_tcp_switched_at:
+          patch.direct_tcp_switched_at !== undefined
+            ? patch.direct_tcp_switched_at
+            : current.direct_tcp_switched_at ?? null,
+        direct_tcp_from_provider:
+          patch.direct_tcp_from_provider !== undefined
+            ? patch.direct_tcp_from_provider
+            : current.direct_tcp_from_provider ?? null,
       });
     },
 

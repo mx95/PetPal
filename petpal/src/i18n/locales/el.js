@@ -2536,6 +2536,7 @@ const el = {
       emptySearch: 'Καμία συσκευή δεν ταιριάζει στην αναζήτηση.',
       unknown: 'άγνωστο',
       observedProvider: '(παρατηρήθηκε: {provider})',
+      switchedToDirectTcp: 'Μεταφέρθηκε σε {provider} (ήταν {from} cloud) στις {when}',
       lastFix: 'Τελευταίο fix {when}',
       noPosition: 'Δεν υπάρχει θέση ακόμα',
       checkingLinks: 'Έλεγχος συνδέσεων εφαρμογής…',
