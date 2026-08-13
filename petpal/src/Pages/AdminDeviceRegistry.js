@@ -119,8 +119,8 @@ export default function AdminDeviceRegistry() {
 
   function draftFor(device) {
     const override = device.providerOverride;
-    const providerId =
-      override === 'g365' || override === 'gpspos' ? override : 'auto';
+    const known = override === 'g365' || override === 'gpspos' || override === 'gt06' || override === 'xexun';
+    const providerId = known ? override : 'auto';
     const base = {
       providerId,
       gpsposPlatformImei: device.gpsposPlatformImei || '',
@@ -428,6 +428,16 @@ export default function AdminDeviceRegistry() {
                       {t('admin.devices.protocolLabel')}: <strong>{device.effectiveProvider || t('admin.devices.unknown')}</strong>
                       {device.observedProvider && device.observedProvider !== device.effectiveProvider ? (
                         <span> {t('admin.devices.observedProvider', { provider: device.observedProvider })}</span>
+                      ) : null}
+                      {device.directTcpSwitchedAt ? (
+                        <span className="pp-adminDeviceCard__directTcp">
+                          {' · '}
+                          {t('admin.devices.switchedToDirectTcp', {
+                            provider: protocolLabel(device.effectiveProvider || 'gt06', t),
+                            from: protocolLabel(device.directTcpFromProvider || 'gpspos', t),
+                            when: device.directTcpSwitchedAt,
+                          })}
+                        </span>
                       ) : null}
                       {device.emnifyCard ? (
                         <span>

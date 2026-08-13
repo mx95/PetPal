@@ -22867,6 +22867,12 @@ html[data-theme="dark"] .pp-nearbyPartnerCard__name {
   font-size: 0.9rem;
 }
 
+.pp-adminDeviceCard__directTcp {
+  display: inline;
+  color: #027a48;
+  font-weight: 650;
+}
+
 .pp-adminDeviceCard__grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));

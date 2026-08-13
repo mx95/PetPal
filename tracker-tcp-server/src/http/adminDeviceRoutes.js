@@ -52,6 +52,8 @@ function deviceConfigPayload(row, live) {
     gpsposPollIntervalSec:
       row?.gpspos_poll_interval_sec != null ? Number(row.gpspos_poll_interval_sec) : null,
     emnifyCard: row?.emnify_card ?? null,
+    directTcpSwitchedAt: row?.direct_tcp_switched_at ?? live?.deviceConfig?.directTcpSwitchedAt ?? null,
+    directTcpFromProvider: row?.direct_tcp_from_provider ?? live?.deviceConfig?.directTcpFromProvider ?? null,
     lastUpdate: live?.lastUpdate ?? row?.last_update ?? null,
     battery: live?.battery ?? row?.battery ?? null,
     signal: live?.signal ?? row?.signal ?? null,
@@ -128,6 +130,12 @@ function registerAdminDeviceRoutes(app, store) {
 
     if ("emnifyCard" in body || "emnify_card" in body) {
       patch.emnify_card = normalizeEmnifyCard(body.emnifyCard ?? body.emnify_card);
+    }
+
+    // Admin may re-enable cloud poll; clear the auto-switch stamp so the poller resumes.
+    if (patch.provider_override === "gpspos" || patch.gpspos_poll_enabled === 1) {
+      patch.direct_tcp_switched_at = null;
+      patch.direct_tcp_from_provider = null;
     }
 
     if (!Object.keys(patch).length) {

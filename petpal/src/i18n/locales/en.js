@@ -2327,6 +2327,7 @@ const en = {
       emptySearch: 'No device matches your search.',
       unknown: 'unknown',
       observedProvider: '(observed: {provider})',
+      switchedToDirectTcp: 'Switched to {provider} (was {from} cloud) at {when}',
       lastFix: 'Last fix {when}',
       noPosition: 'No position yet',
       checkingLinks: 'Checking app links…',
