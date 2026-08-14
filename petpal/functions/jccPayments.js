@@ -164,11 +164,7 @@ function jccRegisterDoSucceeded(reg) {
   return Boolean(reg.orderId && reg.formUrl);
 }
 
-function paidOrderStatus(json) {
-  const s = json?.orderStatus;
-  const n = typeof s === 'string' ? Number(s) : s;
-  return n === 1 || n === 2;
-}
+const { paidOrderStatus, cardVerifyOrderSucceeded, CARD_BINDING_FEATURES } = require('./jccOrderStatus');
 
 function ensureAdmin() {
   try {
@@ -738,14 +734,15 @@ exports.createJccUpdateCard = functions.region('europe-west1').https.onCall(asyn
       userName,
       password,
       orderNumber,
-      amount: String(pricing.chargeCents),
+      // Minor units; 0 is allowed only with VERIFY (JCC register.do features).
+      amount: String(Math.max(0, Number(pricing.chargeCents) || 0)),
       currency: '978',
       returnUrl: `${returnUrl.replace(/\/$/, '')}?orderNumber=${encodeURIComponent(orderNumber)}`,
       failUrl: `${frontendUrl}/payment/failed?orderNumber=${encodeURIComponent(orderNumber)}&reason=card_update`,
       description: pricing.title.slice(0, 240),
       language: 'en',
       clientId: uid,
-      features: 'FORCE_CREATE_BINDING',
+      features: CARD_BINDING_FEATURES,
       jsonParams: buildJccJsonParams(frontendUrl),
       ...buildJccRegisterCustomerParams(shipping),
     };
@@ -1048,7 +1045,9 @@ exports.jccPaymentReturn = functions.region('europe-west1').https.onRequest(asyn
 
   await sessionRef.set({ statusPayload: statusJson, statusCheckedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
 
-  if (!jccOk(statusJson) || !paidOrderStatus(statusJson)) {
+  const cardUpdate = isCardUpdateSession(session);
+  const paymentOk = jccOk(statusJson) && (cardUpdate ? cardVerifyOrderSucceeded(statusJson) : paidOrderStatus(statusJson));
+  if (!paymentOk) {
     await sessionRef.set({ status: 'not_paid' }, { merge: true });
     await updateOrderStatus(db, orderNumber, 'payment_failed');
     redirect(res, `${frontendUrl}/payment/failed?orderNumber=${encodeURIComponent(orderNumber)}`);
@@ -1060,7 +1059,7 @@ exports.jccPaymentReturn = functions.region('europe-west1').https.onRequest(asyn
   const sku = session.sku;
   const uid = session.uid;
 
-  if (isCardUpdateSession(session)) {
+  if (cardUpdate) {
     if (!bindingId) {
       await sessionRef.set({ status: 'paid_no_binding' }, { merge: true });
       await updateOrderStatus(db, orderNumber, 'payment_failed');
