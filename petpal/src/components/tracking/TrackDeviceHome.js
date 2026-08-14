@@ -1,10 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useI18n } from '../../i18n/I18nContext';
 import PositionMap from '../../tracking/PositionMap';
-import { clearHomeAnchor, homeCoordsFromPosition, loadHomeAnchor } from '../../tracking/homeAnchorStorage';
+import { homeCoordsFromPosition, loadHomeAnchor } from '../../tracking/homeAnchorStorage';
 import { HOME_GEOFENCE_METERS } from '../../tracking/mapHomeMarker';
 import { hasPlausibleMapCoords } from '../../tracking/positionFilter';
-import { setHomeCoords, setHomeFromPhone } from '../../tracking/setHomeFromPhone';
+import { setHomeCoords, setHomeFromPhone, clearHomeCoords } from '../../tracking/setHomeFromPhone';
 import { isTrackingGeolocationEnabled } from '../../tracking/trackingWifiFeature';
 
 const DEFAULT_CENTER = { lat: 34.98, lng: 33.85 };
@@ -95,12 +95,20 @@ export default function TrackDeviceHome({
     }
   }
 
-  function handleClear() {
+  async function handleClear() {
     if (!imei?.trim()) return;
-    clearHomeAnchor(imei);
-    setDraft(null);
-    setStatus(t('trackingPage.deviceHomeClearedLocal'));
-    notify();
+    setBusy(true);
+    setError('');
+    try {
+      await clearHomeCoords(imei);
+      setDraft(null);
+      setStatus(t('trackingPage.deviceHomeClearedLocal'));
+      notify();
+    } catch {
+      setError(t('trackingPage.deviceHomeSaveFailed'));
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (

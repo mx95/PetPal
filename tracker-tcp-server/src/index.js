@@ -285,9 +285,17 @@ app.get("/api/app/history", (req, res) => {
 
 app.post("/api/app/home", (req, res) => {
   const imei = String(req.body?.deviceId || req.body?.imei || "").trim();
+  const clear = req.body?.clear === true || req.body?.action === "clear";
+  if (!imei) return res.status(400).json({ error: "missing_deviceId" });
+  if (clear) {
+    if (typeof store.clearHomeLocation !== "function") {
+      return res.status(501).json({ error: "home_location_not_supported" });
+    }
+    store.clearHomeLocation(imei);
+    return res.json({ ok: true, imei, cleared: true, homeLat: null, homeLng: null });
+  }
   const lat = req.body?.lat != null ? Number(req.body.lat) : Number.NaN;
   const lng = req.body?.lng != null ? Number(req.body.lng) : Number.NaN;
-  if (!imei) return res.status(400).json({ error: "missing_deviceId" });
   if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
     return res.status(400).json({ error: "missing_lat_lng" });
   }

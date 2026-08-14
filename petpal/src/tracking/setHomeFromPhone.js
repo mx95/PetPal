@@ -1,5 +1,5 @@
-import { saveHomeAnchor } from './homeAnchorStorage';
-import { saveHomeLocation } from './petpalVendorClient';
+import { saveHomeAnchor, clearHomeAnchor } from './homeAnchorStorage';
+import { saveHomeLocation, clearHomeLocationRemote } from './petpalVendorClient';
 
 /**
  * One-tap: save phone GPS as home on device + tracker server.
@@ -60,4 +60,21 @@ export async function setHomeCoords(imei, lat, lng, meta = {}) {
     /* saved locally; server sync optional */
   }
   return { lat: la, lng: ln };
+}
+
+/**
+ * Clear home locally and on the tracker server.
+ * @param {string} imei
+ */
+export async function clearHomeCoords(imei) {
+  const id = String(imei || '').trim();
+  if (!id) {
+    throw Object.assign(new Error('missing_imei'), { code: 'missing_imei' });
+  }
+  clearHomeAnchor(id);
+  try {
+    await clearHomeLocationRemote(id);
+  } catch {
+    /* local clear still applies */
+  }
 }

@@ -576,6 +576,28 @@ export async function saveHomeLocation(deviceId, lat, lng) {
   return data;
 }
 
+/** Clear saved home on tracker server. */
+export async function clearHomeLocationRemote(deviceId) {
+  const base = xexunBase();
+  if (base == null) return { ok: false, error: 'not_configured' };
+  const imei = String(deviceId || '').trim();
+  if (!imei) throw new Error('missing_imei');
+  const path = '/api/app/home';
+  const url = base === '' ? path : `${base}${path}`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify({ deviceId: imei, clear: true }),
+  });
+  const data = await readJsonSafe(res);
+  if (!res.ok) {
+    const err = new Error(data?.error || `clear home ${res.status}`);
+    err.status = res.status;
+    throw err;
+  }
+  return data;
+}
+
 export function mapsLink(lat, lng) {
   return `https://www.google.com/maps?q=${encodeURIComponent(`${lat},${lng}`)}`;
 }

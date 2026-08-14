@@ -67,6 +67,11 @@ function buildPositionPayload(imei, d) {
   const platformOnline = d.platformOnline === true;
 
   const atHomeWifi = Boolean(d.atHomeWifi || d.source === "wifi");
+  const home = d.homeLocation && isPlausibleLatLng(d.homeLocation.lat, d.homeLocation.lng)
+    ? { lat: Number(d.homeLocation.lat), lng: Number(d.homeLocation.lng) }
+    : null;
+  const homeLat = home ? home.lat : null;
+  const homeLng = home ? home.lng : null;
 
   const useCoords =
     isPlausibleLatLng(rawLat, rawLng) && d.source !== "wifi" && !d.atHomeWifi;
@@ -75,10 +80,6 @@ function buildPositionPayload(imei, d) {
 
   if (!isPlausibleLatLng(lat, lng)) {
     if (atHomeWifi) {
-      const home = d.homeLocation || null;
-      const hasHome = home && isPlausibleLatLng(home.lat, home.lng);
-      const homeLat = hasHome ? Number(home.lat) : null;
-      const homeLng = hasHome ? Number(home.lng) : null;
       return {
         imei,
         provider: d.provider ?? null,
@@ -89,7 +90,7 @@ function buildPositionPayload(imei, d) {
         atHomeWifi: true,
         source: "wifi",
         accuracy: "wifi",
-        locationKind: hasHome ? "home_wifi" : "wifi_status",
+        locationKind: home ? "home_wifi" : "wifi_status",
         ...statusFields(d),
         lastUpdate: serverReceivedAt,
         receivedAt: serverReceivedAt,
@@ -109,6 +110,8 @@ function buildPositionPayload(imei, d) {
         provider: d.provider ?? null,
         lat: approxCoords ? rawLat : null,
         lng: approxCoords ? rawLng : null,
+        homeLat,
+        homeLng,
         source: d.source ?? null,
         accuracy: d.source === "gps" ? "high" : "low",
         ...statusFields(d),
@@ -174,6 +177,8 @@ function buildPositionPayload(imei, d) {
     provider: d.provider ?? null,
     lat,
     lng,
+    homeLat,
+    homeLng,
     source,
     accuracy: source === "gps" ? "high" : "low",
     battery,
