@@ -1682,6 +1682,7 @@ export default function Tracking() {
                             timeTo: next || defaultHistoryDayTimes().timeTo,
                           }));
                         },
+                      },
                     ]
                   ).map((row) => (
                     <div key={row.key} className={`pp-trackHistoryRangeRow pp-trackHistoryRangeRow--${row.key}`}>
