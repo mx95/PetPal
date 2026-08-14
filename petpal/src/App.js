@@ -43,6 +43,7 @@ import AdminBroadcast from './Pages/AdminBroadcast';
 import AdminBookings from './Pages/AdminBookings';
 import AdminSupport from './Pages/AdminSupport';
 import AdminEmailSettings from './Pages/AdminEmailSettings';
+import AdminSiteMode from './Pages/AdminSiteMode';
 import Inbox from './Pages/Inbox';
 import Tracking from './Pages/Tracking';
 import { useI18n } from './i18n/I18nContext';
@@ -172,6 +173,14 @@ function App() {
             element={
               <RequireAuth>
                 <AdminEmailSettings />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/admin/site-mode"
+            element={
+              <RequireAuth>
+                <AdminSiteMode />
               </RequireAuth>
             }
           />
