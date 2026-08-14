@@ -15062,7 +15062,7 @@ select.pp-bookConfirmField__control {
   z-index: 1;
 }
 
-.pp-book-input--search {
+.pp-book-input.pp-book-input--search {
   -webkit-appearance: none;
   appearance: none;
   width: 100%;
@@ -15076,16 +15076,16 @@ select.pp-bookConfirmField__control {
   box-shadow: inset 0 0 0 1px rgba(79, 70, 229, 0.03);
 }
 
-.pp-book-input--search::-webkit-search-decoration,
-.pp-book-input--search::-webkit-search-cancel-button,
-.pp-book-input--search::-webkit-search-results-button,
-.pp-book-input--search::-webkit-search-results-decoration {
+.pp-book-input.pp-book-input--search::-webkit-search-decoration,
+.pp-book-input.pp-book-input--search::-webkit-search-cancel-button,
+.pp-book-input.pp-book-input--search::-webkit-search-results-button,
+.pp-book-input.pp-book-input--search::-webkit-search-results-decoration {
   -webkit-appearance: none;
   appearance: none;
   display: none;
 }
 
-.pp-book-input--search::placeholder {
+.pp-book-input.pp-book-input--search::placeholder {
   color: #667085;
   font-weight: 600;
   opacity: 1;
