@@ -20488,13 +20488,13 @@ html[data-theme="dark"] .pp-nearby-list > li {
 }
 
 .pp-nfcDesignSelector__previewImg {
-  width: min(160px, 42vw);
+  width: min(120px, 34vw);
   height: auto;
   object-fit: contain;
 }
 
 .pp-nfcDesignSelector__previewName {
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 800;
   color: #0f172a;
 }
@@ -20531,14 +20531,14 @@ html[data-theme="dark"] .pp-nearby-list > li {
 
 .pp-nfcDesignSelector__slide {
   flex: 0 0 auto;
-  width: min(132px, 46vw);
+  width: min(108px, 38vw);
   scroll-snap-align: center;
   min-width: 0;
 }
 
 @media (max-width: 420px) {
   .pp-nfcDesignSelector__slide {
-    width: min(120px, 48vw);
+    width: min(96px, 40vw);
   }
 }
 
@@ -23064,7 +23064,7 @@ html[data-theme="dark"] .pp-nearbyPartnerCard__badge--partner {
   }
 
   .pp-shopPage .pp-nfcDesignSelector__previewImg {
-    width: 56px;
+    width: 48px;
     flex-shrink: 0;
   }
 
@@ -23083,7 +23083,7 @@ html[data-theme="dark"] .pp-nearbyPartnerCard__badge--partner {
   }
 
   .pp-shopPage .pp-nfcDesignSelector__slide {
-    width: 92px;
+    width: 80px;
   }
 
   .pp-shopPage .pp-nfcDesignCard {
@@ -23099,8 +23099,8 @@ html[data-theme="dark"] .pp-nearbyPartnerCard__badge--partner {
   }
 
   .pp-shopPage .pp-nfcDesignCard__img {
-    width: 52px;
-    height: 52px;
+    width: 44px;
+    height: 44px;
     aspect-ratio: 1;
   }
 
