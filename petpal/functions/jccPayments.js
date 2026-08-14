@@ -233,7 +233,7 @@ function uniqueOrderNumber(prefix) {
   return safe.slice(0, 36);
 }
 
-const { SKUS, PLUS_SKUS, resolveCheckoutPricing, resolveMarketplaceCartPricing, validateMarketplaceCartLines, PRICES } = require('./shopPricing');
+const { SKUS, PLUS_SKUS, resolveCheckoutPricing, resolveMarketplaceCartPricing, applyMarketplaceCatalogPrices, sumCartChargeCents, validateMarketplaceCartLines, PRICES } = require('./shopPricing');
 const { buildJccRegisterCustomerParams, buildJccJsonParams } = require('./jccRegisterExtras');
 const { appendOrderTrackerSubscriptions, normalizeImei } = require('./subscriptionImei');
 const {
@@ -913,11 +913,30 @@ exports.createJccCheckout = functions.region('europe-west1').https.onCall(async 
     let pricing;
     let sessionCartItems = null;
     let cartSaveCard = saveCard;
+    const db = admin.firestore();
     if (sku === 'MARKETPLACE_CART') {
       pricing = resolveMarketplaceCartPricing(rawCartItems);
       if (!pricing) {
         throw new functions.https.HttpsError('invalid-argument', 'Add at least one product to your cart.');
       }
+      let pricedLines;
+      try {
+        pricedLines = await applyMarketplaceCatalogPrices(db, pricing.cartItems);
+      } catch (priceErr) {
+        throw new functions.https.HttpsError(
+          'invalid-argument',
+          priceErr?.message || 'A product in your cart is no longer available.'
+        );
+      }
+      const chargeCents = sumCartChargeCents(pricedLines);
+      if (chargeCents <= 0) {
+        throw new functions.https.HttpsError('invalid-argument', 'Add at least one product to your cart.');
+      }
+      pricing = {
+        ...pricing,
+        cartItems: pricedLines,
+        chargeCents,
+      };
       const cartErr = validateMarketplaceCartLines(pricing.cartItems);
       if (cartErr) {
         throw new functions.https.HttpsError('invalid-argument', cartErr);
@@ -958,7 +977,6 @@ exports.createJccCheckout = functions.region('europe-west1').https.onCall(async 
     const { userName, password, restBase, returnUrl, frontendUrl } = await jccCredentials();
 
     const orderNumber = uniqueOrderNumber('PP');
-    const db = admin.firestore();
     const sessionRef = db.collection('paymentSessions').doc(orderNumber);
     await sessionRef.set(
       omitUndefined({

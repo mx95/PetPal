@@ -167,6 +167,52 @@ function resolveMarketplaceCartPricing(cartItems) {
   };
 }
 
+/**
+ * Re-price marketplace catalog lines from Firestore (approved + active only).
+ * Catalog SKU lines are left unchanged.
+ * @param {FirebaseFirestore.Firestore} db
+ * @param {Array} lines
+ */
+async function applyMarketplaceCatalogPrices(db, lines) {
+  const out = [];
+  for (const line of lines || []) {
+    if (!line?.productId) {
+      out.push(line);
+      continue;
+    }
+    const snap = await db.collection('marketplaceProducts').doc(String(line.productId)).get();
+    if (!snap.exists) {
+      throw new Error('A product in your cart is no longer available. Refresh the shop and try again.');
+    }
+    const data = snap.data() || {};
+    if (data.status !== 'approved' || data.active === false) {
+      throw new Error(
+        `"${String(data.title || 'Product').slice(0, 80)}" is not available. Remove it from your cart.`
+      );
+    }
+    const listed = Math.max(0, Math.round(Number(data.listedPriceCents) || 0));
+    if (listed < 5) {
+      throw new Error('A product in your cart has invalid pricing. Refresh the shop and try again.');
+    }
+    out.push({
+      ...line,
+      title: String(data.title || line.title || 'Item').slice(0, 120),
+      subtitle: data.companyName
+        ? String(data.companyName).slice(0, 200)
+        : line.subtitle,
+      priceCents: listed,
+      merchantPriceCents: Math.max(0, Math.round(Number(data.merchantPriceCents) || 0)),
+      companyId: data.companyId ? String(data.companyId).slice(0, 64) : undefined,
+      sellerType: data.sellerType === 'petpal' ? 'petpal' : 'company',
+    });
+  }
+  return out;
+}
+
+function sumCartChargeCents(lines) {
+  return (lines || []).reduce((sum, row) => sum + (Number(row.priceCents) || 0) * (Number(row.qty) || 1), 0);
+}
+
 function resolveCartLinePricing(line) {
   const sku = line.sku;
   if (!sku || !SKUS[sku]) return Math.max(0, Number(line.priceCents) || 0);
@@ -184,6 +230,9 @@ function resolveCartLinePricing(line) {
 
 function validateMarketplaceCartLines(lines) {
   for (const line of lines) {
+    if (!line.sku && !line.productId) {
+      return 'Cart items must be shop products or catalog SKUs.';
+    }
     const sku = line.sku;
     if (!sku || !SKUS[sku]) continue;
     const catalog = SKUS[sku];
@@ -229,6 +278,8 @@ module.exports = {
   PLUS_YEARLY_RENEWAL_CENTS,
   resolveCheckoutPricing,
   resolveMarketplaceCartPricing,
+  applyMarketplaceCatalogPrices,
+  sumCartChargeCents,
   validateMarketplaceCartLines,
   expectedChargeCents,
 };

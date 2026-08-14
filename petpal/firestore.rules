@@ -408,5 +408,74 @@ service cloud.firestore {
         && request.resource.data.ownerUid == resource.data.ownerUid;
       allow delete: if false;
     }
+
+    // Marketplace catalog — shop shows approved+active; businesses submit pending; admins approve.
+    function marketplaceProductShape() {
+      let d = request.resource.data;
+      return d.title is string
+        && d.title.size() > 0
+        && d.title.size() <= 120
+        && d.description is string
+        && d.description.size() <= 800
+        && d.category is string
+        && d.merchantPriceCents is number
+        && d.merchantPriceCents >= 5
+        && d.listedPriceCents is number
+        && d.listedPriceCents >= 5
+        && d.commissionPercent is number
+        && (d.commissionPercent == 10 || d.commissionPercent == 12)
+        && d.selfShip is bool
+        && d.sellerType is string
+        && (d.sellerType == 'company' || d.sellerType == 'petpal')
+        && d.companyId is string
+        && d.companyId.size() > 0
+        && d.companyName is string
+        && d.companyName.size() > 0
+        && d.status is string
+        && (d.status == 'pending' || d.status == 'approved' || d.status == 'rejected')
+        && d.active is bool
+        && d.createdBy is string;
+    }
+
+    match /marketplaceProducts/{productId} {
+      allow read: if isAdmin()
+        || (resource.data.status == 'approved' && resource.data.active == true)
+        || (request.auth != null && resource.data.companyId == request.auth.uid);
+
+      allow create: if (
+          isAdmin()
+          && marketplaceProductShape()
+          && request.resource.data.createdBy == request.auth.uid
+        )
+        || (
+          request.auth != null
+          && ownerHasApprovedCompany(request.auth.uid)
+          && marketplaceProductShape()
+          && request.resource.data.sellerType == 'company'
+          && request.resource.data.companyId == request.auth.uid
+          && request.resource.data.createdBy == request.auth.uid
+          && request.resource.data.status == 'pending'
+        );
+
+      allow update: if (isAdmin() && marketplaceProductShape())
+        || (
+          request.auth != null
+          && resource.data.companyId == request.auth.uid
+          && resource.data.sellerType == 'company'
+          && marketplaceProductShape()
+          && request.resource.data.companyId == resource.data.companyId
+          && request.resource.data.sellerType == 'company'
+          && request.resource.data.createdBy == resource.data.createdBy
+          && request.resource.data.status == 'pending'
+          && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['reviewedBy', 'reviewedAt'])
+        );
+
+      allow delete: if isAdmin()
+        || (
+          request.auth != null
+          && resource.data.companyId == request.auth.uid
+          && resource.data.sellerType == 'company'
+        );
+    }
   }
 }
