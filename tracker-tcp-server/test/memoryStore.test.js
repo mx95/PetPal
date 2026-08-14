@@ -123,4 +123,10 @@ test("memory store — GPS uplink does not invent home location", () => {
   const withHome = store.get(imei);
   assert.equal(withHome.homeLocation?.lat, 35.0);
   assert.equal(withHome.homeExplicit, true);
+
+  const payload = buildPositionPayload(imei, withHome);
+  assert.equal(payload.homeLat, 35.0);
+  assert.equal(payload.homeLng, 33.5);
+  assert.equal(payload.lat, 34.71);
+  assert.equal(payload.source, "gps");
 });

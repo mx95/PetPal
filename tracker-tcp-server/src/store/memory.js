@@ -310,6 +310,21 @@ function createMemoryStore() {
       });
       return true;
     },
+    clearHomeLocation(imei) {
+      if (!imei) return false;
+      const k = String(imei);
+      const prev = devices.get(k);
+      if (!prev) {
+        devices.set(k, { imei: k, homeLocation: null, homeExplicit: false });
+        return true;
+      }
+      devices.set(k, {
+        ...prev,
+        homeLocation: null,
+        homeExplicit: false,
+      });
+      return true;
+    },
   };
 }
 

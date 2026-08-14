@@ -277,6 +277,12 @@ function openSqlite(dbPath) {
     WHERE imei = ?
   `);
 
+  const clearDeviceHome = db.prepare(`
+    UPDATE devices
+    SET home_lat = NULL, home_lng = NULL, home_explicit = 0
+    WHERE imei = ?
+  `);
+
   const listGpsposPollTargets = db.prepare(`
     SELECT imei, gpspos_platform_imei, gpspos_poll_interval_sec, provider_override, gpspos_poll_enabled,
            direct_tcp_switched_at, direct_tcp_from_provider
@@ -350,6 +356,7 @@ function openSqlite(dbPath) {
     deleteDeviceCommands,
     deleteDeviceRow,
     clearDeviceLastFix,
+    clearDeviceHome,
     listGpsposPollTargets,
     getLastGpsPosition,
     insertCommandQueued,

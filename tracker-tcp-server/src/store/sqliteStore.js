@@ -372,6 +372,15 @@ function createSqliteStore({ dbPath }) {
       return true;
     },
 
+    clearHomeLocation(imei) {
+      const k = String(imei);
+      if (!k) return false;
+      mem.clearHomeLocation(k);
+      sqlite.ensureDevice.run(k);
+      sqlite.clearDeviceHome.run(k);
+      return true;
+    },
+
     getDeviceConfig(imei) {
       return sqlite.getDevice.get(String(imei)) || null;
     },
