@@ -141,19 +141,12 @@ exports.saveSiteJccCredentials = functions.region('europe-west1').https.onCall(a
 });
 
 /**
- * One-time callable to seed live (and optional test) JCC credentials into Firestore.
- * Pass { token }. Disables itself after success (adminConfig/jccBootstrap.used).
+ * One-time callable to seed live JCC credentials into Firestore.
+ * Pass { token, user, pass, restBase? }. Disables itself after success.
  * Remove this export after production credentials are confirmed.
  */
 const JCC_BOOTSTRAP_TOKEN =
   process.env.JCC_BOOTSTRAP_TOKEN || '4e8cfad6836c4d3dee8bca8a3f84c3750f4e1f9c7e864bc7';
-
-/** Live merchant credentials provided for initial production setup (rotated via Admin UI later). */
-const JCC_BOOTSTRAP_LIVE = {
-  user: '0054705017_powareltd-api',
-  pass: 'H.gkBvH8wmpc',
-  restBase: DEFAULT_LIVE_REST,
-};
 
 exports.bootstrapLiveJccCredentials = functions.region('europe-west1').https.onCall(async (data) => {
   const token = String(data?.token || '').trim();
@@ -169,11 +162,12 @@ exports.bootstrapLiveJccCredentials = functions.region('europe-west1').https.onC
     throw new functions.https.HttpsError('failed-precondition', 'Bootstrap already used.');
   }
 
-  const liveUser = String(data?.user || JCC_BOOTSTRAP_LIVE.user).trim();
-  const livePass = String(data?.pass || JCC_BOOTSTRAP_LIVE.pass).trim();
-  const liveRest = String(data?.restBase || JCC_BOOTSTRAP_LIVE.restBase)
-    .trim()
-    .replace(/\/$/, '') || DEFAULT_LIVE_REST;
+  const liveUser = String(data?.user || '').trim();
+  const livePass = String(data?.pass || '').trim();
+  const liveRest =
+    String(data?.restBase || DEFAULT_LIVE_REST)
+      .trim()
+      .replace(/\/$/, '') || DEFAULT_LIVE_REST;
 
   if (!liveUser || !livePass) {
     throw new functions.https.HttpsError('invalid-argument', 'Live JCC credentials required.');
