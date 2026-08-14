@@ -1347,7 +1347,7 @@ const en = {
     historyToDateAria: 'End date',
     historyToTimeAria: 'End time (each day)',
     historyRangeHint:
-      'Uses your timezone. Points are grouped by when the server received them (not the collar clock). Each day only includes fixes between the From and To times.',
+      'Uses your timezone. Today and Yesterday show the full calendar day. Points are grouped by when the server received them (not the collar clock). Narrow From/To times if you want a shorter window.',
     historyTimeFrom: 'Daily from',
     historyTimeTo: 'Daily to',
     historyTimeHint:

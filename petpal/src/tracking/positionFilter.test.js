@@ -19,6 +19,14 @@ describe('isPlausibleGpsJump', () => {
     expect(kmBetween(home, spike)).toBeGreaterThan(0.2);
     expect(isPlausibleGpsJump(home, spike)).toBe(false);
   });
+
+  it('treats short collar GPS jitter as a plausible hop, not a sprint', () => {
+    const a = pt(34.98468, 33.84502, '2026-08-14T08:19:03.000Z');
+    const b = pt(34.98535, 33.84502, '2026-08-14T08:19:11.000Z');
+    expect(kmBetween(a, b)).toBeGreaterThan(0.05);
+    expect(kmBetween(a, b)).toBeLessThan(0.12);
+    expect(isPlausibleGpsJump(a, b)).toBe(true);
+  });
 });
 
 describe('resolveTrackerPositions', () => {
@@ -93,5 +101,44 @@ describe('resolveHistoryRoutePositions', () => {
       maxSeg = Math.max(maxSeg, kmBetween(route[i - 1], route[i]));
     }
     expect(maxSeg).toBeLessThan(2);
+  });
+
+  it('keeps a neighbourhood walk with GT06-style GPS gaps instead of collapsing to home', () => {
+    const start = Date.parse('2026-08-14T08:17:00.000Z');
+    const points = [];
+    const home = { lat: 34.98468, lng: 33.84502 };
+    const dest = { lat: 34.9754, lng: 33.85469 };
+    const steps = 24;
+    for (let i = 0; i <= steps; i++) {
+      // ~8 s between ~70 m steps — looks like 30+ km/h on noisy collar GPS.
+      const t = new Date(start + i * 8_000).toISOString();
+      const f = i / steps;
+      points.push(
+        pt(home.lat + (dest.lat - home.lat) * f, home.lng + (dest.lng - home.lng) * f, t)
+      );
+    }
+    const route = resolveHistoryRoutePositions(points);
+    expect(route.length).toBeGreaterThan(steps / 2);
+    const span = kmBetween(route[0], route[route.length - 1]);
+    expect(span).toBeGreaterThan(1.2);
+  });
+
+  it('drops factory GPS in China so the Cyprus walk is the route', () => {
+    const china = [];
+    const walk = [];
+    const chinaT = Date.parse('2026-08-12T14:04:00.000Z');
+    for (let i = 0; i < 5; i++) {
+      china.push(pt(22.67894, 113.79599, new Date(chinaT + i * 60_000).toISOString()));
+    }
+    const walkT = Date.parse('2026-08-12T14:18:00.000Z');
+    for (let i = 0; i < 12; i++) {
+      walk.push(
+        pt(34.98468 - i * 0.0004, 33.84502 + i * 0.00035, new Date(walkT + i * 25_000).toISOString())
+      );
+    }
+    const route = resolveHistoryRoutePositions([...china, ...walk]);
+    expect(route.length).toBeGreaterThanOrEqual(8);
+    expect(route.every((p) => p.lng < 50)).toBe(true);
+    expect(route[0].lat).toBeGreaterThan(30);
   });
 });

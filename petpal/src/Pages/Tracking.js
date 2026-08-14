@@ -38,6 +38,7 @@ import {
 } from '../tracking/homeAnchorStorage';
 import { setHomeFromPhone } from '../tracking/setHomeFromPhone';
 import { isTrackingWifiEnabled, isTrackingGeolocationEnabled, stripWifiFromPosition, resolveTrackerHttpBase } from '../tracking/trackingWifiFeature';
+import { placeGridKey, reverseGeocodeLatLng, reverseGeocodePoints } from '../tracking/reverseGeocode';
 
 const LAST_LIVE_PET_KEY = 'petpal_live_selectedPetId';
 const LAST_LIVE_COORDS_KEY = 'petpal_last_live_coords_v1';
@@ -262,12 +263,7 @@ function downsampleMapPath(path, maxPoints = HISTORY_MAP_PATH_MAX) {
 }
 
 function defaultHistoryDayTimes() {
-  const now = new Date();
-  const pad = (n) => String(n).padStart(2, '0');
-  const timeTo = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
-  const fromDate = new Date(now.getTime() - 3 * 60 * 60 * 1000);
-  const timeFrom = `${pad(fromDate.getHours())}:${pad(fromDate.getMinutes())}`;
-  return { timeFrom, timeTo };
+  return { timeFrom: '00:00', timeTo: '23:59' };
 }
 
 function combineLocalDateTime(dateStr, timeStr, endOfDay = false) {
@@ -560,6 +556,8 @@ export default function Tracking() {
   const [homeSaving, setHomeSaving] = useState(false);
   const [homeSaveError, setHomeSaveError] = useState('');
   const [deviceProvider, setDeviceProvider] = useState(null);
+  const [livePlaceLabel, setLivePlaceLabel] = useState('');
+  const [historyPlaceLabels, setHistoryPlaceLabels] = useState({});
 
   useEffect(() => {
     if (!wifiTrackingEnabled && trackerTab === 'device') setTrackerTab('live');
@@ -976,6 +974,20 @@ export default function Tracking() {
     [historyCalendarMatch, historyPoints.length, resolvedHistory, historyRange]
   );
 
+  useEffect(() => {
+    if (!liveDisplayCoords || !Number.isFinite(Number(liveDisplayCoords.lat))) {
+      setLivePlaceLabel('');
+      return undefined;
+    }
+    let cancelled = false;
+    reverseGeocodeLatLng(liveDisplayCoords.lat, liveDisplayCoords.lng).then((label) => {
+      if (!cancelled) setLivePlaceLabel(label || '');
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [liveDisplayCoords?.lat, liveDisplayCoords?.lng]);
+
   const mapHistoryPoints = useMemo(() => {
     if (historyShowAllFixes) {
       const allInRange = filterHistoryPoints(
@@ -1023,6 +1035,21 @@ export default function Tracking() {
     () => buildHistoryTimelineEvents(mapHistoryPoints, t, language, historyRange),
     [mapHistoryPoints, t, language, historyRange]
   );
+
+  useEffect(() => {
+    if (!historyTimelineEvents.length) {
+      setHistoryPlaceLabels({});
+      return undefined;
+    }
+    let cancelled = false;
+    const points = historyTimelineEvents.map((event) => event.start);
+    reverseGeocodePoints(points, { maxUnique: 24 }).then((labels) => {
+      if (!cancelled) setHistoryPlaceLabels(labels);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [historyTimelineEvents]);
 
   const historyMapPath = useMemo(() => {
     const path = mapHistoryPoints
@@ -1332,11 +1359,21 @@ export default function Tracking() {
             <div className="pp-trackLiveSheet">
               <div className="pp-trackLiveSheet__coords">
                 <strong>
-                  {liveDisplayCoords.lat.toFixed(5)}, {liveDisplayCoords.lng.toFixed(5)}
+                  {livePlaceLabel ||
+                    `${liveDisplayCoords.lat.toFixed(5)}, ${liveDisplayCoords.lng.toFixed(5)}`}
                 </strong>
-                {displaySpeedKmh != null ? (
+                {livePlaceLabel || displaySpeedKmh != null ? (
                   <span className="pp-subtle">
-                    {displaySpeedKmh.toFixed(1)} {t('trackingPage.speedUnitKmh')}
+                    {[
+                      livePlaceLabel
+                        ? `${liveDisplayCoords.lat.toFixed(5)}, ${liveDisplayCoords.lng.toFixed(5)}`
+                        : null,
+                      displaySpeedKmh != null
+                        ? `${displaySpeedKmh.toFixed(1)} ${t('trackingPage.speedUnitKmh')}`
+                        : null,
+                    ]
+                      .filter(Boolean)
+                      .join(' · ')}
                   </span>
                 ) : null}
               </div>
@@ -1669,7 +1706,9 @@ export default function Tracking() {
                         <strong>{event.timeLabel}</strong>
                         <em>{event.label}</em>
                         <small>
-                          {p.address || `${p.lat.toFixed(5)}, ${p.lng.toFixed(5)}`}
+                          {historyPlaceLabels[placeGridKey(p.lat, p.lng)] ||
+                            p.address ||
+                            `${p.lat.toFixed(5)}, ${p.lng.toFixed(5)}`}
                           {event.count > 1
                             ? ` · ${t('trackingPage.timelineReports', { count: event.count })}`
                             : sanitizeSpeedKmh(p.speed) != null

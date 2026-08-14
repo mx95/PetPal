@@ -111,14 +111,41 @@ export function isPlausibleGpsJump(prev, next, limits = {}) {
   // Batched fixes share receive time — allow only short hops, not multi‑km GPS spikes.
   if (dtSec <= 0) return distKm <= maxBatchJumpKm;
 
+  // Collar GPS often jitters 10–80 m between 1–15 s reports. Apparent speed
+  // then looks like a sprint even when the pet is walking or still.
+  if (dtSec < 20 && distKm <= 0.12) return true;
+
   const speedKmh = (distKm / dtSec) * 3600;
   return speedKmh <= maxSpeedKmh;
 }
 
-/** Stricter limits for history map polylines (pet on foot). */
-const HISTORY_ROUTE_LIMITS = { maxJumpKm: 0.45, maxBatchJumpKm: 0.15, maxSpeedKmh: 28 };
+/**
+ * History map polylines: keep a real walk (gaps of a few hundred metres,
+ * noisy GT06 speeds) while still refusing multi‑km cell-tower ping-pong.
+ */
+const HISTORY_ROUTE_LIMITS = { maxJumpKm: 1.6, maxBatchJumpKm: 0.4, maxSpeedKmh: 80 };
 const HISTORY_CLUSTER_RADIUS_KM = 0.12;
 const HISTORY_CLUSTER_MIN_POINTS = 3;
+/** Drop factory/default GPS (e.g. Shenzhen) far from the day's real cluster. */
+const HISTORY_OUTLIER_KM = 80;
+
+/**
+ * Keep GPS that sits near the recent median. Factory boot coords thousands of
+ * km away must not become the route start or they hide the real walk.
+ */
+export function excludeFarGpsOutliers(points, maxKm = HISTORY_OUTLIER_KM) {
+  const rows = (Array.isArray(points) ? points : []).filter(
+    (p) => p && Number.isFinite(Number(p.lat)) && Number.isFinite(Number(p.lng))
+  );
+  if (rows.length < 4) return rows;
+  const recent = rows.slice(-Math.max(6, Math.ceil(rows.length / 2)));
+  const lats = recent.map((p) => Number(p.lat)).sort((a, b) => a - b);
+  const lngs = recent.map((p) => Number(p.lng)).sort((a, b) => a - b);
+  const mid = Math.floor(recent.length / 2);
+  const anchor = { lat: lats[mid], lng: lngs[mid] };
+  const kept = rows.filter((p) => kmBetween(p, anchor) <= maxKm);
+  return kept.length >= 2 ? kept : rows;
+}
 
 /** Count distinct coordinate pairs (5 decimal places ≈ 1 m). */
 export function countDistinctLocations(points) {
@@ -263,13 +290,14 @@ function clusterIsCoherent(points, radiusKm = HISTORY_CLUSTER_RADIUS_KM) {
 export function resolveHistoryRoutePositions(points) {
   if (!Array.isArray(points) || points.length === 0) return [];
 
-  const trusted = [];
+  const trustedRaw = [];
   for (const p of points) {
     if (!p || Number.isNaN(Number(p.lat)) || Number.isNaN(Number(p.lng))) continue;
     const candidate = { ...p, lat: Number(p.lat), lng: Number(p.lng), speed: sanitizeSpeedKmh(p.speed) };
     if (!isTrustedGpsFix(candidate)) continue;
-    trusted.push(candidate);
+    trustedRaw.push(candidate);
   }
+  const trusted = excludeFarGpsOutliers(trustedRaw);
   if (trusted.length === 0) return [];
 
   const out = [];
@@ -342,9 +370,7 @@ export function resolveHistoryRoutePositions(points) {
 export function resolveHistoryPositions(points) {
   if (!Array.isArray(points) || points.length === 0) return [];
 
-  let prevTrusted = null;
-  const out = [];
-
+  const trustedRaw = [];
   for (const p of points) {
     if (!p || Number.isNaN(Number(p.lat)) || Number.isNaN(Number(p.lng))) continue;
     const candidate = {
@@ -354,7 +380,13 @@ export function resolveHistoryPositions(points) {
       speed: sanitizeSpeedKmh(p.speed),
     };
     if (!isTrustedGpsFix(candidate)) continue;
+    trustedRaw.push(candidate);
+  }
 
+  let prevTrusted = null;
+  const out = [];
+
+  for (const candidate of excludeFarGpsOutliers(trustedRaw)) {
     if (!prevTrusted) {
       out.push(candidate);
       prevTrusted = candidate;
