@@ -25,18 +25,22 @@ function cardVerifyOrderSucceeded(json) {
 
 /**
  * Features for €0 card binding via register.do.
- * RBS-family gateways (incl. JCC) accept either:
- * - a single `features` value with `;` separators, or
- * - the same key repeated once per feature.
- * Prefer the semicolon form first; callers may fall back to the array form.
+ *
+ * Live JCC test gateway results (PetPal-api):
+ * - amount=0 + VERIFY → OK
+ * - amount=0 + features=VERIFY&features=FORCE_CREATE_BINDING → OK
+ * - amount=0 + FORCE_CREATE_BINDING (alone, first, or `;` with VERIFY) → "[amount] is empty"
+ *
+ * So VERIFY must be first (or alone). Prefer repeated params with VERIFY first.
  */
-const CARD_BINDING_FEATURES = 'FORCE_CREATE_BINDING;VERIFY';
-const CARD_BINDING_FEATURES_REPEATED = ['FORCE_CREATE_BINDING', 'VERIFY'];
+const CARD_BINDING_FEATURES = ['VERIFY', 'FORCE_CREATE_BINDING'];
+/** VERIFY-only €0 registration (still creates a binding when clientId is set). */
+const CARD_BINDING_FEATURES_VERIFY_ONLY = 'VERIFY';
 
 module.exports = {
   orderStatusNumber,
   paidOrderStatus,
   cardVerifyOrderSucceeded,
   CARD_BINDING_FEATURES,
-  CARD_BINDING_FEATURES_REPEATED,
+  CARD_BINDING_FEATURES_VERIFY_ONLY,
 };

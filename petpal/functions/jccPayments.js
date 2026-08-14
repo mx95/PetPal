@@ -168,7 +168,7 @@ const {
   paidOrderStatus,
   cardVerifyOrderSucceeded,
   CARD_BINDING_FEATURES,
-  CARD_BINDING_FEATURES_REPEATED,
+  CARD_BINDING_FEATURES_VERIFY_ONLY,
 } = require('./jccOrderStatus');
 
 function ensureAdmin() {
@@ -222,14 +222,17 @@ function jccAmountEmptyError(reg) {
 }
 
 /**
- * Register a card-binding order. Prefer €0 VERIFY; fall back across feature encodings
- * and finally a 1¢ FORCE_CREATE_BINDING charge if the merchant rejects zero amount.
+ * Register a card-binding order.
+ * JCC test gateway accepts amount=0 only when VERIFY is present and FORCE_CREATE_BINDING
+ * is not sent first (semicolon FORCE;VERIFY and FORCE-first both return "[amount] is empty").
  */
 async function registerJccCardBinding(restBase, baseParams) {
   const attempts = [
+    // Live-verified: features=VERIFY&features=FORCE_CREATE_BINDING + amount=0
     { amount: '0', features: CARD_BINDING_FEATURES, amountCents: 0 },
-    { amount: '0', features: CARD_BINDING_FEATURES_REPEATED, amountCents: 0 },
-    { amount: '1', features: CARD_BINDING_FEATURES, amountCents: 1 },
+    // Live-verified: features=VERIFY alone + amount=0
+    { amount: '0', features: CARD_BINDING_FEATURES_VERIFY_ONLY, amountCents: 0 },
+    // Last resort if VERIFY is disabled on the merchant
     { amount: '1', features: 'FORCE_CREATE_BINDING', amountCents: 1 },
   ];
 
@@ -247,11 +250,8 @@ async function registerJccCardBinding(restBase, baseParams) {
     }
     const amountIssue = jccAmountEmptyError(reg);
     const hasNext = i < attempts.length - 1;
-    // Keep trying alternate encodings / 1¢ only when JCC complains about amount,
-    // or when the next attempt uses a different features encoding for €0.
     if (!hasNext) break;
-    if (amountIssue) continue;
-    if (attempt.amount === '0' && attempts[i + 1].amount === '0') continue;
+    if (amountIssue || attempt.amount === '0') continue;
     break;
   }
   return { reg: lastReg, amountCents: 0, attemptIndex: -1 };
