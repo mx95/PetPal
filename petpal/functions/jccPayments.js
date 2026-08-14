@@ -4,23 +4,26 @@
  * Recurring charges: register.do (new order) + paymentOrderBinding.do (bindingId + tii=U).
  * Scheduled: billingRenewal (daily 05:00), expireProviderBoosts (daily 05:15) clears expired JCC boosts.
  *
- * Configure (production): firebase functions:config:set
- *   jcc.user="PetPal-api"
- *   jcc.pass="YOUR_API_PASSWORD"
- *   jcc.rest_base="https://gateway-test.jcc.com.cy/payment/rest"
- *   jcc.return_url="https://europe-west1-<PROJECT>.cloudfunctions.net/jccPaymentReturn"
- *   jcc.frontend_url="https://your-petpal-host" (no trailing slash; must match the SPA origin users open)
+ * Credentials resolve by Admin Tools payment mode (adminConfig/site.mode = test|live):
+ *   1) Firestore adminConfig/jcc.{test|live} (set in Admin → Test / Live)
+ *   2) Mode-specific env / functions config: JCC_TEST_* / jcc_test.* or JCC_LIVE_* / jcc_live.*
+ *   3) Legacy single set: JCC_* / jcc.* (treated as test fallback)
  *
- * Return flow: register.do sets returnUrl to jccPaymentReturn?orderNumber=<session id>. After pay, JCC
- * redirects there with the same orderNumber plus gateway params (orderId / mdOrder). jccPaymentReturn
- * verifies the session, then 302s to {frontend_url}/payment/success?checkout=success&sku=…&orderNumber=…
+ * Shared return/frontend URLs:
+ *   jcc.return_url / JCC_RETURN_URL
+ *   jcc.frontend_url / JCC_FRONTEND_URL
  *
- * Do not commit real passwords. Test base URL from JCC docs:
- * https://gateway-test.jcc.com.cy/payment/rest/
+ * Do not commit real passwords.
  */
 
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
+const {
+  getPaymentMode,
+  readJccSlots,
+  DEFAULT_TEST_REST,
+  DEFAULT_LIVE_REST,
+} = require('./paymentMode');
 
 function getCfg(path, fallback = null) {
   try {
@@ -44,22 +47,61 @@ function normalizeUrlBase(raw, fallback) {
   return s;
 }
 
-function jccCredentials() {
-  const userName = (jccEnv('JCC_USER') || getCfg('jcc.user') || '').trim();
-  const password = (jccEnv('JCC_PASS') || getCfg('jcc.pass') || '').trim();
+/**
+ * Resolve JCC merchant credentials for the active payment mode (test|live).
+ * @returns {Promise<{ userName: string, password: string, restBase: string, returnUrl: string, frontendUrl: string, mode: 'test'|'live' }>}
+ */
+async function jccCredentials() {
+  ensureAdmin();
+  const db = admin.firestore();
+  const mode = await getPaymentMode(db);
+  const slots = await readJccSlots(db);
+  const slot = mode === 'live' ? slots.live || {} : slots.test || {};
+
+  const envUser = mode === 'live' ? jccEnv('JCC_LIVE_USER') : jccEnv('JCC_TEST_USER');
+  const envPass = mode === 'live' ? jccEnv('JCC_LIVE_PASS') : jccEnv('JCC_TEST_PASS');
+  const envRest = mode === 'live' ? jccEnv('JCC_LIVE_REST_BASE') : jccEnv('JCC_TEST_REST_BASE');
+  const cfgPrefix = mode === 'live' ? 'jcc_live' : 'jcc_test';
+  const defaultRest = mode === 'live' ? DEFAULT_LIVE_REST : DEFAULT_TEST_REST;
+
+  const userName = (
+    String(slot.user || '').trim() ||
+    envUser ||
+    getCfg(`${cfgPrefix}.user`) ||
+    (mode === 'test' ? jccEnv('JCC_USER') || getCfg('jcc.user') : null) ||
+    ''
+  ).trim();
+  const password = (
+    String(slot.pass || '').trim() ||
+    envPass ||
+    getCfg(`${cfgPrefix}.pass`) ||
+    (mode === 'test' ? jccEnv('JCC_PASS') || getCfg('jcc.pass') : null) ||
+    ''
+  ).trim();
   const restBase = normalizeUrlBase(
-    jccEnv('JCC_REST_BASE') || getCfg('jcc.rest_base'),
-    'https://gateway-test.jcc.com.cy/payment/rest'
+    String(slot.restBase || '').trim() ||
+      envRest ||
+      getCfg(`${cfgPrefix}.rest_base`) ||
+      (mode === 'test' ? jccEnv('JCC_REST_BASE') || getCfg('jcc.rest_base') : null),
+    defaultRest
   );
   const returnUrl = (jccEnv('JCC_RETURN_URL') || getCfg('jcc.return_url') || '').trim();
-  const frontendUrl = normalizeUrlBase(jccEnv('JCC_FRONTEND_URL') || getCfg('jcc.frontend_url'), 'http://localhost:3000');
+  const frontendUrl = normalizeUrlBase(
+    jccEnv('JCC_FRONTEND_URL') || getCfg('jcc.frontend_url'),
+    'http://localhost:3000'
+  );
+
   if (!userName || !password) {
-    throw new Error('JCC credentials missing: set jcc.user / jcc.pass (Functions config) or JCC_USER / JCC_PASS env.');
+    throw new Error(
+      mode === 'live'
+        ? 'Live JCC credentials missing: save them in Admin → Test / Live, or set JCC_LIVE_USER / JCC_LIVE_PASS.'
+        : 'Test JCC credentials missing: save them in Admin → Test / Live, or set jcc.user / jcc.pass (or JCC_USER / JCC_PASS).'
+    );
   }
   if (!returnUrl) {
     throw new Error('JCC return URL missing: set jcc.return_url to this function’s public HTTPS URL (jccPaymentReturn).');
   }
-  return { userName, password, restBase, returnUrl, frontendUrl };
+  return { userName, password, restBase, returnUrl, frontendUrl, mode };
 }
 
 const BOOST_SKUS = new Set([
@@ -164,7 +206,12 @@ function jccRegisterDoSucceeded(reg) {
   return Boolean(reg.orderId && reg.formUrl);
 }
 
-const { paidOrderStatus, cardVerifyOrderSucceeded, CARD_BINDING_FEATURES } = require('./jccOrderStatus');
+const {
+  paidOrderStatus,
+  cardVerifyOrderSucceeded,
+  CARD_BINDING_FEATURES,
+  CARD_BINDING_FEATURES_VERIFY_ONLY,
+} = require('./jccOrderStatus');
 
 function ensureAdmin() {
   try {
@@ -210,6 +257,47 @@ function nextRenewalDate(from, sku) {
 }
 
 const CARD_UPDATE_SKU = 'CARD_UPDATE';
+
+function jccAmountEmptyError(reg) {
+  const msg = String(reg?.errorMessage || reg?.error || '');
+  return /\[?amount\]?\s+is\s+empty/i.test(msg) || /amount.*(?:empty|required|invalid)/i.test(msg);
+}
+
+/**
+ * Register a card-binding order.
+ * JCC test gateway accepts amount=0 only when VERIFY is present and FORCE_CREATE_BINDING
+ * is not sent first (semicolon FORCE;VERIFY and FORCE-first both return "[amount] is empty").
+ */
+async function registerJccCardBinding(restBase, baseParams) {
+  const attempts = [
+    // Live-verified: features=VERIFY&features=FORCE_CREATE_BINDING + amount=0
+    { amount: '0', features: CARD_BINDING_FEATURES, amountCents: 0 },
+    // Live-verified: features=VERIFY alone + amount=0
+    { amount: '0', features: CARD_BINDING_FEATURES_VERIFY_ONLY, amountCents: 0 },
+    // Last resort if VERIFY is disabled on the merchant
+    { amount: '1', features: 'FORCE_CREATE_BINDING', amountCents: 1 },
+  ];
+
+  let lastReg = null;
+  for (let i = 0; i < attempts.length; i += 1) {
+    const attempt = attempts[i];
+    const reg = await jccPost(restBase, 'register.do', {
+      ...baseParams,
+      amount: attempt.amount,
+      features: attempt.features,
+    });
+    lastReg = reg;
+    if (jccRegisterDoSucceeded(reg)) {
+      return { reg, amountCents: attempt.amountCents, attemptIndex: i };
+    }
+    const amountIssue = jccAmountEmptyError(reg);
+    const hasNext = i < attempts.length - 1;
+    if (!hasNext) break;
+    if (amountIssue || attempt.amount === '0') continue;
+    break;
+  }
+  return { reg: lastReg, amountCents: 0, attemptIndex: -1 };
+}
 
 /**
  * Persist JCC binding as the user's default card and refresh active subscriptions
@@ -693,7 +781,7 @@ exports.createJccUpdateCard = functions.region('europe-west1').https.onCall(asyn
       throw new functions.https.HttpsError('failed-precondition', 'Card update is not configured.');
     }
 
-    const { userName, password, restBase, returnUrl, frontendUrl } = jccCredentials();
+    const { userName, password, restBase, returnUrl, frontendUrl } = await jccCredentials();
     const orderNumber = uniqueOrderNumber('PC');
     const sessionRef = db.collection('paymentSessions').doc(orderNumber);
     await sessionRef.set(
@@ -730,24 +818,24 @@ exports.createJccUpdateCard = functions.region('europe-west1').https.onCall(asyn
       currency: '978',
     });
 
-    const params = {
+    const baseParams = {
       userName,
       password,
       orderNumber,
-      // Minor units; 0 is allowed only with VERIFY (JCC register.do features).
-      amount: String(Math.max(0, Number(pricing.chargeCents) || 0)),
       currency: '978',
       returnUrl: `${returnUrl.replace(/\/$/, '')}?orderNumber=${encodeURIComponent(orderNumber)}`,
       failUrl: `${frontendUrl}/payment/failed?orderNumber=${encodeURIComponent(orderNumber)}&reason=card_update`,
       description: pricing.title.slice(0, 240),
       language: 'en',
       clientId: uid,
-      features: CARD_BINDING_FEATURES,
       jsonParams: buildJccJsonParams(frontendUrl),
       ...buildJccRegisterCustomerParams(shipping),
     };
 
-    const reg = await jccPost(restBase, 'register.do', params);
+    const { reg, amountCents: registeredCents, attemptIndex } = await registerJccCardBinding(
+      restBase,
+      baseParams
+    );
     if (!jccRegisterDoSucceeded(reg)) {
       await sessionRef.set(
         {
@@ -768,6 +856,8 @@ exports.createJccUpdateCard = functions.region('europe-west1').https.onCall(asyn
         status: 'awaiting_payment',
         jccOrderId: reg.orderId,
         formUrl: reg.formUrl,
+        amountCents: registeredCents,
+        registerAttemptIndex: attemptIndex,
       },
       { merge: true }
     );
@@ -776,7 +866,7 @@ exports.createJccUpdateCard = functions.region('europe-west1').https.onCall(asyn
       formUrl: reg.formUrl,
       orderNumber,
       jccOrderId: reg.orderId,
-      amountCents: pricing.chargeCents,
+      amountCents: registeredCents,
       purpose: 'update_card',
     };
   } catch (e) {
@@ -865,7 +955,7 @@ exports.createJccCheckout = functions.region('europe-west1').https.onCall(async 
     const currency = sku === 'MARKETPLACE_CART' ? '978' : SKUS[sku].currency;
 
     ensureAdmin();
-    const { userName, password, restBase, returnUrl, frontendUrl } = jccCredentials();
+    const { userName, password, restBase, returnUrl, frontendUrl } = await jccCredentials();
 
     const orderNumber = uniqueOrderNumber('PP');
     const db = admin.firestore();
@@ -1006,7 +1096,7 @@ exports.jccPaymentReturn = functions.region('europe-west1').https.onRequest(asyn
 
   let frontendUrl;
   try {
-    ({ frontendUrl } = jccCredentials());
+    ({ frontendUrl } = await jccCredentials());
   } catch (e) {
     redirect(res, `http://localhost:3000/shop?checkout=error&reason=config`);
     return;
@@ -1029,7 +1119,7 @@ exports.jccPaymentReturn = functions.region('europe-west1').https.onRequest(asyn
 
   let statusJson;
   try {
-    const { userName, password, restBase } = jccCredentials();
+    const { userName, password, restBase } = await jccCredentials();
     statusJson = await jccPost(restBase, 'getOrderStatusExtended.do', {
       userName,
       password,
@@ -1242,7 +1332,7 @@ exports.billingRenewal = functions
     ensureAdmin();
     let creds;
     try {
-      creds = jccCredentials();
+      creds = await jccCredentials();
     } catch {
       return null;
     }

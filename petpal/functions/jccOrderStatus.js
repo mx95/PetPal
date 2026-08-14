@@ -23,12 +23,24 @@ function cardVerifyOrderSucceeded(json) {
   return orderStatusNumber(json) === 3;
 }
 
-/** Features for €0 card binding via register.do (repeat features= in the form body). */
-const CARD_BINDING_FEATURES = ['FORCE_CREATE_BINDING', 'VERIFY'];
+/**
+ * Features for €0 card binding via register.do.
+ *
+ * Live JCC test gateway results (PetPal-api):
+ * - amount=0 + VERIFY → OK
+ * - amount=0 + features=VERIFY&features=FORCE_CREATE_BINDING → OK
+ * - amount=0 + FORCE_CREATE_BINDING (alone, first, or `;` with VERIFY) → "[amount] is empty"
+ *
+ * So VERIFY must be first (or alone). Prefer repeated params with VERIFY first.
+ */
+const CARD_BINDING_FEATURES = ['VERIFY', 'FORCE_CREATE_BINDING'];
+/** VERIFY-only €0 registration (still creates a binding when clientId is set). */
+const CARD_BINDING_FEATURES_VERIFY_ONLY = 'VERIFY';
 
 module.exports = {
   orderStatusNumber,
   paidOrderStatus,
   cardVerifyOrderSucceeded,
   CARD_BINDING_FEATURES,
+  CARD_BINDING_FEATURES_VERIFY_ONLY,
 };

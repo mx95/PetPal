@@ -11366,6 +11366,24 @@ select.pp-bookConfirmField__control {
   flex-wrap: wrap;
   border: 1px solid rgba(105, 65, 198, 0.18);
   box-shadow: 0 8px 24px rgba(105, 65, 198, 0.08);
+  min-height: 88px;
+}
+.pp-shopPayment__loading {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 12px 8px;
+}
+.pp-shopPayment__spinner {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 3px solid rgba(37, 99, 235, 0.18);
+  border-top-color: #2563eb;
+  animation: pp-spin 0.85s linear infinite;
 }
 .pp-shopPayment__copy {
   display: grid;

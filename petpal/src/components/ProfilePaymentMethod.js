@@ -11,7 +11,7 @@ import { formatMaskedCard, startJccUpdateCard } from '../shop/startJccUpdateCard
  * Account payment method: show current JCC masked card + update via hosted checkout.
  */
 export default function ProfilePaymentMethod() {
-  const { user } = useAuth();
+  const { user, initializing } = useAuth();
   const { t } = useI18n();
   const { show } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -21,11 +21,13 @@ export default function ProfilePaymentMethod() {
   const [err, setErr] = useState('');
 
   useEffect(() => {
+    if (initializing) return undefined;
     if (!user?.uid || !isFirebaseConfigured()) {
       setMethod(null);
       setLoaded(true);
       return undefined;
     }
+    setLoaded(false);
     const ref = doc(getDb(), 'users', user.uid, 'billing', 'defaultMethod');
     const unsub = onSnapshot(
       ref,
@@ -39,7 +41,7 @@ export default function ProfilePaymentMethod() {
       }
     );
     return () => unsub();
-  }, [user?.uid]);
+  }, [user?.uid, initializing]);
 
   useEffect(() => {
     if (searchParams.get('card') !== 'updated') return;
@@ -64,45 +66,53 @@ export default function ProfilePaymentMethod() {
 
   const masked = formatMaskedCard(method?.maskedPan);
   const hasCard = Boolean(method?.bindingId);
+  const showLoader = initializing || !loaded;
 
   return (
     <section className="pp-card pp-pad pp-shopPayment" aria-label={t('profile.payment.aria')}>
-      <div className="pp-shopPayment__copy">
-        <strong className="pp-shopPayment__title">{t('profile.payment.title')}</strong>
-        {!loaded ? (
+      {showLoader ? (
+        <div className="pp-shopPayment__loading" role="status" aria-live="polite">
+          <span className="pp-shopPayment__spinner" aria-hidden />
           <span className="pp-subtle">{t('profile.payment.loading')}</span>
-        ) : hasCard ? (
-          <>
-            <p className="pp-shopPayment__card" aria-live="polite">
-              <span className="pp-shopPayment__brand" aria-hidden>
-                💳
-              </span>
-              <span className="pp-shopPayment__pan">{masked || t('profile.payment.cardOnFile')}</span>
-            </p>
-            <span className="pp-subtle pp-shopPayment__hint">{t('profile.payment.hintUpdate')}</span>
-          </>
-        ) : (
-          <span className="pp-subtle pp-shopPayment__hint">{t('profile.payment.hintEmpty')}</span>
-        )}
-        {err ? (
-          <div className="pp-error" style={{ marginTop: 8 }}>
-            {err}
+        </div>
+      ) : (
+        <>
+          <div className="pp-shopPayment__copy">
+            <strong className="pp-shopPayment__title">{t('profile.payment.title')}</strong>
+            {hasCard ? (
+              <>
+                <p className="pp-shopPayment__card" aria-live="polite">
+                  <span className="pp-shopPayment__brand" aria-hidden>
+                    💳
+                  </span>
+                  <span className="pp-shopPayment__pan">{masked || t('profile.payment.cardOnFile')}</span>
+                </p>
+                <span className="pp-subtle pp-shopPayment__hint">{t('profile.payment.hintUpdate')}</span>
+              </>
+            ) : (
+              <span className="pp-subtle pp-shopPayment__hint">{t('profile.payment.hintEmpty')}</span>
+            )}
+            {err ? (
+              <div className="pp-error" style={{ marginTop: 8 }}>
+                {err}
+              </div>
+            ) : null}
+            <p className="pp-subtle pp-shopPayment__note">{t('profile.payment.note')}</p>
           </div>
-        ) : null}
-        <p className="pp-subtle pp-shopPayment__note">{t('profile.payment.note')}</p>
-      </div>
-      <button
-        type="button"
-        className="pp-btn pp-btn--primary"
-        disabled={busy || !loaded}
-        onClick={onUpdateCard}
-      >
-        {busy
-          ? t('profile.payment.updating')
-          : hasCard
-            ? t('profile.payment.updateCta')
-            : t('profile.payment.addCta')}
-      </button>
+          <button
+            type="button"
+            className="pp-btn pp-btn--primary"
+            disabled={busy}
+            onClick={onUpdateCard}
+          >
+            {busy
+              ? t('profile.payment.updating')
+              : hasCard
+                ? t('profile.payment.updateCta')
+                : t('profile.payment.addCta')}
+          </button>
+        </>
+      )}
     </section>
   );
 }

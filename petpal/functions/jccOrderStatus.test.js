@@ -4,6 +4,7 @@ const {
   paidOrderStatus,
   cardVerifyOrderSucceeded,
   CARD_BINDING_FEATURES,
+  CARD_BINDING_FEATURES_VERIFY_ONLY,
 } = require('./jccOrderStatus');
 
 test('treats authorized statuses as paid', () => {
@@ -20,6 +21,7 @@ test('accepts REVERSED (3) as successful VERIFY card registration', () => {
   assert.equal(cardVerifyOrderSucceeded({ orderStatus: 6 }), false);
 });
 
-test('uses FORCE_CREATE_BINDING + VERIFY for zero-amount binding', () => {
-  assert.deepEqual(CARD_BINDING_FEATURES, ['FORCE_CREATE_BINDING', 'VERIFY']);
+test('uses VERIFY first then FORCE_CREATE_BINDING for zero-amount binding', () => {
+  assert.deepEqual(CARD_BINDING_FEATURES, ['VERIFY', 'FORCE_CREATE_BINDING']);
+  assert.equal(CARD_BINDING_FEATURES_VERIFY_ONLY, 'VERIFY');
 });
