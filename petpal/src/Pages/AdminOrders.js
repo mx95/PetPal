@@ -19,7 +19,7 @@ function orderWhen(row) {
 export default function AdminOrders() {
   const { t } = useI18n();
   const { user } = useAuth();
-  const { isAdmin, firebaseReady } = useCompany();
+  const { isAdmin, adminReady, firebaseReady } = useCompany();
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState('');
@@ -33,11 +33,12 @@ export default function AdminOrders() {
   const [imeiBusyKey, setImeiBusyKey] = useState('');
 
   useEffect(() => {
-    if (!firebaseReady || !isAdmin) {
+    if (!firebaseReady || !adminReady || !isAdmin) {
       setLoading(false);
       return undefined;
     }
     setLoading(true);
+    setErr('');
     return subscribeAllOrders(
       (list) => {
         setRows(list);
@@ -48,7 +49,7 @@ export default function AdminOrders() {
         setLoading(false);
       }
     );
-  }, [firebaseReady, isAdmin, t]);
+  }, [firebaseReady, adminReady, isAdmin, t]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -75,6 +76,7 @@ export default function AdminOrders() {
 
   if (!user) return <Navigate to="/login" replace />;
   if (!firebaseReady) return <p className="pp-error">{t('admin.firebaseNotConfigured')}</p>;
+  if (!adminReady) return <p className="pp-subtle">{t('admin.loading')}</p>;
   if (!isAdmin) return <Navigate to="/dashboard" replace />;
 
   async function saveStatus(row, status) {
