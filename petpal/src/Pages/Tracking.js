@@ -558,6 +558,9 @@ export default function Tracking() {
   const [deviceProvider, setDeviceProvider] = useState(null);
   const [livePlaceLabel, setLivePlaceLabel] = useState('');
   const [historyPlaceLabels, setHistoryPlaceLabels] = useState({});
+  const [historyRolledToYesterday, setHistoryRolledToYesterday] = useState(false);
+  /** One auto-switch per device+local-day when Today has no fixes yet (e.g. just after midnight). */
+  const todayEmptyFallbackKeyRef = useRef('');
 
   useEffect(() => {
     if (!wifiTrackingEnabled && trackerTab === 'device') setTrackerTab('live');
@@ -748,21 +751,31 @@ export default function Tracking() {
     })
       .then(({ history, calendarMatch, totalInRange, truncated }) => {
         if (cancelled) return;
+        const emptyToday =
+          historyRange.preset === 'today' && Array.isArray(history) && history.length === 0;
+        const fallbackKey = `${effectiveDeviceId}:${dateInputValue(new Date())}`;
+        if (emptyToday && todayEmptyFallbackKeyRef.current !== fallbackKey) {
+          todayEmptyFallbackKeyRef.current = fallbackKey;
+          setHistoryRolledToYesterday(true);
+          setHistoryRange(computeHistoryRangeForPreset('yesterday'));
+          return;
+        }
+        if (historyRange.preset === 'today') setHistoryRolledToYesterday(false);
         setHistoryPoints(history);
         setHistoryCalendarMatch(calendarMatch !== false);
         setHistoryTotalInRange(Number.isFinite(totalInRange) ? totalInRange : null);
         setHistoryTruncated(Boolean(truncated));
         setHistoryIndex(0);
+        setHistoryLoading(false);
       })
       .catch((e) => {
         if (cancelled) return;
         setHistoryPoints([]);
         setHistoryTotalInRange(null);
         setHistoryTruncated(false);
+        setHistoryRolledToYesterday(false);
         setHistoryError(e?.message || t('trackingPage.errLoadHistory'));
-      })
-      .finally(() => {
-        if (!cancelled) setHistoryLoading(false);
+        setHistoryLoading(false);
       });
     return () => {
       cancelled = true;
@@ -1123,6 +1136,12 @@ export default function Tracking() {
   }, [historyRange]);
 
   function applyHistoryPreset(preset) {
+    if (preset === 'today') {
+      todayEmptyFallbackKeyRef.current = '';
+      setHistoryRolledToYesterday(false);
+    } else if (preset !== 'yesterday') {
+      setHistoryRolledToYesterday(false);
+    }
     setHistoryRange(computeHistoryRangeForPreset(preset));
   }
 
@@ -1574,6 +1593,9 @@ export default function Tracking() {
                   </button>
                 </div>
                 {historyError ? <div className="pp-error pp-trackHistoryError">{historyError}</div> : null}
+                {historyRolledToYesterday && historyRange.preset === 'yesterday' ? (
+                  <p className="pp-trackHistoryRangeCard__hint">{t('trackingPage.historyRolledToYesterday')}</p>
+                ) : null}
                 {!historyLoading && historyPoints.length > 0 ? (
                   <label className="pp-trackHistoryShowAll">
                     <input
@@ -1626,31 +1648,40 @@ export default function Tracking() {
                         label: t('trackingPage.historyFromLabel'),
                         date: historyRange.from,
                         dateAria: t('trackingPage.historyFromDateAria'),
-                        onDate: (value) => setHistoryRange((r) => ({ ...r, preset: 'custom', from: value })),
+                        onDate: (value) => {
+                          setHistoryRolledToYesterday(false);
+                          setHistoryRange((r) => ({ ...r, preset: 'custom', from: value }));
+                        },
                         time: historyRange.timeFrom ?? defaultHistoryDayTimes().timeFrom,
                         timeAria: t('trackingPage.historyFromTimeAria'),
-                        onTime: (next) =>
+                        onTime: (next) => {
+                          setHistoryRolledToYesterday(false);
                           setHistoryRange((r) => ({
                             ...r,
                             preset: 'custom',
                             timeFrom: next || defaultHistoryDayTimes().timeFrom,
-                          })),
+                          }));
+                        },
                       },
                       {
                         key: 'to',
                         label: t('trackingPage.historyToLabel'),
                         date: historyRange.to,
                         dateAria: t('trackingPage.historyToDateAria'),
-                        onDate: (value) => setHistoryRange((r) => ({ ...r, preset: 'custom', to: value })),
+                        onDate: (value) => {
+                          setHistoryRolledToYesterday(false);
+                          setHistoryRange((r) => ({ ...r, preset: 'custom', to: value }));
+                        },
                         time: historyRange.timeTo ?? defaultHistoryDayTimes().timeTo,
                         timeAria: t('trackingPage.historyToTimeAria'),
-                        onTime: (next) =>
+                        onTime: (next) => {
+                          setHistoryRolledToYesterday(false);
                           setHistoryRange((r) => ({
                             ...r,
                             preset: 'custom',
                             timeTo: next || defaultHistoryDayTimes().timeTo,
-                          })),
-                      },
+                          }));
+                        },
                     ]
                   ).map((row) => (
                     <div key={row.key} className={`pp-trackHistoryRangeRow pp-trackHistoryRangeRow--${row.key}`}>

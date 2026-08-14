@@ -1325,9 +1325,11 @@ const en = {
     historyScrubAria: 'Jump to point on route',
     historyEmptyTitle: 'No route for these dates',
     historyEmptyBody:
-      'No tracker locations were found for this range. Try different dates or refresh once the collar has uploaded stored positions.',
+      'No tracker locations were found for this range. If it is just after midnight, try Yesterday — or pick the day of the walk and refresh.',
     historyEmptyApproxOnly:
       'Fixes were received for this day, but none are GPS-quality yet. Show cell / Wi‑Fi fixes below, or try Yesterday for the last walk route.',
+    historyRolledToYesterday:
+      'No fixes yet today (past midnight). Showing yesterday’s route instead.',
     historyApproxMapHint:
       'Approximate cell / Wi‑Fi fix only — GPS route appears when the collar uploads satellite positions',
     historyTimelineTitle: 'Timeline',
