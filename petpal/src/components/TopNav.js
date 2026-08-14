@@ -129,14 +129,14 @@ export default function TopNav() {
                 aria-expanded={accountMenuOpen}
               >
                 <UserAvatar user={user} size={32} className="pp-navProfileAvatar" />
-                <span className="pp-topNavAccountBtn__label">{t('nav.profile')}</span>
+                <span className="pp-topNavAccountBtn__label">Menu</span>
               </button>
 
               {accountMenuOpen ? (
                 <div
                   className="absolute right-0 top-full mt-3 w-60 rounded-3xl border border-slate-200 bg-white p-2 shadow-lift animate-soft-pop"
                   role="menu"
-                  aria-label={t('nav.profile')}
+                  aria-label="Menu"
                 >
                   <Link
                     className="pp-menuItemWithBadge flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-petpal-ink no-underline transition hover:bg-petpal-soft"
