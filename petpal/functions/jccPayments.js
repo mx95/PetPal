@@ -164,7 +164,12 @@ function jccRegisterDoSucceeded(reg) {
   return Boolean(reg.orderId && reg.formUrl);
 }
 
-const { paidOrderStatus, cardVerifyOrderSucceeded, CARD_BINDING_FEATURES } = require('./jccOrderStatus');
+const {
+  paidOrderStatus,
+  cardVerifyOrderSucceeded,
+  CARD_BINDING_FEATURES,
+  CARD_BINDING_FEATURES_REPEATED,
+} = require('./jccOrderStatus');
 
 function ensureAdmin() {
   try {
@@ -210,6 +215,47 @@ function nextRenewalDate(from, sku) {
 }
 
 const CARD_UPDATE_SKU = 'CARD_UPDATE';
+
+function jccAmountEmptyError(reg) {
+  const msg = String(reg?.errorMessage || reg?.error || '');
+  return /\[?amount\]?\s+is\s+empty/i.test(msg) || /amount.*(?:empty|required|invalid)/i.test(msg);
+}
+
+/**
+ * Register a card-binding order. Prefer €0 VERIFY; fall back across feature encodings
+ * and finally a 1¢ FORCE_CREATE_BINDING charge if the merchant rejects zero amount.
+ */
+async function registerJccCardBinding(restBase, baseParams) {
+  const attempts = [
+    { amount: '0', features: CARD_BINDING_FEATURES, amountCents: 0 },
+    { amount: '0', features: CARD_BINDING_FEATURES_REPEATED, amountCents: 0 },
+    { amount: '1', features: CARD_BINDING_FEATURES, amountCents: 1 },
+    { amount: '1', features: 'FORCE_CREATE_BINDING', amountCents: 1 },
+  ];
+
+  let lastReg = null;
+  for (let i = 0; i < attempts.length; i += 1) {
+    const attempt = attempts[i];
+    const reg = await jccPost(restBase, 'register.do', {
+      ...baseParams,
+      amount: attempt.amount,
+      features: attempt.features,
+    });
+    lastReg = reg;
+    if (jccRegisterDoSucceeded(reg)) {
+      return { reg, amountCents: attempt.amountCents, attemptIndex: i };
+    }
+    const amountIssue = jccAmountEmptyError(reg);
+    const hasNext = i < attempts.length - 1;
+    // Keep trying alternate encodings / 1¢ only when JCC complains about amount,
+    // or when the next attempt uses a different features encoding for €0.
+    if (!hasNext) break;
+    if (amountIssue) continue;
+    if (attempt.amount === '0' && attempts[i + 1].amount === '0') continue;
+    break;
+  }
+  return { reg: lastReg, amountCents: 0, attemptIndex: -1 };
+}
 
 /**
  * Persist JCC binding as the user's default card and refresh active subscriptions
@@ -730,24 +776,24 @@ exports.createJccUpdateCard = functions.region('europe-west1').https.onCall(asyn
       currency: '978',
     });
 
-    const params = {
+    const baseParams = {
       userName,
       password,
       orderNumber,
-      // Minor units; 0 is allowed only with VERIFY (JCC register.do features).
-      amount: String(Math.max(0, Number(pricing.chargeCents) || 0)),
       currency: '978',
       returnUrl: `${returnUrl.replace(/\/$/, '')}?orderNumber=${encodeURIComponent(orderNumber)}`,
       failUrl: `${frontendUrl}/payment/failed?orderNumber=${encodeURIComponent(orderNumber)}&reason=card_update`,
       description: pricing.title.slice(0, 240),
       language: 'en',
       clientId: uid,
-      features: CARD_BINDING_FEATURES,
       jsonParams: buildJccJsonParams(frontendUrl),
       ...buildJccRegisterCustomerParams(shipping),
     };
 
-    const reg = await jccPost(restBase, 'register.do', params);
+    const { reg, amountCents: registeredCents, attemptIndex } = await registerJccCardBinding(
+      restBase,
+      baseParams
+    );
     if (!jccRegisterDoSucceeded(reg)) {
       await sessionRef.set(
         {
@@ -768,6 +814,8 @@ exports.createJccUpdateCard = functions.region('europe-west1').https.onCall(asyn
         status: 'awaiting_payment',
         jccOrderId: reg.orderId,
         formUrl: reg.formUrl,
+        amountCents: registeredCents,
+        registerAttemptIndex: attemptIndex,
       },
       { merge: true }
     );
@@ -776,7 +824,7 @@ exports.createJccUpdateCard = functions.region('europe-west1').https.onCall(asyn
       formUrl: reg.formUrl,
       orderNumber,
       jccOrderId: reg.orderId,
-      amountCents: pricing.chargeCents,
+      amountCents: registeredCents,
       purpose: 'update_card',
     };
   } catch (e) {

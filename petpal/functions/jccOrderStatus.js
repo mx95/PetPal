@@ -23,12 +23,20 @@ function cardVerifyOrderSucceeded(json) {
   return orderStatusNumber(json) === 3;
 }
 
-/** Features for €0 card binding via register.do (repeat features= in the form body). */
-const CARD_BINDING_FEATURES = ['FORCE_CREATE_BINDING', 'VERIFY'];
+/**
+ * Features for €0 card binding via register.do.
+ * RBS-family gateways (incl. JCC) accept either:
+ * - a single `features` value with `;` separators, or
+ * - the same key repeated once per feature.
+ * Prefer the semicolon form first; callers may fall back to the array form.
+ */
+const CARD_BINDING_FEATURES = 'FORCE_CREATE_BINDING;VERIFY';
+const CARD_BINDING_FEATURES_REPEATED = ['FORCE_CREATE_BINDING', 'VERIFY'];
 
 module.exports = {
   orderStatusNumber,
   paidOrderStatus,
   cardVerifyOrderSucceeded,
   CARD_BINDING_FEATURES,
+  CARD_BINDING_FEATURES_REPEATED,
 };
