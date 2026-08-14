@@ -22457,6 +22457,10 @@ html[data-theme="dark"] .pp-nearbyPartnerCard__badge--partner {
   font-size: 12px;
 }
 
+.pp-trackLiveSheet__coords .pp-subtle:empty {
+  display: none;
+}
+
 .pp-trackLiveSheet__actions {
   display: flex;
   flex-wrap: wrap;
