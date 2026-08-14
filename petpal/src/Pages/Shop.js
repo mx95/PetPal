@@ -692,8 +692,6 @@ export default function Shop() {
               <h2 className="pp-sectionTitle" style={{ marginTop: 0 }}>
                 {t('shopPage.manageTitle')}
               </h2>
-              <p className="pp-subtle">{t('shopPage.manageSub')}</p>
-              <p className="pp-subtle pp-shopManage__linkHint">{t('shopPage.manageLinkHint')}</p>
               <ul className="pp-shopManage__list">
                 {manageRows.map((sub) => {
                   const petName = sub.petName || sub.pet?.name || null;
@@ -715,15 +713,11 @@ export default function Shop() {
                     : sub.kind === 'legacy'
                       ? t('shopPage.manageLegacyImeiHint')
                       : t('shopPage.manageLinkOnMyPets');
-                  const cancelNote = petName
-                    ? t('shopPage.manageCancelForPet', { pet: petName })
-                    : t('shopPage.manageCancelGeneric');
                   return (
                     <li key={sub.id} className="pp-shopManage__row">
                       <div className="pp-shopManage__copy">
                         <strong className="pp-shopManage__title">{title}</strong>
                         <span className="pp-subtle pp-shopManage__detail">{detail}</span>
-                        <span className="pp-shopManage__cancelNote">{cancelNote}</span>
                       </div>
                       <button
                         type="button"
