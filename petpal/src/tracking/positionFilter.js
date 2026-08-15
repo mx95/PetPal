@@ -128,23 +128,63 @@ const HISTORY_CLUSTER_RADIUS_KM = 0.12;
 const HISTORY_CLUSTER_MIN_POINTS = 3;
 /** Drop factory/default GPS (e.g. Shenzhen) far from the day's real cluster. */
 const HISTORY_OUTLIER_KM = 80;
+/**
+ * gpspos.net LASTPOS (and similar) often keep an old collar GPS clock while
+ * server receive time is “now”. Those points must not become the route anchor.
+ */
+const DEVICE_CLOCK_SKEW_DROP_MS = 6 * 60 * 60 * 1000;
+
+export function hasSevereDeviceClockSkew(p, maxSkewMs = DEVICE_CLOCK_SKEW_DROP_MS) {
+  if (!p) return false;
+  const recv = pointTimestampMs(p);
+  const devIso = p.deviceTimeUtc || p.deviceTime || null;
+  if (recv == null || !devIso) return false;
+  const dev = new Date(devIso).getTime();
+  if (!Number.isFinite(dev)) return false;
+  return Math.abs(recv - dev) > maxSkewMs;
+}
 
 /**
- * Keep GPS that sits near the recent median. Factory boot coords thousands of
- * km away must not become the route start or they hide the real walk.
+ * Keep GPS that sits near the day's densest cluster.
+ * Prefer clock-consistent fixes for the anchor so a burst of stale LASTPOS
+ * points at the end of the day cannot erase a real walk elsewhere.
  */
 export function excludeFarGpsOutliers(points, maxKm = HISTORY_OUTLIER_KM) {
   const rows = (Array.isArray(points) ? points : []).filter(
     (p) => p && Number.isFinite(Number(p.lat)) && Number.isFinite(Number(p.lng))
   );
   if (rows.length < 4) return rows;
-  const recent = rows.slice(-Math.max(6, Math.ceil(rows.length / 2)));
-  const lats = recent.map((p) => Number(p.lat)).sort((a, b) => a - b);
-  const lngs = recent.map((p) => Number(p.lng)).sort((a, b) => a - b);
-  const mid = Math.floor(recent.length / 2);
+
+  const withoutSkew = rows.filter((p) => !hasSevereDeviceClockSkew(p));
+  const pool = withoutSkew.length >= 4 ? withoutSkew : rows;
+
+  // ~1.1 km cells — densest cell is usually the real walk, not a lone LASTPOS island.
+  const cellKey = (p) => `${Math.round(Number(p.lat) * 100)}_${Math.round(Number(p.lng) * 100)}`;
+  const counts = new Map();
+  for (const p of pool) {
+    const k = cellKey(p);
+    counts.set(k, (counts.get(k) || 0) + 1);
+  }
+  let bestKey = null;
+  let bestN = 0;
+  for (const [k, n] of counts) {
+    if (n > bestN) {
+      bestKey = k;
+      bestN = n;
+    }
+  }
+  const cluster = bestKey ? pool.filter((p) => cellKey(p) === bestKey) : pool;
+  const lats = cluster.map((p) => Number(p.lat)).sort((a, b) => a - b);
+  const lngs = cluster.map((p) => Number(p.lng)).sort((a, b) => a - b);
+  const mid = Math.floor(cluster.length / 2);
   const anchor = { lat: lats[mid], lng: lngs[mid] };
-  const kept = rows.filter((p) => kmBetween(p, anchor) <= maxKm);
-  return kept.length >= 2 ? kept : rows;
+
+  const kept = rows.filter((p) => {
+    if (hasSevereDeviceClockSkew(p)) return false;
+    return kmBetween(p, anchor) <= maxKm;
+  });
+  if (kept.length >= 2) return kept;
+  return withoutSkew.length >= 2 ? withoutSkew : rows;
 }
 
 /** Count distinct coordinate pairs (5 decimal places ≈ 1 m). */
@@ -293,6 +333,7 @@ export function resolveHistoryRoutePositions(points) {
   const trustedRaw = [];
   for (const p of points) {
     if (!p || Number.isNaN(Number(p.lat)) || Number.isNaN(Number(p.lng))) continue;
+    if (hasSevereDeviceClockSkew(p)) continue;
     const candidate = { ...p, lat: Number(p.lat), lng: Number(p.lng), speed: sanitizeSpeedKmh(p.speed) };
     if (!isTrustedGpsFix(candidate)) continue;
     trustedRaw.push(candidate);
@@ -373,6 +414,7 @@ export function resolveHistoryPositions(points) {
   const trustedRaw = [];
   for (const p of points) {
     if (!p || Number.isNaN(Number(p.lat)) || Number.isNaN(Number(p.lng))) continue;
+    if (hasSevereDeviceClockSkew(p)) continue;
     const candidate = {
       ...p,
       lat: Number(p.lat),

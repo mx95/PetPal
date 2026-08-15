@@ -1,14 +1,24 @@
 import {
   buildRouteVertexMarkers,
   computeRouteFitPath,
+  excludeFarGpsOutliers,
+  hasSevereDeviceClockSkew,
   isPlausibleGpsJump,
   kmBetween,
   resolveHistoryRoutePositions,
   resolveTrackerPositions,
 } from './positionFilter';
 
-function pt(lat, lng, receivedAt) {
-  return { lat, lng, receivedAt, timestamp: receivedAt, source: 'gps', gpsValid: true };
+function pt(lat, lng, receivedAt, extra = {}) {
+  return {
+    lat,
+    lng,
+    receivedAt,
+    timestamp: receivedAt,
+    source: 'gps',
+    gpsValid: true,
+    ...extra,
+  };
 }
 
 describe('isPlausibleGpsJump', () => {
@@ -140,5 +150,31 @@ describe('resolveHistoryRoutePositions', () => {
     expect(route.length).toBeGreaterThanOrEqual(8);
     expect(route.every((p) => p.lng < 50)).toBe(true);
     expect(route[0].lat).toBeGreaterThan(30);
+  });
+
+  it('keeps a Paphos walk when stale gpspos LASTPOS points end the day', () => {
+    const walk = [];
+    const walkT = Date.parse('2026-08-15T10:40:00.000Z');
+    for (let i = 0; i < 40; i++) {
+      const t = new Date(walkT + i * 30_000).toISOString();
+      walk.push(
+        pt(34.8207 + i * 0.00005, 32.3995 + i * 0.00004, t, { deviceTimeUtc: t })
+      );
+    }
+    const lastpos = [];
+    const recvT = Date.parse('2026-08-15T13:12:00.000Z');
+    for (let i = 0; i < 48; i++) {
+      lastpos.push(
+        pt(34.9846733, 33.8448267, new Date(recvT + i * 1000).toISOString(), {
+          deviceTimeUtc: '2026-08-12T14:27:02.000Z',
+        })
+      );
+    }
+    expect(hasSevereDeviceClockSkew(lastpos[0])).toBe(true);
+    const kept = excludeFarGpsOutliers([...walk, ...lastpos]);
+    expect(kept.every((p) => p.lng < 33)).toBe(true);
+    const route = resolveHistoryRoutePositions([...walk, ...lastpos]);
+    expect(route.length).toBeGreaterThan(20);
+    expect(route.every((p) => Math.abs(p.lng - 32.4) < 0.05)).toBe(true);
   });
 });
