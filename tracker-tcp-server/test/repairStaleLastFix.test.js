@@ -27,6 +27,7 @@ test("pickFresherHistoryFix — prefers recent TCP trail over stale LASTPOS", ()
       source: "gps",
       receivedAt: new Date(now - 10 * 60 * 1000).toISOString(),
       timestamp: new Date(now - 10 * 60 * 1000).toISOString(),
+      deviceTimeUtc: new Date(now - 10 * 60 * 1000).toISOString(),
     },
     {
       lat: 34.9846733,
@@ -34,20 +35,51 @@ test("pickFresherHistoryFix — prefers recent TCP trail over stale LASTPOS", ()
       source: "gps",
       receivedAt: new Date(now - 5 * 60 * 1000).toISOString(),
       timestamp: new Date(now - 5 * 60 * 1000).toISOString(),
+      deviceTimeUtc: "2026-08-12T14:27:02.000Z",
     },
   ];
-  // Newest far point should win when walking newest→oldest and skipping near-duplicate of current
   history.push({
     lat: 34.8208,
     lng: 32.3996,
     source: "gps",
     receivedAt: new Date(now - 2 * 60 * 1000).toISOString(),
     timestamp: new Date(now - 2 * 60 * 1000).toISOString(),
+    deviceTimeUtc: new Date(now - 2 * 60 * 1000).toISOString(),
   });
   const pick = pickFresherHistoryFix(device, history);
   assert.ok(pick);
   assert.ok(Math.abs(pick.lat - 34.8208) < 0.001);
   assert.ok(Math.abs(pick.lng - 32.3996) < 0.001);
+});
+
+test("pickFresherHistoryFix — recovers when last-fix timestamp was refreshed", () => {
+  const now = Date.now();
+  const device = {
+    imei: "868022030666528",
+    provider: "gt06",
+    location: { lat: 34.9846733, lng: 33.8448267 },
+    // Timestamp refreshed to "now" but coords still match stale LASTPOS.
+    gps: { lat: 34.9846733, lng: 33.8448267, timestamp: new Date(now - 60 * 1000).toISOString() },
+  };
+  const history = [
+    {
+      lat: 34.8207,
+      lng: 32.3995,
+      source: "gps",
+      receivedAt: new Date(now - 20 * 60 * 1000).toISOString(),
+      deviceTimeUtc: new Date(now - 20 * 60 * 1000).toISOString(),
+    },
+    {
+      lat: 34.9846733,
+      lng: 33.8448267,
+      source: "gps",
+      receivedAt: new Date(now - 10 * 60 * 1000).toISOString(),
+      deviceTimeUtc: "2026-08-12T14:27:02.000Z",
+    },
+  ];
+  const pick = pickFresherHistoryFix(device, history);
+  assert.ok(pick);
+  assert.ok(Math.abs(pick.lat - 34.8207) < 0.001);
 });
 
 test("pickFresherHistoryFix — ignores gpspos-only / non-TCP providers", () => {
@@ -63,6 +95,7 @@ test("pickFresherHistoryFix — ignores gpspos-only / non-TCP providers", () => 
       lng: 32.4,
       source: "gps",
       receivedAt: new Date().toISOString(),
+      deviceTimeUtc: new Date().toISOString(),
     },
   ];
   assert.equal(pickFresherHistoryFix(device, history), null);
@@ -83,6 +116,7 @@ test("repairStaleLastFixFromHistory — upserts without recording when store pro
       lng: 32.3995,
       source: "gps",
       receivedAt: new Date(now - 3 * 60 * 1000).toISOString(),
+      deviceTimeUtc: new Date(now - 3 * 60 * 1000).toISOString(),
     },
   ];
   let upserted = null;

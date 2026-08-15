@@ -7,7 +7,7 @@
 const { isPlausibleLatLng } = require("./coords");
 const { TCP_PROVIDERS } = require("../directTcpPromote");
 
-const MIN_SKEW_MS = 60 * 60 * 1000; // device GPS clock vs history receive
+const MIN_SKEW_MS = 60 * 60 * 1000; // device GPS clock vs server receive
 const MIN_DISTANCE_M = 500;
 const RECENT_HISTORY_MS = 12 * 60 * 60 * 1000;
 
@@ -29,6 +29,23 @@ function currentCoords(device) {
   return { lat: Number(lat), lng: Number(lng) };
 }
 
+function rowReceiveMs(row) {
+  return Date.parse(row?.receivedAt || row?.timestamp || "");
+}
+
+function rowDeviceMs(row) {
+  return Date.parse(row?.deviceTimeUtc || "");
+}
+
+/** Prefer fixes where collar GPS time roughly matches server receive time. */
+function hasConsistentDeviceClock(row) {
+  const recv = rowReceiveMs(row);
+  if (!Number.isFinite(recv)) return false;
+  const dev = rowDeviceMs(row);
+  if (!Number.isFinite(dev)) return true;
+  return Math.abs(recv - dev) <= MIN_SKEW_MS;
+}
+
 function pickFresherHistoryFix(device, history) {
   const provider = String(device?.provider || "").trim().toLowerCase();
   if (!TCP_PROVIDERS.has(provider)) return null;
@@ -36,27 +53,49 @@ function pickFresherHistoryFix(device, history) {
   const cur = currentCoords(device);
   if (!cur) return null;
 
-  const deviceFixMs = Date.parse(device?.gps?.timestamp || device?.deviceStatus?.timestamp || "");
   const rows = Array.isArray(history) ? history : [];
   const now = Date.now();
+  const deviceFixMs = Date.parse(device?.gps?.timestamp || device?.deviceStatus?.timestamp || "");
 
-  // Walk newest → oldest
+  // Newest → oldest: first recent GPS point with a consistent collar clock.
+  let bestConsistent = null;
   for (let i = rows.length - 1; i >= 0; i -= 1) {
     const row = rows[i];
     if (!isPlausibleLatLng(row?.lat, row?.lng)) continue;
     if (row.source === "lbs" || row.source === "wifi") continue;
+    const recvMs = rowReceiveMs(row);
+    if (!Number.isFinite(recvMs) || now - recvMs > RECENT_HISTORY_MS) continue;
+    if (!hasConsistentDeviceClock(row)) continue;
+    bestConsistent = row;
+    break;
+  }
 
-    const recvMs = Date.parse(row.receivedAt || row.timestamp || "");
-    if (!Number.isFinite(recvMs)) continue;
-    if (now - recvMs > RECENT_HISTORY_MS) continue;
+  if (bestConsistent) {
+    const dist = haversineMeters(cur.lat, cur.lng, Number(bestConsistent.lat), Number(bestConsistent.lng));
+    if (dist >= MIN_DISTANCE_M) {
+      return {
+        lat: Number(bestConsistent.lat),
+        lng: Number(bestConsistent.lng),
+        receivedAt: bestConsistent.receivedAt || bestConsistent.timestamp || null,
+        deviceTimeUtc: bestConsistent.deviceTimeUtc || null,
+        source: bestConsistent.source || "gps",
+        distanceM: Math.round(dist),
+      };
+    }
+  }
 
+  // Fallback: any recent point far from current and newer than a stale device GPS clock.
+  for (let i = rows.length - 1; i >= 0; i -= 1) {
+    const row = rows[i];
+    if (!isPlausibleLatLng(row?.lat, row?.lng)) continue;
+    if (row.source === "lbs" || row.source === "wifi") continue;
+    const recvMs = rowReceiveMs(row);
+    if (!Number.isFinite(recvMs) || now - recvMs > RECENT_HISTORY_MS) continue;
     const dist = haversineMeters(cur.lat, cur.lng, Number(row.lat), Number(row.lng));
     if (!(dist >= MIN_DISTANCE_M)) continue;
-
     const newerThanDeviceFix =
       !Number.isFinite(deviceFixMs) || recvMs > deviceFixMs + MIN_SKEW_MS;
     if (!newerThanDeviceFix) continue;
-
     return {
       lat: Number(row.lat),
       lng: Number(row.lng),
@@ -142,6 +181,7 @@ module.exports = {
   haversineMeters,
   pickFresherHistoryFix,
   repairStaleLastFixFromHistory,
+  hasConsistentDeviceClock,
   MIN_SKEW_MS,
   MIN_DISTANCE_M,
 };
