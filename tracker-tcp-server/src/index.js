@@ -13,6 +13,7 @@ const { registerGpsposHttpApi } = require("./http/gpsposApiRoutes");
 const { registerAdminDeviceRoutes } = require("./http/adminDeviceRoutes");
 const { logPrefix } = require("./logging/time");
 const { buildPositionPayload } = require("./http/positionPayload");
+const { repairStaleLastFixFromHistory } = require("./geo/repairStaleLastFix");
 const { inferDeviceProvider } = require("./deviceProvider");
 
 function withProvider(d) {
@@ -252,10 +253,17 @@ app.get("/api/app/devices/:imei", (req, res) => {
 app.get("/api/app/position", (req, res) => {
   const imei = String(req.query.deviceId || req.query.imei || "").trim();
   if (!imei) return res.status(400).json({ error: "missing_deviceId" });
-  const d = store.get(imei);
+  let d = store.get(imei);
   if (!d) return res.status(404).json({ error: "not_found" });
-  const payload = buildPositionPayload(imei, withProvider(d));
+  d = withProvider(d);
+  const healed = repairStaleLastFixFromHistory(store, d);
+  d = withProvider(healed.device);
+  const payload = buildPositionPayload(imei, d);
   if (payload.error === "no_position") return res.status(404).json({ error: "no_position" });
+  if (healed.repaired) {
+    payload.repairedFromHistory = true;
+    payload.repairDistanceM = healed.from?.distanceM ?? null;
+  }
   res.json(payload);
 });
 
@@ -375,8 +383,11 @@ app.get("/devices/:imei/status", (req, res) => {
 app.get("/position", (req, res) => {
   const imei = String(req.query.deviceId || req.query.imei || "").trim();
   if (!imei) return res.status(400).json({ error: "missing_deviceId" });
-  const d = store.get(imei);
+  let d = store.get(imei);
   if (!d) return res.status(404).json({ error: "not_found" });
+  d = withProvider(d);
+  const healed = repairStaleLastFixFromHistory(store, d);
+  d = withProvider(healed.device);
   const payload = buildPositionPayload(imei, d);
   if (payload.error === "no_position") return res.status(404).json({ error: "no_position" });
   res.json(payload);

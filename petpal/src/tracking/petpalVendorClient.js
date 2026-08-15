@@ -501,41 +501,29 @@ export async function getLatestPositionWithSync(deviceId, opts = {}) {
     provider = meta?.provider ?? null;
   }
 
+  // Only cloud-polled gpspos collars need a sync-before-read.
+  // GT06 / 365GPS / Xexun speak TCP — calling /api/gpspos/sync overwrites their
+  // live fix with a stale gpspos.net LASTPOS (wrong city on the Live map).
+  const tcpProviders = new Set(['gt06', 'g365', 'xexun']);
   const shouldSyncGpspos =
-    isGpsposSyncAvailable() && provider !== 'g365';
+    isGpsposSyncAvailable() && (provider == null || provider === 'gpspos') && !tcpProviders.has(provider);
 
   if (shouldSyncGpspos) {
     try {
       await syncGpsposPosition(id);
     } catch (e) {
-      if (e?.code !== 'no_position' && e?.code !== 'gpspos_disabled') {
+      if (e?.code !== 'no_position' && e?.code !== 'gpspos_disabled' && e?.code !== 'direct_tcp') {
         throw e;
       }
     }
   }
 
   try {
-    const pos = await getLatestPosition(id);
-    if (
-      provider !== 'g365' &&
-      pos?.provider === 'gpspos' &&
-      isGpsposSyncAvailable() &&
-      provider !== 'gpspos'
-    ) {
-      try {
-        await syncGpsposPosition(id);
-        return await getLatestPosition(id);
-      } catch (e) {
-        if (e?.code !== 'no_position' && e?.code !== 'gpspos_disabled') {
-          throw e;
-        }
-      }
-    }
-    return pos;
+    return await getLatestPosition(id);
   } catch (e) {
     const retryable =
       isGpsposSyncAvailable() &&
-      provider !== 'g365' &&
+      (provider == null || provider === 'gpspos') &&
       (e?.status === 404 || /not_found|no_position|No GPS fix/i.test(String(e?.message || '')));
     if (!retryable) throw e;
     await syncGpsposPosition(id);

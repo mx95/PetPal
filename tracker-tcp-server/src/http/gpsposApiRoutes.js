@@ -13,6 +13,7 @@ const {
 const { buildPositionPayload } = require("./positionPayload");
 const { logPrefix } = require("../logging/time");
 const { shouldSkipGpsposPoll } = require("../directTcpPromote");
+const { repairStaleLastFixFromHistory } = require("../geo/repairStaleLastFix");
 
 function gpsposConfigFromEnv(env = process.env) {
   const enabled =
@@ -30,6 +31,25 @@ function gpsposConfigFromEnv(env = process.env) {
 async function syncGpsposLastPosition(store, client, requestedImei, { imeiMap = {} } = {}) {
   const storeImei = String(requestedImei || "").trim();
   if (!storeImei) throw new Error("missing_imei");
+
+  const cfg = typeof store.getDeviceConfig === "function" ? store.getDeviceConfig(storeImei) : null;
+  if (shouldSkipGpsposPoll(cfg)) {
+    // Direct TCP (GT06/365GPS/Xexun) — never overwrite with gpspos.net LASTPOS.
+    let saved = store.get(storeImei);
+    if (saved) {
+      const healed = repairStaleLastFixFromHistory(store, saved);
+      saved = healed.device;
+    }
+    const payload = saved ? buildPositionPayload(storeImei, saved) : { error: "no_position" };
+    return {
+      imei: storeImei,
+      platformImei: resolvePlatformImei(storeImei, imeiMap),
+      skipped: true,
+      reason: "direct_tcp",
+      device: saved,
+      position: payload.error === "no_position" ? null : payload,
+    };
+  }
 
   const platformImei = resolvePlatformImei(storeImei, imeiMap);
   const parsed = await client.getLastPosition(platformImei);
@@ -49,11 +69,9 @@ async function syncGpsposLastPosition(store, client, requestedImei, { imeiMap = 
 
   store.upsert(storeImei, mapped);
   if (typeof store.updateDeviceConfig === "function") {
-    const cfg = store.getDeviceConfig?.(storeImei);
-    const alreadyDirectTcp = shouldSkipGpsposPoll(cfg);
     const pollEnabled =
       Number(cfg?.gpspos_poll_enabled) === 1 || cfg?.provider_override === "gpspos";
-    if (!alreadyDirectTcp && !pollEnabled) {
+    if (!pollEnabled) {
       const defaultInterval = Math.max(15, Number(process.env.GPSPOS_POLL_INTERVAL_SEC || 60) || 60);
       store.updateDeviceConfig(storeImei, {
         provider_override: "gpspos",
