@@ -100,6 +100,58 @@ test("memory store — GPS fix clears stale atHomeWifi and returns coords with w
   assert.equal(payload.lat, 34.72);
   assert.equal(payload.lng, 33.08);
   assert.equal(payload.source, "gps");
+  assert.equal(payload.gpsValid, true);
+});
+
+test("memory store — status uplink without gpsValid keeps prior GPS trust", () => {
+  const store = createMemoryStore();
+  const imei = "868022030666528";
+
+  store.upsert(imei, {
+    imei,
+    provider: "gt06",
+    source: "gps",
+    gpsValid: true,
+    location: { lat: 34.8207, lng: 32.3995 },
+    receivedAt: "2026-08-15T13:01:19.422Z",
+  });
+
+  store.upsert(imei, {
+    imei,
+    provider: "gt06",
+    source: "gps",
+    gpsValid: null,
+    deviceStatus: { battery: 100, signal: 24 },
+    battery: 100,
+    signal: 24,
+    receivedAt: "2026-08-15T13:05:00.000Z",
+  });
+
+  const rec = store.get(imei);
+  assert.equal(rec.gpsValid, true);
+  assert.equal(rec.location?.lat, 34.8207);
+
+  const payload = buildPositionPayload(imei, rec);
+  assert.equal(payload.gpsValid, true);
+  assert.equal(payload.lat, 34.8207);
+  assert.equal(payload.source, "gps");
+});
+
+test("position payload — GPS source is trusted even when device.gpsValid is false", () => {
+  const payload = buildPositionPayload("868022030666528", {
+    imei: "868022030666528",
+    provider: "gt06",
+    source: "gps",
+    gpsValid: false,
+    location: { lat: 34.8207, lng: 32.3995 },
+    gps: { lat: 34.8207, lng: 32.3995, timestamp: "2026-08-15T13:01:19.422Z" },
+    receivedAt: "2026-08-15T13:01:19.422Z",
+    lastUpdate: "2026-08-15T13:01:19.422Z",
+    battery: 100,
+    signal: 24,
+  });
+  assert.equal(payload.gpsValid, true);
+  assert.equal(payload.lat, 34.8207);
 });
 
 test("memory store — GPS uplink does not invent home location", () => {

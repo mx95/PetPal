@@ -77,7 +77,6 @@ export function pointTimestampMs(p) {
  */
 export function isTrustedGpsFix(p) {
   if (!p) return false;
-  if (p.gpsValid === false) return false;
   if (p.warningApproximate) return false;
   if (p.positionHeldFromPreviousGps) return false;
 
@@ -88,6 +87,10 @@ export function isTrustedGpsFix(p) {
 
   const acc = String(p.accuracy || '').toLowerCase();
   if (acc === 'lbs' || acc === 'wifi' || acc === 'low') return false;
+
+  // Server may flag gpsValid=false after a status-only uplink even when the
+  // last stored fix is still GPS. Trust explicit GPS source / high accuracy.
+  if (p.gpsValid === false && src !== 'gps' && acc !== 'high') return false;
 
   return true;
 }
@@ -126,8 +129,43 @@ export function isPlausibleGpsJump(prev, next, limits = {}) {
 const HISTORY_ROUTE_LIMITS = { maxJumpKm: 1.6, maxBatchJumpKm: 0.4, maxSpeedKmh: 80 };
 const HISTORY_CLUSTER_RADIUS_KM = 0.12;
 const HISTORY_CLUSTER_MIN_POINTS = 3;
-/** Drop factory/default GPS (e.g. Shenzhen) far from the day's real cluster. */
-const HISTORY_OUTLIER_KM = 80;
+/**
+ * Drop factory/default GPS and other islands far from the day's real cluster.
+ * Keep this tight (~10 km): a wider radius still keeps same-island car noise,
+ * and the jump filter then collapses the walk to a single wrong pin.
+ */
+const HISTORY_OUTLIER_KM = 10;
+
+function densestCellKey(points) {
+  const cellKey = (p) => `${Math.round(Number(p.lat) * 100)}_${Math.round(Number(p.lng) * 100)}`;
+  const counts = new Map();
+  for (const p of points) {
+    const k = cellKey(p);
+    counts.set(k, (counts.get(k) || 0) + 1);
+  }
+  let bestKey = null;
+  let bestN = 0;
+  for (const [k, n] of counts) {
+    if (n > bestN) {
+      bestKey = k;
+      bestN = n;
+    }
+  }
+  return { cellKey, bestKey, bestN };
+}
+
+/**
+ * Index of the earliest point inside the densest ~1.1 km cell.
+ * Starting the polyline there avoids a long inbound drive seeding the route
+ * and then failing every subsequent jump.
+ */
+function densestClusterStartIndex(points) {
+  if (!Array.isArray(points) || points.length < 2) return 0;
+  const { cellKey, bestKey, bestN } = densestCellKey(points);
+  if (!bestKey || bestN < 2) return 0;
+  const idx = points.findIndex((p) => cellKey(p) === bestKey);
+  return idx >= 0 ? idx : 0;
+}
 /**
  * gpspos.net LASTPOS (and similar) often keep an old collar GPS clock while
  * server receive time is “now”. Those points must not become the route anchor.
@@ -159,20 +197,7 @@ export function excludeFarGpsOutliers(points, maxKm = HISTORY_OUTLIER_KM) {
   const pool = withoutSkew.length >= 4 ? withoutSkew : rows;
 
   // ~1.1 km cells — densest cell is usually the real walk, not a lone LASTPOS island.
-  const cellKey = (p) => `${Math.round(Number(p.lat) * 100)}_${Math.round(Number(p.lng) * 100)}`;
-  const counts = new Map();
-  for (const p of pool) {
-    const k = cellKey(p);
-    counts.set(k, (counts.get(k) || 0) + 1);
-  }
-  let bestKey = null;
-  let bestN = 0;
-  for (const [k, n] of counts) {
-    if (n > bestN) {
-      bestKey = k;
-      bestN = n;
-    }
-  }
+  const { cellKey, bestKey } = densestCellKey(pool);
   const cluster = bestKey ? pool.filter((p) => cellKey(p) === bestKey) : pool;
   const lats = cluster.map((p) => Number(p.lat)).sort((a, b) => a - b);
   const lngs = cluster.map((p) => Number(p.lng)).sort((a, b) => a - b);
@@ -338,9 +363,12 @@ export function resolveHistoryRoutePositions(points) {
     if (!isTrustedGpsFix(candidate)) continue;
     trustedRaw.push(candidate);
   }
-  const trusted = excludeFarGpsOutliers(trustedRaw);
+  const trusted = excludeFarGpsOutliers(trustedRaw)
+    .slice()
+    .sort((a, b) => (pointTimestampMs(a) ?? 0) - (pointTimestampMs(b) ?? 0));
   if (trusted.length === 0) return [];
 
+  const seedIndex = densestClusterStartIndex(trusted);
   const out = [];
   let lastPlotted = null;
   let prevRaw = null;
@@ -369,7 +397,8 @@ export function resolveHistoryRoutePositions(points) {
     pendingCluster = [];
   };
 
-  for (const candidate of trusted) {
+  for (let i = seedIndex; i < trusted.length; i++) {
+    const candidate = trusted[i];
     if (!prevRaw) {
       out.push(candidate);
       lastPlotted = candidate;
@@ -428,7 +457,11 @@ export function resolveHistoryPositions(points) {
   let prevTrusted = null;
   const out = [];
 
-  for (const candidate of excludeFarGpsOutliers(trustedRaw)) {
+  const trusted = excludeFarGpsOutliers(trustedRaw)
+    .slice()
+    .sort((a, b) => (pointTimestampMs(a) ?? 0) - (pointTimestampMs(b) ?? 0));
+
+  for (const candidate of trusted) {
     if (!prevTrusted) {
       out.push(candidate);
       prevTrusted = candidate;

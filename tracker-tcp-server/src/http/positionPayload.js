@@ -201,7 +201,8 @@ function buildPositionPayload(imei, d) {
     deviceClockSkewSec,
     platformOnline,
     cloudSyncedAt,
-    gpsValid: d.gpsValid === true,
+    // Prefer source over a stale false flag (status packets / SQLite reload).
+    gpsValid: isApproximate ? false : source === "gps" ? true : d.gpsValid === true,
     satellites: d.satellites ?? null,
     speed: d.speed != null ? Number(d.speed) : null,
     lastUpdateServer: serverReceivedAt,

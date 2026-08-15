@@ -83,7 +83,16 @@ function normalizeIncomingDevice(prev, incoming, canonicalImei = null) {
       p.source === "gps" && p.gpsValid !== false && isPlausibleLatLng(lat, lng)
         ? { lat, lng }
         : prev?.homeLocation ?? null,
-    gpsValid: p.gpsValid === true,
+    // Status-only frames often omit gpsValid; keep the previous flag so live
+    // maps do not suddenly treat a real GPS fix as untrusted.
+    gpsValid:
+      p.gpsValid === true
+        ? true
+        : p.gpsValid === false
+          ? false
+          : prev?.gpsValid === true
+            ? true
+            : false,
     source: p.source || gps.source || null, // "gps" | "lbs"
     accuracy: p.accuracy || null, // "gps" | "wifi" | "lbs" (wifi not implemented yet)
     satellites: p.satellites ?? gps.satellites ?? null,
@@ -209,6 +218,14 @@ function mergeDeviceRecord(prev, incoming) {
     }
   }
   if (incoming.steps == null && prev?.steps != null) merged.steps = prev.steps;
+  if (
+    incoming.gpsValid == null &&
+    prev?.gpsValid === true &&
+    merged.source === "gps" &&
+    hasValidGps(merged.location || merged.gps)
+  ) {
+    merged.gpsValid = true;
+  }
   return merged;
 }
 

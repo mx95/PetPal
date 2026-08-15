@@ -4,6 +4,7 @@ import {
   excludeFarGpsOutliers,
   hasSevereDeviceClockSkew,
   isPlausibleGpsJump,
+  isTrustedGpsFix,
   kmBetween,
   resolveHistoryRoutePositions,
   resolveTrackerPositions,
@@ -20,6 +21,33 @@ function pt(lat, lng, receivedAt, extra = {}) {
     ...extra,
   };
 }
+
+describe('isTrustedGpsFix', () => {
+  it('still trusts explicit GPS when gpsValid was cleared by a status packet', () => {
+    expect(
+      isTrustedGpsFix({
+        lat: 34.82,
+        lng: 32.4,
+        source: 'gps',
+        accuracy: 'high',
+        gpsValid: false,
+        warningApproximate: false,
+      })
+    ).toBe(true);
+  });
+
+  it('rejects LBS even when gpsValid is missing', () => {
+    expect(
+      isTrustedGpsFix({
+        lat: 34.82,
+        lng: 32.4,
+        source: 'lbs',
+        accuracy: 'low',
+        gpsValid: false,
+      })
+    ).toBe(false);
+  });
+});
 
 describe('isPlausibleGpsJump', () => {
   it('rejects multi-km hops when receive times are identical (batched fixes)', () => {
@@ -176,5 +204,49 @@ describe('resolveHistoryRoutePositions', () => {
     const route = resolveHistoryRoutePositions([...walk, ...lastpos]);
     expect(route.length).toBeGreaterThan(20);
     expect(route.every((p) => Math.abs(p.lng - 32.4) < 0.05)).toBe(true);
+  });
+
+  it('does not collapse a Paphos walk when earlier same-day Larnaca noise is within Cyprus', () => {
+    const noise = [];
+    const noiseT = Date.parse('2026-08-15T09:28:00.000Z');
+    for (let i = 0; i < 8; i++) {
+      const t = new Date(noiseT + i * 10_000).toISOString();
+      noise.push(pt(34.7212 + i * 0.0001, 33.2663 - i * 0.0002, t, { deviceTimeUtc: t }));
+    }
+    const walk = [];
+    const walkT = Date.parse('2026-08-15T10:40:00.000Z');
+    for (let i = 0; i < 40; i++) {
+      const t = new Date(walkT + i * 30_000).toISOString();
+      walk.push(
+        pt(34.8207 + i * 0.00005, 32.3995 + i * 0.00004, t, { deviceTimeUtc: t })
+      );
+    }
+    const kept = excludeFarGpsOutliers([...noise, ...walk]);
+    expect(kept.every((p) => p.lng < 33)).toBe(true);
+    const route = resolveHistoryRoutePositions([...noise, ...walk]);
+    expect(route.length).toBeGreaterThan(20);
+    expect(route.every((p) => Math.abs(p.lng - 32.4) < 0.05)).toBe(true);
+  });
+
+  it('seeds the route in the densest walk, not an earlier inbound drive within 10 km', () => {
+    const drive = [];
+    const driveT = Date.parse('2026-08-15T09:50:00.000Z');
+    for (let i = 0; i < 6; i++) {
+      const t = new Date(driveT + i * 60_000).toISOString();
+      // ~8 km east of the densest Paphos cell — within outlier radius, too fast to join.
+      drive.push(pt(34.77 + i * 0.002, 32.48 - i * 0.003, t, { deviceTimeUtc: t }));
+    }
+    const walk = [];
+    const walkT = Date.parse('2026-08-15T10:40:00.000Z');
+    for (let i = 0; i < 40; i++) {
+      const t = new Date(walkT + i * 30_000).toISOString();
+      walk.push(
+        pt(34.8207 + i * 0.00005, 32.3995 + i * 0.00004, t, { deviceTimeUtc: t })
+      );
+    }
+    const route = resolveHistoryRoutePositions([...drive, ...walk]);
+    expect(route.length).toBeGreaterThan(20);
+    expect(route.every((p) => Math.abs(p.lng - 32.4) < 0.05)).toBe(true);
+    expect(route[0].lat).toBeGreaterThan(34.81);
   });
 });

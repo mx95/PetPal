@@ -138,6 +138,7 @@ function deviceFromRow(row) {
     homeLocation,
     homeExplicit: homeExplicit || undefined,
     lastUpdate: row.last_update ?? null,
+    gpsValid: hasLoc && source === "gps",
     location: hasLoc ? { lat, lng } : null,
     gps: hasLoc
       ? { lat, lng, speedKmh: null, timestamp: row.last_update ?? null }
