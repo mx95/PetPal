@@ -32,6 +32,7 @@ import ProviderBookingCard from '../bookings/ProviderBookingCard';
 import { addDays, daysFromMonday } from '../bookings/bookingHeatMap';
 import ListingPlaceImportField from '../company/ListingPlaceImportField';
 import { cancelBusinessBoost } from '../shop/cancelBusinessBoost';
+import MarketplaceProductsPanel from '../components/shop/MarketplaceProductsPanel';
 import { formatDateTime24, formatTime24 } from '../formatTime24';
 import {
   buildDefaultDurationMatrix,
@@ -156,7 +157,7 @@ function dateKey(date) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-const PROVIDER_TABS = ['bookings', 'availability', 'customers', 'services'];
+const PROVIDER_TABS = ['bookings', 'availability', 'customers', 'services', 'products'];
 
 function buildPublishState(companyProfile, providerDoc, t) {
   const limitRaw = providerDoc?.bookingLimitPerDay;
@@ -532,6 +533,7 @@ function ProviderTabs({ tab, setTab }) {
     ['availability', t('providerPortal.tabAvailability')],
     ['customers', t('providerPortal.tabCustomers')],
     ['services', t('providerPortal.tabServices')],
+    ['products', t('providerPortal.tabProducts')],
   ];
   return (
     <div className="pp-providerTabs" role="tablist" aria-label={t('providerPortal.providerSectionsAria')}>
@@ -867,6 +869,13 @@ export default function ProviderPortal() {
             <Customers companyId={companyId} clinicLabel={publish.displayName || profile?.businessName || ''} />
           ) : null}
           {tab === 'services' ? <Services companyId={companyId} /> : null}
+          {tab === 'products' ? (
+            <MarketplaceProductsPanel
+              companyId={companyId}
+              companyName={profile?.businessName || publish.displayName || t('providerPortal.businessFallback')}
+              uid={user?.uid}
+            />
+          ) : null}
         </div>
       </div>
     </div>

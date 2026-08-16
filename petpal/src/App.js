@@ -44,6 +44,7 @@ import AdminBookings from './Pages/AdminBookings';
 import AdminSupport from './Pages/AdminSupport';
 import AdminEmailSettings from './Pages/AdminEmailSettings';
 import AdminSiteMode from './Pages/AdminSiteMode';
+import AdminMarketplaceProducts from './Pages/AdminMarketplaceProducts';
 import Inbox from './Pages/Inbox';
 import Tracking from './Pages/Tracking';
 import { useI18n } from './i18n/I18nContext';
@@ -181,6 +182,14 @@ function App() {
             element={
               <RequireAuth>
                 <AdminSiteMode />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/admin/products"
+            element={
+              <RequireAuth>
+                <AdminMarketplaceProducts />
               </RequireAuth>
             }
           />

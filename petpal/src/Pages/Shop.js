@@ -24,7 +24,9 @@ import {
   localizeShopProduct,
   monthlyFirstPaymentCents,
 } from '../shop/catalog';
-import { MARKETPLACE_PRODUCTS } from '../shop/marketplaceProducts';
+import { MARKETPLACE_CATEGORIES, marketplaceCategoryEmoji } from '../shop/marketplaceCategories';
+import { formatEurFromCents } from '../shop/marketplacePricing';
+import { subscribeApprovedMarketplaceProducts } from '../shop/marketplaceProductsFirestore';
 import { useShopCart } from '../shop/ShopCartContext';
 import { requestSubscriptionCancel } from '../shop/requestSubscriptionCancel';
 import { cancelBusinessBoost } from '../shop/cancelBusinessBoost';
@@ -63,6 +65,22 @@ export default function Shop() {
 
   const [shopTab, setShopTab] = useState('subscriptions');
   const { addToCart, setCheckoutError, cartItems } = useShopCart();
+  const [marketplaceProducts, setMarketplaceProducts] = useState([]);
+  const [marketplaceCategory, setMarketplaceCategory] = useState('all');
+  const [marketplaceErr, setMarketplaceErr] = useState('');
+
+  useEffect(() => {
+    if (shopTab !== 'products') return undefined;
+    return subscribeApprovedMarketplaceProducts(
+      setMarketplaceProducts,
+      (e) => setMarketplaceErr(e?.message || t('common.errorGeneric'))
+    );
+  }, [shopTab, t]);
+
+  const visibleMarketplaceProducts = useMemo(() => {
+    if (marketplaceCategory === 'all') return marketplaceProducts;
+    return marketplaceProducts.filter((p) => p.category === marketplaceCategory);
+  }, [marketplaceProducts, marketplaceCategory]);
 
   const localizedSubscriptionProducts = useMemo(
     () => SUBSCRIPTION_PRODUCTS.map((product) => localizeShopProduct(product, t)),
@@ -757,35 +775,69 @@ export default function Shop() {
       ) : (
         <>
           <p className="pp-subtle pp-shopProductsLead">{t('shopPage.productsLead')}</p>
-          <div className="pp-shopProductGrid">
-            {MARKETPLACE_PRODUCTS.map((product) => (
-              <article key={product.id} className="pp-card pp-shopProductCard">
-                <div className="pp-shopProductCard__emoji" aria-hidden>
-                  {product.emoji}
-                </div>
-                <p className="pp-shopProductCard__company">{product.companyName}</p>
-                <h3 className="pp-shopProductCard__title">{product.title}</h3>
-                <p className="pp-subtle pp-shopProductCard__desc">{product.description}</p>
-                <div className="pp-shopProductCard__foot">
-                  <strong>{formatEur(product.priceCents)}</strong>
-                  <button
-                    type="button"
-                    className="pp-btn pp-btn--primary"
-                    onClick={() => {
-                      setErr('');
-                      addToCart({
-                        key: product.id,
-                        title: product.title,
-                        subtitle: product.companyName,
-                        priceCents: product.priceCents,
-                      });
-                    }}
-                  >
-                    {t('shopPage.addToCart')}
-                  </button>
-                </div>
-              </article>
+          {marketplaceErr ? <p className="pp-error">{marketplaceErr}</p> : null}
+          <div className="pp-shopCategoryChips" role="tablist" aria-label={t('marketplace.categoriesAria')}>
+            <button
+              type="button"
+              className={`pp-shopCategoryChip${marketplaceCategory === 'all' ? ' is-active' : ''}`}
+              onClick={() => setMarketplaceCategory('all')}
+            >
+              {t('marketplace.filterAll')}
+            </button>
+            {MARKETPLACE_CATEGORIES.map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                className={`pp-shopCategoryChip${marketplaceCategory === c.id ? ' is-active' : ''}`}
+                onClick={() => setMarketplaceCategory(c.id)}
+              >
+                {c.emoji} {t(`marketplace.category.${c.id}`)}
+              </button>
             ))}
+          </div>
+          <div className="pp-shopProductGrid">
+            {visibleMarketplaceProducts.length === 0 ? (
+              <p className="pp-subtle">{t('marketplace.emptyShop')}</p>
+            ) : (
+              visibleMarketplaceProducts.map((product) => (
+                <article key={product.id} className="pp-card pp-shopProductCard">
+                  <div className="pp-shopProductCard__media">
+                    {product.imageUrl ? (
+                      <img src={product.imageUrl} alt="" className="pp-shopProductCard__img" />
+                    ) : (
+                      <div className="pp-shopProductCard__emoji" aria-hidden>
+                        {marketplaceCategoryEmoji(product.category)}
+                      </div>
+                    )}
+                  </div>
+                  <p className="pp-shopProductCard__company">{product.companyName}</p>
+                  <h3 className="pp-shopProductCard__title">{product.title}</h3>
+                  <p className="pp-subtle pp-shopProductCard__desc">{product.description}</p>
+                  <p className="pp-shopProductCard__category">
+                    {t(`marketplace.category.${product.category}`)}
+                  </p>
+                  <div className="pp-shopProductCard__foot">
+                    <strong>{formatEurFromCents(product.listedPriceCents)}</strong>
+                    <button
+                      type="button"
+                      className="pp-btn pp-btn--primary"
+                      onClick={() => {
+                        setErr('');
+                        addToCart({
+                          key: product.id,
+                          productId: product.id,
+                          title: product.title,
+                          subtitle: product.companyName,
+                          priceCents: product.listedPriceCents,
+                        });
+                      }}
+                    >
+                      {t('shopPage.addToCart')}
+                    </button>
+                  </div>
+                </article>
+              ))
+            )}
           </div>
         </>
       )}
