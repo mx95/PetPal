@@ -1324,16 +1324,15 @@ const en = {
     historyScrubAria: 'Jump to point on route',
     historyEmptyTitle: 'No route for these dates',
     historyEmptyBody:
-      'No tracker locations were found for this range. If it is just after midnight, try Yesterday — or pick the day of the walk and refresh.',
+      'No tracker locations were found for this range. Try Yesterday, Last 2 hours, or pick the day of the walk and refresh.',
     historyEmptyApproxOnly:
       'Fixes were received for this day, but none are GPS-quality yet. Show cell / Wi‑Fi fixes below, or try Yesterday for the last walk route.',
-    historyRolledToYesterday:
-      'No fixes yet today (past midnight). Showing yesterday’s route instead.',
     historyApproxMapHint:
       'Approximate cell / Wi‑Fi fix only — GPS route appears when the collar uploads satellite positions',
     historyTimelineTitle: 'Timeline',
     historyTimelineEmpty: 'Events appear here after history loads.',
-    presetToday: 'Today',
+    presetLast2Hours: 'Last 2 hours',
+    presetToday: 'Today (whole day)',
     presetYesterday: 'Yesterday',
     historyFromLabel: 'From',
     historyToLabel: 'To',
@@ -1348,7 +1347,7 @@ const en = {
     historyToDateAria: 'End date',
     historyToTimeAria: 'End time (each day)',
     historyRangeHint:
-      'Uses your timezone. Today and Yesterday show the full calendar day. Points are grouped by when the server received them (not the collar clock). Narrow From/To times if you want a shorter window.',
+      'Uses your timezone. Last 2 hours, Today, and Yesterday are shortcuts. Points are grouped by when the server received them (not the collar clock). Narrow From/To times if you want a shorter window.',
     historyTimeFrom: 'Daily from',
     historyTimeTo: 'Daily to',
     historyTimeHint:

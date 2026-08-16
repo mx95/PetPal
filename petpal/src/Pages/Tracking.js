@@ -24,6 +24,7 @@ import {
   countDistinctLocations,
   resolveHistoryPositions,
   resolveHistoryRoutePositions,
+  shouldBreakHistoryRoute,
   buildRouteVertexMarkers,
   computeRouteFitPath,
   sanitizeSpeedKmh,
@@ -249,17 +250,60 @@ const LIVE_POLL_MS = 60_000;
 const HISTORY_FETCH_LIMIT = 15000;
 const HISTORY_MAP_PATH_MAX = 1500;
 
-/** Keep map polylines responsive when a day has thousands of fixes. */
+/** Keep map polylines responsive when a day has thousands of fixes. Preserves `null` gaps. */
 function downsampleMapPath(path, maxPoints = HISTORY_MAP_PATH_MAX) {
   if (!Array.isArray(path) || path.length <= maxPoints) return path;
-  const out = [path[0]];
-  const last = path.length - 1;
-  const step = last / (maxPoints - 1);
-  for (let i = 1; i < maxPoints - 1; i++) {
-    out.push(path[Math.min(last, Math.round(i * step))]);
+  const segments = [];
+  let cur = [];
+  for (const p of path) {
+    if (p == null) {
+      if (cur.length) segments.push(cur);
+      cur = [];
+      continue;
+    }
+    cur.push(p);
   }
-  if (last > 0) out.push(path[last]);
+  if (cur.length) segments.push(cur);
+  if (segments.length <= 1) {
+    const pts = segments[0] || [];
+    if (pts.length <= maxPoints) return path;
+    const out = [pts[0]];
+    const last = pts.length - 1;
+    const step = last / (maxPoints - 1);
+    for (let i = 1; i < maxPoints - 1; i++) out.push(pts[Math.min(last, Math.round(i * step))]);
+    if (last > 0) out.push(pts[last]);
+    return out;
+  }
+  const perSeg = Math.max(2, Math.floor(maxPoints / segments.length));
+  const out = [];
+  segments.forEach((seg, idx) => {
+    if (idx > 0) out.push(null);
+    if (seg.length <= perSeg) {
+      out.push(...seg);
+      return;
+    }
+    out.push(seg[0]);
+    const last = seg.length - 1;
+    const step = last / (perSeg - 1);
+    for (let i = 1; i < perSeg - 1; i++) out.push(seg[Math.min(last, Math.round(i * step))]);
+    out.push(seg[last]);
+  });
   return out;
+}
+
+function buildGapAwareHistoryPath(points) {
+  const path = [];
+  let prev = null;
+  for (const p of points) {
+    if (!p || !Number.isFinite(Number(p.lat)) || !Number.isFinite(Number(p.lng))) continue;
+    const pt = { lat: Number(p.lat), lng: Number(p.lng) };
+    if (prev && (p.routeBreakBefore || shouldBreakHistoryRoute(prev, pt))) {
+      path.push(null);
+    }
+    path.push(pt);
+    prev = pt;
+  }
+  return downsampleMapPath(path);
 }
 
 function defaultHistoryDayTimes() {
@@ -327,7 +371,7 @@ function filterHistoryPoints(points, range) {
   const fromMs = new Date(bounds.from).getTime();
   const toMs = new Date(bounds.to).getTime();
   if (!Number.isFinite(fromMs) || !Number.isFinite(toMs)) return points;
-  const multiDay = Boolean(range?.from && range?.to && range.from !== range.to);
+  const multiDay = Boolean(range?.from && range?.to && range.from !== range.to && range?.preset !== 'last2h');
   return points.filter((p) => {
     const ts = pointTime(p);
     if (!Number.isFinite(ts) || ts < fromMs || ts > toMs) return false;
@@ -338,7 +382,20 @@ function filterHistoryPoints(points, range) {
 
 /** Initial / preset date span for the History tab (inclusive). */
 function computeHistoryRangeForPreset(preset) {
-  const today = startOfDay(new Date());
+  const now = new Date();
+  const today = startOfDay(now);
+  if (preset === 'last2h') {
+    const from = new Date(now.getTime() - 2 * 60 * 60 * 1000);
+    const pad = (n) => String(n).padStart(2, '0');
+    const hm = (d) => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    return {
+      preset,
+      from: dateInputValue(from),
+      to: dateInputValue(now),
+      timeFrom: hm(from),
+      timeTo: hm(now),
+    };
+  }
   if (preset === 'yesterday') {
     const y = new Date(today);
     y.setDate(today.getDate() - 1);
@@ -401,6 +458,7 @@ function historyLocalDayKey(iso) {
 
 function countDaysInRange(range) {
   if (!range?.from || !range?.to) return 1;
+  if (range.preset === 'last2h') return 1;
   const from = new Date(`${range.from}T00:00:00`).getTime();
   const to = new Date(`${range.to}T00:00:00`).getTime();
   if (!Number.isFinite(from) || !Number.isFinite(to)) return 1;
@@ -558,9 +616,6 @@ export default function Tracking() {
   const [deviceProvider, setDeviceProvider] = useState(null);
   const [livePlaceLabel, setLivePlaceLabel] = useState('');
   const [historyPlaceLabels, setHistoryPlaceLabels] = useState({});
-  const [historyRolledToYesterday, setHistoryRolledToYesterday] = useState(false);
-  /** One auto-switch per device+local-day when Today has no fixes yet (e.g. just after midnight). */
-  const todayEmptyFallbackKeyRef = useRef('');
 
   useEffect(() => {
     if (!wifiTrackingEnabled && trackerTab === 'device') setTrackerTab('live');
@@ -751,16 +806,6 @@ export default function Tracking() {
     })
       .then(({ history, calendarMatch, totalInRange, truncated }) => {
         if (cancelled) return;
-        const emptyToday =
-          historyRange.preset === 'today' && Array.isArray(history) && history.length === 0;
-        const fallbackKey = `${effectiveDeviceId}:${dateInputValue(new Date())}`;
-        if (emptyToday && todayEmptyFallbackKeyRef.current !== fallbackKey) {
-          todayEmptyFallbackKeyRef.current = fallbackKey;
-          setHistoryRolledToYesterday(true);
-          setHistoryRange(computeHistoryRangeForPreset('yesterday'));
-          return;
-        }
-        if (historyRange.preset === 'today') setHistoryRolledToYesterday(false);
         setHistoryPoints(history);
         setHistoryCalendarMatch(calendarMatch !== false);
         setHistoryTotalInRange(Number.isFinite(totalInRange) ? totalInRange : null);
@@ -773,7 +818,6 @@ export default function Tracking() {
         setHistoryPoints([]);
         setHistoryTotalInRange(null);
         setHistoryTruncated(false);
-        setHistoryRolledToYesterday(false);
         setHistoryError(e?.message || t('trackingPage.errLoadHistory'));
         setHistoryLoading(false);
       });
@@ -1064,12 +1108,10 @@ export default function Tracking() {
     };
   }, [historyTimelineEvents]);
 
-  const historyMapPath = useMemo(() => {
-    const path = mapHistoryPoints
-      .map((p) => ({ lat: Number(p.lat), lng: Number(p.lng) }))
-      .filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng));
-    return downsampleMapPath(path);
-  }, [mapHistoryPoints]);
+  const historyMapPath = useMemo(
+    () => buildGapAwareHistoryPath(mapHistoryPoints),
+    [mapHistoryPoints]
+  );
 
   const historyMapFitPath = useMemo(
     () => computeRouteFitPath(mapHistoryPoints),
@@ -1136,12 +1178,6 @@ export default function Tracking() {
   }, [historyRange]);
 
   function applyHistoryPreset(preset) {
-    if (preset === 'today') {
-      todayEmptyFallbackKeyRef.current = '';
-      setHistoryRolledToYesterday(false);
-    } else if (preset !== 'yesterday') {
-      setHistoryRolledToYesterday(false);
-    }
     setHistoryRange(computeHistoryRangeForPreset(preset));
   }
 
@@ -1593,9 +1629,6 @@ export default function Tracking() {
                   </button>
                 </div>
                 {historyError ? <div className="pp-error pp-trackHistoryError">{historyError}</div> : null}
-                {historyRolledToYesterday && historyRange.preset === 'yesterday' ? (
-                  <p className="pp-trackHistoryRangeCard__hint">{t('trackingPage.historyRolledToYesterday')}</p>
-                ) : null}
                 {!historyLoading && historyPoints.length > 0 ? (
                   <label className="pp-trackHistoryShowAll">
                     <input
@@ -1626,6 +1659,7 @@ export default function Tracking() {
                 <div className="pp-trackHistoryPresets" role="group" aria-label={t('trackingPage.historyPresetsAria')}>
                   {(
                     [
+                      ['last2h', 'presetLast2Hours'],
                       ['today', 'presetToday'],
                       ['yesterday', 'presetYesterday'],
                     ]
@@ -1649,13 +1683,11 @@ export default function Tracking() {
                         date: historyRange.from,
                         dateAria: t('trackingPage.historyFromDateAria'),
                         onDate: (value) => {
-                          setHistoryRolledToYesterday(false);
                           setHistoryRange((r) => ({ ...r, preset: 'custom', from: value }));
                         },
                         time: historyRange.timeFrom ?? defaultHistoryDayTimes().timeFrom,
                         timeAria: t('trackingPage.historyFromTimeAria'),
                         onTime: (next) => {
-                          setHistoryRolledToYesterday(false);
                           setHistoryRange((r) => ({
                             ...r,
                             preset: 'custom',
@@ -1669,13 +1701,11 @@ export default function Tracking() {
                         date: historyRange.to,
                         dateAria: t('trackingPage.historyToDateAria'),
                         onDate: (value) => {
-                          setHistoryRolledToYesterday(false);
                           setHistoryRange((r) => ({ ...r, preset: 'custom', to: value }));
                         },
                         time: historyRange.timeTo ?? defaultHistoryDayTimes().timeTo,
                         timeAria: t('trackingPage.historyToTimeAria'),
                         onTime: (next) => {
-                          setHistoryRolledToYesterday(false);
                           setHistoryRange((r) => ({
                             ...r,
                             preset: 'custom',

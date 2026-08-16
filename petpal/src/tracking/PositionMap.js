@@ -234,7 +234,7 @@ function GoogleMapResize() {
 
 function FitRoute({ path, fitPath, zoom = 16, maxZoom = 17 }) {
   const map = useMap();
-  const boundsPath = fitPath ?? path;
+  const boundsPath = flattenRoutePath(fitPath ?? path);
   useEffect(() => {
     if (!Array.isArray(boundsPath) || boundsPath.length === 0) return;
     if (boundsPath.length === 1) {
@@ -284,7 +284,7 @@ function GoogleFollowPan({ lat, lng, follow, zoom = LIVE_MAP_ZOOM }) {
 
 function GoogleFitRoute({ path, fitPath, zoom = 16, maxZoom = 17 }) {
   const map = useGoogleMap();
-  const boundsPath = fitPath ?? path;
+  const boundsPath = flattenRoutePath(fitPath ?? path);
   useEffect(() => {
     if (!map || !window.google?.maps || !Array.isArray(boundsPath) || boundsPath.length === 0) return;
     if (boundsPath.length === 1) {
@@ -310,7 +310,7 @@ function GoogleFitRoute({ path, fitPath, zoom = 16, maxZoom = 17 }) {
 
 function GoogleNativePolyline({ path, options }) {
   const map = useGoogleMap();
-  const routePath = useMemo(() => normalizeRoutePath(path), [path]);
+  const routePath = useMemo(() => flattenRoutePath(path), [path]);
   const optionsKey = useMemo(() => JSON.stringify(options || {}), [options]);
 
   useEffect(() => {
@@ -331,6 +331,7 @@ function GoogleNativePolyline({ path, options }) {
 }
 
 function GoogleRoutePolylines({ path, emphasize }) {
+  const segments = useMemo(() => splitRouteSegments(path), [path]);
   const glowOptions = useMemo(
     () => ({
       geodesic: false,
@@ -351,8 +352,12 @@ function GoogleRoutePolylines({ path, emphasize }) {
   );
   return (
     <>
-      <GoogleNativePolyline path={path} options={glowOptions} />
-      <GoogleNativePolyline path={path} options={lineOptions} />
+      {segments.map((segment, i) => (
+        <React.Fragment key={`route-seg-${i}`}>
+          <GoogleNativePolyline path={segment} options={glowOptions} />
+          <GoogleNativePolyline path={segment} options={lineOptions} />
+        </React.Fragment>
+      ))}
     </>
   );
 }
@@ -556,8 +561,39 @@ function LeafletLiveLayers({
 function normalizeRoutePath(path) {
   if (!Array.isArray(path)) return [];
   return path
-    .map((p) => ({ lat: Number(p?.lat), lng: Number(p?.lng) }))
-    .filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng));
+    .map((p) => {
+      if (p == null) return null;
+      const lat = Number(p?.lat);
+      const lng = Number(p?.lng);
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+      return { lat, lng };
+    })
+    .filter((p, i, arr) => {
+      if (p == null) return i > 0 && arr[i - 1] != null;
+      return true;
+    });
+}
+
+/** Split a route path on `null` gaps so teleport spikes are not drawn as lines. */
+function splitRouteSegments(path) {
+  const flat = normalizeRoutePath(path);
+  const segments = [];
+  let cur = [];
+  for (const p of flat) {
+    if (p == null) {
+      if (cur.length >= 2) segments.push(cur);
+      cur = [];
+      continue;
+    }
+    cur.push(p);
+  }
+  if (cur.length >= 2) segments.push(cur);
+  else if (cur.length === 1 && segments.length === 0) segments.push(cur);
+  return segments;
+}
+
+function flattenRoutePath(path) {
+  return normalizeRoutePath(path).filter(Boolean);
 }
 
 function LeafletPositionMap({
@@ -584,7 +620,8 @@ function LeafletPositionMap({
 }) {
   const [followEnabled, setFollowEnabled] = useState(true);
   const z = liveMode ? LIVE_MAP_ZOOM : 16;
-  const routePath = useMemo(() => normalizeRoutePath(path), [path]);
+  const routeSegments = useMemo(() => splitRouteSegments(path), [path]);
+  const routePath = useMemo(() => flattenRoutePath(path), [path]);
   const hasPath = routePath.length > 1;
   const head =
     playbackPointIndex != null && Number.isFinite(lat) && Number.isFinite(lng)
@@ -688,28 +725,32 @@ function LeafletPositionMap({
         ) : null}
         {hasPath ? (
           <>
-            <LeafletPolyline
-              positions={routePath.map((p) => [p.lat, p.lng])}
-              smoothFactor={0}
-              pathOptions={{
-                color: ROUTE_LINE,
-                weight: showRouteVertices ? 3 : 3,
-                opacity: 0.95,
-                lineCap: 'round',
-                lineJoin: 'round',
-              }}
-            />
-            <LeafletPolyline
-              positions={routePath.map((p) => [p.lat, p.lng])}
-              smoothFactor={0}
-              pathOptions={{
-                color: ROUTE_LINE,
-                weight: showRouteVertices ? 8 : 9,
-                opacity: 0.14,
-                lineCap: 'round',
-                lineJoin: 'round',
-              }}
-            />
+            {routeSegments.map((segment, i) => (
+              <React.Fragment key={`leaflet-route-${i}`}>
+                <LeafletPolyline
+                  positions={segment.map((p) => [p.lat, p.lng])}
+                  smoothFactor={0}
+                  pathOptions={{
+                    color: ROUTE_LINE,
+                    weight: showRouteVertices ? 3 : 3,
+                    opacity: 0.95,
+                    lineCap: 'round',
+                    lineJoin: 'round',
+                  }}
+                />
+                <LeafletPolyline
+                  positions={segment.map((p) => [p.lat, p.lng])}
+                  smoothFactor={0}
+                  pathOptions={{
+                    color: ROUTE_LINE,
+                    weight: showRouteVertices ? 8 : 9,
+                    opacity: 0.14,
+                    lineCap: 'round',
+                    lineJoin: 'round',
+                  }}
+                />
+              </React.Fragment>
+            ))}
             {vertexMarkers.map((m) => {
               const active = playbackPointIndex != null && m.pointIndex === playbackPointIndex;
               const r = leafletDotRadius(m.kind, active, showRouteVertices);
@@ -1027,7 +1068,7 @@ function GooglePositionMap({
     libraries: ['places'],
   });
 
-  const routePath = useMemo(() => normalizeRoutePath(path), [path]);
+  const routePath = useMemo(() => flattenRoutePath(path), [path]);
   const hasPath = routePath.length > 1;
   const head =
     playbackPointIndex != null && Number.isFinite(lat) && Number.isFinite(lng)

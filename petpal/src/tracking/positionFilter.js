@@ -126,15 +126,15 @@ export function isPlausibleGpsJump(prev, next, limits = {}) {
  * History map polylines: keep a real walk (gaps of a few hundred metres,
  * noisy GT06 speeds) while still refusing multi‑km cell-tower ping-pong.
  */
-const HISTORY_ROUTE_LIMITS = { maxJumpKm: 1.6, maxBatchJumpKm: 0.4, maxSpeedKmh: 80 };
-const HISTORY_CLUSTER_RADIUS_KM = 0.12;
-const HISTORY_CLUSTER_MIN_POINTS = 3;
 /**
- * Drop factory/default GPS and other islands far from the day's real cluster.
- * Keep this tight (~10 km): a wider radius still keeps same-island car noise,
- * and the jump filter then collapses the walk to a single wrong pin.
+ * Allow normal road travel on the drawn route, but break the polyline on
+ * teleport spikes (stale LASTPOS / bad LBS) instead of drawing cross-map lines.
  */
-const HISTORY_OUTLIER_KM = 10;
+const HISTORY_SPIKE_BREAK_LIMITS = { maxJumpKm: 12, maxBatchJumpKm: 0.8, maxSpeedKmh: 140 };
+/**
+ * Drop factory/default GPS on another continent. Keep same-island day trips.
+ */
+const HISTORY_OUTLIER_KM = 180;
 
 function densestCellKey(points) {
   const cellKey = (p) => `${Math.round(Number(p.lat) * 100)}_${Math.round(Number(p.lng) * 100)}`;
@@ -155,18 +155,6 @@ function densestCellKey(points) {
 }
 
 /**
- * Index of the earliest point inside the densest ~1.1 km cell.
- * Starting the polyline there avoids a long inbound drive seeding the route
- * and then failing every subsequent jump.
- */
-function densestClusterStartIndex(points) {
-  if (!Array.isArray(points) || points.length < 2) return 0;
-  const { cellKey, bestKey, bestN } = densestCellKey(points);
-  if (!bestKey || bestN < 2) return 0;
-  const idx = points.findIndex((p) => cellKey(p) === bestKey);
-  return idx >= 0 ? idx : 0;
-}
-/**
  * gpspos.net LASTPOS (and similar) often keep an old collar GPS clock while
  * server receive time is “now”. Those points must not become the route anchor.
  */
@@ -182,8 +170,14 @@ export function hasSevereDeviceClockSkew(p, maxSkewMs = DEVICE_CLOCK_SKEW_DROP_M
   return Math.abs(recv - dev) > maxSkewMs;
 }
 
+/** True when the map polyline should gap before this point (no spike line). */
+export function shouldBreakHistoryRoute(prev, next, limits = HISTORY_SPIKE_BREAK_LIMITS) {
+  if (!prev || !next) return false;
+  return !isPlausibleGpsJump(prev, next, limits);
+}
+
 /**
- * Keep GPS that sits near the day's densest cluster.
+ * Keep GPS near the day's densest cluster (continent-scale by default).
  * Prefer clock-consistent fixes for the anchor so a burst of stale LASTPOS
  * points at the end of the day cannot erase a real walk elsewhere.
  */
@@ -342,15 +336,16 @@ export function computeRouteFitPath(path, opts = {}) {
   ];
 }
 
-function clusterIsCoherent(points, radiusKm = HISTORY_CLUSTER_RADIUS_KM) {
+function clusterIsCoherent(points, radiusKm = 0.12) {
   if (!points.length) return false;
   const anchor = points[0];
   return points.every((p) => kmBetween(anchor, p) <= radiusKm);
 }
 
 /**
- * History map / timeline route: trusted GPS only, no lines to distant “ping‑pong” towers.
- * New clusters need several fixes in one place before connecting to the last plotted point.
+ * History map / timeline route: trusted GPS for the whole day (minus clock-skew /
+ * continent outliers). Teleport spikes are kept out of the continuous line via
+ * `routeBreakBefore` so the real drive still shows without red cross-map lines.
  */
 export function resolveHistoryRoutePositions(points) {
   if (!Array.isArray(points) || points.length === 0) return [];
@@ -368,69 +363,16 @@ export function resolveHistoryRoutePositions(points) {
     .sort((a, b) => (pointTimestampMs(a) ?? 0) - (pointTimestampMs(b) ?? 0));
   if (trusted.length === 0) return [];
 
-  const seedIndex = densestClusterStartIndex(trusted);
   const out = [];
-  let lastPlotted = null;
-  let prevRaw = null;
-  let pendingCluster = [];
-
-  const flushPendingCluster = () => {
-    if (pendingCluster.length < HISTORY_CLUSTER_MIN_POINTS) {
-      pendingCluster = [];
-      return;
+  let prev = null;
+  for (const candidate of trusted) {
+    const next = { ...candidate };
+    if (prev && shouldBreakHistoryRoute(prev, next)) {
+      next.routeBreakBefore = true;
     }
-    if (!clusterIsCoherent(pendingCluster)) {
-      pendingCluster = [];
-      return;
-    }
-    const seed = pendingCluster[0];
-    const canConnect =
-      !lastPlotted || isPlausibleGpsJump(lastPlotted, seed, HISTORY_ROUTE_LIMITS);
-    if (!canConnect) {
-      pendingCluster = [];
-      return;
-    }
-    for (const p of pendingCluster) {
-      out.push(p);
-      lastPlotted = p;
-    }
-    pendingCluster = [];
-  };
-
-  for (let i = seedIndex; i < trusted.length; i++) {
-    const candidate = trusted[i];
-    if (!prevRaw) {
-      out.push(candidate);
-      lastPlotted = candidate;
-      prevRaw = candidate;
-      continue;
-    }
-
-    if (!isPlausibleGpsJump(prevRaw, candidate, HISTORY_ROUTE_LIMITS)) {
-      flushPendingCluster();
-      pendingCluster = [];
-      continue;
-    }
-    prevRaw = candidate;
-
-    if (!lastPlotted) {
-      out.push(candidate);
-      lastPlotted = candidate;
-      continue;
-    }
-
-    if (isPlausibleGpsJump(lastPlotted, candidate, HISTORY_ROUTE_LIMITS)) {
-      flushPendingCluster();
-      out.push(candidate);
-      lastPlotted = candidate;
-      continue;
-    }
-
-    pendingCluster.push(candidate);
-    flushPendingCluster();
+    out.push(next);
+    prev = next;
   }
-
-  flushPendingCluster();
   return out;
 }
 

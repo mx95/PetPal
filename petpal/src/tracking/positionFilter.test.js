@@ -136,9 +136,11 @@ describe('resolveHistoryRoutePositions', () => {
 
     let maxSeg = 0;
     for (let i = 1; i < route.length; i++) {
+      if (route[i].routeBreakBefore) continue;
       maxSeg = Math.max(maxSeg, kmBetween(route[i - 1], route[i]));
     }
     expect(maxSeg).toBeLessThan(2);
+    expect(route.some((p) => p.routeBreakBefore)).toBe(true);
   });
 
   it('keeps a neighbourhood walk with GT06-style GPS gaps instead of collapsing to home', () => {
@@ -206,7 +208,7 @@ describe('resolveHistoryRoutePositions', () => {
     expect(route.every((p) => Math.abs(p.lng - 32.4) < 0.05)).toBe(true);
   });
 
-  it('does not collapse a Paphos walk when earlier same-day Larnaca noise is within Cyprus', () => {
+  it('keeps the full day route and breaks the polyline on far same-day noise', () => {
     const noise = [];
     const noiseT = Date.parse('2026-08-15T09:28:00.000Z');
     for (let i = 0; i < 8; i++) {
@@ -221,19 +223,17 @@ describe('resolveHistoryRoutePositions', () => {
         pt(34.8207 + i * 0.00005, 32.3995 + i * 0.00004, t, { deviceTimeUtc: t })
       );
     }
-    const kept = excludeFarGpsOutliers([...noise, ...walk]);
-    expect(kept.every((p) => p.lng < 33)).toBe(true);
     const route = resolveHistoryRoutePositions([...noise, ...walk]);
-    expect(route.length).toBeGreaterThan(20);
-    expect(route.every((p) => Math.abs(p.lng - 32.4) < 0.05)).toBe(true);
+    expect(route.length).toBeGreaterThan(40);
+    expect(route.filter((p) => Math.abs(p.lng - 32.4) < 0.05).length).toBeGreaterThan(20);
+    expect(route.some((p) => p.routeBreakBefore)).toBe(true);
   });
 
-  it('seeds the route in the densest walk, not an earlier inbound drive within 10 km', () => {
+  it('keeps an inbound drive into the densest walk instead of truncating the day', () => {
     const drive = [];
     const driveT = Date.parse('2026-08-15T09:50:00.000Z');
     for (let i = 0; i < 6; i++) {
       const t = new Date(driveT + i * 60_000).toISOString();
-      // ~8 km east of the densest Paphos cell — within outlier radius, too fast to join.
       drive.push(pt(34.77 + i * 0.002, 32.48 - i * 0.003, t, { deviceTimeUtc: t }));
     }
     const walk = [];
@@ -245,8 +245,8 @@ describe('resolveHistoryRoutePositions', () => {
       );
     }
     const route = resolveHistoryRoutePositions([...drive, ...walk]);
-    expect(route.length).toBeGreaterThan(20);
-    expect(route.every((p) => Math.abs(p.lng - 32.4) < 0.05)).toBe(true);
-    expect(route[0].lat).toBeGreaterThan(34.81);
+    expect(route.length).toBeGreaterThan(40);
+    expect(route.some((p) => Math.abs(p.lng - 32.4) < 0.05)).toBe(true);
+    expect(route[0].lng).toBeGreaterThan(32.4);
   });
 });
