@@ -1,4 +1,4 @@
-import React, { Suspense, useEffect } from 'react';
+import React, { Suspense, lazy, useEffect } from 'react';
 import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { RequireAuth } from './auth/RequireAuth';
 import { useAuth } from './auth/AuthProvider';
@@ -10,7 +10,6 @@ import ScrollToTop from './components/ScrollToTop';
 import BottomNav from './components/BottomNav';
 import TopNav from './components/TopNav';
 import ShopCartMobilePanel from './components/shop/ShopCartMobilePanel';
-import { MedicationReminderHost } from './components/MedicationReminderHost';
 import { OpeningScreen } from './components/OpeningScreen';
 import {
   ActivityHub,
@@ -56,6 +55,10 @@ import {
   Tracking,
 } from './lazyPages';
 
+const MedicationReminderHost = lazy(() =>
+  import('./components/MedicationReminderHost').then((m) => ({ default: m.MedicationReminderHost }))
+);
+
 /** JCC / gateway sometimes lands users on `/` or `/dashboard` with `?checkout=success` — normalize to the success screen. */
 function CheckoutSuccessBridge() {
   const location = useLocation();
@@ -76,7 +79,7 @@ function RouteLoadingScreen() {
 }
 
 function App() {
-  const { initializing } = useAuth();
+  const { initializing, user } = useAuth();
   const location = useLocation();
   const mainAlignsWithNav = location.pathname === '/docs';
   const isShopRoute = location.pathname === '/shop' || location.pathname.startsWith('/shop/');
@@ -96,7 +99,11 @@ function App() {
   return (
     <div className="pp-shell">
       <ScrollToTop />
-      <MedicationReminderHost />
+      {user ? (
+        <Suspense fallback={null}>
+          <MedicationReminderHost />
+        </Suspense>
+      ) : null}
       <TopNav />
       <ShopCartMobilePanel />
       <CheckoutSuccessBridge />

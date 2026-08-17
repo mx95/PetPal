@@ -4,9 +4,13 @@ import { useAuth } from '../auth/AuthProvider';
 import { MVP_NAV } from '../config/mvpNav';
 import { useI18n } from '../i18n/I18nContext';
 
-const HOME_HERO_SRC = `${process.env.PUBLIC_URL || ''}/images/home-hero.png`;
-const LIVE_TRACKING_SRC = `${process.env.PUBLIC_URL || ''}/images/home-live-tracking.png`;
-const NFC_FEATURE_SRC = `${process.env.PUBLIC_URL || ''}/images/home-nfc-feature.png`;
+const IMG_BASE = `${process.env.PUBLIC_URL || ''}/images`;
+const HOME_HERO_WEBP = `${IMG_BASE}/home-hero.webp`;
+const HOME_HERO_PNG = `${IMG_BASE}/home-hero.png`;
+const LIVE_TRACKING_WEBP = `${IMG_BASE}/home-live-tracking.webp`;
+const LIVE_TRACKING_PNG = `${IMG_BASE}/home-live-tracking.png`;
+const NFC_FEATURE_WEBP = `${IMG_BASE}/home-nfc-feature.webp`;
+const NFC_FEATURE_PNG = `${IMG_BASE}/home-nfc-feature.png`;
 
 const APP_CAPABILITIES = [
   { key: 'gps', to: '/tracking', accent: 'gps' },
@@ -18,8 +22,8 @@ const APP_CAPABILITIES = [
 ].filter((item) => item.mvp !== false);
 
 const SHOWCASE_ITEMS = [
-  { key: 'live', src: LIVE_TRACKING_SRC, altKey: 'home.welcome.showcase.liveAlt' },
-  { key: 'nfc', src: NFC_FEATURE_SRC, altKey: 'home.welcome.showcase.nfcAlt' },
+  { key: 'live', webp: LIVE_TRACKING_WEBP, png: LIVE_TRACKING_PNG, altKey: 'home.welcome.showcase.liveAlt' },
+  { key: 'nfc', webp: NFC_FEATURE_WEBP, png: NFC_FEATURE_PNG, altKey: 'home.welcome.showcase.nfcAlt' },
 ];
 
 function CapabilityIcon({ type }) {
@@ -99,12 +103,18 @@ export default function HomeScreen() {
     <div className="pp-homeWelcome">
       <section className="pp-homeWelcome__banner" aria-labelledby="home-hero-title">
         <div className="pp-homeWelcome__bannerArt" aria-hidden>
-          <img
-            className="pp-homeWelcome__heroImg"
-            src={HOME_HERO_SRC}
-            alt={t('home.welcome.heroImageAlt')}
-            decoding="async"
-          />
+          <picture>
+            <source srcSet={HOME_HERO_WEBP} type="image/webp" />
+            <img
+              className="pp-homeWelcome__heroImg"
+              src={HOME_HERO_PNG}
+              alt={t('home.welcome.heroImageAlt')}
+              width={1200}
+              height={800}
+              decoding="async"
+              fetchPriority="high"
+            />
+          </picture>
           <div className="pp-homeWelcome__heroFade" />
         </div>
         <div className="pp-homeWelcome__bannerOverlay">
@@ -154,9 +164,12 @@ export default function HomeScreen() {
           </h2>
         </header>
         <div className="pp-homeWelcome__showcaseGrid">
-          {SHOWCASE_ITEMS.map(({ key, src, altKey }) => (
+          {SHOWCASE_ITEMS.map(({ key, webp, png, altKey }) => (
             <figure key={key} className="pp-homeWelcome__showcaseCard">
-              <img src={src} alt={t(altKey)} loading="lazy" decoding="async" />
+              <picture>
+                <source srcSet={webp} type="image/webp" />
+                <img src={png} alt={t(altKey)} loading="lazy" decoding="async" width={1200} height={800} />
+              </picture>
             </figure>
           ))}
         </div>
