@@ -7,7 +7,8 @@ import { getCatalogProvider } from '../bookings/bookingCatalog';
 import CalendarAddButtons from '../bookings/CalendarAddButtons';
 import { formatTime24 } from '../formatTime24';
 import { slotEndDate, slotStartDate } from '../bookings/slotTime';
-import { getDb, isFirebaseConfigured } from '../firebase';
+import { isFirebaseConfigured } from '../firebase';
+import { getDb } from '../firebaseDb';
 import { useI18n } from '../i18n/I18nContext';
 import { PageContainer } from '../components/ui';
 

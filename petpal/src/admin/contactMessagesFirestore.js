@@ -8,8 +8,8 @@ import {
   serverTimestamp,
   updateDoc,
 } from 'firebase/firestore';
-import { getDb, isFirebaseConfigured } from '../firebase';
-
+import { isFirebaseConfigured } from '../firebase';
+import { getDb } from '../firebaseDb';
 function tsToDate(v) {
   try {
     if (v?.toDate) return v.toDate();

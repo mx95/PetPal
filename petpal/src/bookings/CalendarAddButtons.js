@@ -7,7 +7,8 @@ import {
   googleCalendarUrl,
   hasCalendarTimes,
 } from './calendarLinks';
-import { getDb, isFirebaseConfigured } from '../firebase';
+import { isFirebaseConfigured } from '../firebase';
+import { getDb } from '../firebaseDb';
 import { useI18n } from '../i18n/I18nContext';
 
 function GoogleCalIcon() {

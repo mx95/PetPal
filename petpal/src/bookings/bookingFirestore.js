@@ -14,7 +14,8 @@ import {
   where,
   writeBatch,
 } from 'firebase/firestore';
-import { auth, getDb, getFirebaseApp, isFirebaseConfigured } from '../firebase';
+import { auth, getFirebaseApp, isFirebaseConfigured } from '../firebase';
+import { getDb } from '../firebaseDb';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { computeAvailableSlots, slotToFirestoreShape } from './availability/availabilityEngine';
 import { parseGeneratedSlotId, resolveGeneratedSlotTimes } from './availability/slotId';

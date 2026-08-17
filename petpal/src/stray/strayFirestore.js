@@ -9,8 +9,8 @@ import {
   serverTimestamp,
   updateDoc,
 } from 'firebase/firestore';
-import { getDb, isFirebaseConfigured } from '../firebase';
-
+import { isFirebaseConfigured } from '../firebase';
+import { getDb } from '../firebaseDb';
 export const STRAY_LISTINGS_COL = 'strayListings';
 
 const LIST_LIMIT = 150;

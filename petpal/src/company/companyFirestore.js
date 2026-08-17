@@ -13,8 +13,8 @@ import {
   where,
 } from 'firebase/firestore';
 import { seedProviderListingFromCompany } from '../bookings/providerDirectoryFirestore';
-import { getDb, isFirebaseConfigured } from '../firebase';
-
+import { isFirebaseConfigured } from '../firebase';
+import { getDb } from '../firebaseDb';
 const COL = 'companies';
 const ADMINS = 'admins';
 

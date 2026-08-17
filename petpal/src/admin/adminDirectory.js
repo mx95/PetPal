@@ -1,6 +1,6 @@
 import { collection, collectionGroup, getDocs } from 'firebase/firestore';
-import { getDb, isFirebaseConfigured } from '../firebase';
-
+import { isFirebaseConfigured } from '../firebase';
+import { getDb } from '../firebaseDb';
 function str(v) {
   return typeof v === 'string' ? v.trim() : v == null ? '' : String(v).trim();
 }

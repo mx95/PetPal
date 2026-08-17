@@ -2,14 +2,11 @@ import React, { Suspense, lazy, useEffect } from 'react';
 import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { RequireAuth } from './auth/RequireAuth';
 import { useAuth } from './auth/AuthProvider';
-import { AppFooter } from './components/AppFooter';
-import { CookieConsent } from './components/CookieConsent';
 import './ui/ui.css';
 import { useI18n } from './i18n/I18nContext';
 import ScrollToTop from './components/ScrollToTop';
 import BottomNav from './components/BottomNav';
 import TopNav from './components/TopNav';
-import ShopCartMobilePanel from './components/shop/ShopCartMobilePanel';
 import { OpeningScreen } from './components/OpeningScreen';
 import {
   ActivityHub,
@@ -58,6 +55,10 @@ import {
 const MedicationReminderHost = lazy(() =>
   import('./components/MedicationReminderHost').then((m) => ({ default: m.MedicationReminderHost }))
 );
+const AuthenticatedProviders = lazy(() => import('./auth/AuthenticatedProviders'));
+const AppFooter = lazy(() => import('./components/AppFooter').then((m) => ({ default: m.AppFooter })));
+const CookieConsent = lazy(() => import('./components/CookieConsent').then((m) => ({ default: m.CookieConsent })));
+const ShopCartMobilePanel = lazy(() => import('./components/shop/ShopCartMobilePanel'));
 
 /** JCC / gateway sometimes lands users on `/` or `/dashboard` with `?checkout=success` — normalize to the success screen. */
 function CheckoutSuccessBridge() {
@@ -78,8 +79,8 @@ function RouteLoadingScreen() {
   return <OpeningScreen subtitle={t('openingScreen.loadingPage')} />;
 }
 
-function App() {
-  const { initializing, user } = useAuth();
+function AppShell() {
+  const { user } = useAuth();
   const location = useLocation();
   const mainAlignsWithNav = location.pathname === '/docs';
   const isShopRoute = location.pathname === '/shop' || location.pathname.startsWith('/shop/');
@@ -93,9 +94,6 @@ function App() {
 
   const { t } = useI18n();
 
-  if (initializing) {
-    return <OpeningScreen subtitle={t('app.checkingSession')} />;
-  }
   return (
     <div className="pp-shell">
       <ScrollToTop />
@@ -105,7 +103,11 @@ function App() {
         </Suspense>
       ) : null}
       <TopNav />
-      <ShopCartMobilePanel />
+      {user ? (
+        <Suspense fallback={null}>
+          <ShopCartMobilePanel />
+        </Suspense>
+      ) : null}
       <CheckoutSuccessBridge />
       <div className="pp-pageScroll">
         <div className={mainClassName}>
@@ -358,11 +360,36 @@ function App() {
             </Routes>
           </Suspense>
         </div>
-        <AppFooter />
+        <Suspense fallback={null}>
+          <AppFooter />
+        </Suspense>
       </div>
-      <CookieConsent />
+      <Suspense fallback={null}>
+        <CookieConsent />
+      </Suspense>
       <BottomNav />
     </div>
+  );
+}
+
+function App() {
+  const { initializing, user } = useAuth();
+  const { t } = useI18n();
+
+  if (initializing) {
+    return <OpeningScreen subtitle={t('app.checkingSession')} />;
+  }
+
+  if (!user) {
+    return <AppShell />;
+  }
+
+  return (
+    <Suspense fallback={<OpeningScreen subtitle={t('app.checkingSession')} />}>
+      <AuthenticatedProviders>
+        <AppShell />
+      </AuthenticatedProviders>
+    </Suspense>
   );
 }
 

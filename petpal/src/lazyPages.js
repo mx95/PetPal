@@ -1,13 +1,13 @@
 import { lazyWithRetry } from './lazyWithRetry';
 
 /** Route-level code splitting — heavy pages and maps load only when visited. */
-export const HomeScreen = lazyWithRetry(() => import('./Pages/HomeScreen'));
+export const HomeScreen = lazyWithRetry(() => import(/* webpackChunkName: "home" */ './Pages/HomeScreen'));
 export const DiscoverHome = lazyWithRetry(() => import('./discover/DiscoverHome'));
 export const PublicPetProfile = lazyWithRetry(() => import('./Pages/PublicPetProfile'));
-export const Login = lazyWithRetry(() => import('./Pages/Login'));
+export const Login = lazyWithRetry(() => import(/* webpackChunkName: "login" */ './Pages/Login'));
 export const ForgotPassword = lazyWithRetry(() => import('./Pages/ForgotPassword'));
 export const Contact = lazyWithRetry(() => import('./Pages/Contact'));
-export const Register = lazyWithRetry(() => import('./Pages/Register'));
+export const Register = lazyWithRetry(() => import(/* webpackChunkName: "register" */ './Pages/Register'));
 export const CompanyApply = lazyWithRetry(() => import('./Pages/CompanyApply'));
 export const AdminHub = lazyWithRetry(() => import('./Pages/AdminHub'));
 export const AdminCompanyQueue = lazyWithRetry(() => import('./Pages/AdminCompanyQueue'));

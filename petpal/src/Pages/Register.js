@@ -2,14 +2,16 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { createUserWithEmailAndPassword, deleteUser, sendEmailVerification, signOut, updateProfile } from 'firebase/auth';
 import { doc, runTransaction, serverTimestamp, setDoc } from 'firebase/firestore';
-import { auth, getDb, isFirebaseConfigured } from '../firebase';
+import { auth, isFirebaseConfigured } from '../firebase';
+import { getDb } from '../firebaseDb';
 import { useAuth } from '../auth/AuthProvider';
 import { mapAuthError, normalizeEmail, trackAuthEvent } from '../auth/authUtils';
 import { signInWithSocialProvider } from '../auth/socialAuth';
 import AuthSocialButtons from '../components/AuthSocialButtons';
 import { useI18n } from '../i18n/I18nContext';
 
-const AUTH_PACK_SRC = `${process.env.PUBLIC_URL || ''}/images/auth-pack-pets.png`;
+const AUTH_PACK_WEBP = `${process.env.PUBLIC_URL || ''}/images/auth-pack-pets.webp`;
+const AUTH_PACK_JPG = `${process.env.PUBLIC_URL || ''}/images/auth-pack-pets.jpg`;
 
 function normalizeAccountName(value) {
   return String(value || '').trim().toLocaleLowerCase();
@@ -223,7 +225,10 @@ export default function Register() {
         <div className="pp-authPage pp-authPage--login">
           <aside className="pp-authPage__welcome">
             <figure className="pp-authPage__welcomeArt" aria-hidden>
-              <img src={AUTH_PACK_SRC} alt="" loading="lazy" decoding="async" />
+              <picture>
+                <source srcSet={AUTH_PACK_WEBP} type="image/webp" />
+                <img src={AUTH_PACK_JPG} alt="" loading="lazy" decoding="async" width="900" height="600" />
+              </picture>
             </figure>
             <div className="pp-authPage__welcomeTop">
               <span className="pp-authPage__welcomeEyebrow">{t('register.welcomeEyebrow')}</span>

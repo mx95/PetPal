@@ -2,7 +2,8 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useR
 import { doc, onSnapshot } from 'firebase/firestore';
 import { useAuth } from '../auth/AuthProvider';
 import { useGame } from '../game/GameContext';
-import { getDb, isFirebaseConfigured } from '../firebase';
+import { isFirebaseConfigured } from '../firebase';
+import { getDb } from '../firebaseDb';
 import { PUBLIC_WALK_COL, writePublicWalkStats } from './publicWalkFirestore';
 
 const PublicWalkContext = createContext(null);

@@ -1,6 +1,7 @@
 import React from 'react';
 import { useI18n } from '../i18n/I18nContext';
-import petpalLogo from '../logo.png';
+
+const LOGO_SRC = `${process.env.PUBLIC_URL || ''}/logo192.png`;
 
 /**
  * Centered auth/session splash — calm gradient, glass card, orbit + pulse loaders
@@ -16,7 +17,7 @@ export function OpeningScreen({ title = 'PetPal', subtitle }) {
         <div className="pp-openingGlow" aria-hidden />
         <div className="pp-openingCard">
           <div className="pp-openingBrand">
-            <img className="pp-openingLogo" src={petpalLogo} alt="" />
+            <img className="pp-openingLogo" src={LOGO_SRC} alt="" width="44" height="44" />
             <div className="pp-openingTitle">{title}</div>
           </div>
           <p className="pp-openingSubtitle">{resolvedSubtitle}</p>

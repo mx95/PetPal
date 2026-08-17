@@ -1,5 +1,6 @@
 import { deleteField, doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
-import { getDb, isFirebaseConfigured } from '../firebase';
+import { isFirebaseConfigured } from '../firebase';
+import { getDb } from '../firebaseDb';
 import { requestSubscriptionCancel } from './requestSubscriptionCancel';
 
 const BOOST_SKU_BY_KIND = {

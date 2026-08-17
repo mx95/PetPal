@@ -1,5 +1,5 @@
 import { deleteObject, getDownloadURL, ref, uploadBytes } from 'firebase/storage';
-import { getFirebaseStorage } from '../firebase';
+import { getFirebaseStorage } from '../firebaseStorage';
 import { fileToAvatarJpeg } from '../profile/userProfilePhoto';
 
 function randToken() {

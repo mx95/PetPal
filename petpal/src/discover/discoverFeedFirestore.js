@@ -9,7 +9,8 @@ import {
   startAfter,
   where,
 } from 'firebase/firestore';
-import { getDb, isFirebaseConfigured } from '../firebase';
+import { isFirebaseConfigured } from '../firebase';
+import { getDb } from '../firebaseDb';
 import { fetchDiscoverFeedPage } from '../data/discoverFeed';
 import { mapDiscoverPostDoc } from './discoverFeedModel';
 

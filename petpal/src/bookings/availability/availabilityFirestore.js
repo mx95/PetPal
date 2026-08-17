@@ -15,7 +15,8 @@ import {
   updateDoc,
   where,
 } from 'firebase/firestore';
-import { getDb, isFirebaseConfigured } from '../../firebase';
+import { isFirebaseConfigured } from '../../firebase';
+import { getDb } from '../../firebaseDb';
 import { DEFAULT_SCHEDULING_SETTINGS } from './availabilityEngine';
 
 function col(companyId, name) {

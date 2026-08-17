@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
 import { MVP_NAV } from '../config/mvpNav';
@@ -6,11 +6,11 @@ import { useI18n } from '../i18n/I18nContext';
 
 const IMG_BASE = `${process.env.PUBLIC_URL || ''}/images`;
 const HOME_HERO_WEBP = `${IMG_BASE}/home-hero.webp`;
-const HOME_HERO_PNG = `${IMG_BASE}/home-hero.png`;
+const HOME_HERO_JPG = `${IMG_BASE}/home-hero.jpg`;
 const LIVE_TRACKING_WEBP = `${IMG_BASE}/home-live-tracking.webp`;
-const LIVE_TRACKING_PNG = `${IMG_BASE}/home-live-tracking.png`;
+const LIVE_TRACKING_JPG = `${IMG_BASE}/home-live-tracking.jpg`;
 const NFC_FEATURE_WEBP = `${IMG_BASE}/home-nfc-feature.webp`;
-const NFC_FEATURE_PNG = `${IMG_BASE}/home-nfc-feature.png`;
+const NFC_FEATURE_JPG = `${IMG_BASE}/home-nfc-feature.jpg`;
 
 const APP_CAPABILITIES = [
   { key: 'gps', to: '/tracking', accent: 'gps' },
@@ -22,8 +22,8 @@ const APP_CAPABILITIES = [
 ].filter((item) => item.mvp !== false);
 
 const SHOWCASE_ITEMS = [
-  { key: 'live', webp: LIVE_TRACKING_WEBP, png: LIVE_TRACKING_PNG, altKey: 'home.welcome.showcase.liveAlt' },
-  { key: 'nfc', webp: NFC_FEATURE_WEBP, png: NFC_FEATURE_PNG, altKey: 'home.welcome.showcase.nfcAlt' },
+  { key: 'live', webp: LIVE_TRACKING_WEBP, jpg: LIVE_TRACKING_JPG, altKey: 'home.welcome.showcase.liveAlt' },
+  { key: 'nfc', webp: NFC_FEATURE_WEBP, jpg: NFC_FEATURE_JPG, altKey: 'home.welcome.showcase.nfcAlt' },
 ];
 
 function CapabilityIcon({ type }) {
@@ -95,6 +95,24 @@ export default function HomeScreen() {
   const { t } = useI18n();
   const { user } = useAuth();
 
+  useEffect(() => {
+    if (user) return undefined;
+    const prefetch = () => {
+      import(/* webpackChunkName: "login" */ './Login');
+      import(/* webpackChunkName: "register" */ './Register');
+    };
+    if (typeof window === 'undefined') return undefined;
+    const idle = window.requestIdleCallback
+      ? window.requestIdleCallback(prefetch, { timeout: 2500 })
+      : window.setTimeout(prefetch, 1200);
+    return () => {
+      if (window.cancelIdleCallback) {
+        window.cancelIdleCallback(idle);
+      }
+      window.clearTimeout(idle);
+    };
+  }, [user]);
+
   if (user) {
     return <Navigate to="/dashboard" replace />;
   }
@@ -107,7 +125,7 @@ export default function HomeScreen() {
             <source srcSet={HOME_HERO_WEBP} type="image/webp" />
             <img
               className="pp-homeWelcome__heroImg"
-              src={HOME_HERO_PNG}
+              src={HOME_HERO_JPG}
               alt={t('home.welcome.heroImageAlt')}
               width={1200}
               height={800}
@@ -164,11 +182,11 @@ export default function HomeScreen() {
           </h2>
         </header>
         <div className="pp-homeWelcome__showcaseGrid">
-          {SHOWCASE_ITEMS.map(({ key, webp, png, altKey }) => (
+          {SHOWCASE_ITEMS.map(({ key, webp, jpg, altKey }) => (
             <figure key={key} className="pp-homeWelcome__showcaseCard">
               <picture>
                 <source srcSet={webp} type="image/webp" />
-                <img src={png} alt={t(altKey)} loading="lazy" decoding="async" width={1200} height={800} />
+                <img src={jpg} alt={t(altKey)} loading="lazy" decoding="async" width={1200} height={800} />
               </picture>
             </figure>
           ))}

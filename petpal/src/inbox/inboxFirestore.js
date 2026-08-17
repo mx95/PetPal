@@ -10,8 +10,8 @@ import {
   writeBatch,
   limit,
 } from 'firebase/firestore';
-import { getDb, isFirebaseConfigured } from '../firebase';
-
+import { isFirebaseConfigured } from '../firebase';
+import { getDb } from '../firebaseDb';
 const BROADCAST = 'broadcastMessages';
 const INBOX_READS = 'inboxReads';
 

@@ -1,6 +1,6 @@
 import { collection, doc, getDocs, limit, query, serverTimestamp, setDoc, where } from 'firebase/firestore';
-import { getDb, isFirebaseConfigured } from '../firebase';
-
+import { isFirebaseConfigured } from '../firebase';
+import { getDb } from '../firebaseDb';
 export const PUBLIC_WALK_COL = 'publicWalkStats';
 
 export function displayNameForUser(user) {

@@ -1,6 +1,6 @@
 import { deleteDoc, doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
-import { getDb, isFirebaseConfigured } from '../firebase';
-
+import { isFirebaseConfigured } from '../firebase';
+import { getDb } from '../firebaseDb';
 /** @param {unknown} value */
 export function normalizeTrackerImei(value) {
   const s = String(value ?? '').trim();

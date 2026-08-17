@@ -13,7 +13,8 @@ import {
   updateDoc,
   writeBatch,
 } from 'firebase/firestore';
-import { getDb, isFirebaseConfigured } from '../firebase';
+import { isFirebaseConfigured } from '../firebase';
+import { getDb } from '../firebaseDb';
 import { normalizeTrackerImei, syncTrackerImeiIndex } from '../tracking/trackerImeiIndex';
 import { linkTrackerSubscriptionPet } from '../shop/subscriptionImeiClient';
 
