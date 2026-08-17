@@ -3524,6 +3524,7 @@ const en = {
   },
   openingScreen: {
     checkingSession: 'Checking your session…',
+    loadingPage: 'Loading…',
   },
   mobileNavDrawer: {
     closeMenu: 'Close menu',

@@ -3946,6 +3946,7 @@ const el = {
   },
   openingScreen: {
     checkingSession: 'Έλεγχος της συνεδρίας σας…',
+    loadingPage: 'Φόρτωση…',
   },
   mobileNavDrawer: {
     closeMenu: 'Κλείσιμο μενού',

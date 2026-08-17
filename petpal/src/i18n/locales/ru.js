@@ -3907,6 +3907,7 @@ const ru = {
   },
   openingScreen: {
     checkingSession: 'Проверяем вашу сессию…',
+    loadingPage: 'Загрузка…',
   },
   mobileNavDrawer: {
     closeMenu: 'Закрыть меню',
