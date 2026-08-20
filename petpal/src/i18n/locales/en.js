@@ -2947,7 +2947,7 @@ const en = {
       register: { label: 'Register', desc: 'Create a new account.' },
       pets: { label: 'My pets', desc: 'Add and edit pets, photos, meds, collar IMEI.' },
       tracking: { label: 'Tracker', desc: 'Live map and route history for GPS collars.' },
-      nearby: { label: 'Nearby', desc: 'Google Maps places — vets, parks, shops.' },
+      nearby: { label: 'Nearby', desc: 'Google Maps places — vets, pet hospitals, parks, pet-friendly beaches, shops.' },
       bookings: { label: 'Bookings', desc: 'Browse and manage service appointments.' },
       providerProfile: { label: 'Provider profile', desc: 'Public business page before booking.' },
       bookService: {
