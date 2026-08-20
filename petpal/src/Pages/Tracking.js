@@ -89,10 +89,24 @@ function pickLastKnownMapCoords(deviceId, liveHistoryFallback, lastKnownRef) {
 
 /** Map pin only when the user has set a home location for this device. */
 function pickHomeMapCoords(deviceId, position) {
+  const local = loadHomeAnchor(deviceId);
   const fromApi = homeCoordsFromPosition(position);
+  if (local && (local.source === 'phone' || local.source === 'map-pin')) {
+    if (!fromApi) return { lat: local.lat, lng: local.lng, mode: 'home' };
+    const liveLat = position?.lat != null ? Number(position.lat) : Number.NaN;
+    const liveLng = position?.lng != null ? Number(position.lng) : Number.NaN;
+    if (
+      Number.isFinite(liveLat) &&
+      Number.isFinite(liveLng) &&
+      Math.abs(fromApi.lat - liveLat) < 1e-5 &&
+      Math.abs(fromApi.lng - liveLng) < 1e-5 &&
+      (Math.abs(local.lat - fromApi.lat) > 1e-4 || Math.abs(local.lng - fromApi.lng) > 1e-4)
+    ) {
+      return { lat: local.lat, lng: local.lng, mode: 'home' };
+    }
+  }
   if (fromApi) return { lat: fromApi.lat, lng: fromApi.lng, mode: 'home' };
-  const stored = loadHomeAnchor(deviceId);
-  if (stored) return { lat: stored.lat, lng: stored.lng, mode: 'home' };
+  if (local) return { lat: local.lat, lng: local.lng, mode: 'home' };
   return null;
 }
 
