@@ -97,6 +97,9 @@ export function AppFooter() {
             <Link className="pp-footer__inlineLink" to="/contact">
               {t('footer.contact')}
             </Link>
+            <Link className="pp-footer__inlineLink" to="/install">
+              {t('footer.installApp')}
+            </Link>
             <button type="button" className="pp-footer__inlineLink pp-footer__linkBtn" onClick={reopenCookieSettings}>
               {t('footer.cookieSettings')}
             </button>

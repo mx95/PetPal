@@ -557,6 +557,7 @@ const en = {
     terms: 'Terms & Conditions',
     cookies: 'Cookies',
     cookieSettings: 'Cookie settings',
+    installApp: 'Add to Home Screen',
     brandDesc:
       'Supporting pet families with reliable care tools and trusted local resources.',
     rightsAndByline: 'All rights reserved · Created with ❤️ by fellow pet parents.',
@@ -564,6 +565,28 @@ const en = {
     instagram: 'Instagram',
     facebook: 'Facebook',
     tiktok: 'TikTok',
+  },
+
+  installPage: {
+    title: 'Add PetPal to your phone',
+    lead: 'Scan the QR code or follow the steps below. Your phone will open this page — then add PetPal to your Home Screen like an app. No App Store or Google Play needed.',
+    alreadyInstalled: 'PetPal is already running from your Home Screen.',
+    qrTitle: 'Scan this QR code',
+    qrSub: 'Print it on packaging, a card, or share it with customers.',
+    qrAlt: 'QR code that opens the PetPal install page',
+    iosTitle: 'iPhone / iPad (Safari)',
+    iosStep1: 'Open this page in Safari (not Instagram or Facebook in-app browser).',
+    iosStep2: 'Tap the Share button at the bottom of the screen.',
+    iosStep3: 'Scroll and tap “Add to Home Screen”.',
+    iosStep4: 'Tap Add. PetPal appears as an icon on your Home Screen.',
+    iosNote: 'Safari is required on iPhone. If you scanned from another app, tap “Open in Safari” first.',
+    androidTitle: 'Android (Chrome)',
+    androidInstallBtn: 'Install PetPal',
+    installing: 'Opening install…',
+    androidManualHint: 'If the button does not appear, use the menu steps below.',
+    androidStep1: 'Open this page in Chrome.',
+    androidStep2: 'Tap the ⋮ menu (top right).',
+    androidStep3: 'Tap “Install app” or “Add to Home screen”, then confirm.',
   },
   legal: {
     privacyTitle: 'Privacy policy',
@@ -1645,6 +1668,8 @@ const en = {
       pet_store: { label: 'Pet shop', desc: 'Pet stores & supplies' },
       veterinary_care: { label: 'Vet', desc: 'Veterinary clinics' },
       park: { label: 'Pet / dog park', desc: 'Parks & off-leash areas' },
+      beach: { label: 'Pet-friendly beach', desc: 'Beaches that welcome dogs & pets' },
+      hospital: { label: 'Pet hospital', desc: 'Animal hospitals & emergency care' },
       pet_hotel: { label: 'Pet hotel & boarding', desc: 'Boarding, overnight stays' },
       grooming: { label: 'Grooming', desc: 'Salons & bath' },
       daycare: { label: 'Daycare', desc: 'Pet daycare & play' },
@@ -2922,7 +2947,7 @@ const en = {
       register: { label: 'Register', desc: 'Create a new account.' },
       pets: { label: 'My pets', desc: 'Add and edit pets, photos, meds, collar IMEI.' },
       tracking: { label: 'Tracker', desc: 'Live map and route history for GPS collars.' },
-      nearby: { label: 'Nearby', desc: 'Google Maps places — vets, parks, shops.' },
+      nearby: { label: 'Nearby', desc: 'Google Maps places — vets, pet hospitals, parks, pet-friendly beaches, shops.' },
       bookings: { label: 'Bookings', desc: 'Browse and manage service appointments.' },
       providerProfile: { label: 'Provider profile', desc: 'Public business page before booking.' },
       bookService: {
@@ -2956,6 +2981,7 @@ const en = {
       privacy: { label: 'Privacy policy', desc: 'Legal privacy text.' },
       terms: { label: 'Terms of service', desc: 'Legal terms.' },
       cookies: { label: 'Cookie policy', desc: 'Cookie information.' },
+      install: { label: 'Add to Home Screen', desc: 'QR code and steps to install PetPal on iPhone or Android.' },
     },
     api: {
       trackerApp: {

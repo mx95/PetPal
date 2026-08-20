@@ -44,6 +44,7 @@ export const APP_ROUTE_CATALOG = [
   { path: '/privacy', labelKey: 'docs.route.privacy.label', descKey: 'docs.route.privacy.desc', auth: 'public', mvpNav: true },
   { path: '/terms', labelKey: 'docs.route.terms.label', descKey: 'docs.route.terms.desc', auth: 'public', mvpNav: true },
   { path: '/cookies', labelKey: 'docs.route.cookies.label', descKey: 'docs.route.cookies.desc', auth: 'public', mvpNav: true },
+  { path: '/install', labelKey: 'docs.route.install.label', descKey: 'docs.route.install.desc', auth: 'public', mvpNav: true },
 ];
 
 /** @type {{ id: string, titleKey: string, introKey: string, baseKey: string, endpoints: { method: string, path: string, descKey: string }[] }[]} */
