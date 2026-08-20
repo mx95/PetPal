@@ -44,6 +44,15 @@ describe('classifyNearbyPlace', () => {
     expect(classifyNearbyPlace({ name: 'Coast Point', types: ['beach'] })).toBe('beach');
   });
 
+  it('maps pet pharmacies by name when browsing all pet services', () => {
+    expect(
+      classifyNearbyPlace(
+        { name: 'Animal Pharmacy Nicosia', types: ['establishment'] },
+        { fallbackId: 'more' }
+      )
+    ).toBe('pet_pharmacy');
+  });
+
   it('uses Google types when the name is generic', () => {
     expect(classifyNearbyPlace({ name: 'Happy Paws', types: ['veterinary_care'] })).toBe(
       'veterinary_care'

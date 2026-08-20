@@ -89,10 +89,24 @@ function pickLastKnownMapCoords(deviceId, liveHistoryFallback, lastKnownRef) {
 
 /** Map pin only when the user has set a home location for this device. */
 function pickHomeMapCoords(deviceId, position) {
+  const local = loadHomeAnchor(deviceId);
   const fromApi = homeCoordsFromPosition(position);
+  if (local && (local.source === 'phone' || local.source === 'map-pin')) {
+    if (!fromApi) return { lat: local.lat, lng: local.lng, mode: 'home' };
+    const liveLat = position?.lat != null ? Number(position.lat) : Number.NaN;
+    const liveLng = position?.lng != null ? Number(position.lng) : Number.NaN;
+    if (
+      Number.isFinite(liveLat) &&
+      Number.isFinite(liveLng) &&
+      Math.abs(fromApi.lat - liveLat) < 1e-5 &&
+      Math.abs(fromApi.lng - liveLng) < 1e-5 &&
+      (Math.abs(local.lat - fromApi.lat) > 1e-4 || Math.abs(local.lng - fromApi.lng) > 1e-4)
+    ) {
+      return { lat: local.lat, lng: local.lng, mode: 'home' };
+    }
+  }
   if (fromApi) return { lat: fromApi.lat, lng: fromApi.lng, mode: 'home' };
-  const stored = loadHomeAnchor(deviceId);
-  if (stored) return { lat: stored.lat, lng: stored.lng, mode: 'home' };
+  if (local) return { lat: local.lat, lng: local.lng, mode: 'home' };
   return null;
 }
 
@@ -875,10 +889,24 @@ export default function Tracking() {
 
   useEffect(() => {
     const home = homeCoordsFromPosition(position);
-    if (home && effectiveDeviceId) {
-      saveHomeAnchor(effectiveDeviceId, home.lat, home.lng, { source: 'api' });
+    if (!home || !effectiveDeviceId) return;
+    const local = loadHomeAnchor(effectiveDeviceId);
+    const liveLat = position?.lat != null ? Number(position.lat) : Number.NaN;
+    const liveLng = position?.lng != null ? Number(position.lng) : Number.NaN;
+    // Guard: never replace a user pin with API "home" that is just the live GPS fix.
+    if (
+      local &&
+      (local.source === 'phone' || local.source === 'map-pin') &&
+      Number.isFinite(liveLat) &&
+      Number.isFinite(liveLng) &&
+      Math.abs(home.lat - liveLat) < 1e-5 &&
+      Math.abs(home.lng - liveLng) < 1e-5 &&
+      (Math.abs(local.lat - home.lat) > 1e-4 || Math.abs(local.lng - home.lng) > 1e-4)
+    ) {
+      return;
     }
-  }, [position?.homeLat, position?.homeLng, effectiveDeviceId]);
+    saveHomeAnchor(effectiveDeviceId, home.lat, home.lng, { source: 'api' });
+  }, [position?.homeLat, position?.homeLng, position?.lat, position?.lng, effectiveDeviceId]);
 
   const hasImmediateLiveCoords = useMemo(() => {
     if (
@@ -989,9 +1017,25 @@ export default function Tracking() {
   }, [trackerTab, liveMapCoords]);
 
   const liveHomeLocation = useMemo(() => {
+    const local = loadHomeAnchor(effectiveDeviceId);
     const fromApi = homeCoordsFromPosition(displayPosition || position);
+    // Prefer a user-set local pin when API home is missing or mirrors live GPS.
+    if (local && (local.source === 'phone' || local.source === 'map-pin')) {
+      if (!fromApi) return local;
+      const liveLat = (displayPosition || position)?.lat;
+      const liveLng = (displayPosition || position)?.lng;
+      if (
+        Number.isFinite(Number(liveLat)) &&
+        Number.isFinite(Number(liveLng)) &&
+        Math.abs(fromApi.lat - Number(liveLat)) < 1e-5 &&
+        Math.abs(fromApi.lng - Number(liveLng)) < 1e-5 &&
+        (Math.abs(local.lat - fromApi.lat) > 1e-4 || Math.abs(local.lng - fromApi.lng) > 1e-4)
+      ) {
+        return local;
+      }
+    }
     if (fromApi) return fromApi;
-    return loadHomeAnchor(effectiveDeviceId);
+    return local;
   }, [displayPosition, position, effectiveDeviceId, homeAnchorTick]);
 
   const petAtHome = useMemo(() => {

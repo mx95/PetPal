@@ -11,6 +11,7 @@ const GOOGLE_TYPE_TO_CATEGORY = {
 /** Distinctive services first so mixed “shop + grooming” pins show scissors. */
 const NAME_RULES = [
   { id: 'hospital', re: /\b(animal hospital|pet hospital|νοσοκομείο ζώων|вет(?:еринарн)?(?:ая)? больниц)\b/i },
+  { id: 'pet_pharmacy', re: /\b(pet\s?pharmacy|animal\s?pharmacy|veterinary\s?pharmacy|φαρμακεί.*ζώ|вет(?:еринарн)?(?:ая)? аптек)\b/i },
   { id: 'veterinary_care', re: /\b(vet(?:erinar(?:y|ian)?)?s?|κτηνίατρ|ветеринар)\b/i },
   { id: 'grooming', re: /\b(groom(?:er|ing)?s?|pet spa|dog wash|κουρέμα|γκρουμ|груминг)\b/i },
   { id: 'pet_hotel', re: /\b(board(?:ing)?|kennel|pet hotel|cattery|πανσιόν|ξενοδοχείο)\b/i },
@@ -24,6 +25,7 @@ const NAME_RULES = [
 
 const SPECIFICITY = [
   'hospital',
+  'pet_pharmacy',
   'veterinary_care',
   'grooming',
   'pet_hotel',

@@ -850,6 +850,7 @@ const en = {
       firebaseNotConfigured:
         'Firebase is not configured. Add all REACT_APP_FIREBASE_* keys from the Firebase console to .env.local and restart the dev server.',
       popupClosed: 'Sign-in was cancelled. You can try again when you’re ready.',
+      redirectInProgress: 'Opening Google sign-in…',
       accountExistsDifferent:
         'An account already exists with this email using a different sign-in method. Sign in with that method, then link providers in settings if needed.',
       unauthorizedDomain:
@@ -1667,15 +1668,16 @@ const en = {
     cats: {
       pet_store: { label: 'Pet shop', desc: 'Pet stores & supplies' },
       veterinary_care: { label: 'Vet', desc: 'Veterinary clinics' },
-      park: { label: 'Pet / dog park', desc: 'Parks & off-leash areas' },
-      beach: { label: 'Pet-friendly beach', desc: 'Beaches that welcome dogs & pets' },
+      park: { label: 'Dog park', desc: 'Parks & off-leash areas' },
+      beach: { label: 'Pet beach', desc: 'Beaches that welcome dogs & pets' },
       hospital: { label: 'Pet hospital', desc: 'Animal hospitals & emergency care' },
-      pet_hotel: { label: 'Pet hotel & boarding', desc: 'Boarding, overnight stays' },
+      pet_hotel: { label: 'Pet hotel', desc: 'Boarding, overnight stays' },
       grooming: { label: 'Grooming', desc: 'Salons & bath' },
       daycare: { label: 'Daycare', desc: 'Pet daycare & play' },
-      trainer: { label: 'Pet Trainers', desc: 'Dog, pet & horse training' },
-      pet_cafe: { label: 'Pet café & events', desc: 'Cafes, meetups, events' },
-      more: { label: 'All pet services', desc: 'Broader local search' },
+      trainer: { label: 'Trainers', desc: 'Dog, pet & horse training' },
+      pet_cafe: { label: 'Pet café', desc: 'Cafes, meetups, events' },
+      pet_pharmacy: { label: 'Pet pharmacy', desc: 'Animal & vet pharmacies' },
+      more: { label: 'More', desc: 'Broader local search' },
     },
   },
   leaderboardPage: {

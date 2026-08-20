@@ -1830,21 +1830,9 @@ select.pp-input:focus {
 
 .pp-nearby-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
   margin-top: 4px;
-}
-
-@media (max-width: 1000px) {
-  .pp-nearby-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 480px) {
-  .pp-nearby-grid {
-    grid-template-columns: 1fr;
-  }
 }
 
 .pp-nearby-tile {
@@ -1860,6 +1848,7 @@ select.pp-input:focus {
   transition: border-color 0.15s, box-shadow 0.15s, transform 0.1s;
   font: inherit;
   min-height: 100px;
+  min-width: 0;
 }
 
 .pp-nearby-tile:hover {
@@ -9234,7 +9223,7 @@ body,
 }
 
 .pp-nearby-grid {
-  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
 }
 
@@ -9242,6 +9231,7 @@ body,
   min-height: 64px;
   padding: 9px;
   border-radius: 16px;
+  min-width: 0;
 }
 
 .pp-nearby-tile__icon {
@@ -9250,7 +9240,14 @@ body,
 }
 
 .pp-nearby-tile__label {
-  font-size: 12px;
+  font-size: 11px;
+  line-height: 1.25;
+  max-width: 100%;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 
 .pp-nearby-tile__desc {
