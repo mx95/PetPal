@@ -898,6 +898,7 @@ const ru = {
       firebaseNotConfigured:
         'Firebase не настроен. Добавьте все REACT_APP_FIREBASE_* из консоли Firebase в .env.local и перезапустите dev-сервер.',
       popupClosed: 'Вход отменён. Можно попробовать снова, когда будете готовы.',
+      redirectInProgress: 'Открываем вход через Google…',
       accountExistsDifferent:
         'Аккаунт с этим email уже есть через другой способ входа. Войдите тем способом.',
       unauthorizedDomain:
@@ -1745,7 +1746,7 @@ const ru = {
         desc: 'Клиники',
       },
       park: {
-        label: 'Парк / парк для собак',
+        label: 'Парк для собак',
         desc: 'Парки без поводка',
       },
       pet_hotel: {
@@ -1757,19 +1758,23 @@ const ru = {
         desc: 'Салоны и купание',
       },
       daycare: {
-        label: 'Дневная передержка',
+        label: 'Дневная',
         desc: 'Занятость и игры',
       },
       trainer: {
-        label: 'Дрессировщики питомцев',
+        label: 'Дрессировка',
         desc: 'Дрессировка собак, питомцев и лошадей',
       },
       pet_cafe: {
-        label: 'Пет‑кафе и события',
+        label: 'Пет‑кафе',
         desc: 'Кафе, встречи',
       },
+      pet_pharmacy: {
+        label: 'Аптека',
+        desc: 'Ветеринарные аптеки',
+      },
       more: {
-        label: 'Все услуги для питомцев',
+        label: 'Ещё',
         desc: 'Широкий поиск',
       },
     },

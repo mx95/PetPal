@@ -906,6 +906,7 @@ const el = {
       firebaseNotConfigured:
         'Το Firebase δεν είναι ρυθμισμένο. Προσθέστε όλα τα REACT_APP_FIREBASE_* από την κονσόλα Firebase στο .env.local και επανεκκινήστε τον dev server.',
       popupClosed: 'Η σύνδεση ακυρώθηκε. Μπορείτε να δοκιμάσετε ξανά όποτε θέλετε.',
+      redirectInProgress: 'Άνοιγμα σύνδεσης Google…',
       accountExistsDifferent:
         'Υπάρχει ήδη λογαριασμός με αυτό το email με διαφορετική μέθοδο σύνδεσης. Συνδεθείτε με εκείνη τη μέθοδο.',
       unauthorizedDomain:
@@ -1760,7 +1761,7 @@ const el = {
     infoLearnMore: 'Μάθετε περισσότερα',
     cats: {
       pet_store: {
-        label: 'Κατάστημα κατοικίδιων',
+        label: 'Κατάστημα',
         desc: 'Καταστήματα & εφόδια',
       },
       veterinary_care: {
@@ -1768,11 +1769,11 @@ const el = {
         desc: 'Κλινικές',
       },
       park: {
-        label: 'Πάρκο / πάρκο σκύλων',
+        label: 'Πάρκο σκύλων',
         desc: 'Χώροι πρασίνου χωρίς leash',
       },
       pet_hotel: {
-        label: 'Ξενοδοχείο κατοικίδιων',
+        label: 'Ξενοδοχείο',
         desc: 'Φιλοξενία, διαμονές',
       },
       grooming: {
@@ -1784,15 +1785,19 @@ const el = {
         desc: 'Φύλαξη και παιχνίδια',
       },
       trainer: {
-        label: 'Εκπαιδευτές κατοικίδιων',
+        label: 'Εκπαιδευτές',
         desc: 'Εκπαίδευση σκύλων, κατοικίδιων & αλόγων',
       },
       pet_cafe: {
-        label: 'Καφέ & εκδηλώσεις',
+        label: 'Pet café',
         desc: 'Καφέ, συναντήσεις',
       },
+      pet_pharmacy: {
+        label: 'Φαρμακείο',
+        desc: 'Φαρμακεία ζώων & κτηνιατρικά',
+      },
       more: {
-        label: 'Όλες οι υπηρεσίες pet',
+        label: 'Περισσότερα',
         desc: 'Ευρύτερη τοπική αναζήτηση',
       },
     },

@@ -79,10 +79,9 @@ function normalizeIncomingDevice(prev, incoming, canonicalImei = null) {
     atHomeWifi,
     wifiBssids: p.wifiBssids ?? p.gps?.wifiBssids ?? null,
     location: isPlausibleLatLng(lat, lng) ? { lat, lng } : null,
-    homeLocation:
-      p.source === "gps" && p.gpsValid !== false && isPlausibleLatLng(lat, lng)
-        ? { lat, lng }
-        : prev?.homeLocation ?? null,
+    // Never invent or move home from live GPS — only setHomeLocation may change it.
+    homeLocation: prev?.homeLocation ?? null,
+    homeExplicit: prev?.homeExplicit ?? null,
     // Status-only frames often omit gpsValid; keep the previous flag so live
     // maps do not suddenly treat a real GPS fix as untrusted.
     gpsValid:
@@ -154,12 +153,18 @@ function mergeDeviceRecord(prev, incoming) {
   if ((!incoming.wifiBssids || incoming.wifiBssids.length === 0) && prev?.wifiBssids?.length) {
     merged.wifiBssids = prev.wifiBssids;
   }
-  if (!incoming.homeLocation && prev?.homeLocation) merged.homeLocation = prev.homeLocation;
-  if (incoming.homeLocation && hasValidGps(incoming.homeLocation)) {
+  // Home is user-set only. Ignore uplink "homeLocation" unless the packet marks it explicit
+  // (setHomeLocation / HTTP home API). Live GPS must never drift or clear the pin.
+  if (incoming.homeExplicit === true && incoming.homeLocation && hasValidGps(incoming.homeLocation)) {
     merged.homeLocation = incoming.homeLocation;
+    merged.homeExplicit = true;
+  } else if (incoming.homeExplicit === false) {
+    merged.homeLocation = null;
+    merged.homeExplicit = false;
+  } else {
+    if (prev?.homeLocation) merged.homeLocation = prev.homeLocation;
+    if (prev?.homeExplicit != null) merged.homeExplicit = prev.homeExplicit;
   }
-  if (incoming.homeExplicit != null) merged.homeExplicit = incoming.homeExplicit;
-  else if (prev?.homeExplicit != null && merged.homeLocation) merged.homeExplicit = prev.homeExplicit;
   const incomingWifi = incoming.atHomeWifi || incoming.source === "wifi";
   const prevWifi = prev?.atHomeWifi || prev?.source === "wifi";
   if (

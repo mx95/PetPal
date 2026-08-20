@@ -1,9 +1,9 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../firebase';
 import { mapAuthError, normalizeEmail, trackAuthEvent } from '../auth/authUtils';
-import { signInWithSocialProvider } from '../auth/socialAuth';
+import { completeSocialRedirectIfNeeded, signInWithSocialProvider } from '../auth/socialAuth';
 import AuthSocialButtons from '../components/AuthSocialButtons';
 import { useI18n } from '../i18n/I18nContext';
 
@@ -63,12 +63,46 @@ export default function Login() {
   const isCoolingDown = cooldownLeftSec > 0;
   const busy = submitting || Boolean(socialBusy);
 
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const completed = await completeSocialRedirectIfNeeded();
+        if (cancelled || !completed || completed.mode !== 'login') return;
+        trackAuthEvent('login_social_success', {
+          provider: completed.providerId || 'google',
+          via: 'redirect',
+        });
+        navigate(completed.returnTo || redirectTo, { replace: true });
+      } catch (err) {
+        if (cancelled) return;
+        trackAuthEvent('login_social_failure', {
+          provider: 'google',
+          code: err?.code || 'unknown',
+          via: 'redirect',
+        });
+        setError(mapAuthError(err, t, 'login'));
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [navigate, redirectTo, t]);
+
   async function finishSocial(providerId) {
     if (busy || isCoolingDown) return;
     setError('');
     setSocialBusy(providerId);
     try {
-      await signInWithSocialProvider(providerId);
+      const cred = await signInWithSocialProvider(providerId, {
+        mode: 'login',
+        returnTo: redirectTo,
+      });
+      if (!cred) {
+        // Redirect flow — browser leaves this page.
+        setError(t('auth.errors.redirectInProgress'));
+        return;
+      }
       trackAuthEvent('login_social_success', { provider: providerId });
       navigate(redirectTo, { replace: true });
     } catch (err) {

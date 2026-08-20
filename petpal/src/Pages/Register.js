@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { createUserWithEmailAndPassword, deleteUser, sendEmailVerification, signOut, updateProfile } from 'firebase/auth';
 import { doc, runTransaction, serverTimestamp, setDoc } from 'firebase/firestore';
 import { auth, getDb, isFirebaseConfigured } from '../firebase';
 import { useAuth } from '../auth/AuthProvider';
 import { mapAuthError, normalizeEmail, trackAuthEvent } from '../auth/authUtils';
-import { signInWithSocialProvider } from '../auth/socialAuth';
+import { completeSocialRedirectIfNeeded, preferSocialRedirect, signInWithSocialProvider } from '../auth/socialAuth';
 import AuthSocialButtons from '../components/AuthSocialButtons';
 import { useI18n } from '../i18n/I18nContext';
 
@@ -51,6 +51,32 @@ export default function Register() {
   };
   const busy = submitting || Boolean(socialBusy);
 
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const completed = await completeSocialRedirectIfNeeded();
+        if (cancelled || !completed || completed.mode !== 'register') return;
+        trackAuthEvent('register_social_success', {
+          provider: completed.providerId || 'google',
+          via: 'redirect',
+        });
+        navigate(completed.returnTo || '/', { replace: true });
+      } catch (err) {
+        if (cancelled) return;
+        trackAuthEvent('register_social_failure', {
+          provider: 'google',
+          code: err?.code || 'unknown',
+          via: 'redirect',
+        });
+        setError(mapAuthError(err, t, 'register'));
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [navigate, t]);
+
   async function finishSocial(providerId) {
     if (busy) return;
     setError('');
@@ -64,14 +90,22 @@ export default function Register() {
       return;
     }
     setSocialBusy(providerId);
-    beginRegistrationTransaction();
+    const usingRedirect = preferSocialRedirect();
+    if (!usingRedirect) beginRegistrationTransaction();
     try {
-      await signInWithSocialProvider(providerId);
+      const cred = await signInWithSocialProvider(providerId, {
+        mode: 'register',
+        returnTo: '/',
+      });
+      if (!cred) {
+        setError(t('auth.errors.redirectInProgress'));
+        return;
+      }
       completeRegistrationTransaction(true);
       trackAuthEvent('register_social_success', { provider: providerId });
       navigate('/', { replace: true });
     } catch (err) {
-      completeRegistrationTransaction(false);
+      if (!usingRedirect) completeRegistrationTransaction(false);
       trackAuthEvent('register_social_failure', { provider: providerId, code: err?.code || 'unknown' });
       setError(mapAuthError(err, t, 'register'));
     } finally {

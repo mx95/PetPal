@@ -50,6 +50,11 @@ export const NEARBY_CATEGORIES = [
     keyword: 'pet friendly cafe',
   },
   {
+    id: 'pet_pharmacy',
+    icon: '💊',
+    keyword: 'pet pharmacy animal pharmacy veterinary pharmacy',
+  },
+  {
     id: 'more',
     icon: '🔎',
     keyword: 'pet services',

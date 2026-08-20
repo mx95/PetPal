@@ -38,6 +38,9 @@ export function mapAuthError(err, t, mode = 'login') {
   if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
     return t('auth.errors.popupClosed');
   }
+  if (code === 'auth/redirect-cancelled-by-user') {
+    return t('auth.errors.popupClosed');
+  }
   if (code === 'auth/account-exists-with-different-credential') {
     return t('auth.errors.accountExistsDifferent');
   }

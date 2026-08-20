@@ -67,9 +67,13 @@ function buildPositionPayload(imei, d) {
   const platformOnline = d.platformOnline === true;
 
   const atHomeWifi = Boolean(d.atHomeWifi || d.source === "wifi");
-  const home = d.homeLocation && isPlausibleLatLng(d.homeLocation.lat, d.homeLocation.lng)
-    ? { lat: Number(d.homeLocation.lat), lng: Number(d.homeLocation.lng) }
-    : null;
+  // Only expose home when the user explicitly set it (never a live GPS copy).
+  const home =
+    d.homeExplicit &&
+    d.homeLocation &&
+    isPlausibleLatLng(d.homeLocation.lat, d.homeLocation.lng)
+      ? { lat: Number(d.homeLocation.lat), lng: Number(d.homeLocation.lng) }
+      : null;
   const homeLat = home ? home.lat : null;
   const homeLng = home ? home.lng : null;
 

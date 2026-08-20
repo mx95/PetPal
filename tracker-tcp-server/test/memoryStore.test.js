@@ -182,3 +182,43 @@ test("memory store — GPS uplink does not invent home location", () => {
   assert.equal(payload.lat, 34.71);
   assert.equal(payload.source, "gps");
 });
+
+test("memory store — GPS uplink does not move an explicit home pin", () => {
+  const store = createMemoryStore();
+  const imei = "868022030666501";
+
+  store.setHomeLocation(imei, 34.9, 33.6);
+  store.upsert(imei, {
+    imei,
+    provider: "gt06",
+    source: "gps",
+    gpsValid: true,
+    gps: { lat: 34.71, lng: 33.07, speedKmh: 4 },
+    receivedAt: new Date().toISOString(),
+  });
+
+  const rec = store.get(imei);
+  assert.equal(rec.homeLocation?.lat, 34.9);
+  assert.equal(rec.homeLocation?.lng, 33.6);
+  assert.equal(rec.homeExplicit, true);
+  assert.equal(rec.location?.lat, 34.71);
+
+  const payload = buildPositionPayload(imei, rec);
+  assert.equal(payload.homeLat, 34.9);
+  assert.equal(payload.homeLng, 33.6);
+  assert.equal(payload.lat, 34.71);
+});
+
+test("position payload hides non-explicit homeLocation", () => {
+  const payload = buildPositionPayload("1", {
+    imei: "1",
+    homeLocation: { lat: 34.7, lng: 33.0 },
+    homeExplicit: false,
+    location: { lat: 34.71, lng: 33.07 },
+    source: "gps",
+    gpsValid: true,
+    receivedAt: new Date().toISOString(),
+  });
+  assert.equal(payload.homeLat, null);
+  assert.equal(payload.homeLng, null);
+});
