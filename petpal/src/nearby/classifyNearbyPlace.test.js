@@ -28,6 +28,22 @@ describe('classifyNearbyPlace', () => {
     ).toBe('grooming');
   });
 
+  it('maps pet hospitals and beaches when browsing all pet services', () => {
+    expect(
+      classifyNearbyPlace(
+        { name: 'Nicosia Animal Hospital', types: ['point_of_interest'] },
+        { fallbackId: 'more' }
+      )
+    ).toBe('hospital');
+    expect(
+      classifyNearbyPlace(
+        { name: 'Lady\'s Mile Dog Beach', types: ['beach'] },
+        { fallbackId: 'more' }
+      )
+    ).toBe('beach');
+    expect(classifyNearbyPlace({ name: 'Coast Point', types: ['beach'] })).toBe('beach');
+  });
+
   it('uses Google types when the name is generic', () => {
     expect(classifyNearbyPlace({ name: 'Happy Paws', types: ['veterinary_care'] })).toBe(
       'veterinary_care'

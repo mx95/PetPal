@@ -23725,3 +23725,74 @@ html[lang='ru'] .pp-brand {
   gap: 8px;
 }
 
+.pp-installPage__banner {
+  margin: 16px 0 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(16, 185, 129, 0.12);
+  color: #065f46;
+  font-weight: 650;
+}
+
+.pp-installPage__layout {
+  display: grid;
+  gap: 28px;
+  margin-top: 24px;
+}
+
+@media (min-width: 860px) {
+  .pp-installPage__layout {
+    grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+    align-items: start;
+  }
+}
+
+.pp-installPage__qrBlock {
+  text-align: center;
+}
+
+.pp-installPage__qr {
+  display: block;
+  width: 240px;
+  max-width: 100%;
+  height: auto;
+  margin: 12px auto 0;
+  border-radius: 16px;
+  background: #fff;
+  border: 1px solid rgba(16, 24, 40, 0.08);
+}
+
+.pp-installPage__url {
+  margin: 12px 0 0;
+  font-size: 14px;
+  font-weight: 650;
+  word-break: break-all;
+}
+
+.pp-installPage__steps {
+  display: grid;
+  gap: 16px;
+}
+
+.pp-installPage__card {
+  padding: 16px 18px;
+  border-radius: 16px;
+  border: 1px solid rgba(16, 24, 40, 0.08);
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.pp-installPage__card .pp-btn {
+  margin: 8px 0 12px;
+}
+
+.pp-installPage__list {
+  margin: 10px 0 0;
+  padding-left: 1.25rem;
+  display: grid;
+  gap: 8px;
+  line-height: 1.45;
+  color: #344054;
+  font-weight: 550;
+}
+
+

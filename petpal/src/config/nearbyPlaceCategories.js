@@ -25,6 +25,17 @@ export const NEARBY_CATEGORIES = [
     keyword: 'dog',
   },
   {
+    id: 'beach',
+    icon: '🏖️',
+    type: 'beach',
+    keyword: 'dog pet friendly',
+  },
+  {
+    id: 'hospital',
+    icon: '🏥',
+    keyword: 'animal hospital pet hospital veterinary hospital',
+  },
+  {
     id: 'pet_hotel',
     icon: '🏨',
     keyword: 'pet hotel boarding',

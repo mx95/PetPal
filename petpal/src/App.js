@@ -35,6 +35,7 @@ import {
   ForgotPassword,
   HomeScreen,
   Inbox,
+  InstallApp,
   Leaderboard,
   Login,
   LostPetAlerts,
@@ -111,6 +112,7 @@ function App() {
               <Route path="/login" element={<Login />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/contact" element={<Contact />} />
+              <Route path="/install" element={<InstallApp />} />
               <Route path="/register" element={<Register />} />
               <Route
                 path="/company/apply"

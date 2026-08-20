@@ -5,27 +5,32 @@ const GOOGLE_TYPE_TO_CATEGORY = {
   veterinary_care: 'veterinary_care',
   veterinarian: 'veterinary_care',
   park: 'park',
+  beach: 'beach',
 };
 
 /** Distinctive services first so mixed “shop + grooming” pins show scissors. */
 const NAME_RULES = [
-  { id: 'veterinary_care', re: /\b(vet(?:erinar(?:y|ian)?)?s?|animal hospital|κτηνίατρ|ветеринар)\b/i },
+  { id: 'hospital', re: /\b(animal hospital|pet hospital|νοσοκομείο ζώων|вет(?:еринарн)?(?:ая)? больниц)\b/i },
+  { id: 'veterinary_care', re: /\b(vet(?:erinar(?:y|ian)?)?s?|κτηνίατρ|ветеринар)\b/i },
   { id: 'grooming', re: /\b(groom(?:er|ing)?s?|pet spa|dog wash|κουρέμα|γκρουμ|груминг)\b/i },
   { id: 'pet_hotel', re: /\b(board(?:ing)?|kennel|pet hotel|cattery|πανσιόν|ξενοδοχείο)\b/i },
   { id: 'daycare', re: /\b(day\s?care|doggy day|cr[eè]che)\b/i },
   { id: 'trainer', re: /\b(train(?:er|ing)|obedience|agility|behaviour|behavior|εκπαιδευτ)\b/i },
   { id: 'pet_cafe', re: /\b(caf[eé]|coffee|cat cafe)\b/i },
+  { id: 'beach', re: /\b(pet.?friendly beach|dog beach|dog.?friendly beach|παραλία.*(σκύλ|κατοικίδ)|пляж)\b/i },
   { id: 'park', re: /\b(dog park|pet park|off[- ]leash)\b/i },
   { id: 'pet_store', re: /\b(pet shop|pet store|pet supplies|accessories|zooshop)\b/i },
 ];
 
 const SPECIFICITY = [
+  'hospital',
   'veterinary_care',
   'grooming',
   'pet_hotel',
   'daycare',
   'trainer',
   'pet_cafe',
+  'beach',
   'park',
   'pet_store',
 ];
