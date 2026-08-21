@@ -5,7 +5,6 @@ import { useI18n } from '../i18n/I18nContext';
 import { subscribeCustomerBookings } from '../bookings/bookingFirestore';
 import {
   LOCAL_BOOKINGS_KEY,
-  getCatalogProviders,
   getCatalogServices,
   isCatalogProvider,
   resolveCatalogProviderId,
@@ -82,17 +81,7 @@ function BrowseProviders() {
     []
   );
 
-  const catalogProviders = useMemo(() => getCatalogProviders(), []);
-
-  const sourceRows = useMemo(() => {
-    const byId = new Map();
-    catalogProviders.forEach((p) => byId.set(String(p.id), p));
-    rows.forEach((p) => {
-      const id = String(p.id);
-      byId.set(id, { ...byId.get(id), ...p });
-    });
-    return Array.from(byId.values());
-  }, [rows, catalogProviders]);
+  const sourceRows = useMemo(() => rows, [rows]);
 
   const filtered = useMemo(() => {
     const applyTabFilter = rows.length > 0;
@@ -165,7 +154,7 @@ function BrowseProviders() {
   };
 
   const showEmpty = sorted.length === 0;
-  const showBrowseContent = loaded || catalogProviders.length > 0;
+  const showBrowseContent = loaded;
 
   return (
     <div className="pp-book-layout">

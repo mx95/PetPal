@@ -20432,20 +20432,20 @@ html[data-theme="dark"] .pp-nearby-list > li {
 }
 
 .pp-shopTrackerOpt__img {
-  width: 52px;
-  height: 40px;
+  width: 96px;
+  height: 74px;
   object-fit: contain;
   flex-shrink: 0;
-  border-radius: 8px;
+  border-radius: 10px;
   background: #fff;
   border: 1px solid rgba(16, 24, 40, 0.08);
 }
 
 .pp-shopCard__productImg {
   display: block;
-  width: min(100%, 220px);
+  width: min(100%, 320px);
   height: auto;
-  margin: 8px auto 12px;
+  margin: 10px auto 14px;
   object-fit: contain;
 }
 
@@ -23028,8 +23028,13 @@ html[data-theme="dark"] .pp-nearbyPartnerCard__badge--partner {
   }
 
   .pp-shopPage .pp-shopCard__productImg {
-    width: min(100%, 140px);
-    margin: 4px auto 8px;
+    width: min(100%, 220px);
+    margin: 6px auto 10px;
+  }
+
+  .pp-shopPage .pp-shopTrackerOpt__img {
+    width: 84px;
+    height: 64px;
   }
 
   .pp-shopPage .pp-shopAddons {
