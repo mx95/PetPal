@@ -69,6 +69,33 @@ export function matchesRatingFilter(rating, filter) {
   return true;
 }
 
+const HIDDEN_DEMO_PROVIDER_NAMES = new Set([
+  'petpal demo grooming',
+  'fluffy cuts grooming & pet shop',
+  'paws & care vet clinic',
+]);
+
+const HIDDEN_DEMO_EMAIL_SNIPPETS = [
+  'business.demo@petpal.com.cy',
+  '@fluffycuts.petpal.app',
+  '@paws-care.petpal.app',
+];
+
+/**
+ * Seeded / offline demo businesses that should not appear in Bookings or Nearby.
+ * @param {Record<string, unknown>|null|undefined} provider
+ */
+export function isHiddenDemoProvider(provider) {
+  if (!provider || typeof provider !== 'object') return false;
+  const name = String(provider.displayName || '').trim().toLowerCase();
+  if (name && HIDDEN_DEMO_PROVIDER_NAMES.has(name)) return true;
+  const contact = `${provider.email || ''} ${provider.publicEmail || ''} ${provider.phone || ''}`.toLowerCase();
+  if (HIDDEN_DEMO_EMAIL_SNIPPETS.some((s) => contact.includes(s))) return true;
+  const address = String(provider.address || '').toLowerCase();
+  if (address.includes('artemidos 4') && address.includes('xylofagou')) return true;
+  return false;
+}
+
 export function haversineKm(lat1, lng1, lat2, lng2) {
   const r = 6371;
   const toRad = (d) => (d * Math.PI) / 180;

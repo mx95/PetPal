@@ -1,4 +1,8 @@
-import { pickDefaultServiceForTab, providerMatchesServiceTab } from './bookingBrowseUtils';
+import {
+  isHiddenDemoProvider,
+  pickDefaultServiceForTab,
+  providerMatchesServiceTab,
+} from './bookingBrowseUtils';
 
 describe('providerMatchesServiceTab', () => {
   test('matches walker providers', () => {
@@ -14,5 +18,18 @@ describe('pickDefaultServiceForTab', () => {
       { id: '2', type: 'walker', name: '30 min walk', active: true },
     ];
     expect(pickDefaultServiceForTab(services, 'walker')?.id).toBe('2');
+  });
+});
+
+describe('isHiddenDemoProvider', () => {
+  test('hides seeded PetPal Demo Grooming', () => {
+    expect(isHiddenDemoProvider({ displayName: 'PetPal Demo Grooming' })).toBe(true);
+    expect(
+      isHiddenDemoProvider({
+        displayName: 'Real Groomer',
+        address: 'Artemidos 4, Xylofagou',
+      })
+    ).toBe(true);
+    expect(isHiddenDemoProvider({ displayName: 'Cyprus Pet Care', address: 'Limassol' })).toBe(false);
   });
 });

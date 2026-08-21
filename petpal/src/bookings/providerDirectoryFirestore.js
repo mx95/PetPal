@@ -11,6 +11,7 @@ import {
   where,
 } from 'firebase/firestore';
 import { getDb, isFirebaseConfigured } from '../firebase';
+import { isHiddenDemoProvider } from './bookingBrowseUtils';
 
 function providersCol() {
   return collection(getDb(), 'providers');
@@ -34,7 +35,12 @@ export function subscribeProviders(onNext, onError) {
   const q = query(providersCol(), where('bookingEnabled', '==', true), orderBy('displayName', 'asc'));
   return onSnapshot(
     q,
-    (snap) => onNext(snap.docs.map((d) => ({ id: d.id, ...d.data() }))),
+    (snap) =>
+      onNext(
+        snap.docs
+          .map((d) => ({ id: d.id, ...d.data() }))
+          .filter((p) => !isHiddenDemoProvider(p))
+      ),
     (err) => (onError ? onError(err) : undefined)
   );
 }
