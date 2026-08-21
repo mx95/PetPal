@@ -23731,44 +23731,17 @@ html[lang='ru'] .pp-brand {
   font-weight: 650;
 }
 
-.pp-installPage__layout {
+.pp-installPage__steps {
   display: grid;
-  gap: 28px;
+  gap: 16px;
   margin-top: 24px;
 }
 
 @media (min-width: 860px) {
-  .pp-installPage__layout {
-    grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+  .pp-installPage__steps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     align-items: start;
   }
-}
-
-.pp-installPage__qrBlock {
-  text-align: center;
-}
-
-.pp-installPage__qr {
-  display: block;
-  width: 240px;
-  max-width: 100%;
-  height: auto;
-  margin: 12px auto 0;
-  border-radius: 16px;
-  background: #fff;
-  border: 1px solid rgba(16, 24, 40, 0.08);
-}
-
-.pp-installPage__url {
-  margin: 12px 0 0;
-  font-size: 14px;
-  font-weight: 650;
-  word-break: break-all;
-}
-
-.pp-installPage__steps {
-  display: grid;
-  gap: 16px;
 }
 
 .pp-installPage__card {
@@ -23778,18 +23751,82 @@ html[lang='ru'] .pp-brand {
   background: rgba(255, 255, 255, 0.72);
 }
 
+.pp-installPage__card--focus {
+  border-color: rgba(91, 55, 255, 0.35);
+  box-shadow: 0 0 0 1px rgba(91, 55, 255, 0.12);
+}
+
 .pp-installPage__card .pp-btn {
   margin: 8px 0 12px;
 }
 
-.pp-installPage__list {
-  margin: 10px 0 0;
-  padding-left: 1.25rem;
+.pp-installPage__note {
+  margin-top: 12px;
+}
+
+.pp-installPage__stepList {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
   display: grid;
-  gap: 8px;
+  gap: 12px;
+}
+
+.pp-installStep {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.pp-installStep__num {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #101828;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.pp-installStep__body {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  min-width: 0;
   line-height: 1.45;
   color: #344054;
   font-weight: 550;
+  padding-top: 3px;
 }
+
+.pp-installStep__body strong {
+  font-weight: 750;
+  color: #101828;
+}
+
+.pp-installIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid rgba(16, 24, 40, 0.12);
+  background: #fff;
+  color: #007aff;
+  flex: 0 0 auto;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06);
+}
+
+.pp-installIcon--menu {
+  color: #202124;
+}
+
 
 
