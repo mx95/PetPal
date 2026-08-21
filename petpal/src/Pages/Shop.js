@@ -61,7 +61,7 @@ export default function Shop() {
   const focusSku = searchParams.get('sku');
   const cardRefs = useRef(/** @type {Record<string, HTMLElement | null>} */ ({}));
 
-  const [shopTab, setShopTab] = useState('products');
+  const [shopTab, setShopTab] = useState('subscriptions');
   const { addToCart, setCheckoutError, cartItems } = useShopCart();
   const hasMarketplaceProducts = MARKETPLACE_PRODUCTS.length > 0;
 
@@ -345,20 +345,20 @@ export default function Shop() {
         <button
           type="button"
           role="tab"
-          aria-selected={shopTab === 'products'}
-          className={`pp-shopTabs__btn${shopTab === 'products' ? ' is-active' : ''}`}
-          onClick={() => setShopTab('products')}
-        >
-          {t('shopPage.tabProducts')}
-        </button>
-        <button
-          type="button"
-          role="tab"
           aria-selected={shopTab === 'subscriptions'}
           className={`pp-shopTabs__btn${shopTab === 'subscriptions' ? ' is-active' : ''}`}
           onClick={() => setShopTab('subscriptions')}
         >
           {t('shopPage.tabSubscriptions')}
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={shopTab === 'products'}
+          className={`pp-shopTabs__btn${shopTab === 'products' ? ' is-active' : ''}`}
+          onClick={() => setShopTab('products')}
+        >
+          {t('shopPage.tabProducts')}
         </button>
       </div>
 
