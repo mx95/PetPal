@@ -445,15 +445,20 @@ export default function Register() {
               </span>
             </label>
 
-            <button className="pp-btn pp-btnPrimary pp-btn--lg" disabled={busy || !acceptedTerms}>
-              {submitting ? t('register.creating') : t('register.createAccount')}
-            </button>
-
             <AuthSocialButtons
+              primary
               busy={busy}
               disabled={!acceptedTerms}
               onGoogle={() => void finishSocial('google')}
             />
+
+            <div className="pp-authSocial__divider" role="presentation">
+              <span>{t('auth.orUseEmail')}</span>
+            </div>
+
+            <button className="pp-btn pp-btnPrimary pp-btn--lg" disabled={busy || !acceptedTerms}>
+              {submitting ? t('register.creating') : t('register.createAccount')}
+            </button>
 
             <p className="pp-subtle pp-authSwitchHint">
               {t('register.haveAccountQ')}{' '}
