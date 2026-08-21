@@ -153,7 +153,7 @@ disable_business_demo_account() {
 }
 
 clear_broadcast_inbox_once() {
-  local marker="/var/lib/petpal/broadcast-inbox-cleared-2026-08-21"
+  local marker="/var/lib/petpal/broadcast-inbox-cleared-2026-08-21b"
   local script="$PETPAL_DIR/scripts/clear-broadcast-inbox.cjs"
   [ -f "$script" ] || return 0
   if [ -f "$marker" ]; then

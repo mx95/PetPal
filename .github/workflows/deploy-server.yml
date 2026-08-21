@@ -59,8 +59,10 @@ jobs:
             export CLEAR_DEVICE_POSITIONS_IMEI="${{ github.event.inputs.clear_imei || '' }}"
             bash "$PETPAL_ROOT/scripts/deploy-server.sh"
             # Clear shared broadcast inbox once (script may be new after this pull).
-            CLEAR_INBOX_MARKER="/var/lib/petpal/broadcast-inbox-cleared-2026-08-21"
+            CLEAR_INBOX_MARKER="/var/lib/petpal/broadcast-inbox-cleared-2026-08-21b"
             CLEAR_INBOX_SCRIPT="$PETPAL_ROOT/petpal/scripts/clear-broadcast-inbox.cjs"
+            # Drop stale false-success marker from earlier failed Admin-only attempts.
+            rm -f /var/lib/petpal/broadcast-inbox-cleared-2026-08-21 2>/dev/null || true
             if [ -f "$CLEAR_INBOX_SCRIPT" ] && [ ! -f "$CLEAR_INBOX_MARKER" ]; then
               echo "[deploy] Clearing broadcast inbox (post-deploy one-shot)"
               mkdir -p /var/lib/petpal

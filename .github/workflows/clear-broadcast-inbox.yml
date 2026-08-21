@@ -35,4 +35,4 @@ jobs:
             fi
             node scripts/clear-broadcast-inbox.cjs
             mkdir -p /var/lib/petpal
-            touch /var/lib/petpal/broadcast-inbox-cleared-2026-08-21
+            touch /var/lib/petpal/broadcast-inbox-cleared-2026-08-21b
