@@ -61,13 +61,9 @@ export default function Shop() {
   const focusSku = searchParams.get('sku');
   const cardRefs = useRef(/** @type {Record<string, HTMLElement | null>} */ ({}));
 
-  const [shopTab, setShopTab] = useState('subscriptions');
+  const [shopTab, setShopTab] = useState('products');
   const { addToCart, setCheckoutError, cartItems } = useShopCart();
   const hasMarketplaceProducts = MARKETPLACE_PRODUCTS.length > 0;
-
-  useEffect(() => {
-    if (!hasMarketplaceProducts && shopTab === 'products') setShopTab('subscriptions');
-  }, [hasMarketplaceProducts, shopTab]);
 
   const localizedSubscriptionProducts = useMemo(
     () => SUBSCRIPTION_PRODUCTS.map((product) => localizeShopProduct(product, t)),
@@ -349,23 +345,21 @@ export default function Shop() {
         <button
           type="button"
           role="tab"
+          aria-selected={shopTab === 'products'}
+          className={`pp-shopTabs__btn${shopTab === 'products' ? ' is-active' : ''}`}
+          onClick={() => setShopTab('products')}
+        >
+          {t('shopPage.tabProducts')}
+        </button>
+        <button
+          type="button"
+          role="tab"
           aria-selected={shopTab === 'subscriptions'}
           className={`pp-shopTabs__btn${shopTab === 'subscriptions' ? ' is-active' : ''}`}
           onClick={() => setShopTab('subscriptions')}
         >
           {t('shopPage.tabSubscriptions')}
         </button>
-        {hasMarketplaceProducts ? (
-          <button
-            type="button"
-            role="tab"
-            aria-selected={shopTab === 'products'}
-            className={`pp-shopTabs__btn${shopTab === 'products' ? ' is-active' : ''}`}
-            onClick={() => setShopTab('products')}
-          >
-            {t('shopPage.tabProducts')}
-          </button>
-        ) : null}
       </div>
 
       {banner ? (
@@ -763,37 +757,46 @@ export default function Shop() {
         </>
       ) : (
         <>
-          <p className="pp-subtle pp-shopProductsLead">{t('shopPage.productsLead')}</p>
-          <div className="pp-shopProductGrid">
-            {MARKETPLACE_PRODUCTS.map((product) => (
-              <article key={product.id} className="pp-card pp-shopProductCard">
-                <div className="pp-shopProductCard__emoji" aria-hidden>
-                  {product.emoji}
-                </div>
-                <p className="pp-shopProductCard__company">{product.companyName}</p>
-                <h3 className="pp-shopProductCard__title">{product.title}</h3>
-                <p className="pp-subtle pp-shopProductCard__desc">{product.description}</p>
-                <div className="pp-shopProductCard__foot">
-                  <strong>{formatEur(product.priceCents)}</strong>
-                  <button
-                    type="button"
-                    className="pp-btn pp-btn--primary"
-                    onClick={() => {
-                      setErr('');
-                      addToCart({
-                        key: product.id,
-                        title: product.title,
-                        subtitle: product.companyName,
-                        priceCents: product.priceCents,
-                      });
-                    }}
-                  >
-                    {t('shopPage.addToCart')}
-                  </button>
-                </div>
-              </article>
-            ))}
-          </div>
+          {hasMarketplaceProducts ? (
+            <>
+              <p className="pp-subtle pp-shopProductsLead">{t('shopPage.productsLead')}</p>
+              <div className="pp-shopProductGrid">
+                {MARKETPLACE_PRODUCTS.map((product) => (
+                  <article key={product.id} className="pp-card pp-shopProductCard">
+                    <div className="pp-shopProductCard__emoji" aria-hidden>
+                      {product.emoji}
+                    </div>
+                    <p className="pp-shopProductCard__company">{product.companyName}</p>
+                    <h3 className="pp-shopProductCard__title">{product.title}</h3>
+                    <p className="pp-subtle pp-shopProductCard__desc">{product.description}</p>
+                    <div className="pp-shopProductCard__foot">
+                      <strong>{formatEur(product.priceCents)}</strong>
+                      <button
+                        type="button"
+                        className="pp-btn pp-btn--primary"
+                        onClick={() => {
+                          setErr('');
+                          addToCart({
+                            key: product.id,
+                            title: product.title,
+                            subtitle: product.companyName,
+                            priceCents: product.priceCents,
+                          });
+                        }}
+                      >
+                        {t('shopPage.addToCart')}
+                      </button>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </>
+          ) : (
+            <div className="pp-shopEmptyProducts" role="status">
+              <h2 className="pp-shopEmptyProducts__title">{t('shopPage.productsEmptyTitle')}</h2>
+              <p className="pp-subtle pp-shopEmptyProducts__body">{t('shopPage.productsEmptyBody')}</p>
+            </div>
+          )}
         </>
       )}
     </div>

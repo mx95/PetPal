@@ -2108,6 +2108,8 @@ const en = {
     nfcDesignPrev: 'Previous NFC designs',
     nfcDesignNext: 'Next NFC designs',
     productsLead: 'Products from registered PetPal businesses. Add items to your cart to review before checkout.',
+    productsEmptyTitle: 'No products here yet',
+    productsEmptyBody: 'The shop is ready — products from PetPal businesses will appear here soon.',
     addToCart: 'Add to cart',
     inCartQty: 'In cart ({count})',
     cartTitle: 'Your cart',

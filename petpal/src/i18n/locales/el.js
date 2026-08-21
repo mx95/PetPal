@@ -2288,6 +2288,8 @@ const el = {
     nfcDesignNext: 'Επόμενα σχέδια NFC',
     productsLead:
       'Προϊόντα από εγγεγραμμένες επιχειρήσεις PetPal. Προσθέστε στο καλάθι για έλεγχο πριν το checkout.',
+    productsEmptyTitle: 'Δεν υπάρχουν προϊόντα ακόμα',
+    productsEmptyBody: 'Το κατάστημα είναι έτοιμο — τα προϊόντα από επιχειρήσεις PetPal θα εμφανιστούν σύντομα.',
     addToCart: 'Προσθήκη στο καλάθι',
     inCartQty: 'Στο καλάθι ({count})',
     cartTitle: 'Το καλάθι σας',
