@@ -18,7 +18,7 @@ const NAME_RULES = [
   { id: 'daycare', re: /\b(day\s?care|doggy day|cr[eè]che)\b/i },
   { id: 'trainer', re: /\b(train(?:er|ing)|obedience|agility|behaviour|behavior|εκπαιδευτ)\b/i },
   { id: 'pet_cafe', re: /\b(caf[eé]|coffee|cat cafe)\b/i },
-  { id: 'beach', re: /\b(pet.?friendly beach|dog beach|dog.?friendly beach|παραλία.*(σκύλ|κατοικίδ)|пляж)\b/i },
+  { id: 'beach', re: /\b(pet.?friendly beach|dog beach|dog.?friendly beach|παραλία.*(σκύλ|κατοικίδ)|σκύλ.*παραλία|пляж.*(собак|питом)|собач.*пляж)\b/i },
   { id: 'park', re: /\b(dog park|pet park|off[- ]leash)\b/i },
   { id: 'pet_store', re: /\b(pet shop|pet store|pet supplies|accessories|zooshop)\b/i },
 ];

@@ -5,6 +5,7 @@ import {
   getCategoryById,
   NEARBY_CATEGORIES,
   NEARBY_SEARCH_RADIUS_M,
+  nearbySearchFields,
 } from '../config/nearbyPlaceCategories';
 import { nearbyCategoryForPlace } from '../nearby/classifyNearbyPlace';
 import NearbyCategoryPin from '../nearby/NearbyCategoryPin';
@@ -181,10 +182,7 @@ function NearbyMap({ apiKey }) {
           return;
         }
         sources.forEach((entry) => {
-          const request = {};
-          if (entry.type) request.type = entry.type;
-          if (entry.keyword) request.keyword = entry.keyword;
-          if (!entry.type && !entry.keyword) request.keyword = 'pet';
+          const request = { ...nearbySearchFields(entry) };
           if (bounds) request.bounds = bounds;
           else {
             request.location = loc;
@@ -207,10 +205,7 @@ function NearbyMap({ apiKey }) {
         return;
       }
 
-      const request = {};
-      if (cat.type) request.type = cat.type;
-      if (cat.keyword) request.keyword = cat.keyword;
-      if (!cat.type && !cat.keyword) request.keyword = 'pet';
+      const request = { ...nearbySearchFields(cat) };
 
       if (scope === 'bounds') {
         const bounds = map.getBounds();
