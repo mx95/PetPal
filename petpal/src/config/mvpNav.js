@@ -2,7 +2,7 @@ import { isBookingBrowseEnabled } from '../bookings/bookingFeature';
 
 /**
  * MVP navigation: hide post-launch features from primary UI.
- * Routes remain reachable via direct URL — listed on /docs.
+ * Routes remain reachable via direct URL.
  */
 export const MVP_NAV = {
   showPremium: false,
