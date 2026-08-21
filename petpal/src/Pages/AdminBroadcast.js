@@ -3,6 +3,7 @@ import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
 import { useCompany } from '../company/CompanyContext';
 import { clearAllBroadcastMessages, createBroadcastMessage } from '../inbox/inboxFirestore';
+import { clearBroadcastInboxRemote } from '../inbox/clearBroadcastInboxClient';
 import { useI18n } from '../i18n/I18nContext';
 
 export default function AdminBroadcast() {
@@ -57,7 +58,13 @@ export default function AdminBroadcast() {
     setOk('');
     setClearing(true);
     try {
-      const n = await clearAllBroadcastMessages();
+      let n = 0;
+      try {
+        const remote = await clearBroadcastInboxRemote();
+        n = Number(remote?.deleted) || 0;
+      } catch {
+        n = await clearAllBroadcastMessages();
+      }
       setOk(t('admin.broadcast.cleared', { count: n }));
     } catch (ex) {
       setErr(ex?.message || t('admin.broadcast.errClear'));
