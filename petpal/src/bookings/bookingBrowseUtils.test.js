@@ -22,8 +22,9 @@ describe('pickDefaultServiceForTab', () => {
 });
 
 describe('isHiddenDemoProvider', () => {
-  test('hides seeded PetPal Demo Grooming', () => {
+  test('hides seeded PetPal Demo Grooming and Sotiris Demo', () => {
     expect(isHiddenDemoProvider({ displayName: 'PetPal Demo Grooming' })).toBe(true);
+    expect(isHiddenDemoProvider({ displayName: 'Sotiris Demo' })).toBe(true);
     expect(
       isHiddenDemoProvider({
         displayName: 'Real Groomer',

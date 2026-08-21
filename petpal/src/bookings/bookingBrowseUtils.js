@@ -73,6 +73,7 @@ const HIDDEN_DEMO_PROVIDER_NAMES = new Set([
   'petpal demo grooming',
   'fluffy cuts grooming & pet shop',
   'paws & care vet clinic',
+  'sotiris demo',
 ]);
 
 const HIDDEN_DEMO_EMAIL_SNIPPETS = [
@@ -89,6 +90,8 @@ export function isHiddenDemoProvider(provider) {
   if (!provider || typeof provider !== 'object') return false;
   const name = String(provider.displayName || '').trim().toLowerCase();
   if (name && HIDDEN_DEMO_PROVIDER_NAMES.has(name)) return true;
+  // Catch "Something Demo" test listings used for boost previews.
+  if (/\bdemo\b/i.test(name) && /(sotiris|petpal|test|sample|example)/i.test(name)) return true;
   const contact = `${provider.email || ''} ${provider.publicEmail || ''} ${provider.phone || ''}`.toLowerCase();
   if (HIDDEN_DEMO_EMAIL_SNIPPETS.some((s) => contact.includes(s))) return true;
   const address = String(provider.address || '').toLowerCase();
