@@ -20640,6 +20640,28 @@ html[data-theme="dark"] .pp-nearby-list > li {
   margin-bottom: 14px;
 }
 
+.pp-shopEmptyProducts {
+  margin-top: 8px;
+  padding: 28px 20px;
+  text-align: center;
+  border-radius: 18px;
+  border: 1px dashed rgba(16, 24, 40, 0.14);
+  background: rgba(248, 250, 252, 0.9);
+}
+
+.pp-shopEmptyProducts__title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #1f2937;
+}
+
+.pp-shopEmptyProducts__body {
+  margin: 8px auto 0;
+  max-width: 28rem;
+  line-height: 1.45;
+}
+
 .pp-shopCartNote {
   margin-top: 10px;
   font-size: 13px;
