@@ -57,6 +57,25 @@ jobs:
             export PETPAL_ROOT
             export DEPLOY_BRANCH="${{ github.event.inputs.branch || github.ref_name }}"
             export CLEAR_DEVICE_POSITIONS_IMEI="${{ github.event.inputs.clear_imei || '' }}"
+            # Pull first so we use the latest deploy script, then restore a Google-compatible
+            # authDomain (custom domain needs OAuth redirect URI first or login 400s).
+            cd "$PETPAL_ROOT"
+            git update-ref -d "refs/remotes/origin/${DEPLOY_BRANCH}" 2>/dev/null || true
+            git fetch origin "+refs/heads/${DEPLOY_BRANCH}:refs/remotes/origin/${DEPLOY_BRANCH}" --prune
+            git checkout "$DEPLOY_BRANCH"
+            git reset --hard "origin/${DEPLOY_BRANCH}"
+            ENVF="$PETPAL_ROOT/petpal/.env.local"
+            AUTH_DOMAIN="${PETPAL_FIREBASE_AUTH_DOMAIN:-petpal-aecda.firebaseapp.com}"
+            if [ -f "$ENVF" ]; then
+              if grep -qE '^REACT_APP_FIREBASE_AUTH_DOMAIN=' "$ENVF"; then
+                sed -i.bak "s|^REACT_APP_FIREBASE_AUTH_DOMAIN=.*|REACT_APP_FIREBASE_AUTH_DOMAIN=${AUTH_DOMAIN}|" "$ENVF"
+              else
+                printf '\nREACT_APP_FIREBASE_AUTH_DOMAIN=%s\n' "$AUTH_DOMAIN" >> "$ENVF"
+              fi
+              echo "[deploy] REACT_APP_FIREBASE_AUTH_DOMAIN=${AUTH_DOMAIN}"
+            fi
+            export SKIP_GIT=1
+            export PETPAL_FIREBASE_AUTH_DOMAIN="$AUTH_DOMAIN"
             bash "$PETPAL_ROOT/scripts/deploy-server.sh"
             # Clear shared broadcast inbox once (script may be new after this pull).
             CLEAR_INBOX_MARKER="/var/lib/petpal/broadcast-inbox-cleared-2026-08-21b"
