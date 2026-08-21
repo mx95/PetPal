@@ -2,22 +2,10 @@
  * Bookable add-on services (multi-select in appointment wizard).
  */
 
-import { GROOMING_PROVIDER_ID, VET_PROVIDER_ID, resolveCatalogProviderId } from './bookingCatalog';
+import { resolveCatalogProviderId } from './bookingCatalog';
 
-/** @type {Record<string, Array<{ id: string, nameKey: string, durationMin: number, price: string, emoji?: string }>>} */
-const CATALOG_ADDONS = {
-  [GROOMING_PROVIDER_ID]: [
-    { id: 'bath', nameKey: 'bookConfirm.addonBath', durationMin: 25, price: '€18', emoji: '🛁' },
-    { id: 'nail-cutting', nameKey: 'bookConfirm.addonNails', durationMin: 15, price: '€12', emoji: '✂️' },
-    { id: 'brush-teeth', nameKey: 'bookConfirm.addonTeeth', durationMin: 10, price: '€8', emoji: '🦷' },
-    { id: 'hair-cut', nameKey: 'bookConfirm.addonHaircut', durationMin: 35, price: '€22', emoji: '💇' },
-    { id: 'tick-shampoo', nameKey: 'bookConfirm.addonTickShampoo', durationMin: 20, price: '€15', emoji: '🧴' },
-  ],
-  [VET_PROVIDER_ID]: [
-    { id: 'nail-cutting', nameKey: 'bookConfirm.addonNails', durationMin: 15, price: '€12', emoji: '✂️' },
-    { id: 'brush-teeth', nameKey: 'bookConfirm.addonTeeth', durationMin: 10, price: '€8', emoji: '🦷' },
-  ],
-};
+/** Offline catalog add-ons — empty while demo booking places are disabled. */
+const CATALOG_ADDONS = {};
 
 export function getCatalogAddons(providerId) {
   const id = resolveCatalogProviderId(providerId);

@@ -63,6 +63,11 @@ export default function Shop() {
 
   const [shopTab, setShopTab] = useState('subscriptions');
   const { addToCart, setCheckoutError, cartItems } = useShopCart();
+  const hasMarketplaceProducts = MARKETPLACE_PRODUCTS.length > 0;
+
+  useEffect(() => {
+    if (!hasMarketplaceProducts && shopTab === 'products') setShopTab('subscriptions');
+  }, [hasMarketplaceProducts, shopTab]);
 
   const localizedSubscriptionProducts = useMemo(
     () => SUBSCRIPTION_PRODUCTS.map((product) => localizeShopProduct(product, t)),
@@ -350,15 +355,17 @@ export default function Shop() {
         >
           {t('shopPage.tabSubscriptions')}
         </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={shopTab === 'products'}
-          className={`pp-shopTabs__btn${shopTab === 'products' ? ' is-active' : ''}`}
-          onClick={() => setShopTab('products')}
-        >
-          {t('shopPage.tabProducts')}
-        </button>
+        {hasMarketplaceProducts ? (
+          <button
+            type="button"
+            role="tab"
+            aria-selected={shopTab === 'products'}
+            className={`pp-shopTabs__btn${shopTab === 'products' ? ' is-active' : ''}`}
+            onClick={() => setShopTab('products')}
+          >
+            {t('shopPage.tabProducts')}
+          </button>
+        ) : null}
       </div>
 
       {banner ? (

@@ -1,6 +1,6 @@
 /**
- * Offline grooming catalog — used when booking via direct URL before Firestore providers exist.
- * Provider and service IDs are stable public slugs (not "demo" / "example").
+ * Offline booking catalog — disabled for production listings.
+ * Legacy provider/service ID aliases still resolve for old deep links.
  */
 
 export const GROOMING_PROVIDER_ID = 'fluffy-cuts-grooming';
@@ -39,119 +39,15 @@ export function resolveCatalogServiceId(serviceId) {
   return LEGACY_SERVICE_IDS[id] || id;
 }
 
+/** Offline catalog providers — intentionally empty (no demo listings in Bookings). */
+const CATALOG_PROVIDERS = {};
+const CATALOG_SERVICES = {};
+const CATALOG_SCHEDULES = {};
+
 export function isCatalogProvider(providerId) {
   const id = resolveCatalogProviderId(providerId);
   return Boolean(CATALOG_PROVIDERS[id]);
 }
-
-const GROOMING_PROVIDER = {
-  id: GROOMING_PROVIDER_ID,
-  displayName: 'Fluffy Cuts Grooming & Pet Shop',
-  email: 'bookings@fluffycuts.petpal.app',
-  address: '45 Sunset Ave, Kifisia',
-  phone: '+30 210 111 1111',
-  providerTypes: { vet: false, bath: true, saloon: true, hotel: false },
-  rating: 4.6,
-  priceTier: 1,
-  lat: 38.0744,
-  lng: 23.8125,
-  workingHours: 'Tue–Sat 10:00–19:00',
-  nextAvailable: 'Grooming slots this week',
-  servicesPreview: 'Bath · Full grooming',
-};
-
-const VET_PROVIDER = {
-  id: VET_PROVIDER_ID,
-  displayName: 'Paws & Care Vet Clinic',
-  email: 'appointments@paws-care.petpal.app',
-  address: '12 Makarios Ave, Limassol',
-  phone: '+357 25 000 000',
-  providerTypes: { vet: true, bath: false, saloon: false, hotel: false },
-  rating: 4.8,
-  priceTier: 2,
-  lat: 34.6841,
-  lng: 33.0379,
-  workingHours: 'Mon–Sat 09:00–18:00',
-  nextAvailable: 'Next slot 10:00',
-  servicesPreview: 'Checkups · Vaccinations',
-  sponsored: true,
-  recommended: true,
-};
-
-const CATALOG_PROVIDERS = {
-  [GROOMING_PROVIDER_ID]: GROOMING_PROVIDER,
-  [VET_PROVIDER_ID]: VET_PROVIDER,
-};
-
-const CATALOG_SERVICES = {
-  [GROOMING_PROVIDER_ID]: [
-    {
-      id: GROOMING_SERVICES.BATH,
-      type: 'bath',
-      name: 'Bath & brush',
-      durationMin: 45,
-      price: '€28',
-      description: 'Coat wash and brush-out',
-      active: true,
-      variants: [
-        { id: 'short', labelKey: 'bookConfirm.coatShort', durationMin: 35, price: '€24', descriptionKey: 'bookConfirm.coatShortDesc' },
-        { id: 'medium', labelKey: 'bookConfirm.coatMedium', durationMin: 45, price: '€28', descriptionKey: 'bookConfirm.coatMediumDesc' },
-        { id: 'long', labelKey: 'bookConfirm.coatLong', durationMin: 60, price: '€35', descriptionKey: 'bookConfirm.coatLongDesc' },
-      ],
-    },
-    {
-      id: GROOMING_SERVICES.FULL,
-      type: 'saloon',
-      name: 'Full grooming',
-      durationMin: 75,
-      price: '€45',
-      description: 'Wash, trim, ears and nails',
-      active: true,
-      variants: [
-        { id: 'short', labelKey: 'bookConfirm.coatShort', durationMin: 60, price: '€38', descriptionKey: 'bookConfirm.coatShortDesc' },
-        { id: 'medium', labelKey: 'bookConfirm.coatMedium', durationMin: 75, price: '€45', descriptionKey: 'bookConfirm.coatMediumDesc' },
-        { id: 'long', labelKey: 'bookConfirm.coatLong', durationMin: 95, price: '€55', descriptionKey: 'bookConfirm.coatLongDesc' },
-      ],
-    },
-  ],
-  [VET_PROVIDER_ID]: [
-    {
-      id: VET_SERVICES.CHECKUP,
-      type: 'vet',
-      name: 'Health checkup',
-      durationMin: 30,
-      price: '€35',
-      description: 'General wellness exam',
-      active: true,
-    },
-    {
-      id: VET_SERVICES.VACCINE,
-      type: 'vet',
-      name: 'Vaccination visit',
-      durationMin: 20,
-      price: '€25',
-      description: 'Routine vaccine appointment',
-      active: true,
-    },
-  ],
-};
-
-const CATALOG_SCHEDULES = {
-  [GROOMING_PROVIDER_ID]: {
-    closedWeekdays: [0, 1],
-    windows: [
-      { start: [10, 0], end: [13, 0] },
-      { start: [14, 0], end: [19, 0] },
-    ],
-  },
-  [VET_PROVIDER_ID]: {
-    closedWeekdays: [0],
-    windows: [
-      { start: [9, 0], end: [13, 0] },
-      { start: [14, 0], end: [18, 0] },
-    ],
-  },
-};
 
 function addDays(date, days) {
   const d = new Date(date);
