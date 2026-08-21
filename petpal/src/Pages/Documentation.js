@@ -1,14 +1,8 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { APP_ROUTE_CATALOG } from '../config/appRouteCatalog';
 import { useAuth } from '../auth/AuthProvider';
 import { useI18n } from '../i18n/I18nContext';
-import en from '../i18n/locales/en';
 import { BRAND } from '../config/brand';
-
-function getDeep(obj, dotPath) {
-  return dotPath.split('.').reduce((acc, part) => (acc == null ? undefined : acc[part]), obj);
-}
 
 function ParaBlock({ textKey }) {
   const { t } = useI18n();
@@ -23,68 +17,17 @@ function ParaBlock({ textKey }) {
     ));
 }
 
-function AuthBadge({ auth }) {
-  const { t } = useI18n();
-  const label =
-    auth === 'admin' ? t('docs.routesAuthAdmin') : auth === 'auth' ? t('docs.routesAuthUser') : t('docs.routesAuthPublic');
-  return <span className={`pp-docsBadge pp-docsBadge--${auth}`}>{label}</span>;
-}
-
-/** Prefer active locale; fall back to English strings from en.js when a key is missing. */
-function docStr(t, key) {
-  const v = t(key);
-  if (v && v !== key) return v;
-  const fb = getDeep(en, key);
-  return typeof fb === 'string' ? fb : key;
-}
-
-function RouteTable({ routes }) {
-  const { t } = useI18n();
-  return (
-    <div className="pp-docsTableWrap">
-      <table className="pp-docsTable">
-        <thead>
-          <tr>
-            <th>{t('docs.routesColPath')}</th>
-            <th>{t('docs.routesColPage')}</th>
-            <th>{t('docs.routesColAccess')}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {routes.map((route) => (
-            <tr key={route.path}>
-              <td>
-                <code className="pp-docsCode">{route.path}</code>
-              </td>
-              <td>
-                <strong>{docStr(t, route.labelKey)}</strong>
-                <p className="pp-docsTable__desc">{docStr(t, route.descKey)}</p>
-              </td>
-              <td>
-                <AuthBadge auth={route.auth} />
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
 /**
- * In-app reference: routes (including hidden MVP pages) and backend APIs.
+ * In-app help: how-to, support, and language — no internal route catalog for users.
  */
 export default function Documentation() {
   const { user } = useAuth();
   const { t } = useI18n();
   const back = user ? { to: '/', label: t('docs.backHome') } : { to: '/login', label: t('docs.backLogin') };
 
-  const mvpRoutes = APP_ROUTE_CATALOG.filter((r) => r.mvpNav && r.auth !== 'admin');
-
   const toc = [
     { href: '#docs-overview', key: 'docs.toc1' },
     { href: '#docs-howto', key: 'docs.tocHowto' },
-    { href: '#docs-routes-mvp', key: 'docs.tocRoutesMvp' },
     { href: '#docs-support', key: 'docs.tocSupport' },
     { href: '#docs-language', key: 'docs.toc11' },
   ];
@@ -133,12 +76,6 @@ export default function Documentation() {
                 <li>{t('docs.howtoSubscriptions')}</li>
                 <li>{t('docs.howtoSupport')}</li>
               </ul>
-            </section>
-
-            <section id="docs-routes-mvp">
-              <h2>{t('docs.routesMvpTitle')}</h2>
-              <p>{t('docs.routesMvpIntro')}</p>
-              <RouteTable routes={mvpRoutes} />
             </section>
 
             <section id="docs-support">
