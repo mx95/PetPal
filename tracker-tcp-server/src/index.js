@@ -11,6 +11,7 @@ const { createGt06TcpServer } = require("./tcp/gt06Handler");
 const { registerG365HttpApi } = require("./http/g365ApiRoutes");
 const { registerGpsposHttpApi } = require("./http/gpsposApiRoutes");
 const { registerAdminDeviceRoutes } = require("./http/adminDeviceRoutes");
+const { registerFirebaseAuthProxy } = require("./http/firebaseAuthProxy");
 const { logPrefix } = require("./logging/time");
 const { buildPositionPayload } = require("./http/positionPayload");
 const { repairStaleLastFixFromHistory } = require("./geo/repairStaleLastFix");
@@ -394,11 +395,14 @@ app.get("/position", (req, res) => {
 });
 
 //
-// ✅ 2. STATIC FILES
+// ✅ 2. STATIC FILES (+ Firebase Auth redirect helper proxy)
 //
 const WEB_BUILD_DIR =
   process.env.WEB_BUILD_DIR || path.resolve(__dirname, "..", "..", "petpal", "build");
 const WEB_INDEX_HTML = path.join(WEB_BUILD_DIR, "index.html");
+
+// Must be registered before the SPA fallback so /__/auth/* is not swallowed by index.html.
+registerFirebaseAuthProxy(app);
 
 /** Rewrite legacy http:// tracker API calls to same-origin (HTTPS mixed-content safety). */
 const TRACKER_FETCH_SHIM = `<script id="petpal-tracker-fetch-shim">(function(){var h=String(window.location.hostname||"").toLowerCase();if(!window.isSecureContext||h!=="petpal.com.cy"&&h!=="www.petpal.com.cy")return;var legacy=["http://116.203.209.68:5002","http://127.0.0.1:5002"];var f=window.fetch;window.fetch=function(i,n){var u=typeof i==="string"?i:i&&i.url;if(typeof u!=="string")return f.call(this,i,n);for(var k=0;k<legacy.length;k++){var b=legacy[k];if(u.indexOf(b)===0){u=u.slice(b.length)||"/";break;}}if(u!==(typeof i==="string"?i:i.url)){i=typeof i==="string"?u:new Request(u,i);}return f.call(this,i,n);};})();</script>`;

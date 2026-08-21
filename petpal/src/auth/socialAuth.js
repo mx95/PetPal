@@ -123,7 +123,8 @@ export async function ensureSocialUserProfile(user) {
 /**
  * Google / Apple sign-in (popup on desktop; redirect on mobile / PWA / Capacitor).
  * Requires the provider to be enabled in Firebase Console → Authentication → Sign-in method.
- * Production web config must use project petpal-aecda (authDomain petpal-aecda.firebaseapp.com).
+ * Production web: use authDomain petpal.com.cy with /__/auth reverse-proxy
+ * (tracker-tcp-server) so Google redirect works on iOS Safari / Chrome.
  *
  * @param {'google'|'apple'} providerId
  * @param {{ returnTo?: string, mode?: 'login'|'register' }} [options]

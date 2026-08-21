@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../firebase';
+import { useAuth } from '../auth/AuthProvider';
 import { mapAuthError, normalizeEmail, trackAuthEvent } from '../auth/authUtils';
 import { completeSocialRedirectIfNeeded, signInWithSocialProvider } from '../auth/socialAuth';
 import AuthSocialButtons from '../components/AuthSocialButtons';
@@ -44,6 +45,7 @@ function BenefitIcon({ type }) {
 
 export default function Login() {
   const { t } = useI18n();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const redirectTo = useMemo(() => location.state?.from || '/', [location.state]);
@@ -62,13 +64,21 @@ export default function Login() {
   const cooldownLeftSec = Math.max(0, Math.ceil((cooldownUntil - Date.now()) / 1000));
   const isCoolingDown = cooldownLeftSec > 0;
   const busy = submitting || Boolean(socialBusy);
+  const signInLabel = t('login.logIn');
+  const signingInLabel = t('login.loggingIn');
+
+  // If AuthProvider already restored the session (redirect result consumed on `/`),
+  // leave the login form immediately.
+  useEffect(() => {
+    if (user) navigate(redirectTo, { replace: true });
+  }, [user, navigate, redirectTo]);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
         const completed = await completeSocialRedirectIfNeeded();
-        if (cancelled || !completed || completed.mode !== 'login') return;
+        if (cancelled || !completed) return;
         trackAuthEvent('login_social_success', {
           provider: completed.providerId || 'google',
           via: 'redirect',
@@ -244,18 +254,25 @@ export default function Login() {
                 </Link>
               </div>
 
-              <button
-                className="pp-btn pp-btnPrimary pp-btn--lg"
-                disabled={busy || !formIsValid || isCoolingDown}
-              >
-                {submitting ? t('login.loggingIn') : t('login.logIn')}
-              </button>
-
               <AuthSocialButtons
                 busy={busy}
                 disabled={isCoolingDown}
                 onGoogle={() => void finishSocial('google')}
               />
+
+              <button
+                type="submit"
+                className="pp-btn pp-btnPrimary pp-btn--lg"
+                disabled={busy || !formIsValid || isCoolingDown}
+              >
+                {submitting
+                  ? signingInLabel && signingInLabel !== 'login.loggingIn'
+                    ? signingInLabel
+                    : 'Signing in…'
+                  : signInLabel && signInLabel !== 'login.logIn'
+                    ? signInLabel
+                    : 'Sign in'}
+              </button>
 
               <p className="pp-authTrust">{t('login.securityHint')}</p>
 

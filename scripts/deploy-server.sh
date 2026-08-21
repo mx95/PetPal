@@ -265,6 +265,26 @@ deploy_firebase_functions() {
 deploy_firestore_rules
 deploy_firebase_functions
 
+ensure_firebase_auth_domain_for_redirect() {
+  # Google redirect sign-in on iOS Safari needs a first-party authDomain.
+  # Pair with tracker /__/auth proxy → petpal-aecda.firebaseapp.com.
+  local envf="$PETPAL_DIR/.env.local"
+  [ -f "$envf" ] || return 0
+  if grep -qE '^REACT_APP_FIREBASE_AUTH_DOMAIN=petpal\.com\.cy\s*$' "$envf"; then
+    log "Firebase authDomain already petpal.com.cy"
+    return 0
+  fi
+  if grep -qE '^REACT_APP_FIREBASE_AUTH_DOMAIN=' "$envf"; then
+    sed -i.bak 's|^REACT_APP_FIREBASE_AUTH_DOMAIN=.*|REACT_APP_FIREBASE_AUTH_DOMAIN=petpal.com.cy|' "$envf"
+    log "Updated REACT_APP_FIREBASE_AUTH_DOMAIN=petpal.com.cy (Google redirect / first-party cookies)"
+  else
+    printf '\nREACT_APP_FIREBASE_AUTH_DOMAIN=petpal.com.cy\n' >> "$envf"
+    log "Appended REACT_APP_FIREBASE_AUTH_DOMAIN=petpal.com.cy"
+  fi
+}
+
+ensure_firebase_auth_domain_for_redirect
+
 log "Building frontend"
 cd "$PETPAL_DIR"
 if needs_npm_ci "$PETPAL_DIR"; then
