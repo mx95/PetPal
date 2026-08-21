@@ -569,6 +569,8 @@ const ru = {
     nfcSelectPetRequired: 'Выберите хотя бы одного питомца для NFC-метки.',
     productsLead:
       'Товары зарегистрированных бизнесов PetPal. Добавьте в корзину для проверки перед оплатой.',
+    productsEmptyTitle: 'Пока нет товаров',
+    productsEmptyBody: 'Магазин готов — товары от бизнесов PetPal появятся здесь скоро.',
     addToCart: 'В корзину',
     inCartQty: 'В корзине ({count})',
     cartTitle: 'Ваша корзина',

@@ -557,6 +557,8 @@ const el = {
     nfcSelectPetRequired: 'Επιλέξτε τουλάχιστον ένα κατοικίδιο για το NFC tag.',
     productsLead:
       'Προϊόντα από εγγεγραμμένες επιχειρήσεις PetPal. Προσθέστε στο καλάθι για έλεγχο πριν το checkout.',
+    productsEmptyTitle: 'Δεν υπάρχουν προϊόντα ακόμα',
+    productsEmptyBody: 'Το κατάστημα είναι έτοιμο — τα προϊόντα από επιχειρήσεις PetPal θα εμφανιστούν σύντομα.',
     addToCart: 'Προσθήκη στο καλάθι',
     inCartQty: 'Στο καλάθι ({count})',
     cartTitle: 'Το καλάθι σας',
