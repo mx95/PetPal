@@ -98,6 +98,7 @@ function NearbyMap({ apiKey }) {
 
   const [map, setMap] = useState(null);
   const [searchCenter, setSearchCenter] = useState(DEFAULT_CENTER);
+  const moreSearchGenRef = useRef(0);
   const [locationNote, setLocationNote] = useState(() => ({ kind: 'default' }));
   const [selectedCategoryId, setSelectedCategoryId] = useState('more');
   const [searchScope, setSearchScope] = useState('radius');
@@ -155,8 +156,17 @@ function NearbyMap({ apiKey }) {
       const cat = NEARBY_CATEGORIES.find((c) => c.id === selectedCategoryId) || NEARBY_CATEGORIES[0];
 
       const finish = (merged) => {
-        if (merged.length) {
-          setPlaces(merged.slice(0, 30));
+        const center = userLocation || searchCenter;
+        const ranked = [...merged].sort((a, b) => {
+          const da = distanceKm(center, a);
+          const db = distanceKm(center, b);
+          if (da == null && db == null) return 0;
+          if (da == null) return 1;
+          if (db == null) return -1;
+          return da - db;
+        });
+        if (ranked.length) {
+          setPlaces(ranked.slice(0, 60));
           setSearchStatus('ok');
         } else {
           setSearchStatus('empty');
@@ -176,32 +186,59 @@ function NearbyMap({ apiKey }) {
         }
         /** @type {Map<string, google.maps.places.PlaceResult & { nearbySourceCategoryIds?: string[] }>} */
         const byId = new Map();
-        let pending = sources.length;
-        if (!pending) {
-          setSearchStatus('empty');
-          return;
-        }
-        sources.forEach((entry) => {
-          const request = { ...nearbySearchFields(entry) };
-          if (bounds) request.bounds = bounds;
-          else {
-            request.location = loc;
-            request.radius = Math.max(NEARBY_SEARCH_RADIUS_M, 10000);
-          }
-          service.nearbySearch(request, (results, status) => {
-            if (status === window.google.maps.places.PlacesServiceStatus.OK && results) {
-              results.forEach((place) => {
-                if (!place.place_id) return;
-                const prev = byId.get(place.place_id);
-                const ids = new Set(prev?.nearbySourceCategoryIds || []);
-                ids.add(entry.id);
-                byId.set(place.place_id, { ...place, nearbySourceCategoryIds: [...ids] });
-              });
+        const searchGen = ++moreSearchGenRef.current;
+
+        const runOne = (entry) =>
+          new Promise((resolve) => {
+            const request = { ...nearbySearchFields(entry) };
+            if (bounds) request.bounds = bounds;
+            else {
+              request.location = loc;
+              request.radius = Math.max(NEARBY_SEARCH_RADIUS_M, 10000);
             }
-            pending -= 1;
-            if (pending <= 0) finish([...byId.values()]);
+
+            const attempt = (retry) => {
+              service.nearbySearch(request, (results, status) => {
+                if (status === window.google.maps.places.PlacesServiceStatus.OK && results) {
+                  resolve(results);
+                  return;
+                }
+                if (
+                  status === window.google.maps.places.PlacesServiceStatus.OVER_QUERY_LIMIT &&
+                  retry < 2
+                ) {
+                  window.setTimeout(() => attempt(retry + 1), 900 * (retry + 1));
+                  return;
+                }
+                resolve([]);
+              });
+            };
+            attempt(0);
           });
-        });
+
+        (async () => {
+          for (let i = 0; i < sources.length; i += 1) {
+            if (moreSearchGenRef.current !== searchGen) return;
+            const entry = sources[i];
+            // eslint-disable-next-line no-await-in-loop
+            const results = await runOne(entry);
+            if (moreSearchGenRef.current !== searchGen) return;
+            results.forEach((place) => {
+              if (!place.place_id) return;
+              const prev = byId.get(place.place_id);
+              const ids = new Set(prev?.nearbySourceCategoryIds || []);
+              ids.add(entry.id);
+              byId.set(place.place_id, { ...place, nearbySourceCategoryIds: [...ids] });
+            });
+            // Keep Places under the client rate limit (~10 burst, then ~1/s).
+            if (i < sources.length - 1) {
+              // eslint-disable-next-line no-await-in-loop
+              await new Promise((r) => window.setTimeout(r, 350));
+            }
+          }
+          if (moreSearchGenRef.current !== searchGen) return;
+          finish([...byId.values()]);
+        })();
         return;
       }
 
@@ -242,7 +279,7 @@ function NearbyMap({ apiKey }) {
         setSearchStatus('error');
       });
     },
-    [map, isLoaded, searchCenter, selectedCategoryId, searchScope]
+    [map, isLoaded, searchCenter, selectedCategoryId, searchScope, userLocation]
   );
 
   useEffect(() => {

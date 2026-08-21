@@ -1683,7 +1683,7 @@ const en = {
       trainer: { label: 'Trainers', desc: 'Dog, pet & horse training' },
       pet_cafe: { label: 'Pet café', desc: 'Cafes, meetups, events' },
       pet_pharmacy: { label: 'Pet pharmacy', desc: 'Animal & vet pharmacies' },
-      more: { label: 'More', desc: 'Broader local search' },
+      more: { label: 'All services', desc: 'Every nearby pet service' },
     },
   },
   leaderboardPage: {
