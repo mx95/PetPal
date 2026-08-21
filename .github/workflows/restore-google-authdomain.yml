@@ -1,0 +1,42 @@
+# One-off: restore Google login after redirect_uri_mismatch by resetting authDomain.
+# Run manually: Actions → Restore Google authDomain → Run workflow
+
+name: Restore Google authDomain
+
+on:
+  workflow_dispatch:
+
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Reset authDomain and redeploy over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          command_timeout: 18m
+          script: |
+            set -euo pipefail
+            PETPAL_ROOT="${{ secrets.DEPLOY_PATH }}"
+            if [ -z "$PETPAL_ROOT" ]; then PETPAL_ROOT="/root/PetPal"; fi
+            export PETPAL_ROOT
+            export DEPLOY_BRANCH=main
+            export PETPAL_FIREBASE_AUTH_DOMAIN=petpal-aecda.firebaseapp.com
+            cd "$PETPAL_ROOT"
+            git fetch origin main
+            git checkout main
+            git reset --hard origin/main
+            # Force authDomain back so Google accepts redirect_uri again.
+            ENVF="$PETPAL_ROOT/petpal/.env.local"
+            if [ -f "$ENVF" ]; then
+              if grep -qE '^REACT_APP_FIREBASE_AUTH_DOMAIN=' "$ENVF"; then
+                sed -i.bak 's|^REACT_APP_FIREBASE_AUTH_DOMAIN=.*|REACT_APP_FIREBASE_AUTH_DOMAIN=petpal-aecda.firebaseapp.com|' "$ENVF"
+              else
+                printf '\nREACT_APP_FIREBASE_AUTH_DOMAIN=petpal-aecda.firebaseapp.com\n' >> "$ENVF"
+              fi
+              echo "[restore-auth] authDomain=$(grep FIREBASE_AUTH_DOMAIN "$ENVF")"
+            fi
+            bash "$PETPAL_ROOT/scripts/deploy-server.sh"

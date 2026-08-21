@@ -266,20 +266,25 @@ deploy_firestore_rules
 deploy_firebase_functions
 
 ensure_firebase_auth_domain_for_redirect() {
-  # Google redirect sign-in on iOS Safari needs a first-party authDomain.
-  # Pair with tracker /__/auth proxy → petpal-aecda.firebaseapp.com.
+  # Google OAuth must allow https://petpal.com.cy/__/auth/handler before we can
+  # use authDomain=petpal.com.cy. Until that URI is registered in Google Cloud,
+  # keep the working Firebase default or login fails with redirect_uri_mismatch.
   local envf="$PETPAL_DIR/.env.local"
   [ -f "$envf" ] || return 0
-  if grep -qE '^REACT_APP_FIREBASE_AUTH_DOMAIN=petpal\.com\.cy\s*$' "$envf"; then
-    log "Firebase authDomain already petpal.com.cy"
+  local want="${PETPAL_FIREBASE_AUTH_DOMAIN:-petpal-aecda.firebaseapp.com}"
+  if grep -qE "^REACT_APP_FIREBASE_AUTH_DOMAIN=${want//./\\.}\s*$" "$envf"; then
+    log "Firebase authDomain already $want"
     return 0
   fi
   if grep -qE '^REACT_APP_FIREBASE_AUTH_DOMAIN=' "$envf"; then
-    sed -i.bak 's|^REACT_APP_FIREBASE_AUTH_DOMAIN=.*|REACT_APP_FIREBASE_AUTH_DOMAIN=petpal.com.cy|' "$envf"
-    log "Updated REACT_APP_FIREBASE_AUTH_DOMAIN=petpal.com.cy (Google redirect / first-party cookies)"
+    sed -i.bak "s|^REACT_APP_FIREBASE_AUTH_DOMAIN=.*|REACT_APP_FIREBASE_AUTH_DOMAIN=${want}|" "$envf"
+    log "Set REACT_APP_FIREBASE_AUTH_DOMAIN=${want}"
   else
-    printf '\nREACT_APP_FIREBASE_AUTH_DOMAIN=petpal.com.cy\n' >> "$envf"
-    log "Appended REACT_APP_FIREBASE_AUTH_DOMAIN=petpal.com.cy"
+    printf '\nREACT_APP_FIREBASE_AUTH_DOMAIN=%s\n' "$want" >> "$envf"
+    log "Appended REACT_APP_FIREBASE_AUTH_DOMAIN=${want}"
+  fi
+  if [ "$want" = "petpal.com.cy" ]; then
+    log "NOTE: Google Cloud OAuth must include https://petpal.com.cy/__/auth/handler"
   fi
 }
 
