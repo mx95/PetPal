@@ -8,6 +8,7 @@ import {
   nearbySearchFields,
 } from '../config/nearbyPlaceCategories';
 import { nearbyCategoryForPlace } from '../nearby/classifyNearbyPlace';
+import { filterAcceptableNearbyPlaces } from '../nearby/nearbyPlaceQuality';
 import NearbyCategoryPin from '../nearby/NearbyCategoryPin';
 import { GOOGLE_MAPS_LOADER_ID } from '../config/googleMapsLoaderId';
 import { subscribeGoogleMapsAuthFailure } from '../config/googleMapsAuthFailure';
@@ -157,7 +158,10 @@ function NearbyMap({ apiKey }) {
 
       const finish = (merged) => {
         const center = userLocation || searchCenter;
-        const ranked = [...merged].sort((a, b) => {
+        const filtered = filterAcceptableNearbyPlaces(merged, {
+          selectedCategoryId: cat.id,
+        });
+        const ranked = [...filtered].sort((a, b) => {
           const da = distanceKm(center, a);
           const db = distanceKm(center, b);
           if (da == null && db == null) return 0;
@@ -259,13 +263,19 @@ function NearbyMap({ apiKey }) {
 
       service.nearbySearch(request, (results, status) => {
         if (status === window.google.maps.places.PlacesServiceStatus.OK && results) {
-          setPlaces(
-            results.slice(0, 20).map((place) => ({
-              ...place,
-              nearbySourceCategoryIds: [cat.id],
-            }))
-          );
-          setSearchStatus('ok');
+          const mapped = results.slice(0, 40).map((place) => ({
+            ...place,
+            nearbySourceCategoryIds: [cat.id],
+          }));
+          const filtered = filterAcceptableNearbyPlaces(mapped, {
+            selectedCategoryId: cat.id,
+          });
+          if (filtered.length) {
+            setPlaces(filtered.slice(0, 20));
+            setSearchStatus('ok');
+          } else {
+            setSearchStatus('empty');
+          }
           return;
         }
         if (status === window.google.maps.places.PlacesServiceStatus.ZERO_RESULTS) {

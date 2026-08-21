@@ -1,4 +1,5 @@
 import { getCategoryById } from '../config/nearbyPlaceCategories';
+import { hasPetCafeSignal } from './nearbyPlaceQuality';
 
 const GOOGLE_TYPE_TO_CATEGORY = {
   pet_store: 'pet_store',
@@ -17,7 +18,8 @@ const NAME_RULES = [
   { id: 'pet_hotel', re: /\b(board(?:ing)?|kennel|pet hotel|cattery|πανσιόν|ξενοδοχείο)\b/i },
   { id: 'daycare', re: /\b(day\s?care|doggy day|cr[eè]che)\b/i },
   { id: 'trainer', re: /\b(train(?:er|ing)|obedience|agility|behaviour|behavior|εκπαιδευτ)\b/i },
-  { id: 'pet_cafe', re: /\b(caf[eé]|coffee|cat cafe)\b/i },
+  // Require pet/dog/cat + café — bare “cafe” matches ordinary coffee shops.
+  { id: 'pet_cafe', re: /\b((pet|dog|cat)[- ]?(friendly[- ]?)?(caf[eé]|coffee)|cat\s*cafe|dog\s*cafe|pet\s*cafe)\b/i },
   { id: 'beach', re: /\b(pet.?friendly beach|dog beach|dog.?friendly beach|παραλία.*(σκύλ|κατοικίδ)|σκύλ.*παραλία|пляж.*(собак|питом)|собач.*пляж)\b/i },
   { id: 'park', re: /\b(dog park|pet park|off[- ]leash)\b/i },
   { id: 'pet_store', re: /\b(pet shop|pet store|pet supplies|accessories|zooshop)\b/i },
@@ -62,12 +64,13 @@ function categoryFromSearchSources(place) {
   const sources = Array.isArray(place?.nearbySourceCategoryIds)
     ? place.nearbySourceCategoryIds.filter(Boolean)
     : [];
-  if (sources.length === 1) return sources[0];
-  if (sources.length > 1) {
+  const usable = sources.filter((id) => id !== 'pet_cafe' || hasPetCafeSignal(place));
+  if (usable.length === 1) return usable[0];
+  if (usable.length > 1) {
     for (const id of SPECIFICITY) {
-      if (sources.includes(id)) return id;
+      if (usable.includes(id)) return id;
     }
-    return sources[0];
+    return usable[0];
   }
   return null;
 }

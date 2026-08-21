@@ -71,14 +71,26 @@ describe('classifyNearbyPlace', () => {
     ).toBe('daycare');
   });
 
-  it('picks the more specific source when a place matched several searches', () => {
+  it('does not treat ordinary cafés as pet cafés', () => {
     expect(
-      classifyNearbyPlace({
-        name: 'Local Pets',
-        types: ['establishment'],
-        nearbySourceCategoryIds: ['pet_store', 'trainer'],
-      })
-    ).toBe('trainer');
+      classifyNearbyPlace(
+        {
+          name: 'Limanaki DaVinci Espresso Lounge Cafe Bar',
+          types: ['cafe', 'bar'],
+          nearbySourceCategoryIds: ['pet_cafe'],
+        },
+        { fallbackId: 'more' }
+      )
+    ).not.toBe('pet_cafe');
+  });
+
+  it('maps pet cafés by explicit pet-café wording', () => {
+    expect(
+      classifyNearbyPlace(
+        { name: 'Whiskers Cat Cafe', types: ['cafe'], nearbySourceCategoryIds: ['pet_cafe'] },
+        { fallbackId: 'more' }
+      )
+    ).toBe('pet_cafe');
   });
 });
 

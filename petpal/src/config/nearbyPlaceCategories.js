@@ -84,7 +84,8 @@ export const NEARBY_CATEGORIES = [
   {
     id: 'pet_cafe',
     icon: '☕',
-    keyword: 'pet friendly cafe',
+    // Prefer explicit pet-café wording; client still filters ordinary cafés.
+    keyword: 'pet cafe cat cafe dog cafe pet friendly cafe',
   },
   {
     id: 'pet_pharmacy',
