@@ -152,7 +152,33 @@ disable_business_demo_account() {
   fi
 }
 
+clear_broadcast_inbox_once() {
+  local marker="/var/lib/petpal/broadcast-inbox-cleared-2026-08-21"
+  local script="$PETPAL_DIR/scripts/clear-broadcast-inbox.cjs"
+  [ -f "$script" ] || return 0
+  if [ -f "$marker" ]; then
+    log "Broadcast inbox already cleared ($marker)"
+    return 0
+  fi
+  log "Clearing broadcast inbox messages for all users"
+  mkdir -p "$(dirname "$marker")"
+  cd "$PETPAL_DIR"
+  export FIREBASE_PROJECT_ID=petpal-aecda
+  if [ -f /root/serviceAccount.json ]; then
+    export GOOGLE_APPLICATION_CREDENTIALS=/root/serviceAccount.json
+  elif [ -f "$PETPAL_DIR/serviceAccount.json" ]; then
+    export GOOGLE_APPLICATION_CREDENTIALS="$PETPAL_DIR/serviceAccount.json"
+  fi
+  if node scripts/clear-broadcast-inbox.cjs; then
+    touch "$marker"
+    log "Broadcast inbox cleared OK"
+  else
+    log "Broadcast inbox clear skipped or failed (Firebase Admin credentials may be missing on server)"
+  fi
+}
+
 disable_business_demo_account
+clear_broadcast_inbox_once
 
 deploy_firebase_cli() {
   if command -v firebase >/dev/null 2>&1; then

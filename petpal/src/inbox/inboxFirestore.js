@@ -2,6 +2,7 @@ import {
   addDoc,
   collection,
   doc,
+  getDocs,
   onSnapshot,
   orderBy,
   query,
@@ -71,7 +72,7 @@ export function subscribeInboxReads(uid, onNext, onError) {
     (snap) => onNext(new Set(snap.docs.map((d) => d.id))),
     (e) => {
       if (onError) onError(e);
-      else onNext(new Set());
+      else onNext([]);
     }
   );
 }
@@ -93,6 +94,24 @@ export async function createBroadcastMessage(payload) {
     createdAt: serverTimestamp(),
   });
   return ref.id;
+}
+
+/** Delete every broadcast so all user inboxes become empty. Admin-only (Firestore rules). */
+export async function clearAllBroadcastMessages() {
+  if (!isFirebaseConfigured()) throw new Error('Firebase is not configured');
+  let deleted = 0;
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    const snap = await getDocs(query(broadcastCol(), limit(400)));
+    if (snap.empty) break;
+    const batch = writeBatch(getDb());
+    snap.docs.forEach((d) => {
+      batch.delete(d.ref);
+      deleted += 1;
+    });
+    await batch.commit();
+  }
+  return deleted;
 }
 
 export async function markInboxMessageRead(uid, messageId) {

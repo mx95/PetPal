@@ -1,0 +1,38 @@
+# One-off: delete all broadcastMessages so every user’s inbox is empty.
+# Run manually: Actions → Clear broadcast inbox → Run workflow
+
+name: Clear broadcast inbox
+
+on:
+  workflow_dispatch:
+
+jobs:
+  clear:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Clear broadcast inbox over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          command_timeout: 8m
+          script: |
+            set -euo pipefail
+            PETPAL_ROOT="${{ secrets.DEPLOY_PATH }}"
+            if [ -z "$PETPAL_ROOT" ]; then PETPAL_ROOT="/root/PetPal"; fi
+            cd "$PETPAL_ROOT"
+            git fetch origin main
+            git checkout main
+            git reset --hard origin/main
+            cd petpal
+            export FIREBASE_PROJECT_ID=petpal-aecda
+            if [ -f /root/serviceAccount.json ]; then
+              export GOOGLE_APPLICATION_CREDENTIALS=/root/serviceAccount.json
+            elif [ -f "$PETPAL_ROOT/petpal/serviceAccount.json" ]; then
+              export GOOGLE_APPLICATION_CREDENTIALS="$PETPAL_ROOT/petpal/serviceAccount.json"
+            fi
+            node scripts/clear-broadcast-inbox.cjs
+            mkdir -p /var/lib/petpal
+            touch /var/lib/petpal/broadcast-inbox-cleared-2026-08-21

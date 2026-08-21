@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
 import { useCompany } from '../company/CompanyContext';
-import { createBroadcastMessage } from '../inbox/inboxFirestore';
+import { clearAllBroadcastMessages, createBroadcastMessage } from '../inbox/inboxFirestore';
 import { useI18n } from '../i18n/I18nContext';
 
 export default function AdminBroadcast() {
@@ -12,6 +12,7 @@ export default function AdminBroadcast() {
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [sending, setSending] = useState(false);
+  const [clearing, setClearing] = useState(false);
   const [err, setErr] = useState('');
   const [ok, setOk] = useState('');
 
@@ -46,6 +47,22 @@ export default function AdminBroadcast() {
       setErr(ex?.message || t('admin.broadcast.errSend'));
     } finally {
       setSending(false);
+    }
+  }
+
+  async function handleClearAll() {
+    const okConfirm = window.confirm(t('admin.broadcast.clearConfirm'));
+    if (!okConfirm) return;
+    setErr('');
+    setOk('');
+    setClearing(true);
+    try {
+      const n = await clearAllBroadcastMessages();
+      setOk(t('admin.broadcast.cleared', { count: n }));
+    } catch (ex) {
+      setErr(ex?.message || t('admin.broadcast.errClear'));
+    } finally {
+      setClearing(false);
     }
   }
 
@@ -97,9 +114,17 @@ export default function AdminBroadcast() {
           </label>
           {err ? <p className="pp-error">{err}</p> : null}
           {ok ? <p className="pp-subtle" style={{ color: '#15803d', fontWeight: 700 }}>{ok}</p> : null}
-          <div className="pp-row" style={{ gap: 10, marginTop: 8 }}>
-            <button type="submit" className="pp-btn pp-btnPrimary" disabled={sending}>
+          <div className="pp-row" style={{ gap: 10, marginTop: 8, flexWrap: 'wrap' }}>
+            <button type="submit" className="pp-btn pp-btnPrimary" disabled={sending || clearing}>
               {sending ? t('admin.broadcast.sending') : t('admin.broadcast.send')}
+            </button>
+            <button
+              type="button"
+              className="pp-btn pp-btn--ghost"
+              disabled={sending || clearing}
+              onClick={() => void handleClearAll()}
+            >
+              {clearing ? t('admin.broadcast.clearing') : t('admin.broadcast.clearAll')}
             </button>
           </div>
         </form>

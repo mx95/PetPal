@@ -2333,6 +2333,12 @@ const en = {
       sending: 'Sending…',
       sent: 'Message sent to all users.',
       errSend: 'Could not send message.',
+      clearAll: 'Clear inbox for everyone',
+      clearing: 'Clearing…',
+      clearConfirm:
+        'Delete all broadcast messages? Every user’s inbox will be empty. This cannot be undone.',
+      cleared: 'Cleared {count} message(s) from everyone’s inbox.',
+      errClear: 'Could not clear inbox messages.',
     },
     bookings: {
       title: 'All bookings',
