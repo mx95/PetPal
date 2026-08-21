@@ -58,6 +58,25 @@ jobs:
             export DEPLOY_BRANCH="${{ github.event.inputs.branch || github.ref_name }}"
             export CLEAR_DEVICE_POSITIONS_IMEI="${{ github.event.inputs.clear_imei || '' }}"
             bash "$PETPAL_ROOT/scripts/deploy-server.sh"
+            # Clear shared broadcast inbox once (script may be new after this pull).
+            CLEAR_INBOX_MARKER="/var/lib/petpal/broadcast-inbox-cleared-2026-08-21"
+            CLEAR_INBOX_SCRIPT="$PETPAL_ROOT/petpal/scripts/clear-broadcast-inbox.cjs"
+            if [ -f "$CLEAR_INBOX_SCRIPT" ] && [ ! -f "$CLEAR_INBOX_MARKER" ]; then
+              echo "[deploy] Clearing broadcast inbox (post-deploy one-shot)"
+              mkdir -p /var/lib/petpal
+              export FIREBASE_PROJECT_ID=petpal-aecda
+              if [ -f /root/serviceAccount.json ]; then
+                export GOOGLE_APPLICATION_CREDENTIALS=/root/serviceAccount.json
+              elif [ -f "$PETPAL_ROOT/petpal/serviceAccount.json" ]; then
+                export GOOGLE_APPLICATION_CREDENTIALS="$PETPAL_ROOT/petpal/serviceAccount.json"
+              fi
+              if (cd "$PETPAL_ROOT/petpal" && node scripts/clear-broadcast-inbox.cjs); then
+                touch "$CLEAR_INBOX_MARKER"
+                echo "[deploy] Broadcast inbox cleared OK"
+              else
+                echo "[deploy] Broadcast inbox clear skipped or failed (Admin credentials may be missing)"
+              fi
+            fi
             # If the pre-pull deploy script ignored CLEAR_*, clear here after git update.
             CLEAR_IMEI="${CLEAR_DEVICE_POSITIONS_IMEI:-}"
             if [ -n "$CLEAR_IMEI" ]; then
