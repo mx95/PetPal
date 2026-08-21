@@ -107,7 +107,9 @@ backup_tracker_db
 if [ "$SKIP_GIT" != "1" ]; then
   log "Updating repo at $PETPAL_ROOT (branch: $DEPLOY_BRANCH)"
   cd "$PETPAL_ROOT"
-  # Force-update remote tracking ref — avoids stale ref errors when deploy workflows overlap.
+  # Drop a stale remote-tracking ref before fetch — overlapping deploys can leave
+  # "cannot lock ref … expected X but is at Y" and abort the whole deploy.
+  git update-ref -d "refs/remotes/origin/${DEPLOY_BRANCH}" 2>/dev/null || true
   git fetch origin "+refs/heads/${DEPLOY_BRANCH}:refs/remotes/origin/${DEPLOY_BRANCH}" --prune
   git checkout "$DEPLOY_BRANCH"
   git reset --hard "origin/$DEPLOY_BRANCH"
@@ -121,35 +123,36 @@ if [ ! -f "$PETPAL_DIR/.env.local" ]; then
   die "Missing petpal/.env.local on server — create it before deploy (Firebase + REACT_APP_XEXUN_HTTP_BASE_URL=same)."
 fi
 
-seed_business_demo_account() {
-  local marker="/var/lib/petpal/business-demo-account.seeded"
-  local script="$PETPAL_DIR/scripts/create-business-account.cjs"
+disable_business_demo_account() {
+  local marker="/var/lib/petpal/business-demo-account.disabled"
+  local script="$PETPAL_DIR/scripts/disable-demo-business.cjs"
   [ -f "$script" ] || return 0
   if [ -f "$marker" ]; then
-    log "Business demo account already seeded ($marker)"
+    log "Business demo account already disabled ($marker)"
     return 0
   fi
-  log "Seeding business demo account (one-time)"
+  log "Disabling business demo account (hide from Bookings / Nearby)"
   mkdir -p "$(dirname "$marker")"
   cd "$PETPAL_DIR"
   export FIREBASE_PROJECT_ID=petpal-aecda
   export BIZ_EMAIL=business.demo@petpal.com.cy
-  export BIZ_PASSWORD='PetPalBiz2026!Demo'
-  export BIZ_NAME='PetPal Demo Grooming'
+  export DELETE_DEMO=0
   if [ -f /root/serviceAccount.json ]; then
     export GOOGLE_APPLICATION_CREDENTIALS=/root/serviceAccount.json
   elif [ -f "$PETPAL_DIR/serviceAccount.json" ]; then
     export GOOGLE_APPLICATION_CREDENTIALS="$PETPAL_DIR/serviceAccount.json"
   fi
-  if node scripts/create-business-account.cjs; then
+  if node scripts/disable-demo-business.cjs; then
     touch "$marker"
-    log "Business demo account seeded OK"
+    # Stop future deploys from re-seeding the old one-time demo account.
+    touch /var/lib/petpal/business-demo-account.seeded 2>/dev/null || true
+    log "Business demo account disabled OK"
   else
-    log "Business demo account seed skipped or failed (Firebase Admin credentials may be missing on server)"
+    log "Business demo disable skipped or failed (Firebase Admin credentials may be missing on server)"
   fi
 }
 
-seed_business_demo_account
+disable_business_demo_account
 
 deploy_firebase_cli() {
   if command -v firebase >/dev/null 2>&1; then
