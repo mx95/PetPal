@@ -17,17 +17,29 @@ function GoogleGlyph() {
  *   busy?: boolean,
  *   disabled?: boolean,
  *   onGoogle: () => void,
+ *   primary?: boolean,
  * }} props
  */
-export default function AuthSocialButtons({ busy = false, disabled = false, onGoogle }) {
+export default function AuthSocialButtons({
+  busy = false,
+  disabled = false,
+  onGoogle,
+  primary = false,
+}) {
   const { t } = useI18n();
   const locked = busy || disabled;
+  const googleLabel =
+    t('auth.continueGoogle') && t('auth.continueGoogle') !== 'auth.continueGoogle'
+      ? t('auth.continueGoogle')
+      : 'Continue with Google';
 
   return (
-    <div className="pp-authSocial">
-      <div className="pp-authSocial__divider" role="presentation">
-        <span>{t('auth.continueWith')}</span>
-      </div>
+    <div className={`pp-authSocial${primary ? ' pp-authSocial--primary' : ''}`}>
+      {!primary ? (
+        <div className="pp-authSocial__divider" role="presentation">
+          <span>{t('auth.continueWith')}</span>
+        </div>
+      ) : null}
       <div className="pp-authSocial__row">
         <button
           type="button"
@@ -36,7 +48,7 @@ export default function AuthSocialButtons({ busy = false, disabled = false, onGo
           onClick={onGoogle}
         >
           <GoogleGlyph />
-          <span>{t('auth.continueGoogle')}</span>
+          <span>{googleLabel}</span>
         </button>
       </div>
     </div>

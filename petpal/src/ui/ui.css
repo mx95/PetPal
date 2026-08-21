@@ -11901,6 +11901,16 @@ select.pp-bookConfirmField__control {
   margin-top: 4px;
 }
 
+.pp-authSocial--primary {
+  margin-top: 0;
+  margin-bottom: 4px;
+}
+
+.pp-authSocial--primary .pp-authSocial__btn {
+  min-height: 48px;
+  font-size: 15px;
+}
+
 .pp-authSocial__divider {
   display: flex;
   align-items: center;

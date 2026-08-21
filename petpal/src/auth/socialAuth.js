@@ -53,8 +53,9 @@ function writeRedirectMeta(meta) {
 }
 
 /**
- * Popup auth often closes or reloads the whole tab in iOS Safari, Android Chrome,
- * installed PWAs, and Capacitor shells. Prefer full-page redirect there.
+ * Full-page redirect is only reliable in native shells / installed PWAs.
+ * Regular mobile Safari/Chrome used to work with popup; redirect + firebaseapp.com
+ * authDomain often returns to the app without a session (third-party storage block).
  */
 export function preferSocialRedirect() {
   if (typeof window === 'undefined') return false;
@@ -63,15 +64,30 @@ export function preferSocialRedirect() {
   } catch {
     /* ignore */
   }
-  const ua = navigator.userAgent || '';
-  const isIOS =
-    /iPad|iPhone|iPod/.test(ua) ||
-    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-  const isAndroid = /Android/i.test(ua);
   const standalone =
     window.matchMedia?.('(display-mode: standalone)')?.matches === true ||
     window.navigator.standalone === true;
-  return standalone || isIOS || isAndroid;
+  return standalone;
+}
+
+function shouldFallbackToRedirect(err) {
+  const code = String(err?.code || '');
+  return (
+    code === 'auth/popup-blocked' ||
+    code === 'auth/popup-closed-by-user' ||
+    code === 'auth/cancelled-popup-request'
+  );
+}
+
+async function startSocialRedirect(provider, options) {
+  writeRedirectMeta({
+    providerId: options.providerId,
+    mode: options.mode === 'register' ? 'register' : 'login',
+    returnTo: options.returnTo || '/',
+    at: Date.now(),
+  });
+  await signInWithRedirect(auth, provider);
+  return null;
 }
 
 /**
@@ -121,8 +137,10 @@ export async function ensureSocialUserProfile(user) {
 }
 
 /**
- * Google / Apple sign-in (popup on desktop; redirect on mobile / PWA / Capacitor).
- * Requires the provider to be enabled in Firebase Console → Authentication → Sign-in method.
+ * Google / Apple sign-in.
+ * Web (including mobile browsers): popup — this is what previously worked on petpal.com.cy.
+ * Capacitor / installed PWA: redirect. If popup is blocked, fall back to redirect.
+ *
  * Production authDomain must stay petpal-aecda.firebaseapp.com until
  * https://petpal.com.cy/__/auth/handler is registered in Google Cloud OAuth
  * (otherwise Google returns Error 400: redirect_uri_mismatch).
@@ -138,25 +156,34 @@ export async function signInWithSocialProvider(providerId, options = {}) {
     throw err;
   }
   const provider = providerId === 'apple' ? appleProvider() : googleProvider;
+  const redirectOpts = {
+    providerId,
+    mode: options.mode,
+    returnTo: options.returnTo,
+  };
 
   if (preferSocialRedirect()) {
-    writeRedirectMeta({
-      providerId,
-      mode: options.mode === 'register' ? 'register' : 'login',
-      returnTo: options.returnTo || '/',
-      at: Date.now(),
-    });
-    await signInWithRedirect(auth, provider);
-    return null;
+    return startSocialRedirect(provider, redirectOpts);
   }
 
-  const cred = await signInWithPopup(auth, provider);
   try {
-    await ensureSocialUserProfile(cred.user);
-  } catch (profileErr) {
-    console.warn('social profile ensure failed', profileErr);
+    const cred = await signInWithPopup(auth, provider);
+    try {
+      await ensureSocialUserProfile(cred.user);
+    } catch (profileErr) {
+      console.warn('social profile ensure failed', profileErr);
+    }
+    return cred;
+  } catch (err) {
+    // User cancelled intentionally — do not bounce into a full-page redirect.
+    if (err?.code === 'auth/popup-closed-by-user' || err?.code === 'auth/cancelled-popup-request') {
+      throw err;
+    }
+    if (shouldFallbackToRedirect(err)) {
+      return startSocialRedirect(provider, redirectOpts);
+    }
+    throw err;
   }
-  return cred;
 }
 
 /**

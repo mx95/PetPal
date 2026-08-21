@@ -909,6 +909,7 @@ const ru = {
   },
   auth: {
     continueWith: 'Или продолжить с',
+    orUseEmail: 'Или через email',
     continueGoogle: 'Продолжить с Google',
     continueApple: 'Продолжить с Apple',
     errors: {

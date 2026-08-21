@@ -917,6 +917,7 @@ const el = {
   },
   auth: {
     continueWith: 'Ή συνεχίστε με',
+    orUseEmail: 'Ή με email',
     continueGoogle: 'Συνέχεια με Google',
     continueApple: 'Συνέχεια με Apple',
     errors: {

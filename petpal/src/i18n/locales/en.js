@@ -838,6 +838,7 @@ const en = {
   requireAuth: { loading: 'Loading…' },
   auth: {
     continueWith: 'Or continue with',
+    orUseEmail: 'Or use email',
     continueGoogle: 'Continue with Google',
     continueApple: 'Continue with Apple',
     errors: {

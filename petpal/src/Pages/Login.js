@@ -176,6 +176,17 @@ export default function Login() {
             <p className="pp-subtle pp-authFormSubtitle">{t('login.formSubtitle')}</p>
 
             <form className="pp-form" onSubmit={onSubmit}>
+              <AuthSocialButtons
+                primary
+                busy={busy}
+                disabled={isCoolingDown}
+                onGoogle={() => void finishSocial('google')}
+              />
+
+              <div className="pp-authSocial__divider" role="presentation">
+                <span>{t('auth.orUseEmail')}</span>
+              </div>
+
               <div>
                 <div className="pp-label">{t('login.email')}</div>
                 <input
@@ -253,12 +264,6 @@ export default function Login() {
                   {t('login.forgotPassword')}
                 </Link>
               </div>
-
-              <AuthSocialButtons
-                busy={busy}
-                disabled={isCoolingDown}
-                onGoogle={() => void finishSocial('google')}
-              />
 
               <button
                 type="submit"
