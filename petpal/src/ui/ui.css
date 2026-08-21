@@ -23054,13 +23054,13 @@ html[data-theme="dark"] .pp-nearbyPartnerCard__badge--partner {
   }
 
   .pp-shopPage .pp-shopCard__productImg {
-    width: min(100%, 220px);
+    width: min(100%, 280px);
     margin: 6px auto 10px;
   }
 
-  .pp-shopPage .pp-shopTrackerOpt__img {
-    width: 84px;
-    height: 64px;
+  .pp-shopPage .pp-shopTrackerOpt--withImage .pp-shopTrackerOpt__img {
+    width: min(100%, 200px);
+    max-height: 148px;
   }
 
   .pp-shopPage .pp-shopAddons {
