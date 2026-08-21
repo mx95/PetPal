@@ -156,14 +156,14 @@ function NearbyMap({ apiKey }) {
       const service = new window.google.maps.places.PlacesService(map);
       const cat = NEARBY_CATEGORIES.find((c) => c.id === selectedCategoryId) || NEARBY_CATEGORIES[0];
 
-      const finish = (merged) => {
-        const center = userLocation || searchCenter;
+      const finish = (merged, { done = true } = {}) => {
+        const sortCenter = userLocation || searchCenter;
         const filtered = filterAcceptableNearbyPlaces(merged, {
           selectedCategoryId: cat.id,
         });
         const ranked = [...filtered].sort((a, b) => {
-          const da = distanceKm(center, a);
-          const db = distanceKm(center, b);
+          const da = distanceKm(sortCenter, a);
+          const db = distanceKm(sortCenter, b);
           if (da == null && db == null) return 0;
           if (da == null) return 1;
           if (db == null) return -1;
@@ -172,8 +172,10 @@ function NearbyMap({ apiKey }) {
         if (ranked.length) {
           setPlaces(ranked.slice(0, 60));
           setSearchStatus('ok');
-        } else {
+        } else if (done) {
           setSearchStatus('empty');
+        } else {
+          setSearchStatus('loading');
         }
       };
 
@@ -191,6 +193,10 @@ function NearbyMap({ apiKey }) {
         /** @type {Map<string, google.maps.places.PlaceResult & { nearbySourceCategoryIds?: string[] }>} */
         const byId = new Map();
         const searchGen = ++moreSearchGenRef.current;
+        // Small parallel batches stay under Places client rate limits while
+        // finishing much faster than one-by-one (~11 × 350ms delays).
+        const BATCH_SIZE = 3;
+        const BATCH_GAP_MS = 180;
 
         const runOne = (entry) =>
           new Promise((resolve) => {
@@ -211,7 +217,7 @@ function NearbyMap({ apiKey }) {
                   status === window.google.maps.places.PlacesServiceStatus.OVER_QUERY_LIMIT &&
                   retry < 2
                 ) {
-                  window.setTimeout(() => attempt(retry + 1), 900 * (retry + 1));
+                  window.setTimeout(() => attempt(retry + 1), 700 * (retry + 1));
                   return;
                 }
                 resolve([]);
@@ -221,27 +227,29 @@ function NearbyMap({ apiKey }) {
           });
 
         (async () => {
-          for (let i = 0; i < sources.length; i += 1) {
+          for (let i = 0; i < sources.length; i += BATCH_SIZE) {
             if (moreSearchGenRef.current !== searchGen) return;
-            const entry = sources[i];
+            const batch = sources.slice(i, i + BATCH_SIZE);
             // eslint-disable-next-line no-await-in-loop
-            const results = await runOne(entry);
+            const batchResults = await Promise.all(batch.map((entry) => runOne(entry)));
             if (moreSearchGenRef.current !== searchGen) return;
-            results.forEach((place) => {
-              if (!place.place_id) return;
-              const prev = byId.get(place.place_id);
-              const ids = new Set(prev?.nearbySourceCategoryIds || []);
-              ids.add(entry.id);
-              byId.set(place.place_id, { ...place, nearbySourceCategoryIds: [...ids] });
+            batch.forEach((entry, idx) => {
+              (batchResults[idx] || []).forEach((place) => {
+                if (!place.place_id) return;
+                const prev = byId.get(place.place_id);
+                const ids = new Set(prev?.nearbySourceCategoryIds || []);
+                ids.add(entry.id);
+                byId.set(place.place_id, { ...place, nearbySourceCategoryIds: [...ids] });
+              });
             });
-            // Keep Places under the client rate limit (~10 burst, then ~1/s).
-            if (i < sources.length - 1) {
+            const isLast = i + BATCH_SIZE >= sources.length;
+            // Show markers as batches complete so the map is not empty for seconds.
+            finish([...byId.values()], { done: isLast });
+            if (!isLast) {
               // eslint-disable-next-line no-await-in-loop
-              await new Promise((r) => window.setTimeout(r, 350));
+              await new Promise((r) => window.setTimeout(r, BATCH_GAP_MS));
             }
           }
-          if (moreSearchGenRef.current !== searchGen) return;
-          finish([...byId.values()]);
         })();
         return;
       }

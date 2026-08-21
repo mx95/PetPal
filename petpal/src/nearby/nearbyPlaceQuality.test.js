@@ -56,11 +56,18 @@ describe('nearbyPlaceQuality', () => {
     ).toBe(true);
   });
 
-  it('keeps groomers and hospitals with pet signals', () => {
+  it('keeps groomers, hospitals, trainers, and brand-name hits without dropping them', () => {
     expect(
       isAcceptableNearbyPlace({
         name: 'Fluffy Cuts Pet Grooming',
         types: ['point_of_interest'],
+        nearbySourceCategoryIds: ['grooming'],
+      })
+    ).toBe(true);
+    expect(
+      isAcceptableNearbyPlace({
+        name: 'City Style Studio',
+        types: ['beauty_salon', 'establishment'],
         nearbySourceCategoryIds: ['grooming'],
       })
     ).toBe(true);
@@ -71,42 +78,36 @@ describe('nearbyPlaceQuality', () => {
         nearbySourceCategoryIds: ['hospital'],
       })
     ).toBe(true);
-  });
-
-  it('drops keyword hits with no pet signal', () => {
-    expect(
-      isAcceptableNearbyPlace({
-        name: 'City Style Studio',
-        types: ['beauty_salon', 'establishment'],
-        nearbySourceCategoryIds: ['grooming'],
-      })
-    ).toBe(false);
     expect(
       isAcceptableNearbyPlace({
         name: 'Fitness Coach Pro',
         types: ['gym'],
         nearbySourceCategoryIds: ['trainer'],
       })
-    ).toBe(false);
+    ).toBe(true);
   });
 
-  it('keeps parks when browsing Parks; requires dog/pet wording in All services', () => {
+  it('keeps parks from park search in All services', () => {
     const park = {
       name: 'Municipal Park',
       types: ['park'],
       nearbySourceCategoryIds: ['park'],
     };
     expect(isAcceptableNearbyPlace(park, { selectedCategoryId: 'park' })).toBe(true);
-    expect(isAcceptableNearbyPlace(park, { selectedCategoryId: 'more' })).toBe(false);
+    expect(isAcceptableNearbyPlace(park, { selectedCategoryId: 'more' })).toBe(true);
+  });
+
+  it('keeps a place that matched grooming even if pet_cafe also matched', () => {
     expect(
-      isAcceptableNearbyPlace(
-        { ...park, name: 'Ayia Napa Dog Park' },
-        { selectedCategoryId: 'more' }
-      )
+      isAcceptableNearbyPlace({
+        name: 'Paws Spa',
+        types: ['establishment'],
+        nearbySourceCategoryIds: ['grooming', 'pet_cafe'],
+      })
     ).toBe(true);
   });
 
-  it('filters a mixed list down to acceptable places', () => {
+  it('filters a mixed list: drop plain café, keep real services', () => {
     const kept = filterAcceptableNearbyPlaces(
       [
         {
@@ -120,13 +121,13 @@ describe('nearbyPlaceQuality', () => {
           nearbySourceCategoryIds: ['pet_store'],
         },
         {
-          name: 'Beach Bar Central',
-          types: ['bar'],
-          nearbySourceCategoryIds: ['beach'],
+          name: 'Sunshine Grooming',
+          types: ['establishment'],
+          nearbySourceCategoryIds: ['grooming'],
         },
       ],
       { selectedCategoryId: 'more' }
     );
-    expect(kept.map((p) => p.name)).toEqual(['Pet World']);
+    expect(kept.map((p) => p.name)).toEqual(['Pet World', 'Sunshine Grooming']);
   });
 });
