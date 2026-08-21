@@ -2989,7 +2989,7 @@ const en = {
       privacy: { label: 'Privacy policy', desc: 'Legal privacy text.' },
       terms: { label: 'Terms of service', desc: 'Legal terms.' },
       cookies: { label: 'Cookie policy', desc: 'Cookie information.' },
-      install: { label: 'Add to Home Screen', desc: 'QR code and steps to install PetPal on iPhone or Android.' },
+      install: { label: 'Add to Home Screen', desc: 'Step-by-step icons to install PetPal on iPhone or Android.' },
     },
     api: {
       trackerApp: {
