@@ -74,7 +74,14 @@ jobs:
                 touch "$CLEAR_INBOX_MARKER"
                 echo "[deploy] Broadcast inbox cleared OK"
               else
-                echo "[deploy] Broadcast inbox clear skipped or failed (Admin credentials may be missing)"
+                echo "[deploy] clear-broadcast-inbox.cjs failed — trying firebase CLI delete"
+                if command -v firebase >/dev/null 2>&1; then FB=firebase; else FB="npx firebase-tools@13.29.1"; fi
+                if (cd "$PETPAL_ROOT/petpal" && $FB firestore:delete broadcastMessages --recursive --force --project petpal-aecda --non-interactive); then
+                  touch "$CLEAR_INBOX_MARKER"
+                  echo "[deploy] Broadcast inbox cleared via Firebase CLI OK"
+                else
+                  echo "[deploy] Broadcast inbox clear skipped or failed (Admin credentials may be missing)"
+                fi
               fi
             fi
             # If the pre-pull deploy script ignored CLEAR_*, clear here after git update.
