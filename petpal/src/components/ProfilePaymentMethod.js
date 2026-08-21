@@ -4,7 +4,8 @@ import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
 import { useI18n } from '../i18n/I18nContext';
 import { useToast } from '../components/Toast';
-import { getDb, isFirebaseConfigured } from '../firebase';
+import { isFirebaseConfigured } from '../firebase';
+import { getDb } from '../firebaseDb';
 import { formatMaskedCard, startJccUpdateCard } from '../shop/startJccUpdateCard';
 
 /**

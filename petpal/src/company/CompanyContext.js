@@ -1,131 +1,22 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
-import { doc, onSnapshot } from 'firebase/firestore';
-import { useAuth } from '../auth/AuthProvider';
-import { getDb, isFirebaseConfigured } from '../firebase';
-import { subscribeCompanyProfile, subscribeCompanyProfiles, subscribeIsAdmin } from './companyFirestore';
+import React, { createContext, useContext } from 'react';
 
-const CompanyContext = createContext(null);
+export const CompanyContext = createContext(null);
 
-export function CompanyProvider({ children }) {
-  const { user } = useAuth();
-  const uid = user?.uid ?? null;
-  const [profile, setProfile] = useState(/** @type {import('./companyTypes').CompanyProfile | null} */ (null));
-  const [profiles, setProfiles] = useState(/** @type {import('./companyTypes').CompanyProfile[]} */ ([]));
-  const [profileLoading, setProfileLoading] = useState(!!isFirebaseConfigured() && !!uid);
-  const [userAccountType, setUserAccountType] = useState(/** @type {'individual' | 'company' | null} */ (null));
-  const [isAdmin, setIsAdmin] = useState(false);
-  /** False until the first admins/{uid} snapshot (avoids bouncing signed-in admins to /dashboard). */
-  const [adminReady, setAdminReady] = useState(() => !isFirebaseConfigured());
-
-  useEffect(() => {
-    if (!uid || !isFirebaseConfigured()) {
-      setProfile(null);
-      setProfiles([]);
-      setProfileLoading(false);
-      return undefined;
-    }
-    setProfileLoading(true);
-    const offPrimary = subscribeCompanyProfile(
-      uid,
-      (data) => {
-        setProfile(data);
-        setProfileLoading(false);
-      },
-      () => {
-        setProfile(null);
-        setProfileLoading(false);
-      }
-    );
-
-    const offAll = subscribeCompanyProfiles(
-      uid,
-      (rows) => setProfiles(rows),
-      () => setProfiles([])
-    );
-
-    return () => {
-      offPrimary();
-      offAll();
-    };
-  }, [uid]);
-
-  useEffect(() => {
-    if (!uid || !isFirebaseConfigured()) {
-      setIsAdmin(false);
-      setAdminReady(true);
-      return undefined;
-    }
-    setAdminReady(false);
-    return subscribeIsAdmin(uid, (next) => {
-      setIsAdmin(Boolean(next));
-      setAdminReady(true);
-    });
-  }, [uid]);
-
-  useEffect(() => {
-    if (!uid || !isFirebaseConfigured()) {
-      setUserAccountType(null);
-      return undefined;
-    }
-    return onSnapshot(
-      doc(getDb(), 'users', uid),
-      (snap) => {
-        const type = String(snap.data()?.accountType || 'individual').toLowerCase();
-        setUserAccountType(type === 'company' ? 'company' : 'individual');
-      },
-      () => setUserAccountType('individual')
-    );
-  }, [uid]);
-
-  const isApprovedCompany = profile?.status === 'approved';
-  const isPendingCompany = profile?.status === 'pending';
-  const isRejectedCompany = profile?.status === 'rejected';
-  const isCompanyAccount =
-    userAccountType === 'company'
-    || profile?.accountType === 'company'
-    || isApprovedCompany
-    || isPendingCompany
-    || isRejectedCompany;
-  /** Business schedule home + nav — never for platform admins using a personal login. */
-  const isBusinessHome =
-    !isAdmin
-    && (isApprovedCompany || (userAccountType === 'company' && !isApprovedCompany));
-
-  const value = useMemo(
-    () => ({
-      profile,
-      profiles,
-      profileLoading,
-      userAccountType,
-      isCompanyAccount,
-      isBusinessHome,
-      isApprovedCompany,
-      isPendingCompany,
-      isRejectedCompany,
-      isAdmin,
-      adminReady,
-      firebaseReady: isFirebaseConfigured(),
-    }),
-    [
-      profile,
-      profiles,
-      profileLoading,
-      userAccountType,
-      isCompanyAccount,
-      isBusinessHome,
-      isApprovedCompany,
-      isPendingCompany,
-      isRejectedCompany,
-      isAdmin,
-      adminReady,
-    ]
-  );
-
-  return <CompanyContext.Provider value={value}>{children}</CompanyContext.Provider>;
-}
+const GUEST_COMPANY = {
+  profile: null,
+  profiles: [],
+  profileLoading: false,
+  userAccountType: null,
+  isCompanyAccount: false,
+  isBusinessHome: false,
+  isApprovedCompany: false,
+  isPendingCompany: false,
+  isRejectedCompany: false,
+  isAdmin: false,
+  adminReady: true,
+  firebaseReady: false,
+};
 
 export function useCompany() {
-  const ctx = useContext(CompanyContext);
-  if (!ctx) throw new Error('useCompany must be used within CompanyProvider');
-  return ctx;
+  return useContext(CompanyContext) || GUEST_COMPANY;
 }

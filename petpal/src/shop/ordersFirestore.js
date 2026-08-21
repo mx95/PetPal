@@ -8,8 +8,8 @@ import {
   updateDoc,
   where,
 } from 'firebase/firestore';
-import { getDb, isFirebaseConfigured } from '../firebase';
-
+import { isFirebaseConfigured } from '../firebase';
+import { getDb } from '../firebaseDb';
 /** @typedef {'pending_payment'|'paid'|'processing'|'shipped'|'delivered'|'cancelled'|'payment_failed'} OrderStatus */
 
 export const ORDER_STATUS_LABEL_KEYS = {

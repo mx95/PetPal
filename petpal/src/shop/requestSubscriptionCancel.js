@@ -1,6 +1,6 @@
 import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
-import { getDb, isFirebaseConfigured } from '../firebase';
-
+import { isFirebaseConfigured } from '../firebase';
+import { getDb } from '../firebaseDb';
 /**
  * Request cancellation — admin disables SIM/tracker on backend.
  * @param {{ uid: string, subscriptionId: string, sku: string, imei?: string }} params

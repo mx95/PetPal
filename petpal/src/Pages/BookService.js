@@ -34,7 +34,8 @@ import {
   resolveAddonsByIds,
   sumAddonDuration,
 } from '../bookings/bookingAddons';
-import { isFirebaseConfigured, getDb } from '../firebase';
+import { isFirebaseConfigured } from '../firebase';
+import { getDb } from '../firebaseDb';
 import { doc, getDoc } from 'firebase/firestore';
 import { sendBookingConfirmationEmail } from '../bookings/sendBookingEmail';
 import { formatTime24 } from '../formatTime24';

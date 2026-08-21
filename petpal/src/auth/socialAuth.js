@@ -6,7 +6,8 @@ import {
   signInWithRedirect,
 } from 'firebase/auth';
 import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
-import { auth, getDb, isFirebaseConfigured } from '../firebase';
+import { auth, isFirebaseConfigured } from '../firebase';
+import { getDb } from '../firebaseDb';
 import { normalizeEmail } from './authUtils';
 
 const googleProvider = new GoogleAuthProvider();

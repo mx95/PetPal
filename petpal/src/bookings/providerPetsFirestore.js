@@ -1,6 +1,6 @@
 import { addDoc, collection, deleteDoc, doc, onSnapshot, orderBy, query, serverTimestamp, updateDoc } from 'firebase/firestore';
-import { getDb, isFirebaseConfigured } from '../firebase';
-
+import { isFirebaseConfigured } from '../firebase';
+import { getDb } from '../firebaseDb';
 function clientPetsCol(companyId) {
   return collection(getDb(), 'companies', companyId, 'clientPets');
 }

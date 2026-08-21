@@ -2,12 +2,7 @@ import { render, screen } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { I18nProvider } from './i18n/I18nContext';
 import { AuthProvider } from './auth/AuthProvider';
-import { CompanyProvider } from './company/CompanyContext';
-import { PetsProvider } from './pets/PetsContext';
-import { GameProvider } from './game/GameContext';
-import { PublicWalkProvider } from './leaderboard/PublicWalkContext';
-import { LostPetProvider } from './lostPet/LostPetContext';
-import { CommunityProvider } from './social/CommunityContext';
+import { ToastProvider } from './components/Toast';
 
 jest.mock('./tracking/PositionMap', () => {
   return function MockPositionMap() {
@@ -37,19 +32,9 @@ test('renders app name', () => {
     <BrowserRouter>
       <I18nProvider>
         <AuthProvider>
-          <CompanyProvider>
-            <PetsProvider>
-              <LostPetProvider>
-                <GameProvider>
-                  <PublicWalkProvider>
-                    <CommunityProvider>
-                      <App />
-                    </CommunityProvider>
-                  </PublicWalkProvider>
-                </GameProvider>
-              </LostPetProvider>
-            </PetsProvider>
-          </CompanyProvider>
+          <ToastProvider>
+            <App />
+          </ToastProvider>
         </AuthProvider>
       </I18nProvider>
     </BrowserRouter>

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useI18n } from '../i18n/I18nContext';
-import { getEffectiveProfilePhotoUrl } from '../profile/userProfilePhoto';
+import { getEffectiveProfilePhotoUrl } from '../profile/userProfilePhotoLocal';
 
 /**
  * Human profile image: Firebase photoURL, or device-local upload, or initial letter.

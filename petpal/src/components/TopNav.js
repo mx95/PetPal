@@ -7,9 +7,10 @@ import { useI18n } from '../i18n/I18nContext';
 import { LanguageSwitcher } from '../i18n/LanguageSwitcher';
 import ShopCartHeaderButton from './shop/ShopCartHeaderButton';
 import UserAvatar from './UserAvatar';
-import petpalLogo from '../logo.png';
 import { BRAND } from '../config/brand';
 import { MVP_NAV } from '../config/mvpNav';
+
+const LOGO_SRC = `${process.env.PUBLIC_URL || ''}/logo192.png`;
 
 function navItemClassName({ isActive }) {
   return [
@@ -104,7 +105,7 @@ export default function TopNav() {
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
         <Link className="group flex min-w-0 items-center gap-3 no-underline" to={user ? '/dashboard' : '/'} aria-label={t('nav.home')}>
           <span className="pp-logoMark flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white shadow-soft transition-transform duration-300 group-hover:scale-105">
-            <img className="h-10 w-10 rounded-2xl" src={petpalLogo} alt="" />
+            <img className="h-10 w-10 rounded-2xl" src={LOGO_SRC} alt="" width="40" height="40" />
           </span>
           <span className="pp-topNavBrand min-w-0">
             <span className="pp-topNavBrand__name">{BRAND.appName}</span>

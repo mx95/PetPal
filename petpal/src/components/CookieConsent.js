@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getCookieConsent, setCookieConsent } from '../cookies/cookieConsentStorage';
-import { enableFirebaseAnalytics, isFirebaseAnalyticsConfigured } from '../firebase';
+import { isFirebaseAnalyticsConfigured } from '../firebase';
+import { enableFirebaseAnalytics } from '../firebaseAnalytics';
 import { useI18n } from '../i18n/I18nContext';
 
 /**

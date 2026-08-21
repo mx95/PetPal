@@ -1,8 +1,5 @@
 import { getApp, getApps, initializeApp } from 'firebase/app';
-import { getAnalytics, isSupported } from 'firebase/analytics';
 import { getAuth } from 'firebase/auth';
-import { getFirestore, initializeFirestore, memoryLocalCache } from 'firebase/firestore';
-import { getStorage } from 'firebase/storage';
 
 function trimEnv(value) {
   return typeof value === 'string' ? value.trim() : value;
@@ -48,30 +45,6 @@ export function getFirebaseApp() {
   return app;
 }
 
-/** Firestore (leaderboard + opt-in). Requires full web config (see isFirebaseConfigured). */
-let db;
-export function getDb() {
-  if (!firebaseReady || !app) {
-    throw new Error('Firebase is not configured');
-  }
-  if (!db) {
-    const preferLongPolling =
-      String(process.env.NODE_ENV) !== 'production' ||
-      (typeof window !== 'undefined' &&
-        (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'));
-    if (preferLongPolling) {
-      db = initializeFirestore(app, {
-        localCache: memoryLocalCache(),
-        experimentalForceLongPolling: true,
-        useFetchStreams: false,
-      });
-    } else {
-      db = getFirestore(app);
-    }
-  }
-  return db;
-}
-
 export function isFirebaseConfigured() {
   return firebaseReady;
 }
@@ -81,53 +54,7 @@ export function isFirebaseStorageConfigured() {
   return Boolean(process.env.REACT_APP_FIREBASE_STORAGE_BUCKET);
 }
 
-let storageInstance = null;
-
-/** @returns {import('firebase/storage').FirebaseStorage | null} */
-export function getFirebaseStorage() {
-  if (!firebaseReady || !app) return null;
-  if (!isFirebaseStorageConfigured()) return null;
-  if (!storageInstance) {
-    try {
-      storageInstance = getStorage(app);
-    } catch {
-      return null;
-    }
-  }
-  return storageInstance;
-}
-
 /** Set when `REACT_APP_FIREBASE_MEASUREMENT_ID` is present. */
 export function isFirebaseAnalyticsConfigured() {
   return Boolean(process.env.REACT_APP_FIREBASE_MEASUREMENT_ID);
 }
-
-/**
- * Google Analytics (web) — only load after the user consents in CookieConsent (non-essential).
- * Call `enableFirebaseAnalytics()` from there; do not import getAnalytics on first paint.
- */
-let analyticsInstance = null;
-let analyticsInitPromise = null;
-
-export function enableFirebaseAnalytics() {
-  if (!firebaseReady || !app) return Promise.resolve(null);
-  if (!isFirebaseAnalyticsConfigured()) return Promise.resolve(null);
-  if (analyticsInstance) return Promise.resolve(analyticsInstance);
-  if (analyticsInitPromise) return analyticsInitPromise;
-  analyticsInitPromise = isSupported().then((ok) => {
-    if (!ok) {
-      return null;
-    }
-    if (!analyticsInstance) {
-      analyticsInstance = getAnalytics(app);
-    }
-    return analyticsInstance;
-  });
-  return analyticsInitPromise;
-}
-
-/** Returns the Analytics instance, or `null` if not consented/initialized yet. */
-export function getFirebaseAnalytics() {
-  return Promise.resolve(analyticsInstance);
-}
-

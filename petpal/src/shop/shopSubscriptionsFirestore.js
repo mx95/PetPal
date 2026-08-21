@@ -1,5 +1,6 @@
 import { collection, doc, onSnapshot, query, where } from 'firebase/firestore';
-import { getDb, isFirebaseConfigured } from '../firebase';
+import { isFirebaseConfigured } from '../firebase';
+import { getDb } from '../firebaseDb';
 import { PLUS_SKUS } from './catalog';
 
 const TEARDOWN_DELAY_MS = 150;

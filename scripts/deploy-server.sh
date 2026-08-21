@@ -244,7 +244,7 @@ if needs_npm_ci "$PETPAL_DIR"; then
 else
   log "Skipping npm ci (petpal) — lockfile unchanged"
 fi
-npm run build
+GENERATE_SOURCEMAP=false npm run build
 
 log "Updating tracker backend"
 cd "$TRACKER_DIR"

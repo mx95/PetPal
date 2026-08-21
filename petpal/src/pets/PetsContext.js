@@ -1,7 +1,8 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { doc, getDoc } from 'firebase/firestore';
 import { useAuth } from '../auth/AuthProvider';
-import { getDb, isFirebaseConfigured } from '../firebase';
+import { isFirebaseConfigured } from '../firebase';
+import { getDb } from '../firebaseDb';
 import { getPetCategory } from './petCategories';
 import { createPet, deletePet, patchPet, subscribePets } from './petsFirestore';
 import { fetchSharedPetsForUser } from './petShareFirestore';
@@ -258,8 +259,17 @@ export function PetsProvider({ children }) {
   return <PetsContext.Provider value={value}>{children}</PetsContext.Provider>;
 }
 
+const GUEST_PETS = {
+  pets: [],
+  ownedPets: [],
+  sharedPets: [],
+  addPet: async () => null,
+  updatePet: async () => {},
+  removePet: async () => {},
+  getPet: () => undefined,
+  getCategory: getPetCategory,
+};
+
 export function usePets() {
-  const ctx = useContext(PetsContext);
-  if (!ctx) throw new Error('usePets must be used within PetsProvider');
-  return ctx;
+  return useContext(PetsContext) || GUEST_PETS;
 }

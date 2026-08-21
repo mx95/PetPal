@@ -430,6 +430,10 @@ if (fs.existsSync(WEB_INDEX_HTML)) {
         }
         if (filePath.includes(`${path.sep}static${path.sep}`)) {
           res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+          return;
+        }
+        if (/\.(?:webp|png|jpe?g|gif|svg|ico|woff2?)$/i.test(filePath)) {
+          res.setHeader("Cache-Control", "public, max-age=604800, stale-while-revalidate=2592000");
         }
       },
     })

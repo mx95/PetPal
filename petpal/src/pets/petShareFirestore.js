@@ -7,8 +7,8 @@ import {
   setDoc,
   where,
 } from 'firebase/firestore';
-import { getDb, isFirebaseConfigured } from '../firebase';
-
+import { isFirebaseConfigured } from '../firebase';
+import { getDb } from '../firebaseDb';
 /**
  * Share a pet profile with another PetPal user by email.
  * Creates a collaboration doc the recipient can read when signed in.

@@ -7,7 +7,8 @@ import {
   isCatalogProvider,
   resolveCatalogProviderId,
 } from '../bookings/bookingCatalog';
-import { getDb, isFirebaseConfigured } from '../firebase';
+import { isFirebaseConfigured } from '../firebase';
+import { getDb } from '../firebaseDb';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { useI18n } from '../i18n/I18nContext';
 

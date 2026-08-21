@@ -2,7 +2,8 @@ import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 
 import { useLocation } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
 import { useAuth } from '../auth/AuthProvider';
-import { getDb, isFirebaseConfigured } from '../firebase';
+import { isFirebaseConfigured } from '../firebase';
+import { getDb } from '../firebaseDb';
 import { PET_CATEGORIES } from '../pets/petCategories';
 import { usePets } from '../pets/PetsContext';
 import { deletePetPhoto, deletePetPhotoByPath, uploadPetPhoto } from '../pets/petPhotoStorage';
