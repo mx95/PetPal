@@ -1,8 +1,12 @@
 import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { auth } from '../firebase';
+import { completeSocialRedirectIfNeeded } from './socialAuth';
 
 const AuthContext = createContext(null);
+
+/** Never leave the opening splash forever if Auth/IndexedDB stalls (common on iOS). */
+const AUTH_INIT_TIMEOUT_MS = 10000;
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -16,16 +20,39 @@ export function AuthProvider({ children }) {
       setInitializing(false);
       return undefined;
     }
+
+    let cancelled = false;
+    const finishInit = () => {
+      if (!cancelled) setInitializing(false);
+    };
+
+    const safetyTimer = window.setTimeout(finishInit, AUTH_INIT_TIMEOUT_MS);
+
+    // After Google/Apple redirect, Firebase may not emit onAuthStateChanged until
+    // getRedirectResult() is consumed. Login/Register are not always mounted (e.g.
+    // return lands on `/`), so kick this off from the auth root.
+    void completeSocialRedirectIfNeeded().catch((err) => {
+      console.warn('[auth] social redirect result failed', err?.code || err);
+    });
+
     const unsubscribe = onAuthStateChanged(auth, (nextUser) => {
+      if (cancelled) return;
       if (registrationInFlight) {
         pendingAuthUserRef.current = nextUser;
-        setInitializing(false);
+        finishInit();
+        window.clearTimeout(safetyTimer);
         return;
       }
       setUser(nextUser);
-      setInitializing(false);
+      finishInit();
+      window.clearTimeout(safetyTimer);
     });
-    return unsubscribe;
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(safetyTimer);
+      unsubscribe();
+    };
   }, [registrationInFlight]);
 
   const value = useMemo(
@@ -56,4 +83,3 @@ export function useAuth() {
   if (!ctx) throw new Error('useAuth must be used within AuthProvider');
   return ctx;
 }
-

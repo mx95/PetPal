@@ -179,11 +179,11 @@ export function completeSocialRedirectIfNeeded() {
       const meta = readRedirectMeta();
       clearRedirectMeta();
 
-      try {
-        await ensureSocialUserProfile(cred.user);
-      } catch (profileErr) {
+      // Do not await Firestore here — a hung profile write would keep callers stuck,
+      // and getRedirectResult itself is what unblocks auth on iOS/Safari.
+      void ensureSocialUserProfile(cred.user).catch((profileErr) => {
         console.warn('social profile ensure failed', profileErr);
-      }
+      });
 
       return {
         cred,
