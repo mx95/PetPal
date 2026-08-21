@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
 import { useI18n } from '../i18n/I18nContext';
@@ -6,7 +6,8 @@ import { useI18n } from '../i18n/I18nContext';
 function detectPlatform() {
   if (typeof navigator === 'undefined') return 'other';
   const ua = navigator.userAgent || '';
-  const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const isIOS =
+    /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   if (isIOS) return 'ios';
   if (/Android/i.test(ua)) return 'android';
   return 'other';
@@ -20,6 +21,107 @@ function isStandaloneDisplay() {
   );
 }
 
+/** iOS Safari Share (square with upward arrow). */
+function IconIosShare({ label }) {
+  return (
+    <span className="pp-installIcon" title={label} aria-label={label} role="img">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden>
+        <path
+          d="M12 3v11"
+          stroke="currentColor"
+          strokeWidth="2.2"
+          strokeLinecap="round"
+        />
+        <path
+          d="M8 6.5 12 3l4 3.5"
+          stroke="currentColor"
+          strokeWidth="2.2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M6.5 10.5H5.2A2.2 2.2 0 0 0 3 12.7v6.1A2.2 2.2 0 0 0 5.2 21h13.6a2.2 2.2 0 0 0 2.2-2.2v-6.1a2.2 2.2 0 0 0-2.2-2.2h-1.3"
+          stroke="currentColor"
+          strokeWidth="2.2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </span>
+  );
+}
+
+/** iOS “Add to Home Screen” (square with plus). */
+function IconIosAddHome({ label }) {
+  return (
+    <span className="pp-installIcon" title={label} aria-label={label} role="img">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden>
+        <rect
+          x="4"
+          y="4"
+          width="16"
+          height="16"
+          rx="3.5"
+          stroke="currentColor"
+          strokeWidth="2.1"
+        />
+        <path d="M12 8.2v7.6M8.2 12h7.6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+      </svg>
+    </span>
+  );
+}
+
+/** Android Chrome overflow menu (⋮). */
+function IconAndroidMenu({ label }) {
+  return (
+    <span className="pp-installIcon pp-installIcon--menu" title={label} aria-label={label} role="img">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden>
+        <circle cx="12" cy="5.5" r="2" />
+        <circle cx="12" cy="12" r="2" />
+        <circle cx="12" cy="18.5" r="2" />
+      </svg>
+    </span>
+  );
+}
+
+/** Android “Install app” / Add to Home screen (phone + plus). */
+function IconAndroidInstall({ label }) {
+  return (
+    <span className="pp-installIcon" title={label} aria-label={label} role="img">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden>
+        <rect
+          x="7"
+          y="2.5"
+          width="10"
+          height="19"
+          rx="2.2"
+          stroke="currentColor"
+          strokeWidth="2"
+        />
+        <path d="M10.5 5.2h3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+        <circle cx="12" cy="18.2" r="1" fill="currentColor" />
+        <path
+          d="M17.2 9.2v4.4M15 11.4h4.4"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+        />
+      </svg>
+    </span>
+  );
+}
+
+function InstallStep({ n, children }) {
+  return (
+    <li className="pp-installStep">
+      <span className="pp-installStep__num" aria-hidden>
+        {n}
+      </span>
+      <div className="pp-installStep__body">{children}</div>
+    </li>
+  );
+}
+
 export default function InstallApp() {
   const { t } = useI18n();
   const { user } = useAuth();
@@ -28,17 +130,6 @@ export default function InstallApp() {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [installBusy, setInstallBusy] = useState(false);
   const [installHint, setInstallHint] = useState('');
-
-  const installUrl = useMemo(() => {
-    if (typeof window === 'undefined') return 'https://petpal.com.cy/install';
-    return `${window.location.origin}/install`;
-  }, []);
-
-  const qrSrc = useMemo(
-    () =>
-      `https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=8&data=${encodeURIComponent(installUrl)}`,
-    [installUrl]
-  );
 
   useEffect(() => {
     setPlatform(detectPlatform());
@@ -92,68 +183,76 @@ export default function InstallApp() {
             </p>
           ) : null}
 
-          <div className="pp-installPage__layout">
-            <section className="pp-installPage__qrBlock" aria-labelledby="install-qr-title">
-              <h2 id="install-qr-title" className="pp-h2">
-                {t('installPage.qrTitle')}
+          <div className="pp-installPage__steps">
+            <section
+              className={`pp-installPage__card${platform === 'ios' ? ' pp-installPage__card--focus' : ''}`}
+              aria-labelledby="install-ios-title"
+            >
+              <h2 id="install-ios-title" className="pp-h2">
+                {t('installPage.iosTitle')}
               </h2>
-              <p className="pp-subtle">{t('installPage.qrSub')}</p>
-              <img
-                className="pp-installPage__qr"
-                src={qrSrc}
-                width={240}
-                height={240}
-                alt={t('installPage.qrAlt')}
-              />
-              <p className="pp-installPage__url">
-                <a href={installUrl}>{installUrl.replace(/^https?:\/\//, '')}</a>
-              </p>
+              <ol className="pp-installPage__stepList">
+                <InstallStep n={1}>
+                  <span>{t('installPage.iosStep1')}</span>
+                </InstallStep>
+                <InstallStep n={2}>
+                  <span>{t('installPage.iosStep2Before')}</span>
+                  <IconIosShare label={t('installPage.iconShare')} />
+                  <span>{t('installPage.iosStep2After')}</span>
+                </InstallStep>
+                <InstallStep n={3}>
+                  <span>{t('installPage.iosStep3Before')}</span>
+                  <IconIosAddHome label={t('installPage.iconAddHome')} />
+                  <strong>{t('installPage.iosStep3Action')}</strong>
+                </InstallStep>
+                <InstallStep n={4}>
+                  <span>{t('installPage.iosStep4')}</span>
+                </InstallStep>
+              </ol>
+              <p className="pp-subtle pp-installPage__note">{t('installPage.iosNote')}</p>
             </section>
 
-            <div className="pp-installPage__steps">
-              {(platform === 'ios' || platform === 'other') && (
-                <section className="pp-installPage__card" aria-labelledby="install-ios-title">
-                  <h2 id="install-ios-title" className="pp-h2">
-                    {t('installPage.iosTitle')}
-                  </h2>
-                  <ol className="pp-installPage__list">
-                    <li>{t('installPage.iosStep1')}</li>
-                    <li>{t('installPage.iosStep2')}</li>
-                    <li>{t('installPage.iosStep3')}</li>
-                    <li>{t('installPage.iosStep4')}</li>
-                  </ol>
-                  <p className="pp-subtle">{t('installPage.iosNote')}</p>
-                </section>
-              )}
-
-              {(platform === 'android' || platform === 'other') && (
-                <section className="pp-installPage__card" aria-labelledby="install-android-title">
-                  <h2 id="install-android-title" className="pp-h2">
-                    {t('installPage.androidTitle')}
-                  </h2>
-                  {deferredPrompt ? (
-                    <button
-                      type="button"
-                      className="pp-btn pp-btnPrimary"
-                      disabled={installBusy}
-                      onClick={handleAndroidInstall}
-                    >
-                      {installBusy ? t('installPage.installing') : t('installPage.androidInstallBtn')}
-                    </button>
-                  ) : null}
-                  <ol className="pp-installPage__list">
-                    <li>{t('installPage.androidStep1')}</li>
-                    <li>{t('installPage.androidStep2')}</li>
-                    <li>{t('installPage.androidStep3')}</li>
-                  </ol>
-                  {installHint ? (
-                    <p className="pp-subtle" role="status">
-                      {installHint}
-                    </p>
-                  ) : null}
-                </section>
-              )}
-            </div>
+            <section
+              className={`pp-installPage__card${platform === 'android' ? ' pp-installPage__card--focus' : ''}`}
+              aria-labelledby="install-android-title"
+            >
+              <h2 id="install-android-title" className="pp-h2">
+                {t('installPage.androidTitle')}
+              </h2>
+              {deferredPrompt ? (
+                <button
+                  type="button"
+                  className="pp-btn pp-btnPrimary"
+                  disabled={installBusy}
+                  onClick={handleAndroidInstall}
+                >
+                  {installBusy ? t('installPage.installing') : t('installPage.androidInstallBtn')}
+                </button>
+              ) : null}
+              <ol className="pp-installPage__stepList">
+                <InstallStep n={1}>
+                  <span>{t('installPage.androidStep1')}</span>
+                </InstallStep>
+                <InstallStep n={2}>
+                  <span>{t('installPage.androidStep2Before')}</span>
+                  <IconAndroidMenu label={t('installPage.iconMenu')} />
+                  <span>{t('installPage.androidStep2After')}</span>
+                </InstallStep>
+                <InstallStep n={3}>
+                  <span>{t('installPage.androidStep3Before')}</span>
+                  <IconAndroidInstall label={t('installPage.iconInstall')} />
+                  <strong>{t('installPage.androidStep3Action')}</strong>
+                </InstallStep>
+                <InstallStep n={4}>
+                  <span>{t('installPage.androidStep4')}</span>
+                </InstallStep>
+              </ol>
+              {installHint ? (
+                <p className="pp-subtle" role="status">
+                  {installHint}
+                </p>
+              ) : null}
+            </section>
           </div>
         </div>
       </div>
