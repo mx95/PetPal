@@ -143,10 +143,27 @@ function NearbyMap({ apiKey }) {
     () => ({ lat: searchCenter.lat, lng: searchCenter.lng }),
     [searchCenter.lat, searchCenter.lng]
   );
+  const userLocationIcon = useMemo(
+    () =>
+      typeof window !== 'undefined' && window.google?.maps?.SymbolPath
+        ? {
+            path: window.google.maps.SymbolPath.CIRCLE,
+            scale: 8,
+            fillColor: '#2563eb',
+            fillOpacity: 1,
+            strokeColor: '#ffffff',
+            strokeWeight: 3,
+          }
+        : undefined,
+    // Recreate once Maps JS is loaded (isLoaded flips true).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [isLoaded]
+  );
 
   const searchCenterRef = useRef(searchCenter);
   const userLocationRef = useRef(userLocation);
   const searchScopeRef = useRef(searchScope);
+  const lastPanRef = useRef({ lat: DEFAULT_CENTER.lat, lng: DEFAULT_CENTER.lng });
   searchCenterRef.current = searchCenter;
   userLocationRef.current = userLocation;
   searchScopeRef.current = searchScope;
@@ -160,14 +177,12 @@ function NearbyMap({ apiKey }) {
       const searchGen = ++moreSearchGenRef.current;
       setActivePlace(null);
       setSearchStatus('loading');
-      // One clear per search is fine; the flicker came from many overlapping
-      // clears + mid-batch top-60 churn. Deduped starts fix the rest.
-      setPlaces([]);
+      // Keep existing pins visible until new results arrive (no clear→empty flash).
 
       const service = new window.google.maps.places.PlacesService(map);
       const cat = NEARBY_CATEGORIES.find((c) => c.id === selectedCategoryId) || NEARBY_CATEGORIES[0];
 
-      const publishPlaces = (merged, { done = true, max = 60 } = {}) => {
+      const publishPlaces = (merged, { max = 60 } = {}) => {
         if (moreSearchGenRef.current !== searchGen) return;
         const sortCenter = userLocationRef.current || center;
         const filtered = filterAcceptableNearbyPlaces(merged, {
@@ -184,23 +199,11 @@ function NearbyMap({ apiKey }) {
 
         setPlaces((prev) => {
           if (moreSearchGenRef.current !== searchGen) return prev;
-          if (!ranked.length) return done ? [] : prev;
-
-          if (!done) {
-            // Append-only while batches run — never drop or reorder pins mid-search.
-            const existing = new Set(prev.map((p) => p.place_id));
-            const additions = ranked.filter((p) => p.place_id && !existing.has(p.place_id));
-            if (!additions.length) return prev;
-            return [...prev, ...additions];
-          }
-
-          // Final: keep prior object refs for stable OverlayView instances.
+          if (!ranked.length) return [];
           const prevById = new Map(prev.map((p) => [p.place_id, p]));
           return ranked.slice(0, max).map((p) => prevById.get(p.place_id) || p);
         });
-
-        if (ranked.length) setSearchStatus('ok');
-        else if (done) setSearchStatus('empty');
+        setSearchStatus(ranked.length ? 'ok' : 'empty');
       };
 
       if (cat.id === 'more') {
@@ -216,8 +219,6 @@ function NearbyMap({ apiKey }) {
         }
         /** @type {Map<string, google.maps.places.PlaceResult & { nearbySourceCategoryIds?: string[] }>} */
         const byId = new Map();
-        // Small parallel batches stay under Places client rate limits while
-        // finishing much faster than one-by-one (~11 × 350ms delays).
         const BATCH_SIZE = 3;
         const BATCH_GAP_MS = 180;
 
@@ -262,13 +263,8 @@ function NearbyMap({ apiKey }) {
                 const prev = byId.get(place.place_id);
                 const ids = new Set(prev?.nearbySourceCategoryIds || []);
                 ids.add(entry.id);
-                // Keep the first place object so React keys/pins stay stable;
-                // only refresh the category id list when new sources match.
                 if (prev) {
-                  byId.set(place.place_id, {
-                    ...prev,
-                    nearbySourceCategoryIds: [...ids],
-                  });
+                  prev.nearbySourceCategoryIds = [...ids];
                 } else {
                   byId.set(place.place_id, {
                     ...place,
@@ -278,12 +274,14 @@ function NearbyMap({ apiKey }) {
               });
             });
             const isLast = i + BATCH_SIZE >= sources.length;
-            // Progressive paint without slicing — final publish trims to 60.
-            publishPlaces([...byId.values()], { done: isLast });
             if (!isLast) {
               // eslint-disable-next-line no-await-in-loop
               await new Promise((r) => window.setTimeout(r, BATCH_GAP_MS));
             }
+          }
+          // Publish once when every category batch is done — avoids pin churn while panning.
+          if (moreSearchGenRef.current === searchGen) {
+            publishPlaces([...byId.values()], { max: 60 });
           }
         })();
         return;
@@ -311,7 +309,7 @@ function NearbyMap({ apiKey }) {
             ...place,
             nearbySourceCategoryIds: [cat.id],
           }));
-          publishPlaces(mapped, { done: true, max: 20 });
+          publishPlaces(mapped, { max: 20 });
           return;
         }
         if (status === window.google.maps.places.PlacesServiceStatus.ZERO_RESULTS) {
@@ -332,6 +330,21 @@ function NearbyMap({ apiKey }) {
   useEffect(() => {
     if (isLoaded && map) runPlacesSearch();
   }, [isLoaded, map, selectedCategoryId, searchCenter.lat, searchCenter.lng, runPlacesSearch]);
+
+  // Intentionally uncontrolled map: do not bind `center`/`zoom` props (they fight
+  // user pans and remount overlays). Pan only when searchCenter changes on purpose.
+  useEffect(() => {
+    if (!map || !window.google?.maps) return;
+    const prev = lastPanRef.current;
+    if (
+      Math.abs(prev.lat - mapCenter.lat) < 1e-7 &&
+      Math.abs(prev.lng - mapCenter.lng) < 1e-7
+    ) {
+      return;
+    }
+    lastPanRef.current = { lat: mapCenter.lat, lng: mapCenter.lng };
+    map.panTo(new window.google.maps.LatLng(mapCenter.lat, mapCenter.lng));
+  }, [map, mapCenter.lat, mapCenter.lng]);
 
   const requestUserLocation = useCallback(
     ({ silent = false } = {}) => {
@@ -360,10 +373,9 @@ function NearbyMap({ apiKey }) {
           if (map && window.google?.maps) {
             map.panTo(new window.google.maps.LatLng(next.lat, next.lng));
             map.setZoom(14);
+            lastPanRef.current = { lat: next.lat, lng: next.lng };
           }
           setSearchScope('radius');
-          // Let the searchCenter effect run the search once — calling
-          // runPlacesSearch here too caused clear→paint→clear flicker.
         },
         (err) => {
           setLocFetching(false);
@@ -512,8 +524,8 @@ function NearbyMap({ apiKey }) {
             </div>
             <GoogleMap
               mapContainerStyle={mapContainerStyle}
-              center={mapCenter}
-              zoom={14}
+              defaultCenter={DEFAULT_CENTER}
+              defaultZoom={14}
               onLoad={setMap}
               options={mapOptions}
               onClick={() => setActivePlace(null)}
@@ -534,14 +546,7 @@ function NearbyMap({ apiKey }) {
                 <Marker
                   position={userLocation}
                   title={t('nearbyPage.yourLocation')}
-                  icon={{
-                    path: window.google.maps.SymbolPath.CIRCLE,
-                    scale: 8,
-                    fillColor: '#2563eb',
-                    fillOpacity: 1,
-                    strokeColor: '#ffffff',
-                    strokeWeight: 3,
-                  }}
+                  icon={userLocationIcon}
                 />
               ) : null}
               {activePlace?.geometry?.location ? (
