@@ -63,41 +63,49 @@ export default function TopNav() {
     navigate('/', { replace: true });
   };
 
-  const primaryLinks = user ? (
+  const primaryLinks = (
     <>
-      {MVP_NAV.showPremium ? (
-        <NavLink className={navItemClassName} to="/premium/lost">
-          {t('nav.premium')}
-        </NavLink>
+      {user ? (
+        <>
+          {MVP_NAV.showPremium ? (
+            <NavLink className={navItemClassName} to="/premium/lost">
+              {t('nav.premium')}
+            </NavLink>
+          ) : null}
+          {MVP_NAV.showCommunity ? (
+            <NavLink className={navItemClassName} to="/community">
+              {t('nav.community')}
+            </NavLink>
+          ) : null}
+          {MVP_NAV.showBookings ? (
+            <NavLink className={navItemClassName} to="/bookings">
+              {t('nav.bookings')}
+            </NavLink>
+          ) : null}
+          <NavLink className={navItemClassName} to="/nearby">
+            {t('nav.nearby')}
+          </NavLink>
+          <NavLink className={navItemClassName} to="/tracking">
+            {t('nav.tracking')}
+          </NavLink>
+        </>
       ) : null}
-      {MVP_NAV.showCommunity ? (
-        <NavLink className={navItemClassName} to="/community">
-          {t('nav.community')}
-        </NavLink>
-      ) : null}
-      {MVP_NAV.showBookings ? (
-        <NavLink className={navItemClassName} to="/bookings">
-          {t('nav.bookings')}
-        </NavLink>
-      ) : null}
-      <NavLink className={navItemClassName} to="/nearby">
-        {t('nav.nearby')}
-      </NavLink>
-      <NavLink className={navItemClassName} to="/tracking">
-        {t('nav.tracking')}
-      </NavLink>
       {MVP_NAV.showShop ? (
         <NavLink className={navItemClassName} to="/shop">
           {t('nav.shop')}
         </NavLink>
       ) : null}
-      {isApprovedCompany && profile?.bookingEnabled ? (
-        <NavLink className={navItemClassName} to="/provider">
-          {t('nav.provider')}
-        </NavLink>
+      {user ? (
+        <>
+          {isApprovedCompany && profile?.bookingEnabled ? (
+            <NavLink className={navItemClassName} to="/provider">
+              {t('nav.provider')}
+            </NavLink>
+          ) : null}
+        </>
       ) : null}
     </>
-  ) : null;
+  );
 
   return (
     <header className="pp-topNav sticky top-0 z-40 border-b border-white/70 bg-white/75 backdrop-blur-2xl">

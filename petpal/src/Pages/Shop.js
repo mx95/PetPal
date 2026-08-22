@@ -314,22 +314,6 @@ export default function Shop() {
     }
   }
 
-  if (!user) {
-    return (
-      <div className="pp-pad pp-demoProviderPortal">
-        <div className="pp-pageHeader">
-          <div className="pp-pageHeader__copy">
-            <div className="pp-pageHeader__title">{t('shopPage.signInTitle')}</div>
-            <div className="pp-pageHeader__subtitle">{t('shopPage.signInSub')}</div>
-          </div>
-        </div>
-        <Link className="pp-btn pp-btn--primary" to="/login">
-          {t('nav.login')}
-        </Link>
-      </div>
-    );
-  }
-
   if (!isFirebaseConfigured()) {
     return (
       <div className="pp-pad">
@@ -341,6 +325,19 @@ export default function Shop() {
 
   return (
     <div className="pp-pad pp-shopPage">
+      {!user ? (
+        <div className="pp-shopGuestBanner" role="note">
+          <p className="pp-shopGuestBanner__text">{t('shopPage.guestBanner')}</p>
+          <div className="pp-shopGuestBanner__actions">
+            <Link className="pp-btn pp-btn--primary" to="/login" state={{ from: '/shop' }}>
+              {t('shopPage.guestSignInCta')}
+            </Link>
+            <Link className="pp-btn pp-btn--ghost" to="/register">
+              {t('shopPage.guestRegisterCta')}
+            </Link>
+          </div>
+        </div>
+      ) : null}
       <div className="pp-shopTabs" role="tablist" aria-label={t('shopPage.tabsAria')}>
         <button
           type="button"
@@ -607,6 +604,7 @@ export default function Shop() {
                       <>
                         <ShopPetPicker
                           pets={petOptions}
+                          guest={!user}
                           selectedIds={
                             p.id === 'PETPAL_PLUS_MONTHLY'
                               ? monthlyNfcPetIds
@@ -686,9 +684,9 @@ export default function Shop() {
             })}
           </div>
 
-          <ProfilePaymentMethod />
+          {user ? <ProfilePaymentMethod /> : null}
 
-          {manageRows.length || plusActiveBySku.PETPAL_PLUS_YEARLY ? (
+          {user && (manageRows.length || plusActiveBySku.PETPAL_PLUS_YEARLY) ? (
             <section className="pp-card pp-pad pp-shopManage pp-shopManage--prominent">
               <h2 className="pp-sectionTitle" style={{ marginTop: 0 }}>
                 {t('shopPage.manageTitle')}

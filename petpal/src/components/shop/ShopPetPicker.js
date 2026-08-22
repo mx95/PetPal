@@ -8,12 +8,17 @@ import PetAvatar from '../PetAvatar';
  *   selectedIds: string[],
  *   onChange: (ids: string[]) => void,
  *   disabled?: boolean,
+ *   guest?: boolean,
  * }} props
  */
-export default function ShopPetPicker({ pets, selectedIds, onChange, disabled }) {
+export default function ShopPetPicker({ pets, selectedIds, onChange, disabled, guest = false }) {
   const { t } = useI18n();
   if (!pets.length) {
-    return <p className="pp-subtle pp-shopPetPicker__empty">{t('shopPage.nfcNoPets')}</p>;
+    return (
+      <p className="pp-subtle pp-shopPetPicker__empty">
+        {guest ? t('shopPage.nfcNoPetsGuest') : t('shopPage.nfcNoPets')}
+      </p>
+    );
   }
 
   const toggle = (id) => {

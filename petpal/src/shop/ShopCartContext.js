@@ -95,6 +95,10 @@ export function ShopCartProvider({ children }) {
       setExpanded(true);
       return;
     }
+    if (!user) {
+      navigate('/login', { state: { from: '/shop/checkout' } });
+      return;
+    }
     const hasRecurring = cartItems.some(
       (row) => row.recurring || PLUS_SKUS.includes(row.sku || '') || BOOST_SKUS.includes(row.sku || '')
     );
@@ -111,7 +115,7 @@ export function ShopCartProvider({ children }) {
     });
     setExpanded(false);
     navigate('/shop/checkout');
-  }, [cartItems, navigate, t, totalCents, user?.uid]);
+  }, [cartItems, navigate, t, totalCents, user]);
 
   const value = useMemo(
     () => ({

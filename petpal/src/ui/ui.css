@@ -20753,6 +20753,29 @@ html[data-theme="dark"] .pp-nearby-list > li {
   border: 1px solid rgba(245, 158, 11, 0.35);
 }
 
+.pp-shopGuestBanner {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(101, 70, 232, 0.18);
+  background: linear-gradient(135deg, rgba(101, 70, 232, 0.06), rgba(255, 255, 255, 0.98));
+}
+
+.pp-shopGuestBanner__text {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.45;
+  color: #344054;
+}
+
+.pp-shopGuestBanner__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
 html[data-theme="dark"] .pp-shopCard__badge {
   color: #c4b5fd;
   background: linear-gradient(120deg, rgba(91, 55, 255, 0.28), rgba(47, 128, 255, 0.2));

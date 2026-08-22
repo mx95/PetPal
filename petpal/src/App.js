@@ -258,11 +258,7 @@ function App() {
               />
               <Route
                 path="/shop"
-                element={
-                  <RequireAuth>
-                    <Shop />
-                  </RequireAuth>
-                }
+                element={<Shop />}
               />
               <Route
                 path="/payment/success"
