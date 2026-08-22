@@ -160,8 +160,9 @@ function NearbyMap({ apiKey }) {
       const searchGen = ++moreSearchGenRef.current;
       setActivePlace(null);
       setSearchStatus('loading');
-      // Do not wipe markers here — clearing then re-adding every search restart
-      // is what made pins flicker. Markers are replaced when new results arrive.
+      // One clear per search is fine; the flicker came from many overlapping
+      // clears + mid-batch top-60 churn. Deduped starts fix the rest.
+      setPlaces([]);
 
       const service = new window.google.maps.places.PlacesService(map);
       const cat = NEARBY_CATEGORIES.find((c) => c.id === selectedCategoryId) || NEARBY_CATEGORIES[0];
