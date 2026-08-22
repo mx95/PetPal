@@ -175,9 +175,8 @@ function NearbyMap({ apiKey }) {
       const center = centerOverride || searchCenterRef.current;
       // Cancel any in-flight All-services search and start a new generation.
       const searchGen = ++moreSearchGenRef.current;
-      setActivePlace(null);
       setSearchStatus('loading');
-      // Keep existing pins visible until new results arrive (no clear→empty flash).
+      // Keep existing pins + selection until new results arrive (avoids flash/flicker).
 
       const service = new window.google.maps.places.PlacesService(map);
       const cat = NEARBY_CATEGORIES.find((c) => c.id === selectedCategoryId) || NEARBY_CATEGORIES[0];
@@ -419,6 +418,21 @@ function NearbyMap({ apiKey }) {
     runPlacesSearch('bounds');
   }
 
+  const onPinClick = useCallback((place) => {
+    setActivePlace(place);
+  }, []);
+
+  const pinRows = useMemo(
+    () =>
+      places
+        .filter((p) => p?.geometry?.location)
+        .map((p) => ({
+          place: p,
+          category: nearbyCategoryForPlace(p, selectedCategoryId, t),
+        })),
+    [places, selectedCategoryId, t]
+  );
+
   const radiusKm = NEARBY_SEARCH_RADIUS_M / 1000;
 
   if (loadError || mapsAuthFailed) {
@@ -531,18 +545,15 @@ function NearbyMap({ apiKey }) {
               options={mapOptions}
               onClick={() => setActivePlace(null)}
             >
-              {places.map((p) => {
-                const pinCategory = nearbyCategoryForPlace(p, selectedCategoryId, t);
-                return p.geometry?.location ? (
-                  <NearbyCategoryPin
-                    key={p.place_id}
-                    place={p}
-                    category={pinCategory}
-                    active={activePlace?.place_id === p.place_id}
-                    onClick={() => setActivePlace(p)}
-                  />
-                ) : null;
-              })}
+              {pinRows.map(({ place: p, category: pinCategory }) => (
+                <NearbyCategoryPin
+                  key={p.place_id}
+                  place={p}
+                  category={pinCategory}
+                  active={activePlace?.place_id === p.place_id}
+                  onClick={() => onPinClick(p)}
+                />
+              ))}
               {userLocation ? (
                 <Marker
                   position={userLocation}
