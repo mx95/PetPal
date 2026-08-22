@@ -309,7 +309,8 @@ function NearbyMap({ apiKey }) {
             ...place,
             nearbySourceCategoryIds: [cat.id],
           }));
-          publishPlaces(mapped, { max: 20 });
+          // Pet café: show more Google keyword hits (pet-friendly cafés).
+          publishPlaces(mapped, { max: cat.id === 'pet_cafe' ? 40 : 20 });
           return;
         }
         if (status === window.google.maps.places.PlacesServiceStatus.ZERO_RESULTS) {
