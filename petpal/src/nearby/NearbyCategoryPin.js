@@ -40,6 +40,8 @@ function NearbyCategoryPin({ place, category, active, onClick }) {
   const loc = place?.geometry?.location;
   const icon = useMemo(
     () => markerIconForCategory(category, Boolean(active)),
+    // category object identity changes; pin art only depends on id/icon/active.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [category?.id, category?.icon, active]
   );
 
