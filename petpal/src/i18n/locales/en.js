@@ -857,6 +857,8 @@ const en = {
       firebaseNotConfigured:
         'Firebase is not configured. Add all REACT_APP_FIREBASE_* keys from the Firebase console to .env.local and restart the dev server.',
       popupClosed: 'Sign-in was cancelled. You can try again when you’re ready.',
+      pwaPopupBlocked:
+        'Google sign-in was blocked in the installed app. Open petpal.com.cy in Safari or Chrome, sign in once, then reopen the app — or allow pop-ups for PetPal.',
       redirectInProgress: 'Opening Google sign-in…',
       accountExistsDifferent:
         'An account already exists with this email using a different sign-in method. Sign in with that method, then link providers in settings if needed.',

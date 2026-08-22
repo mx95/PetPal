@@ -928,6 +928,8 @@ const ru = {
       firebaseNotConfigured:
         'Firebase не настроен. Добавьте все REACT_APP_FIREBASE_* из консоли Firebase в .env.local и перезапустите dev-сервер.',
       popupClosed: 'Вход отменён. Можно попробовать снова, когда будете готовы.',
+      pwaPopupBlocked:
+        'Вход через Google заблокирован в установленном приложении. Откройте petpal.com.cy в Safari или Chrome, войдите один раз и снова откройте приложение — или разрешите всплывающие окна для PetPal.',
       redirectInProgress: 'Открываем вход через Google…',
       accountExistsDifferent:
         'Аккаунт с этим email уже есть через другой способ входа. Войдите тем способом.',

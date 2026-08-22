@@ -52,10 +52,51 @@ function writeRedirectMeta(meta) {
   }
 }
 
+function configuredAuthDomain() {
+  return String(
+    auth?.app?.options?.authDomain || process.env.REACT_APP_FIREBASE_AUTH_DOMAIN || ''
+  )
+    .trim()
+    .toLowerCase();
+}
+
 /**
- * Full-page redirect is only reliable in native shells / installed PWAs.
- * Regular mobile Safari/Chrome used to work with popup; redirect + firebaseapp.com
- * authDomain often returns to the app without a session (third-party storage block).
+ * Redirect sign-in only works when the Firebase auth helper is first-party
+ * (authDomain matches the page host). Cross-origin authDomain (*.firebaseapp.com
+ * while the app is on petpal.com.cy) loses the session in installed PWAs after
+ * Google returns — the classic "back to the site but still logged out" bug.
+ */
+export function isAuthDomainFirstParty() {
+  if (typeof window === 'undefined') return false;
+  const authDomain = configuredAuthDomain();
+  if (!authDomain) return false;
+  const host = String(window.location.hostname || '').toLowerCase();
+  if (!host) return false;
+  return (
+    host === authDomain ||
+    host === `www.${authDomain}` ||
+    authDomain === `www.${host}` ||
+    host.endsWith(`.${authDomain}`)
+  );
+}
+
+export function isInstalledWebApp() {
+  if (typeof window === 'undefined') return false;
+  try {
+    if (window.Capacitor?.isNativePlatform?.()) return true;
+  } catch {
+    /* ignore */
+  }
+  return (
+    window.matchMedia?.('(display-mode: standalone)')?.matches === true ||
+    window.navigator.standalone === true
+  );
+}
+
+/**
+ * Prefer full-page redirect only when it can complete the session:
+ * Capacitor always; installed PWA only when authDomain is first-party.
+ * Otherwise use popup (same as mobile Safari/Chrome).
  */
 export function preferSocialRedirect() {
   if (typeof window === 'undefined') return false;
@@ -64,19 +105,15 @@ export function preferSocialRedirect() {
   } catch {
     /* ignore */
   }
-  const standalone =
-    window.matchMedia?.('(display-mode: standalone)')?.matches === true ||
-    window.navigator.standalone === true;
-  return standalone;
+  if (!isInstalledWebApp()) return false;
+  return isAuthDomainFirstParty();
 }
 
 function shouldFallbackToRedirect(err) {
+  // Never fall back to cross-origin redirect — it silently drops the session in PWAs.
+  if (!isAuthDomainFirstParty()) return false;
   const code = String(err?.code || '');
-  return (
-    code === 'auth/popup-blocked' ||
-    code === 'auth/popup-closed-by-user' ||
-    code === 'auth/cancelled-popup-request'
-  );
+  return code === 'auth/popup-blocked';
 }
 
 async function startSocialRedirect(provider, options) {
@@ -138,12 +175,11 @@ export async function ensureSocialUserProfile(user) {
 
 /**
  * Google / Apple sign-in.
- * Web (including mobile browsers): popup — this is what previously worked on petpal.com.cy.
- * Capacitor / installed PWA: redirect. If popup is blocked, fall back to redirect.
+ * Browser + installed PWA (until authDomain is first-party): popup.
+ * Capacitor / first-party PWA: redirect.
  *
- * Production authDomain must stay petpal-aecda.firebaseapp.com until
- * https://petpal.com.cy/__/auth/handler is registered in Google Cloud OAuth
- * (otherwise Google returns Error 400: redirect_uri_mismatch).
+ * Production authDomain should become petpal.com.cy (with /__/auth proxy) after
+ * https://petpal.com.cy/__/auth/handler is registered in Google Cloud OAuth.
  *
  * @param {'google'|'apple'} providerId
  * @param {{ returnTo?: string, mode?: 'login'|'register' }} [options]
@@ -175,12 +211,18 @@ export async function signInWithSocialProvider(providerId, options = {}) {
     }
     return cred;
   } catch (err) {
-    // User cancelled intentionally — do not bounce into a full-page redirect.
     if (err?.code === 'auth/popup-closed-by-user' || err?.code === 'auth/cancelled-popup-request') {
       throw err;
     }
     if (shouldFallbackToRedirect(err)) {
       return startSocialRedirect(provider, redirectOpts);
+    }
+    // Installed app + blocked popup: give a clearer path than a silent logout.
+    if (isInstalledWebApp() && err?.code === 'auth/popup-blocked') {
+      const nicer = new Error('auth_pwa_popup_blocked');
+      nicer.code = 'auth/pwa-popup-blocked';
+      nicer.cause = err;
+      throw nicer;
     }
     throw err;
   }

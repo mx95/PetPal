@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { OverlayView } from '@react-google-maps/api';
 
 function pinOffset() {
@@ -8,7 +8,7 @@ function pinOffset() {
 /**
  * Category emoji pin on the Nearby Google Map (replaces generic blue dots).
  */
-export default function NearbyCategoryPin({ place, category, active, onClick }) {
+function NearbyCategoryPin({ place, category, active, onClick }) {
   const loc = place?.geometry?.location;
   if (!loc) return null;
 
@@ -37,3 +37,5 @@ export default function NearbyCategoryPin({ place, category, active, onClick }) 
     </OverlayView>
   );
 }
+
+export default memo(NearbyCategoryPin);

@@ -936,6 +936,8 @@ const el = {
       firebaseNotConfigured:
         'Το Firebase δεν είναι ρυθμισμένο. Προσθέστε όλα τα REACT_APP_FIREBASE_* από την κονσόλα Firebase στο .env.local και επανεκκινήστε τον dev server.',
       popupClosed: 'Η σύνδεση ακυρώθηκε. Μπορείτε να δοκιμάσετε ξανά όποτε θέλετε.',
+      pwaPopupBlocked:
+        'Η σύνδεση Google αποκλείστηκε στην εγκατεστημένη εφαρμογή. Ανοίξτε το petpal.com.cy στο Safari ή Chrome, συνδεθείτε μία φορά και ξανανοίξτε την εφαρμογή — ή επιτρέψτε τα αναδυόμενα για το PetPal.',
       redirectInProgress: 'Άνοιγμα σύνδεσης Google…',
       accountExistsDifferent:
         'Υπάρχει ήδη λογαριασμός με αυτό το email με διαφορετική μέθοδο σύνδεσης. Συνδεθείτε με εκείνη τη μέθοδο.',
