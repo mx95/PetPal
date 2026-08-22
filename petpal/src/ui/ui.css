@@ -1914,41 +1914,42 @@ select.pp-input:focus {
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 36px;
+  width: 48px;
   border: 0;
   padding: 0;
   background: transparent;
   cursor: pointer;
-  filter: drop-shadow(0 4px 10px rgba(16, 24, 40, 0.28));
+  filter: drop-shadow(0 6px 14px rgba(16, 24, 40, 0.32));
   transform-origin: 50% 100%;
+  -webkit-tap-highlight-color: transparent;
 }
 .pp-nearby-mapPin__bubble {
-  width: 36px;
-  height: 36px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   display: grid;
   place-items: center;
-  font-size: 18px;
+  font-size: 24px;
   line-height: 1;
-  background: #fff;
-  border: 2.5px solid #5b37ff;
+  background: #ffffff;
+  border: 3px solid #5b37ff;
   box-sizing: border-box;
 }
 .pp-nearby-mapPin__stem {
-  width: 10px;
-  height: 10px;
-  margin-top: -6px;
+  width: 14px;
+  height: 14px;
+  margin-top: -7px;
   background: #5b37ff;
   transform: rotate(45deg);
-  border-radius: 1px;
+  border-radius: 2px;
 }
 .pp-nearby-mapPin.is-active {
   z-index: 2;
-  transform: scale(1.12);
+  transform: scale(1.14);
 }
 .pp-nearby-mapPin.is-active .pp-nearby-mapPin__bubble {
   border-color: #3d1fd4;
-  box-shadow: 0 0 0 4px rgba(91, 55, 255, 0.22);
+  box-shadow: 0 0 0 5px rgba(91, 55, 255, 0.24);
 }
 .pp-nearby-mapPin.is-active .pp-nearby-mapPin__stem {
   background: #3d1fd4;

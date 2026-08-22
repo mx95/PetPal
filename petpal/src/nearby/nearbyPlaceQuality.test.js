@@ -5,7 +5,7 @@ import {
 } from './nearbyPlaceQuality';
 
 describe('nearbyPlaceQuality', () => {
-  it('rejects ordinary cafés returned for pet-café search (DaVinci-style false positive)', () => {
+  it('rejects ordinary cafés in All services but keeps them on the Pet café tab', () => {
     const place = {
       place_id: 'davinci',
       name: 'Limanaki DaVinci Espresso Lounge Cafe Bar',
@@ -15,7 +15,8 @@ describe('nearbyPlaceQuality', () => {
     };
     expect(hasPetCafeSignal(place)).toBe(false);
     expect(isAcceptableNearbyPlace(place, { selectedCategoryId: 'more' })).toBe(false);
-    expect(isAcceptableNearbyPlace(place, { selectedCategoryId: 'pet_cafe' })).toBe(false);
+    // Pet café tab trusts Google keyword matches (pet-friendly cafés).
+    expect(isAcceptableNearbyPlace(place, { selectedCategoryId: 'pet_cafe' })).toBe(true);
   });
 
   it('keeps real pet cafés', () => {

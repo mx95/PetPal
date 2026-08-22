@@ -59,8 +59,9 @@ export function hasPetCafeSignal(place) {
 }
 
 /**
- * Only reject ordinary cafés/restaurants from pet-café search.
- * Groomers, hospitals, parks, brand-name clinics, etc. are kept.
+ * Only reject ordinary cafés/restaurants from All-services pet-café noise.
+ * When the user opens the Pet café tab, trust Google Places keyword matches
+ * (pet-friendly / dogs-allowed cafés often lack “pet” in the place name).
  *
  * @param {google.maps.places.PlaceResult & { nearbySourceCategoryIds?: string[] }} place
  * @param {{ selectedCategoryId?: string }} [options]
@@ -73,12 +74,16 @@ export function isAcceptableNearbyPlace(place, options = {}) {
   const selected = options.selectedCategoryId || 'more';
   const foodDrink = isFoodOrDrinkVenue(place);
   const nonCafeSources = sources.filter((id) => id !== 'pet_cafe');
-  const petCafeOnly =
-    selected === 'pet_cafe' ||
-    (sources.includes('pet_cafe') && nonCafeSources.length === 0);
 
-  // DaVinci-style: Google café/bar returned only for “pet café” keywords.
-  if (petCafeOnly && (foodDrink || selected === 'pet_cafe' || sources.includes('pet_cafe'))) {
+  // Explicit Pet café category: show Google's keyword hits (pet-friendly cafés).
+  if (selected === 'pet_cafe') {
+    return true;
+  }
+
+  const petCafeOnly = sources.includes('pet_cafe') && nonCafeSources.length === 0;
+
+  // All services: drop ordinary cafés that only matched pet_café keywords.
+  if (petCafeOnly && foodDrink) {
     return hasPetCafeSignal(place);
   }
 
