@@ -422,7 +422,28 @@ function sendSpaIndex(_req, res) {
   }
 }
 
+function sendStaticSeoFile(res, fileName, contentType) {
+  const candidates = [
+    path.join(WEB_BUILD_DIR, fileName),
+    path.resolve(__dirname, "..", "..", "petpal", "public", fileName),
+  ];
+  for (const filePath of candidates) {
+    if (!fs.existsSync(filePath)) continue;
+    res.setHeader("Cache-Control", "public, max-age=3600");
+    return res.type(contentType).send(fs.readFileSync(filePath, "utf8"));
+  }
+  return false;
+}
+
 if (fs.existsSync(WEB_INDEX_HTML)) {
+  app.get("/robots.txt", (_req, res) => {
+    if (sendStaticSeoFile(res, "robots.txt", "text/plain")) return;
+    res.type("text/plain").send("User-agent: *\nAllow: /\n");
+  });
+  app.get("/sitemap.xml", (_req, res) => {
+    if (sendStaticSeoFile(res, "sitemap.xml", "application/xml")) return;
+    res.status(404).type("text/plain").send("sitemap not found — rebuild petpal after adding public/sitemap.xml");
+  });
   app.get(["/", "/index.html"], sendSpaIndex);
   app.use(
     express.static(WEB_BUILD_DIR, {

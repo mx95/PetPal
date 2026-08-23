@@ -11,48 +11,64 @@ PetPal is a client-rendered React app. Google can index it, but you must **submi
 | `petpal/public/robots.txt` | Allows public pages; blocks `/admin`, `/dashboard`, etc. |
 | `petpal/src/components/RouteSeo.js` | Per-route title, description, canonical, `noindex` |
 | `petpal/src/config/seo.js` | Site URL and route SEO map |
+| `tracker-tcp-server/src/index.js` | Explicit `/robots.txt` and `/sitemap.xml` routes |
 
-## One-time setup (required)
+---
 
-### 1. Google Search Console
+## ✅ Domain verified (Cloudflare DNS)
 
-1. Open [Google Search Console](https://search.google.com/search-console)
-2. Add property: **URL prefix** → `https://petpal.com.cy`
-3. Verify ownership (recommended: **DNS TXT record** at your domain registrar)
-   - Alternative: set `REACT_APP_GOOGLE_SITE_VERIFICATION` in `petpal/.env.local`, rebuild, deploy
-4. Go to **Sitemaps** → submit: `https://petpal.com.cy/sitemap.xml`
-5. Use **URL inspection** on `/` and `/shop` → **Request indexing**
+If Search Console shows **“Ownership auto verified”** via Cloudflare, you are done with verification for the whole domain (`petpal.com.cy` + subdomains).
 
-Indexing usually takes **several days to a few weeks** for a new site.
+### Do these next (in order)
 
-### 2. Pick one canonical domain
+#### 1. Deploy the latest code
 
-Use either `petpal.com.cy` or `www.petpal.com.cy` everywhere (Search Console, sitemap, links). Redirect the other to your chosen host in nginx to avoid duplicate listings.
+The SEO meta tags and sitemap only work **after deploy**. Until then, Google still sees the old `PetPal GPS Tracker` page and `/sitemap.xml` returns HTML.
 
-### 3. Production env (before `npm run build`)
+After deploy, confirm:
+
+- `https://petpal.com.cy/sitemap.xml` → XML list of URLs (not the React app)
+- View source on `/` → title should be **“PetPal — GPS Pet Tracker & Care Hub | Cyprus”**
+
+#### 2. Submit your sitemap
+
+In [Google Search Console](https://search.google.com/search-console):
+
+1. Open your **petpal.com.cy** property
+2. Left menu → **Sitemaps** (under “Indexing”)
+3. Enter: `sitemap.xml` → **Submit**
+
+#### 3. Request indexing for key pages
+
+1. Left menu → **URL inspection** (top search bar)
+2. Enter `https://petpal.com.cy/` → **Request indexing**
+3. Repeat for `https://petpal.com.cy/shop`
+
+#### 4. Wait for data
+
+The Overview page shows **“Processing data, please check again in a day or so”** — that is normal for a new property. Indexing often takes **3–14 days** before brand searches like `PetPal Cyprus` return results.
+
+---
+
+## Production env (before `npm run build`)
 
 ```bash
 REACT_APP_SITE_URL=https://petpal.com.cy
-# Optional, after Search Console setup:
-REACT_APP_GOOGLE_SITE_VERIFICATION=your-code-here
 ```
 
-### 4. Deploy and verify
+DNS verification is already done — you do **not** need `REACT_APP_GOOGLE_SITE_VERIFICATION` unless you add a second verification method.
 
-After deploy, confirm these URLs work in a browser:
+## Pick one canonical domain
 
-- `https://petpal.com.cy/robots.txt`
-- `https://petpal.com.cy/sitemap.xml`
-
-View page source on `/` — you should see the title, description, and JSON-LD block.
+Use either `petpal.com.cy` or `www.petpal.com.cy` in marketing links. Redirect the other in nginx to avoid duplicate listings.
 
 ## Search terms
 
-You will usually appear first for **brand searches** (`PetPal`, `PetPal Cyprus`, `petpal.com.cy`) before generic terms (`GPS pet tracker Cyprus`). Generic ranking needs content, backlinks, and time.
+You will usually appear first for **brand searches** (`PetPal`, `PetPal Cyprus`, `petpal.com.cy`) before generic terms (`GPS pet tracker Cyprus`).
 
 ## Updating the sitemap
 
-When you add new **public** marketing pages, add a `<url>` entry to `petpal/public/sitemap.xml` and redeploy. Then resubmit the sitemap in Search Console (or use “Ping” by visiting the sitemap URL after deploy).
+When you add new **public** pages, add a `<url>` to `petpal/public/sitemap.xml`, redeploy, then resubmit the sitemap in Search Console.
 
 ## Indexable vs private routes
 
@@ -62,7 +78,7 @@ When you add new **public** marketing pages, add a `<url>` entry to `petpal/publ
 
 ## Optional next steps
 
-- Add a 1200×630 **og-share.png** at `public/images/` for richer social previews
-- Enable `REACT_APP_FIREBASE_MEASUREMENT_ID` for traffic analytics (separate from Search Console)
-- Register **Google Business Profile** if you have a local Cyprus presence
-- Build prerender/SSR for `/pet/:id` if share previews matter
+- Add a 1200×630 share image at `public/images/og-share.png`
+- Enable `REACT_APP_FIREBASE_MEASUREMENT_ID` for traffic analytics
+- Register **Google Business Profile** for Cyprus
+- Link Instagram / social profiles to `petpal.com.cy`

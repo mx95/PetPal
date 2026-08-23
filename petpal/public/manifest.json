@@ -1,6 +1,7 @@
 {
   "short_name": "PetPal",
-  "name": "PetPal GPS Tracker",
+  "name": "PetPal — GPS Pet Tracker & Care Hub",
+  "description": "GPS pet tracking, NFC tags, nearby pet services, and bookings in Cyprus.",
   "icons": [
     {
       "src": "/logo192.png",
