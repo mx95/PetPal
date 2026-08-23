@@ -9,6 +9,7 @@ import { ADMIN_FULFILLMENT_STATUSES, formatOrderStatusLabel, adminUpdateOrder, s
 import { localizeCartItem } from '../shop/shopCartHelpers';
 import { nfcDesignIdFromOrderItem, orderItemHasNfcDesign } from '../shop/orderItemDisplay';
 import { getNfcTagDesignById } from '../data/nfcTagDesigns';
+import { useShopAssets } from '../hooks/useShopAssets';
 import { adminAssignSubscriptionImei } from '../shop/subscriptionImeiClient';
 import { formatDateTime24 } from '../formatTime24';
 
@@ -22,6 +23,7 @@ export default function AdminOrders() {
   const { t } = useI18n();
   const { user } = useAuth();
   const { isAdmin, adminReady, firebaseReady } = useCompany();
+  const { nfcDesigns } = useShopAssets();
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState('');
@@ -205,7 +207,7 @@ export default function AdminOrders() {
                     {row.items.map((item) => {
                       const displayItem = localizeCartItem(item, t);
                       const designId = orderItemHasNfcDesign(item) ? nfcDesignIdFromOrderItem(item) : null;
-                      const design = designId != null ? getNfcTagDesignById(designId) : null;
+                      const design = designId != null ? getNfcTagDesignById(designId, nfcDesigns) : null;
                       return (
                         <li key={item.key} className="pp-adminOrdersList__line">
                           <div className="pp-adminOrdersList__lineMain">

@@ -9,8 +9,7 @@ export function nfcDesignIdFromOrderItem(item) {
   if (item.selectedDesignId != null && Number.isFinite(Number(item.selectedDesignId))) {
     return Math.max(1, Math.min(999, Number(item.selectedDesignId)));
   }
-  const key = String(item.key || '');
-  const fromKey = key.match(/-d(\d+)(?:-|$)/i);
+  const fromKey = String(item.key || '').match(/-d(\d+)(?:-|$)/i);
   if (fromKey) return Math.max(1, Math.min(999, Number(fromKey[1])));
   return null;
 }

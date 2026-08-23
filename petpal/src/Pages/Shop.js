@@ -10,7 +10,9 @@ import { providerBookingsBoostIsActive, providerNearbyBoostIsActive } from '../b
 import ShopCartBar from '../components/shop/ShopCartBar';
 import ShopPetPicker from '../components/shop/ShopPetPicker';
 import NfcDesignSelector from '../components/shop/NfcDesignSelector';
-import { NFC_TAG_DESIGNS } from '../data/nfcTagDesigns';
+import NfcShopShowcase from '../components/shop/NfcShopShowcase';
+import TrackerShopHero from '../components/shop/TrackerShopHero';
+import { useShopAssets } from '../hooks/useShopAssets';
 import {
   NFC_TAG_ADDON_CENTS,
   PLUS_SKUS,
@@ -90,14 +92,20 @@ export default function Shop() {
   const [monthlyNfcPetIds, setMonthlyNfcPetIds] = useState(/** @type {string[]} */ ([]));
   const [yearlyNfcPetIds, setYearlyNfcPetIds] = useState(/** @type {string[]} */ ([]));
   const [nfcHardwarePetIds, setNfcHardwarePetIds] = useState(/** @type {string[]} */ ([]));
-  const [selectedNfcDesignId, setSelectedNfcDesignId] = useState(
-    () => NFC_TAG_DESIGNS[0]?.id || 1
-  );
+  const [providerDoc, setProviderDoc] = useState(null);
+  const { nfcDesigns, trackerImage } = useShopAssets();
+  const [selectedNfcDesignId, setSelectedNfcDesignId] = useState(1);
   const [activeTrackerSubs, setActiveTrackerSubs] = useState(/** @type {Array<{ id: string, sku?: string, status?: string, createdAt?: unknown }>} */ ([]));
   const [legacyMonthlyActive, setLegacyMonthlyActive] = useState(false);
   const [cancelBusy, setCancelBusy] = useState(null);
   const [boostCancelBusy, setBoostCancelBusy] = useState('');
   const [cancelMsg, setCancelMsg] = useState('');
+
+  useEffect(() => {
+    if (!nfcDesigns.some((d) => d.id === selectedNfcDesignId)) {
+      setSelectedNfcDesignId(nfcDesigns[0]?.id || 1);
+    }
+  }, [nfcDesigns, selectedNfcDesignId]);
 
   const petOptions = useMemo(
     () =>
@@ -109,9 +117,7 @@ export default function Shop() {
         photoDataUrl: p.photoDataUrl,
       })),
     [pets]
-  )
-
-  const [providerDoc, setProviderDoc] = useState(null);
+  );
 
   useEffect(() => {
     if (!uid || !showBusinessBoosts) {
@@ -369,6 +375,14 @@ export default function Shop() {
 
       {cartItems.length ? <ShopCartBar /> : null}
 
+      <NfcShopShowcase
+        designs={nfcDesigns}
+        selectedDesignId={selectedNfcDesignId}
+        onSelectDesign={setSelectedNfcDesignId}
+        selectable
+      />
+      <TrackerShopHero trackerImage={trackerImage} />
+
       {shopTab === 'subscriptions' ? (
         <>
           <div className="pp-shopInfoBox" role="note">
@@ -490,7 +504,7 @@ export default function Shop() {
                     {p.id === 'TRACKER_HARDWARE' ? (
                       <img
                         className="pp-shopCard__productImg"
-                        src="/images/shop/gps-tracker-v2.png"
+                        src={trackerImage}
                         alt={p.title}
                       />
                     ) : null}
@@ -553,7 +567,7 @@ export default function Shop() {
                           />
                           <img
                             className="pp-shopTrackerOpt__img"
-                            src="/images/shop/gps-tracker-v2.png"
+                            src={trackerImage}
                             alt=""
                           />
                           <span className="pp-shopTrackerOpt__copy">
@@ -625,6 +639,7 @@ export default function Shop() {
                           selectedDesignId={selectedNfcDesignId}
                           onChange={setSelectedNfcDesignId}
                           disabled={isLoading}
+                          designs={nfcDesigns}
                         />
                       </>
                     ) : null}
