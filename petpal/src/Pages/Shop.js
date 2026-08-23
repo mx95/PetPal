@@ -572,11 +572,13 @@ export default function Shop() {
                             disabled={isLoading || monthlyUseExistingImei}
                             onChange={(e) => setMonthlyIncludeTracker(e.target.checked)}
                           />
-                          <img
-                            className="pp-shopTrackerOpt__img"
-                            src={trackerImage}
-                            alt=""
-                          />
+                          <div className="pp-shopTrackerOpt__imgWrap" aria-hidden>
+                            <img
+                              className="pp-shopTrackerOpt__img"
+                              src={trackerImage}
+                              alt=""
+                            />
+                          </div>
                           <span className="pp-shopTrackerOpt__copy">
                             <strong>
                               {monthlyAddOnMode

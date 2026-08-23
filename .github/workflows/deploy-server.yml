@@ -60,6 +60,7 @@ jobs:
             # Pull first so we use the latest deploy script, then restore a Google-compatible
             # authDomain (custom domain needs OAuth redirect URI first or login 400s).
             cd "$PETPAL_ROOT"
+            rm -f "$PETPAL_ROOT/.git/index.lock"
             git update-ref -d "refs/remotes/origin/${DEPLOY_BRANCH}" 2>/dev/null || true
             git fetch origin "+refs/heads/${DEPLOY_BRANCH}:refs/remotes/origin/${DEPLOY_BRANCH}" --prune
             git checkout "$DEPLOY_BRANCH"

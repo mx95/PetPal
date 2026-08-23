@@ -134,6 +134,7 @@ maintenance_enable
 if [ "$SKIP_GIT" != "1" ]; then
   log "Updating repo at $PETPAL_ROOT (branch: $DEPLOY_BRANCH)"
   cd "$PETPAL_ROOT"
+  rm -f "$PETPAL_ROOT/.git/index.lock"
   # Drop a stale remote-tracking ref before fetch — overlapping deploys can leave
   # "cannot lock ref … expected X but is at Y" and abort the whole deploy.
   git update-ref -d "refs/remotes/origin/${DEPLOY_BRANCH}" 2>/dev/null || true
