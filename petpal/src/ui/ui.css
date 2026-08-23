@@ -7451,10 +7451,6 @@ html[data-theme='dark'] .pp-homeWelcome__value strong {
   font-weight: 600;
 }
 
-.pp-publicPet__hero p::after {
-  content: ' 🐾';
-}
-
 .pp-publicPet__kv { margin: 0; }
 
 .pp-publicPet__card h2 {
