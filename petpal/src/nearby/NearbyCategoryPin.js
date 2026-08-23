@@ -56,7 +56,8 @@ function NearbyCategoryPin({ place, category, active, onClick }) {
       zIndex={active ? 1000 : 1}
       clickable
       onClick={() => onClick?.()}
-      optimized
+      // Custom SVG icons need optimized=false or Maps may hide/corrupt them.
+      optimized={false}
     />
   );
 }
