@@ -2449,6 +2449,9 @@ const el = {
     trackerImeiAssigned: 'Ανατέθηκε: {imei}',
     trackerImeiAssignedForPayment: 'Το IMEI ανατέθηκε για πληρωμή {payment} · sub {sub}.',
     trackerImeiBusy: 'Αποθήκευση…',
+    nfcDesignLabel: 'Σχέδιο NFC',
+    nfcDesignId: 'Σχέδιο #{id}',
+    nfcDesignUnknown: 'Το σχέδιο NFC δεν καταγράφηκε σε αυτή την παραγγελία.',
   },
   admin: {
     badge: 'Διαχείριση',

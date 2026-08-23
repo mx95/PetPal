@@ -108,28 +108,47 @@ function validateShipping(shipping) {
  */
 function buildOrderItems(sku, ctx) {
   if (sku === 'MARKETPLACE_CART' && Array.isArray(ctx.cartItems)) {
-    return ctx.cartItems.map((row) =>
-      omitUndefined({
+    return ctx.cartItems.map((row) => {
+      const selectedDesignId =
+        row.selectedDesignId != null && Number.isFinite(Number(row.selectedDesignId))
+          ? Math.max(1, Math.min(999, Number(row.selectedDesignId)))
+          : undefined;
+      return omitUndefined({
         key: String(row.key || '').slice(0, 120),
         title: String(row.title || 'Item').slice(0, 160),
         subtitle: row.subtitle ? String(row.subtitle).slice(0, 200) : undefined,
         priceCents: Math.max(0, Number(row.priceCents) || 0),
         qty: Math.max(1, Number(row.qty) || 1),
         sku: row.sku ? String(row.sku).slice(0, 64) : undefined,
+        productId: row.productId ? String(row.productId).slice(0, 64) : undefined,
         saveCard: Boolean(row.saveCard),
         includeTracker: Boolean(row.includeTracker),
         includeNfc: Boolean(row.includeNfc),
         nfcPetIds: Array.isArray(row.nfcPetIds) ? row.nfcPetIds.map(String).filter(Boolean) : undefined,
+        selectedDesignId,
         recurring: Boolean(row.recurring),
-      })
-    );
+      });
+    });
   }
   const items = [{ key: sku, title: ctx.title || sku, priceCents: ctx.chargeCents || 0, qty: 1 }];
   if (ctx.includeTracker) {
     items.push({ key: 'TRACKER_HARDWARE', title: 'GPS tracker device', priceCents: 3999, qty: 1 });
   }
   if (ctx.includeNfc) {
-    items.push({ key: 'NFC_TAG_HARDWARE', title: 'NFC pet tag', priceCents: sku === 'PETPAL_PLUS_YEARLY' ? 0 : 999, qty: 1 });
+    const selectedDesignId =
+      ctx.selectedDesignId != null && Number.isFinite(Number(ctx.selectedDesignId))
+        ? Math.max(1, Math.min(999, Number(ctx.selectedDesignId)))
+        : undefined;
+    items.push(
+      omitUndefined({
+        key: 'NFC_TAG_HARDWARE',
+        title: 'NFC pet tag',
+        priceCents: sku === 'PETPAL_PLUS_YEARLY' ? 0 : 999,
+        qty: 1,
+        selectedDesignId,
+        productId: 'nfc-tag',
+      })
+    );
   }
   return items;
 }

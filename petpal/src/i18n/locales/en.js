@@ -2259,6 +2259,9 @@ const en = {
     trackerImeiAssigned: 'Assigned: {imei}',
     trackerImeiAssignedForPayment: 'IMEI assigned for payment {payment} · sub {sub}.',
     trackerImeiBusy: 'Saving…',
+    nfcDesignLabel: 'NFC design',
+    nfcDesignId: 'Design #{id}',
+    nfcDesignUnknown: 'NFC design not recorded on this order.',
   },
   admin: {
     badge: 'Admin',

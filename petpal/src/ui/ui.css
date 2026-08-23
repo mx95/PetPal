@@ -20362,6 +20362,37 @@ html[data-theme="dark"] .pp-nearby-list > li {
   min-width: 0;
 }
 
+.pp-adminOrdersList__line {
+  list-style: none;
+}
+
+.pp-adminOrdersList__lineMain {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pp-adminOrdersList__nfcDesign {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: rgba(91, 55, 255, 0.06);
+  border: 1px solid rgba(91, 55, 255, 0.12);
+  max-width: 360px;
+}
+
+.pp-adminOrdersList__nfcThumb {
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: 10px;
+  flex-shrink: 0;
+  background: #fff;
+}
+
 .pp-shopCart__rowMeta {
   display: flex;
   align-items: center;
