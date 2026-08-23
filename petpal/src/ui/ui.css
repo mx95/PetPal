@@ -1955,6 +1955,17 @@ select.pp-input:focus {
   background: #3d1fd4;
 }
 
+/* Native Marker emoji labels (vector pin + label — no broken image icons). */
+.pp-nearby-markerLabel {
+  font-size: 17px !important;
+  line-height: 1 !important;
+  position: relative;
+  top: -1px;
+}
+.pp-nearby-markerLabel.is-active {
+  filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.35));
+}
+
 .pp-nearby-mapFloatingBar {
   position: absolute;
   z-index: 10;
