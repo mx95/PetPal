@@ -2415,6 +2415,9 @@ const ru = {
     trackerImeiAssigned: 'Назначено: {imei}',
     trackerImeiAssignedForPayment: 'IMEI назначен для платежа {payment} · sub {sub}.',
     trackerImeiBusy: 'Сохранение…',
+    nfcDesignLabel: 'Дизайн NFC',
+    nfcDesignId: 'Дизайн #{id}',
+    nfcDesignUnknown: 'Дизайн NFC не записан в этом заказе.',
   },
   admin: {
     badge: 'Админ',

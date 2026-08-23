@@ -7,6 +7,8 @@ import { PrettySelect } from '../components/PrettySelect';
 import { formatEur } from '../shop/catalog';
 import { ADMIN_FULFILLMENT_STATUSES, formatOrderStatusLabel, adminUpdateOrder, subscribeAllOrders } from '../shop/ordersFirestore';
 import { localizeCartItem } from '../shop/shopCartHelpers';
+import { nfcDesignIdFromOrderItem, orderItemHasNfcDesign } from '../shop/orderItemDisplay';
+import { getNfcTagDesignById } from '../data/nfcTagDesigns';
 import { adminAssignSubscriptionImei } from '../shop/subscriptionImeiClient';
 import { formatDateTime24 } from '../formatTime24';
 
@@ -202,15 +204,44 @@ export default function AdminOrders() {
                   <ul className="pp-ordersList__lines">
                     {row.items.map((item) => {
                       const displayItem = localizeCartItem(item, t);
+                      const designId = orderItemHasNfcDesign(item) ? nfcDesignIdFromOrderItem(item) : null;
+                      const design = designId != null ? getNfcTagDesignById(designId) : null;
                       return (
-                        <li key={item.key}>
-                          {displayItem.title} ×{item.qty} — {formatEur(item.priceCents * item.qty)}
-                          {item.subPaymentId ? (
-                            <span className="pp-subtle">
-                              {' '}
-                              · subPaymentID {item.subPaymentId}
+                        <li key={item.key} className="pp-adminOrdersList__line">
+                          <div className="pp-adminOrdersList__lineMain">
+                            <span>
+                              {displayItem.title} ×{item.qty} — {formatEur(item.priceCents * item.qty)}
+                              {item.subPaymentId ? (
+                                <span className="pp-subtle">
+                                  {' '}
+                                  · subPaymentID {item.subPaymentId}
+                                </span>
+                              ) : null}
                             </span>
-                          ) : null}
+                            {displayItem.subtitle ? (
+                              <div className="pp-subtle">{displayItem.subtitle}</div>
+                            ) : null}
+                            {design ? (
+                              <div className="pp-adminOrdersList__nfcDesign">
+                                <img
+                                  src={design.image}
+                                  alt=""
+                                  width={48}
+                                  height={48}
+                                  className="pp-adminOrdersList__nfcThumb"
+                                />
+                                <div>
+                                  <strong>{t('adminOrders.nfcDesignLabel')}</strong>
+                                  <div>{design.name}</div>
+                                  <div className="pp-subtle">
+                                    {t('adminOrders.nfcDesignId', { id: design.id })}
+                                  </div>
+                                </div>
+                              </div>
+                            ) : orderItemHasNfcDesign(item) ? (
+                              <div className="pp-subtle">{t('adminOrders.nfcDesignUnknown')}</div>
+                            ) : null}
+                          </div>
                         </li>
                       );
                     })}
