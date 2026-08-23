@@ -2,10 +2,11 @@ import {
   filterAcceptableNearbyPlaces,
   hasPetCafeSignal,
   isAcceptableNearbyPlace,
+  isPermanentlyClosedPlace,
 } from './nearbyPlaceQuality';
 
 describe('nearbyPlaceQuality', () => {
-  it('rejects ordinary cafés in All services but keeps them on the Pet café tab', () => {
+  it('rejects ordinary cafés in All services and on the Pet café tab', () => {
     const place = {
       place_id: 'davinci',
       name: 'Limanaki DaVinci Espresso Lounge Cafe Bar',
@@ -15,8 +16,7 @@ describe('nearbyPlaceQuality', () => {
     };
     expect(hasPetCafeSignal(place)).toBe(false);
     expect(isAcceptableNearbyPlace(place, { selectedCategoryId: 'more' })).toBe(false);
-    // Pet café tab trusts Google keyword matches (pet-friendly cafés).
-    expect(isAcceptableNearbyPlace(place, { selectedCategoryId: 'pet_cafe' })).toBe(true);
+    expect(isAcceptableNearbyPlace(place, { selectedCategoryId: 'pet_cafe' })).toBe(false);
   });
 
   it('keeps real pet cafés', () => {
@@ -29,6 +29,7 @@ describe('nearbyPlaceQuality', () => {
     };
     expect(hasPetCafeSignal(place)).toBe(true);
     expect(isAcceptableNearbyPlace(place, { selectedCategoryId: 'more' })).toBe(true);
+    expect(isAcceptableNearbyPlace(place, { selectedCategoryId: 'pet_cafe' })).toBe(true);
   });
 
   it('keeps pet-friendly cafés with explicit wording', () => {
@@ -39,6 +40,56 @@ describe('nearbyPlaceQuality', () => {
       nearbySourceCategoryIds: ['pet_cafe'],
     };
     expect(isAcceptableNearbyPlace(place)).toBe(true);
+    expect(isAcceptableNearbyPlace(place, { selectedCategoryId: 'pet_cafe' })).toBe(true);
+  });
+
+  it('keeps café-like venues that mention dogs on the Pet café tab', () => {
+    const place = {
+      place_id: 'dogs-ok',
+      name: 'Garden Terrace',
+      vicinity: 'Dogs welcome patio',
+      types: ['cafe', 'restaurant'],
+      nearbySourceCategoryIds: ['pet_cafe'],
+    };
+    expect(hasPetCafeSignal(place)).toBe(false);
+    expect(isAcceptableNearbyPlace(place, { selectedCategoryId: 'pet_cafe' })).toBe(true);
+  });
+
+  it('excludes permanently closed places', () => {
+    const place = {
+      place_id: 'gone',
+      name: 'Old Cat Cafe',
+      types: ['cafe'],
+      business_status: 'CLOSED_PERMANENTLY',
+      nearbySourceCategoryIds: ['pet_cafe'],
+    };
+    expect(isPermanentlyClosedPlace(place)).toBe(true);
+    expect(isAcceptableNearbyPlace(place, { selectedCategoryId: 'pet_cafe' })).toBe(false);
+    expect(
+      isAcceptableNearbyPlace(
+        { name: 'Happy Paws', types: ['veterinary_care'], business_status: 'CLOSED_PERMANENTLY' },
+        { selectedCategoryId: 'veterinary_care' }
+      )
+    ).toBe(false);
+  });
+
+  it('keeps operational and temporarily closed places', () => {
+    expect(
+      isAcceptableNearbyPlace({
+        name: 'Paws Cat Cafe',
+        types: ['cafe'],
+        business_status: 'OPERATIONAL',
+        nearbySourceCategoryIds: ['pet_cafe'],
+      })
+    ).toBe(true);
+    expect(
+      isAcceptableNearbyPlace({
+        name: 'Paws Cat Cafe',
+        types: ['cafe'],
+        business_status: 'CLOSED_TEMPORARILY',
+        nearbySourceCategoryIds: ['pet_cafe'],
+      })
+    ).toBe(true);
   });
 
   it('keeps trusted Google pet types without pet wording in the name', () => {
@@ -125,6 +176,12 @@ describe('nearbyPlaceQuality', () => {
           name: 'Sunshine Grooming',
           types: ['establishment'],
           nearbySourceCategoryIds: ['grooming'],
+        },
+        {
+          name: 'Closed Pet Shop',
+          types: ['pet_store'],
+          business_status: 'CLOSED_PERMANENTLY',
+          nearbySourceCategoryIds: ['pet_store'],
         },
       ],
       { selectedCategoryId: 'more' }

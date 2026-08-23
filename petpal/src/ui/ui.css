@@ -1838,8 +1838,9 @@ select.pp-input:focus {
 .pp-nearby-tile {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  text-align: left;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
   padding: 14px 16px;
   border-radius: 16px;
   border: 2px solid rgba(16, 24, 40, 0.1);
@@ -1866,6 +1867,10 @@ select.pp-input:focus {
   font-size: 26px;
   line-height: 1;
   margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
 }
 
 .pp-nearby-tile__label {
@@ -1873,6 +1878,8 @@ select.pp-input:focus {
   font-size: 15px;
   letter-spacing: -0.02em;
   color: #101828;
+  text-align: center;
+  width: 100%;
 }
 
 .pp-nearby-tile__desc {
@@ -1880,6 +1887,8 @@ select.pp-input:focus {
   color: #667085;
   margin-top: 4px;
   line-height: 1.35;
+  text-align: center;
+  width: 100%;
 }
 
 .pp-nearby-hint {
@@ -1922,6 +1931,10 @@ select.pp-input:focus {
   filter: drop-shadow(0 6px 14px rgba(16, 24, 40, 0.32));
   transform-origin: 50% 100%;
   -webkit-tap-highlight-color: transparent;
+  /* Keep overlays on their own compositor layer during map pans. */
+  will-change: transform;
+  backface-visibility: hidden;
+  transform: translateZ(0);
 }
 .pp-nearby-mapPin__bubble {
   width: 48px;
@@ -1945,7 +1958,7 @@ select.pp-input:focus {
 }
 .pp-nearby-mapPin.is-active {
   z-index: 2;
-  transform: scale(1.14);
+  transform: translateZ(0) scale(1.14);
 }
 .pp-nearby-mapPin.is-active .pp-nearby-mapPin__bubble {
   border-color: #3d1fd4;
@@ -8228,9 +8241,10 @@ a.pp-publicPet__metaValue {
 .pp-bottomNav__row {
   pointer-events: auto;
   display: grid;
-  grid-template-columns: 1fr 1fr 1.4fr 1fr 1fr;
+  grid-template-columns: 1fr 1fr minmax(72px, 1.35fr) 1fr 1fr;
   align-items: center;
-  gap: 6px;
+  justify-items: center;
+  gap: 8px;
   background:
     radial-gradient(180px 90px at 50% -20%, rgba(91, 55, 255, 0.16), transparent 70%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.94) 0%, rgba(249, 250, 255, 0.92) 100%),
@@ -8251,12 +8265,16 @@ a.pp-publicPet__metaValue {
   justify-content: center;
   gap: 3px;
   min-height: 52px;
+  width: 100%;
+  max-width: 100%;
   padding: 7px 4px;
   border-radius: 18px;
   color: #344054;
   font-weight: 800;
   font-size: 10px;
   text-decoration: none;
+  box-sizing: border-box;
+  overflow: hidden;
   transition:
     color 220ms ease,
     background 220ms ease,
@@ -8264,6 +8282,7 @@ a.pp-publicPet__metaValue {
     box-shadow 220ms ease;
   -webkit-tap-highlight-color: transparent;
   position: relative;
+  z-index: 0;
 }
 
 @media (max-width: 720px) {
@@ -8422,8 +8441,9 @@ a.pp-publicPet__metaValue {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: 68px;
-  height: 68px;
+  width: 64px;
+  height: 64px;
+  max-width: 100%;
   margin: 0 auto;
   border-radius: 50%;
   background: linear-gradient(145deg, #5b37ff 0%, #7b60ff 58%, #66a3ff 100%);
@@ -8436,7 +8456,9 @@ a.pp-publicPet__metaValue {
   transition: transform 200ms ease, box-shadow 220ms ease, filter 200ms ease;
   -webkit-tap-highlight-color: transparent;
   position: relative;
+  z-index: 2;
   overflow: visible;
+  box-sizing: border-box;
 }
 .pp-bottomNav__fab:hover {
   transform: translateY(-15px);
@@ -9105,13 +9127,13 @@ body,
 .pp-bottomNav__row {
   max-width: 410px;
   margin: 0 auto;
-  gap: 2px;
+  gap: 6px;
   border-radius: 24px;
   border-color: rgba(255, 255, 255, 0.72);
   backdrop-filter: blur(12px) saturate(1.05);
   -webkit-backdrop-filter: blur(12px) saturate(1.05);
   box-shadow: 0 12px 28px -20px rgba(16, 24, 40, 0.46);
-  padding: 5px 7px;
+  padding: 5px 8px;
 }
 
 .pp-bottomNav__item {
@@ -9256,17 +9278,25 @@ body,
   padding: 9px;
   border-radius: 16px;
   min-width: 0;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
 }
 
 .pp-nearby-tile__icon {
   font-size: 18px;
   margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
 }
 
 .pp-nearby-tile__label {
   font-size: 11px;
   line-height: 1.25;
   max-width: 100%;
+  text-align: center;
   overflow: hidden;
   display: -webkit-box;
   -webkit-box-orient: vertical;
@@ -16010,7 +16040,7 @@ html[data-theme="dark"] .pp-book-modalPanel::before {
 .pp-bottomNav__item--on {
   color: #5b37ff;
   background: linear-gradient(180deg, rgba(91, 55, 255, 0.14), rgba(91, 55, 255, 0.08));
-  box-shadow: 0 8px 20px -16px rgba(91, 55, 255, 0.75);
+  box-shadow: inset 0 0 0 1px rgba(91, 55, 255, 0.2);
 }
 
 .pp-nearbyHeader {
@@ -18934,8 +18964,9 @@ html[data-theme="dark"] .pp-providerCalendarToggle button.is-active {
 }
 
 .pp-nearby-tile {
-  align-items: flex-start;
+  align-items: center;
   justify-content: center;
+  text-align: center;
   min-height: 58px;
   border-radius: 18px;
   transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease, background 180ms ease;
@@ -19194,11 +19225,13 @@ html[data-theme="dark"] .pp-nearby-list > li {
     width: 100% !important;
     min-height: 50px;
     max-width: none;
-    grid-template-columns: repeat(2, minmax(0, 1fr)) 62px repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr)) minmax(64px, 72px) repeat(2, minmax(0, 1fr));
     align-items: center;
     justify-items: center;
-    gap: 2px;
-    padding: 2px 4px !important;
+    column-gap: 6px;
+    row-gap: 0;
+    gap: 6px;
+    padding: 2px 8px !important;
     border-radius: 0;
     border: none;
     box-shadow: none;
@@ -19213,9 +19246,12 @@ html[data-theme="dark"] .pp-nearby-list > li {
 
   .pp-bottomNav__item {
     width: 100%;
+    max-width: 100%;
     min-height: 42px !important;
     gap: 2px;
-    padding: 3px 2px !important;
+    padding: 3px 4px !important;
+    overflow: hidden;
+    box-sizing: border-box;
   }
 
   .pp-bottomNav__label {
@@ -19230,9 +19266,10 @@ html[data-theme="dark"] .pp-nearby-list > li {
   }
 
   .pp-bottomNav__fab {
-    width: 54px !important;
-    height: 54px !important;
-    transform: translateY(-4px) !important;
+    width: 50px !important;
+    height: 50px !important;
+    max-width: 100%;
+    transform: translateY(-6px) !important;
     box-shadow: 0 6px 18px -6px rgba(91, 55, 255, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.22) !important;
   }
 
@@ -19253,6 +19290,7 @@ html[data-theme="dark"] .pp-nearby-list > li {
   .pp-bottomNav__item--on {
     background: linear-gradient(180deg, rgba(91, 55, 255, 0.1) 0%, rgba(91, 55, 255, 0.05) 100%) !important;
     box-shadow: inset 0 0 0 1px rgba(91, 55, 255, 0.16) !important;
+    overflow: hidden;
   }
 
   .pp-bottomNav__fabPulse {
