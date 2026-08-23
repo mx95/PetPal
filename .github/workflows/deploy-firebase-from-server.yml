@@ -70,6 +70,11 @@ jobs:
               $FB deploy --only firestore:rules,firestore:indexes --project petpal-aecda --non-interactive
             }
 
+            deploy_storage() {
+              echo "[firebase-deploy] Deploying Storage rules"
+              $FB deploy --only storage --project petpal-aecda --non-interactive
+            }
+
             deploy_functions() {
               echo "[firebase-deploy] Installing function dependencies"
               cd "$PETPAL_ROOT/petpal/functions"
@@ -98,9 +103,11 @@ jobs:
             case "$TARGETS" in
               rules) deploy_rules ;;
               indexes) deploy_rules ;;
+              storage) deploy_storage ;;
               functions) deploy_functions ;;
               all)
                 deploy_rules
+                deploy_storage
                 deploy_functions
                 ;;
               *)

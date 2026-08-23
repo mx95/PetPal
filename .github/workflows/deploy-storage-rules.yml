@@ -1,0 +1,41 @@
+# Deploy Firebase Storage rules (shop asset uploads, profile photos, etc.).
+#
+# Requires FIREBASE_TOKEN in GitHub Actions secrets (firebase login:ci).
+
+name: Deploy storage rules
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'petpal/storage.rules'
+      - '.github/workflows/deploy-storage-rules.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-storage-rules
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: petpal
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Deploy Storage rules
+        run: >
+          npx firebase-tools@13.29.1 deploy
+          --only storage
+          --project petpal-aecda
+          --non-interactive
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
