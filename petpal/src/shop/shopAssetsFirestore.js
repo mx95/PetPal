@@ -1,5 +1,5 @@
 import { doc, onSnapshot, setDoc, serverTimestamp } from 'firebase/firestore';
-import { getFirebaseDb } from '../firebase';
+import { getDb } from '../firebase';
 import { DEFAULT_NFC_TAG_DESIGNS, DEFAULT_TRACKER_SHOP_IMAGE } from '../data/nfcTagDesigns';
 
 export const SHOP_ASSETS_DOC = 'shopAssets';
@@ -30,7 +30,7 @@ export function defaultShopAssetsDoc() {
  * @param {(err: Error) => void} [onError]
  */
 export function subscribeShopAssets(onData, onError) {
-  const db = getFirebaseDb();
+  const db = getDb();
   if (!db) {
     onData(null);
     return () => {};
@@ -46,7 +46,7 @@ export function subscribeShopAssets(onData, onError) {
 
 /** @param {ShopAssetsDoc} payload */
 export async function saveShopAssets(payload) {
-  const db = getFirebaseDb();
+  const db = getDb();
   if (!db) throw new Error('Firebase is not configured.');
   await setDoc(
     doc(db, 'adminConfig', SHOP_ASSETS_DOC),
