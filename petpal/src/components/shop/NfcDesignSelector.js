@@ -22,7 +22,7 @@ export default function NfcDesignSelector({
   const { t } = useI18n();
   const trackRef = useRef(null);
   const selected = useMemo(
-    () => getNfcTagDesignById(selectedDesignId) || designs[0],
+    () => getNfcTagDesignById(selectedDesignId, designs) || designs[0],
     [selectedDesignId, designs]
   );
 

@@ -1,7 +1,7 @@
 import { getFunctions, httpsCallable, connectFunctionsEmulator } from 'firebase/functions';
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import { getFirebaseApp, getFirebaseStorage } from '../firebase';
-import { fileToAvatarJpeg } from '../profile/userProfilePhoto';
+import { fileToShopAssetJpeg } from '../profile/userProfilePhoto';
 
 const REGION = 'europe-west1';
 
@@ -60,7 +60,7 @@ async function uploadViaStorageClient(blob, kind, designId) {
  */
 export async function uploadShopAssetImage(file, kind, designId) {
   if (!file) throw new Error('No file selected.');
-  const { blob } = await fileToAvatarJpeg(file);
+  const { blob } = await fileToShopAssetJpeg(file);
   try {
     return await uploadViaCallable(blob, kind, designId);
   } catch (callableErr) {

@@ -20633,9 +20633,9 @@ html[data-theme="dark"] .pp-nearby-list > li {
   align-items: center;
   justify-content: center;
   width: 100%;
-  min-height: min(180px, 46vw);
+  min-height: min(200px, 52vw);
   margin: 0;
-  padding: 4px 0;
+  padding: 8px 0;
   overflow: visible;
   flex-shrink: 0;
 }
@@ -20644,8 +20644,8 @@ html[data-theme="dark"] .pp-nearby-list > li {
   display: block;
   width: auto;
   height: auto;
-  max-width: min(168px, 44vw);
-  max-height: min(180px, 46vw);
+  max-width: min(200px, 52vw);
+  max-height: min(220px, 54vw);
   object-fit: contain;
   flex-shrink: 0;
 }
@@ -20688,7 +20688,7 @@ html[data-theme="dark"] .pp-nearby-list > li {
 
 .pp-nfcDesignSelector__slide {
   flex: 0 0 auto;
-  width: min(108px, 38vw);
+  width: min(112px, 40vw);
   scroll-snap-align: center;
   min-width: 0;
 }
@@ -20735,8 +20735,10 @@ html[data-theme="dark"] .pp-nearby-list > li {
 }
 
 .pp-nfcDesignCard__img {
+  display: block;
   width: 100%;
-  aspect-ratio: 1;
+  height: auto;
+  max-height: 88px;
   object-fit: contain;
   pointer-events: none;
 }
@@ -23267,13 +23269,13 @@ html[data-theme="dark"] .pp-nearbyPartnerCard__badge--partner {
   }
 
   .pp-shopPage .pp-nfcDesignSelector__previewMedia {
-    min-height: 88px;
-    padding: 2px 0;
+    min-height: 160px;
+    padding: 6px 0;
   }
 
   .pp-shopPage .pp-nfcDesignSelector__previewImg {
-    max-width: 80px;
-    max-height: 88px;
+    max-width: 160px;
+    max-height: 180px;
     flex-shrink: 0;
   }
 
@@ -23292,14 +23294,14 @@ html[data-theme="dark"] .pp-nearbyPartnerCard__badge--partner {
   }
 
   .pp-shopPage .pp-nfcDesignSelector__slide {
-    width: 80px;
+    width: 96px;
   }
 
   .pp-shopPage .pp-nfcDesignCard {
     min-width: 0;
-    padding: 6px 4px 4px;
-    gap: 3px;
-    overflow: hidden;
+    padding: 8px 6px 6px;
+    gap: 4px;
+    overflow: visible;
   }
 
   .pp-shopPage .pp-nfcDesignCard.is-selected {
@@ -23308,9 +23310,9 @@ html[data-theme="dark"] .pp-nearbyPartnerCard__badge--partner {
   }
 
   .pp-shopPage .pp-nfcDesignCard__img {
-    width: 44px;
-    height: 44px;
-    aspect-ratio: 1;
+    width: 100%;
+    height: auto;
+    max-height: 72px;
   }
 
   .pp-shopPage .pp-nfcDesignCard__name {

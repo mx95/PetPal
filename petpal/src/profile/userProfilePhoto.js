@@ -68,6 +68,7 @@ function loadImage(file) {
 }
 
 const AVATAR_MAX = 512;
+const SHOP_ASSET_MAX = 800;
 const JPEG_Q = 0.86;
 const MAX_INPUT_BYTES = 12 * 1024 * 1024;
 
@@ -97,6 +98,40 @@ export async function fileToAvatarJpeg(file) {
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('NO_CANVAS');
   ctx.drawImage(img, sx, sy, side, side, 0, 0, out, out);
+  const dataUrl = canvas.toDataURL('image/jpeg', JPEG_Q);
+  const blob = await new Promise((resolve, reject) => {
+    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('NO_BLOB'))), 'image/jpeg', JPEG_Q);
+  });
+  return { blob, dataUrl };
+}
+
+/**
+ * Scale shop/NFC product art to fit within a max box — no square crop.
+ * @param {File} file
+ * @returns {Promise<{ blob: Blob, dataUrl: string }>}
+ */
+export async function fileToShopAssetJpeg(file) {
+  if (!file?.type?.startsWith('image/')) {
+    throw new Error('NOT_IMAGE');
+  }
+  if (file.size > MAX_INPUT_BYTES) {
+    throw new Error('TOO_LARGE');
+  }
+  const img = await loadImage(file);
+  const nw = img.naturalWidth;
+  const nh = img.naturalHeight;
+  if (nw <= 0 || nh <= 0) throw new Error('BAD_IMAGE');
+  const scale = Math.min(1, SHOP_ASSET_MAX / Math.max(nw, nh));
+  const outW = Math.max(1, Math.round(nw * scale));
+  const outH = Math.max(1, Math.round(nh * scale));
+  const canvas = document.createElement('canvas');
+  canvas.width = outW;
+  canvas.height = outH;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('NO_CANVAS');
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, outW, outH);
+  ctx.drawImage(img, 0, 0, outW, outH);
   const dataUrl = canvas.toDataURL('image/jpeg', JPEG_Q);
   const blob = await new Promise((resolve, reject) => {
     canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('NO_BLOB'))), 'image/jpeg', JPEG_Q);
