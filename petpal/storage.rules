@@ -1,5 +1,5 @@
 rules_version = '2';
-// Deploy with: firebase deploy --only storage
+// Deploy with: firebase deploy --only storage (or Actions → Deploy storage rules)
 // Requires Blaze plan for Storage, or use local-only profile photos in the app (no rules needed).
 service firebase.storage {
   match /b/{bucket}/o {
