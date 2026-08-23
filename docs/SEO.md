@@ -80,5 +80,5 @@ When you add new **public** pages, add a `<url>` to `petpal/public/sitemap.xml`,
 
 - Add a 1200×630 share image at `public/images/og-share.png`
 - Enable `REACT_APP_FIREBASE_MEASUREMENT_ID` for traffic analytics
-- Register **Google Business Profile** for Cyprus
+- **Register Google Business Profile** — step-by-step: [GOOGLE_BUSINESS_PROFILE.md](./GOOGLE_BUSINESS_PROFILE.md)
 - Link Instagram / social profiles to `petpal.com.cy`

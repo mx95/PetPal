@@ -5,10 +5,49 @@ export const SITE_URL = (process.env.REACT_APP_SITE_URL || 'https://petpal.com.c
 
 export const DEFAULT_OG_IMAGE = `${SITE_URL}/images/home-hero.png`;
 
-export const DEFAULT_TITLE = `${BRAND.appName} — GPS Pet Tracker & Care Hub | Cyprus`;
+export const SITE_NAME = BRAND.productName;
+
+export const DEFAULT_TITLE = `${SITE_NAME} | GPS Pet Tracker & NFC Tags — Cyprus`;
 
 export const DEFAULT_DESCRIPTION =
-  'Track your pet with GPS collars, NFC tags, nearby vets and pet services, and online bookings. PetPal by Pomware Innovative Solutions, Cyprus.';
+  'PetPal Care Hub — track your pet with GPS collars, NFC tags, nearby vets and pet services, and online bookings. By Pomware Innovative Solutions, Cyprus.';
+
+/** Organization + WebSite JSON-LD for Google site name / brand recognition. */
+export function buildHomeJsonLd() {
+  return {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'Organization',
+        '@id': `${SITE_URL}/#organization`,
+        name: SITE_NAME,
+        alternateName: ['PetPal', 'PetPal Cyprus', 'PetPal GPS Tracker'],
+        url: SITE_URL,
+        email: BRAND.contactEmail,
+        logo: `${SITE_URL}/logo512.png`,
+        address: {
+          '@type': 'PostalAddress',
+          addressLocality: 'Nicosia',
+          addressCountry: 'CY',
+        },
+        parentOrganization: {
+          '@type': 'Organization',
+          name: BRAND.legalName,
+        },
+      },
+      {
+        '@type': 'WebSite',
+        '@id': `${SITE_URL}/#website`,
+        name: SITE_NAME,
+        alternateName: ['PetPal', 'PetPal Cyprus'],
+        url: SITE_URL,
+        description: DEFAULT_DESCRIPTION,
+        publisher: { '@id': `${SITE_URL}/#organization` },
+        inLanguage: ['en', 'el'],
+      },
+    ],
+  };
+}
 
 /** Path prefixes that should never appear in search results. */
 export const NOINDEX_PREFIXES = [
@@ -37,83 +76,71 @@ export const ROUTE_SEO = [
     title: DEFAULT_TITLE,
     description: DEFAULT_DESCRIPTION,
     index: true,
-    jsonLd: {
-      '@context': 'https://schema.org',
-      '@type': 'WebSite',
-      name: BRAND.appName,
-      url: SITE_URL,
-      description: DEFAULT_DESCRIPTION,
-      publisher: {
-        '@type': 'Organization',
-        name: BRAND.legalName,
-        url: SITE_URL,
-        email: BRAND.contactEmail,
-      },
-    },
+    jsonLd: buildHomeJsonLd(),
   },
   {
     match: (path) => path === '/shop' || path.startsWith('/shop/'),
-    title: `NFC Pet Tags & GPS Trackers — ${BRAND.appName} Shop`,
+    title: `NFC Pet Tags & GPS Trackers — ${SITE_NAME}`,
     description:
-      'Shop NFC pet ID tags and GPS trackers. Custom designs, subscriptions, and delivery across Cyprus.',
+      'Shop NFC pet ID tags and GPS trackers at PetPal Care Hub. Custom designs, subscriptions, and delivery across Cyprus.',
     index: (path) => path === '/shop',
   },
   {
     match: (path) => path === '/contact',
-    title: `Contact — ${BRAND.appName}`,
-    description: `Get in touch with ${BRAND.appName} support. Email ${BRAND.contactEmail} for help with trackers, NFC tags, and bookings.`,
+    title: `Contact — ${SITE_NAME}`,
+    description: `Contact PetPal Care Hub support at ${BRAND.contactEmail} for help with trackers, NFC tags, and bookings.`,
   },
   {
     match: (path) => path === '/install',
-    title: `Install App — ${BRAND.appName}`,
-    description: `Install ${BRAND.appName} on your phone — add to home screen on iOS and Android for quick pet tracking and care.`,
+    title: `Install App — ${SITE_NAME}`,
+    description: `Install PetPal Care Hub on your phone — add to home screen on iOS and Android for quick pet tracking and care.`,
   },
   {
     match: (path) => path === '/docs',
-    title: `Help & Documentation — ${BRAND.appName}`,
-    description: `Guides for GPS tracking, NFC tags, bookings, shop orders, and account setup on ${BRAND.appName}.`,
+    title: `Help & Documentation — ${SITE_NAME}`,
+    description: `Guides for GPS tracking, NFC tags, bookings, shop orders, and account setup on PetPal Care Hub.`,
   },
   {
     match: (path) => path === '/discover',
-    title: `Discover — ${BRAND.appName}`,
-    description: `Explore pet care features, community, and services on ${BRAND.appName}.`,
+    title: `Discover — ${SITE_NAME}`,
+    description: `Explore pet care features, community, and services on PetPal Care Hub.`,
   },
   {
     match: (path) => path === '/privacy',
-    title: `Privacy Policy — ${BRAND.appName}`,
-    description: `${BRAND.appName} privacy policy — how we handle location data, account information, and cookies.`,
+    title: `Privacy Policy — ${SITE_NAME}`,
+    description: `PetPal Care Hub privacy policy — how we handle location data, account information, and cookies.`,
   },
   {
     match: (path) => path === '/terms',
-    title: `Terms of Service — ${BRAND.appName}`,
-    description: `${BRAND.appName} terms of service and conditions of use.`,
+    title: `Terms of Service — ${SITE_NAME}`,
+    description: `PetPal Care Hub terms of service and conditions of use.`,
   },
   {
     match: (path) => path === '/cookies',
-    title: `Cookie Policy — ${BRAND.appName}`,
-    description: `${BRAND.appName} cookie policy — necessary cookies and optional analytics.`,
+    title: `Cookie Policy — ${SITE_NAME}`,
+    description: `PetPal Care Hub cookie policy — necessary cookies and optional analytics.`,
   },
   {
     match: (path) => path.startsWith('/pet'),
-    title: `Pet Profile — ${BRAND.appName}`,
-    description: `View a pet profile on ${BRAND.appName}. NFC scan and emergency contact information.`,
+    title: `Pet Profile — ${SITE_NAME}`,
+    description: `View a pet profile on PetPal Care Hub. NFC scan and emergency contact information.`,
   },
   {
     match: (path) => path === '/login',
-    title: `Log in — ${BRAND.appName}`,
-    description: `Sign in to your ${BRAND.appName} account to track pets, manage bookings, and shop.`,
+    title: `Log in — ${SITE_NAME}`,
+    description: `Sign in to your PetPal Care Hub account to track pets, manage bookings, and shop.`,
     index: false,
   },
   {
     match: (path) => path === '/register',
-    title: `Create account — ${BRAND.appName}`,
-    description: `Register for ${BRAND.appName} — GPS tracking, NFC tags, and pet care in one app.`,
+    title: `Create account — ${SITE_NAME}`,
+    description: `Register for PetPal Care Hub — GPS tracking, NFC tags, and pet care in one app.`,
     index: false,
   },
   {
     match: (path) => path === '/forgot-password',
-    title: `Reset password — ${BRAND.appName}`,
-    description: `Reset your ${BRAND.appName} account password.`,
+    title: `Reset password — ${SITE_NAME}`,
+    description: `Reset your PetPal Care Hub account password.`,
     index: false,
   },
 ];
@@ -124,7 +151,7 @@ export function resolveSeo(pathname) {
 
   if (noindex) {
     return {
-      title: `${BRAND.appName}`,
+      title: SITE_NAME,
       description: DEFAULT_DESCRIPTION,
       canonicalPath: path,
       index: false,

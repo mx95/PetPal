@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { DEFAULT_OG_IMAGE, absoluteUrl, resolveSeo } from '../config/seo';
+import { DEFAULT_OG_IMAGE, SITE_NAME, absoluteUrl, resolveSeo } from '../config/seo';
 
 const MANAGED_SELECTOR = 'meta[data-pp-seo], link[data-pp-seo], script[data-pp-seo]';
 
@@ -57,7 +57,7 @@ export function RouteSeo() {
     upsertMeta('property', 'og:title', seo.title);
     upsertMeta('property', 'og:description', seo.description);
     upsertMeta('property', 'og:image', DEFAULT_OG_IMAGE);
-    upsertMeta('property', 'og:site_name', 'PetPal');
+    upsertMeta('property', 'og:site_name', SITE_NAME);
     upsertMeta('name', 'twitter:card', 'summary_large_image');
     upsertMeta('name', 'twitter:title', seo.title);
     upsertMeta('name', 'twitter:description', seo.description);
