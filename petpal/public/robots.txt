@@ -1,3 +1,21 @@
 # https://www.robotstxt.org/robotstxt.html
 User-agent: *
-Disallow:
+Allow: /
+Disallow: /admin
+Disallow: /dashboard
+Disallow: /tracking
+Disallow: /nearby
+Disallow: /profile
+Disallow: /provider
+Disallow: /payment
+Disallow: /bookings
+Disallow: /pets
+Disallow: /premium
+Disallow: /community
+Disallow: /leaderboard
+Disallow: /activity
+Disallow: /inbox
+Disallow: /shop/checkout
+Disallow: /company/apply
+
+Sitemap: https://petpal.com.cy/sitemap.xml

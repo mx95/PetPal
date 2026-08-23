@@ -7,6 +7,7 @@ import { CookieConsent } from './components/CookieConsent';
 import './ui/ui.css';
 import { useI18n } from './i18n/I18nContext';
 import ScrollToTop from './components/ScrollToTop';
+import { RouteSeo } from './components/RouteSeo';
 import BottomNav from './components/BottomNav';
 import TopNav from './components/TopNav';
 import ShopCartMobilePanel from './components/shop/ShopCartMobilePanel';
@@ -98,6 +99,7 @@ function App() {
   return (
     <div className="pp-shell">
       <ScrollToTop />
+      <RouteSeo />
       <MedicationReminderHost />
       <TopNav />
       <ShopCartMobilePanel />
