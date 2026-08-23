@@ -46,10 +46,14 @@ export function getNfcTagDesignById(id, catalog = DEFAULT_NFC_TAG_DESIGNS) {
   return list.find((d) => d.id === Number(id)) || list[0];
 }
 
-export const DEFAULT_TRACKER_SHOP_IMAGE = '/images/shop/gps-tracker-v2.png';
+export const DEFAULT_TRACKER_SHOP_IMAGE = '/images/shop/gps-tracker-v3.png';
 
 /** @param {{ trackerImage?: string } | null | undefined} assets */
 export function resolveTrackerShopImage(assets) {
   const url = String(assets?.trackerImage || '').trim();
-  return url || DEFAULT_TRACKER_SHOP_IMAGE;
+  if (!url) return DEFAULT_TRACKER_SHOP_IMAGE;
+  if (url.includes('/images/shop/gps-tracker-v2.png') || url.includes('/images/shop/gps-tracker.png')) {
+    return DEFAULT_TRACKER_SHOP_IMAGE;
+  }
+  return url;
 }

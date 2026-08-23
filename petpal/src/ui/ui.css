@@ -20541,13 +20541,15 @@ html[data-theme="dark"] .pp-nearby-list > li {
 .pp-shopTrackerOpt__imgWrap {
   grid-column: 1 / -1;
   width: 100%;
-  height: 156px;
+  height: 168px;
   border-radius: 14px;
   background: #fff;
   border: 1px solid rgba(16, 24, 40, 0.08);
   overflow: hidden;
   display: grid;
   place-items: center;
+  padding: 8px 10px;
+  box-sizing: border-box;
 }
 
 .pp-shopTrackerOpt--withImage .pp-shopTrackerOpt__img {
@@ -20556,7 +20558,6 @@ html[data-theme="dark"] .pp-nearby-list > li {
   min-height: 0;
   max-height: none;
   object-fit: contain;
-  transform: scale(2.15);
   border: none;
   padding: 0;
   background: transparent;
@@ -23237,11 +23238,8 @@ html[data-theme="dark"] .pp-nearbyPartnerCard__badge--partner {
   }
 
   .pp-shopPage .pp-shopTrackerOpt__imgWrap {
-    height: 142px;
-  }
-
-  .pp-shopPage .pp-shopTrackerOpt--withImage .pp-shopTrackerOpt__img {
-    transform: scale(2.05);
+    height: 152px;
+    padding: 6px 8px;
   }
 
   .pp-shopPage .pp-shopAddons {

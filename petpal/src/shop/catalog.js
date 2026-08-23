@@ -133,7 +133,7 @@ export const SHOP_PRODUCTS = [
     currency: '978',
     recurring: false,
     badge: 'Hardware',
-    image: '/images/shop/gps-tracker-v2.png',
+    image: '/images/shop/gps-tracker-v3.png',
   },
   {
     id: 'NFC_TAG_HARDWARE',
