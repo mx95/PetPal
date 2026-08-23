@@ -4,9 +4,9 @@ import { useAuth } from '../auth/AuthProvider';
 import { MVP_NAV } from '../config/mvpNav';
 import { useI18n } from '../i18n/I18nContext';
 
-const HOME_HERO_SRC = `${process.env.PUBLIC_URL || ''}/images/home-hero.png`;
-const LIVE_TRACKING_SRC = `${process.env.PUBLIC_URL || ''}/images/home-live-tracking.png`;
-const NFC_FEATURE_SRC = `${process.env.PUBLIC_URL || ''}/images/home-nfc-feature.png`;
+const HOME_HERO_SRC = `${process.env.PUBLIC_URL || ''}/images/home-hero.jpg`;
+const LIVE_TRACKING_SRC = `${process.env.PUBLIC_URL || ''}/images/home-live-tracking.jpg`;
+const NFC_FEATURE_SRC = `${process.env.PUBLIC_URL || ''}/images/home-nfc-feature.jpg`;
 
 const APP_CAPABILITIES = [
   { key: 'gps', to: '/tracking', accent: 'gps' },
@@ -103,6 +103,9 @@ export default function HomeScreen() {
             className="pp-homeWelcome__heroImg"
             src={HOME_HERO_SRC}
             alt={t('home.welcome.heroImageAlt')}
+            width={1536}
+            height={1024}
+            fetchPriority="high"
             decoding="async"
           />
           <div className="pp-homeWelcome__heroFade" />
@@ -156,7 +159,7 @@ export default function HomeScreen() {
         <div className="pp-homeWelcome__showcaseGrid">
           {SHOWCASE_ITEMS.map(({ key, src, altKey }) => (
             <figure key={key} className="pp-homeWelcome__showcaseCard">
-              <img src={src} alt={t(altKey)} loading="lazy" decoding="async" />
+              <img src={src} alt={t(altKey)} width={1200} height={800} loading="lazy" decoding="async" />
             </figure>
           ))}
         </div>
