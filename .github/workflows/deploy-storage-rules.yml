@@ -32,10 +32,15 @@ jobs:
           node-version: '20'
 
       - name: Deploy Storage rules
-        run: >
-          npx firebase-tools@13.29.1 deploy
-          --only storage
-          --project petpal-aecda
-          --non-interactive
+        run: |
+          if [ -z "${FIREBASE_TOKEN}" ]; then
+            echo "FIREBASE_TOKEN is not set — skipping GitHub deploy."
+            echo "Storage rules are deployed via Deploy Firebase from server on push to main."
+            exit 0
+          fi
+          npx firebase-tools@13.29.1 deploy \
+            --only storage \
+            --project petpal-aecda \
+            --non-interactive
         env:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
