@@ -84,6 +84,24 @@ sudo certbot --nginx -d petpal.com.cy -d www.petpal.com.cy
 
 Certbot adds the `listen 443 ssl` block and auto-renewal.
 
+### Deploy maintenance page
+
+While GitHub Actions deploys (build + PM2 restart), nginx can show a branded **“We’re updating PetPal”** page instead of a connection error.
+
+**One-time on the server** (as root):
+
+```bash
+cd ~/PetPal && sudo bash scripts/install-nginx-maintenance.sh
+```
+
+After that, every `scripts/deploy-server.sh` run automatically:
+
+1. Turns maintenance **on** at the start
+2. Builds and reloads PM2
+3. Turns maintenance **off** when the app is healthy again
+
+If PM2 is briefly down, nginx also serves the same page for upstream **502/503** errors. Firebase Auth (`/__/auth`) is not affected.
+
 ---
 
 ## 4. Firewall (Hetzner + UFW)

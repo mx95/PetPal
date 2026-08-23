@@ -14,6 +14,29 @@ LEGACY_DB="${PETPAL_LEGACY_DB:-$PETPAL_ROOT/tracker-tcp-server/data/petpal.sqlit
 log() { printf '[deploy] %s\n' "$*"; }
 die() { printf '[deploy] ERROR: %s\n' "$*" >&2; exit 1; }
 
+# shellcheck source=maintenance/maintenance.sh
+source "$PETPAL_ROOT/scripts/maintenance/maintenance.sh"
+
+ensure_nginx_maintenance_routing() {
+  if [ "$(id -u)" -ne 0 ]; then
+    log "Skipping nginx maintenance install (not root — run once: sudo bash scripts/install-nginx-maintenance.sh)"
+    return 0
+  fi
+  if ! command -v nginx >/dev/null 2>&1; then
+    log "Skipping nginx maintenance install (nginx not installed)"
+    return 0
+  fi
+  if bash "$PETPAL_ROOT/scripts/install-nginx-maintenance.sh"; then
+    log "nginx maintenance routing ready"
+  else
+    log "nginx maintenance install skipped or failed — deploy continues"
+  fi
+}
+
+maintenance_trap_disable() {
+  maintenance_disable || true
+}
+
 needs_npm_ci() {
   local dir="$1"
   [ ! -d "$dir/node_modules" ] && return 0
@@ -103,6 +126,10 @@ TRACKER_DIR="$PETPAL_ROOT/tracker-tcp-server"
 ensure_tracker_db
 positions_before="$(count_positions "$TRACKER_DB")"
 backup_tracker_db
+
+ensure_nginx_maintenance_routing
+trap maintenance_trap_disable EXIT
+maintenance_enable
 
 if [ "$SKIP_GIT" != "1" ]; then
   log "Updating repo at $PETPAL_ROOT (branch: $DEPLOY_BRANCH)"
@@ -349,6 +376,8 @@ if [ "$ready" != "1" ]; then
 fi
 
 positions_after="$(count_positions "$TRACKER_DB")"
+maintenance_disable
+trap - EXIT
 log "Deploy OK — tracker DB: $TRACKER_DB ($positions_after position rows)"
 log "Tip: hard-refresh the browser (Ctrl+F5) to load the new JS bundle."
 log "Note: JCC shop checkout uses Firebase Cloud Functions — deploy separately with: cd petpal && npm run deploy:shop-functions"

@@ -21,12 +21,29 @@ apt-get update -qq
 DEBIAN_FRONTEND=noninteractive apt-get install -y nginx certbot python3-certbot-nginx
 
 SITE="/etc/nginx/sites-available/${DOMAIN}"
+SNIPPET="/etc/nginx/snippets/petpal-maintenance.conf"
+log "Writing maintenance snippet $SNIPPET"
+mkdir -p /etc/nginx/snippets
+cat > "$SNIPPET" <<'EOF'
+# PetPal maintenance — managed by scripts/install-nginx-maintenance.sh
+error_page 502 503 @petpal_maintenance;
+
+location @petpal_maintenance {
+    root /var/lib/petpal/maintenance;
+    try_files /maintenance.html =503;
+    default_type text/html;
+    add_header Retry-After 60 always;
+    add_header Cache-Control "no-store, no-cache, must-revalidate" always;
+}
+EOF
+
 log "Writing $SITE"
 cat > "$SITE" <<EOF
 server {
     listen 80;
     listen [::]:80;
     server_name ${DOMAIN} ${WWW};
+    include ${SNIPPET};
 
     # Firebase Auth redirect helpers (Google / Apple) — first-party on this domain.
     location /__/auth {
@@ -39,6 +56,11 @@ server {
     }
 
     location / {
+        # PetPal maintenance
+        if (-f /var/lib/petpal/maintenance.enabled) {
+            return 503;
+        }
+        proxy_intercept_errors on;
         proxy_pass http://127.0.0.1:${UPSTREAM_PORT};
         proxy_http_version 1.1;
         proxy_set_header Host \$host;
