@@ -20540,15 +20540,16 @@ html[data-theme="dark"] .pp-nearby-list > li {
 
 .pp-shopTrackerOpt--withImage .pp-shopTrackerOpt__img {
   grid-column: 1 / -1;
-  justify-self: center;
-  width: min(100%, 220px);
+  justify-self: stretch;
+  width: 100%;
+  min-height: 132px;
+  max-height: 220px;
   height: auto;
-  max-height: 160px;
   object-fit: contain;
   border-radius: 14px;
   background: #fff;
   border: 1px solid rgba(16, 24, 40, 0.08);
-  padding: 8px;
+  padding: 4px 6px;
   box-sizing: border-box;
 }
 
@@ -23226,8 +23227,8 @@ html[data-theme="dark"] .pp-nearbyPartnerCard__badge--partner {
   }
 
   .pp-shopPage .pp-shopTrackerOpt--withImage .pp-shopTrackerOpt__img {
-    width: min(100%, 200px);
-    max-height: 148px;
+    min-height: 118px;
+    max-height: 200px;
   }
 
   .pp-shopPage .pp-shopAddons {
