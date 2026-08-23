@@ -28,7 +28,20 @@ The SEO meta tags and sitemap only work **after deploy**. Until then, Google sti
 After deploy, confirm:
 
 - `https://petpal.com.cy/sitemap.xml` → XML list of URLs (not the React app)
-- View source on `/` → title should be **“PetPal — GPS Pet Tracker & Care Hub | Cyprus”**
+- View source on `/` → title should be **“PetPal Care Hub | GPS Pet Tracker & NFC Tags — Cyprus”**
+
+#### Sitemap error: “Sitemap is HTML”
+
+Google read `/sitemap.xml` **before** the SEO deploy (every URL returned the React app). The file is valid XML now.
+
+**Fix:**
+
+1. Open `https://petpal.com.cy/sitemap.xml` on your phone — must start with `<?xml version="1.0"`, not the PetPal app.
+2. Search Console → **Sitemaps** → delete the failed submission.
+3. Submit again: enter only `sitemap.xml` (not `https://petpal.com.cy/sitemap.xml`).
+4. Wait **24–48 hours** — status should become **Success** with ~9 pages discovered.
+
+Optional: **Cloudflare** → Caching → **Purge Everything** once so edge cache does not serve old HTML.
 
 #### 2. Submit your sitemap
 
