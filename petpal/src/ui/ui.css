@@ -24063,6 +24063,26 @@ html[lang='ru'] .pp-brand {
   align-items: flex-start;
 }
 
+.pp-adminShopAssets__row.is-hidden {
+  opacity: 0.62;
+}
+
+.pp-adminShopAssets__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.pp-adminShopAssets__removeBtn {
+  color: #b42318;
+  border-color: rgba(180, 35, 24, 0.25);
+}
+
+.pp-adminShopAssets__removeBtn:disabled {
+  opacity: 0.45;
+}
+
 .pp-adminShopAssets__trackerPreview,
 .pp-adminShopAssets__thumb {
   width: 96px;

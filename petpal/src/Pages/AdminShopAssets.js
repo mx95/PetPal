@@ -117,6 +117,13 @@ export default function AdminShopAssets() {
     ]);
   }
 
+  function removeDesign(id) {
+    setNfcDesigns((prev) => {
+      if (prev.length <= 1) return prev;
+      return prev.filter((row) => row.id !== id);
+    });
+  }
+
   async function onSave() {
     setBusy('save');
     setErr('');
@@ -196,7 +203,10 @@ export default function AdminShopAssets() {
             .slice()
             .sort((a, b) => Number(a.id) - Number(b.id))
             .map((row) => (
-              <li key={row.id} className="pp-adminShopAssets__row">
+              <li
+                key={row.id}
+                className={`pp-adminShopAssets__row${row.enabled === false ? ' is-hidden' : ''}`}
+              >
                 <img src={row.image} alt="" className="pp-adminShopAssets__thumb" />
                 <div className="pp-adminShopAssets__fields">
                   <label className="pp-subtle">
@@ -238,20 +248,31 @@ export default function AdminShopAssets() {
                     <span>{t('adminShopAssets.enabledLabel')}</span>
                   </label>
                 </div>
-                <label className="pp-btn pp-btn--ghost">
-                  {busy === `nfc-${row.id}` ? t('adminShopAssets.uploading') : t('adminShopAssets.uploadImage')}
-                  <input
-                    type="file"
-                    accept="image/*"
-                    hidden
-                    disabled={Boolean(busy)}
-                    onChange={(e) => {
-                      const f = e.target.files?.[0];
-                      e.target.value = '';
-                      void onUploadNfc(row.id, f);
-                    }}
-                  />
-                </label>
+                <div className="pp-adminShopAssets__actions">
+                  <label className="pp-btn pp-btn--ghost">
+                    {busy === `nfc-${row.id}` ? t('adminShopAssets.uploading') : t('adminShopAssets.uploadImage')}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      hidden
+                      disabled={Boolean(busy)}
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        e.target.value = '';
+                        void onUploadNfc(row.id, f);
+                      }}
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    className="pp-btn pp-btn--ghost pp-adminShopAssets__removeBtn"
+                    disabled={Boolean(busy) || nfcDesigns.length <= 1}
+                    title={nfcDesigns.length <= 1 ? t('adminShopAssets.cannotRemoveLast') : undefined}
+                    onClick={() => removeDesign(row.id)}
+                  >
+                    {t('adminShopAssets.removeDesign')}
+                  </button>
+                </div>
               </li>
             ))}
         </ul>
