@@ -1,9 +1,9 @@
 /**
- * @typedef {{ id: number, name: string, image: string, enabled?: boolean }} NfcTagDesign
+ * @typedef {{ id: number, name: string, image: string }} NfcTagDesign
  */
 
-/** Default NFC catalog — overridden by adminConfig/shopAssets when published. */
-export const DEFAULT_NFC_TAG_DESIGNS = [
+/** @type {NfcTagDesign[]} */
+export const NFC_TAG_DESIGNS = [
   { id: 1, name: 'Classic Paw', image: '/images/nfc-tags/nfc-tag-01.png' },
   { id: 2, name: 'Bone White', image: '/images/nfc-tags/nfc-tag-02.png' },
   { id: 3, name: 'Charlie Blue', image: '/images/nfc-tags/nfc-tag-03.png' },
@@ -17,41 +17,7 @@ export const DEFAULT_NFC_TAG_DESIGNS = [
   { id: 16, name: 'Pearl Grey', image: '/images/nfc-tags/nfc-tag-16.png' },
 ];
 
-/** @deprecated use DEFAULT_NFC_TAG_DESIGNS or useShopAssets */
-export const NFC_TAG_DESIGNS = DEFAULT_NFC_TAG_DESIGNS;
-
-/**
- * Merge Firestore shop asset overrides onto defaults.
- * @param {{ nfcDesigns?: Array<{ id: number|string, name?: string, image?: string, enabled?: boolean }> } | null | undefined} assets
- * @returns {NfcTagDesign[]}
- */
-export function mergeNfcTagDesigns(assets) {
-  const overrides = Array.isArray(assets?.nfcDesigns) ? assets.nfcDesigns : null;
-  if (!overrides?.length) {
-    return DEFAULT_NFC_TAG_DESIGNS.map((d) => ({ ...d, enabled: true }));
-  }
-
-  return overrides
-    .map((row) => ({
-      id: Number(row.id),
-      name: String(row.name || `Design ${row.id}`).slice(0, 80),
-      image: String(row.image || '').slice(0, 500),
-      enabled: row.enabled !== false,
-    }))
-    .filter((d) => Number.isFinite(d.id) && d.id >= 1 && d.enabled !== false && d.image)
-    .sort((a, b) => a.id - b.id);
-}
-
-/** @param {number} id @param {NfcTagDesign[]} [catalog] */
-export function getNfcTagDesignById(id, catalog = DEFAULT_NFC_TAG_DESIGNS) {
-  const list = catalog?.length ? catalog : DEFAULT_NFC_TAG_DESIGNS;
-  return list.find((d) => d.id === Number(id)) || list[0];
-}
-
-export const DEFAULT_TRACKER_SHOP_IMAGE = '/images/shop/gps-tracker-v2.png';
-
-/** @param {{ trackerImage?: string } | null | undefined} assets */
-export function resolveTrackerShopImage(assets) {
-  const url = String(assets?.trackerImage || '').trim();
-  return url || DEFAULT_TRACKER_SHOP_IMAGE;
+/** @param {number} id */
+export function getNfcTagDesignById(id) {
+  return NFC_TAG_DESIGNS.find((d) => d.id === Number(id)) || NFC_TAG_DESIGNS[0];
 }
