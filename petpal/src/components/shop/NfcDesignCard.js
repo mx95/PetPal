@@ -22,7 +22,9 @@ export default function NfcDesignCard({ design, selected, disabled = false, onSe
           ✓
         </span>
       ) : null}
-      <img className="pp-nfcDesignCard__img" src={design.image} alt="" loading="lazy" />
+      <span className="pp-nfcDesignCard__imgWrap">
+        <img className="pp-nfcDesignCard__img" src={design.image} alt="" loading="lazy" />
+      </span>
       <span className="pp-nfcDesignCard__name">{design.name}</span>
     </button>
   );
