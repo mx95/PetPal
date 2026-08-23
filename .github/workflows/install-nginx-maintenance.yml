@@ -33,6 +33,7 @@ jobs:
             bash "$PETPAL_ROOT/scripts/install-nginx-maintenance.sh"
             mkdir -p /var/lib/petpal/maintenance
             cp "$PETPAL_ROOT/scripts/maintenance/maintenance.html" /var/lib/petpal/maintenance/maintenance.html
+            cp "$PETPAL_ROOT/scripts/maintenance/logo.png" /var/lib/petpal/maintenance/logo.png
             echo "======== nginx maintenance ========"
             grep -n 'petpal-maintenance\|maintenance.enabled\|@petpal_maintenance' /etc/nginx/sites-available/petpal.com.cy || true
             test -f /var/lib/petpal/maintenance/maintenance.html

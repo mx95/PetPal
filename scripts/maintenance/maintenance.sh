@@ -6,6 +6,7 @@ PETPAL_ROOT="${PETPAL_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}
 MAINTENANCE_DIR="${PETPAL_MAINTENANCE_DIR:-/var/lib/petpal/maintenance}"
 MAINTENANCE_FLAG="${PETPAL_MAINTENANCE_FLAG:-/var/lib/petpal/maintenance.enabled}"
 MAINTENANCE_HTML_SRC="$PETPAL_ROOT/scripts/maintenance/maintenance.html"
+MAINTENANCE_LOGO_SRC="$PETPAL_ROOT/scripts/maintenance/logo.png"
 
 maintenance_log() {
   printf '[maintenance] %s\n' "$*"
@@ -19,6 +20,10 @@ maintenance_install_assets() {
   mkdir -p "$MAINTENANCE_DIR"
   cp "$MAINTENANCE_HTML_SRC" "$MAINTENANCE_DIR/maintenance.html"
   chmod 644 "$MAINTENANCE_DIR/maintenance.html"
+  if [ -f "$MAINTENANCE_LOGO_SRC" ]; then
+    cp "$MAINTENANCE_LOGO_SRC" "$MAINTENANCE_DIR/logo.png"
+    chmod 644 "$MAINTENANCE_DIR/logo.png"
+  fi
 }
 
 maintenance_enable() {

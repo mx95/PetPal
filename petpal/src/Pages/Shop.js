@@ -465,6 +465,10 @@ export default function Shop() {
                 p.id === 'PETPAL_PLUS_MONTHLY' ? monthlyFirstPaymentCents(monthlyAddonOpts) : p.amountCents;
               const hasMonthlyAddons =
                 monthlyIncludeTracker || (monthlyIncludeNfc && monthlyNfcPetIds.length > 0);
+              const monthlyTrackerSourceSelected = monthlyUseExistingImei || monthlyIncludeTracker;
+              const monthlyExistingImeiValid =
+                !monthlyUseExistingImei || Boolean(normalizeTrackerImei(monthlyExistingImei));
+              const monthlyCanAddToCart = monthlyTrackerSourceSelected && monthlyExistingImeiValid;
               const showNfcPicker =
                 (p.id === 'PETPAL_PLUS_MONTHLY' && monthlyIncludeNfc) ||
                 p.id === 'PETPAL_PLUS_YEARLY' ||
