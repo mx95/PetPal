@@ -134,6 +134,12 @@ export default function AdminHub() {
             desc={t('admin.hub.siteModeDesc')}
           />
           <AdminActionCard
+            to="/admin/shop-assets"
+            icon="🖼️"
+            title={t('admin.hub.shopAssetsTitle')}
+            desc={t('admin.hub.shopAssetsDesc')}
+          />
+          <AdminActionCard
             to="/admin/orders"
             icon="📦"
             title={t('admin.hub.ordersTitle')}
