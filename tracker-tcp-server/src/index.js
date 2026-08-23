@@ -429,7 +429,8 @@ function sendStaticSeoFile(res, fileName, contentType) {
   ];
   for (const filePath of candidates) {
     if (!fs.existsSync(filePath)) continue;
-    res.setHeader("Cache-Control", "public, max-age=3600");
+    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+    res.setHeader("Pragma", "no-cache");
     return res.type(contentType).send(fs.readFileSync(filePath, "utf8"));
   }
   return false;
