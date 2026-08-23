@@ -21,6 +21,7 @@ import {
   AdminEmailSettings,
   AdminHub,
   AdminOrders,
+  AdminShopAssets,
   AdminSiteMode,
   AdminSupport,
   BookingsHub,
@@ -199,6 +200,14 @@ function App() {
                 element={
                   <RequireAuth>
                     <AdminOrders />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/admin/shop-assets"
+                element={
+                  <RequireAuth>
+                    <AdminShopAssets />
                   </RequireAuth>
                 }
               />
