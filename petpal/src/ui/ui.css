@@ -20584,6 +20584,7 @@ html[data-theme="dark"] .pp-nearby-list > li {
   border-radius: 12px;
   background: rgba(109, 76, 255, 0.04);
   border: 1px solid rgba(109, 76, 255, 0.12);
+  flex-shrink: 0;
 }
 
 .pp-nfcDesignSelector__title {
@@ -20599,10 +20600,12 @@ html[data-theme="dark"] .pp-nearby-list > li {
   align-items: center;
   gap: 8px;
   margin-bottom: 14px;
-  padding: 12px;
+  padding: 14px 12px 12px;
   border-radius: 12px;
   background: #fff;
   border: 1px solid rgba(16, 24, 40, 0.08);
+  overflow: visible;
+  flex-shrink: 0;
 }
 
 .pp-nfcDesignSelector__previewLabel {
@@ -20613,10 +20616,26 @@ html[data-theme="dark"] .pp-nearby-list > li {
   letter-spacing: 0.04em;
 }
 
+.pp-nfcDesignSelector__previewMedia {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: min(180px, 46vw);
+  margin: 0;
+  padding: 4px 0;
+  overflow: visible;
+  flex-shrink: 0;
+}
+
 .pp-nfcDesignSelector__previewImg {
-  width: min(120px, 34vw);
+  display: block;
+  width: auto;
   height: auto;
+  max-width: min(168px, 44vw);
+  max-height: min(180px, 46vw);
   object-fit: contain;
+  flex-shrink: 0;
 }
 
 .pp-nfcDesignSelector__previewName {
@@ -23227,26 +23246,28 @@ html[data-theme="dark"] .pp-nearbyPartnerCard__badge--partner {
   }
 
   .pp-shopPage .pp-nfcDesignSelector__preview {
-    flex-direction: row;
-    align-items: center;
-    justify-content: flex-start;
-    gap: 10px;
     margin-bottom: 8px;
-    padding: 6px 8px;
+    padding: 10px 8px 8px;
   }
 
   .pp-shopPage .pp-nfcDesignSelector__previewLabel {
-    display: none;
+    font-size: 0.72rem;
+  }
+
+  .pp-shopPage .pp-nfcDesignSelector__previewMedia {
+    min-height: 88px;
+    padding: 2px 0;
   }
 
   .pp-shopPage .pp-nfcDesignSelector__previewImg {
-    width: 48px;
+    max-width: 80px;
+    max-height: 88px;
     flex-shrink: 0;
   }
 
   .pp-shopPage .pp-nfcDesignSelector__previewName {
     font-size: 0.82rem;
-    text-align: left;
+    text-align: center;
   }
 
   .pp-shopPage .pp-nfcDesignSelector__carousel {

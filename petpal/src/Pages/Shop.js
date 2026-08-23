@@ -220,6 +220,10 @@ export default function Shop() {
       setErr(t('shopPage.saveCardRequired'));
       return;
     }
+    if (product.id === 'PETPAL_PLUS_MONTHLY' && !monthlyUseExistingImei && !monthlyIncludeTracker) {
+      setErr(t('shopPage.trackerSourceRequired'));
+      return;
+    }
     if (product.id === 'PETPAL_PLUS_MONTHLY' && monthlyIncludeNfc && !monthlyNfcPetIds.length) {
       setErr(t('shopPage.nfcSelectPetRequired'));
       return;
@@ -675,7 +679,10 @@ export default function Shop() {
                     <button
                       type="button"
                       className="pp-btn pp-btn--primary pp-shopCard__payBtn"
-                      disabled={p.id === 'PETPAL_PLUS_YEARLY' && planActive}
+                      disabled={
+                        (p.id === 'PETPAL_PLUS_YEARLY' && planActive) ||
+                        (p.id === 'PETPAL_PLUS_MONTHLY' && !monthlyCanAddToCart)
+                      }
                       onClick={() => addSubscriptionToCart(p)}
                     >
                       {p.id === 'PETPAL_PLUS_MONTHLY' && monthlyAddOnMode

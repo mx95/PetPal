@@ -50,11 +50,13 @@ export default function NfcDesignSelector({
 
       <div className="pp-nfcDesignSelector__preview">
         <div className="pp-nfcDesignSelector__previewLabel">{t('shopPage.nfcDesignSelected')}</div>
-        <img
-          className="pp-nfcDesignSelector__previewImg"
-          src={selected.image}
-          alt={selected.name}
-        />
+        <figure className="pp-nfcDesignSelector__previewMedia">
+          <img
+            className="pp-nfcDesignSelector__previewImg"
+            src={selected.image}
+            alt={selected.name}
+          />
+        </figure>
         <div className="pp-nfcDesignSelector__previewName">{selected.name}</div>
       </div>
 

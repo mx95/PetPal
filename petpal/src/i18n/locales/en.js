@@ -2071,6 +2071,8 @@ const en = {
     monthlyExistingImeiLabel: 'Tracker IMEI',
     monthlyExistingImeiPlaceholder: '15-digit IMEI on the collar label',
     existingImeiInvalid: 'Enter a valid tracker IMEI (10–20 digits).',
+    trackerSourceRequired:
+      'Select “I already have a GPS tracker” or “Add GPS Tracker” before adding to cart.',
     addAnotherSubscriptionCta: 'Add another subscription',
     nfcPerPetNote: '+{amount} for {count} NFC tag(s) at checkout',
     tabSubscriptions: 'Subscriptions',
