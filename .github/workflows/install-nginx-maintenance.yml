@@ -1,0 +1,39 @@
+# One-time / on-demand: install nginx maintenance page routing on the Hetzner host.
+# Run: Actions → Install nginx maintenance → Run workflow
+
+name: Install nginx maintenance
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: install-nginx-maintenance
+  cancel-in-progress: false
+
+jobs:
+  install:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Install maintenance routing over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          command_timeout: 5m
+          script: |
+            set -euo pipefail
+            PETPAL_ROOT="${{ secrets.DEPLOY_PATH }}"
+            if [ -z "$PETPAL_ROOT" ]; then PETPAL_ROOT="/root/PetPal"; fi
+            cd "$PETPAL_ROOT"
+            git fetch origin main --prune
+            git checkout main
+            git reset --hard origin/main
+            bash "$PETPAL_ROOT/scripts/install-nginx-maintenance.sh"
+            mkdir -p /var/lib/petpal/maintenance
+            cp "$PETPAL_ROOT/scripts/maintenance/maintenance.html" /var/lib/petpal/maintenance/maintenance.html
+            echo "======== nginx maintenance ========"
+            grep -n 'petpal-maintenance\|maintenance.enabled\|@petpal_maintenance' /etc/nginx/sites-available/petpal.com.cy || true
+            test -f /var/lib/petpal/maintenance/maintenance.html
+            echo "install OK"
