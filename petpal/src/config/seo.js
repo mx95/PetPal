@@ -3,7 +3,7 @@ import { BRAND } from './brand';
 /** Public site origin — set REACT_APP_SITE_URL in production if the domain differs. */
 export const SITE_URL = (process.env.REACT_APP_SITE_URL || 'https://petpal.com.cy').replace(/\/$/, '');
 
-export const DEFAULT_OG_IMAGE = `${SITE_URL}/images/home-hero.png`;
+export const DEFAULT_OG_IMAGE = `${SITE_URL}/images/home-hero.jpg`;
 
 export const SITE_NAME = BRAND.productName;
 

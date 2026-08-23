@@ -445,6 +445,14 @@ if (fs.existsSync(WEB_INDEX_HTML)) {
     if (sendStaticSeoFile(res, "sitemap.xml", "application/xml")) return;
     res.status(404).type("text/plain").send("sitemap not found — rebuild petpal after adding public/sitemap.xml");
   });
+  const legacyHomeImages = {
+    "/images/home-hero.png": "home-hero.jpg",
+    "/images/home-live-tracking.png": "home-live-tracking.jpg",
+    "/images/home-nfc-feature.png": "home-nfc-feature.jpg",
+  };
+  for (const [from, to] of Object.entries(legacyHomeImages)) {
+    app.get(from, (_req, res) => res.redirect(301, `/images/${to}`));
+  }
   app.get(["/", "/index.html"], sendSpaIndex);
   app.use(
     express.static(WEB_BUILD_DIR, {
@@ -456,6 +464,10 @@ if (fs.existsSync(WEB_INDEX_HTML)) {
         }
         if (filePath.includes(`${path.sep}static${path.sep}`)) {
           res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+          return;
+        }
+        if (filePath.includes(`${path.sep}images${path.sep}`)) {
+          res.setHeader("Cache-Control", "public, max-age=604800");
         }
       },
     })
