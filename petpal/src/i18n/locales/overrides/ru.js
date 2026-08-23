@@ -469,7 +469,7 @@ const ru = {
     nfcOnlySub: 'Метка профиля питомца по касанию — подписка для заказа не нужна.',
     yearlyHardwareIncluded: 'Бесплатные GPS-трекер и NFC-метка',
     yearlyFreeHardwareIncluded:
-      'Включает один БЕСПЛАТНЫЙ GPS-трекер и одну БЕСПЛАТНУЮ NFC-метку — выберите питомца(ев) выше',
+      'GPS-трекер со скидкой и БЕСПЛАТНАЯ NFC-метка.',
     yearlyRenewalNote: 'Продление {amount}/год после первого года.',
     yearlyTrackerIncluded: 'Бесплатный GPS-ошейник',
     monthlyAddTrackerTitle: 'Добавить GPS-трекер',

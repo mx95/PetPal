@@ -2018,7 +2018,7 @@ const en = {
     nfcOnlyTitle: 'NFC tag',
     nfcOnlySub: 'Tap-to-open pet profile tag — no subscription required to order.',
     yearlyHardwareIncluded: 'Free GPS tracker and NFC tag included',
-    yearlyFreeHardwareIncluded: 'Includes one FREE GPS tracker and one FREE NFC tag — select pet(s) above',
+    yearlyFreeHardwareIncluded: 'Discounted GPS Tracker and FREE NFC Tag.',
     yearlyRenewalNote: 'Renews at {amount}/year after the first year.',
     yearlyTrackerIncluded: 'Free GPS collar included',
     monthlyAddTrackerTitle: 'Add GPS Tracker',

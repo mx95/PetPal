@@ -451,7 +451,7 @@ const el = {
       'Tag προφίλ κατοικιδίου με άγγιγμα — δεν απαιτείται συνδρομή για παραγγελία.',
     yearlyHardwareIncluded: 'Δωρεάν GPS tracker και NFC tag',
     yearlyFreeHardwareIncluded:
-      'Περιλαμβάνει ένα ΔΩΡΕΑΝ GPS tracker και ένα ΔΩΡΕΑΝ NFC tag — επιλέξτε κατοικίδιο(α) παραπάνω',
+      'GPS Tracker με έκπτωση και ΔΩΡΕΑΝ NFC Tag.',
     yearlyRenewalNote: 'Ανανέωση {amount}/έτος μετά το πρώτο έτος.',
     yearlyTrackerIncluded: 'Δωρεάν GPS κολάρο',
     monthlyAddTrackerTitle: 'Προσθήκη GPS Tracker',
