@@ -10,6 +10,7 @@ import { providerBookingsBoostIsActive, providerNearbyBoostIsActive } from '../b
 import ShopCartBar from '../components/shop/ShopCartBar';
 import ShopPetPicker from '../components/shop/ShopPetPicker';
 import NfcDesignSelector from '../components/shop/NfcDesignSelector';
+import ImeiQrScannerButton from '../components/ImeiQrScannerButton';
 import { useShopAssets } from '../hooks/useShopAssets';
 import {
   NFC_TAG_ADDON_CENTS,
@@ -546,15 +547,22 @@ export default function Shop() {
                         {monthlyUseExistingImei ? (
                           <label className="pp-field" style={{ marginTop: 10 }}>
                             <span className="pp-field__label">{t('shopPage.monthlyExistingImeiLabel')}</span>
-                            <input
-                              className="pp-input"
-                              inputMode="numeric"
-                              autoComplete="off"
-                              placeholder={t('shopPage.monthlyExistingImeiPlaceholder')}
-                              value={monthlyExistingImei}
-                              disabled={isLoading}
-                              onChange={(e) => setMonthlyExistingImei(e.target.value.replace(/\D/g, '').slice(0, 20))}
-                            />
+                            <div className="pp-row" style={{ alignItems: 'stretch', gap: 8, flexWrap: 'wrap' }}>
+                              <input
+                                className="pp-input"
+                                style={{ flex: '1 1 160px', minWidth: 0 }}
+                                inputMode="numeric"
+                                autoComplete="off"
+                                placeholder={t('shopPage.monthlyExistingImeiPlaceholder')}
+                                value={monthlyExistingImei}
+                                disabled={isLoading}
+                                onChange={(e) => setMonthlyExistingImei(e.target.value.replace(/\D/g, '').slice(0, 20))}
+                              />
+                              <ImeiQrScannerButton
+                                onImei={setMonthlyExistingImei}
+                                disabled={isLoading}
+                              />
+                            </div>
                           </label>
                         ) : null}
                         <label className="pp-shopTrackerOpt pp-shopTrackerOpt--withImage">
