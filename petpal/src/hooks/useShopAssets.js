@@ -29,10 +29,10 @@ export function useShopAssets() {
 
   const nfcDesigns = useMemo(() => mergeNfcTagDesigns(raw), [raw]);
   const trackerImage = useMemo(() => {
-    // While Firestore is loading, do not fall back to the static default —
-    // that causes a one-frame flash of the old tracker photo before the
-    // admin-uploaded image arrives.
-    if (loading || raw == null) return '';
+    // Only withhold the default while the first snapshot is in flight.
+    // After load (including missing doc / permission error), always resolve
+    // so the shop never stays blank.
+    if (loading) return '';
     return resolveTrackerShopImage(raw) || DEFAULT_TRACKER_SHOP_IMAGE;
   }, [raw, loading]);
 
