@@ -79,8 +79,8 @@ export function isPermanentlyClosedPlace(place) {
 
 /**
  * Only reject ordinary cafés/restaurants from All-services pet-café noise.
- * Pet café tab: keep café-like venues or places with an explicit pet-café signal
- * (keyword search alone still returns ordinary coffee shops).
+ * Cafe tab: trust Google Places keyword matches for pet-friendly / dogs-allowed
+ * cafés (they often lack “pet” in the place name — that used to wipe the map).
  *
  * @param {google.maps.places.PlaceResult & { nearbySourceCategoryIds?: string[] }} place
  * @param {{ selectedCategoryId?: string }} [options]
@@ -95,14 +95,9 @@ export function isAcceptableNearbyPlace(place, options = {}) {
   const foodDrink = isFoodOrDrinkVenue(place);
   const nonCafeSources = sources.filter((id) => id !== 'pet_cafe');
 
+  // Cafe category: show Google's pet-friendly café keyword hits as returned.
   if (selected === 'pet_cafe') {
-    if (hasPetCafeSignal(place)) return true;
-    // Keyword hits that are clearly café-like and mention pets / dogs / cats.
-    if (isCafeLikeVenue(place) && hasPetRelevanceSignal(place)) return true;
-    // Cafe tab: trust Places results tagged from this category when they look like a café.
-    // Name/vicinity often omit “pet” even when Google matched pet-friendly keywords.
-    if (isCafeLikeVenue(place) && sources.includes('pet_cafe')) return true;
-    return false;
+    return true;
   }
 
   const petCafeOnly = sources.includes('pet_cafe') && nonCafeSources.length === 0;

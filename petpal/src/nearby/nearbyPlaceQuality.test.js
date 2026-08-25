@@ -6,7 +6,7 @@ import {
 } from './nearbyPlaceQuality';
 
 describe('nearbyPlaceQuality', () => {
-  it('rejects ordinary cafés in All services; Cafe tab keeps café-like Places hits', () => {
+  it('rejects ordinary cafés in All services; Cafe tab trusts Google keyword hits', () => {
     const place = {
       place_id: 'davinci',
       name: 'Limanaki DaVinci Espresso Lounge Cafe Bar',

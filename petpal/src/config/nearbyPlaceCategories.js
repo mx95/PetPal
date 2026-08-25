@@ -85,9 +85,9 @@ export const NEARBY_CATEGORIES = [
   {
     id: 'pet_cafe',
     icon: '☕',
-    // Table 1 `cafe` + pet keywords (avoid keyword===type which can ZERO_RESULTS).
-    type: 'cafe',
-    keyword: 'pet friendly dogs welcome cats welcome pets allowed dog friendly',
+    // Keyword-only (no type=cafe): Google ranks cafés that mention pets welcome /
+    // dog-friendly. Cafe tab trusts these hits — names often omit “pet”.
+    keyword: 'pet friendly cafe dog friendly cafe pets allowed cafe cat cafe dog cafe',
   },
   {
     id: 'pet_pharmacy',
@@ -103,12 +103,16 @@ export const NEARBY_CATEGORIES = [
 
 /**
  * Extra Nearby Search queries for the Cafe tab (merged with the category request).
- * Cat/dog cafés often lack `type=cafe` ranking under generic pet-friendly keywords.
+ * Separate short queries catch cat cafés / dog cafés Google may rank differently.
  */
 export const PET_CAFE_EXTRA_SEARCHES = [
-  { keyword: 'cat cafe' },
-  { keyword: 'dog cafe pet cafe' },
   { keyword: 'pet friendly cafe' },
+  { keyword: 'dog friendly cafe' },
+  { keyword: 'cat cafe' },
+  { keyword: 'pets allowed cafe' },
+  // Broad café sweep in the area; Cafe tab still only shows Places keyword hits
+  // from this category (and All services keeps ordinary cafés filtered out).
+  { type: 'cafe', keyword: 'pet friendly' },
 ];
 
 export function getCategoryById(id, t) {
