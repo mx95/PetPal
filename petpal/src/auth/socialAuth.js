@@ -17,6 +17,9 @@ const SOCIAL_REDIRECT_META_KEY = 'petpal_social_auth_v1';
 /** Shared so Login + Register can both await one getRedirectResult(). */
 let redirectResultPromise = null;
 
+/** Prevent concurrent Google/Apple popups from stacked taps. */
+let socialSignInInFlight = false;
+
 function appleProvider() {
   const provider = new OAuthProvider('apple.com');
   provider.addScope('email');
@@ -191,6 +194,15 @@ export async function signInWithSocialProvider(providerId, options = {}) {
     err.code = 'auth/firebase-not-configured';
     throw err;
   }
+
+  // Prevent double-taps from opening multiple Google popups (common cause of
+  // "site closes twice then works on the third try" on mobile Safari).
+  if (socialSignInInFlight) {
+    const err = new Error('auth_social_in_progress');
+    err.code = 'auth/cancelled-popup-request';
+    throw err;
+  }
+
   const provider = providerId === 'apple' ? appleProvider() : googleProvider;
   const redirectOpts = {
     providerId,
@@ -202,6 +214,7 @@ export async function signInWithSocialProvider(providerId, options = {}) {
     return startSocialRedirect(provider, redirectOpts);
   }
 
+  socialSignInInFlight = true;
   try {
     const cred = await signInWithPopup(auth, provider);
     try {
@@ -225,6 +238,8 @@ export async function signInWithSocialProvider(providerId, options = {}) {
       throw nicer;
     }
     throw err;
+  } finally {
+    socialSignInInFlight = false;
   }
 }
 

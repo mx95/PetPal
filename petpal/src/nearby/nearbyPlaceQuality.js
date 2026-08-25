@@ -7,7 +7,7 @@
 const TRUSTED_GOOGLE_TYPES = new Set(['pet_store', 'veterinary_care', 'veterinarian']);
 
 const PET_SIGNAL_RE =
-  /\b(pets?|dogs?|cats?|pupp(?:y|ies)|kittens?|animals?|paws?|veterinary|veterinarian|vets?|groom(?:er|ing)?|kennels?|boarding|daycare|doggy|pet[- ]?friendly|cat\s*cafe|dog\s*cafe|pet\s*cafe|ζώα?|σκύλ(?:ος|οι|άκι)?|γατ(?:α|ες|ί)|κτηνίατρ|κατοικίδι|ветеринар|собак|кошк|питомц|зоо)\b/i;
+  /\b(pets?|dogs?|cats?|pupp(?:y|ies)|kittens?|animals?|paws?|veterinary|veterinarian|vets?|groom(?:er|ing)?|kennels?|boarding|daycare|doggy|pet[- ]?friendly|pets?\s+allowed|dogs?\s+(?:allowed|welcome)|cats?\s+(?:allowed|welcome)|cat\s*cafe|dog\s*cafe|pet\s*cafe|ζώα?|σκύλ(?:ος|οι|άκι)?|γατ(?:α|ες|ί)|κτηνίατρ|κατοικίδι|ветеринар|собак|кошк|питомц|зоо)\b/i;
 
 const FOOD_DRINK_TYPES = new Set([
   'cafe',
@@ -53,7 +53,7 @@ function isCafeLikeVenue(place) {
   return placeTypes(place).some((t) => CAFE_LIKE_TYPES.has(t));
 }
 
-/** Real pet cafés — not every place with “cafe” in the name. */
+/** Cafés that welcome pets — explicit pet-café wording or café-like + pet signal. */
 export function hasPetCafeSignal(place) {
   const text = placeText(place);
   if (
@@ -62,6 +62,9 @@ export function hasPetCafeSignal(place) {
     )
   ) {
     return true;
+  }
+  if (/\b(pets?\s+allowed|dogs?\s+(?:allowed|welcome)|cats?\s+(?:allowed|welcome))\b/i.test(text)) {
+    return isCafeLikeVenue(place) || /\b(caf[eé]|coffee)\b/i.test(text);
   }
   return /\b(caf[eé]|coffee)\b/i.test(text) && PET_SIGNAL_RE.test(text);
 }

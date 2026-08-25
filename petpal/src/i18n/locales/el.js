@@ -1829,8 +1829,8 @@ const el = {
         desc: 'Εκπαίδευση σκύλων, κατοικίδιων & αλόγων',
       },
       pet_cafe: {
-        label: 'Pet café',
-        desc: 'Καφέ, συναντήσεις',
+        label: 'Cafe',
+        desc: 'Καφέ που δέχονται κατοικίδια',
       },
       pet_pharmacy: {
         label: 'Φαρμακείο',
@@ -1901,6 +1901,7 @@ const el = {
     tabHotel: 'Ξενοδοχείο',
     tabBath: 'Λούσιμο',
     tabWalker: 'Βόλτες κατοικιδίων',
+    tabSpa: 'Pet spa',
     recommendedTitle: 'Προτεινόμενα',
     recommendedSub: 'Τοπικές επιχειρήσεις με ενίσχυση',
     filtersTitle: 'Εύρεση',

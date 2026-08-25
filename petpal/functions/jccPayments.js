@@ -781,7 +781,7 @@ exports.createJccUpdateCard = functions.region('europe-west1').https.onCall(asyn
       throw new functions.https.HttpsError('failed-precondition', 'Card update is not configured.');
     }
 
-    const { userName, password, restBase, returnUrl, frontendUrl } = await jccCredentials();
+    const { userName, password, restBase, returnUrl, frontendUrl, mode } = await jccCredentials();
     const orderNumber = uniqueOrderNumber('PC');
     const sessionRef = db.collection('paymentSessions').doc(orderNumber);
     await sessionRef.set(
@@ -800,6 +800,7 @@ exports.createJccUpdateCard = functions.region('europe-west1').https.onCall(asyn
         amountCents: pricing.chargeCents,
         renewalAmountCents: null,
         currency: '978',
+        paymentMode: mode,
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
         status: 'pending_register',
       })
@@ -816,6 +817,7 @@ exports.createJccUpdateCard = functions.region('europe-west1').https.onCall(asyn
       includeNfc: false,
       nfcPetIds: [],
       currency: '978',
+      paymentMode: mode,
     });
 
     const baseParams = {
@@ -955,7 +957,7 @@ exports.createJccCheckout = functions.region('europe-west1').https.onCall(async 
     const currency = sku === 'MARKETPLACE_CART' ? '978' : SKUS[sku].currency;
 
     ensureAdmin();
-    const { userName, password, restBase, returnUrl, frontendUrl } = await jccCredentials();
+    const { userName, password, restBase, returnUrl, frontendUrl, mode } = await jccCredentials();
 
     const orderNumber = uniqueOrderNumber('PP');
     const db = admin.firestore();
@@ -975,6 +977,7 @@ exports.createJccCheckout = functions.region('europe-west1').https.onCall(async 
         amountCents: pricing.chargeCents,
         renewalAmountCents: pricing.renewalCents ?? null,
         currency,
+        paymentMode: mode,
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
         status: 'pending_register',
       })
@@ -991,6 +994,7 @@ exports.createJccCheckout = functions.region('europe-west1').https.onCall(async 
       includeNfc: pricing.includeNfc,
       nfcPetIds,
       currency,
+      paymentMode: mode,
     });
 
     const jccCartLines =

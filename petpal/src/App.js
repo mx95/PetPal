@@ -25,6 +25,7 @@ import {
   AdminShopAssets,
   AdminSiteMode,
   AdminSupport,
+  AdminUsersNfc,
   BookingsHub,
   BreedMatching,
   Community,
@@ -210,6 +211,14 @@ function App() {
                 element={
                   <RequireAuth>
                     <AdminShopAssets />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/admin/users-nfc"
+                element={
+                  <RequireAuth>
+                    <AdminUsersNfc />
                   </RequireAuth>
                 }
               />

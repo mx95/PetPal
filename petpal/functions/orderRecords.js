@@ -176,6 +176,7 @@ async function createPendingOrder(db, payload) {
     includeNfc,
     nfcPetIds,
     currency,
+    paymentMode,
   } = payload;
   const items = annotateOrderItemsWithSubPayments(
     buildOrderItems(sku, {
@@ -216,6 +217,7 @@ async function createPendingOrder(db, payload) {
         includeNfc: Boolean(includeNfc),
         nfcPetIds: Array.isArray(nfcPetIds) ? nfcPetIds : null,
         needsFulfillment: needsFulfillment(sku, { includeTracker, includeNfc }),
+        paymentMode: paymentMode === 'live' || paymentMode === 'test' ? paymentMode : null,
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       })

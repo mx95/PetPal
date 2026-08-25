@@ -84,8 +84,8 @@ export const NEARBY_CATEGORIES = [
   {
     id: 'pet_cafe',
     icon: '☕',
-    // Pet-friendly café wording; nearbyPlaceQuality drops ordinary coffee shops.
-    keyword: 'pet friendly cafe dog friendly cafe cat cafe dog cafe pets allowed',
+    // Pet-friendly cafés / coffee shops that welcome dogs & cats.
+    keyword: 'pet friendly cafe dog friendly cafe cat cafe pets allowed cafe dog welcome cafe',
   },
   {
     id: 'pet_pharmacy',
