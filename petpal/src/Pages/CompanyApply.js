@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
 import { useCompany } from '../company/CompanyContext';
 import { saveCompanyApplication } from '../company/companyFirestore';
+import { uploadCompanyLogo } from '../company/companyLogoStorage';
 import LocationPicker, { defaultMapCenter } from '../company/LocationPicker';
 import CompanyPlaceSearchField from '../company/CompanyPlaceSearchField';
 import { useI18n } from '../i18n/I18nContext';
@@ -52,6 +53,7 @@ export default function CompanyApply() {
   );
   const [businessType, setBusinessType] = useState('other');
   const [logoUrl, setLogoUrl] = useState('');
+  const [logoUploading, setLogoUploading] = useState(false);
   const [addressLine, setAddressLine] = useState('');
   const [publicEmail, setPublicEmail] = useState(() => (user && user.email) || '');
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -114,6 +116,29 @@ export default function CompanyApply() {
     else document.body.classList.remove(cls);
     return () => document.body.classList.remove(cls);
   }, [modalOpen]);
+
+  async function onUploadLogo(file) {
+    if (!file || !user?.uid) return;
+    setError('');
+    setLogoUploading(true);
+    try {
+      const url = await uploadCompanyLogo(user.uid, file);
+      setLogoUrl(url);
+    } catch (err) {
+      const msg = err?.message || String(err);
+      if (msg.includes('NOT_IMAGE') || msg.includes('image')) {
+        setError(t('companyApply.logoUploadNotImage'));
+      } else if (msg.includes('TOO_LARGE') || msg.includes('size')) {
+        setError(t('companyApply.logoUploadTooLarge'));
+      } else if (msg.includes('permission') || msg.includes('PERMISSION') || msg.includes('unauthorized')) {
+        setError(t('companyApply.logoUploadPermission'));
+      } else {
+        setError(t('companyApply.logoUploadFailed'));
+      }
+    } finally {
+      setLogoUploading(false);
+    }
+  }
 
   async function onSubmit(e) {
     e.preventDefault();
@@ -340,13 +365,41 @@ export default function CompanyApply() {
               </div>
 
               <div>
-                <div className="pp-label">{t('companyApply.businessLogoUrl')}</div>
-                <input
-                  className="pp-input"
-                  value={logoUrl}
-                  onChange={(e) => setLogoUrl(e.target.value)}
-                  placeholder={t('companyApply.logoUrlPlaceholder')}
-                />
+                <div className="pp-label">{t('companyApply.businessLogo')}</div>
+                <p className="pp-subtle" style={{ marginTop: 0, marginBottom: 8, fontSize: 13 }}>
+                  {t('companyApply.businessLogoHint')}
+                </p>
+                <div className="pp-row" style={{ gap: 10, alignItems: 'stretch', flexWrap: 'wrap' }}>
+                  <input
+                    className="pp-input"
+                    style={{ flex: '1 1 180px', minWidth: 0 }}
+                    value={logoUrl}
+                    onChange={(e) => setLogoUrl(e.target.value)}
+                    placeholder={t('companyApply.logoUrlPlaceholder')}
+                    inputMode="url"
+                    autoComplete="off"
+                    disabled={logoUploading || submitting}
+                  />
+                  <label className="pp-btn pp-btn--ghost" style={{ margin: 0, cursor: logoUploading ? 'wait' : 'pointer' }}>
+                    {logoUploading ? t('companyApply.logoUploading') : t('companyApply.logoUpload')}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      hidden
+                      disabled={logoUploading || submitting || !user?.uid}
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        e.target.value = '';
+                        void onUploadLogo(f);
+                      }}
+                    />
+                  </label>
+                </div>
+                {logoUrl.trim() ? (
+                  <div className="pp-companyLogoPreview" style={{ marginTop: 10 }}>
+                    <img src={logoUrl.trim()} alt="" />
+                  </div>
+                ) : null}
               </div>
 
               <div>
