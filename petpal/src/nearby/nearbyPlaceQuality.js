@@ -7,7 +7,7 @@
 const TRUSTED_GOOGLE_TYPES = new Set(['pet_store', 'veterinary_care', 'veterinarian']);
 
 const PET_SIGNAL_RE =
-  /\b(pets?|dogs?|cats?|pupp(?:y|ies)|kittens?|animals?|paws?|veterinary|veterinarian|vets?|groom(?:er|ing)?|kennels?|boarding|daycare|doggy|pet[- ]?friendly|pets?\s+allowed|dogs?\s+(?:allowed|welcome)|cats?\s+(?:allowed|welcome)|cat\s*cafe|dog\s*cafe|pet\s*cafe|ζώα?|σκύλ(?:ος|οι|άκι)?|γατ(?:α|ες|ί)|κτηνίατρ|κατοικίδι|ветеринар|собак|кошк|питомц|зоо)\b/i;
+  /\b(pets?|dogs?|cats?|pupp(?:y|ies)|kittens?|animals?|paws?|veterinary|veterinarian|vets?|groom(?:er|ing)?|kennels?|boarding|daycare|doggy|pet[- ]?friendly|pets?\s+allowed|dogs?\s+(?:allowed|welcome|ok|okay)|cats?\s+(?:allowed|welcome|ok|okay)|bring\s+your\s+dog|dog[- ]friendly|cat[- ]friendly|cat\s*cafe|dog\s*cafe|pet\s*cafe|ζώα?|σκύλ(?:ος|οι|άκι)?|γατ(?:α|ες|ί)|κτηνίατρ|κατοικίδι|φιλικό\s+προς\s+(?:κατοικίδια|σκύλους)|ветеринар|собак|кошк|питомц|зоо|с\s+собак)\b/i;
 
 const FOOD_DRINK_TYPES = new Set([
   'cafe',
@@ -99,7 +99,9 @@ export function isAcceptableNearbyPlace(place, options = {}) {
     if (hasPetCafeSignal(place)) return true;
     // Keyword hits that are clearly café-like and mention pets / dogs / cats.
     if (isCafeLikeVenue(place) && hasPetRelevanceSignal(place)) return true;
-    // Drop ordinary espresso bars / random POIs that only matched loose keywords.
+    // Cafe tab: trust Places results tagged from this category when they look like a café.
+    // Name/vicinity often omit “pet” even when Google matched pet-friendly keywords.
+    if (isCafeLikeVenue(place) && sources.includes('pet_cafe')) return true;
     return false;
   }
 

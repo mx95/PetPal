@@ -25,6 +25,17 @@ describe('nearbySearchFields', () => {
     expect(nearbySearchFields({})).toEqual({ keyword: 'pet' });
   });
 
+  it('allows cafe as a Nearby Search type for pet-friendly café search', () => {
+    const cafe = NEARBY_CATEGORIES.find((c) => c.id === 'pet_cafe');
+    expect(cafe).toBeTruthy();
+    expect(NEARBY_SEARCH_TYPE_WHITELIST.has('cafe')).toBe(true);
+    expect(nearbySearchFields(cafe)).toEqual({
+      type: 'cafe',
+      keyword: cafe.keyword,
+    });
+    expect(cafe.keyword.toLowerCase()).not.toBe('cafe');
+  });
+
   it('configures beach as keyword-only so searches are not INVALID_REQUEST', () => {
     const beach = NEARBY_CATEGORIES.find((c) => c.id === 'beach');
     expect(beach).toBeTruthy();

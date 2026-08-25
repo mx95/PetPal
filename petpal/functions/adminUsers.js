@@ -76,6 +76,24 @@ exports.adminDeleteUser = functions.region('europe-west1').https.onCall(async (d
   }
 
   const userRef = db.collection('users').doc(uid);
+  let email = '';
+  try {
+    const authUser = await admin.auth().getUser(uid);
+    email = String(authUser?.email || '').trim();
+  } catch (e) {
+    if (e?.code !== 'auth/user-not-found') {
+      functions.logger.warn('adminDeleteUser getUser email', { uid, message: e?.message });
+    }
+  }
+  if (!email) {
+    try {
+      const userSnap = await userRef.get();
+      email = String(userSnap.data()?.email || '').trim();
+    } catch {
+      // ignore
+    }
+  }
+
   const summary = {
     pets: 0,
     publicPets: 0,
@@ -122,5 +140,5 @@ exports.adminDeleteUser = functions.region('europe-west1').https.onCall(async (d
     }
   }
 
-  return { ok: true, uid, summary };
+  return { ok: true, uid, email: email || null, summary };
 });

@@ -54,10 +54,15 @@ export default function AdminUsersNfc() {
   }, [firebaseReady, adminReady, isAdmin, t]);
 
   const filtered = useMemo(() => filterAdminDirectory(rows, search), [rows, search]);
+  const totals = useMemo(() => {
+    const accounts = rows.length;
+    const pets = rows.reduce((n, row) => n + (Array.isArray(row.pets) ? row.pets.length : 0), 0);
+    return { accounts, pets };
+  }, [rows]);
   const origin = typeof window !== 'undefined' ? window.location.origin : '';
 
-  async function onDeleteUser(uid, label) {
-    const confirmMsg = t('adminUsersNfc.confirmDelete', { name: label || uid });
+  async function onDeleteUser(uid, label, email) {
+    const confirmMsg = t('adminUsersNfc.confirmDelete', { name: label || email || uid });
     if (!window.confirm(confirmMsg)) return;
     setBusyUid(uid);
     setErr('');
@@ -65,7 +70,13 @@ export default function AdminUsersNfc() {
     try {
       const fn = httpsCallable(functionsClient(), 'adminDeleteUser');
       const result = await fn({ uid });
-      setOk(t('adminUsersNfc.deleteOk', { uid: result?.data?.uid || uid }));
+      const deletedUid = result?.data?.uid || uid;
+      const deletedEmail = String(result?.data?.email || email || '').trim();
+      setOk(
+        deletedEmail
+          ? t('adminUsersNfc.deleteOkWithEmail', { email: deletedEmail, uid: deletedUid })
+          : t('adminUsersNfc.deleteOk', { uid: deletedUid })
+      );
       await reload();
     } catch (e) {
       setErr(e?.message || t('adminUsersNfc.deleteFailed'));
@@ -90,6 +101,13 @@ export default function AdminUsersNfc() {
       <p className="pp-subtle" style={{ maxWidth: 720 }}>
         {t('adminUsersNfc.intro')}
       </p>
+
+      {!loading ? (
+        <div className="pp-adminUsersNfc__totals" style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
+          <span className="pp-badge">{t('admin.hub.userCount', { n: totals.accounts })}</span>
+          <span className="pp-badge">{t('admin.hub.petCount', { n: totals.pets })}</span>
+        </div>
+      ) : null}
 
       <input
         type="search"
@@ -128,7 +146,7 @@ export default function AdminUsersNfc() {
                   type="button"
                   className="pp-btn pp-btn--ghost pp-adminShopAssets__removeBtn"
                   disabled={Boolean(busyUid) || row.uid === user.uid}
-                  onClick={() => void onDeleteUser(row.uid, row.name || row.email)}
+                  onClick={() => void onDeleteUser(row.uid, row.name || row.email, row.email)}
                 >
                   {busyUid === row.uid ? t('adminUsersNfc.deleting') : t('adminUsersNfc.deleteUser')}
                 </button>
