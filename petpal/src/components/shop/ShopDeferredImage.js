@@ -1,47 +1,18 @@
 import React, { useEffect, useState } from 'react';
 
 /**
- * Avoid flashing a previous/default shop image while Firestore overrides load,
- * and while a new src is still downloading after the URL changes.
+ * Show a short skeleton until the image URL is ready and the bitmap has loaded,
+ * so Shop does not flash a previous/default tracker photo.
  */
 export default function ShopDeferredImage({ src, className, alt = '', style }) {
-  const [displaySrc, setDisplaySrc] = useState('');
-  const [visible, setVisible] = useState(false);
+  const next = String(src || '').trim();
+  const [loadedFor, setLoadedFor] = useState('');
 
   useEffect(() => {
-    const next = String(src || '').trim();
-    if (!next) {
-      setDisplaySrc('');
-      setVisible(false);
-      return undefined;
-    }
+    setLoadedFor('');
+  }, [next]);
 
-    let cancelled = false;
-    setVisible(false);
-
-    const img = new Image();
-    img.onload = () => {
-      if (cancelled) return;
-      setDisplaySrc(next);
-      setVisible(true);
-    };
-    img.onerror = () => {
-      if (cancelled) return;
-      setDisplaySrc(next);
-      setVisible(true);
-    };
-    img.src = next;
-    if (img.complete && img.naturalWidth > 0) {
-      setDisplaySrc(next);
-      setVisible(true);
-    }
-
-    return () => {
-      cancelled = true;
-    };
-  }, [src]);
-
-  if (!displaySrc || !visible) {
+  if (!next) {
     return (
       <span
         className={`${className || ''} pp-shopDeferredImg pp-shopDeferredImg--pending`.trim()}
@@ -53,12 +24,20 @@ export default function ShopDeferredImage({ src, className, alt = '', style }) {
     );
   }
 
+  const ready = loadedFor === next;
+
   return (
     <img
-      className={`${className || ''} pp-shopDeferredImg`.trim()}
-      style={style}
-      src={displaySrc}
+      className={`${className || ''} pp-shopDeferredImg${ready ? '' : ' pp-shopDeferredImg--pending'}`.trim()}
+      style={{
+        ...style,
+        opacity: ready ? undefined : 0,
+        // Keep layout while pending; CSS pending styles still apply via class.
+      }}
+      src={next}
       alt={alt}
+      onLoad={() => setLoadedFor(next)}
+      onError={() => setLoadedFor(next)}
     />
   );
 }
