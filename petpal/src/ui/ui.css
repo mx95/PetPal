@@ -932,6 +932,23 @@ select.pp-input:focus {
   max-width: 100%;
 }
 
+.pp-companyLogoPreview {
+  width: 72px;
+  height: 72px;
+  border-radius: 14px;
+  border: 1px solid rgba(16, 24, 40, 0.1);
+  background: #fff;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+}
+
+.pp-companyLogoPreview img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
 .pp-companyMapSection {
   min-width: 0;
   max-width: 100%;
