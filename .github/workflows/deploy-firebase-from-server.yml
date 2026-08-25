@@ -117,3 +117,5 @@ jobs:
             esac
 
             echo "[firebase-deploy] Done"
+
+# Ensure adminPurgeOrdersKeepLatestLive + adminDeleteUser deploy with all.
