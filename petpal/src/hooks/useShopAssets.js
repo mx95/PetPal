@@ -28,13 +28,19 @@ export function useShopAssets() {
   }, []);
 
   const nfcDesigns = useMemo(() => mergeNfcTagDesigns(raw), [raw]);
-  const trackerImage = useMemo(() => resolveTrackerShopImage(raw), [raw]);
+  const trackerImage = useMemo(() => {
+    // While Firestore is loading, do not fall back to the static default —
+    // that causes a one-frame flash of the old tracker photo before the
+    // admin-uploaded image arrives.
+    if (loading || raw == null) return '';
+    return resolveTrackerShopImage(raw) || DEFAULT_TRACKER_SHOP_IMAGE;
+  }, [raw, loading]);
 
   return {
     raw,
     loading,
     err,
     nfcDesigns: nfcDesigns.length ? nfcDesigns : DEFAULT_NFC_TAG_DESIGNS,
-    trackerImage: trackerImage || DEFAULT_TRACKER_SHOP_IMAGE,
+    trackerImage,
   };
 }

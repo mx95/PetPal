@@ -12,6 +12,7 @@ import ShopPetPicker from '../components/shop/ShopPetPicker';
 import NfcDesignSelector from '../components/shop/NfcDesignSelector';
 import ImeiQrScannerButton from '../components/ImeiQrScannerButton';
 import { useShopAssets } from '../hooks/useShopAssets';
+import ShopDeferredImage from '../components/shop/ShopDeferredImage';
 import {
   NFC_TAG_ADDON_CENTS,
   PLUS_SKUS,
@@ -502,7 +503,7 @@ export default function Shop() {
                       </p>
                     ) : null}
                     {p.id === 'TRACKER_HARDWARE' ? (
-                      <img
+                      <ShopDeferredImage
                         className="pp-shopCard__productImg"
                         src={trackerImage}
                         alt={p.title}
@@ -573,7 +574,7 @@ export default function Shop() {
                             onChange={(e) => setMonthlyIncludeTracker(e.target.checked)}
                           />
                           <div className="pp-shopTrackerOpt__imgWrap" aria-hidden>
-                            <img
+                            <ShopDeferredImage
                               className="pp-shopTrackerOpt__img"
                               src={trackerImage}
                               alt=""
