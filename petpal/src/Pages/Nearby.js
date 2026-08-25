@@ -5,6 +5,7 @@ import {
   getCategoryById,
   NEARBY_CATEGORIES,
   NEARBY_SEARCH_RADIUS_M,
+  PET_CAFE_EXTRA_SEARCHES,
   nearbySearchFields,
 } from '../config/nearbyPlaceCategories';
 import { nearbyCategoryForPlace } from '../nearby/classifyNearbyPlace';
@@ -286,6 +287,68 @@ function NearbyMap({ apiKey }) {
         return;
       }
 
+      // Cafe tab: merge type=cafe + pet keywords with cat/dog café keyword searches.
+      if (cat.id === 'pet_cafe') {
+        const loc =
+          scope === 'bounds'
+            ? null
+            : new window.google.maps.LatLng(center.lat, center.lng);
+        const bounds = scope === 'bounds' ? map.getBounds() : null;
+        if (scope === 'bounds' && !bounds) {
+          setSearchStatus('error');
+          return;
+        }
+        /** @type {Map<string, google.maps.places.PlaceResult & { nearbySourceCategoryIds?: string[] }>} */
+        const byId = new Map();
+        const queries = [{ ...cat }, ...PET_CAFE_EXTRA_SEARCHES];
+
+        const runOne = (entry) =>
+          new Promise((resolve) => {
+            const request = { ...nearbySearchFields(entry) };
+            if (bounds) request.bounds = bounds;
+            else {
+              request.location = loc;
+              request.radius = NEARBY_SEARCH_RADIUS_M;
+            }
+
+            const attempt = (retry) => {
+              service.nearbySearch(request, (results, status) => {
+                if (status === window.google.maps.places.PlacesServiceStatus.OK && results) {
+                  resolve(results);
+                  return;
+                }
+                if (
+                  status === window.google.maps.places.PlacesServiceStatus.OVER_QUERY_LIMIT &&
+                  retry < 2
+                ) {
+                  window.setTimeout(() => attempt(retry + 1), 700 * (retry + 1));
+                  return;
+                }
+                resolve([]);
+              });
+            };
+            attempt(0);
+          });
+
+        (async () => {
+          const resultsList = await Promise.all(queries.map((entry) => runOne(entry)));
+          if (moreSearchGenRef.current !== searchGen) return;
+          resultsList.forEach((results) => {
+            (results || []).forEach((place) => {
+              if (!place.place_id) return;
+              const prev = byId.get(place.place_id);
+              if (prev) return;
+              byId.set(place.place_id, {
+                ...place,
+                nearbySourceCategoryIds: ['pet_cafe'],
+              });
+            });
+          });
+          publishPlaces([...byId.values()], { max: 40 });
+        })();
+        return;
+      }
+
       const request = { ...nearbySearchFields(cat) };
 
       if (scope === 'bounds') {
@@ -308,8 +371,8 @@ function NearbyMap({ apiKey }) {
             ...place,
             nearbySourceCategoryIds: [cat.id],
           }));
-          // Pet café: show more Google keyword hits (pet-friendly cafés).
-          publishPlaces(mapped, { max: cat.id === 'pet_cafe' ? 40 : 20 });
+          // Category keyword hits (non–pet-café tabs).
+          publishPlaces(mapped, { max: 20 });
           return;
         }
         if (status === window.google.maps.places.PlacesServiceStatus.ZERO_RESULTS) {

@@ -6,7 +6,7 @@ import {
 } from './nearbyPlaceQuality';
 
 describe('nearbyPlaceQuality', () => {
-  it('rejects ordinary cafés in All services and on the Pet café tab', () => {
+  it('rejects ordinary cafés in All services; Cafe tab trusts Google keyword hits', () => {
     const place = {
       place_id: 'davinci',
       name: 'Limanaki DaVinci Espresso Lounge Cafe Bar',
@@ -16,7 +16,7 @@ describe('nearbyPlaceQuality', () => {
     };
     expect(hasPetCafeSignal(place)).toBe(false);
     expect(isAcceptableNearbyPlace(place, { selectedCategoryId: 'more' })).toBe(false);
-    expect(isAcceptableNearbyPlace(place, { selectedCategoryId: 'pet_cafe' })).toBe(false);
+    expect(isAcceptableNearbyPlace(place, { selectedCategoryId: 'pet_cafe' })).toBe(true);
   });
 
   it('keeps real pet cafés', () => {
@@ -51,8 +51,21 @@ describe('nearbyPlaceQuality', () => {
       types: ['cafe', 'restaurant'],
       nearbySourceCategoryIds: ['pet_cafe'],
     };
+    expect(hasPetCafeSignal(place)).toBe(true);
+    expect(isAcceptableNearbyPlace(place, { selectedCategoryId: 'pet_cafe' })).toBe(true);
+  });
+
+  it('keeps café-like Places hits on the Cafe tab even without pet wording', () => {
+    const place = {
+      place_id: 'plain-cafe',
+      name: 'Harbour Espresso',
+      vicinity: 'Nicosia',
+      types: ['cafe', 'food'],
+      nearbySourceCategoryIds: ['pet_cafe'],
+    };
     expect(hasPetCafeSignal(place)).toBe(false);
     expect(isAcceptableNearbyPlace(place, { selectedCategoryId: 'pet_cafe' })).toBe(true);
+    expect(isAcceptableNearbyPlace(place, { selectedCategoryId: 'more' })).toBe(false);
   });
 
   it('excludes permanently closed places', () => {

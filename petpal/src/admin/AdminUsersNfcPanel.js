@@ -38,6 +38,11 @@ export default function AdminUsersNfcPanel({ enabled }) {
   }, [enabled, t]);
 
   const filtered = useMemo(() => filterAdminDirectory(rows, search), [rows, search]);
+  const totals = useMemo(() => {
+    const accounts = rows.length;
+    const pets = rows.reduce((n, row) => n + (Array.isArray(row.pets) ? row.pets.length : 0), 0);
+    return { accounts, pets };
+  }, [rows]);
   const origin = typeof window !== 'undefined' ? window.location.origin : '';
 
   return (
@@ -51,7 +56,10 @@ export default function AdminUsersNfcPanel({ enabled }) {
             {t('admin.hub.usersNfcIntro')}
           </p>
         </div>
-        <span className="pp-badge">{t('admin.hub.userCount', { n: filtered.length })}</span>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+          <span className="pp-badge">{t('admin.hub.userCount', { n: totals.accounts })}</span>
+          <span className="pp-badge">{t('admin.hub.petCount', { n: totals.pets })}</span>
+        </div>
       </div>
 
       <input

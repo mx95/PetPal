@@ -25,6 +25,20 @@ describe('nearbySearchFields', () => {
     expect(nearbySearchFields({})).toEqual({ keyword: 'pet' });
   });
 
+  it('allows cafe type in whitelist for optional Cafe extra searches', () => {
+    expect(NEARBY_SEARCH_TYPE_WHITELIST.has('cafe')).toBe(true);
+    const cafe = NEARBY_CATEGORIES.find((c) => c.id === 'pet_cafe');
+    expect(cafe).toBeTruthy();
+    // Primary Cafe search stays keyword-only (broader pet-friendly ranking).
+    expect(nearbySearchFields(cafe)).toEqual({
+      keyword: cafe.keyword,
+    });
+    expect(nearbySearchFields({ type: 'cafe', keyword: 'pet friendly' })).toEqual({
+      type: 'cafe',
+      keyword: 'pet friendly',
+    });
+  });
+
   it('configures beach as keyword-only so searches are not INVALID_REQUEST', () => {
     const beach = NEARBY_CATEGORIES.find((c) => c.id === 'beach');
     expect(beach).toBeTruthy();

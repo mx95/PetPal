@@ -15,6 +15,7 @@ export const NEARBY_SEARCH_TYPE_WHITELIST = new Set([
   'pet_store',
   'veterinary_care',
   'park',
+  'cafe',
 ]);
 
 /**
@@ -84,8 +85,9 @@ export const NEARBY_CATEGORIES = [
   {
     id: 'pet_cafe',
     icon: '☕',
-    // Pet-friendly cafés / coffee shops that welcome dogs & cats.
-    keyword: 'pet friendly cafe dog friendly cafe cat cafe pets allowed cafe dog welcome cafe',
+    // Keyword-only (no type=cafe): Google ranks cafés that mention pets welcome /
+    // dog-friendly. Cafe tab trusts these hits — names often omit “pet”.
+    keyword: 'pet friendly cafe dog friendly cafe pets allowed cafe cat cafe dog cafe',
   },
   {
     id: 'pet_pharmacy',
@@ -97,6 +99,20 @@ export const NEARBY_CATEGORIES = [
     icon: '🔎',
     keyword: 'pet services',
   },
+];
+
+/**
+ * Extra Nearby Search queries for the Cafe tab (merged with the category request).
+ * Separate short queries catch cat cafés / dog cafés Google may rank differently.
+ */
+export const PET_CAFE_EXTRA_SEARCHES = [
+  { keyword: 'pet friendly cafe' },
+  { keyword: 'dog friendly cafe' },
+  { keyword: 'cat cafe' },
+  { keyword: 'pets allowed cafe' },
+  // Broad café sweep in the area; Cafe tab still only shows Places keyword hits
+  // from this category (and All services keeps ordinary cafés filtered out).
+  { type: 'cafe', keyword: 'pet friendly' },
 ];
 
 export function getCategoryById(id, t) {

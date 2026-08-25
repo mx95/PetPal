@@ -17,8 +17,21 @@ function ParaBlock({ textKey }) {
     ));
 }
 
+function HowtoList({ keys }) {
+  const { t } = useI18n();
+  return (
+    <ul>
+      {keys.map((key) => {
+        const text = t(key);
+        if (!text || text === key) return null;
+        return <li key={key}>{text}</li>;
+      })}
+    </ul>
+  );
+}
+
 /**
- * In-app help: how-to, support, and language — no internal route catalog for users.
+ * In-app help: how-to guides for navigating PetPal — no internal route catalog for users.
  */
 export default function Documentation() {
   const { user } = useAuth();
@@ -28,8 +41,34 @@ export default function Documentation() {
   const toc = [
     { href: '#docs-overview', key: 'docs.toc1' },
     { href: '#docs-howto', key: 'docs.tocHowto' },
+    { href: '#docs-account', key: 'docs.toc2' },
+    { href: '#docs-pets', key: 'docs.toc3' },
+    { href: '#docs-live', key: 'docs.toc8' },
+    { href: '#docs-nearby', key: 'docs.toc7' },
+    { href: '#docs-bookings', key: 'docs.tocBookings' },
+    { href: '#docs-shop', key: 'docs.tocShop' },
+    { href: '#docs-nfc', key: 'docs.tocNfc' },
+    { href: '#docs-activity', key: 'docs.toc4' },
+    { href: '#docs-community', key: 'docs.toc5' },
+    { href: '#docs-premium', key: 'docs.tocPremium' },
+    { href: '#docs-install', key: 'docs.tocInstall' },
     { href: '#docs-support', key: 'docs.tocSupport' },
     { href: '#docs-language', key: 'docs.toc11' },
+  ];
+
+  const howtoKeys = [
+    'docs.howtoNav',
+    'docs.howtoAccount',
+    'docs.howtoPets',
+    'docs.howtoLive',
+    'docs.howtoNearby',
+    'docs.howtoBook',
+    'docs.howtoCalendar',
+    'docs.howtoShop',
+    'docs.howtoSubscriptions',
+    'docs.howtoNfc',
+    'docs.howtoInstall',
+    'docs.howtoSupport',
   ];
 
   return (
@@ -70,12 +109,74 @@ export default function Documentation() {
 
             <section id="docs-howto">
               <h2>{t('docs.howtoTitle')}</h2>
-              <ul>
-                <li>{t('docs.howtoBook')}</li>
-                <li>{t('docs.howtoCalendar')}</li>
-                <li>{t('docs.howtoSubscriptions')}</li>
-                <li>{t('docs.howtoSupport')}</li>
-              </ul>
+              <p>{t('docs.howtoIntro')}</p>
+              <HowtoList keys={howtoKeys} />
+            </section>
+
+            <section id="docs-account">
+              <h2>{t('docs.u2Title')}</h2>
+              <ParaBlock textKey="docs.u2Body" />
+            </section>
+
+            <section id="docs-pets">
+              <h2>{t('docs.u3Title')}</h2>
+              <ParaBlock textKey="docs.u3Body" />
+            </section>
+
+            <section id="docs-live">
+              <h2>{t('docs.u8Title')}</h2>
+              <ParaBlock textKey="docs.u8Body" />
+            </section>
+
+            <section id="docs-nearby">
+              <h2>{t('docs.u7Title')}</h2>
+              <ParaBlock textKey="docs.u7Body" />
+            </section>
+
+            <section id="docs-bookings">
+              <h2>{t('docs.bookingsTitle')}</h2>
+              <ParaBlock textKey="docs.bookingsBody" />
+            </section>
+
+            <section id="docs-shop">
+              <h2>{t('docs.shopTitle')}</h2>
+              <ParaBlock textKey="docs.shopBody" />
+            </section>
+
+            <section id="docs-nfc">
+              <h2>{t('docs.nfcTitle')}</h2>
+              <ParaBlock textKey="docs.nfcBody" />
+            </section>
+
+            <section id="docs-activity">
+              <h2>{t('docs.u4Title')}</h2>
+              <ParaBlock textKey="docs.u4Body" />
+            </section>
+
+            <section id="docs-community">
+              <h2>{t('docs.u5Title')}</h2>
+              <ParaBlock textKey="docs.u5Body" />
+            </section>
+
+            <section id="docs-premium">
+              <h2>{t('docs.premiumTitle')}</h2>
+              <ParaBlock textKey="docs.premiumBody" />
+              <h3>{t('docs.u6Title')}</h3>
+              <ParaBlock textKey="docs.u6Body" />
+              <h3>{t('docs.u10Title')}</h3>
+              <ParaBlock textKey="docs.u10Body" />
+              <h3>{t('docs.u11Title')}</h3>
+              <ParaBlock textKey="docs.u11Body" />
+            </section>
+
+            <section id="docs-install">
+              <h2>{t('docs.installTitle')}</h2>
+              <ParaBlock textKey="docs.installBody" />
+              <p>
+                <Link className="pp-link" to="/install">
+                  {t('docs.installCta')}
+                </Link>
+              </p>
             </section>
 
             <section id="docs-support">

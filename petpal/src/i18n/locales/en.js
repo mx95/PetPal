@@ -2280,6 +2280,7 @@ const en = {
     deleting: 'Deleting…',
     confirmDelete: 'Permanently delete {name}? This removes Auth login, pets, and related data.',
     deleteOk: 'Deleted user {uid}.',
+    deleteOkWithEmail: 'Deleted user {email} ({uid}).',
     deleteFailed: 'Could not delete user.',
   },
   adminShopAssets: {
@@ -2958,18 +2959,18 @@ const en = {
     badge: 'Help & reference',
     pageTitle: 'Help',
     pageSubtitle:
-      'Guides and support for common PetPal tasks.',
+      'Guides to help you navigate PetPal — pets, live tracking, Nearby, bookings, shop, NFC tags, and more.',
     backApp: '← Dashboard',
     backHome: '← Home',
     backLogin: '← Log in',
     tocAria: 'On this page',
     tocTitle: 'Contents',
     toc1: 'Overview',
-    tocHowto: 'How to',
+    tocHowto: 'Quick how-to',
     tocSupport: 'Support',
     toc2: 'Account',
     toc3: 'Your pets',
-    toc4: 'Dashboard & rewards',
+    toc4: 'Activity & rewards',
     toc5: 'Community',
     toc6: 'Lost pet alerts',
     toc7: 'Nearby places',
@@ -2977,6 +2978,11 @@ const en = {
     toc9: 'Stray adoption board',
     toc10: 'Dog breeding directory',
     toc11: 'Language & privacy',
+    tocBookings: 'Bookings',
+    tocShop: 'Shop & subscriptions',
+    tocNfc: 'NFC pet tags',
+    tocPremium: 'Premium tools',
+    tocInstall: 'Install the app',
     tocRoutesMvp: 'MVP routes (in navigation)',
     // Internal route/API references are intentionally not exposed to customers.
     routesMvpTitle: 'MVP routes (shown in navigation)',
@@ -2995,16 +3001,51 @@ const en = {
     apiBaseLabel: '',
     u1Title: 'What you can do here',
     u1BodyMvp:
-      'PetPal helps you manage pet profiles, connect collars for live GPS (when available), discover nearby pet-friendly places, and book services.\n\nThis page includes quick “how to” steps and links to key pages.',
-    howtoTitle: 'How to',
+      'PetPal Care Hub helps you manage pet profiles, connect GPS collars for live tracking, find pet-friendly places Nearby, book services, shop for NFC tags and trackers, and keep your account in one place.\n\nUse the bottom bar for Activity, Bookings, Live, Nearby, and Shop. Open Menu (top right) for My pets, Profile, Docs, Support, and more. This page walks through each area step by step.',
+    howtoTitle: 'Quick how-to',
+    howtoIntro:
+      'Short steps for the most common tasks. Scroll further for fuller guides on each area.',
+    howtoNav:
+      'Find your way: bottom bar = Activity, Bookings, Live map, Nearby, Shop. Top right Menu opens My pets, Profile, Docs, Support, language, and business tools when available.',
+    howtoAccount:
+      'Account: Register or Log in (email/password or Google). Open Profile from Menu to update your details, phone, and preferences.',
+    howtoPets:
+      'Pets: Menu → My pets → Add a pet. Add name, photo, breed, and optional collar IMEI. Edit any pet anytime from the same list.',
+    howtoLive:
+      'Live tracking: open Live after a collar IMEI is linked on a pet. Use history ranges to replay walks when the tracker has reported positions.',
+    howtoNearby:
+      'Nearby: pick a category (Cafe, parks, vets, beaches, and more), tap Use my location or Search this area after moving the map. Cafe aims at places that welcome dogs, cats, and other pets — always confirm with the venue.',
     howtoBook: 'Book an appointment: open Bookings → pick a business → choose a service → pick a time → confirm.',
     howtoCalendar: 'Add to calendar: open My bookings → View details → Add to calendar (Google or Apple).',
+    howtoShop:
+      'Shop: browse GPS trackers and NFC tag designs, check out securely, then track fulfilment under orders / subscriptions.',
     howtoSubscriptions:
       'Manage subscriptions: open Shop → Your subscriptions to view status or request cancellation.',
-    howtoSupport: 'Get help: open Support to message the team about your account, orders, or bookings.',
+    howtoNfc:
+      'NFC tags: after your tag arrives, scan it to open your pet’s public profile. Program the public ID from the order / pet profile when instructions are provided.',
+    howtoInstall:
+      'Install: open Add to Home Screen (/install) for iPhone and Android steps so PetPal opens like an app.',
+    howtoSupport: 'Get help: open Support (or Contact) to message the team about your account, orders, or bookings.',
     supportTitle: 'Support',
-    supportBody: 'If you have questions or need help with an order, booking, or your account, contact us.',
+    supportBody:
+      'If you have questions or need help with an order, booking, tracker, NFC tag, or your account, contact us. Include your account email and any order or booking reference when you can.',
     supportCta: 'Open support form',
+    bookingsTitle: 'Bookings',
+    bookingsBody:
+      'Open Bookings from the bottom bar to browse providers (grooming, spa, walkers, and more when listed).\n\nTap a business → choose a service → pick an available slot → confirm. You can review upcoming and past bookings under My bookings, cancel when the provider allows it, and add the appointment to Google or Apple Calendar from the booking details.\n\nBusinesses manage availability in the Provider portal after approval.',
+    shopTitle: 'Shop & subscriptions',
+    shopBody:
+      'Shop sells GPS tracker plans (monthly or yearly) and NFC tag designs. Complete checkout with the payment form, then watch for fulfilment updates (shipping, IMEI assignment for trackers).\n\nYour subscriptions lists active plans. Link an assigned collar IMEI to a pet under My pets so Live tracking can show that device. Contact support if an IMEI or design looks wrong after delivery.',
+    nfcTitle: 'NFC pet tags',
+    nfcBody:
+      'NFC tags open a public pet profile when someone taps the tag with a phone. Keep the profile photo, name, and contact details up to date under My pets so finders can reach you.\n\nEach pet can have a public ID used when programming the tag. Share the public profile link anytime; you do not need the physical tag for that link to work.',
+    premiumTitle: 'Premium tools',
+    premiumBody:
+      'Premium gathers extra tools that may be free during beta: lost-pet alerts, stray adoption listings, and a dog breeding directory. Open Premium from Menu or Home when those tiles are available.',
+    installTitle: 'Install PetPal on your phone',
+    installBody:
+      'You can add PetPal to your home screen so it opens full-screen like an app. Use the Install guide for Safari (iPhone) and Chrome (Android) steps, including where to find “Add to Home Screen”.',
+    installCta: 'Open install steps',
     u1Body:
       'PetPal helps you keep a profile for each pet, log walks and earn rewards on the Dashboard, share moments in Community, explore pet-friendly spots on a map, optionally publish lost-pet alerts, and—if you use a compatible GPS collar—see the latest position on a map.\n\nUse the Docs tab any time; you can open this guide without signing in.',
     route: {
@@ -3111,25 +3152,25 @@ const en = {
     },
     u2Title: 'Signing up and signing in',
     u2Body:
-      'Tap Register to create an account with your email and a password. Already have an account? Use Log in.\n\nHome is the overview grid of every feature (tap a tile to open). The top bar adds Dashboard, Premium, Community, Leaderboard, Nearby, Tracker, and your language switch. Use Profile (under the logo) for pets, business application, documentation, and Admin when you have access.',
+      'Tap Register to create an account with your email and a password, or use Google sign-in when shown. Already have an account? Use Log in.\n\nAfter you sign in, the bottom bar and Menu are your main navigation. Profile (Menu) holds account settings. Businesses can apply under business / company apply; approved providers use the Provider portal for listings and bookings.',
     u3Title: 'Your pets',
     u3Body:
-      'Open Pets (sometimes labelled My pets). To add an animal, expand Add a pet with the + row at the top—fill in name, type, optional colours, age, description, and a photo if you like.\n\nYou can edit an existing pet from the list (name, photo, optional GPS device id for the tracker map—use the id given by your collar supplier or installer).\n\nIf you see Try sample data, that loads demo pets only in your browser for exploration—it does not replace your real pets.',
-    u4Title: 'Dashboard & leaderboard',
+      'Open My pets from Menu. Add a pet with name, type, optional breed, colours, age, description, and a photo.\n\nLink a GPS collar by entering the IMEI supplied with your tracker (often after Shop fulfilment). That IMEI powers the Live map for that pet.\n\nPublic profiles (for NFC or sharing) use a public ID — keep contact fields accurate so someone who finds your pet can reach you.',
+    u4Title: 'Activity & rewards',
     u4Body:
-      'The Dashboard is home base: levels, XP, walk summaries, and shortcuts to other areas.\n\nLeaderboard shows simple rankings where that feature is enabled—great for comparing progress at a glance.',
+      'Activity (bottom bar) is home for walks, XP, streaks, and missions when those features are enabled.\n\nLog walks from here when prompted; progress may also appear on the leaderboard if you opt in to share distances.',
     u5Title: 'Community',
     u5Body:
-      'Under Community, expand New post with the + bar. Write an update, add photos or a short video, tag which pets appear in the post, and optionally attach your latest logged walk.\n\nIf your account is an approved business, you can switch post type to share updates tied to your verified map location.',
+      'Community (when available from Menu or Home) lets you share updates, photos, or short videos and tag pets. Approved businesses can post updates tied to their verified location.',
     u6Title: 'Lost pet alerts',
     u6Body:
-      'Open Premium → Lost pet. Turn on Premium (preview) when offered—this build may simulate pricing while features are tested.\n\nExpand Create alert with the + button. Choose the missing pet, describe them and where they were last seen, add optional map coordinates and contact phone only if you are comfortable sharing.\n\nAlerts you create here may be stored on this device in demo mode—double-check each screen for details.',
+      'Open Premium → Lost pet. Create an alert with the missing pet, description, last-seen details, optional map pin, and a contact phone only if you are comfortable sharing.\n\nTreat alerts as urgent notices for your local network — keep details accurate and mark the pet found when they return.',
     u7Title: 'Nearby pet-friendly places',
     u7Body:
-      'Nearby shows a map and categories (parks, vets, shops, etc.). Pick a category, then use Search this area after you move the map, or Search near me for results around your location.\n\nIf the map says an API key is missing or places fail to load, maps search must be enabled by whoever runs this PetPal site—try again later or contact support.',
+      'Nearby shows categories such as pet stores, vets, parks, beaches, hospitals, grooming, daycare, trainers, pharmacies, and Cafe (cafés that welcome pets).\n\n1) Choose a category. 2) Tap Use my location for results near you, or pan the map and tap Search this area. 3) Tap a pin for name, distance, and links when available.\n\nCafe searches Google Places for pet-friendly / dog- and cat-friendly cafés. Results depend on Google’s data — always confirm pets are welcome before you visit. “All services” mixes every category and filters out ordinary cafés that are not clearly pet-related.',
     u8Title: 'Live GPS tracker map',
     u8Body:
-      'If your pet has a compatible collar linked, open Tracker to see the latest location and history when available.\n\nIf the map looks out of date, confirm the collar is linked to the correct pet and contact support for help.',
+      'Open Live from the bottom bar. Select a pet with a linked IMEI to see the latest position and route history when the collar has reported to PetPal.\n\nIf the map is empty or stale: confirm the collar is charged and online, the IMEI matches the device on My pets, and your subscription is active. Contact support with the IMEI if positions still do not appear.',
     trackersTitle: '',
     trackersIntro: '',
     trackersXexunTitle: '',
