@@ -1806,8 +1806,8 @@ const ru = {
         desc: 'Дрессировка собак, питомцев и лошадей',
       },
       pet_cafe: {
-        label: 'Пет‑кафе',
-        desc: 'Кафе, встречи',
+        label: 'Cafe',
+        desc: 'Кафе, куда пускают питомцев',
       },
       pet_pharmacy: {
         label: 'Аптека',
@@ -1878,6 +1878,7 @@ const ru = {
     tabHotel: 'Отель',
     tabBath: 'Купание',
     tabWalker: 'Выгул собак',
+    tabSpa: 'Pet spa',
     recommendedTitle: 'Рекомендуем',
     recommendedSub: 'Местный бизнес с продвижением',
     filtersTitle: 'Поиск',

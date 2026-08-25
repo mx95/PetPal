@@ -1,4 +1,4 @@
-/** @typedef {'vet'|'saloon'|'hotel'|'bath'|'walker'} ServiceTabId */
+/** @typedef {'vet'|'saloon'|'hotel'|'bath'|'walker'|'spa'} ServiceTabId */
 
 /**
  * @param {Record<string, unknown>} p
@@ -7,10 +7,11 @@
 export function providerMatchesServiceTab(p, tabId) {
   const pt = p?.providerTypes && typeof p.providerTypes === 'object' ? p.providerTypes : {};
   if (tabId === 'vet') return Boolean(pt.vet);
-  if (tabId === 'bath') return Boolean(pt.bath || pt.saloon);
-  if (tabId === 'saloon') return Boolean(pt.saloon);
+  if (tabId === 'bath') return Boolean(pt.bath || pt.saloon || pt.spa);
+  if (tabId === 'saloon') return Boolean(pt.saloon || pt.spa);
   if (tabId === 'hotel') return Boolean(pt.hotel);
   if (tabId === 'walker') return Boolean(pt.walker);
+  if (tabId === 'spa') return Boolean(pt.spa || pt.saloon || pt.bath);
   return true;
 }
 
@@ -25,11 +26,14 @@ export function pickDefaultServiceForTab(services, serviceTab) {
   const forTab = act.filter((s) => {
     const type = String(s.type || 'vet');
     if (serviceTab === 'bath') return type === 'bath' || /bath/i.test(String(s.name || ''));
-    if (serviceTab === 'saloon') return type === 'saloon' || type === 'bath';
+    if (serviceTab === 'saloon') return type === 'saloon' || type === 'bath' || type === 'spa';
     if (serviceTab === 'vet') return type === 'vet';
     if (serviceTab === 'hotel') return type === 'hotel';
     if (serviceTab === 'walker') {
       return type === 'walker' || /walk|walker/i.test(String(s.name || ''));
+    }
+    if (serviceTab === 'spa') {
+      return type === 'spa' || /spa/i.test(String(s.name || '')) || type === 'saloon' || type === 'bath';
     }
     return true;
   });

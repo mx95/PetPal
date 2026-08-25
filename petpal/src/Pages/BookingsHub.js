@@ -131,6 +131,7 @@ function BrowseProviders() {
       { id: 'hotel', emoji: '🏨', label: t('bookingsHub.tabHotel') },
       { id: 'bath', emoji: '🛁', label: t('bookingsHub.tabBath') },
       { id: 'saloon', emoji: '✂️', label: t('bookingsHub.tabGroom') },
+      { id: 'spa', emoji: '✨', label: t('bookingsHub.tabSpa') },
       { id: 'walker', emoji: '🦮', label: t('bookingsHub.tabWalker') },
     ],
     [t]

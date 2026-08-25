@@ -24110,6 +24110,67 @@ html[lang='ru'] .pp-brand {
   align-items: flex-start;
 }
 
+.pp-adminShopAssetsPage__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-top: 4px;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  padding: 10px 0 12px;
+  background: linear-gradient(180deg, rgba(248, 250, 252, 0.96) 70%, rgba(248, 250, 252, 0));
+}
+
+.pp-adminShopAssetsPage__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pp-adminShopAssets__previewFrame,
+.pp-adminShopAssets__thumbWrap {
+  border-radius: 16px;
+  border: 1px solid rgba(16, 24, 40, 0.1);
+  background: #fff;
+  padding: 8px;
+  display: grid;
+  gap: 8px;
+  place-items: center;
+}
+
+.pp-adminShopAssets__trackerMeta {
+  flex: 1 1 180px;
+  min-width: 0;
+}
+
+.pp-adminShopAssets__fieldRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.pp-adminShopAssets__grow {
+  flex: 1 1 160px;
+}
+
+.pp-adminShopAssets__rowFooter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.pp-adminUserCard__headActions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-end;
+}
+
 .pp-adminShopAssets__row.is-hidden {
   opacity: 0.62;
 }

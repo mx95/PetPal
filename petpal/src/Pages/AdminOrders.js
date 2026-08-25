@@ -12,6 +12,18 @@ import { getNfcTagDesignById } from '../data/nfcTagDesigns';
 import { useShopAssets } from '../hooks/useShopAssets';
 import { adminAssignSubscriptionImei } from '../shop/subscriptionImeiClient';
 import { formatDateTime24 } from '../formatTime24';
+import { getFirebaseApp } from '../firebase';
+import { getFunctions, httpsCallable, connectFunctionsEmulator } from 'firebase/functions';
+
+function functionsClient() {
+  const app = getFirebaseApp();
+  if (!app) throw new Error('Firebase is not configured.');
+  const functions = getFunctions(app, 'europe-west1');
+  if (process.env.NODE_ENV === 'development' && process.env.REACT_APP_FUNCTIONS_EMULATOR === '1') {
+    connectFunctionsEmulator(functions, '127.0.0.1', 5001);
+  }
+  return functions;
+}
 
 function orderWhen(row) {
   const ts = row.paidAt || row.createdAt;
@@ -35,6 +47,7 @@ export default function AdminOrders() {
   const [draftNotes, setDraftNotes] = useState({});
   const [imeiDrafts, setImeiDrafts] = useState({});
   const [imeiBusyKey, setImeiBusyKey] = useState('');
+  const [purgeBusy, setPurgeBusy] = useState(false);
 
   useEffect(() => {
     if (!firebaseReady || !adminReady || !isAdmin) {
@@ -83,6 +96,24 @@ export default function AdminOrders() {
   if (!adminReady) return <p className="pp-subtle">{t('admin.loading')}</p>;
   if (!isAdmin) return <Navigate to="/dashboard" replace />;
 
+  async function purgeKeepLatestLive() {
+    if (!window.confirm(t('adminOrders.purgeConfirm'))) return;
+    setPurgeBusy(true);
+    setErr('');
+    setOk('');
+    try {
+      const fn = httpsCallable(functionsClient(), 'adminPurgeOrdersKeepLatestLive');
+      const result = await fn({});
+      const kept = result?.data?.kept?.orderNumber || '—';
+      const deleted = result?.data?.deleted ?? 0;
+      setOk(t('adminOrders.purgeOk', { kept, deleted }));
+    } catch (e) {
+      setErr(e?.message || t('adminOrders.purgeFailed'));
+    } finally {
+      setPurgeBusy(false);
+    }
+  }
+
   async function saveStatus(row, status) {
     setBusyId(row.id);
     setErr('');
@@ -130,7 +161,7 @@ export default function AdminOrders() {
 
   return (
     <div className="pp-pad">
-      <div className="pp-row" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      <div className="pp-row" style={{ justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
         <div>
           <Link className="pp-link" to="/admin">
             ← Admin
@@ -140,6 +171,14 @@ export default function AdminOrders() {
           </h1>
           <p className="pp-subtle">{t('adminOrders.sub')}</p>
         </div>
+        <button
+          type="button"
+          className="pp-btn pp-btn--ghost pp-adminShopAssets__removeBtn"
+          disabled={purgeBusy || loading}
+          onClick={() => void purgeKeepLatestLive()}
+        >
+          {purgeBusy ? t('adminOrders.purging') : t('adminOrders.purgeKeepLatest')}
+        </button>
       </div>
 
       <div className="pp-adminFilters" style={{ marginTop: 16 }}>

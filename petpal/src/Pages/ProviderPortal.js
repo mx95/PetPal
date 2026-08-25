@@ -46,6 +46,7 @@ function businessTypeLabel(t, providerTypes = {}) {
   if (providerTypes.shop) return t('providerPortal.businessTypePetShop');
   if (providerTypes.park) return t('providerPortal.businessTypePetDogPark');
   if (providerTypes.hotel) return t('providerPortal.businessTypePetHotelBoarding');
+  if (providerTypes.spa) return t('providerPortal.businessTypePetSpa');
   if (providerTypes.bath || providerTypes.saloon) return t('providerPortal.businessTypeGroomingBath');
   if (providerTypes.walker) return t('providerPortal.businessTypePetWalkers');
   if (providerTypes.daycare) return t('providerPortal.businessTypeDaycare');
@@ -58,6 +59,7 @@ function businessIcon(providerTypes = {}) {
   if (providerTypes.shop) return '🛍️';
   if (providerTypes.park) return '🌳';
   if (providerTypes.hotel) return '🏨';
+  if (providerTypes.spa) return '✨';
   if (providerTypes.bath || providerTypes.saloon) return '🛁';
   if (providerTypes.walker) return '🦮';
   if (providerTypes.daycare) return '☀️';
@@ -67,6 +69,7 @@ function businessIcon(providerTypes = {}) {
 
 function serviceIcon(type) {
   if (type === 'vet') return '🩺';
+  if (type === 'spa') return '✨';
   if (type === 'bath' || type === 'saloon') return '🛁';
   if (type === 'hotel') return '🏨';
   if (type === 'walker') return '🦮';
@@ -82,6 +85,7 @@ function serviceTypeLabel(t, type) {
   if (normalized === 'vet') return t('providerPortal.serviceTypeVet');
   if (normalized === 'bath') return t('providerPortal.serviceTypeBath');
   if (normalized === 'saloon') return t('providerPortal.serviceTypeSaloon');
+  if (normalized === 'spa') return t('providerPortal.serviceTypeSpa');
   if (normalized === 'hotel') return t('providerPortal.serviceTypeHotel');
   if (normalized === 'walker') return t('providerPortal.serviceTypePetWalker');
   if (normalized === 'shop') return t('providerPortal.serviceTypePetShop');
@@ -965,6 +969,7 @@ function Services({ companyId }) {
                 <option value="vet">{serviceTypeLabel(t, 'vet')}</option>
                 <option value="bath">{serviceTypeLabel(t, 'bath')}</option>
                 <option value="saloon">{serviceTypeLabel(t, 'saloon')}</option>
+                <option value="spa">{serviceTypeLabel(t, 'spa')}</option>
                 <option value="hotel">{serviceTypeLabel(t, 'hotel')}</option>
                 <option value="walker">{serviceTypeLabel(t, 'walker')}</option>
               </select>
@@ -1265,6 +1270,7 @@ function PublicListingPanel({
                 { key: 'walker', label: t('providerPortal.businessTypePetWalkers'), emoji: '🦮' },
                 { key: 'bath', label: t('providerPortal.categoryBathWash'), emoji: '🛁' },
                 { key: 'saloon', label: t('providerPortal.categoryGrooming'), emoji: '✂️' },
+                { key: 'spa', label: t('providerPortal.serviceTypeSpa'), emoji: '✨' },
                 { key: 'hotel', label: t('providerPortal.categoryPetHotel'), emoji: '🏨' },
               ].map(({ key, label, emoji }) => {
                 const on = Boolean(publish.providerTypes?.[key]);

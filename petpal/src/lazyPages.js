@@ -19,6 +19,7 @@ export const AdminEmailSettings = lazyWithRetry(() => import('./Pages/AdminEmail
 export const AdminSiteMode = lazyWithRetry(() => import('./Pages/AdminSiteMode'));
 export const AdminOrders = lazyWithRetry(() => import('./Pages/AdminOrders'));
 export const AdminShopAssets = lazyWithRetry(() => import('./Pages/AdminShopAssets'));
+export const AdminUsersNfc = lazyWithRetry(() => import('./Pages/AdminUsersNfc'));
 export const Inbox = lazyWithRetry(() => import('./Pages/Inbox'));
 export const PrivacyPolicy = lazyWithRetry(() => import('./Pages/PrivacyPolicy'));
 export const TermsOfService = lazyWithRetry(() => import('./Pages/TermsOfService'));
