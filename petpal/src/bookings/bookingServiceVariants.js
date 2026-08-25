@@ -20,7 +20,7 @@ export const DEFAULT_COAT_VARIANTS = FUR_LENGTH_OPTIONS.map((o) => ({
   descriptionKey: o.descriptionKey,
 }));
 
-const COAT_SERVICE_TYPES = new Set(['saloon', 'bath', 'grooming', 'groom']);
+const COAT_SERVICE_TYPES = new Set(['saloon', 'bath', 'grooming', 'groom', 'spa']);
 
 const SIZE_DURATION_OFFSETS = { small: -10, medium: 0, large: 15 };
 const FUR_DURATION_OFFSETS = { short: -10, medium: 0, long: 20 };
