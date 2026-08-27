@@ -1,0 +1,49 @@
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  background: #f0f4ff;
+  color: #101828;
+}
+.pp-shell { min-height: 100vh; padding-bottom: 88px; }
+.pp-main { max-width: 720px; margin: 0 auto; padding: 16px 16px 24px; }
+.pp-grid { display: flex; flex-direction: column; gap: 16px; }
+.pp-col-12 { width: 100%; }
+.preview-topnav {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px; background: rgba(255,255,255,.92); border-bottom: 1px solid rgba(16,24,40,.06);
+  backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 10;
+}
+.preview-topnav strong { font-size: 15px; letter-spacing: 0.02em; }
+.preview-menu-btn {
+  font-size: 13px; font-weight: 800; border: 1px solid #e4e7ec; border-radius: 999px; padding: 6px 12px; background: #fff;
+}
+.preview-menu-open {
+  position: absolute; right: 16px; top: 58px; width: 250px;
+  background: #fff; border: 1px solid #e4e7ec; border-radius: 24px; padding: 8px;
+  box-shadow: 0 20px 40px -20px rgba(16,24,40,.25); z-index: 20;
+}
+.preview-menu-item {
+  display: flex; align-items: center; gap: 12px; padding: 12px 16px;
+  border-radius: 16px; font-size: 14px; font-weight: 700; color: #101828;
+}
+.preview-menu-item.is-highlight { background: rgba(91,55,255,.08); color: #5b37ff; }
+.preview-menu-item svg { width: 20px; height: 20px; color: #5b37ff; flex-shrink: 0; }
+.preview-bottom-nav {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
+  display: flex; align-items: flex-end; justify-content: space-around;
+  padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px));
+  background: rgba(255,255,255,.94); border-top: 1px solid rgba(16,24,40,.08);
+  backdrop-filter: blur(14px);
+}
+.preview-bottom-nav__item {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  font-size: 10px; font-weight: 800; color: #667085; min-width: 52px;
+}
+.preview-bottom-nav__item.is-live {
+  margin-top: -22px; width: 58px; height: 58px; border-radius: 999px;
+  background: linear-gradient(135deg, #5b37ff, #7c5cff); color: #fff;
+  display: grid; place-items: center; font-size: 11px; box-shadow: 0 12px 28px -8px rgba(91,55,255,.55);
+}
+.preview-photo-demo {
+  background: linear-gradient(135deg, #c7d2fe 0%, #fbcfe8 100%);
+}

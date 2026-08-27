@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Preview — Menu (PR #104)</title>
+  <link rel="stylesheet" href="file:///workspace/petpal/src/ui/ui.css" />
+  <link rel="stylesheet" href="preview-shell.css" />
+</head>
+<body>
+  <div class="pp-shell">
+    <div class="preview-topnav" style="position:relative;">
+      <strong>PetPal CARE HUB</strong>
+      <span class="preview-menu-btn">Menu ▾</span>
+      <div class="preview-menu-open">
+        <div class="preview-menu-item"><span>📬</span><span>Inbox</span></div>
+        <div class="preview-menu-item"><span>🐾</span><span>My Pets</span></div>
+        <div class="preview-menu-item is-highlight">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65"><circle cx="8.5" cy="7.5" r="2.1" fill="currentColor" stroke="none"/><circle cx="15.5" cy="7.5" r="2.1" fill="currentColor" stroke="none"/><path d="M10.5 16.5c1.2 2.2 3.8 2.2 5 0"/><circle cx="19.2" cy="4.8" r="2.4"/></svg>
+          <span>Lost Pets</span>
+        </div>
+        <div class="preview-menu-item is-highlight">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65"><path d="M4 10.5 12 4l8 6.5V20a1.5 1.5 0 0 1-1.5 1.5H5.5A1.5 1.5 0 0 1 4 20v-9.5Z"/><path d="M9.5 21.5V14a2.5 2.5 0 0 1 5 0v7.5"/></svg>
+          <span>Shelters</span>
+        </div>
+        <div class="preview-menu-item"><span>🏃</span><span>Activity</span></div>
+        <div class="preview-menu-item"><span>📅</span><span>Bookings</span></div>
+        <div class="preview-menu-item"><span>👤</span><span>My Profile</span></div>
+        <div class="preview-menu-item" style="color:#dc2626;"><span>↩️</span><span>Log out</span></div>
+      </div>
+    </div>
+    <div class="pp-main" style="opacity:.4;filter:blur(1px);pointer-events:none;">
+      <p class="pp-subtle">Background: Activity hub</p>
+      <div class="pp-card pp-pad" style="height:360px;"></div>
+    </div>
+    <nav class="preview-bottom-nav" aria-label="Bottom navigation unchanged">
+      <div class="preview-bottom-nav__item">Activity</div>
+      <div class="preview-bottom-nav__item">Bookings</div>
+      <div class="preview-bottom-nav__item is-live">Live</div>
+      <div class="preview-bottom-nav__item">Nearby</div>
+      <div class="preview-bottom-nav__item">Shop</div>
+    </nav>
+  </div>
+</body>
+</html>
