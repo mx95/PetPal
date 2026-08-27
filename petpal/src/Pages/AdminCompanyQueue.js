@@ -7,6 +7,13 @@ import {
   adminRejectCompany,
   fetchPendingCompanyApplications,
 } from '../company/companyFirestore';
+import {
+  adminApproveShelter,
+  adminRejectShelter,
+  adminReactivateShelter,
+  adminSuspendShelter,
+  fetchPendingShelterApplications,
+} from '../shelter/shelterFirestore';
 import { useI18n } from '../i18n/I18nContext';
 
 function mapsLink(lat, lng) {
@@ -18,6 +25,7 @@ export default function AdminCompanyQueue() {
   const { user } = useAuth();
   const { isAdmin, firebaseReady } = useCompany();
   const [list, setList] = useState(/** @type {import('../company/companyTypes').CompanyProfile[]} */ ([]));
+  const [shelterList, setShelterList] = useState(/** @type {import('../shelter/shelterTypes').ShelterProfile[]} */ ([]));
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState('');
   const [actionId, setActionId] = useState(/** @type {string | null} */ (null));
@@ -29,6 +37,8 @@ export default function AdminCompanyQueue() {
     try {
       const rows = await fetchPendingCompanyApplications();
       setList(rows);
+      const shelters = await fetchPendingShelterApplications();
+      setShelterList(shelters);
     } catch (e) {
       setErr(e?.message || t('admin.companyQueue.errLoad'));
     } finally {
@@ -78,6 +88,32 @@ export default function AdminCompanyQueue() {
       await refresh();
     } catch (e) {
       setErr(e?.message || t('admin.companyQueue.errReject'));
+    } finally {
+      setActionId(null);
+    }
+  }
+
+  async function approveShelter(id) {
+    setActionId(id);
+    setErr('');
+    try {
+      await adminApproveShelter(id, noteById[id] || '');
+      await refresh();
+    } catch (e) {
+      setErr(e?.message || t('admin.shelterQueue.errApprove'));
+    } finally {
+      setActionId(null);
+    }
+  }
+
+  async function rejectShelter(id) {
+    setActionId(id);
+    setErr('');
+    try {
+      await adminRejectShelter(id, noteById[id] || t('admin.companyQueue.defaultRejectNote'));
+      await refresh();
+    } catch (e) {
+      setErr(e?.message || t('admin.shelterQueue.errReject'));
     } finally {
       setActionId(null);
     }
@@ -179,6 +215,41 @@ export default function AdminCompanyQueue() {
                     </button>
                     <button type="button" className="pp-btn" disabled={actionId === id} onClick={() => reject(id)}>
                       {actionId === id ? t('admin.busyShort') : t('admin.companyQueue.reject')}
+                    </button>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
+      <div className="pp-col-12" style={{ marginTop: 24 }}>
+        <h2 className="pp-h1" style={{ fontSize: 22 }}>
+          {t('admin.shelterQueue.title')}
+        </h2>
+        {loading ? (
+          <p className="pp-subtle">{t('admin.loading')}</p>
+        ) : shelterList.length === 0 ? (
+          <p className="pp-subtle">{t('admin.shelterQueue.empty')}</p>
+        ) : (
+          <ul className="pp-adminCompanyList" style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+            {shelterList.map((s) => {
+              const id = s.id;
+              if (!id) return null;
+              return (
+                <li key={id} className="pp-card pp-pad" style={{ marginBottom: 12 }}>
+                  <h3 className="pp-sectionTitle" style={{ marginTop: 0 }}>
+                    {s.shelterName}
+                  </h3>
+                  <p className="pp-subtle">{s.city} · {s.contactPerson}</p>
+                  <p className="pp-subtle">{s.publicEmail} · {s.phoneNumber}</p>
+                  {s.description ? <p style={{ marginTop: 8 }}>{s.description}</p> : null}
+                  <div className="pp-row" style={{ marginTop: 12, gap: 10, flexWrap: 'wrap' }}>
+                    <button type="button" className="pp-btn pp-btnPrimary" disabled={actionId === id} onClick={() => approveShelter(id)}>
+                      {actionId === id ? t('admin.busyShort') : t('admin.shelterQueue.approve')}
+                    </button>
+                    <button type="button" className="pp-btn" disabled={actionId === id} onClick={() => rejectShelter(id)}>
+                      {actionId === id ? t('admin.busyShort') : t('admin.shelterQueue.reject')}
                     </button>
                   </div>
                 </li>

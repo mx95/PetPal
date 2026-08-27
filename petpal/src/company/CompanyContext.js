@@ -3,6 +3,7 @@ import { doc, onSnapshot } from 'firebase/firestore';
 import { useAuth } from '../auth/AuthProvider';
 import { getDb, isFirebaseConfigured } from '../firebase';
 import { subscribeCompanyProfile, subscribeCompanyProfiles, subscribeIsAdmin } from './companyFirestore';
+import { subscribeShelterProfile } from '../shelter/shelterFirestore';
 
 const CompanyContext = createContext(null);
 
@@ -12,9 +13,10 @@ export function CompanyProvider({ children }) {
   const [profile, setProfile] = useState(/** @type {import('./companyTypes').CompanyProfile | null} */ (null));
   const [profiles, setProfiles] = useState(/** @type {import('./companyTypes').CompanyProfile[]} */ ([]));
   const [profileLoading, setProfileLoading] = useState(!!isFirebaseConfigured() && !!uid);
-  const [userAccountType, setUserAccountType] = useState(/** @type {'individual' | 'company' | null} */ (null));
+  const [shelterProfile, setShelterProfile] = useState(/** @type {import('../shelter/shelterTypes').ShelterProfile | null} */ (null));
+  const [shelterProfileLoading, setShelterProfileLoading] = useState(!!isFirebaseConfigured() && !!uid);
+  const [userAccountType, setUserAccountType] = useState(/** @type {'individual' | 'company' | 'shelter' | null} */ (null));
   const [isAdmin, setIsAdmin] = useState(false);
-  /** False until the first admins/{uid} snapshot (avoids bouncing signed-in admins to /dashboard). */
   const [adminReady, setAdminReady] = useState(() => !isFirebaseConfigured());
 
   useEffect(() => {
@@ -36,17 +38,31 @@ export function CompanyProvider({ children }) {
         setProfileLoading(false);
       }
     );
-
-    const offAll = subscribeCompanyProfiles(
-      uid,
-      (rows) => setProfiles(rows),
-      () => setProfiles([])
-    );
-
+    const offAll = subscribeCompanyProfiles(uid, (rows) => setProfiles(rows), () => setProfiles([]));
     return () => {
       offPrimary();
       offAll();
     };
+  }, [uid]);
+
+  useEffect(() => {
+    if (!uid || !isFirebaseConfigured()) {
+      setShelterProfile(null);
+      setShelterProfileLoading(false);
+      return undefined;
+    }
+    setShelterProfileLoading(true);
+    return subscribeShelterProfile(
+      uid,
+      (data) => {
+        setShelterProfile(data);
+        setShelterProfileLoading(false);
+      },
+      () => {
+        setShelterProfile(null);
+        setShelterProfileLoading(false);
+      }
+    );
   }, [uid]);
 
   useEffect(() => {
@@ -71,7 +87,9 @@ export function CompanyProvider({ children }) {
       doc(getDb(), 'users', uid),
       (snap) => {
         const type = String(snap.data()?.accountType || 'individual').toLowerCase();
-        setUserAccountType(type === 'company' ? 'company' : 'individual');
+        if (type === 'company') setUserAccountType('company');
+        else if (type === 'shelter') setUserAccountType('shelter');
+        else setUserAccountType('individual');
       },
       () => setUserAccountType('individual')
     );
@@ -86,9 +104,22 @@ export function CompanyProvider({ children }) {
     || isApprovedCompany
     || isPendingCompany
     || isRejectedCompany;
-  /** Business schedule home + nav — never for platform admins using a personal login. */
+
+  const isApprovedShelter = shelterProfile?.status === 'approved';
+  const isPendingShelter = shelterProfile?.status === 'pending';
+  const isRejectedShelter = shelterProfile?.status === 'rejected';
+  const isSuspendedShelter = shelterProfile?.status === 'suspended';
+  const isShelterAccount =
+    userAccountType === 'shelter'
+    || shelterProfile?.accountType === 'shelter'
+    || isApprovedShelter
+    || isPendingShelter
+    || isRejectedShelter
+    || isSuspendedShelter;
+
   const isBusinessHome =
     !isAdmin
+    && !isShelterAccount
     && (isApprovedCompany || (userAccountType === 'company' && !isApprovedCompany));
 
   const value = useMemo(
@@ -96,12 +127,19 @@ export function CompanyProvider({ children }) {
       profile,
       profiles,
       profileLoading,
+      shelterProfile,
+      shelterProfileLoading,
       userAccountType,
       isCompanyAccount,
+      isShelterAccount,
       isBusinessHome,
       isApprovedCompany,
       isPendingCompany,
       isRejectedCompany,
+      isApprovedShelter,
+      isPendingShelter,
+      isRejectedShelter,
+      isSuspendedShelter,
       isAdmin,
       adminReady,
       firebaseReady: isFirebaseConfigured(),
@@ -110,12 +148,19 @@ export function CompanyProvider({ children }) {
       profile,
       profiles,
       profileLoading,
+      shelterProfile,
+      shelterProfileLoading,
       userAccountType,
       isCompanyAccount,
+      isShelterAccount,
       isBusinessHome,
       isApprovedCompany,
       isPendingCompany,
       isRejectedCompany,
+      isApprovedShelter,
+      isPendingShelter,
+      isRejectedShelter,
+      isSuspendedShelter,
       isAdmin,
       adminReady,
     ]

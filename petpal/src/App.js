@@ -42,6 +42,7 @@ import {
   Leaderboard,
   Login,
   LostPetAlerts,
+  LostPetDetail,
   MyOrders,
   MyPets,
   Nearby,
@@ -53,6 +54,11 @@ import {
   ProviderPortal,
   PublicPetProfile,
   Register,
+  ShelterAnimalDetail,
+  ShelterApply,
+  ShelterDashboard,
+  ShelterPublicProfile,
+  SheltersHub,
   Shop,
   ShopCheckout,
   StrayAdoption,
@@ -231,6 +237,14 @@ function App() {
                 }
               />
               <Route
+                path="/lost-pet/:alertId"
+                element={
+                  <RequireAuth>
+                    <LostPetDetail />
+                  </RequireAuth>
+                }
+              />
+              <Route
                 path="/lost-pet"
                 element={
                   <RequireAuth>
@@ -239,10 +253,42 @@ function App() {
                 }
               />
               <Route
+                path="/shelters/animal/:animalId"
+                element={
+                  <RequireAuth>
+                    <ShelterAnimalDetail />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/shelters/:shelterId"
+                element={
+                  <RequireAuth>
+                    <ShelterPublicProfile />
+                  </RequireAuth>
+                }
+              />
+              <Route
                 path="/shelters"
                 element={
                   <RequireAuth>
-                    <StrayAdoption />
+                    <SheltersHub />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/shelter/dashboard"
+                element={
+                  <RequireAuth>
+                    <ShelterDashboard />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/shelter/apply"
+                element={
+                  <RequireAuth>
+                    <ShelterApply />
                   </RequireAuth>
                 }
               />

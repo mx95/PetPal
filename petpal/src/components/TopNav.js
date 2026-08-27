@@ -3,6 +3,8 @@ import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
 import { useCompany } from '../company/CompanyContext';
 import { useInbox } from '../inbox/InboxContext';
+import IconLostPet from './icons/IconLostPet';
+import IconShelter from './icons/IconShelter';
 import { useI18n } from '../i18n/I18nContext';
 import { LanguageSwitcher } from '../i18n/LanguageSwitcher';
 import ShopCartHeaderButton from './shop/ShopCartHeaderButton';
@@ -181,7 +183,9 @@ export default function TopNav() {
                     role="menuitem"
                     onClick={() => setAccountMenuOpen(false)}
                   >
-                    <span aria-hidden>🆘</span>
+                    <span aria-hidden className="pp-menuIcon">
+                      <IconLostPet size={20} />
+                    </span>
                     <span>{t('nav.lostPet')}</span>
                   </Link>
                   <Link
@@ -190,7 +194,9 @@ export default function TopNav() {
                     role="menuitem"
                     onClick={() => setAccountMenuOpen(false)}
                   >
-                    <span aria-hidden>🏡</span>
+                    <span aria-hidden className="pp-menuIcon">
+                      <IconShelter size={20} />
+                    </span>
                     <span>{t('nav.shelters')}</span>
                   </Link>
                   {isApprovedCompany ? (
