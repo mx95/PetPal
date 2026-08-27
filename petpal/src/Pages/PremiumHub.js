@@ -8,7 +8,7 @@ function tabCls({ isActive }) {
 
 const BENEFITS = [
   { key: 'lost', to: '/lost-pet', icon: '🚨', accent: 'lost' },
-  { key: 'stray', to: '/shelters', icon: '🐾', accent: 'stray' },
+  { key: 'stray', to: '/shelters', icon: '🏠', accent: 'stray' },
   { key: 'breeding', to: '/premium/breeding', icon: '💞', accent: 'breeding' },
 ];
 

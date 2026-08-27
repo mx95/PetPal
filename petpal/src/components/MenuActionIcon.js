@@ -3,7 +3,7 @@ import React from 'react';
 /** Reuses Premium hub action-card icon styling for menu entries. */
 const TONES = {
   lost: { icon: '🚨', className: 'pp-menuActionIcon pp-menuActionIcon--lost' },
-  shelter: { icon: '🐾', className: 'pp-menuActionIcon pp-menuActionIcon--shelter' },
+  shelter: { icon: '🏠', className: 'pp-menuActionIcon pp-menuActionIcon--shelter' },
 };
 
 /**
