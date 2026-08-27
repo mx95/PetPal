@@ -59,22 +59,21 @@ export default function SheltersHub() {
             <h1 className="pp-pageHeader__title">{t('shelters.title')}</h1>
             <p className="pp-pageHeader__sub">{t('shelters.tagline')}</p>
           </div>
-          <Link className="pp-pageHeader__back" to="/">
-            {t('common.backHome')}
-          </Link>
         </header>
       </div>
 
-      {user && !isApprovedShelter ? (
+      {(!isApprovedShelter || !user) ? (
         <div className="pp-col-12">
           <div className="pp-card pp-pad pp-shelterCta">
             <h2 className="pp-sectionTitle" style={{ marginTop: 0 }}>
-              {isShelterAccount ? t('shelters.pendingTitle') : t('shelters.registerTitle')}
+              {!user ? t('shelters.registerTitle') : isShelterAccount ? t('shelters.pendingTitle') : t('shelters.registerTitle')}
             </h2>
-            <p className="pp-subtle">{isShelterAccount ? t('shelters.pendingDesc') : t('shelters.registerDesc')}</p>
+            <p className="pp-subtle">
+              {!user ? t('shelters.registerGuestDesc') : isShelterAccount ? t('shelters.pendingDesc') : t('shelters.registerDesc')}
+            </p>
             {!isShelterAccount ? (
-              <Link className="pp-btn pp-btnPrimary" to="/shelter/apply">
-                {t('shelters.registerCta')}
+              <Link className="pp-btn pp-btnPrimary" to={user ? '/shelter/apply' : '/login'}>
+                {user ? t('shelters.registerCta') : t('shelters.registerGuestCta')}
               </Link>
             ) : null}
           </div>

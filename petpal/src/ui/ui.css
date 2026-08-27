@@ -24444,6 +24444,62 @@ html[lang='ru'] .pp-brand {
   background: rgba(217, 161, 0, 0.18);
   color: #b54708;
 }
+.pp-menuActionIcon--inbox {
+  background: rgba(91, 55, 255, 0.12);
+  color: #5b37ff;
+}
+.pp-menuActionIcon--pets {
+  background: rgba(15, 159, 110, 0.14);
+  color: #0f9f6e;
+}
+.pp-menuActionIcon--activity {
+  background: rgba(37, 99, 235, 0.12);
+  color: #2563eb;
+}
+.pp-menuActionIcon--bookings,
+.pp-menuActionIcon--admin {
+  background: rgba(194, 65, 12, 0.12);
+  color: #c2410c;
+}
+.pp-menuActionIcon--profile {
+  background: rgba(91, 55, 255, 0.1);
+  color: #5b37ff;
+}
+.pp-menuActionIcon--logout {
+  background: rgba(180, 35, 24, 0.1);
+  color: #b42318;
+}
+.pp-topNavGuestLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  text-decoration: none;
+  color: inherit;
+  font-size: 12px;
+  font-weight: 700;
+}
+.pp-topNavGuestLink__label {
+  display: none;
+}
+@media (min-width: 640px) {
+  .pp-topNavGuestLink__label {
+    display: inline;
+  }
+}
+.pp-homeWelcome__capability--lost .pp-homeWelcome__capabilityIcon {
+  color: #b42318;
+  background: linear-gradient(145deg, #fef3f2, #fee4e2);
+}
+.pp-homeWelcome__capability--shelter .pp-homeWelcome__capabilityIcon {
+  color: #b54708;
+  background: linear-gradient(145deg, #fff7ed, #ffedd5);
+}
+.pp-homeWelcome__capability--gps .pp-homeWelcome__capabilityIcon {
+  color: #5b37ff;
+  background: linear-gradient(145deg, #f0ebff, #e8e0ff);
+}
 .pp-visuallyHidden {
   position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
 }

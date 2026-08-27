@@ -117,7 +117,6 @@ export default function MultiPhotoUpload({ photos, onChange, maxCount = PHOTO_MA
         type="file"
         accept={PHOTO_ACCEPT}
         multiple
-        capture="environment"
         className="pp-visuallyHidden"
         onChange={(e) => {
           onFilesSelected(e.target.files);

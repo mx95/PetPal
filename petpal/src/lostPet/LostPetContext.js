@@ -27,11 +27,17 @@ export function LostPetProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!uid) {
-      setFeedAlerts([]);
-      setMyAlerts([]);
+    setLoading(true);
+    setFeedError('');
+    const offFeed = subscribeActiveLostPetAlerts((rows, err) => {
+      setFeedAlerts(rows);
+      setFeedError(err?.message || '');
       setLoading(false);
-      return undefined;
+    });
+
+    if (!uid) {
+      setMyAlerts([]);
+      return () => offFeed();
     }
 
     let cancelled = false;
@@ -52,12 +58,6 @@ export function LostPetProvider({ children }) {
       if (cancelled) return;
     })();
 
-    setLoading(true);
-    const offFeed = subscribeActiveLostPetAlerts((rows, err) => {
-      setFeedAlerts(rows);
-      setFeedError(err?.message || '');
-      setLoading(false);
-    });
     const offMine = subscribeMyLostPetAlerts(uid, (rows) => setMyAlerts(rows));
     return () => {
       cancelled = true;
