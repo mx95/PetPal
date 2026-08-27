@@ -157,8 +157,8 @@ export default function TopNav() {
                     role="menuitem"
                     onClick={() => setAccountMenuOpen(false)}
                   >
-                    <span className="pp-menuItemWithBadge__iconWrap" aria-hidden>
-                      <span className="pp-menuItemWithBadge__icon">📬</span>
+                    <span className="pp-menuItemWithBadge__iconWrap">
+                      <MenuActionIcon tone="inbox" />
                       {unreadCount > 0 ? (
                         <span className="pp-notifyBadge" aria-label={t('nav.inboxUnread', { count: unreadCount })}>
                           {unreadCount > 99 ? '99+' : unreadCount}
@@ -173,7 +173,7 @@ export default function TopNav() {
                     role="menuitem"
                     onClick={() => setAccountMenuOpen(false)}
                   >
-                    <span aria-hidden>&#128062;</span>
+                    <MenuActionIcon tone="pets" />
                     <span>{t('nav.myPets')}</span>
                   </Link>
                   <Link
@@ -201,7 +201,7 @@ export default function TopNav() {
                       role="menuitem"
                       onClick={() => setAccountMenuOpen(false)}
                     >
-                      <span aria-hidden>&#127939;</span>
+                      <MenuActionIcon tone="activity" />
                       <span>{t('nav.activity')}</span>
                     </Link>
                   ) : null}
@@ -212,7 +212,7 @@ export default function TopNav() {
                       role="menuitem"
                       onClick={() => setAccountMenuOpen(false)}
                     >
-                      <span aria-hidden>&#128197;</span>
+                      <MenuActionIcon tone="admin" />
                       <span>{t('nav.adminBookings')}</span>
                     </Link>
                   ) : null}
@@ -222,7 +222,7 @@ export default function TopNav() {
                     role="menuitem"
                     onClick={() => setAccountMenuOpen(false)}
                   >
-                    <span aria-hidden>&#128100;</span>
+                    <MenuActionIcon tone="profile" />
                     <span>{t('nav.profile')}</span>
                   </Link>
                   <button
@@ -231,7 +231,7 @@ export default function TopNav() {
                     role="menuitem"
                     onClick={() => void handleSignOut()}
                   >
-                    <span aria-hidden>↩️</span>
+                    <MenuActionIcon tone="logout" />
                     <span>{t('nav.logout')}</span>
                   </button>
                 </div>
@@ -239,6 +239,14 @@ export default function TopNav() {
             </div>
           ) : (
             <>
+              <Link className="pp-topNavGuestLink" to="/lost-pet" title={t('nav.lostPet')}>
+                <MenuActionIcon tone="lost" />
+                <span className="pp-topNavGuestLink__label">{t('nav.lostPet')}</span>
+              </Link>
+              <Link className="pp-topNavGuestLink" to="/shelters" title={t('nav.shelters')}>
+                <MenuActionIcon tone="shelter" />
+                <span className="pp-topNavGuestLink__label">{t('nav.shelters')}</span>
+              </Link>
               <NavLink
                 className="hidden items-center justify-center rounded-full border border-slate-200 px-3 py-2 text-sm font-bold text-petpal-ink no-underline sm:inline-flex"
                 to="/login"

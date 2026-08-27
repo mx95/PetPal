@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
 import { useCompany } from '../company/CompanyContext';
 import LocationPicker, { defaultMapCenter } from '../company/LocationPicker';
+import CompanyPlaceSearchField from '../company/CompanyPlaceSearchField';
 import { uploadScopedPhoto } from '../media/scopedPhotoStorage';
 import { useI18n } from '../i18n/I18nContext';
 import { saveShelterApplication } from '../shelter/shelterFirestore';
@@ -33,6 +34,7 @@ export default function ShelterApply() {
   const setPos = useCallback((nextLat, nextLng) => {
     setLat(nextLat);
     setLng(nextLng);
+    setRecenterSignal((n) => n + 1);
   }, []);
 
   useEffect(() => {
@@ -205,6 +207,18 @@ export default function ShelterApply() {
           </div>
           <div>
             <label className="pp-label">{t('shelters.fieldLocation')}</label>
+            <p className="pp-subtle" style={{ marginTop: 0, marginBottom: 10, fontSize: 13 }}>
+              {t('shelters.mapSearchHint')}
+            </p>
+            <CompanyPlaceSearchField
+              onPicked={(nextLat, nextLng, meta) => {
+                setPos(nextLat, nextLng);
+                if (meta?.placeName && !shelterName.trim()) setShelterName(String(meta.placeName));
+                if (meta?.placeAddress && !addressLine.trim()) setAddressLine(String(meta.placeAddress));
+              }}
+              businessName={shelterName}
+              addressLine={addressLine}
+            />
             <LocationPicker lat={lat} lng={lng} onChange={setPos} recenterSignal={recenterSignal} />
           </div>
           {error ? <p className="pp-error">{error}</p> : null}

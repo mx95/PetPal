@@ -236,46 +236,11 @@ function App() {
                   </RequireAuth>
                 }
               />
-              <Route
-                path="/lost-pet/:alertId"
-                element={
-                  <RequireAuth>
-                    <LostPetDetail />
-                  </RequireAuth>
-                }
-              />
-              <Route
-                path="/lost-pet"
-                element={
-                  <RequireAuth>
-                    <LostPetAlerts />
-                  </RequireAuth>
-                }
-              />
-              <Route
-                path="/shelters/animal/:animalId"
-                element={
-                  <RequireAuth>
-                    <ShelterAnimalDetail />
-                  </RequireAuth>
-                }
-              />
-              <Route
-                path="/shelters/:shelterId"
-                element={
-                  <RequireAuth>
-                    <ShelterPublicProfile />
-                  </RequireAuth>
-                }
-              />
-              <Route
-                path="/shelters"
-                element={
-                  <RequireAuth>
-                    <SheltersHub />
-                  </RequireAuth>
-                }
-              />
+              <Route path="/lost-pet/:alertId" element={<LostPetDetail />} />
+              <Route path="/lost-pet" element={<LostPetAlerts />} />
+              <Route path="/shelters/animal/:animalId" element={<ShelterAnimalDetail />} />
+              <Route path="/shelters/:shelterId" element={<ShelterPublicProfile />} />
+              <Route path="/shelters" element={<SheltersHub />} />
               <Route
                 path="/shelter/dashboard"
                 element={

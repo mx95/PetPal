@@ -117,9 +117,6 @@ export default function LostPetAlerts() {
             <h1 className="pp-pageHeader__title">{t('lostPet.title')}</h1>
             <p className="pp-pageHeader__sub">{t('lostPet.tagline')}</p>
           </div>
-          <Link className="pp-pageHeader__back" to="/">
-            {t('common.backHome')}
-          </Link>
         </header>
       </div>
 
@@ -140,7 +137,14 @@ export default function LostPetAlerts() {
           </button>
           {createExpanded ? (
             <div className="pp-expandPanel">
-              {!pets.length ? (
+              {!user ? (
+                <p className="pp-subtle">
+                  {t('lostPet.signInToPost')}{' '}
+                  <Link className="pp-link" to="/login">
+                    {t('nav.login')}
+                  </Link>
+                </p>
+              ) : !pets.length ? (
                 <p className="pp-subtle">
                   {t('lostPet.noPets')}{' '}
                   <Link className="pp-link" to="/pets">

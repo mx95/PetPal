@@ -9,6 +9,8 @@ const LIVE_TRACKING_SRC = `${process.env.PUBLIC_URL || ''}/images/home-live-trac
 const NFC_FEATURE_SRC = `${process.env.PUBLIC_URL || ''}/images/home-nfc-feature.jpg`;
 
 const APP_CAPABILITIES = [
+  { key: 'lost', to: '/lost-pet', accent: 'lost' },
+  { key: 'shelters', to: '/shelters', accent: 'shelter' },
   { key: 'gps', to: '/tracking', accent: 'gps' },
   { key: 'nfc', to: '/shop', accent: 'nfc', mvp: MVP_NAV.showShop },
   { key: 'nearby', to: '/nearby', accent: 'nearby' },
@@ -24,6 +26,23 @@ const SHOWCASE_ITEMS = [
 
 function CapabilityIcon({ type }) {
   const common = { width: 22, height: 22, viewBox: '0 0 24 24', fill: 'none', 'aria-hidden': true };
+  if (type === 'lost') {
+    return (
+      <svg {...common}>
+        <circle cx="12" cy="12" r="7.5" stroke="currentColor" strokeWidth="1.8" />
+        <path d="M12 7v5l3 2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+        <path d="M12 4.5v1.2M12 18.3v1.2M4.5 12H5.7M18.3 12H19.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      </svg>
+    );
+  }
+  if (type === 'shelter') {
+    return (
+      <svg {...common}>
+        <path d="M4 10.8 12 4.5l8 6.3V19a1.4 1.4 0 0 1-1.4 1.4H5.4A1.4 1.4 0 0 1 4 19v-8.2Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+        <path d="M9.3 20.4V13a2.2 2.2 0 0 1 4.4 0v7.4" stroke="currentColor" strokeWidth="1.8" />
+      </svg>
+    );
+  }
   if (type === 'gps') {
     return (
       <svg {...common}>
