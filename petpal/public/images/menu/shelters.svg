@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" role="img" aria-label="Shelters">
+  <defs>
+    <linearGradient id="sheltersBg" x1="8" y1="6" x2="40" y2="42" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#EEF4FF"/>
+      <stop offset="1" stop-color="#E0E7FF"/>
+    </linearGradient>
+  </defs>
+  <rect width="48" height="48" rx="14" fill="url(#sheltersBg)"/>
+  <path d="M10 22.5 24 11l14 11.5V37a2 2 0 0 1-2 2H12a2 2 0 0 1-2-2V22.5Z" fill="#5B37FF" opacity="0.14" stroke="#5B37FF" stroke-width="2"/>
+  <path d="M19 39V28.5a2.5 2.5 0 0 1 5 0V39" stroke="#5B37FF" stroke-width="2" stroke-linecap="round"/>
+  <path d="M24 24.2c-.8-1-2.4-1-3.2 0-.8 1-.1 2.6 1.6 2.6s2.4-1.6 1.6-2.6Z" fill="#5B37FF"/>
+  <circle cx="33.5" cy="33.5" r="6.5" fill="#5B37FF"/>
+  <circle cx="31.8" cy="32.2" r="1.3" fill="#fff"/>
+  <circle cx="35.2" cy="32.2" r="1.3" fill="#fff"/>
+  <path d="M31.8 35.2c1 1.2 2.8 1.2 3.8 0" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/>
+</svg>

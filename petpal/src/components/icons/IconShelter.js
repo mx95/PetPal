@@ -1,7 +1,23 @@
 import React from 'react';
 
-/** Shelter / home with heart for Shelters menu item. */
-export default function IconShelter({ size = 22 }) {
+/**
+ * Shelters menu mark — house + paw on a soft purple chip.
+ * @param {{ size?: number, variant?: 'menu' | 'plain' }} props
+ */
+export default function IconShelter({ size = 22, variant = 'plain' }) {
+  if (variant === 'menu') {
+    return (
+      <img
+        src={`${process.env.PUBLIC_URL || ''}/images/menu/shelters.svg`}
+        width={size}
+        height={size}
+        alt=""
+        aria-hidden="true"
+        className="pp-menuFeatureIcon__img"
+      />
+    );
+  }
+
   return (
     <svg
       viewBox="0 0 24 24"
@@ -14,9 +30,12 @@ export default function IconShelter({ size = 22 }) {
       strokeLinecap="round"
       strokeLinejoin="round"
     >
-      <path d="M4 10.5 12 4l8 6.5V20a1.5 1.5 0 0 1-1.5 1.5H5.5A1.5 1.5 0 0 1 4 20v-9.5Z" />
-      <path d="M9.5 21.5V14a2.5 2.5 0 0 1 5 0v7.5" />
-      <path d="M12 11.2c-.6-.8-1.8-.8-2.4 0-.6.8-.1 2 1.2 2s1.8-1.2 1.2-2Z" fill="currentColor" stroke="none" />
+      <path d="M4 10.8 12 4.5l8 6.3V19a1.4 1.4 0 0 1-1.4 1.4H5.4A1.4 1.4 0 0 1 4 19v-8.2Z" />
+      <path d="M9.3 20.4V13a2.2 2.2 0 0 1 4.4 0v7.4" />
+      <circle cx="17.6" cy="16.2" r="2.8" fill="currentColor" stroke="none" opacity="0.18" />
+      <circle cx="16.7" cy="15.5" r="0.55" fill="currentColor" stroke="none" />
+      <circle cx="18.5" cy="15.5" r="0.55" fill="currentColor" stroke="none" />
+      <path d="M16.8 16.8c.55.65 1.45.65 2 0" strokeWidth="1.1" />
     </svg>
   );
 }
