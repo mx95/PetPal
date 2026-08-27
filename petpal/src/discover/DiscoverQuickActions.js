@@ -7,11 +7,11 @@ const ACTIONS = [
   { key: 'vets', icon: '🏥', to: '/nearby', labelKey: 'discover.actions.vets' },
   { key: 'groom', icon: '✂️', to: '/nearby', labelKey: 'discover.actions.groomers' },
   { key: 'shops', icon: '🛒', to: '/shop', labelKey: 'discover.actions.shops' },
-  { key: 'lost', icon: '🆘', to: '/premium/lost', labelKey: 'discover.actions.lost' },
+  { key: 'lost', icon: '🆘', to: '/lost-pet', labelKey: 'discover.actions.lost' },
   { key: 'book', icon: '📅', to: '/bookings', labelKey: 'discover.actions.bookings', browseOnly: true },
   { key: 'walk', icon: '🚶', to: '/dashboard', labelKey: 'discover.actions.walk' },
   { key: 'pack', icon: '💬', to: '/community', labelKey: 'discover.actions.community' },
-  { key: 'sos', icon: '⚡', to: '/premium/lost', labelKey: 'discover.actions.emergency' },
+  { key: 'sos', icon: '⚡', to: '/lost-pet', labelKey: 'discover.actions.emergency' },
 ];
 
 export default function DiscoverQuickActions() {

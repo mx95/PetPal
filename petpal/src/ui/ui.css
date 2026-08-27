@@ -11659,6 +11659,19 @@ select.pp-bookConfirmField__control {
 }
 .pp-heroCard--premium .pp-heroCard__eyebrow { color: #b54708; }
 
+.pp-heroCard--lost {
+  background:
+    radial-gradient(380px 220px at -10% -20%, rgba(180, 35, 24, 0.14), transparent 65%),
+    linear-gradient(180deg, #ffffff 0%, #fff5f5 100%);
+  border-color: rgba(180, 35, 24, 0.22);
+  box-shadow: 0 20px 50px -28px rgba(180, 35, 24, 0.28);
+}
+.pp-heroCard--lost .pp-heroCard__eyebrow { color: #b42318; }
+
+.pp-lostPetAlertCard {
+  border-color: rgba(180, 50, 50, 0.22);
+}
+
 /* Auth (login/register) layout */
 .pp-authPage {
   display: grid;

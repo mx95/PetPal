@@ -137,23 +137,24 @@ export default function StrayAdoption() {
   }
 
   return (
-    <div className="pp-grid">
+    <div className="pp-grid pp-sheltersPage">
       {!embedded ? (
         <div className="pp-col-12">
-          <div className="pp-row" style={{ justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
-            <div>
-              <div className="pp-badge">{t('strayAdoption.badge')}</div>
-              <h1 className="pp-h1" style={{ marginTop: 10 }}>
-                {t('strayAdoption.title')}
-              </h1>
-              <p className="pp-subtle" style={{ marginTop: 6, maxWidth: 720 }}>
-                {t('strayAdoption.intro')}
-              </p>
+          <header className="pp-pageHeader">
+            <div className="pp-pageHeader__copy">
+              <span
+                className="pp-publicHero__eyebrow"
+                style={{ display: 'inline-block', width: 'fit-content', background: 'rgba(91, 55, 255, 0.12)', color: '#5b37ff' }}
+              >
+                {t('strayAdoption.badge')}
+              </span>
+              <h1 className="pp-pageHeader__title">{t('strayAdoption.title')}</h1>
+              <p className="pp-pageHeader__sub">{t('strayAdoption.intro')}</p>
             </div>
-            <Link className="pp-link" to="/dashboard">
-              {t('strayAdoption.backDash')}
+            <Link className="pp-pageHeader__back" to="/">
+              {t('common.backHome')}
             </Link>
-          </div>
+          </header>
         </div>
       ) : null}
 
@@ -179,16 +180,27 @@ export default function StrayAdoption() {
         <div className="pp-card pp-pad">
           <button
             type="button"
-            className="pp-sectionTitle pp-link"
-            style={{ width: '100%', textAlign: 'left', border: 0, background: 'none', cursor: 'pointer', padding: 0, font: 'inherit' }}
+            className="pp-expandTrigger"
             aria-expanded={reportExpanded}
             onClick={() => setReportExpanded((x) => !x)}
+            id="report-stray-expand"
           >
-            {reportExpanded ? '▼ ' : '▶ '}
-            {t('strayAdoption.reportHeading')}
+            <span className="pp-expandTrigger__icon" aria-hidden>
+              {reportExpanded ? '−' : '+'}
+            </span>
+            <span className="pp-expandTrigger__text">
+              <span className="pp-expandTrigger__title">{t('strayAdoption.reportHeading')}</span>
+              <span className="pp-expandTrigger__desc">
+                {reportExpanded ? t('strayAdoption.reportExpanded') : t('strayAdoption.reportCollapsed')}
+              </span>
+            </span>
+            <span className={`pp-expandTrigger__chev ${reportExpanded ? 'is-open' : ''}`} aria-hidden>
+              ▼
+            </span>
           </button>
           {reportExpanded ? (
-            <form onSubmit={onSubmit} style={{ marginTop: 16 }}>
+            <div className="pp-expandPanel" role="region" aria-labelledby="report-stray-expand">
+            <form onSubmit={onSubmit} style={{ marginTop: 4 }}>
               <p className="pp-subtle" style={{ fontSize: 13, marginBottom: 12 }}>
                 {t('strayAdoption.reportHint')}
               </p>
@@ -276,6 +288,7 @@ export default function StrayAdoption() {
                 </button>
               </p>
             </form>
+            </div>
           ) : null}
         </div>
       </div>

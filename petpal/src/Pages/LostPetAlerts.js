@@ -10,21 +10,20 @@ function mapsLink(lat, lng) {
   return `https://www.google.com/maps?q=${encodeURIComponent(`${lat},${lng}`)}`;
 }
 
-function formatWhen(iso, language) {
+function formatWhen(iso) {
   try {
-    return new Date(iso).toLocaleString(language === 'el' ? 'el-CY' : language === 'ru' ? 'ru-RU' : 'en-GB');
+    return new Date(iso).toLocaleString();
   } catch {
     return iso;
   }
 }
 
 export default function LostPetAlerts() {
-  const { t, language } = useI18n();
   const outletCtx = useOutletContext();
   const embedded = outletCtx?.embedded === true;
-
+  const { t } = useI18n();
   const { pets, getCategory } = usePets();
-  const { premiumUnlocked, setPremium, activeListings, publishAlert, resolveAlert } = useLostPet();
+  const { activeListings, publishAlert, resolveAlert } = useLostPet();
   const [petId, setPetId] = useState('');
   const [description, setDescription] = useState('');
   const [lastSeenText, setLastSeenText] = useState('');
@@ -38,7 +37,6 @@ export default function LostPetAlerts() {
   const petSelectId = useId();
 
   const hasPets = pets.length > 0;
-
   const sortedPets = useMemo(() => [...pets].sort((a, b) => a.name.localeCompare(b.name)), [pets]);
 
   async function onSubmit(e) {
@@ -78,66 +76,52 @@ export default function LostPetAlerts() {
   }
 
   return (
-    <div className="pp-grid">
+    <div className="pp-grid pp-lostPetPage">
       {!embedded ? (
         <div className="pp-col-12">
-          <div className="pp-row" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <div>
-              <div className="pp-badge pp-badge--premium">{t('lostPet.premium')}</div>
-              <h1 className="pp-h1" style={{ marginTop: 10 }}>
-                {t('lostPet.title')}
-              </h1>
-              <p className="pp-subtle" style={{ marginTop: 6, maxWidth: 640 }}>
+          <header className="pp-pageHeader">
+            <div className="pp-pageHeader__copy">
+              <span
+                className="pp-publicHero__eyebrow"
+                style={{ display: 'inline-block', width: 'fit-content', background: 'rgba(180, 35, 24, 0.12)', color: '#b42318' }}
+              >
+                {t('lostPet.badge')}
+              </span>
+              <h1 className="pp-pageHeader__title">{t('lostPet.title')}</h1>
+              <p className="pp-pageHeader__sub">
                 {t('lostPet.intro')}{' '}
-                {t('lostPet.introPets')}{' '}
                 <Link className="pp-link" to="/pets" style={{ display: 'inline', padding: 0 }}>
-                  {t('nav.myPets')}
+                  {t('lostPet.introPets')}
                 </Link>
-                .
               </p>
             </div>
-            <Link className="pp-link" to="/dashboard">
-              {t('lostPet.backDash')}
+            <Link className="pp-pageHeader__back" to="/">
+              {t('common.backHome')}
             </Link>
-          </div>
+          </header>
         </div>
       ) : null}
 
-      <div className="pp-col-12">
-        <div className="pp-card pp-pad pp-lostPetPremiumCta" style={{ borderColor: 'rgba(180, 120, 32, 0.35)' }}>
-          <h2 className="pp-sectionTitle">{t('lostPet.ctaTitle')}</h2>
-          <ul className="pp-subtle" style={{ margin: '0 0 12px 18px', lineHeight: 1.5 }}>
-            <li>{t('lostPet.cta1')}</li>
-            <li>{t('lostPet.cta2')}</li>
-            <li>{t('lostPet.cta3')}</li>
-          </ul>
-          {!premiumUnlocked ? (
-            <p style={{ margin: 0 }}>
-              <button type="button" className="pp-btn pp-btnPremium" onClick={() => setPremium(true)}>
-                {t('lostPet.enablePremium')}
-              </button>
-              <span className="pp-subtle" style={{ marginLeft: 10, fontSize: 12 }}>
-                {t('lostPet.noPayment')}
-              </span>
-            </p>
-          ) : (
-            <p className="pp-subtle" style={{ margin: 0, fontSize: 13 }}>
-              {t('lostPet.premiumOnBefore')}{' '}
-              <button
-                type="button"
-                className="pp-link"
-                style={{ display: 'inline', padding: 0, border: 0, background: 'none', font: 'inherit' }}
-                onClick={() => setPremium(false)}
-              >
-                {t('lostPet.turnOff')}
-              </button>
-              {t('lostPet.premiumOnAfter')}
-            </p>
-          )}
+      {!embedded ? (
+        <div className="pp-col-12">
+          <section className="pp-heroCard pp-heroCard--lost" aria-label={t('lostPet.helpTitle')}>
+            <div className="pp-heroCard__avatar" aria-hidden style={{ background: 'rgba(180, 35, 24, 0.12)', color: '#b42318' }}>
+              <div style={{ width: 64, height: 64, display: 'grid', placeItems: 'center', fontSize: 30 }}>🆘</div>
+            </div>
+            <div className="pp-heroCard__copy">
+              <span className="pp-heroCard__eyebrow">{t('lostPet.helpTitle')}</span>
+              <h2 className="pp-heroCard__title">{t('lostPet.helpLead')}</h2>
+              <ul className="pp-heroCard__sub" style={{ margin: 0, paddingLeft: 18, lineHeight: 1.55 }}>
+                <li>{t('lostPet.cta1')}</li>
+                <li>{t('lostPet.cta2')}</li>
+                <li>{t('lostPet.cta3')}</li>
+              </ul>
+            </div>
+          </section>
         </div>
-      </div>
+      ) : null}
 
-      {premiumUnlocked && hasPets ? (
+      {hasPets ? (
         <div className="pp-col-12">
           <div className="pp-card pp-pad" style={{ maxWidth: 720 }}>
             <button
@@ -153,7 +137,7 @@ export default function LostPetAlerts() {
               <span className="pp-expandTrigger__text">
                 <span className="pp-expandTrigger__title">{t('lostPet.createTitle')}</span>
                 <span className="pp-expandTrigger__desc">
-                  {createAlertExpanded ? t('lostPet.createExpandedHint') : t('lostPet.createCollapsedHint')}
+                  {createAlertExpanded ? t('lostPet.createExpanded') : t('lostPet.createCollapsed')}
                 </span>
               </span>
               <span className={`pp-expandTrigger__chev ${createAlertExpanded ? 'is-open' : ''}`} aria-hidden>
@@ -265,95 +249,79 @@ export default function LostPetAlerts() {
             ) : null}
           </div>
         </div>
-      ) : null}
-
-      {premiumUnlocked && !hasPets ? (
+      ) : (
         <div className="pp-col-12">
           <p className="pp-subtle">
             <Link to="/pets">{t('lostPet.addPetsLink')}</Link> {t('lostPet.withPhoto')}
           </p>
         </div>
-      ) : null}
-
-      {!premiumUnlocked ? null : (
-        <div className="pp-col-12">
-          <h2 className="pp-sectionTitle" style={{ marginBottom: 12 }}>
-            {t('lostPet.yourAlerts')}
-          </h2>
-          {activeListings.length === 0 ? (
-            <p className="pp-subtle">{t('lostPet.noAlerts')}</p>
-          ) : (
-            <ul
-              className="pp-lostPetList"
-              style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 16 }}
-            >
-              {activeListings.map((L) => (
-                <li key={L.id} className="pp-card pp-pad" style={{ borderColor: 'rgba(180, 50, 50, 0.25)' }}>
-                  <div className="pp-row" style={{ alignItems: 'flex-start', gap: 16, flexWrap: 'wrap' }}>
-                    <PetAvatar
-                      pet={{ categoryId: L.categoryId, photoDataUrl: L.photoDataUrl }}
-                      size={96}
-                      className="pp-petAvatar--lg"
-                    />
-                    <div style={{ flex: '1 1 240px' }}>
-                      <div className="pp-h1" style={{ fontSize: 20, margin: '0 0 6px' }}>
-                        {L.petName}{' '}
-                        <span className="pp-subtle" style={{ fontSize: 13, fontWeight: 600 }}>
-                          {t('lostPet.lost')}
-                        </span>
-                      </div>
-                      <p className="pp-subtle" style={{ margin: '0 0 8px', fontSize: 12 }}>
-                        {formatWhen(L.createdAt, language)}
-                      </p>
-                      <p style={{ margin: '0 0 8px', lineHeight: 1.5 }}>{L.description}</p>
-                      <p style={{ margin: '0 0 8px' }}>
-                        <strong>{t('lostPet.lastSeenLabel')}</strong> {L.lastSeenText}
-                      </p>
-                      {L.lastSeenLat != null && L.lastSeenLng != null ? (
-                        <p style={{ margin: '0 0 8px' }}>
-                          <a
-                            className="pp-link"
-                            href={mapsLink(L.lastSeenLat, L.lastSeenLng)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          >
-                            {t('lostPet.mapLink')}
-                          </a>
-                        </p>
-                      ) : null}
-                      {L.reward ? (
-                        <p style={{ margin: '0 0 8px' }}>
-                          <strong>{t('lostPet.rewardLabel')}</strong> {L.reward}
-                        </p>
-                      ) : null}
-                      {L.contactPhone ? (
-                        <p style={{ margin: 0 }}>
-                          <a
-                            className="pp-btn pp-btnPrimary"
-                            style={{ display: 'inline-block', textDecoration: 'none' }}
-                            href={`tel:${L.contactPhone.replace(/\s/g, '')}`}
-                          >
-                            {t('lostPet.call')} {L.contactPhone}
-                          </a>
-                        </p>
-                      ) : (
-                        <p className="pp-subtle" style={{ margin: 0, fontSize: 12 }}>
-                          {t('lostPet.noPhone')}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                  <div style={{ marginTop: 12 }}>
-                    <button type="button" className="pp-btn" onClick={() => resolveAlert(L.id)}>
-                      {t('lostPet.markFound')}
-                    </button>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
       )}
+
+      <div className="pp-col-12">
+        <h2 className="pp-sectionTitle" style={{ marginBottom: 12 }}>
+          {t('lostPet.yourAlerts')}
+        </h2>
+        {activeListings.length === 0 ? (
+          <p className="pp-subtle">{t('lostPet.noAlerts')}</p>
+        ) : (
+          <ul className="pp-lostPetList" style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {activeListings.map((L) => (
+              <li key={L.id} className="pp-card pp-pad pp-lostPetAlertCard">
+                <div className="pp-row" style={{ alignItems: 'flex-start', gap: 16, flexWrap: 'wrap' }}>
+                  <PetAvatar pet={{ categoryId: L.categoryId, photoDataUrl: L.photoDataUrl }} size={96} className="pp-petAvatar--lg" />
+                  <div style={{ flex: '1 1 240px' }}>
+                    <div className="pp-h1" style={{ fontSize: 20, margin: '0 0 6px' }}>
+                      {L.petName}{' '}
+                      <span className="pp-subtle" style={{ fontSize: 13, fontWeight: 600 }}>
+                        {t('lostPet.lost')}
+                      </span>
+                    </div>
+                    <p className="pp-subtle" style={{ margin: '0 0 8px', fontSize: 12 }}>
+                      {formatWhen(L.createdAt)}
+                    </p>
+                    <p style={{ margin: '0 0 8px', lineHeight: 1.5 }}>{L.description}</p>
+                    <p style={{ margin: '0 0 8px' }}>
+                      <strong>{t('lostPet.lastSeenLabel')}</strong> {L.lastSeenText}
+                    </p>
+                    {L.lastSeenLat != null && L.lastSeenLng != null ? (
+                      <p style={{ margin: '0 0 8px' }}>
+                        <a className="pp-link" href={mapsLink(L.lastSeenLat, L.lastSeenLng)} target="_blank" rel="noopener noreferrer">
+                          {t('lostPet.mapLink')}
+                        </a>
+                      </p>
+                    ) : null}
+                    {L.reward ? (
+                      <p style={{ margin: '0 0 8px' }}>
+                        <strong>{t('lostPet.rewardLabel')}</strong> {L.reward}
+                      </p>
+                    ) : null}
+                    {L.contactPhone ? (
+                      <p style={{ margin: 0 }}>
+                        <a
+                          className="pp-btn pp-btnPrimary"
+                          style={{ display: 'inline-block', textDecoration: 'none' }}
+                          href={`tel:${L.contactPhone.replace(/\s/g, '')}`}
+                        >
+                          {t('lostPet.call')} {L.contactPhone}
+                        </a>
+                      </p>
+                    ) : (
+                      <p className="pp-subtle" style={{ margin: 0, fontSize: 12 }}>
+                        {t('lostPet.noPhone')}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <div style={{ marginTop: 12 }}>
+                  <button type="button" className="pp-btn" onClick={() => resolveAlert(L.id)}>
+                    {t('lostPet.markFound')}
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </div>
   );
 }

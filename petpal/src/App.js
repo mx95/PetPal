@@ -230,8 +230,23 @@ function App() {
                   </RequireAuth>
                 }
               />
-              <Route path="/lost-pet" element={<Navigate to="/premium/lost" replace />} />
-              <Route path="/stray-adoption" element={<Navigate to="/premium/stray" replace />} />
+              <Route
+                path="/lost-pet"
+                element={
+                  <RequireAuth>
+                    <LostPetAlerts />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/shelters"
+                element={
+                  <RequireAuth>
+                    <StrayAdoption />
+                  </RequireAuth>
+                }
+              />
+              <Route path="/stray-adoption" element={<Navigate to="/shelters" replace />} />
               <Route path="/privacy" element={<PrivacyPolicy />} />
               <Route path="/terms" element={<TermsOfService />} />
               <Route path="/cookies" element={<CookiePolicy />} />

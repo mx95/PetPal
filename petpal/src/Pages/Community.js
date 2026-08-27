@@ -299,7 +299,7 @@ function PostCard({ post, taggedPet, authorLetter }) {
           <Link
             className="pp-link"
             style={{ padding: 0 }}
-            to={feedKind === 'lostPet' ? '/premium/lost' : '/premium/stray'}
+            to={feedKind === 'lostPet' ? '/lost-pet' : '/shelters'}
           >
             {feedKind === 'lostPet' ? t('community.feedPremiumLinkLost') : t('community.feedPremiumLinkStray')} →
           </Link>
