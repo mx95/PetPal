@@ -11867,6 +11867,15 @@ select.pp-bookConfirmField__control {
   line-height: 1.15;
 }
 
+.pp-authPage__welcomeWaiting {
+  white-space: nowrap;
+}
+
+.pp-authPage__welcomePaw {
+  display: inline-block;
+  margin-left: 0.15em;
+}
+
 .pp-authPage--login .pp-authPage__welcomeSub {
   margin: 0;
   max-width: 34ch;
