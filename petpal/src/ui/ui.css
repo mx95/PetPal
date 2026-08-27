@@ -24453,8 +24453,16 @@ html[lang='ru'] .pp-brand {
   color: #0f9f6e;
 }
 .pp-menuActionIcon--activity {
-  background: rgba(37, 99, 235, 0.12);
-  color: #2563eb;
+  background: transparent;
+  padding: 0;
+  overflow: hidden;
+}
+.pp-menuActionIcon__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
+  display: block;
 }
 .pp-menuActionIcon--bookings,
 .pp-menuActionIcon--admin {
