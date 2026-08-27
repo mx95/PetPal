@@ -23716,6 +23716,72 @@ html[lang='ru'] .pp-brand {
   gap: 12px;
 }
 
+.pp-adminUserCard__titleRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.pp-adminUserCard__profileLine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.pp-adminAccountType {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.pp-adminAccountType--individual {
+  background: rgba(16, 24, 40, 0.08);
+  color: rgba(16, 24, 40, 0.72);
+}
+
+.pp-adminAccountType--company {
+  background: rgba(91, 55, 255, 0.12);
+  color: #5b37ff;
+}
+
+.pp-adminAccountType--shelter {
+  background: rgba(217, 161, 0, 0.18);
+  color: #b54708;
+}
+
+.pp-adminProfileStatus {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.pp-adminProfileStatus--pending {
+  background: rgba(247, 144, 9, 0.14);
+  color: #b54708;
+}
+
+.pp-adminProfileStatus--approved {
+  background: rgba(18, 183, 106, 0.12);
+  color: #039855;
+}
+
+.pp-adminProfileStatus--rejected,
+.pp-adminProfileStatus--suspended {
+  background: rgba(180, 35, 24, 0.12);
+  color: #b42318;
+}
+
 .pp-adminUserCard__uid {
   margin-top: 6px;
   display: flex;

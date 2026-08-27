@@ -42,6 +42,52 @@ describe('mergeAdminDirectory', () => {
     );
   });
 
+  it('enriches users with company and shelter profile metadata', () => {
+    const users = mergeAdminDirectory({
+      userDocs: [{ id: 'u1', data: { email: 'biz@example.com', accountName: 'Biz Owner' } }],
+      companyDocs: [
+        {
+          id: 'co1',
+          ownerUid: 'u1',
+          businessName: 'Happy Paws Grooming',
+          status: 'approved',
+          publicEmail: 'biz@example.com',
+        },
+      ],
+      shelterDocs: [
+        {
+          id: 'sh1',
+          ownerUid: 'u2',
+          shelterName: 'Limassol Rescue',
+          status: 'pending',
+          publicEmail: 'rescue@example.com',
+        },
+      ],
+    });
+
+    const biz = users.find((u) => u.uid === 'u1');
+    const shelter = users.find((u) => u.uid === 'u2');
+    expect(biz).toEqual(
+      expect.objectContaining({
+        accountType: 'company',
+        profileKind: 'company',
+        profileName: 'Happy Paws Grooming',
+        profileStatus: 'approved',
+        profileId: 'co1',
+      })
+    );
+    expect(shelter).toEqual(
+      expect.objectContaining({
+        accountType: 'shelter',
+        profileKind: 'shelter',
+        profileName: 'Limassol Rescue',
+        profileStatus: 'pending',
+        profileId: 'sh1',
+        email: 'rescue@example.com',
+      })
+    );
+  });
+
   it('creates a user row from a public pet when the profile doc is missing', () => {
     const users = mergeAdminDirectory({
       publicDocs: [

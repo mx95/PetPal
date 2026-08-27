@@ -2322,13 +2322,37 @@ const en = {
   adminUsersNfc: {
     title: 'Users & NFC tags',
     intro:
-      'Admin-only directory of accounts and pet public IDs for NFC programming. You can permanently delete a user from Auth and Firestore.',
+      'Admin-only directory of accounts and pet public IDs for NFC programming. Business and shelter accounts show their listing name and approval status. You can permanently delete a user from Auth and Firestore.',
     deleteUser: 'Delete user',
     deleting: 'Deleting…',
     confirmDelete: 'Permanently delete {name}? This removes Auth login, pets, and related data.',
     deleteOk: 'Deleted user {uid}.',
     deleteOkWithEmail: 'Deleted user {email} ({uid}).',
     deleteFailed: 'Could not delete user.',
+    businessCount: '{n} business',
+    shelterCount: '{n} shelter',
+    businessProfile: 'Business',
+    shelterProfile: 'Shelter',
+    accountType: {
+      individual: 'Individual',
+      company: 'Business',
+      shelter: 'Shelter',
+      unknown: 'Unknown',
+    },
+    profileStatus: {
+      company: {
+        pending: 'Pending approval',
+        approved: 'Approved',
+        rejected: 'Rejected',
+        suspended: 'Suspended',
+      },
+      shelter: {
+        pending: 'Pending approval',
+        approved: 'Approved',
+        rejected: 'Rejected',
+        suspended: 'Suspended',
+      },
+    },
   },
   adminShopAssets: {
     title: 'Shop images',

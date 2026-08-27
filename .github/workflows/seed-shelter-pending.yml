@@ -1,0 +1,39 @@
+# One-off: seed a pending shelter application on production Firebase (via server Admin SDK).
+# Run manually: Actions → Seed pending shelter → Run workflow
+
+name: Seed pending shelter
+
+on:
+  workflow_dispatch:
+
+jobs:
+  seed:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Seed pending shelter over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          command_timeout: 8m
+          script: |
+            set -euo pipefail
+            PETPAL_ROOT="${{ secrets.DEPLOY_PATH }}"
+            if [ -z "$PETPAL_ROOT" ]; then PETPAL_ROOT="/root/PetPal"; fi
+            cd "$PETPAL_ROOT"
+            git fetch origin main
+            git checkout main
+            git reset --hard origin/main
+            cd petpal
+            export FIREBASE_PROJECT_ID=petpal-aecda
+            export SHELTER_EMAIL=shelter.demo@petpal.com.cy
+            export SHELTER_PASSWORD='PetPalShelter2026!Demo'
+            export SHELTER_NAME='Limassol Paw Rescue'
+            if [ -f /root/serviceAccount.json ]; then
+              export GOOGLE_APPLICATION_CREDENTIALS=/root/serviceAccount.json
+            elif [ -f "$PETPAL_ROOT/petpal/serviceAccount.json" ]; then
+              export GOOGLE_APPLICATION_CREDENTIALS="$PETPAL_ROOT/petpal/serviceAccount.json"
+            fi
+            node scripts/create-shelter-pending.cjs
