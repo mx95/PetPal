@@ -7,10 +7,12 @@ import { useMobileDockLayout } from '../hooks/useMobileDockLayout';
 import { useI18n } from '../i18n/I18nContext';
 import { MVP_NAV } from '../config/mvpNav';
 
-import ActivityPetsIcon from './icons/ActivityPetsIcon';
-
 const ICONS = {
-  home: <ActivityPetsIcon size={22} />,
+  home: (
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+      <path d="M4 11.5 12 5l8 6.5V20a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1v-8.5z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+    </svg>
+  ),
   pets: (
     <svg viewBox="0 0 24 24" width="22" height="22" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
       <ellipse cx="12" cy="16.8" rx="4.2" ry="3.4" stroke="currentColor" strokeWidth="1.6" />

@@ -7,7 +7,7 @@ const TONES = {
   pets: { icon: '🐾', className: 'pp-menuActionIcon pp-menuActionIcon--pets' },
   lost: { icon: '🚨', className: 'pp-menuActionIcon pp-menuActionIcon--lost' },
   shelter: { icon: '🏠', className: 'pp-menuActionIcon pp-menuActionIcon--shelter' },
-  activity: { className: 'pp-menuActionIcon pp-menuActionIcon--activity', render: () => <ActivityPetsIcon size={16} /> },
+  activity: { className: 'pp-menuActionIcon pp-menuActionIcon--activity', render: () => <ActivityPetsIcon size={16} variant="menu" /> },
   bookings: { icon: '📅', className: 'pp-menuActionIcon pp-menuActionIcon--bookings' },
   profile: { icon: '👤', className: 'pp-menuActionIcon pp-menuActionIcon--profile' },
   logout: { icon: '↩️', className: 'pp-menuActionIcon pp-menuActionIcon--logout' },
