@@ -194,17 +194,15 @@ export default function TopNav() {
                     <MenuActionIcon tone="shelter" />
                     <span>{t('nav.shelters')}</span>
                   </Link>
-                  {isApprovedCompany ? (
-                    <Link
-                      className={accountMenuLinkClassName()}
-                      to="/activity"
-                      role="menuitem"
-                      onClick={() => setAccountMenuOpen(false)}
-                    >
-                      <MenuActionIcon tone="activity" />
-                      <span>{t('nav.activity')}</span>
-                    </Link>
-                  ) : null}
+                  <Link
+                    className={accountMenuLinkClassName()}
+                    to="/activity"
+                    role="menuitem"
+                    onClick={() => setAccountMenuOpen(false)}
+                  >
+                    <MenuActionIcon tone="activity" />
+                    <span>{t('nav.activity')}</span>
+                  </Link>
                   {isAdmin ? (
                     <Link
                       className={accountMenuLinkClassName()}
@@ -239,14 +237,6 @@ export default function TopNav() {
             </div>
           ) : (
             <>
-              <Link className="pp-topNavGuestLink" to="/lost-pet" title={t('nav.lostPet')}>
-                <MenuActionIcon tone="lost" />
-                <span className="pp-topNavGuestLink__label">{t('nav.lostPet')}</span>
-              </Link>
-              <Link className="pp-topNavGuestLink" to="/shelters" title={t('nav.shelters')}>
-                <MenuActionIcon tone="shelter" />
-                <span className="pp-topNavGuestLink__label">{t('nav.shelters')}</span>
-              </Link>
               <NavLink
                 className="hidden items-center justify-center rounded-full border border-slate-200 px-3 py-2 text-sm font-bold text-petpal-ink no-underline sm:inline-flex"
                 to="/login"

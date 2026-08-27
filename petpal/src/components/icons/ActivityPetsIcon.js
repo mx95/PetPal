@@ -2,16 +2,14 @@ import React from 'react';
 
 /**
  * Activity menu mark — dog + cat in a trail circle with paw steps.
- * Matches the PetPal activity chip artwork (menu only; bottom nav keeps the house icon).
+ * Menu only; bottom nav keeps the house icon.
  * @param {{ size?: number, variant?: 'menu' | 'plain' }} props
  */
-export default function ActivityPetsIcon({ size = 18, variant = 'menu' }) {
+export default function ActivityPetsIcon({ size = 18, variant = 'plain' }) {
   if (variant === 'menu') {
     return (
       <img
         src={`${process.env.PUBLIC_URL || ''}/images/menu/activity.png`}
-        width={size}
-        height={size}
         alt=""
         aria-hidden="true"
         className="pp-menuActionIcon__img"
