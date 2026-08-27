@@ -106,6 +106,28 @@ jobs:
                 fi
               fi
             fi
+            # Seed pending demo shelter once (Admin → Company approvals).
+            SHELTER_SEED_MARKER="/var/lib/petpal/shelter-pending-seeded-2026-08-27"
+            SHELTER_SEED_SCRIPT="$PETPAL_ROOT/petpal/scripts/create-shelter-pending.cjs"
+            if [ -f "$SHELTER_SEED_SCRIPT" ] && [ ! -f "$SHELTER_SEED_MARKER" ]; then
+              echo "[deploy] Seeding pending demo shelter (post-deploy one-shot)"
+              mkdir -p /var/lib/petpal
+              export FIREBASE_PROJECT_ID=petpal-aecda
+              export SHELTER_EMAIL=shelter.demo@petpal.com.cy
+              export SHELTER_PASSWORD='PetPalShelter2026!Demo'
+              export SHELTER_NAME='Limassol Paw Rescue'
+              if [ -f /root/serviceAccount.json ]; then
+                export GOOGLE_APPLICATION_CREDENTIALS=/root/serviceAccount.json
+              elif [ -f "$PETPAL_ROOT/petpal/serviceAccount.json" ]; then
+                export GOOGLE_APPLICATION_CREDENTIALS="$PETPAL_ROOT/petpal/serviceAccount.json"
+              fi
+              if (cd "$PETPAL_ROOT/petpal" && node scripts/create-shelter-pending.cjs); then
+                touch "$SHELTER_SEED_MARKER"
+                echo "[deploy] Pending shelter seeded OK"
+              else
+                echo "[deploy] Pending shelter seed skipped or failed (Admin credentials may be missing on server)"
+              fi
+            fi
             # If the pre-pull deploy script ignored CLEAR_*, clear here after git update.
             CLEAR_IMEI="${CLEAR_DEVICE_POSITIONS_IMEI:-}"
             if [ -n "$CLEAR_IMEI" ]; then
