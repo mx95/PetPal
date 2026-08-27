@@ -1,17 +1,17 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useI18n } from '../i18n/I18nContext';
+import { useI18n } from '../../i18n/I18nContext';
 import {
   PHOTO_ACCEPT,
   PHOTO_MAX_COUNT,
   newPhotoDraftId,
   normalizePrimaryPhoto,
   validatePhotoFile,
-} from '../media/photoUploadUtils';
+} from '../../media/photoUploadUtils';
 
 /**
  * @param {{
- *   photos: import('../media/photoUploadUtils').PhotoDraft[],
- *   onChange: (next: import('../media/photoUploadUtils').PhotoDraft[]) => void,
+ *   photos: import('../../media/photoUploadUtils').PhotoDraft[],
+ *   onChange: (next: import('../../media/photoUploadUtils').PhotoDraft[]) => void,
  *   maxCount?: number,
  *   hint?: string,
  *   disabled?: boolean,
