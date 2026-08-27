@@ -6261,8 +6261,8 @@ html[data-theme="dark"] .pp-timeRangeRow--readOnly .pp-timeRangeRow__control {
   position: relative;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
-  min-height: clamp(290px, 38vw, 390px);
+  justify-content: flex-start;
+  min-height: clamp(260px, 34vw, 360px);
   margin-bottom: clamp(24px, 4vw, 36px);
   padding: 0;
   border-radius: 24px;
@@ -6311,7 +6311,7 @@ html[data-theme="dark"] .pp-timeRangeRow--readOnly .pp-timeRangeRow__control {
   z-index: 2;
   min-width: 0;
   max-width: min(34rem, 52%);
-  padding: clamp(10px, 1.8vw, 16px) clamp(18px, 2.4vw, 28px) 4px clamp(22px, 3.2vw, 36px);
+  padding: clamp(18px, 2.4vw, 24px) clamp(18px, 2.4vw, 28px) 4px clamp(22px, 3.2vw, 36px);
 }
 
 .pp-homeWelcome__bannerCopy {
@@ -6345,8 +6345,8 @@ html[data-theme="dark"] .pp-timeRangeRow--readOnly .pp-timeRangeRow__control {
   .pp-homeWelcome__banner {
     display: flex;
     flex-direction: column;
-    justify-content: flex-end;
-    min-height: clamp(320px, 88vw, 440px);
+    justify-content: flex-start;
+    min-height: clamp(260px, 72vw, 360px);
     padding: 0;
     gap: 0;
     overflow: hidden;
@@ -6385,7 +6385,7 @@ html[data-theme="dark"] .pp-timeRangeRow--readOnly .pp-timeRangeRow__control {
     height: auto;
     z-index: 2;
     pointer-events: auto;
-    padding: 8px 18px 4px;
+    padding: 18px 18px 4px;
     max-width: min(100%, 26rem);
   }
 
@@ -11865,6 +11865,7 @@ select.pp-bookConfirmField__control {
   margin: 0;
   color: #101a35;
   line-height: 1.15;
+  white-space: nowrap;
 }
 
 .pp-authPage__welcomeWaiting {
@@ -12065,7 +12066,7 @@ select.pp-bookConfirmField__control {
     padding: 16px 16px 18px;
   }
   .pp-authPage--login .pp-authPage__welcomeTop {
-    max-width: min(100%, 17.5rem);
+    max-width: min(100%, 22rem);
   }
   .pp-authPage__welcomeArt {
     top: 34%;
