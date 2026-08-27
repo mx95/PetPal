@@ -101,9 +101,8 @@ const en = {
     },
     publicHero: {
       eyebrow: 'For pets and the people who love them',
-      headline: 'PetPal Care Hub — one calm home for every pet you care for.',
-      sub:
-        'Track walks, log achievements, share moments, and act fast when something goes wrong. PetPal keeps every pet — and every caregiver — on the same page.',
+      headlineBefore: 'PetPal Care Hub —',
+      headlineAfter: 'one calm home for every pet you care for.',
       ctaPrimary: 'Create account',
       ctaSecondary: 'Already a member',
       bullet1Title: 'Daily walk tracking',
