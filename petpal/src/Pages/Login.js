@@ -156,8 +156,15 @@ export default function Login() {
             </figure>
             <div className="pp-authPage__welcomeTop">
               <span className="pp-authPage__welcomeEyebrow">{t('login.welcomeEyebrow')}</span>
-              <h1 className="pp-authPage__welcomeTitle">{t('login.welcome')}</h1>
-              <p className="pp-authPage__welcomeSub">{t('login.subtitle')}</p>
+              <h1 className="pp-authPage__welcomeTitle">
+                {t('login.welcomeBefore')}
+                <span className="pp-authPage__welcomeWaiting">
+                  {t('login.welcomeWaiting')}
+                  <span className="pp-authPage__welcomePaw" aria-hidden="true">
+                    🐾
+                  </span>
+                </span>
+              </h1>
               <ul className="pp-authPage__welcomeList">
                 {LOGIN_BENEFITS.map(({ key, icon }) => (
                   <li key={key}>

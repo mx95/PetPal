@@ -874,6 +874,8 @@ const en = {
   },
   login: {
     welcomeEyebrow: 'Welcome back',
+    welcomeBefore: 'Your pack is ',
+    welcomeWaiting: 'waiting',
     welcome: 'Your pack is waiting 🐾',
     subtitle: 'Keep your pets happy, healthy and safe — all in one place.',
     benefit1: 'Live GPS tracking for every walk',
