@@ -3,6 +3,7 @@ import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
 import { useCompany } from '../company/CompanyContext';
 import { useInbox } from '../inbox/InboxContext';
+import MenuActionIcon from './MenuActionIcon';
 import { useI18n } from '../i18n/I18nContext';
 import { LanguageSwitcher } from '../i18n/LanguageSwitcher';
 import ShopCartHeaderButton from './shop/ShopCartHeaderButton';
@@ -20,6 +21,10 @@ function navItemClassName({ isActive }) {
     .join(' ');
 }
 
+
+function accountMenuLinkClassName() {
+  return 'flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-petpal-ink no-underline transition hover:bg-petpal-soft';
+}
 
 export default function TopNav() {
   const { user, signOut } = useAuth();
@@ -137,17 +142,17 @@ export default function TopNav() {
                 aria-expanded={accountMenuOpen}
               >
                 <UserAvatar user={user} size={32} className="pp-navProfileAvatar" />
-                <span className="pp-topNavAccountBtn__label">Menu</span>
+                <span className="pp-topNavAccountBtn__label">{t('nav.menu')}</span>
               </button>
 
               {accountMenuOpen ? (
                 <div
                   className="absolute right-0 top-full mt-3 w-60 rounded-3xl border border-slate-200 bg-white p-2 shadow-lift animate-soft-pop"
                   role="menu"
-                  aria-label="Menu"
+                  aria-label={t('nav.menu')}
                 >
                   <Link
-                    className="pp-menuItemWithBadge flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-petpal-ink no-underline transition hover:bg-petpal-soft"
+                    className={`pp-menuItemWithBadge ${accountMenuLinkClassName()}`}
                     to="/inbox"
                     role="menuitem"
                     onClick={() => setAccountMenuOpen(false)}
@@ -163,7 +168,7 @@ export default function TopNav() {
                     <span>{t('nav.inbox')}</span>
                   </Link>
                   <Link
-                    className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-petpal-ink no-underline transition hover:bg-petpal-soft"
+                    className={accountMenuLinkClassName()}
                     to="/pets"
                     role="menuitem"
                     onClick={() => setAccountMenuOpen(false)}
@@ -171,9 +176,27 @@ export default function TopNav() {
                     <span aria-hidden>&#128062;</span>
                     <span>{t('nav.myPets')}</span>
                   </Link>
+                  <Link
+                    className={accountMenuLinkClassName()}
+                    to="/lost-pet"
+                    role="menuitem"
+                    onClick={() => setAccountMenuOpen(false)}
+                  >
+                    <MenuActionIcon tone="lost" />
+                    <span>{t('nav.lostPet')}</span>
+                  </Link>
+                  <Link
+                    className={accountMenuLinkClassName()}
+                    to="/shelters"
+                    role="menuitem"
+                    onClick={() => setAccountMenuOpen(false)}
+                  >
+                    <MenuActionIcon tone="shelter" />
+                    <span>{t('nav.shelters')}</span>
+                  </Link>
                   {isApprovedCompany ? (
                     <Link
-                      className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-petpal-ink no-underline transition hover:bg-petpal-soft"
+                      className={accountMenuLinkClassName()}
                       to="/activity"
                       role="menuitem"
                       onClick={() => setAccountMenuOpen(false)}
@@ -184,7 +207,7 @@ export default function TopNav() {
                   ) : null}
                   {isAdmin ? (
                     <Link
-                      className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-petpal-ink no-underline transition hover:bg-petpal-soft"
+                      className={accountMenuLinkClassName()}
                       to="/admin/bookings"
                       role="menuitem"
                       onClick={() => setAccountMenuOpen(false)}
@@ -194,7 +217,7 @@ export default function TopNav() {
                     </Link>
                   ) : null}
                   <Link
-                    className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-petpal-ink no-underline transition hover:bg-petpal-soft"
+                    className={accountMenuLinkClassName()}
                     to="/profile"
                     role="menuitem"
                     onClick={() => setAccountMenuOpen(false)}

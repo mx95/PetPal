@@ -57,7 +57,9 @@ export default function AdminUsersNfc() {
   const totals = useMemo(() => {
     const accounts = rows.length;
     const pets = rows.reduce((n, row) => n + (Array.isArray(row.pets) ? row.pets.length : 0), 0);
-    return { accounts, pets };
+    const business = rows.filter((row) => row.accountType === 'company').length;
+    const shelter = rows.filter((row) => row.accountType === 'shelter').length;
+    return { accounts, pets, business, shelter };
   }, [rows]);
   const origin = typeof window !== 'undefined' ? window.location.origin : '';
 
@@ -90,6 +92,28 @@ export default function AdminUsersNfc() {
   if (!adminReady) return <p className="pp-subtle">{t('admin.loading')}</p>;
   if (!isAdmin) return <Navigate to="/dashboard" replace />;
 
+  function accountTypeLabel(row) {
+    const type = String(row.accountType || 'individual').toLowerCase();
+    const key = `adminUsersNfc.accountType.${type}`;
+    const translated = t(key);
+    return translated === key ? t('adminUsersNfc.accountType.individual') : translated;
+  }
+
+  function accountTypeClass(row) {
+    const type = String(row.accountType || 'individual').toLowerCase();
+    if (type === 'company') return 'pp-adminAccountType--company';
+    if (type === 'shelter') return 'pp-adminAccountType--shelter';
+    return 'pp-adminAccountType--individual';
+  }
+
+  function profileStatusLabel(row) {
+    if (!row.profileStatus) return '';
+    const kind = row.profileKind === 'shelter' ? 'shelter' : 'company';
+    const key = `adminUsersNfc.profileStatus.${kind}.${row.profileStatus}`;
+    const translated = t(key);
+    return translated === key ? row.profileStatus : translated;
+  }
+
   return (
     <div className="pp-pad">
       <Link className="pp-link" to="/admin">
@@ -106,6 +130,8 @@ export default function AdminUsersNfc() {
         <div className="pp-adminUsersNfc__totals" style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
           <span className="pp-badge">{t('admin.hub.userCount', { n: totals.accounts })}</span>
           <span className="pp-badge">{t('admin.hub.petCount', { n: totals.pets })}</span>
+          <span className="pp-badge">{t('adminUsersNfc.businessCount', { n: totals.business })}</span>
+          <span className="pp-badge">{t('adminUsersNfc.shelterCount', { n: totals.shelter })}</span>
         </div>
       ) : null}
 
@@ -130,7 +156,24 @@ export default function AdminUsersNfc() {
           <li key={row.uid} className="pp-card pp-adminUserCard">
             <div className="pp-adminUserCard__head">
               <div>
-                <strong>{row.name || row.email || t('admin.hub.unnamedUser')}</strong>
+                <div className="pp-adminUserCard__titleRow">
+                  <strong>{row.name || row.email || t('admin.hub.unnamedUser')}</strong>
+                  <span className={`pp-adminAccountType ${accountTypeClass(row)}`}>{accountTypeLabel(row)}</span>
+                </div>
+                {row.profileName ? (
+                  <div className="pp-adminUserCard__profileLine">
+                    <span className="pp-subtle">
+                      {row.profileKind === 'shelter' ? t('adminUsersNfc.shelterProfile') : t('adminUsersNfc.businessProfile')}
+                      {': '}
+                      <strong>{row.profileName}</strong>
+                    </span>
+                    {row.profileStatus ? (
+                      <span className={`pp-adminProfileStatus pp-adminProfileStatus--${row.profileStatus}`}>
+                        {profileStatusLabel(row)}
+                      </span>
+                    ) : null}
+                  </div>
+                ) : null}
                 <div className="pp-subtle">
                   {row.email || '—'}
                   {row.phone ? ` · ${row.phone}` : ''}

@@ -1,125 +1,178 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../auth/AuthProvider';
-import { usePets } from '../pets/PetsContext';
+import { uploadPhotoDrafts } from '../media/scopedPhotoStorage';
+import { normalizePrimaryPhoto } from '../media/photoUploadUtils';
 import {
-  loadLostListings,
-  loadPremiumUnlocked,
-  saveLostListings,
-  savePremiumUnlocked,
-} from './lostPetStorage';
-
-/**
- * @typedef {Object} LostPetListing
- * @property {string} id
- * @property {string} petId
- * @property {string} petName
- * @property {string} categoryId
- * @property {string|undefined} photoDataUrl
- * @property {string} description
- * @property {string} lastSeenText
- * @property {number|null} lastSeenLat
- * @property {number|null} lastSeenLng
- * @property {string} reward
- * @property {string} contactPhone
- * @property {string} createdAt
- * @property {boolean} active
- */
+  createLostPetAlert,
+  fetchLostPetAlertById,
+  markLostPetFound,
+  migrateLegacyLostPetAlerts,
+  reportLostPetAlert,
+  subscribeActiveLostPetAlerts,
+  subscribeMyLostPetAlerts,
+  updateLostPetAlert,
+} from './lostPetFirestore';
+import { loadLostListings, saveLostListings } from './lostPetStorage';
+import { validateLostPetInput } from './lostPetUtils';
 
 const LostPetContext = createContext(null);
-
-function newId() {
-  if (typeof crypto !== 'undefined' && crypto.randomUUID) return `lost_${crypto.randomUUID()}`;
-  return `lost_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-}
+const MIGRATION_KEY = 'petpal_lost_pet_migrated_v2';
 
 export function LostPetProvider({ children }) {
   const { user } = useAuth();
   const uid = user?.uid ?? null;
-  const { pets } = usePets();
-  const [premiumUnlocked, setPremiumUnlocked] = useState(false);
-  const [listings, setListings] = useState(/** @type {LostPetListing[]} */ ([]));
+  const [feedAlerts, setFeedAlerts] = useState(/** @type {import('./lostPetTypes').LostPetAlert[]} */ ([]));
+  const [myAlerts, setMyAlerts] = useState(/** @type {import('./lostPetTypes').LostPetAlert[]} */ ([]));
+  const [feedError, setFeedError] = useState('');
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!uid) {
-      setPremiumUnlocked(false);
-      setListings([]);
-      return;
+      setFeedAlerts([]);
+      setMyAlerts([]);
+      setLoading(false);
+      return undefined;
     }
-    setPremiumUnlocked(loadPremiumUnlocked(uid));
-    setListings(loadLostListings(uid));
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const key = `${MIGRATION_KEY}_${uid}`;
+        if (!localStorage.getItem(key)) {
+          const legacy = loadLostListings(uid);
+          if (legacy.length) {
+            await migrateLegacyLostPetAlerts(uid, legacy);
+            saveLostListings(uid, []);
+          }
+          localStorage.setItem(key, '1');
+        }
+      } catch (e) {
+        console.warn('[LostPet] legacy migration skipped', e);
+      }
+      if (cancelled) return;
+    })();
+
+    setLoading(true);
+    const offFeed = subscribeActiveLostPetAlerts((rows, err) => {
+      setFeedAlerts(rows);
+      setFeedError(err?.message || '');
+      setLoading(false);
+    });
+    const offMine = subscribeMyLostPetAlerts(uid, (rows) => setMyAlerts(rows));
+    return () => {
+      cancelled = true;
+      offFeed();
+      offMine();
+    };
   }, [uid]);
 
-  const setPremium = useCallback(
-    (on) => {
-      if (!uid) return;
-      setPremiumUnlocked(!!on);
-      savePremiumUnlocked(uid, !!on);
+  const publishAlert = useCallback(
+    async (payload) => {
+      if (!uid) return { ok: false, error: 'auth' };
+      const v = validateLostPetInput(payload);
+      if (!v.ok) return { ok: false, error: v.code };
+
+      const draftId = `draft_${Date.now()}`;
+      const normalizedPhotos = normalizePrimaryPhoto(payload.photoDrafts || []);
+      const uploaded = await uploadPhotoDrafts(
+        normalizedPhotos.map((p) => ({
+          file: p.file,
+          photoUrl: p.photoUrl,
+          storagePath: p.storagePath,
+          isPrimary: p.isPrimary,
+        })),
+        { uid, scope: 'lostPetPhotos', entityId: draftId }
+      );
+
+      const result = await createLostPetAlert(uid, {
+        petId: payload.petId,
+        petName: payload.petName,
+        categoryId: payload.categoryId,
+        breed: payload.breed,
+        description: payload.description,
+        identifyingMarks: payload.identifyingMarks,
+        lastSeenText: payload.lastSeenText,
+        lastSeenAt: payload.lastSeenAt,
+        lastSeenLat: payload.lastSeenLat,
+        lastSeenLng: payload.lastSeenLng,
+        reward: payload.reward,
+        contactPhone: payload.contactPhone,
+        additionalInfo: payload.additionalInfo,
+        photos: uploaded,
+      });
+      if (!result.ok) return { ok: false, error: result.reason || 'save_failed' };
+      return { ok: true, id: result.id };
     },
     [uid]
-  );
-
-  const publishAlert = useCallback(
-    (payload) => {
-      const pet = pets.find((p) => p.id === payload.petId);
-      if (!pet) return { ok: false, error: 'no_pet' };
-      const lastLat =
-        payload.lastSeenLat != null && String(payload.lastSeenLat).trim() !== ''
-          ? Number(payload.lastSeenLat)
-          : null;
-      const lastLng =
-        payload.lastSeenLng != null && String(payload.lastSeenLng).trim() !== ''
-          ? Number(payload.lastSeenLng)
-          : null;
-      const entry = {
-        id: newId(),
-        petId: pet.id,
-        petName: pet.name,
-        categoryId: pet.categoryId,
-        photoDataUrl: pet.photoDataUrl,
-        description: String(payload.description || '').trim().slice(0, 2000),
-        lastSeenText: String(payload.lastSeenText || '').trim().slice(0, 1000),
-        lastSeenLat: lastLat != null && Number.isFinite(lastLat) ? lastLat : null,
-        lastSeenLng: lastLng != null && Number.isFinite(lastLng) ? lastLng : null,
-        reward: String(payload.reward || '').trim().slice(0, 200),
-        contactPhone: String(payload.contactPhone || '').trim().slice(0, 40),
-        createdAt: new Date().toISOString(),
-        active: true,
-      };
-      if (!entry.description) return { ok: false, error: 'description' };
-      if (!entry.lastSeenText) return { ok: false, error: 'lastSeen' };
-      setListings((prev) => {
-        const next = [entry, ...prev];
-        if (uid) saveLostListings(uid, next);
-        return next;
-      });
-      return { ok: true };
-    },
-    [pets, uid]
   );
 
   const resolveAlert = useCallback(
-    (id) => {
-      setListings((prev) => {
-        const next = prev.map((x) => (x.id === id ? { ...x, active: false } : x));
-        if (uid) saveLostListings(uid, next);
-        return next;
-      });
+    async (id) => {
+      if (!uid) return { ok: false };
+      return markLostPetFound(id, uid);
     },
     [uid]
   );
 
-  const activeListings = useMemo(() => listings.filter((x) => x.active), [listings]);
+  const reportAlert = useCallback(
+    async (id) => {
+      if (!uid) return { ok: false };
+      return reportLostPetAlert(id, uid);
+    },
+    [uid]
+  );
+
+  const getAlertById = useCallback(async (id) => fetchLostPetAlertById(id), []);
+
+  const editAlert = useCallback(
+    async (id, patch) => {
+      if (!uid) return { ok: false };
+      let photos;
+      if (patch.photoDrafts) {
+        const normalized = normalizePrimaryPhoto(patch.photoDrafts);
+        photos = await uploadPhotoDrafts(
+          normalized.map((p) => ({
+            file: p.file,
+            photoUrl: p.photoUrl,
+            storagePath: p.storagePath,
+            isPrimary: p.isPrimary,
+          })),
+          { uid, scope: 'lostPetPhotos', entityId: id }
+        );
+      }
+      return updateLostPetAlert(id, uid, { ...patch, photos });
+    },
+    [uid]
+  );
+
+  const activeListings = feedAlerts;
+  const myActiveAlerts = useMemo(() => myAlerts.filter((a) => a.status === 'active' || a.status === 'reported'), [myAlerts]);
 
   const value = useMemo(
     () => ({
-      premiumUnlocked,
-      setPremium,
+      loading,
+      feedError,
       activeListings,
-      allListings: listings,
+      myAlerts,
+      myActiveAlerts,
       publishAlert,
       resolveAlert,
+      reportAlert,
+      editAlert,
+      getAlertById,
     }),
-    [premiumUnlocked, setPremium, activeListings, listings, publishAlert, resolveAlert]
+    [
+      loading,
+      feedError,
+      activeListings,
+      myAlerts,
+      myActiveAlerts,
+      publishAlert,
+      resolveAlert,
+      reportAlert,
+      editAlert,
+      getAlertById,
+    ]
   );
 
   return <LostPetContext.Provider value={value}>{children}</LostPetContext.Provider>;

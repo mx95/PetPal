@@ -7,8 +7,8 @@ function tabCls({ isActive }) {
 }
 
 const BENEFITS = [
-  { key: 'lost', to: '/premium/lost', icon: '🚨', accent: 'lost' },
-  { key: 'stray', to: '/premium/stray', icon: '🐾', accent: 'stray' },
+  { key: 'lost', to: '/lost-pet', icon: '🚨', accent: 'lost' },
+  { key: 'stray', to: '/shelters', icon: '🏠', accent: 'stray' },
   { key: 'breeding', to: '/premium/breeding', icon: '💞', accent: 'breeding' },
 ];
 
@@ -76,10 +76,10 @@ export default function PremiumHub() {
         {!isHubRoot ? (
           <div className="pp-col-12">
             <nav className="pp-row" style={{ gap: 8, flexWrap: 'wrap' }} aria-label={t('premium.navAria')}>
-              <NavLink to="/premium/lost" className={tabCls} end>
+              <NavLink to="/lost-pet" className={tabCls} end>
                 {t('premium.tabLost')}
               </NavLink>
-              <NavLink to="/premium/stray" className={tabCls}>
+              <NavLink to="/shelters" className={tabCls}>
                 {t('premium.tabStray')}
               </NavLink>
               <NavLink to="/premium/breeding" className={tabCls}>

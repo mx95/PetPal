@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Preview — Shelters hub (PR #104)</title>
+  <link rel="stylesheet" href="file:///workspace/petpal/src/ui/ui.css" />
+  <link rel="stylesheet" href="preview-shell.css" />
+</head>
+<body>
+  <div class="pp-shell">
+    <div class="preview-topnav">
+      <strong>PetPal CARE HUB</strong>
+      <span class="preview-menu-btn">Menu ▾</span>
+    </div>
+    <div class="pp-main">
+      <div class="pp-grid pp-sheltersHub">
+        <div class="pp-col-12">
+          <header class="pp-pageHeader">
+            <div class="pp-pageHeader__copy">
+              <span class="pp-publicHero__eyebrow pp-publicHero__eyebrow--shelter">SHELTERS</span>
+              <h1 class="pp-pageHeader__title">Shelters</h1>
+              <p class="pp-pageHeader__sub">Browse verified shelters and animals available for adoption.</p>
+            </div>
+            <a class="pp-pageHeader__back" href="#">← Home</a>
+          </header>
+        </div>
+        <div class="pp-col-12">
+          <div class="pp-card pp-pad">
+            <div class="pp-filterRow">
+              <input class="pp-input" placeholder="Search shelters…" value="" />
+              <select class="pp-input"><option>All cities</option><option selected>Nicosia</option></select>
+            </div>
+          </div>
+        </div>
+        <div class="pp-col-12">
+          <h2 class="pp-sectionTitle">Approved shelters</h2>
+          <div class="pp-photoFeed">
+            <article class="pp-photoFeedCard pp-photoFeedCard--shelter">
+              <div class="pp-photoFeedCard__media">
+                <img class="pp-photoFeedCard__img" src="https://images.unsplash.com/photo-1450778869180-41d060ebde46?w=800&h=600&fit=crop" alt="" />
+                <span class="pp-photoFeedCard__status">Approved shelter</span>
+              </div>
+              <div class="pp-photoFeedCard__body">
+                <h3 class="pp-photoFeedCard__title">ABC Animal Shelter</h3>
+                <p class="pp-photoFeedCard__subtitle">Nicosia · 12 Rescue Street</p>
+                <p class="pp-photoFeedCard__desc">Non-profit rescue caring for dogs and cats across Cyprus since 2010.</p>
+                <div class="pp-photoFeedCard__actions">
+                  <a class="pp-btn pp-btnPrimary" href="#">View shelter</a>
+                  <a class="pp-btn" href="#">Call</a>
+                </div>
+              </div>
+            </article>
+          </div>
+        </div>
+        <div class="pp-col-12">
+          <h2 class="pp-sectionTitle">Animals available for adoption</h2>
+          <div class="pp-chipRow" style="margin-bottom:12px;">
+            <button class="pp-chip is-on" type="button">All</button>
+            <button class="pp-chip" type="button">🐕</button>
+            <button class="pp-chip" type="button">🐈</button>
+          </div>
+          <div class="pp-photoFeed">
+            <article class="pp-photoFeedCard pp-photoFeedCard--available">
+              <div class="pp-photoFeedCard__media">
+                <img class="pp-photoFeedCard__img" src="https://images.unsplash.com/photo-1537151620547-768eb6cf6599?w=800&h=600&fit=crop" alt="" />
+                <span class="pp-photoFeedCard__status">Available</span>
+              </div>
+              <div class="pp-photoFeedCard__body">
+                <h3 class="pp-photoFeedCard__title">Rocky</h3>
+                <p class="pp-photoFeedCard__subtitle">Dog · Terrier mix · 2 years</p>
+                <p class="pp-photoFeedCard__meta">Shelter: ABC Animal Shelter</p>
+                <p class="pp-photoFeedCard__desc">Calm, good with people, loves walks. Fully vaccinated.</p>
+                <div class="pp-photoFeedCard__actions">
+                  <a class="pp-btn pp-btnPrimary" href="#">View animal</a>
+                  <a class="pp-btn" href="#">Contact shelter</a>
+                </div>
+              </div>
+            </article>
+            <article class="pp-photoFeedCard pp-photoFeedCard--available">
+              <div class="pp-photoFeedCard__media">
+                <img class="pp-photoFeedCard__img" src="https://images.unsplash.com/photo-1574158622682-e40e69881006?w=800&h=600&fit=crop" alt="" />
+                <span class="pp-photoFeedCard__status">Available</span>
+              </div>
+              <div class="pp-photoFeedCard__body">
+                <h3 class="pp-photoFeedCard__title">Ginger</h3>
+                <p class="pp-photoFeedCard__subtitle">Cat · Domestic · Adult</p>
+                <p class="pp-photoFeedCard__meta">Shelter: ABC Animal Shelter</p>
+                <p class="pp-photoFeedCard__desc">Friendly, socialized, sterilized. Indoor home preferred.</p>
+                <div class="pp-photoFeedCard__actions">
+                  <a class="pp-btn pp-btnPrimary" href="#">View animal</a>
+                </div>
+              </div>
+            </article>
+          </div>
+        </div>
+      </div>
+    </div>
+    <nav class="preview-bottom-nav">
+      <div class="preview-bottom-nav__item">Activity</div>
+      <div class="preview-bottom-nav__item">Bookings</div>
+      <div class="preview-bottom-nav__item is-live">Live</div>
+      <div class="preview-bottom-nav__item">Nearby</div>
+      <div class="preview-bottom-nav__item">Shop</div>
+    </nav>
+  </div>
+</body>
+</html>

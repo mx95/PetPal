@@ -40,7 +40,7 @@ export default function Register() {
   const [error, setError] = useState('');
   const [info, setInfo] = useState('');
   const [acceptedTerms, setAcceptedTerms] = useState(false);
-  const [accountType, setAccountType] = useState(/** @type {'individual' | 'company'} */ ('individual'));
+  const [accountType, setAccountType] = useState(/** @type {'individual' | 'company' | 'shelter'} */ ('individual'));
   const [businessName, setBusinessName] = useState('');
   const [socialBusy, setSocialBusy] = useState('');
 
@@ -85,7 +85,7 @@ export default function Register() {
       setError(t('register.termsError'));
       return;
     }
-    if (accountType === 'company') {
+    if (accountType === 'company' || accountType === 'shelter') {
       setError(t('register.socialIndividualOnly'));
       return;
     }
@@ -239,6 +239,12 @@ export default function Register() {
         navigate('/company/apply', { replace: true, state: { businessName: trimmedBusinessName } });
         return;
       }
+      if (accountType === 'shelter') {
+        completeRegistrationTransaction(true);
+        trackAuthEvent('register_success_shelter');
+        navigate('/shelter/apply', { replace: true });
+        return;
+      }
       completeRegistrationTransaction(true);
       trackAuthEvent('register_success_individual');
       navigate('/', { replace: true });
@@ -316,12 +322,23 @@ export default function Register() {
                   <span aria-hidden>🏪</span>
                   {t('register.accountBusiness')}
                 </label>
+                <label className={`pp-radioChip ${accountType === 'shelter' ? 'pp-radioChip--on' : ''}`}>
+                  <input
+                    type="radio"
+                    name="accountType"
+                    checked={accountType === 'shelter'}
+                    onChange={() => setAccountType('shelter')}
+                    disabled={busy}
+                  />
+                  <span aria-hidden>🏠</span>
+                  {t('register.accountShelter')}
+                </label>
               </div>
               <p className="pp-subtle" style={{ fontSize: 12, marginTop: 6, marginBottom: 0 }}>
-                {t('register.businessHint')}
+                {accountType === 'shelter' ? t('shelters.registerDesc') : t('register.businessHint')}
               </p>
             </div>
-            {accountType === 'individual' ? (
+            {accountType === 'individual' || accountType === 'shelter' ? (
               <div>
                 <div className="pp-label">{t('register.nameOptional')}</div>
                 <input

@@ -42,6 +42,7 @@ import {
   Leaderboard,
   Login,
   LostPetAlerts,
+  LostPetDetail,
   MyOrders,
   MyPets,
   Nearby,
@@ -53,6 +54,11 @@ import {
   ProviderPortal,
   PublicPetProfile,
   Register,
+  ShelterAnimalDetail,
+  ShelterApply,
+  ShelterDashboard,
+  ShelterPublicProfile,
+  SheltersHub,
   Shop,
   ShopCheckout,
   StrayAdoption,
@@ -230,8 +236,63 @@ function App() {
                   </RequireAuth>
                 }
               />
-              <Route path="/lost-pet" element={<Navigate to="/premium/lost" replace />} />
-              <Route path="/stray-adoption" element={<Navigate to="/premium/stray" replace />} />
+              <Route
+                path="/lost-pet/:alertId"
+                element={
+                  <RequireAuth>
+                    <LostPetDetail />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/lost-pet"
+                element={
+                  <RequireAuth>
+                    <LostPetAlerts />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/shelters/animal/:animalId"
+                element={
+                  <RequireAuth>
+                    <ShelterAnimalDetail />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/shelters/:shelterId"
+                element={
+                  <RequireAuth>
+                    <ShelterPublicProfile />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/shelters"
+                element={
+                  <RequireAuth>
+                    <SheltersHub />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/shelter/dashboard"
+                element={
+                  <RequireAuth>
+                    <ShelterDashboard />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/shelter/apply"
+                element={
+                  <RequireAuth>
+                    <ShelterApply />
+                  </RequireAuth>
+                }
+              />
+              <Route path="/stray-adoption" element={<Navigate to="/shelters" replace />} />
               <Route path="/privacy" element={<PrivacyPolicy />} />
               <Route path="/terms" element={<TermsOfService />} />
               <Route path="/cookies" element={<CookiePolicy />} />

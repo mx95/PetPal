@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Preview — Shelters</title>
+  <link rel="stylesheet" href="file:///workspace/petpal/src/ui/ui.css" />
+  <link rel="stylesheet" href="preview-shell.css" />
+  <style>
+    .pp-shelterCard { display:flex; gap:14px; align-items:flex-start; }
+    .pp-shelterCard__photo { width:88px; height:88px; border-radius:18px; object-fit:cover; background:#eee; }
+    .pp-shelterCard__tag { display:inline-block; font-size:11px; font-weight:800; padding:4px 8px; border-radius:999px; background:rgba(91,55,255,.1); color:#5b37ff; }
+  </style>
+</head>
+<body>
+  <div class="pp-shell">
+    <div class="preview-topnav">
+      <strong>PetPal CARE HUB</strong>
+      <span style="font-size:13px;font-weight:800;border:1px solid #e4e7ec;border-radius:999px;padding:6px 12px;">Menu ▾</span>
+    </div>
+    <div class="pp-main">
+      <div class="pp-grid pp-sheltersPage">
+        <div class="pp-col-12">
+          <header class="pp-pageHeader">
+            <div class="pp-pageHeader__copy">
+              <span class="pp-publicHero__eyebrow" style="display:inline-block;width:fit-content;background:rgba(91,55,255,.12);color:#5b37ff;">Shelters & adopters</span>
+              <h1 class="pp-pageHeader__title">Found strays — adoption board</h1>
+              <p class="pp-pageHeader__sub">Report an animal you found as a stray so shelters and adopters can respond. Listings sync in the cloud for every signed-in user.</p>
+            </div>
+            <a class="pp-pageHeader__back" href="#">← Home</a>
+          </header>
+        </div>
+        <div class="pp-col-12">
+          <div class="pp-card pp-pad">
+            <button type="button" class="pp-expandTrigger" aria-expanded="false">
+              <span class="pp-expandTrigger__icon">+</span>
+              <span class="pp-expandTrigger__text">
+                <span class="pp-expandTrigger__title">Report a found stray</span>
+                <span class="pp-expandTrigger__desc">Open to post a found stray for shelters and adopters to see.</span>
+              </span>
+              <span class="pp-expandTrigger__chev">▼</span>
+            </button>
+          </div>
+        </div>
+        <div class="pp-col-12">
+          <div class="pp-card pp-pad">
+            <h2 class="pp-sectionTitle" style="margin-top:0;">Available strays</h2>
+            <p class="pp-subtle" style="margin-bottom:14px;">Filter by species or browse open listings near you.</p>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;">
+              <button class="pp-btn pp-btnPrimary" type="button">All</button>
+              <button class="pp-btn" type="button">🐕</button>
+              <button class="pp-btn" type="button">🐈</button>
+            </div>
+            <div class="pp-card pp-pad" style="margin-bottom:12px;box-shadow:none;">
+              <div class="pp-shelterCard">
+                <div class="pp-shelterCard__photo" style="display:grid;place-items:center;font-size:32px;">🐕</div>
+                <div>
+                  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                    <strong>Young terrier mix</strong>
+                    <span class="pp-shelterCard__tag">Dog</span>
+                  </div>
+                  <p class="pp-subtle" style="margin:6px 0;">Found near Strovolos industrial area · calm, no collar</p>
+                  <p style="margin:0;font-size:14px;"><strong>Contact:</strong> +357 99 555 123</p>
+                </div>
+              </div>
+            </div>
+            <div class="pp-card pp-pad" style="box-shadow:none;">
+              <div class="pp-shelterCard">
+                <div class="pp-shelterCard__photo" style="display:grid;place-items:center;font-size:32px;">🐈</div>
+                <div>
+                  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                    <strong>Ginger adult cat</strong>
+                    <span class="pp-shelterCard__tag">Cat</span>
+                  </div>
+                  <p class="pp-subtle" style="margin:6px 0;">Found in Lakatamia · friendly, seems socialized</p>
+                  <p style="margin:0;font-size:14px;"><strong>Contact:</strong> adnscut+pet@gmail.com</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

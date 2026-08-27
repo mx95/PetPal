@@ -61,6 +61,8 @@ export const NOINDEX_PREFIXES = [
   '/bookings',
   '/pets',
   '/premium',
+  '/lost-pet',
+  '/shelters',
   '/community',
   '/leaderboard',
   '/activity',

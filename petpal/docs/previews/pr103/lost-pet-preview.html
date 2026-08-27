@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Preview — Lost pet alerts</title>
+  <link rel="stylesheet" href="file:///workspace/petpal/src/ui/ui.css" />
+  <link rel="stylesheet" href="preview-shell.css" />
+</head>
+<body>
+  <div class="pp-shell">
+    <div class="preview-topnav">
+      <strong>PetPal CARE HUB</strong>
+      <span style="font-size:13px;font-weight:800;border:1px solid #e4e7ec;border-radius:999px;padding:6px 12px;">Menu ▾</span>
+    </div>
+    <div class="pp-main">
+      <div class="pp-grid pp-lostPetPage">
+        <div class="pp-col-12">
+          <header class="pp-pageHeader">
+            <div class="pp-pageHeader__copy">
+              <span class="pp-publicHero__eyebrow" style="display:inline-block;width:fit-content;background:rgba(180,35,24,.12);color:#b42318;">Lost pet</span>
+              <h1 class="pp-pageHeader__title">Lost pet alerts</h1>
+              <p class="pp-pageHeader__sub">Urgent posts to help get your pet home: last known area, contact details, and optional reward. Alerts are stored on this device for now. <a class="pp-link" href="#">Add profile photos in My pets.</a></p>
+            </div>
+            <a class="pp-pageHeader__back" href="#">← Home</a>
+          </header>
+        </div>
+        <div class="pp-col-12">
+          <section class="pp-heroCard pp-heroCard--lost">
+            <div class="pp-heroCard__avatar" style="background:rgba(180,35,24,.12);color:#b42318;">
+              <div style="width:64px;height:64px;display:grid;place-items:center;font-size:30px;">🆘</div>
+            </div>
+            <div class="pp-heroCard__copy">
+              <span class="pp-heroCard__eyebrow">How alerts work</span>
+              <h2 class="pp-heroCard__title">Create a clear alert so finders can reach you quickly.</h2>
+              <ul class="pp-heroCard__sub" style="margin:0;padding-left:18px;line-height:1.55;">
+                <li>One-tap call from your contact phone when you add it to the alert</li>
+                <li>Last seen / area text plus optional map coordinates</li>
+                <li>Optional reward line for finders</li>
+              </ul>
+            </div>
+          </section>
+        </div>
+        <div class="pp-col-12">
+          <div class="pp-card pp-pad">
+            <button type="button" class="pp-expandTrigger" aria-expanded="true">
+              <span class="pp-expandTrigger__icon">−</span>
+              <span class="pp-expandTrigger__text">
+                <span class="pp-expandTrigger__title">Create alert</span>
+                <span class="pp-expandTrigger__desc">Fill in the form below. Tap the header to collapse.</span>
+              </span>
+              <span class="pp-expandTrigger__chev is-open">▼</span>
+            </button>
+            <div class="pp-expandPanel">
+              <p class="pp-subtle pp-expandIntro">Pick the missing pet, add a clear description and where they were last seen, then optional coordinates, reward, and phone.</p>
+              <div style="display:grid;gap:12px;">
+                <div><div class="pp-label">Pet</div><div class="pp-input">🐕 Luna</div></div>
+                <div><div class="pp-label">Description</div><div class="pp-input" style="min-height:72px;">Malinois, red collar, responds to Luna</div></div>
+                <div><div class="pp-label">Last place / time seen</div><div class="pp-input" style="min-height:56px;">This morning near Aglantzia park, Nicosia</div></div>
+                <button class="pp-btn pp-btnPrimary" type="button">Publish alert</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="pp-col-12">
+          <h2 class="pp-sectionTitle">Your active alerts</h2>
+          <div class="pp-card pp-pad pp-lostPetAlertCard" style="margin-top:12px;">
+            <div style="display:flex;gap:16px;align-items:flex-start;">
+              <div style="width:84px;height:84px;border-radius:20px;background:linear-gradient(135deg,#ffe4e6,#fecdd3);display:grid;place-items:center;font-size:34px;">🐕</div>
+              <div>
+                <div style="font-size:20px;font-weight:900;">Luna <span class="pp-subtle" style="font-size:13px;">lost</span></div>
+                <p class="pp-subtle" style="font-size:12px;margin:6px 0;">Aug 27, 2026, 6:10 PM</p>
+                <p style="margin:0 0 8px;line-height:1.5;">Malinois, red collar, friendly but shy with strangers.</p>
+                <p style="margin:0;"><strong>Last seen:</strong> Aglantzia park entrance</p>
+                <p style="margin:12px 0 0;"><a class="pp-btn pp-btnPrimary" href="#" style="display:inline-block;text-decoration:none;">Call +357 99 124 491</a></p>
+              </div>
+            </div>
+            <div style="margin-top:12px;"><button class="pp-btn" type="button">Mark as found</button></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

@@ -22,7 +22,11 @@ function emptyUser(uid, extras = {}) {
     firstName: '',
     lastName: '',
     phone: '',
-    accountType: '',
+    accountType: 'individual',
+    profileKind: '',
+    profileName: '',
+    profileStatus: '',
+    profileId: '',
     pets: [],
     ...extras,
   };
@@ -33,9 +37,11 @@ function emptyUser(uid, extras = {}) {
  *   userDocs?: Array<{ id: string, data?: Record<string, unknown> }>,
  *   petDocs?: Array<{ id: string, ownerUid?: string, data?: Record<string, unknown> }>,
  *   publicDocs?: Array<{ id: string, data?: Record<string, unknown> }>,
+ *   companyDocs?: Array<{ id: string, ownerUid?: string, businessName?: string, status?: string, [key: string]: unknown }>,
+ *   shelterDocs?: Array<{ id: string, ownerUid?: string, shelterName?: string, status?: string, [key: string]: unknown }>,
  * }} input
  */
-export function mergeAdminDirectory({ userDocs = [], petDocs = [], publicDocs = [] } = {}) {
+export function mergeAdminDirectory({ userDocs = [], petDocs = [], publicDocs = [], companyDocs = [], shelterDocs = [] } = {}) {
   /** @type {Map<string, ReturnType<typeof emptyUser>>} */
   const usersByUid = new Map();
 
@@ -49,6 +55,56 @@ export function mergeAdminDirectory({ userDocs = [], petDocs = [], publicDocs = 
       phone: str(data.phone) || str(data.phoneNumber),
       accountType: str(data.accountType) || 'individual',
     }));
+  }
+
+  for (const company of companyDocs) {
+    const ownerUid = str(company.ownerUid);
+    if (!ownerUid) continue;
+    if (!usersByUid.has(ownerUid)) {
+      usersByUid.set(
+        ownerUid,
+        emptyUser(ownerUid, {
+          email: str(company.publicEmail),
+          name: str(company.businessName),
+          phone: str(company.phoneNumber),
+          accountType: 'company',
+        })
+      );
+    }
+    const user = usersByUid.get(ownerUid);
+    user.accountType = 'company';
+    user.profileKind = 'company';
+    user.profileName = str(company.businessName);
+    user.profileStatus = str(company.status) || 'pending';
+    user.profileId = str(company.id);
+    if (!user.email && company.publicEmail) user.email = str(company.publicEmail);
+    if (!user.phone && company.phoneNumber) user.phone = str(company.phoneNumber);
+    if (!user.name && company.businessName) user.name = str(company.businessName);
+  }
+
+  for (const shelter of shelterDocs) {
+    const ownerUid = str(shelter.ownerUid);
+    if (!ownerUid) continue;
+    if (!usersByUid.has(ownerUid)) {
+      usersByUid.set(
+        ownerUid,
+        emptyUser(ownerUid, {
+          email: str(shelter.publicEmail),
+          name: str(shelter.shelterName),
+          phone: str(shelter.phoneNumber),
+          accountType: 'shelter',
+        })
+      );
+    }
+    const user = usersByUid.get(ownerUid);
+    user.accountType = 'shelter';
+    user.profileKind = 'shelter';
+    user.profileName = str(shelter.shelterName);
+    user.profileStatus = str(shelter.status) || 'pending';
+    user.profileId = str(shelter.id);
+    if (!user.email && shelter.publicEmail) user.email = str(shelter.publicEmail);
+    if (!user.phone && shelter.phoneNumber) user.phone = str(shelter.phoneNumber);
+    if (!user.name && shelter.shelterName) user.name = str(shelter.shelterName);
   }
 
   /** @type {Map<string, string>} */
@@ -139,6 +195,10 @@ export function filterAdminDirectory(users, queryText) {
       u.lastName,
       u.phone,
       u.accountType,
+      u.profileKind,
+      u.profileName,
+      u.profileStatus,
+      u.profileId,
       ...u.pets.flatMap((p) => [p.name, p.publicId, p.imei, p.id, p.breed]),
     ]
       .filter(Boolean)
@@ -163,13 +223,17 @@ export function publicPetAbsoluteUrl(publicId, origin = '') {
 export async function fetchAdminUsersDirectory() {
   if (!isFirebaseConfigured()) return [];
   const db = getDb();
-  const [usersSnap, publicSnap] = await Promise.all([
+  const [usersSnap, publicSnap, companiesSnap, sheltersSnap] = await Promise.all([
     getDocs(collection(db, 'users')),
     getDocs(collection(db, 'publicPets')),
+    getDocs(collection(db, 'companies')),
+    getDocs(collection(db, 'shelters')),
   ]);
 
   const userDocs = usersSnap.docs.map((d) => ({ id: d.id, data: d.data() || {} }));
   const publicDocs = publicSnap.docs.map((d) => ({ id: d.id, data: d.data() || {} }));
+  const companyDocs = companiesSnap.docs.map((d) => ({ id: d.id, ...(d.data() || {}) }));
+  const shelterDocs = sheltersSnap.docs.map((d) => ({ id: d.id, ...(d.data() || {}) }));
 
   let petDocs = [];
   try {
@@ -192,5 +256,5 @@ export async function fetchAdminUsersDirectory() {
     );
   }
 
-  return mergeAdminDirectory({ userDocs, petDocs, publicDocs });
+  return mergeAdminDirectory({ userDocs, petDocs, publicDocs, companyDocs, shelterDocs });
 }

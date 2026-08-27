@@ -28,6 +28,8 @@ export const APP_ROUTE_CATALOG = [
   { path: '/shop', labelKey: 'docs.route.shop.label', descKey: 'docs.route.shop.desc', auth: 'public', mvpNav: true },
   { path: '/payment/success', labelKey: 'docs.route.paymentSuccess.label', descKey: 'docs.route.paymentSuccess.desc', auth: 'auth', mvpNav: false },
   { path: '/premium', labelKey: 'docs.route.premium.label', descKey: 'docs.route.premium.desc', auth: 'auth', mvpNav: false },
+  { path: '/lost-pet', labelKey: 'nav.lostPet', descKey: 'docs.route.premiumLost.desc', auth: 'auth', mvpNav: false },
+  { path: '/shelters', labelKey: 'nav.shelters', descKey: 'docs.route.premiumStray.desc', auth: 'auth', mvpNav: false },
   { path: '/premium/lost', labelKey: 'docs.route.premiumLost.label', descKey: 'docs.route.premiumLost.desc', auth: 'auth', mvpNav: false },
   { path: '/premium/stray', labelKey: 'docs.route.premiumStray.label', descKey: 'docs.route.premiumStray.desc', auth: 'auth', mvpNav: false },
   { path: '/premium/breeding', labelKey: 'docs.route.premiumBreeding.label', descKey: 'docs.route.premiumBreeding.desc', auth: 'auth', mvpNav: false },
