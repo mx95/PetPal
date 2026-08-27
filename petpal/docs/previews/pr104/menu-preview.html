@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Preview — Menu (PR #104)</title>
+  <title>Preview — Menu icons (PR #104)</title>
   <link rel="stylesheet" href="file:///workspace/petpal/src/ui/ui.css" />
   <link rel="stylesheet" href="preview-shell.css" />
 </head>
@@ -16,11 +16,11 @@
         <div class="preview-menu-item"><span>📬</span><span>Inbox</span></div>
         <div class="preview-menu-item"><span>🐾</span><span>My Pets</span></div>
         <div class="preview-menu-item is-highlight">
-          <img src="file:///workspace/petpal/public/images/menu/lost-pets.svg" width="28" height="28" alt="" />
+          <span class="pp-menuActionIcon pp-menuActionIcon--lost">🚨</span>
           <span>Lost Pets</span>
         </div>
         <div class="preview-menu-item is-highlight">
-          <img src="file:///workspace/petpal/public/images/menu/shelters.svg" width="28" height="28" alt="" />
+          <span class="pp-menuActionIcon pp-menuActionIcon--shelter">🐾</span>
           <span>Shelters</span>
         </div>
         <div class="preview-menu-item"><span>🏃</span><span>Activity</span></div>
@@ -29,11 +29,11 @@
         <div class="preview-menu-item" style="color:#dc2626;"><span>↩️</span><span>Log out</span></div>
       </div>
     </div>
-    <div class="pp-main" style="opacity:.4;filter:blur(1px);pointer-events:none;">
+    <div class="pp-main" style="opacity:.35;pointer-events:none;filter:blur(1px);">
       <p class="pp-subtle">Background: Activity hub</p>
       <div class="pp-card pp-pad" style="height:360px;"></div>
     </div>
-    <nav class="preview-bottom-nav" aria-label="Bottom navigation unchanged">
+    <nav class="preview-bottom-nav">
       <div class="preview-bottom-nav__item">Activity</div>
       <div class="preview-bottom-nav__item">Bookings</div>
       <div class="preview-bottom-nav__item is-live">Live</div>

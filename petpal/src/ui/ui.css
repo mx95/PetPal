@@ -24359,8 +24359,7 @@ html[lang='ru'] .pp-brand {
   border-radius: 999px; border: 1px solid rgba(16,24,40,.12); padding: 8px 14px; font-weight: 800; background: #fff;
 }
 .pp-chip.is-on { background: #5b37ff; color: #fff; border-color: transparent; }
-.pp-menuIcon { width: 22px; display: inline-flex; align-items: center; justify-content: center; color: #5b37ff; }
-.pp-menuFeatureIcon {
+.pp-menuActionIcon {
   width: 34px;
   height: 34px;
   display: inline-flex;
@@ -24368,10 +24367,17 @@ html[lang='ru'] .pp-brand {
   justify-content: center;
   flex-shrink: 0;
   border-radius: 12px;
+  font-size: 18px;
+  line-height: 1;
 }
-.pp-menuFeatureIcon__img { display: block; width: 28px; height: 28px; }
-.pp-menuFeatureIcon--lost { background: transparent; }
-.pp-menuFeatureIcon--shelter { background: transparent; }
+.pp-menuActionIcon--lost {
+  background: rgba(180, 35, 24, 0.12);
+  color: #b42318;
+}
+.pp-menuActionIcon--shelter {
+  background: rgba(217, 161, 0, 0.18);
+  color: #b54708;
+}
 .pp-visuallyHidden {
   position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
 }
