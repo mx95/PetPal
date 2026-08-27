@@ -134,11 +134,10 @@ export default function HomeScreen() {
             <div className="pp-homeWelcome__bannerGreeting">
               <p className="pp-homeWelcome__eyebrow">{t('home.publicHero.eyebrow')}</p>
               <h1 id="home-hero-title" className="pp-homeWelcome__title">
-                {t('home.publicHero.headline')}
+                {t('home.publicHero.headlineBefore')}
+                <br />
+                {t('home.publicHero.headlineAfter')}
               </h1>
-            </div>
-            <div className="pp-homeWelcome__bannerBody">
-              <p className="pp-homeWelcome__lead">{t('home.publicHero.sub')}</p>
             </div>
           </div>
         </div>
