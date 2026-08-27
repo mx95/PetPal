@@ -11,6 +11,7 @@ import { RouteSeo } from './components/RouteSeo';
 import BottomNav from './components/BottomNav';
 import TopNav from './components/TopNav';
 import ShopCartMobilePanel from './components/shop/ShopCartMobilePanel';
+import { InboxNotificationHost } from './components/InboxNotificationHost';
 import { MedicationReminderHost } from './components/MedicationReminderHost';
 import { OpeningScreen } from './components/OpeningScreen';
 import {
@@ -102,6 +103,7 @@ function App() {
       <ScrollToTop />
       <RouteSeo />
       <MedicationReminderHost />
+      <InboxNotificationHost />
       <TopNav />
       <ShopCartMobilePanel />
       <CheckoutSuccessBridge />
