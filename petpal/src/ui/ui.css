@@ -20897,13 +20897,29 @@ html[data-theme="dark"] .pp-nearby-list > li {
   gap: 0.5rem;
   min-height: 48px;
   width: 100%;
+}
+
+.pp-shopCard__payBtn.pp-btn--primary,
+.pp-shopCard__payBtn.pp-btnPrimary {
   color: #fff;
 }
 
-.pp-shopCard__payBtn:hover:not(:disabled) {
+.pp-shopCard__payBtn.pp-btn--primary:hover:not(:disabled),
+.pp-shopCard__payBtn.pp-btnPrimary:hover:not(:disabled) {
   background: linear-gradient(135deg, #5126ff 0%, #2f6fd4 100%);
   color: #fff;
   border-color: transparent;
+}
+
+.pp-shopCard__payBtn.pp-btn--ghost {
+  color: #344054;
+  background: rgba(255, 255, 255, 0.94);
+}
+
+.pp-shopCard__payBtn.pp-btn--ghost:hover:not(:disabled) {
+  background: rgba(16, 24, 40, 0.04);
+  color: #344054;
+  border-color: rgba(16, 24, 40, 0.18);
 }
 
 .pp-shopCard__payBtn--loading {
