@@ -38,14 +38,18 @@ export default function LostPetAlerts() {
   const selectedPet = pets.find((p) => p.id === petId) || null;
 
   useEffect(() => {
-    if (!selectedPet) return;
-    if (selectedPet.ownerPhone && !contactPhone) setContactPhone(selectedPet.ownerPhone);
-    if (photoDrafts.length) return;
-    const seedUrl = selectedPet.photoUrl || selectedPet.photoDataUrl;
-    if (seedUrl) {
-      setPhotoDrafts([{ id: 'seed', previewUrl: seedUrl, photoUrl: seedUrl, isPrimary: true }]);
+    if (!petId) {
+      setPhotoDrafts([]);
+      return;
     }
-  }, [selectedPet, contactPhone, photoDrafts.length]);
+    const pet = pets.find((p) => p.id === petId);
+    if (!pet) return;
+    if (pet.ownerPhone) setContactPhone((prev) => prev || pet.ownerPhone);
+    const seedUrl = pet.photoUrl || pet.photoDataUrl;
+    setPhotoDrafts(
+      seedUrl ? [{ id: 'seed', previewUrl: seedUrl, photoUrl: seedUrl, isPrimary: true }] : []
+    );
+  }, [petId, pets]);
 
   async function onSubmit(e) {
     e.preventDefault();
@@ -157,7 +161,7 @@ export default function LostPetAlerts() {
                     <label className="pp-label" htmlFor={petSelectId}>
                       {t('lostPet.pet')}
                     </label>
-                    <PrettySelect id={petSelectId} value={petId} onChange={setPetId} required>
+                    <PrettySelect id={petSelectId} value={petId} onChange={(e) => setPetId(e.target.value)} required>
                       <option value="">{t('lostPet.selectPet')}</option>
                       {sortedPets.map((p) => (
                         <option key={p.id} value={p.id}>
