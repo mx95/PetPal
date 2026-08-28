@@ -28,7 +28,7 @@ function accountMenuLinkClassName() {
 
 export default function TopNav() {
   const { user, signOut } = useAuth();
-  const { isApprovedCompany, isAdmin, profile } = useCompany();
+  const { isApprovedCompany, isAdmin, profile, isBusinessHome } = useCompany();
   const { unreadCount } = useInbox();
   const { t } = useI18n();
   const navigate = useNavigate();
@@ -194,15 +194,17 @@ export default function TopNav() {
                     <MenuActionIcon tone="shelter" />
                     <span>{t('nav.shelters')}</span>
                   </Link>
-                  <Link
-                    className={accountMenuLinkClassName()}
-                    to="/activity"
-                    role="menuitem"
-                    onClick={() => setAccountMenuOpen(false)}
-                  >
-                    <MenuActionIcon tone="activity" />
-                    <span>{t('nav.activity')}</span>
-                  </Link>
+                  {isBusinessHome || isAdmin ? (
+                    <Link
+                      className={accountMenuLinkClassName()}
+                      to="/activity"
+                      role="menuitem"
+                      onClick={() => setAccountMenuOpen(false)}
+                    >
+                      <MenuActionIcon tone="activity" />
+                      <span>{t('nav.activity')}</span>
+                    </Link>
+                  ) : null}
                   {isAdmin ? (
                     <Link
                       className={accountMenuLinkClassName()}

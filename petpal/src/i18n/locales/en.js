@@ -403,6 +403,14 @@ const en = {
     needKm: 'Need {n} km today',
     gotIt: 'Got it',
     doneTag: 'Done',
+    missions: {
+      check_in: { label: 'Daily check-in' },
+      hydration: { label: 'Water bowl refresh' },
+      mini_walk: { label: '10-minute stroll' },
+      walk_5km: { label: '5 km walk' },
+      treat: { label: 'Training / treat moment' },
+      play: { label: 'Play or cuddle time' },
+    },
     walkTitle: 'Log a walk',
     walkSub: 'Distance feeds today’s total, streaks, and optional sharing.',
     suggestedWalksTitle: 'Possible walks from GPS',
@@ -1765,6 +1773,7 @@ const en = {
     firebaseWarn:
       'Firebase project is not configured in this build, so the leaderboard cannot sync. Set REACT_APP_FIREBASE_* in .env and deploy Firestore security rules to enable it.',
     optInCheckbox: 'Show my walk distances on the global leaderboard',
+    optOutHint: 'Sharing is on by default. Turn off to hide your distances.',
     totalsLine:
       'Your current totals: today {today} km, this week {week} km, this year {year} km.',
     rankSuffix: '· your rank (this view): #{rank}',

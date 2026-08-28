@@ -2,6 +2,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useR
 import { doc, onSnapshot } from 'firebase/firestore';
 import { useAuth } from '../auth/AuthProvider';
 import { useGame } from '../game/GameContext';
+import { usePets } from '../pets/PetsContext';
 import { getDb, isFirebaseConfigured } from '../firebase';
 import { PUBLIC_WALK_COL, writePublicWalkStats } from './publicWalkFirestore';
 
@@ -10,22 +11,29 @@ const PublicWalkContext = createContext(null);
 export function PublicWalkProvider({ children }) {
   const { user } = useAuth();
   const uid = user?.uid ?? null;
+  const { pets } = usePets();
   const {
     walkTotals,
     walkLog,
+    daily,
     level,
     achievementXp,
     achievementCount,
     lifetimeAchievementDefs: lifeDefs,
     lifetimeStats,
   } = useGame();
-  const [shareOnLeaderboard, setShareState] = useState(false);
+  const [shareOnLeaderboard, setShareState] = useState(true);
   const [shareLoaded, setShareLoaded] = useState(false);
   const [lastSyncError, setLastSyncError] = useState(null);
 
+  const primaryPetName = useMemo(() => {
+    const first = pets?.[0];
+    return first?.name?.trim?.() || '';
+  }, [pets]);
+
   useEffect(() => {
     if (!uid || !isFirebaseConfigured()) {
-      setShareState(false);
+      setShareState(true);
       setShareLoaded(true);
       return;
     }
@@ -34,16 +42,16 @@ export function PublicWalkProvider({ children }) {
       ref,
       (snap) => {
         if (!snap.exists()) {
-          setShareState(false);
+          setShareState(true);
         } else {
           const s = snap.data();
-          setShareState(s.shareWalkDistance === true);
+          setShareState(s.shareWalkDistance !== false);
         }
         setShareLoaded(true);
       },
       () => {
         setShareLoaded(true);
-        setShareState(false);
+        setShareState(true);
       }
     );
     return () => unsub();
@@ -66,6 +74,9 @@ export function PublicWalkProvider({ children }) {
           achievementCount,
           achievementTotal: Array.isArray(lifeDefs) ? lifeDefs.length : 0,
           lifetimeKm: lifetimeStats?.km || 0,
+          petName: primaryPetName,
+          dailyDay: daily?.day,
+          dailyDone: daily?.done,
         });
       } catch (e) {
         setShareState(previous);
@@ -73,24 +84,38 @@ export function PublicWalkProvider({ children }) {
         throw e;
       }
     },
-    [user, walkTotals, shareOnLeaderboard, level, achievementXp, achievementCount, lifeDefs, lifetimeStats]
+    [
+      user,
+      walkTotals,
+      shareOnLeaderboard,
+      level,
+      achievementXp,
+      achievementCount,
+      lifeDefs,
+      lifetimeStats,
+      primaryPetName,
+      daily,
+    ]
   );
 
   const debouncRef = useRef(null);
   useEffect(() => {
-    if (!uid || !user || !shareOnLeaderboard || !isFirebaseConfigured()) return;
+    if (!uid || !user || !shareLoaded || !isFirebaseConfigured()) return;
     if (debouncRef.current) clearTimeout(debouncRef.current);
     debouncRef.current = setTimeout(() => {
       writePublicWalkStats({
         uid,
         user,
-        shareWalkDistance: true,
+        shareWalkDistance: shareOnLeaderboard,
         walkTotals,
         level,
         achievementXp,
         achievementCount,
         achievementTotal: Array.isArray(lifeDefs) ? lifeDefs.length : 0,
         lifetimeKm: lifetimeStats?.km || 0,
+        petName: primaryPetName,
+        dailyDay: daily?.day,
+        dailyDone: daily?.done,
       })
         .then(() => setLastSyncError(null))
         .catch((e) => setLastSyncError(e?.message || 'Sync failed'));
@@ -98,7 +123,21 @@ export function PublicWalkProvider({ children }) {
     return () => {
       if (debouncRef.current) clearTimeout(debouncRef.current);
     };
-  }, [uid, user, shareOnLeaderboard, walkLog, walkTotals, level, achievementXp, achievementCount, lifeDefs, lifetimeStats]);
+  }, [
+    uid,
+    user,
+    shareLoaded,
+    shareOnLeaderboard,
+    walkLog,
+    walkTotals,
+    daily,
+    level,
+    achievementXp,
+    achievementCount,
+    lifeDefs,
+    lifetimeStats,
+    primaryPetName,
+  ]);
 
   const value = useMemo(
     () => ({
