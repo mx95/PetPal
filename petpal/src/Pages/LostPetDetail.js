@@ -4,9 +4,8 @@ import PhotoGallery from '../components/media/PhotoGallery';
 import { useAuth } from '../auth/AuthProvider';
 import { useI18n } from '../i18n/I18nContext';
 import { useLostPet } from '../lostPet/LostPetContext';
-import { canMarkLostPetFound } from '../lostPet/lostPetUtils';
+import { canMarkLostPetFound, formatLostPetReward, lostPetSpeciesLabel } from '../lostPet/lostPetUtils';
 import { formatWhen, mapsLink, shareListing, telHref } from '../media/photoUploadUtils';
-import { lostPetSpeciesLabel } from '../lostPet/lostPetUtils';
 
 export default function LostPetDetail() {
   const { alertId } = useParams();
@@ -104,7 +103,7 @@ export default function LostPetDetail() {
           </div>
           {alert.reward ? (
             <p style={{ marginTop: 12 }}>
-              <strong>{t('lostPet.reward')}:</strong> {alert.reward}
+              <strong>{t('lostPet.rewardLabel')}</strong> {formatLostPetReward(alert.reward)}
             </p>
           ) : null}
           {alert.additionalInfo ? (

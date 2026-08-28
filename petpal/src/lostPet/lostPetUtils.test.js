@@ -1,4 +1,4 @@
-import { filterActiveLostPetFeed, isActiveLostPetStatus, validateLostPetInput } from './lostPetUtils';
+import { filterActiveLostPetFeed, formatLostPetReward, isActiveLostPetStatus, validateLostPetInput } from './lostPetUtils';
 
 describe('lostPetUtils', () => {
   it('validates required lost pet fields', () => {
@@ -24,5 +24,11 @@ describe('lostPetUtils', () => {
   it('detects active statuses', () => {
     expect(isActiveLostPetStatus('active')).toBe(true);
     expect(isActiveLostPetStatus('found')).toBe(false);
+  });
+
+  it('formats numeric rewards as euros on published alerts', () => {
+    expect(formatLostPetReward('2500')).toBe('€2,500');
+    expect(formatLostPetReward('€50')).toBe('€50');
+    expect(formatLostPetReward('thank-you dinner')).toBe('thank-you dinner');
   });
 });

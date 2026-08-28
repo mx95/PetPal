@@ -42,6 +42,28 @@ export function filterActiveLostPetFeed(rows) {
 }
 
 /**
+ * @param {string} raw
+ * @returns {string}
+ */
+export function formatLostPetReward(raw) {
+  const s = String(raw || '').trim();
+  if (!s) return '';
+  if (s.includes('€')) return s;
+  const numericOnly = s.replace(/[\s,]/g, '');
+  if (/^\d+(\.\d{1,2})?$/.test(numericOnly)) {
+    const num = Number(numericOnly);
+    if (num > 0) {
+      return new Intl.NumberFormat('en-IE', {
+        style: 'currency',
+        currency: 'EUR',
+        maximumFractionDigits: Number.isInteger(num) ? 0 : 2,
+      }).format(num);
+    }
+  }
+  return s;
+}
+
+/**
  * @param {string} categoryId
  * @param {(key: string) => string} t
  */
