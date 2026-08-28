@@ -6311,7 +6311,8 @@ html[data-theme="dark"] .pp-timeRangeRow--readOnly .pp-timeRangeRow__control {
   z-index: 2;
   min-width: 0;
   max-width: min(34rem, 52%);
-  padding: 4px clamp(18px, 2.4vw, 28px) clamp(16px, 2.6vw, 24px) clamp(22px, 3.2vw, 36px);
+  flex: 0 0 auto;
+  padding: clamp(18px, 2.4vw, 24px) clamp(18px, 2.4vw, 28px) 4px clamp(22px, 3.2vw, 36px);
 }
 
 .pp-homeWelcome__bannerCopy {
@@ -6323,9 +6324,9 @@ html[data-theme="dark"] .pp-timeRangeRow--readOnly .pp-timeRangeRow__control {
 .pp-homeWelcome__bannerActions {
   position: relative;
   z-index: 2;
-  margin-top: 0;
+  margin-top: auto;
   max-width: min(34rem, 52%);
-  padding: clamp(18px, 2.4vw, 24px) clamp(18px, 2.4vw, 28px) 6px clamp(22px, 3.2vw, 36px);
+  padding: 6px clamp(18px, 2.4vw, 28px) clamp(16px, 2.6vw, 24px) clamp(22px, 3.2vw, 36px);
 }
 
 .pp-homeWelcome__bannerActions .pp-btn--ghost {
@@ -6385,7 +6386,7 @@ html[data-theme="dark"] .pp-timeRangeRow--readOnly .pp-timeRangeRow__control {
     height: auto;
     z-index: 2;
     pointer-events: auto;
-    padding: 4px 18px 16px;
+    padding: 18px 18px 4px;
     max-width: min(100%, 26rem);
   }
 
@@ -6417,9 +6418,9 @@ html[data-theme="dark"] .pp-timeRangeRow--readOnly .pp-timeRangeRow__control {
     order: unset;
     position: relative;
     z-index: 2;
-    margin-top: 0;
+    margin-top: auto;
     max-width: none;
-    padding: 18px 16px 6px;
+    padding: 6px 16px 16px;
     background: transparent;
   }
 
