@@ -1,18 +1,18 @@
 /** Daily micro-missions: small XP, once per day per mission (client-only until backend). */
 
-/** @type {Array<{ id: string, label: string, xp: number, minWalkKmToday?: number, description?: string }>} */
+/** @type {Array<{ id: string, icon: string, xp: number, minWalkKmToday?: number, description?: string }>} */
 export const DAILY_MISSIONS = [
-  { id: 'check_in', label: 'Daily check-in', xp: 4 },
-  { id: 'hydration', label: 'Water bowl refresh', xp: 5 },
-  { id: 'mini_walk', label: '10-minute stroll', xp: 8 },
+  { id: 'check_in', icon: '☀️', xp: 4 },
+  { id: 'hydration', icon: '💧', xp: 5 },
+  { id: 'mini_walk', icon: '🚶', xp: 8 },
   {
     id: 'walk_5km',
-    label: '5 km walk',
+    icon: '🗺️',
     xp: 22,
     minWalkKmToday: 5,
   },
-  { id: 'treat', label: 'Training / treat moment', xp: 4 },
-  { id: 'play', label: 'Play or cuddle time', xp: 4 },
+  { id: 'treat', icon: '🦴', xp: 4 },
+  { id: 'play', icon: '🎾', xp: 4 },
 ];
 
 export function dayKey() {

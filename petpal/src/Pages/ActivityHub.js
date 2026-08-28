@@ -154,22 +154,29 @@ export default function ActivityHub() {
     const needKm = m.minWalkKmToday;
     const dayKm = displayTodayKm;
     const walkMet = needKm == null || dayKm >= needKm;
+    const label = t(`activityHub.missions.${m.id}.label`);
     return (
       <div key={m.id} className={`pp-hubMission ${done ? 'pp-hubMission--done' : ''}`}>
         <div className="pp-hubMission__body">
-          <span className="pp-hubMission__label">{m.label}</span>
+          <span className="pp-hubMission__icon" aria-hidden>
+            {m.icon}
+          </span>
+          <span className="pp-hubMission__label">{label}</span>
           <span className="pp-hubMission__xp">+{m.xp} XP</span>
-          {m.description ? <span className="pp-hubMission__desc">{m.description}</span> : null}
         </div>
-        {done ? null : needKm != null ? (
-          <button type="button" className="pp-btn pp-btnPrimary" disabled={!walkMet} onClick={() => onCompleteMission(m.id)}>
-            {walkMet ? t('activityHub.claimReward') : t('activityHub.needKm', { n: needKm })}
-          </button>
-        ) : (
-          <button type="button" className="pp-btn pp-btnPrimary" onClick={() => onCompleteMission(m.id)}>
-            {t('activityHub.gotIt')}
-          </button>
-        )}
+        <div className="pp-hubMission__action">
+          {done ? (
+            <span className="pp-hubMission__doneTag">{t('activityHub.doneTag')}</span>
+          ) : needKm != null ? (
+            <button type="button" className="pp-btn pp-btnPrimary" disabled={!walkMet} onClick={() => onCompleteMission(m.id)}>
+              {walkMet ? t('activityHub.claimReward') : t('activityHub.needKm', { n: needKm })}
+            </button>
+          ) : (
+            <button type="button" className="pp-btn pp-btnPrimary" onClick={() => onCompleteMission(m.id)}>
+              {t('activityHub.gotIt')}
+            </button>
+          )}
+        </div>
       </div>
     );
   };

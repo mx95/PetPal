@@ -1,11 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
 import { useI18n } from '../i18n/I18nContext';
-import { useGame } from '../game/GameContext';
 import { usePublicWalk } from '../leaderboard/PublicWalkContext';
 import { fetchPublicLeaderboard } from '../leaderboard/publicWalkFirestore';
-import { EmptyState, PageContainer, PetIllustration, SecondaryButton, SegmentedTabs, SkeletonCard } from '../components/ui';
+import { leaderboardRowLabel } from '../leaderboard/leaderboardLabels';
+import { EmptyState, PageContainer, PetIllustration, SegmentedTabs, SkeletonCard } from '../components/ui';
 
 function formatKm(n) {
   if (n == null || Number.isNaN(n)) return '0.0';
@@ -59,7 +58,7 @@ function RankBadge({ rank, compact = false }) {
  */
 function WalkLeaderboardRow({ row, rank, km, maxKm, isYou, t }) {
   const pct = Math.min(100, Math.round((km / maxKm) * 100));
-  const label = String(row.displayName || '?');
+  const label = leaderboardRowLabel(row);
   return (
     <li
       className={`pp-lb-row ${isYou ? 'pp-lb-row--me' : ''} ${rank <= 3 ? `pp-lb-row--place-${rank}` : ''}`}
@@ -102,7 +101,6 @@ function LbSurface({ children, className = '', hover = true }) {
 export default function Leaderboard() {
   const { t } = useI18n();
   const { user } = useAuth();
-  const { walkTotals } = useGame();
   const { shareOnLeaderboard, shareLoaded, setShareOnLeaderboard, lastSyncError, isFirestoreEnabled } = usePublicWalk();
   const [period, setPeriod] = useState('week');
   const [rows, setRows] = useState([]);
@@ -147,17 +145,15 @@ export default function Leaderboard() {
   }, [rows, user?.uid]);
 
   const achievementRows = useMemo(() => {
-    return [...rows]
-      .filter((r) => (Number(r.achievementXp) || 0) > 0 || (Number(r.achievementCount) || 0) > 0)
-      .sort((a, b) => {
-        const ax = Number(a.achievementXp) || 0;
-        const bx = Number(b.achievementXp) || 0;
-        if (bx !== ax) return bx - ax;
-        const ac = Number(a.achievementCount) || 0;
-        const bc = Number(b.achievementCount) || 0;
-        if (bc !== ac) return bc - ac;
-        return (Number(b.level) || 0) - (Number(a.level) || 0);
-      });
+    return [...rows].sort((a, b) => {
+      const ax = Number(a.achievementXp) || 0;
+      const bx = Number(b.achievementXp) || 0;
+      if (bx !== ax) return bx - ax;
+      const ac = Number(a.achievementCount) || 0;
+      const bc = Number(b.achievementCount) || 0;
+      if (bc !== ac) return bc - ac;
+      return (Number(b.level) || 0) - (Number(a.level) || 0);
+    });
   }, [rows]);
 
   const currentPeriodLabel = useMemo(() => periods.find((p) => p.id === period)?.label || '', [periods, period]);
@@ -194,25 +190,12 @@ export default function Leaderboard() {
             <div>
               <span className="mb-4 inline-flex rounded-full bg-petpal-soft px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-petpal-lilac">{t('leaderboardPage.rankingsHeading')}</span>
               <h1 className="text-4xl font-black tracking-[-0.06em] text-petpal-ink sm:text-6xl">{t('leaderboardPage.heroTitle')}</h1>
-              <p className="mt-4 max-w-2xl text-lg leading-8 text-petpal-muted">{t('leaderboardPage.heroSub')}</p>
-              <p className="mt-4 max-w-2xl text-sm leading-6 text-slate-500">
-                {t('leaderboardPage.introStart')}{' '}
-                <Link to="/dashboard" className="font-black text-petpal-lilac">
-                  {t('leaderboardPage.introDashLink')}
-                </Link>
-                {t('leaderboardPage.introEnd')}
-              </p>
-              <SecondaryButton to="/dashboard" className="mt-6">
-                {t('common.backDashboard')}
-              </SecondaryButton>
             </div>
             <PetIllustration variant="trophy" className="mx-auto h-56 w-56" />
           </div>
         </section>
 
         <LbSurface hover={false} className="pp-lb-privacy">
-          <h2 className="pp-lb-h2">{t('leaderboardPage.privacyHeading')}</h2>
-          <p className="pp-lb-lead">{t('leaderboardPage.privacyBody')}</p>
           {!isFirestoreEnabled ? (
             <p className="pp-lb-warn">{t('leaderboardPage.firebaseWarn')}</p>
           ) : (
@@ -230,16 +213,6 @@ export default function Leaderboard() {
             </div>
           )}
           {lastSyncError ? <p className="pp-lb-warn pp-lb-warn--mt">{lastSyncError}</p> : null}
-          <p className="pp-lb-meta">
-            {t('leaderboardPage.totalsLine', {
-              today: formatKm(walkTotals.day),
-              week: formatKm(walkTotals.week),
-              year: formatKm(walkTotals.year),
-            })}
-            {shareOnLeaderboard && yourRank != null ? (
-              <> {t('leaderboardPage.rankSuffix', { rank: yourRank })}</>
-            ) : null}
-          </p>
         </LbSurface>
 
         <LbSurface className="pp-lb-toolbar">
@@ -283,13 +256,14 @@ export default function Leaderboard() {
                   );
                 }
                 const isYou = r.id === user?.uid;
+                const label = leaderboardRowLabel(r);
                 return (
                   <div key={r.id} className={`pp-lb-podium__block ${heights[idx]} ${isYou ? 'pp-lb-podium__block--me' : ''}`}>
                     <span className="pp-lb-podium__medal" aria-hidden>
                       {medals[idx]}
                     </span>
-                    <LbAvatar name={r.displayName} variant="podium" />
-                    <span className="pp-lb-podium__name">{r.displayName}</span>
+                    <LbAvatar name={label} variant="podium" />
+                    <span className="pp-lb-podium__name">{label}</span>
                     <span className="pp-lb-podium__km">
                       {formatKm(r[key])} {t('leaderboardPage.tblKmSuffix')}
                     </span>
@@ -316,7 +290,7 @@ export default function Leaderboard() {
                   </span>
                 </div>
               </div>
-              <LbAvatar name={myRow.displayName} variant="me" />
+              <LbAvatar name={leaderboardRowLabel(myRow)} variant="me" />
             </div>
             {gapKm != null && gapKm > 0 && aheadRow ? (
               <p className="pp-lb-meCard__hint">
@@ -356,38 +330,24 @@ export default function Leaderboard() {
         <section className="pp-lb-section">
           <LbSurface hover={false} className="pp-lb-ach">
             <h2 className="pp-lb-h2">{t('leaderboardPage.achTitle')}</h2>
-            <p className="pp-lb-lead pp-lb-lead--tight">{t('leaderboardPage.achIntroStart')}</p>
             {!loading && !loadError && achievementRows.length === 0 && isFirestoreEnabled ? (
               <p className="pp-lb-muted">{t('leaderboardPage.achEmpty')}</p>
             ) : null}
             <ul className="pp-lb-achRows">
               {achievementRows.map((r, i) => {
                 const isYou = r.id === user?.uid;
-                const ax = Math.round(Number(r.achievementXp) || 0);
-                const ac = Math.round(Number(r.achievementCount) || 0);
-                const at = Math.round(Number(r.achievementTotal) || 0);
-                const lvl = Math.max(1, Math.round(Number(r.level) || 1));
+                const label = leaderboardRowLabel(r);
                 return (
                   <li key={`ach-${r.id}`} className={`pp-lb-achRow ${isYou ? 'pp-lb-achRow--me' : ''}`}>
                     <div className="pp-lb-achRow__rank">
                       <RankBadge rank={i + 1} compact />
                     </div>
-                    <LbAvatar name={r.displayName} variant="row" />
+                    <LbAvatar name={label} variant="row" />
                     <div className="pp-lb-achRow__main">
                       <span className="pp-lb-achRow__name">
-                        {r.displayName}
+                        {label}
                         {isYou ? <span className="pp-lb-row__you">{t('leaderboardPage.tblYouBadge')}</span> : null}
                       </span>
-                      <div className="pp-lb-achRow__stats">
-                        <span>{ax} XP</span>
-                        <span>
-                          {ac}
-                          {at > 0 ? ` / ${at}` : ''} {t('leaderboardPage.achTblBadges')}
-                        </span>
-                        <span>
-                          {t('leaderboardPage.achTblLevel')} {lvl}
-                        </span>
-                      </div>
                     </div>
                   </li>
                 );

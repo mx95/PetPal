@@ -15,6 +15,7 @@ import {
   xpToNextLevel,
 } from './ownerGame';
 import { loadGameState, saveGameState } from './gameStorage';
+import { loadRemoteDailyProgress } from './gameFirestore';
 import { localDayKey, walkTotalsFromLog } from '../walk/walkStats';
 import { filesToResizedDataUrls, MAX_PHOTOS_PER_WALK_SESSION } from '../walk/walkPhotos';
 
@@ -109,6 +110,27 @@ export function GameProvider({ children }) {
       return;
     }
     setState(normalizeState(loadGameState(uid)));
+    let cancelled = false;
+    (async () => {
+      const remoteDaily = await loadRemoteDailyProgress(uid);
+      if (cancelled || !remoteDaily) return;
+      setState((prev) => {
+        const normalized = normalizeState(prev);
+        if (normalized.daily.day !== remoteDaily.day) {
+          const next = { ...normalized, daily: remoteDaily };
+          saveGameState(uid, next);
+          return next;
+        }
+        const merged = [...new Set([...(normalized.daily.done || []), ...remoteDaily.done])];
+        if (merged.length === (normalized.daily.done || []).length) return normalized;
+        const next = { ...normalized, daily: { day: remoteDaily.day, done: merged } };
+        saveGameState(uid, next);
+        return next;
+      });
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [uid]);
 
   const persist = useCallback(
@@ -330,6 +352,7 @@ export function GameProvider({ children }) {
       nextMax,
       completeDaily,
       DAILY_MISSIONS,
+      daily: state.daily,
       dailyDone: dailyDoneSet,
       isDailyDone: (id) => dailyDoneSet.has(id),
       lifetimeDailyDone: state.lifetimeDailyDone,

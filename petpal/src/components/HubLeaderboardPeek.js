@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
 import { useI18n } from '../i18n/I18nContext';
 import { fetchPublicLeaderboard } from '../leaderboard/publicWalkFirestore';
+import { leaderboardRowLabel } from '../leaderboard/leaderboardLabels';
 
 function formatKm(n) {
   if (n == null || Number.isNaN(n)) return '0.0';
@@ -66,7 +67,7 @@ export default function HubLeaderboardPeek() {
                     {(r.displayName || '?').charAt(0).toUpperCase()}
                   </span>
                 </div>
-                <span className="pp-hubLb__name">{r.displayName}</span>
+                <span className="pp-hubLb__name">{leaderboardRowLabel(r)}</span>
                 <span className="pp-hubLb__km">
                   {formatKm(r.kmWeek)} {t('leaderboardPage.tblKmSuffix')}
                 </span>

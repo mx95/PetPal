@@ -9,11 +9,8 @@ export function displayNameForUser(user) {
 }
 
 /**
- * Write or clear a user's public leaderboard row.
- *
- * When `shareWalkDistance` is true we also publish summary game stats
- * (level, achievement XP, achievement count) so other boards can rank
- * caregivers by progression — not just kilometers.
+ * Write a user's walk / achievement / daily-mission snapshot.
+ * Km and daily progress are always stored; `shareWalkDistance` controls public listing.
  *
  * @param {{
  *   uid: string,
@@ -25,6 +22,9 @@ export function displayNameForUser(user) {
  *   achievementCount?: number,
  *   achievementTotal?: number,
  *   lifetimeKm?: number,
+ *   petName?: string,
+ *   dailyDay?: string,
+ *   dailyDone?: string[],
  * }} args
  */
 export async function writePublicWalkStats({
@@ -37,40 +37,32 @@ export async function writePublicWalkStats({
   achievementCount,
   achievementTotal,
   lifetimeKm,
+  petName,
+  dailyDay,
+  dailyDone,
 }) {
   if (!isFirebaseConfigured() || !uid) {
     return { ok: false, reason: 'no_backend' };
   }
   const db = getDb();
   const ref = doc(db, PUBLIC_WALK_COL, uid);
-  if (!shareWalkDistance) {
-    await setDoc(
-      ref,
-      {
-        shareWalkDistance: false,
-        updatedAt: serverTimestamp(),
-      },
-      { merge: true }
-    );
-    return { ok: true };
-  }
-  await setDoc(
-    ref,
-    {
-      shareWalkDistance: true,
-      displayName: displayNameForUser(user),
-      kmDay: t.day,
-      kmWeek: t.week,
-      kmYear: t.year,
-      kmLifetime: Math.max(0, Number(lifetimeKm) || 0),
-      level: Math.max(1, Number(level) || 1),
-      achievementXp: Math.max(0, Number(achievementXp) || 0),
-      achievementCount: Math.max(0, Number(achievementCount) || 0),
-      achievementTotal: Math.max(0, Number(achievementTotal) || 0),
-      updatedAt: serverTimestamp(),
-    },
-    { merge: true }
-  );
+  const payload = {
+    shareWalkDistance: shareWalkDistance !== false,
+    displayName: displayNameForUser(user),
+    petName: String(petName || '').trim(),
+    kmDay: Math.max(0, Number(t?.day) || 0),
+    kmWeek: Math.max(0, Number(t?.week) || 0),
+    kmYear: Math.max(0, Number(t?.year) || 0),
+    kmLifetime: Math.max(0, Number(lifetimeKm) || 0),
+    level: Math.max(1, Number(level) || 1),
+    achievementXp: Math.max(0, Number(achievementXp) || 0),
+    achievementCount: Math.max(0, Number(achievementCount) || 0),
+    achievementTotal: Math.max(0, Number(achievementTotal) || 0),
+    dailyDay: dailyDay ? String(dailyDay) : '',
+    dailyDone: Array.isArray(dailyDone) ? dailyDone.map(String) : [],
+    updatedAt: serverTimestamp(),
+  };
+  await setDoc(ref, payload, { merge: true });
   return { ok: true };
 }
 
@@ -78,6 +70,7 @@ export async function writePublicWalkStats({
  * @returns {Promise<Array<{
  *   id: string,
  *   displayName: string,
+ *   petName: string,
  *   kmDay: number,
  *   kmWeek: number,
  *   kmYear: number,
@@ -100,6 +93,7 @@ export async function fetchPublicLeaderboard() {
     return {
       id: d.id,
       displayName: String(x.displayName || 'Pet parent'),
+      petName: String(x.petName || '').trim(),
       kmDay: Math.max(0, Number(x.kmDay) || 0),
       kmWeek: Math.max(0, Number(x.kmWeek) || 0),
       kmYear: Math.max(0, Number(x.kmYear) || 0),
