@@ -5,6 +5,8 @@ import { useGame } from '../game/GameContext';
 import { usePets } from '../pets/PetsContext';
 import { getDb, isFirebaseConfigured } from '../firebase';
 import { PUBLIC_WALK_COL, writePublicWalkStats } from './publicWalkFirestore';
+import { getEffectiveProfilePhotoUrl } from '../profile/userProfilePhoto';
+import { petPhotoForDisplay, photoUrlForLeaderboardSync } from './leaderboardRowUtils';
 
 const PublicWalkContext = createContext(null);
 
@@ -26,10 +28,31 @@ export function PublicWalkProvider({ children }) {
   const [shareLoaded, setShareLoaded] = useState(false);
   const [lastSyncError, setLastSyncError] = useState(null);
 
-  const primaryPetName = useMemo(() => {
-    const first = pets?.[0];
-    return first?.name?.trim?.() || '';
-  }, [pets]);
+  const primaryPet = pets?.[0] ?? null;
+  const primaryPetMeta = useMemo(
+    () => ({
+      name: primaryPet?.name?.trim?.() || '',
+      photoUrl: photoUrlForLeaderboardSync(primaryPet?.photoUrl) || photoUrlForLeaderboardSync(petPhotoForDisplay(primaryPet)),
+      categoryId: primaryPet?.categoryId || 'dog',
+    }),
+    [primaryPet]
+  );
+  const ownerPhotoUrl = useMemo(
+    () => photoUrlForLeaderboardSync(getEffectiveProfilePhotoUrl(user)),
+    [user, user?.uid, user?.photoURL]
+  );
+
+  const syncPayloadExtras = useMemo(
+    () => ({
+      petName: primaryPetMeta.name,
+      petPhotoUrl: primaryPetMeta.photoUrl,
+      ownerPhotoUrl,
+      petCategoryId: primaryPetMeta.categoryId,
+      dailyDay: daily?.day,
+      dailyDone: daily?.done,
+    }),
+    [primaryPetMeta, ownerPhotoUrl, daily]
+  );
 
   useEffect(() => {
     if (!uid || !isFirebaseConfigured()) {
@@ -74,9 +97,7 @@ export function PublicWalkProvider({ children }) {
           achievementCount,
           achievementTotal: Array.isArray(lifeDefs) ? lifeDefs.length : 0,
           lifetimeKm: lifetimeStats?.km || 0,
-          petName: primaryPetName,
-          dailyDay: daily?.day,
-          dailyDone: daily?.done,
+          ...syncPayloadExtras,
         });
       } catch (e) {
         setShareState(previous);
@@ -93,7 +114,8 @@ export function PublicWalkProvider({ children }) {
       achievementCount,
       lifeDefs,
       lifetimeStats,
-      primaryPetName,
+      primaryPetMeta,
+      syncPayloadExtras,
       daily,
     ]
   );
@@ -113,9 +135,7 @@ export function PublicWalkProvider({ children }) {
         achievementCount,
         achievementTotal: Array.isArray(lifeDefs) ? lifeDefs.length : 0,
         lifetimeKm: lifetimeStats?.km || 0,
-        petName: primaryPetName,
-        dailyDay: daily?.day,
-        dailyDone: daily?.done,
+        ...syncPayloadExtras,
       })
         .then(() => setLastSyncError(null))
         .catch((e) => setLastSyncError(e?.message || 'Sync failed'));
@@ -136,7 +156,7 @@ export function PublicWalkProvider({ children }) {
     achievementCount,
     lifeDefs,
     lifetimeStats,
-    primaryPetName,
+    syncPayloadExtras,
   ]);
 
   const value = useMemo(

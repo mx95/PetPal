@@ -1791,6 +1791,7 @@ const en = {
     tblYouBadge: '· you',
     starRatingLine: '★ {rating} ({reviews} reviews)',
     achTitle: 'Achievement leaderboard',
+    achMetric: '{count} achievements',
     achIntroStart: 'A separate ranking that compares lifetime achievement XP — badges from walking, streaks, levels, and pets. Opt in on the panel above to appear here.',
     achTblXp: 'Achievement XP',
     achTblBadges: 'Badges',
