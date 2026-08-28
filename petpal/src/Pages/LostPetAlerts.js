@@ -85,6 +85,7 @@ export default function LostPetAlerts() {
         if (r.error === 'description') setFormError(t('lostPet.errDesc'));
         else if (r.error === 'lastSeen') setFormError(t('lostPet.errLast'));
         else if (r.error === 'phone') setFormError(t('lostPet.errPhone'));
+        else if (r.error === 'photo_upload') setFormError(t('lostPet.errPhotoUpload'));
         else setFormError(t('lostPet.errGeneric'));
         return;
       }

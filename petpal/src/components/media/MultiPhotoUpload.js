@@ -5,7 +5,7 @@ import {
   PHOTO_MAX_COUNT,
   newPhotoDraftId,
   normalizePrimaryPhoto,
-  validatePhotoFile,
+  prepareListingPhotoFile,
 } from '../../media/photoUploadUtils';
 
 /**
@@ -21,6 +21,7 @@ export default function MultiPhotoUpload({ photos, onChange, maxCount = PHOTO_MA
   const { t } = useI18n();
   const inputRef = useRef(/** @type {HTMLInputElement | null} */ (null));
   const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
 
   useEffect(
     () => () => {
@@ -53,7 +54,7 @@ export default function MultiPhotoUpload({ photos, onChange, maxCount = PHOTO_MA
     onChange(normalizePrimaryPhoto(photos.filter((p) => p.id !== id)));
   }
 
-  function onFilesSelected(fileList) {
+  async function onFilesSelected(fileList) {
     setError('');
     const files = Array.from(fileList || []);
     if (!files.length) return;
@@ -62,21 +63,32 @@ export default function MultiPhotoUpload({ photos, onChange, maxCount = PHOTO_MA
       setError(t('photos.errMaxCount', { count: maxCount }));
       return;
     }
+    setBusy(true);
     const next = [...photos];
-    for (const file of files.slice(0, room)) {
-      const v = validatePhotoFile(file);
-      if (!v.ok) {
-        setError(v.code === 'size' ? t('photos.errTooLarge') : t('photos.errType'));
-        continue;
+    try {
+      for (const file of files.slice(0, room)) {
+        if (!file?.type?.startsWith('image/')) {
+          setError(t('photos.errType'));
+          continue;
+        }
+        try {
+          const prepared = await prepareListingPhotoFile(file);
+          next.push({
+            id: newPhotoDraftId(),
+            previewUrl: URL.createObjectURL(prepared),
+            file: prepared,
+            isPrimary: next.length === 0,
+          });
+        } catch (e) {
+          setError(e?.message === 'TOO_LARGE' ? t('photos.errTooLarge') : t('photos.errType'));
+        }
       }
-      next.push({
-        id: newPhotoDraftId(),
-        previewUrl: URL.createObjectURL(file),
-        file,
-        isPrimary: next.length === 0,
-      });
+      if (next.length > photos.length) {
+        onChange(normalizePrimaryPhoto(next));
+      }
+    } finally {
+      setBusy(false);
     }
-    onChange(normalizePrimaryPhoto(next));
   }
 
   return (
@@ -89,11 +101,11 @@ export default function MultiPhotoUpload({ photos, onChange, maxCount = PHOTO_MA
             {p.isPrimary ? <span className="pp-photoUpload__badge">{t('photos.cover')}</span> : null}
             <div className="pp-photoUpload__actions">
               {!p.isPrimary ? (
-                <button type="button" className="pp-photoUpload__btn" onClick={() => setPrimary(p.id)} disabled={disabled}>
+                <button type="button" className="pp-photoUpload__btn" onClick={() => setPrimary(p.id)} disabled={disabled || busy}>
                   {t('photos.setCover')}
                 </button>
               ) : null}
-              <button type="button" className="pp-photoUpload__btn pp-photoUpload__btn--danger" onClick={() => removePhoto(p.id)} disabled={disabled}>
+              <button type="button" className="pp-photoUpload__btn pp-photoUpload__btn--danger" onClick={() => removePhoto(p.id)} disabled={disabled || busy}>
                 {t('photos.remove')}
               </button>
             </div>
@@ -104,7 +116,7 @@ export default function MultiPhotoUpload({ photos, onChange, maxCount = PHOTO_MA
             type="button"
             className="pp-photoUpload__add"
             onClick={() => inputRef.current?.click()}
-            disabled={disabled}
+            disabled={disabled || busy}
             aria-label={t('photos.add')}
           >
             <span aria-hidden>+</span>

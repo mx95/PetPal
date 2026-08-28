@@ -1,8 +1,100 @@
 /** @typedef {{ id: string, previewUrl: string, storagePath?: string, photoUrl?: string, isPrimary?: boolean, file?: File, uploading?: boolean, error?: string }} PhotoDraft */
 
 export const PHOTO_MAX_COUNT = 6;
-export const PHOTO_MAX_BYTES = 8 * 1024 * 1024;
+/** Pre-compression pick limit in MultiPhotoUpload (large phone photos are resized before upload). */
+export const PHOTO_MAX_BYTES = 24 * 1024 * 1024;
 export const PHOTO_ACCEPT = 'image/jpeg,image/png,image/webp,image/heic,image/heif';
+
+const LISTING_PHOTO_MAX = 1600;
+const LISTING_JPEG_Q = 0.86;
+
+function loadImageFromFile(file) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      resolve(img);
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error('IMAGE_LOAD'));
+    };
+    img.src = url;
+  });
+}
+
+/**
+ * Resize a listing photo to fit within LISTING_PHOTO_MAX — no square crop.
+ * @param {File} file
+ * @returns {Promise<{ blob: Blob, dataUrl: string }>}
+ */
+export async function fileToListingPhotoJpeg(file) {
+  if (!file?.type?.startsWith('image/')) {
+    throw new Error('NOT_IMAGE');
+  }
+  if (file.size > PHOTO_MAX_BYTES) {
+    throw new Error('TOO_LARGE');
+  }
+  const img = await loadImageFromFile(file);
+  let w = img.naturalWidth;
+  let h = img.naturalHeight;
+  if (w <= 0 || h <= 0) throw new Error('BAD_IMAGE');
+  const scale = Math.min(1, LISTING_PHOTO_MAX / Math.max(w, h));
+  const outW = Math.max(1, Math.round(w * scale));
+  const outH = Math.max(1, Math.round(h * scale));
+  const canvas = document.createElement('canvas');
+  canvas.width = outW;
+  canvas.height = outH;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('NO_CANVAS');
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, outW, outH);
+  ctx.drawImage(img, 0, 0, outW, outH);
+  const dataUrl = canvas.toDataURL('image/jpeg', LISTING_JPEG_Q);
+  const blob = await new Promise((resolve, reject) => {
+    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('NO_BLOB'))), 'image/jpeg', LISTING_JPEG_Q);
+  });
+  return { blob, dataUrl };
+}
+
+/**
+ * Compress a picked photo for lost-pet / shelter / adoption uploads.
+ * @param {File} file
+ * @returns {Promise<File>}
+ */
+export async function prepareListingPhotoFile(file) {
+  const { blob } = await fileToListingPhotoJpeg(file);
+  return new File([blob], 'photo.jpg', { type: 'image/jpeg', lastModified: Date.now() });
+}
+
+/**
+ * @param {string} url
+ * @returns {Promise<File | null>}
+ */
+export async function photoUrlToUploadFile(url) {
+  const s = String(url || '').trim();
+  if (!s) return null;
+  if (s.startsWith('data:')) {
+    try {
+      const blob = await (await fetch(s)).blob();
+      if (!blob.type.startsWith('image/')) return null;
+      return new File([blob], 'seed.jpg', { type: blob.type || 'image/jpeg', lastModified: Date.now() });
+    } catch {
+      return null;
+    }
+  }
+  if (s.startsWith('http://') || s.startsWith('https://')) {
+    try {
+      const blob = await (await fetch(s)).blob();
+      if (!blob.type.startsWith('image/')) return null;
+      return new File([blob], 'remote.jpg', { type: blob.type || 'image/jpeg', lastModified: Date.now() });
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
 
 /**
  * @param {File} file
