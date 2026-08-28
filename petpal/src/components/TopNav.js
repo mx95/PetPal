@@ -194,7 +194,7 @@ export default function TopNav() {
                     <MenuActionIcon tone="shelter" />
                     <span>{t('nav.shelters')}</span>
                   </Link>
-                  {isBusinessHome || isAdmin ? (
+                  {isBusinessHome ? (
                     <Link
                       className={accountMenuLinkClassName()}
                       to="/activity"

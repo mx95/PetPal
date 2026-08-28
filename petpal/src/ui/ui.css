@@ -11308,6 +11308,42 @@ select.pp-bookConfirmField__control {
   line-height: 1.1;
 }
 .pp-pageHeader__sub { color: #475467; margin: 0; font-size: 15px; }
+
+.pp-sheltersHubHero {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+}
+
+.pp-sheltersHubHero .pp-pageHeader__title {
+  margin-top: 8px;
+}
+
+.pp-sheltersHubHero .pp-pageHeader__sub {
+  max-width: 640px;
+}
+
+.pp-sheltersHubHero__register {
+  width: 100%;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(16, 24, 40, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.pp-sheltersHubHero__registerTitle {
+  margin: 0;
+  font-size: 18px;
+}
+
+.pp-sheltersHubHero__dashboard {
+  margin-top: 16px;
+}
+
 .pp-pageHeader__back {
   align-self: flex-start;
   display: inline-flex;
