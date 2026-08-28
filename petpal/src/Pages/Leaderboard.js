@@ -1,9 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../auth/AuthProvider';
+import { usePets } from '../pets/PetsContext';
 import { useI18n } from '../i18n/I18nContext';
+import { useGame } from '../game/GameContext';
 import { usePublicWalk } from '../leaderboard/PublicWalkContext';
-import { fetchPublicLeaderboard } from '../leaderboard/publicWalkFirestore';
-import { leaderboardRowLabel } from '../leaderboard/leaderboardLabels';
+import { displayNameForUser, fetchPublicLeaderboard } from '../leaderboard/publicWalkFirestore';
+import { enrichLeaderboardRow } from '../leaderboard/leaderboardRowUtils';
+import { LeaderboardPairNames, LeaderboardPairVisual } from '../components/leaderboard/LeaderboardPairVisual';
 import { EmptyState, PageContainer, PetIllustration, SegmentedTabs, SkeletonCard } from '../components/ui';
 
 function formatKm(n) {
@@ -11,7 +14,6 @@ function formatKm(n) {
   return (Math.round(n * 10) / 10).toFixed(1);
 }
 
-/** Podium order: 2nd, 1st, 3rd for visual center emphasis */
 function podiumThree(rows) {
   if (!rows?.length) return [null, null, null];
   if (rows.length === 1) return [null, rows[0], null];
@@ -19,58 +21,54 @@ function podiumThree(rows) {
   return [rows[1], rows[0], rows[2]];
 }
 
-/**
- * @param {{ name: string, variant?: 'row' | 'podium' | 'me' }} props
- */
-function LbAvatar({ name, variant = 'row' }) {
-  const letter = (name || '?').trim().charAt(0).toUpperCase();
-  return (
-    <span className={`pp-lb-avatar pp-lb-avatar--${variant}`} aria-hidden>
-      {letter}
-    </span>
-  );
+function rankMedal(rank) {
+  if (rank === 1) return '🥇';
+  if (rank === 2) return '🥈';
+  if (rank === 3) return '🥉';
+  return null;
 }
 
-/**
- * @param {{ rank: number, compact?: boolean }} props
- */
 function RankBadge({ rank, compact = false }) {
+  const medal = rankMedal(rank);
   const tier = rank === 1 ? 'gold' : rank === 2 ? 'silver' : rank === 3 ? 'bronze' : 'default';
   return (
     <span
       className={`pp-lb-rankBadge pp-lb-rankBadge--${tier} ${compact ? 'pp-lb-rankBadge--sm' : ''}`.trim()}
-      aria-hidden
+      aria-hidden={Boolean(medal)}
     >
-      #{rank}
+      {medal || `#${rank}`}
     </span>
   );
 }
 
-/**
- * @param {{
- *   row: Record<string, unknown>,
- *   rank: number,
- *   km: number,
- *   maxKm: number,
- *   isYou: boolean,
- *   t: (k: string, v?: object) => string,
- * }} props
- */
-function WalkLeaderboardRow({ row, rank, km, maxKm, isYou, t }) {
+function WalkLeaderboardRow({ row, rank, km, maxKm, isYou, user, t }) {
   const pct = Math.min(100, Math.round((km / maxKm) * 100));
-  const label = leaderboardRowLabel(row);
   return (
     <li
-      className={`pp-lb-row ${isYou ? 'pp-lb-row--me' : ''} ${rank <= 3 ? `pp-lb-row--place-${rank}` : ''}`}
+      className={`pp-lb-row pp-lb-row--v2 ${isYou ? 'pp-lb-row--me' : ''} ${rank <= 3 ? `pp-lb-row--place-${rank}` : ''}`}
     >
       <div className="pp-lb-row__rankCol">
-        <RankBadge rank={rank} />
+        <RankBadge rank={rank} compact />
       </div>
-      <LbAvatar name={label} variant="row" />
-      <div className="pp-lb-row__main">
-        <div className="pp-lb-row__nameRow">
-          <span className="pp-lb-row__name">{label}</span>
-          {isYou ? <span className="pp-lb-row__you">{t('leaderboardPage.tblYouBadge')}</span> : null}
+      <LeaderboardPairVisual
+        ownerName={row.displayName}
+        petName={row.petName}
+        petPhotoUrl={row.petPhotoUrl}
+        ownerPhotoUrl={row.ownerPhotoUrl}
+        petCategoryId={row.petCategoryId}
+        ownerUser={isYou ? user : null}
+        size="row"
+      />
+      <div className="pp-lb-row__body">
+        <LeaderboardPairNames
+          ownerName={row.displayName}
+          petName={row.petName}
+          showYou={isYou}
+          youLabel={t('leaderboardPage.tblYouBadge')}
+        />
+        <div className="pp-lb-row__kmLine">
+          <span className="pp-lb-row__statVal">{formatKm(km)}</span>
+          <span className="pp-lb-row__statUnit">{t('leaderboardPage.tblKmSuffix')}</span>
         </div>
         <div
           className="pp-lb-row__bar"
@@ -83,17 +81,39 @@ function WalkLeaderboardRow({ row, rank, km, maxKm, isYou, t }) {
           <div className="pp-lb-row__barFill" style={{ width: `${pct}%` }} />
         </div>
       </div>
-      <div className="pp-lb-row__stat">
-        <span className="pp-lb-row__statVal">{formatKm(km)}</span>
-        <span className="pp-lb-row__statUnit">{t('leaderboardPage.tblKmSuffix')}</span>
+    </li>
+  );
+}
+
+function AchievementLeaderboardRow({ row, rank, isYou, user, t }) {
+  const count = Math.max(0, Math.round(Number(row.achievementCount) || 0));
+  return (
+    <li className={`pp-lb-achRow pp-lb-achRow--v2 ${isYou ? 'pp-lb-achRow--me' : ''} ${rank <= 3 ? `pp-lb-achRow--place-${rank}` : ''}`}>
+      <div className="pp-lb-achRow__rank">
+        <RankBadge rank={rank} compact />
+      </div>
+      <LeaderboardPairVisual
+        ownerName={row.displayName}
+        petName={row.petName}
+        petPhotoUrl={row.petPhotoUrl}
+        ownerPhotoUrl={row.ownerPhotoUrl}
+        petCategoryId={row.petCategoryId}
+        ownerUser={isYou ? user : null}
+        size="row"
+      />
+      <div className="pp-lb-achRow__body">
+        <LeaderboardPairNames
+          ownerName={row.displayName}
+          petName={row.petName}
+          showYou={isYou}
+          youLabel={t('leaderboardPage.tblYouBadge')}
+        />
+        <div className="pp-lb-achRow__metric">{t('leaderboardPage.achMetric', { count })}</div>
       </div>
     </li>
   );
 }
 
-/**
- * @param {{ children: React.ReactNode, className?: string, hover?: boolean }} props
- */
 function LbSurface({ children, className = '', hover = true }) {
   return <div className={`pp-lb-surface ${hover ? 'pp-lb-surface--hover' : ''} ${className}`.trim()}>{children}</div>;
 }
@@ -101,6 +121,8 @@ function LbSurface({ children, className = '', hover = true }) {
 export default function Leaderboard() {
   const { t } = useI18n();
   const { user } = useAuth();
+  const { pets } = usePets();
+  const { walkTotals } = useGame();
   const { shareOnLeaderboard, shareLoaded, setShareOnLeaderboard, lastSyncError, isFirestoreEnabled } = usePublicWalk();
   const [period, setPeriod] = useState('week');
   const [rows, setRows] = useState([]);
@@ -118,6 +140,11 @@ export default function Leaderboard() {
   );
 
   const key = useMemo(() => periods.find((p) => p.id === period)?.key || 'kmWeek', [period, periods]);
+
+  const enrichedRows = useMemo(
+    () => rows.map((row) => enrichLeaderboardRow(row, user, pets)).filter(Boolean),
+    [rows, user, pets]
+  );
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -140,12 +167,12 @@ export default function Leaderboard() {
 
   const yourRank = useMemo(() => {
     if (!user?.uid) return null;
-    const i = rows.findIndex((r) => r.id === user.uid);
+    const i = enrichedRows.findIndex((r) => r.id === user.uid);
     return i >= 0 ? i + 1 : null;
-  }, [rows, user?.uid]);
+  }, [enrichedRows, user?.uid]);
 
   const achievementRows = useMemo(() => {
-    return [...rows].sort((a, b) => {
+    return [...enrichedRows].sort((a, b) => {
       const ax = Number(a.achievementXp) || 0;
       const bx = Number(b.achievementXp) || 0;
       if (bx !== ax) return bx - ax;
@@ -154,21 +181,40 @@ export default function Leaderboard() {
       if (bc !== ac) return bc - ac;
       return (Number(b.level) || 0) - (Number(a.level) || 0);
     });
-  }, [rows]);
+  }, [enrichedRows]);
 
   const currentPeriodLabel = useMemo(() => periods.find((p) => p.id === period)?.label || '', [periods, period]);
-  const rowsWithKm = useMemo(() => rows.filter((r) => (Number(r[key]) || 0) > 0), [rows, key]);
+  const rowsWithKm = useMemo(() => enrichedRows.filter((r) => (Number(r[key]) || 0) > 0), [enrichedRows, key]);
   const [p2, p1, p3] = podiumThree(rowsWithKm);
 
-  const myRow = useMemo(() => rows.find((r) => r.id === user?.uid), [rows, user?.uid]);
-  const myVal = myRow ? Number(myRow[key] || 0) : 0;
-  const aheadRow = yourRank != null && yourRank > 1 ? rows[yourRank - 2] : null;
-  const gapKm = aheadRow && myRow != null ? Math.max(0, (Number(aheadRow[key]) || 0) - myVal) : null;
+  const myRow = useMemo(() => enrichedRows.find((r) => r.id === user?.uid), [enrichedRows, user?.uid]);
+  const myDisplayRow = useMemo(() => {
+    if (myRow) return myRow;
+    if (!shareOnLeaderboard || !user) return null;
+    return enrichLeaderboardRow(
+      {
+        id: user.uid,
+        displayName: displayNameForUser(user),
+        petName: pets?.[0]?.name || '',
+        petPhotoUrl: '',
+        ownerPhotoUrl: '',
+        petCategoryId: pets?.[0]?.categoryId || 'dog',
+        achievementCount: 0,
+        [key]: walkTotals?.[period === 'day' ? 'day' : period === 'year' ? 'year' : 'week'] || 0,
+      },
+      user,
+      pets
+    );
+  }, [myRow, shareOnLeaderboard, user, pets, key, period, walkTotals]);
+
+  const myVal = myDisplayRow ? Number(myDisplayRow[key] || 0) : 0;
+  const aheadRow = yourRank != null && yourRank > 1 ? enrichedRows[yourRank - 2] : null;
+  const gapKm = aheadRow && myDisplayRow != null ? Math.max(0, (Number(aheadRow[key]) || 0) - myVal) : null;
 
   const maxWalkKm = useMemo(() => {
-    if (!rows.length) return 1;
-    return Math.max(1, ...rows.map((r) => Number(r[key]) || 0));
-  }, [rows, key]);
+    if (!enrichedRows.length) return 1;
+    return Math.max(1, ...enrichedRows.map((r) => Number(r[key]) || 0));
+  }, [enrichedRows, key]);
 
   const onShareToggle = async (next) => {
     setSaving(true);
@@ -182,16 +228,18 @@ export default function Leaderboard() {
   const showPodium = !loading && rowsWithKm.length > 0;
 
   return (
-    <PageContainer className="animate-fade-up">
-      <div className="space-y-6">
-        <section className="relative overflow-hidden rounded-[2rem] border border-white/80 bg-white/80 p-6 shadow-lift backdrop-blur sm:p-10">
-          <div className="absolute -right-16 -top-20 h-60 w-60 rounded-full bg-petpal-soft blur-3xl" aria-hidden />
-          <div className="relative grid gap-8 lg:grid-cols-[1fr_260px] lg:items-center">
+    <PageContainer className="animate-fade-up pp-lb-page--social">
+      <div className="space-y-5">
+        <section className="relative overflow-hidden rounded-[1.75rem] border border-white/80 bg-white/80 p-5 shadow-lift backdrop-blur sm:p-8">
+          <div className="absolute -right-16 -top-20 h-52 w-52 rounded-full bg-petpal-soft blur-3xl" aria-hidden />
+          <div className="relative grid gap-6 lg:grid-cols-[1fr_180px] lg:items-center">
             <div>
-              <span className="mb-4 inline-flex rounded-full bg-petpal-soft px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-petpal-lilac">{t('leaderboardPage.rankingsHeading')}</span>
-              <h1 className="text-4xl font-black tracking-[-0.06em] text-petpal-ink sm:text-6xl">{t('leaderboardPage.heroTitle')}</h1>
+              <span className="mb-3 inline-flex rounded-full bg-petpal-soft px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.16em] text-petpal-lilac">
+                {t('leaderboardPage.rankingsHeading')}
+              </span>
+              <h1 className="text-3xl font-black tracking-[-0.05em] text-petpal-ink sm:text-5xl">{t('leaderboardPage.heroTitle')}</h1>
             </div>
-            <PetIllustration variant="trophy" className="mx-auto h-56 w-56" />
+            <PetIllustration variant="trophy" className="mx-auto h-36 w-36 sm:h-44 sm:w-44" />
           </div>
         </section>
 
@@ -224,7 +272,7 @@ export default function Leaderboard() {
 
         {loadError ? <p className="pp-lb-error">{loadError}</p> : null}
         {loading && rows.length === 0 ? (
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-3 md:grid-cols-3">
             <SkeletonCard />
             <SkeletonCard />
             <SkeletonCard />
@@ -237,60 +285,31 @@ export default function Leaderboard() {
           <EmptyState title={t('leaderboardPage.emptySharers')} body={t('leaderboardPage.optInCheckbox')} icon="trophy" />
         ) : null}
 
-        {showPodium ? (
-          <section className="pp-lb-section">
-            <h2 className="pp-lb-sectionTitle">{t('leaderboardPage.rankingsHeading')}</h2>
-            <div className="pp-lb-podium">
-              {[p2, p1, p3].map((r, idx) => {
-                const medals = ['🥈', '🥇', '🥉'];
-                const heights = ['pp-lb-podium__block--silver', 'pp-lb-podium__block--gold', 'pp-lb-podium__block--bronze'];
-                const rankNums = [2, 1, 3];
-                if (!r) {
-                  return (
-                    <div key={`empty-${idx}`} className={`pp-lb-podium__block ${heights[idx]} pp-lb-podium__block--empty`}>
-                      <span className="pp-lb-podium__medal" aria-hidden>
-                        {medals[idx]}
-                      </span>
-                      <span className="pp-lb-podium__empty">—</span>
-                    </div>
-                  );
-                }
-                const isYou = r.id === user?.uid;
-                const label = leaderboardRowLabel(r);
-                return (
-                  <div key={r.id} className={`pp-lb-podium__block ${heights[idx]} ${isYou ? 'pp-lb-podium__block--me' : ''}`}>
-                    <span className="pp-lb-podium__medal" aria-hidden>
-                      {medals[idx]}
-                    </span>
-                    <LbAvatar name={label} variant="podium" />
-                    <span className="pp-lb-podium__name">{label}</span>
-                    <span className="pp-lb-podium__km">
-                      {formatKm(r[key])} {t('leaderboardPage.tblKmSuffix')}
-                    </span>
-                    <span className="pp-lb-podium__rank">#{rankNums[idx]}</span>
-                    {isYou ? <span className="pp-lb-podium__you">{t('leaderboardPage.tblYouBadge')}</span> : null}
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-        ) : null}
-
-        {shareOnLeaderboard && myRow && yourRank != null ? (
-          <LbSurface hover={false} className="pp-lb-meCard">
+        {shareOnLeaderboard && myDisplayRow && yourRank != null ? (
+          <LbSurface hover={false} className="pp-lb-meCard pp-lb-meCard--social">
             <span className="pp-lb-meCard__badge">{t('leaderboardPage.yourPositionBadge')}</span>
-            <div className="pp-lb-meCard__row">
-              <div>
-                <span className="pp-lb-meCard__eyebrow">{t('leaderboardPage.myPositionHeading')}</span>
-                <div className="pp-lb-meCard__rank">#{yourRank}</div>
-                <div className="pp-lb-meCard__km">
-                  {formatKm(myRow[key])}{' '}
-                  <span>
-                    {t('leaderboardPage.tblKmSuffix')} · {currentPeriodLabel}
-                  </span>
-                </div>
-              </div>
-              <LbAvatar name={leaderboardRowLabel(myRow)} variant="me" />
+            <div className="pp-lb-meCard__heroRank">
+              {rankMedal(yourRank) ? (
+                <span className="pp-lb-meCard__medal" aria-hidden>
+                  {rankMedal(yourRank)}
+                </span>
+              ) : null}
+              <span className="pp-lb-meCard__rank">#{yourRank}</span>
+            </div>
+            <div className="pp-lb-meCard__social">
+              <LeaderboardPairVisual
+                ownerName={myDisplayRow.displayName}
+                petName={myDisplayRow.petName}
+                petPhotoUrl={myDisplayRow.petPhotoUrl}
+                ownerPhotoUrl={myDisplayRow.ownerPhotoUrl}
+                petCategoryId={myDisplayRow.petCategoryId}
+                ownerUser={user}
+                size="hero"
+              />
+              <LeaderboardPairNames ownerName={myDisplayRow.displayName} petName={myDisplayRow.petName} />
+            </div>
+            <div className="pp-lb-meCard__km">
+              {formatKm(myVal)} <span>{t('leaderboardPage.tblKmSuffix')} · {currentPeriodLabel}</span>
             </div>
             {gapKm != null && gapKm > 0 && aheadRow ? (
               <p className="pp-lb-meCard__hint">
@@ -302,12 +321,57 @@ export default function Leaderboard() {
           </LbSurface>
         ) : null}
 
-        {!loading && rows.length > 0 ? (
+        {showPodium ? (
+          <section className="pp-lb-section">
+            <h2 className="pp-lb-sectionTitle">{t('leaderboardPage.rankingsHeading')}</h2>
+            <div className="pp-lb-podium pp-lb-podium--social">
+              {[p2, p1, p3].map((r, idx) => {
+                const rankNums = [2, 1, 3];
+                const heights = ['pp-lb-podium__block--silver', 'pp-lb-podium__block--gold', 'pp-lb-podium__block--bronze'];
+                const rank = rankNums[idx];
+                if (!r) {
+                  return (
+                    <div key={`empty-${idx}`} className={`pp-lb-podium__block ${heights[idx]} pp-lb-podium__block--empty`}>
+                      <RankBadge rank={rank} />
+                      <span className="pp-lb-podium__empty">—</span>
+                    </div>
+                  );
+                }
+                const isYou = r.id === user?.uid;
+                return (
+                  <div key={r.id} className={`pp-lb-podium__block ${heights[idx]} ${isYou ? 'pp-lb-podium__block--me' : ''}`}>
+                    <RankBadge rank={rank} />
+                    <LeaderboardPairVisual
+                      ownerName={r.displayName}
+                      petName={r.petName}
+                      petPhotoUrl={r.petPhotoUrl}
+                      ownerPhotoUrl={r.ownerPhotoUrl}
+                      petCategoryId={r.petCategoryId}
+                      ownerUser={isYou ? user : null}
+                      size="podium"
+                    />
+                    <LeaderboardPairNames
+                      ownerName={r.displayName}
+                      petName={r.petName}
+                      showYou={isYou}
+                      youLabel={t('leaderboardPage.tblYouBadge')}
+                    />
+                    <span className="pp-lb-podium__km">
+                      {formatKm(r[key])} {t('leaderboardPage.tblKmSuffix')}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        ) : null}
+
+        {!loading && enrichedRows.length > 0 ? (
           <section className="pp-lb-section">
             <h2 className="pp-lb-sectionTitle">{t('leaderboardPage.listHeadingWalk', { period: currentPeriodLabel })}</h2>
-            <LbSurface hover={false} className="pp-lb-listWrap">
-              <ul className="pp-lb-rows">
-                {rows.map((r, i) => {
+            <LbSurface hover={false} className="pp-lb-listWrap pp-lb-listWrap--social">
+              <ul className="pp-lb-rows pp-lb-rows--social">
+                {enrichedRows.map((r, i) => {
                   const v = r[key] ?? 0;
                   const isYou = r.id === user?.uid;
                   return (
@@ -318,6 +382,7 @@ export default function Leaderboard() {
                       km={Number(v) || 0}
                       maxKm={maxWalkKm}
                       isYou={isYou}
+                      user={user}
                       t={t}
                     />
                   );
@@ -328,28 +393,16 @@ export default function Leaderboard() {
         ) : null}
 
         <section className="pp-lb-section">
-          <LbSurface hover={false} className="pp-lb-ach">
+          <LbSurface hover={false} className="pp-lb-ach pp-lb-ach--social">
             <h2 className="pp-lb-h2">{t('leaderboardPage.achTitle')}</h2>
             {!loading && !loadError && achievementRows.length === 0 && isFirestoreEnabled ? (
               <p className="pp-lb-muted">{t('leaderboardPage.achEmpty')}</p>
             ) : null}
-            <ul className="pp-lb-achRows">
+            <ul className="pp-lb-achRows pp-lb-achRows--social">
               {achievementRows.map((r, i) => {
                 const isYou = r.id === user?.uid;
-                const label = leaderboardRowLabel(r);
                 return (
-                  <li key={`ach-${r.id}`} className={`pp-lb-achRow ${isYou ? 'pp-lb-achRow--me' : ''}`}>
-                    <div className="pp-lb-achRow__rank">
-                      <RankBadge rank={i + 1} compact />
-                    </div>
-                    <LbAvatar name={label} variant="row" />
-                    <div className="pp-lb-achRow__main">
-                      <span className="pp-lb-achRow__name">
-                        {label}
-                        {isYou ? <span className="pp-lb-row__you">{t('leaderboardPage.tblYouBadge')}</span> : null}
-                      </span>
-                    </div>
-                  </li>
+                  <AchievementLeaderboardRow key={`ach-${r.id}`} row={r} rank={i + 1} isYou={isYou} user={user} t={t} />
                 );
               })}
             </ul>

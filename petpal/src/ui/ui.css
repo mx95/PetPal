@@ -12618,8 +12618,8 @@ select.pp-bookConfirmField__control {
 }
 
 .pp-lb-switch[aria-checked='true'] {
-  background: var(--lb-primary);
-  border-color: rgba(79, 70, 229, 0.35);
+  background: #5b37ff;
+  border-color: rgba(91, 55, 255, 0.45);
 }
 
 .pp-lb-switch[aria-checked='true']::after {
@@ -13143,6 +13143,288 @@ select.pp-bookConfirmField__control {
   .pp-lb-row__statVal,
   .pp-lb-row__statUnit {
     display: inline;
+  }
+}
+
+/* —— Social pet+owner leaderboard redesign —— */
+.pp-lb-page--social {
+  --lb-primary: #5b37ff;
+  --lb-primary-dark: #4a2bd4;
+  --lb-text: #101828;
+  --lb-muted: #667085;
+  --lb-line: rgba(16, 24, 40, 0.08);
+  --lb-shadow: 0 10px 30px rgba(16, 24, 40, 0.08);
+  color: var(--lb-text);
+}
+
+.pp-lbPair {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.pp-lbPair__petWrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.pp-lbPair__pet,
+.pp-lbPair__petWrap .pp-petAvatar {
+  border-radius: 50%;
+  box-shadow: 0 4px 14px rgba(16, 24, 40, 0.1);
+}
+
+.pp-lbPair__ownerWrap {
+  position: absolute;
+  right: -3px;
+  bottom: -1px;
+  z-index: 2;
+  line-height: 0;
+}
+
+.pp-lbPair__owner {
+  border: 2px solid #fff !important;
+  box-shadow: 0 2px 8px rgba(16, 24, 40, 0.14);
+  border-radius: 50%;
+}
+
+.pp-lbPairCopy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  text-align: left;
+}
+
+.pp-lbPairCopy__owner {
+  font-weight: 800;
+  font-size: 14px;
+  color: var(--lb-text);
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pp-lbPairCopy__you {
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--lb-primary);
+  margin-left: 4px;
+}
+
+.pp-lbPairCopy__pet {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--lb-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pp-lbPairCopy__paw {
+  flex-shrink: 0;
+  font-size: 12px;
+  line-height: 1;
+}
+
+/* Your position — social card */
+.pp-lb-meCard--social {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 18px 20px;
+}
+
+.pp-lb-meCard__heroRank {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  line-height: 1;
+}
+
+.pp-lb-meCard__medal {
+  font-size: 30px;
+  line-height: 1;
+}
+
+.pp-lb-meCard__social {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+}
+
+/* Podium — social */
+.pp-lb-podium--social .pp-lb-podium__block {
+  gap: 6px;
+  padding: 14px 10px 16px;
+}
+
+.pp-lb-podium--social .pp-lbPairCopy {
+  align-items: center;
+  text-align: center;
+  width: 100%;
+}
+
+.pp-lb-podium--social .pp-lbPairCopy__owner,
+.pp-lb-podium--social .pp-lbPairCopy__pet {
+  max-width: 100%;
+}
+
+/* Walk rows — v2 compact */
+.pp-lb-rows--social {
+  gap: 6px;
+}
+
+.pp-lb-listWrap.pp-lb-listWrap--social,
+.pp-lb-rows--social + .pp-lb-listWrap {
+  padding: 12px 14px;
+}
+
+.pp-lb-row--v2 {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  align-items: center;
+  gap: 10px 12px;
+  padding: 10px 12px;
+}
+
+.pp-lb-row--v2 .pp-lb-row__rankCol {
+  min-width: 34px;
+}
+
+.pp-lb-row__body {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.pp-lb-row__kmLine {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.pp-lb-row--v2 .pp-lb-row__statVal {
+  font-size: 14px;
+}
+
+.pp-lb-row--v2 .pp-lb-row__statUnit {
+  font-size: 12px;
+}
+
+.pp-lb-row--v2 .pp-lb-row__bar {
+  margin-top: 2px;
+  height: 4px;
+}
+
+.pp-lb-row--v2.pp-lb-row--me {
+  box-shadow: 0 0 0 1px rgba(91, 55, 255, 0.16);
+}
+
+/* Achievement rows — v2 */
+.pp-lb-ach--social {
+  padding: 18px 16px;
+}
+
+.pp-lb-achRows--social {
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.pp-lb-achRow--v2 {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  align-items: center;
+  gap: 10px 12px;
+  padding: 10px 12px;
+}
+
+.pp-lb-achRow--v2 .pp-lb-achRow__rank {
+  min-width: 34px;
+}
+
+.pp-lb-achRow__body {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.pp-lb-achRow--v2 .pp-lb-achRow__metric {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--lb-muted);
+  margin-top: 0;
+}
+
+.pp-lb-achRow--place-1 {
+  border-color: rgba(234, 179, 8, 0.35);
+  background: linear-gradient(90deg, rgba(254, 243, 199, 0.45) 0%, #ffffff 60%);
+}
+
+.pp-lb-achRow--place-2 {
+  border-color: rgba(148, 163, 184, 0.4);
+  background: linear-gradient(90deg, rgba(241, 245, 249, 0.85) 0%, #ffffff 60%);
+}
+
+.pp-lb-achRow--place-3 {
+  border-color: rgba(217, 119, 6, 0.28);
+  background: linear-gradient(90deg, rgba(255, 237, 213, 0.55) 0%, #ffffff 60%);
+}
+
+/* Hub peek — social pairs */
+.pp-hubLb__podium--social .pp-hubLb__slot--social {
+  gap: 6px;
+  padding: 10px 6px 12px;
+}
+
+.pp-hubLb__pair {
+  margin: 2px 0 4px;
+}
+
+.pp-hubLb__pairCopy {
+  width: 100%;
+  align-items: center;
+  text-align: center;
+}
+
+.pp-hubLb__pairCopy .pp-lbPairCopy__owner,
+.pp-hubLb__pairCopy .pp-lbPairCopy__pet {
+  max-width: 100%;
+  font-size: 12px;
+}
+
+.pp-hubLb__medal {
+  font-size: 20px;
+  line-height: 1;
+}
+
+@media (max-width: 640px) {
+  .pp-lb-row--v2 {
+    grid-template-columns: auto auto 1fr;
+    flex-wrap: nowrap;
+  }
+
+  .pp-lb-row--v2 .pp-lb-row__body {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .pp-lb-achRow--v2 {
+    grid-template-columns: auto auto 1fr;
+  }
+
+  .pp-hubLb__podium--social {
+    grid-template-columns: 1fr;
+    max-width: 320px;
+    margin: 0 auto;
   }
 }
 
