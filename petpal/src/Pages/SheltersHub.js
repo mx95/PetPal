@@ -50,43 +50,41 @@ export default function SheltersHub() {
 
   const shelterById = useMemo(() => Object.fromEntries(shelters.map((s) => [s.id, s])), [shelters]);
 
+  const showRegisterBlock = !isApprovedShelter || !user;
+  const registerTitle = !user
+    ? t('shelters.registerTitle')
+    : isShelterAccount
+      ? t('shelters.pendingTitle')
+      : t('shelters.registerTitle');
+
   return (
     <div className="pp-grid pp-sheltersHub">
       <div className="pp-col-12">
-        <header className="pp-pageHeader">
-          <div className="pp-pageHeader__copy">
-            <span className="pp-publicHero__eyebrow pp-publicHero__eyebrow--shelter">{t('shelters.badge')}</span>
-            <h1 className="pp-pageHeader__title">{t('shelters.title')}</h1>
-            <p className="pp-pageHeader__sub">{t('shelters.tagline')}</p>
-          </div>
-        </header>
+        <div className="pp-card pp-pad pp-sheltersHubHero">
+          <span className="pp-publicHero__eyebrow pp-publicHero__eyebrow--shelter">{t('shelters.badge')}</span>
+          <h1 className="pp-pageHeader__title">{t('shelters.title')}</h1>
+          <p className="pp-pageHeader__sub">{t('shelters.tagline')}</p>
+
+          {showRegisterBlock ? (
+            <div className="pp-sheltersHubHero__register">
+              <h2 className="pp-sectionTitle pp-sheltersHubHero__registerTitle">{registerTitle}</h2>
+              {!user ? <p className="pp-subtle">{t('shelters.registerGuestDesc')}</p> : null}
+              {user && isShelterAccount ? <p className="pp-subtle">{t('shelters.pendingDesc')}</p> : null}
+              {!isShelterAccount ? (
+                <Link className="pp-btn pp-btnPrimary" to={user ? '/shelter/apply' : '/login'}>
+                  {user ? t('shelters.registerCta') : t('shelters.registerGuestCta')}
+                </Link>
+              ) : null}
+            </div>
+          ) : null}
+
+          {isApprovedShelter && shelterProfile?.id ? (
+            <Link className="pp-btn pp-btnPrimary pp-sheltersHubHero__dashboard" to="/shelter/dashboard">
+              {t('shelters.openDashboard')}
+            </Link>
+          ) : null}
+        </div>
       </div>
-
-      {(!isApprovedShelter || !user) ? (
-        <div className="pp-col-12">
-          <div className="pp-card pp-pad pp-shelterCta">
-            <h2 className="pp-sectionTitle" style={{ marginTop: 0 }}>
-              {!user ? t('shelters.registerTitle') : isShelterAccount ? t('shelters.pendingTitle') : t('shelters.registerTitle')}
-            </h2>
-            <p className="pp-subtle">
-              {!user ? t('shelters.registerGuestDesc') : isShelterAccount ? t('shelters.pendingDesc') : t('shelters.registerDesc')}
-            </p>
-            {!isShelterAccount ? (
-              <Link className="pp-btn pp-btnPrimary" to={user ? '/shelter/apply' : '/login'}>
-                {user ? t('shelters.registerCta') : t('shelters.registerGuestCta')}
-              </Link>
-            ) : null}
-          </div>
-        </div>
-      ) : null}
-
-      {isApprovedShelter && shelterProfile?.id ? (
-        <div className="pp-col-12">
-          <Link className="pp-btn pp-btnPrimary" to="/shelter/dashboard">
-            {t('shelters.openDashboard')}
-          </Link>
-        </div>
-      ) : null}
 
       <div className="pp-col-12">
         <div className="pp-card pp-pad">
