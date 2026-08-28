@@ -9,6 +9,7 @@ import { walkStreakDays, kmTodayForPetFromSessions, latestWalkSessionForPet } fr
 import { useAutoGpsWalks } from '../walk/useAutoGpsWalks';
 import LifetimeAchievements from '../components/LifetimeAchievements';
 import { formatDateTime24 } from '../formatTime24';
+import { playMissionCompleteSound } from '../sound/playMissionComplete';
 
 const WEEKLY_GOAL_KM = 18;
 
@@ -141,6 +142,13 @@ export default function ActivityHub() {
         ? formatDateTime24(new Date(latestWalkPet.createdAt), language)
         : '';
 
+  const onCompleteMission = useCallback(
+    (missionId) => {
+      if (completeDaily(missionId)) playMissionCompleteSound();
+    },
+    [completeDaily]
+  );
+
   const renderMission = (m) => {
     const done = isDailyDone(m.id);
     const needKm = m.minWalkKmToday;
@@ -154,11 +162,11 @@ export default function ActivityHub() {
           {m.description ? <span className="pp-hubMission__desc">{m.description}</span> : null}
         </div>
         {done ? null : needKm != null ? (
-          <button type="button" className="pp-btn pp-btnPrimary" disabled={!walkMet} onClick={() => completeDaily(m.id)}>
+          <button type="button" className="pp-btn pp-btnPrimary" disabled={!walkMet} onClick={() => onCompleteMission(m.id)}>
             {walkMet ? t('activityHub.claimReward') : t('activityHub.needKm', { n: needKm })}
           </button>
         ) : (
-          <button type="button" className="pp-btn pp-btnPrimary" onClick={() => completeDaily(m.id)}>
+          <button type="button" className="pp-btn pp-btnPrimary" onClick={() => onCompleteMission(m.id)}>
             {t('activityHub.gotIt')}
           </button>
         )}
