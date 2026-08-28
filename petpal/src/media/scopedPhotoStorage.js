@@ -1,6 +1,6 @@
 import { deleteObject, getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import { getFirebaseStorage } from '../firebase';
-import { fileToAvatarJpeg } from '../profile/userProfilePhoto';
+import { fileToListingPhotoJpeg, photoUrlToUploadFile } from './photoUploadUtils';
 
 function randToken() {
   return Math.random().toString(36).slice(2, 10);
@@ -12,7 +12,7 @@ function randToken() {
 export async function uploadScopedPhoto({ uid, scope, entityId, file, index = 0 }) {
   const storage = getFirebaseStorage();
   if (!storage || !uid || !file || !entityId) return null;
-  const { blob } = await fileToAvatarJpeg(file);
+  const { blob } = await fileToListingPhotoJpeg(file);
   const safeScope = String(scope || 'photos').replace(/[^\w-]/g, '');
   const safeEntity = String(entityId || '').replace(/[^\w-]/g, '');
   const path = `${safeScope}/${uid}/${safeEntity}/${Date.now()}-${index}-${randToken()}.jpg`;
@@ -44,12 +44,21 @@ export async function uploadPhotoDrafts(drafts, ctx) {
       out.push({ url: d.photoUrl, storagePath: d.storagePath, isPrimary: !!d.isPrimary });
       continue;
     }
-    if (!d.file) continue;
+    let file = d.file || null;
+    if (!file && d.photoUrl) {
+      const remote = String(d.photoUrl).trim();
+      if (remote.startsWith('http://') || remote.startsWith('https://')) {
+        out.push({ url: remote, storagePath: d.storagePath || '', isPrimary: !!d.isPrimary });
+        continue;
+      }
+      file = await photoUrlToUploadFile(remote);
+    }
+    if (!file) continue;
     const uploaded = await uploadScopedPhoto({
       uid: ctx.uid,
       scope: ctx.scope,
       entityId: ctx.entityId,
-      file: d.file,
+      file,
       index: i,
     });
     if (uploaded) {

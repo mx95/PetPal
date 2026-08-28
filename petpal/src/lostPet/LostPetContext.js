@@ -83,6 +83,7 @@ export function LostPetProvider({ children }) {
         })),
         { uid, scope: 'lostPetPhotos', entityId: draftId }
       );
+      if (!uploaded.length) return { ok: false, error: 'photo_upload' };
 
       const result = await createLostPetAlert(uid, {
         petId: payload.petId,
