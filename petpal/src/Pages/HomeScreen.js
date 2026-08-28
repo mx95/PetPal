@@ -129,6 +129,16 @@ export default function HomeScreen() {
           />
           <div className="pp-homeWelcome__heroFade" />
         </div>
+        <div className="pp-homeWelcome__bannerActions">
+          <div className="pp-homeWelcome__ctaRow">
+            <Link className="pp-btn pp-btnPrimary" to="/register">
+              {t('home.publicHero.ctaPrimary')}
+            </Link>
+            <Link className="pp-btn pp-btn--ghost" to="/login">
+              {t('home.publicHero.ctaSecondary')}
+            </Link>
+          </div>
+        </div>
         <div className="pp-homeWelcome__bannerOverlay">
           <div className="pp-homeWelcome__bannerCopy">
             <div className="pp-homeWelcome__bannerGreeting">
@@ -139,16 +149,6 @@ export default function HomeScreen() {
                 {t('home.publicHero.headlineAfter')}
               </h1>
             </div>
-          </div>
-        </div>
-        <div className="pp-homeWelcome__bannerActions">
-          <div className="pp-homeWelcome__ctaRow">
-            <Link className="pp-btn pp-btnPrimary" to="/register">
-              {t('home.publicHero.ctaPrimary')}
-            </Link>
-            <Link className="pp-btn pp-btn--ghost" to="/login">
-              {t('home.publicHero.ctaSecondary')}
-            </Link>
           </div>
         </div>
       </section>
