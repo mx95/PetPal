@@ -40,6 +40,7 @@ function buildEventDetails({
   variantLabel,
   location,
   bookingId,
+  bookingUrl,
   price,
   durationMin,
   customerEmail,
@@ -54,8 +55,15 @@ function buildEventDetails({
   if (price) lines.push(`Price: ${price}`);
   if (location) lines.push(`Location: ${location}`);
   if (bookingId) lines.push(`Confirmation: ${bookingId}`);
+  if (bookingUrl) lines.push(`View booking: ${bookingUrl}`);
   lines.push('Booked via PetPal');
   return lines.join('\n');
+}
+
+function buildBookingDetailUrl(bookingId, origin = 'https://petpal.com.cy') {
+  const id = String(bookingId || '').trim();
+  if (!id) return '';
+  return `${String(origin).replace(/\/$/, '')}/bookings/booking/${encodeURIComponent(id)}`;
 }
 
 function buildBookingIcs({
@@ -63,11 +71,13 @@ function buildBookingIcs({
   title,
   details,
   location,
+  url,
   start,
   end,
   attendeeEmail,
   organizerEmail,
   organizerName = 'PetPal Bookings',
+  alarmMinutes = 15,
 }) {
   const startStamp = googleDate(start);
   const endStamp = googleDate(end);
@@ -75,6 +85,7 @@ function buildBookingIcs({
 
   const attendee = String(attendeeEmail || '').trim().toLowerCase();
   const organizer = String(organizerEmail || '').trim().toLowerCase();
+  const mins = Number(alarmMinutes);
 
   return [
     'BEGIN:VCALENDAR',
@@ -89,11 +100,17 @@ function buildBookingIcs({
     `DTEND:${endStamp}`,
     `SUMMARY:${escapeIcsText(title)}`,
     location ? `LOCATION:${escapeIcsText(location)}` : '',
+    url ? `URL:${escapeIcsText(url)}` : '',
     details ? `DESCRIPTION:${escapeIcsText(details)}` : '',
     organizer ? `ORGANIZER;CN=${escapeIcsText(organizerName)}:mailto:${organizer}` : '',
     attendee ? `ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;PARTSTAT=NEEDS-ACTION;RSVP=TRUE:mailto:${attendee}` : '',
     'STATUS:CONFIRMED',
     'SEQUENCE:0',
+    Number.isFinite(mins) && mins > 0 ? 'BEGIN:VALARM' : '',
+    Number.isFinite(mins) && mins > 0 ? `TRIGGER:-PT${mins}M` : '',
+    Number.isFinite(mins) && mins > 0 ? 'ACTION:DISPLAY' : '',
+    Number.isFinite(mins) && mins > 0 ? `DESCRIPTION:${escapeIcsText('PetPal appointment reminder')}` : '',
+    Number.isFinite(mins) && mins > 0 ? 'END:VALARM' : '',
     'END:VEVENT',
     'END:VCALENDAR',
   ]
@@ -125,6 +142,7 @@ function buildInviteFromBooking({
   if (!start || !end) return '';
 
   const title = buildEventTitle({ storeName, serviceName, petName });
+  const bookingUrl = buildBookingDetailUrl(bookingId);
   const details = buildEventDetails({
     storeName,
     serviceName,
@@ -132,6 +150,7 @@ function buildInviteFromBooking({
     variantLabel,
     location,
     bookingId,
+    bookingUrl,
     price,
     durationMin: Number.isFinite(mins) && mins > 0 ? mins : undefined,
     customerEmail,
@@ -142,6 +161,7 @@ function buildInviteFromBooking({
     title,
     details,
     location,
+    url: bookingUrl,
     start,
     end,
     attendeeEmail,

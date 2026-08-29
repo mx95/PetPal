@@ -1,6 +1,8 @@
 import {
+  buildBookingDetailUrl,
   buildCalendarEvent,
   buildIcsContent,
+  CALENDAR_DEFAULT_ALARM_MINUTES,
   downloadAppleCalendar,
   googleCalendarUrl,
   hasCalendarTimes,
@@ -52,22 +54,6 @@ describe('calendarLinks', () => {
     expect(url).toContain('dates=20260706T095500Z%2F20260706T105000Z');
   });
 
-  test('buildIcsContent includes DTSTART, DTEND, and LOCATION', () => {
-    const event = buildCalendarEvent({
-      providerName: 'Sotiris Demo',
-      serviceName: 'Grooming',
-      petName: 'Odin',
-      startAtIso: '2026-07-06T09:55:00.000Z',
-      durationMin: 55,
-      providerAddress: '12 Makarios Ave, Limassol',
-    });
-    const ics = buildIcsContent(event);
-    expect(ics).toContain('DTSTART:20260706T095500Z');
-    expect(ics).toContain('DTEND:20260706T105000Z');
-    expect(ics).toContain('LOCATION:12 Makarios Ave\\, Limassol');
-    expect(ics).toContain('SUMMARY:Sotiris Demo');
-  });
-
   test('downloadAppleCalendar returns true when event has times', () => {
     const event = buildCalendarEvent({
       serviceName: 'Grooming',
@@ -87,5 +73,72 @@ describe('calendarLinks', () => {
 
     URL.createObjectURL = originalCreate;
     URL.revokeObjectURL = originalRevoke;
+  });
+
+  test('buildBookingDetailUrl builds absolute booking link', () => {
+    expect(buildBookingDetailUrl('abc-123', 'https://petpal.com.cy')).toBe(
+      'https://petpal.com.cy/bookings/booking/abc-123'
+    );
+    expect(buildBookingDetailUrl('abc-123')).toMatch(/\/bookings\/booking\/abc-123$/);
+    expect(buildBookingDetailUrl('')).toBe('');
+  });
+
+  test('buildCalendarEvent includes booking URL in details and stable uid', () => {
+    const event = buildCalendarEvent(
+      {
+        providerName: 'Happy Paws',
+        serviceName: 'Grooming',
+        petName: 'Odin',
+        startAtIso: '2026-07-06T09:55:00.000Z',
+        durationMin: 30,
+        bookingId: 'bk_42',
+      },
+      (key) => key
+    );
+    expect(event.uid).toBe('bk_42@petpal.com.cy');
+    expect(event.url).toContain('/bookings/booking/bk_42');
+    expect(event.details).toContain('View booking:');
+    expect(event.details).toContain('/bookings/booking/bk_42');
+  });
+
+  test('buildIcsContent includes DTSTART, DTEND, LOCATION, URL, VALARM, and stable UID', () => {
+    const event = buildCalendarEvent({
+      providerName: 'Sotiris Demo',
+      serviceName: 'Grooming',
+      petName: 'Odin',
+      startAtIso: '2026-07-06T09:55:00.000Z',
+      durationMin: 55,
+      providerAddress: '12 Makarios Ave, Limassol',
+      bookingId: 'bk_99',
+    });
+    const ics = buildIcsContent(event);
+    expect(ics).toContain('UID:bk_99@petpal.com.cy');
+    expect(ics).toContain('DTSTART:20260706T095500Z');
+    expect(ics).toContain('DTEND:20260706T105000Z');
+    expect(ics).toContain('LOCATION:12 Makarios Ave\\, Limassol');
+    expect(ics).toContain('SUMMARY:Sotiris Demo');
+    expect(ics).toContain('URL:');
+    expect(ics).toContain('/bookings/booking/bk_99');
+    expect(ics).toContain('BEGIN:VALARM');
+    expect(ics).toContain(`TRIGGER:-PT${CALENDAR_DEFAULT_ALARM_MINUTES}M`);
+    expect(ics).toContain('END:VALARM');
+  });
+
+  test('googleCalendarUrl includes details with booking link', () => {
+    const event = buildCalendarEvent({
+      serviceName: 'Grooming',
+      petName: 'Odin',
+      startAtIso: '2026-07-06T09:55:00.000Z',
+      endAtIso: '2026-07-06T10:50:00.000Z',
+      bookingId: 'bk_link',
+    });
+    const url = googleCalendarUrl(event);
+    expect(url).toContain('details=');
+    expect(url).toContain('View+booking');
+    expect(url).toContain('bk_link');
+  });
+
+  test('hasCalendarTimes is false when start missing', () => {
+    expect(hasCalendarTimes({ start: null, end: new Date() })).toBe(false);
   });
 });
