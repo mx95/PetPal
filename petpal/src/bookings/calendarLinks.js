@@ -27,6 +27,19 @@ function translate(t, key, fallback, params) {
   return typeof t === 'function' ? t(key, params) : fallback;
 }
 
+/** @param {string} bookingId @param {string} [origin] */
+export function buildBookingDetailUrl(bookingId, origin) {
+  const id = String(bookingId || '').trim();
+  if (!id) return '';
+  const base =
+    origin ||
+    (typeof window !== 'undefined' && window.location?.origin ? window.location.origin : 'https://petpal.com.cy');
+  return `${String(base).replace(/\/$/, '')}/bookings/booking/${encodeURIComponent(id)}`;
+}
+
+/** Default reminder offset for calendar exports (matches common “15 minutes before”). */
+export const CALENDAR_DEFAULT_ALARM_MINUTES = 15;
+
 function resolveEventTimes(event) {
   let start = asDate(event?.start);
   let end = asDate(event?.end);
@@ -69,6 +82,7 @@ function buildEventDetails({
   variantLabel,
   location,
   bookingId,
+  bookingUrl,
   price,
   durationMin,
 }) {
@@ -81,6 +95,7 @@ function buildEventDetails({
   if (price) lines.push(`Price: ${price}`);
   if (location) lines.push(`Location: ${location}`);
   if (bookingId) lines.push(`Confirmation: ${bookingId}`);
+  if (bookingUrl) lines.push(`View booking: ${bookingUrl}`);
   lines.push('Booked via PetPal');
   return lines.join('\n');
 }
@@ -102,6 +117,7 @@ export function buildCalendarEvent(booking, t) {
   const bookingId = booking?.bookingId || booking?.id || '';
   const price = booking?.price || booking?.variantSnapshot?.price || booking?.serviceSnapshot?.price || '';
   const durationMin = Number(booking?.durationMin);
+  const bookingUrl = buildBookingDetailUrl(bookingId);
 
   const start = slotStartDate(booking);
   let end = slotEndDate(booking);
@@ -117,6 +133,7 @@ export function buildCalendarEvent(booking, t) {
     variantLabel,
     location,
     bookingId,
+    bookingUrl,
     price,
     durationMin: Number.isFinite(durationMin) && durationMin > 0 ? durationMin : undefined,
   });
@@ -125,6 +142,8 @@ export function buildCalendarEvent(booking, t) {
     title,
     details,
     location,
+    url: bookingUrl,
+    uid: bookingId ? `${bookingId}@petpal.com.cy` : undefined,
     storeName,
     providerName: storeName,
     serviceName,
@@ -139,6 +158,8 @@ export function buildIcsContent(event) {
   const { start, end } = resolveEventTimes(event);
   const startStamp = googleDate(start);
   const endStamp = googleDate(end);
+  const uid = event?.uid || `${Date.now()}-${Math.random().toString(16).slice(2)}@petpal.com.cy`;
+  const alarmMinutes = Number(event?.alarmMinutes) || CALENDAR_DEFAULT_ALARM_MINUTES;
 
   return [
     'BEGIN:VCALENDAR',
@@ -147,13 +168,19 @@ export function buildIcsContent(event) {
     'CALSCALE:GREGORIAN',
     'METHOD:PUBLISH',
     'BEGIN:VEVENT',
-    `UID:${Date.now()}-${Math.random().toString(16).slice(2)}@petpal.com.cy`,
+    `UID:${uid}`,
     `DTSTAMP:${googleDate(new Date())}`,
     startStamp ? `DTSTART:${startStamp}` : '',
     endStamp ? `DTEND:${endStamp}` : '',
     `SUMMARY:${escapeIcsText(event.title)}`,
     event.location ? `LOCATION:${escapeIcsText(event.location)}` : '',
+    event.url ? `URL:${escapeIcsText(event.url)}` : '',
     event.details ? `DESCRIPTION:${escapeIcsText(event.details)}` : '',
+    alarmMinutes > 0 ? 'BEGIN:VALARM' : '',
+    alarmMinutes > 0 ? `TRIGGER:-PT${alarmMinutes}M` : '',
+    alarmMinutes > 0 ? 'ACTION:DISPLAY' : '',
+    alarmMinutes > 0 ? `DESCRIPTION:${escapeIcsText('PetPal appointment reminder')}` : '',
+    alarmMinutes > 0 ? 'END:VALARM' : '',
     'END:VEVENT',
     'END:VCALENDAR',
   ]
