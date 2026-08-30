@@ -299,7 +299,7 @@ ensure_firebase_auth_domain_for_redirect() {
   # keep the working Firebase default or login fails with redirect_uri_mismatch.
   local envf="$PETPAL_DIR/.env.local"
   [ -f "$envf" ] || return 0
-  local want="${PETPAL_FIREBASE_AUTH_DOMAIN:-petpal-aecda.firebaseapp.com}"
+  local want="${PETPAL_FIREBASE_AUTH_DOMAIN:-petpal.com.cy}"
   if grep -qE "^REACT_APP_FIREBASE_AUTH_DOMAIN=${want//./\\.}\s*$" "$envf"; then
     log "Firebase authDomain already $want"
     return 0
