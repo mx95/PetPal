@@ -109,8 +109,7 @@ export default function Login() {
         returnTo: redirectTo,
       });
       if (!cred) {
-        // Redirect flow — browser leaves this page.
-        setError(t('auth.errors.redirectInProgress'));
+        // Redirect flow — browser navigates away; keep the busy state.
         return;
       }
       trackAuthEvent('login_social_success', { provider: providerId });
