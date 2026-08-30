@@ -3,6 +3,7 @@ import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-route
 import { useAuth } from '../auth/AuthProvider';
 import { useI18n } from '../i18n/I18nContext';
 import { bookSlot, fetchCompanyService, fetchOpenSlots } from '../bookings/bookingFirestore';
+import { buildCustomerSnapshot, buildPetSnapshotForBooking } from '../bookings/bookingSnapshotUtils';
 import { getProviderBookingStatus } from '../bookings/providerDirectoryFirestore';
 import {
   buildVariantSnapshot,
@@ -599,6 +600,8 @@ export default function BookService({ embedded = false }) {
       }
       const pet = selectedPet;
       const slot = slots.find((s) => s.id === slotId) || null;
+      const petSnapshot = buildPetSnapshotForBooking(pet, user);
+      const customerSnapshot = buildCustomerSnapshot(user);
       const variantSnapshot = buildVariantSnapshot(service, variantId, t);
       const addonsSnapshot = buildAddonsSnapshot(selectedAddons, t);
       const serviceSnapshot = service
@@ -624,7 +627,8 @@ export default function BookService({ embedded = false }) {
           customerUid: uid,
           petId,
           petName: pet?.name || '',
-          petSnapshot: { name: pet?.name || '', categoryId: pet?.categoryId || 'dog' },
+          petSnapshot,
+          customerSnapshot,
           variantId: variantId || null,
           variantSnapshot,
           addonsSnapshot,
@@ -670,7 +674,8 @@ export default function BookService({ embedded = false }) {
           slotId,
           customerUid: uid,
           petId,
-          petSnapshot: { name: pet?.name || '', categoryId: pet?.categoryId || 'dog' },
+          petSnapshot,
+          customerSnapshot,
           variantId: variantId || null,
           variantSnapshot,
           addonsSnapshot,
@@ -693,7 +698,8 @@ export default function BookService({ embedded = false }) {
         slotId,
         petId,
         petName: pet?.name || 'Pet',
-        petSnapshot: { name: pet?.name || 'Pet', categoryId: pet?.categoryId || 'dog' },
+        petSnapshot,
+        customerSnapshot,
         variantId: variantId || null,
         variantSnapshot,
         addonsSnapshot,

@@ -18879,6 +18879,38 @@ html[data-theme="dark"] .pp-bookingDetailCard {
   grid-template-columns: 46px minmax(0, 1fr) auto;
 }
 
+.pp-providerClientCard--customer,
+.pp-providerClientCard--onFile {
+  grid-template-columns: 52px minmax(0, 1fr);
+}
+
+.pp-providerClientCard--onFile.pp-providerClientCard {
+  grid-template-columns: 46px minmax(0, 1fr) auto;
+}
+
+.pp-providerClientCard__pair {
+  align-self: center;
+}
+
+.pp-providerClientCard__petAvatar {
+  border-radius: 17px;
+}
+
+.pp-providerClientCard__body {
+  min-width: 0;
+}
+
+.pp-providerClientCard__petLine {
+  margin: 4px 0 0;
+  color: var(--pp-text-2);
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+.pp-providerClientCard__petLine span {
+  margin-right: 4px;
+}
+
 .pp-providerBookingCard small,
 .pp-providerClientCard small {
   color: var(--pp-text-2);

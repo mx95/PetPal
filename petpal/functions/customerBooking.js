@@ -79,7 +79,9 @@ exports.createCustomerBooking = functions.region('europe-west1').https.onCall(as
   const petId = String(data?.petId || '').trim();
   if (!companyId || !serviceId || !slotId || !petId) fail('invalid-argument', 'missing_fields');
 
-  const petSnapshot = data?.petSnapshot && typeof data.petSnapshot === 'object' ? data.petSnapshot : {};
+  const petSnapshotInput = data?.petSnapshot && typeof data.petSnapshot === 'object' ? data.petSnapshot : {};
+  const customerSnapshotInput =
+    data?.customerSnapshot && typeof data.customerSnapshot === 'object' ? data.customerSnapshot : {};
   const variantId = data?.variantId ? String(data.variantId) : null;
   const variantSnapshot =
     data?.variantSnapshot && typeof data.variantSnapshot === 'object' ? data.variantSnapshot : null;
@@ -98,6 +100,55 @@ exports.createCustomerBooking = functions.region('europe-west1').https.onCall(as
   if (providerData.bookingEnabled !== true) fail('failed-precondition', 'booking_not_enabled');
 
   const resolved = await resolveOpenSlot(db, companyId, serviceId, slotId, durationMin);
+
+  let customerSnapshot = { ...customerSnapshotInput };
+  let petSnapshot = { ...petSnapshotInput };
+  try {
+    const authUser = await admin.auth().getUser(customerUid);
+    if (authUser.email && !customerSnapshot.email) customerSnapshot.email = String(authUser.email).trim();
+    if (authUser.displayName && !customerSnapshot.displayName) {
+      customerSnapshot.displayName = String(authUser.displayName).trim();
+    }
+    if (authUser.photoURL && !customerSnapshot.photoURL) {
+      customerSnapshot.photoURL = String(authUser.photoURL).trim();
+    }
+  } catch (err) {
+    functions.logger.warn('Booking customer auth lookup failed', { customerUid, err: String(err?.message || err) });
+  }
+
+  try {
+    const userSnap = await db.doc(`users/${customerUid}`).get();
+    if (userSnap.exists) {
+      const profile = userSnap.data() || {};
+      if (profile.email && !customerSnapshot.email) customerSnapshot.email = String(profile.email).trim();
+      if (profile.accountName && !customerSnapshot.displayName) {
+        customerSnapshot.displayName = String(profile.accountName).trim();
+      }
+      if (profile.profilePhotoUrl && !customerSnapshot.photoURL) {
+        customerSnapshot.photoURL = String(profile.profilePhotoUrl).trim();
+      }
+    }
+  } catch (err) {
+    functions.logger.warn('Booking customer profile lookup failed', { customerUid, err: String(err?.message || err) });
+  }
+
+  try {
+    const petSnap = await db.doc(`users/${customerUid}/pets/${petId}`).get();
+    if (petSnap.exists) {
+      const pet = petSnap.data() || {};
+      if (pet.name && !petSnapshot.name) petSnapshot.name = String(pet.name).trim();
+      if (pet.categoryId && !petSnapshot.categoryId) petSnapshot.categoryId = String(pet.categoryId);
+      if (pet.photoUrl && !petSnapshot.photoUrl) petSnapshot.photoUrl = String(pet.photoUrl).trim();
+      if (pet.ownerName && !petSnapshot.ownerName) petSnapshot.ownerName = String(pet.ownerName).trim();
+      if (pet.ownerPhone && !petSnapshot.ownerPhone) petSnapshot.ownerPhone = String(pet.ownerPhone).trim();
+      if (!customerSnapshot.displayName && pet.ownerName) {
+        customerSnapshot.displayName = String(pet.ownerName).trim();
+      }
+    }
+  } catch (err) {
+    functions.logger.warn('Booking pet lookup failed', { customerUid, petId, err: String(err?.message || err) });
+  }
+
   const bookingRef = db.collection('bookings').doc();
   const bookingPayload = {
     companyId,
@@ -113,6 +164,7 @@ exports.createCustomerBooking = functions.region('europe-west1').https.onCall(as
     createdAt: admin.firestore.FieldValue.serverTimestamp(),
     updatedAt: admin.firestore.FieldValue.serverTimestamp(),
   };
+  if (Object.keys(customerSnapshot).length) bookingPayload.customerSnapshot = customerSnapshot;
   if (variantId) bookingPayload.variantId = variantId;
   if (variantSnapshot) bookingPayload.variantSnapshot = variantSnapshot;
   if (serviceSnapshot) bookingPayload.serviceSnapshot = serviceSnapshot;

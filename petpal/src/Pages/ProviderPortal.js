@@ -14,8 +14,12 @@ import {
   upsertCompanyService,
 } from '../bookings/bookingFirestore';
 import { createClientPet, deleteClientPet, patchClientPet, subscribeClientPets } from '../bookings/providerPetsFirestore';
+import { aggregateCustomersFromBookings } from '../bookings/providerCustomerUtils';
+import { enrichCustomersFromDirectory } from '../bookings/providerCustomerEnrich';
 import PetMedicationModal from '../components/PetMedicationModal';
 import IconMedPill from '../components/icons/IconMedPill';
+import PetAvatar from '../components/PetAvatar';
+import { LeaderboardPairVisual } from '../components/leaderboard/LeaderboardPairVisual';
 import { useI18n } from '../i18n/I18nContext';
 import { publishProviderProfile, setProviderBookingEnabled, subscribeProviderProfile } from '../bookings/providerDirectoryFirestore';
 import { providerBookingsBoostIsActive, providerNearbyBoostIsActive } from '../bookings/bookingBrowseUtils';
@@ -1847,13 +1851,22 @@ function Bookings({ companyId }) {
     setBusyId('walkin');
     try {
       const service = services.find((s) => s.id === walkIn.serviceId);
+      const clientPet = walkIn.clientPetId ? clientPets.find((p) => p.id === walkIn.clientPetId) : null;
+      const petSnapshot = {
+        name: petName,
+        categoryId: clientPet?.categoryId || 'dog',
+        ...(clientPet?.photoUrl ? { photoUrl: clientPet.photoUrl } : {}),
+        ...(clientPet?.photoDataUrl ? { photoDataUrl: clientPet.photoDataUrl } : {}),
+        ...(walkIn.ownerName ? { ownerName: walkIn.ownerName } : {}),
+        ...(walkIn.ownerPhone ? { ownerPhone: walkIn.ownerPhone } : {}),
+      };
       await createProviderBooking({
         companyId,
         providerUid: user?.uid || companyId,
         serviceId: walkIn.serviceId,
         slotId: walkIn.slotId,
         clientPetId: walkIn.clientPetId || null,
-        petSnapshot: { name: petName },
+        petSnapshot,
         ownerName: walkIn.ownerName,
         ownerPhone: walkIn.ownerPhone,
         serviceSnapshot: service
@@ -2081,6 +2094,7 @@ function Customers({ companyId, clinicLabel = '' }) {
   const { t } = useI18n();
   const [bookings, setBookings] = useState([]);
   const [clientPets, setClientPets] = useState([]);
+  const [enrichedCustomers, setEnrichedCustomers] = useState([]);
   const [err, setErr] = useState('');
   const [medClient, setMedClient] = useState(/** @type {Record<string, unknown> | null} */ (null));
   const [form, setForm] = useState({ name: '', ownerName: '', ownerPhone: '', trackingImei: '' });
@@ -2088,26 +2102,24 @@ function Customers({ companyId, clinicLabel = '' }) {
   useEffect(() => subscribeProviderBookings(companyId, setBookings, (e) => setErr(e?.message || t('common.errorGeneric'))), [companyId, t]);
   useEffect(() => subscribeClientPets(companyId, setClientPets, (e) => setErr(e?.message || t('common.errorGeneric'))), [companyId, t]);
 
-  const customersFromBookings = useMemo(() => {
-    const map = new Map();
-    bookings.forEach((b) => {
-      const key = String(b.customerUid || b.petSnapshot?.name || b.id);
-      const row = map.get(key) || {
-        key,
-        petName: b.petSnapshot?.name || t('providerPortal.petFallback'),
-        ownerLabel: b.customerUid
-          ? t('providerPortal.customerLabelWithId', { id: String(b.customerUid).slice(0, 8) })
-          : t('providerPortal.walkInCustomer'),
-        visits: 0,
-        lastVisit: '',
-      };
-      row.visits += 1;
-      const when = b.startAt?.toDate ? b.startAt.toDate().toISOString() : '';
-      if (when && when > row.lastVisit) row.lastVisit = when;
-      map.set(key, row);
+  const customersFromBookings = useMemo(
+    () => aggregateCustomersFromBookings(bookings, t),
+    [bookings, t]
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!customersFromBookings.length) {
+      setEnrichedCustomers([]);
+      return undefined;
+    }
+    enrichCustomersFromDirectory(customersFromBookings).then((rows) => {
+      if (!cancelled) setEnrichedCustomers(rows);
     });
-    return [...map.values()].sort((a, b) => String(b.lastVisit).localeCompare(String(a.lastVisit)));
-  }, [bookings, t]);
+    return () => {
+      cancelled = true;
+    };
+  }, [customersFromBookings]);
 
   const onCreatePet = async (e) => {
     e.preventDefault();
@@ -2192,12 +2204,23 @@ function Customers({ companyId, clinicLabel = '' }) {
           {customersFromBookings.length === 0 ? (
             <div className="pp-providerEmptyCard" style={{ gridColumn: '1 / -1' }}>{t('providerPortal.noCustomersFromBookings')}</div>
           ) : (
-            customersFromBookings.map((c) => (
-              <article key={c.key} className="pp-providerClientCard">
-                <div className="pp-providerAvatar" aria-hidden>{c.petName.charAt(0)}</div>
-                <div>
-                  <h3>{c.petName}</h3>
-                  <p>{c.ownerLabel}</p>
+            (enrichedCustomers.length ? enrichedCustomers : customersFromBookings).map((c) => (
+              <article key={c.key} className="pp-providerClientCard pp-providerClientCard--customer">
+                <LeaderboardPairVisual
+                  ownerName={c.customerName}
+                  petName={c.petName}
+                  petPhotoUrl={c.petPhotoUrl}
+                  ownerPhotoUrl={c.customerPhotoUrl}
+                  petCategoryId={c.petCategoryId}
+                  size="row"
+                  className="pp-providerClientCard__pair"
+                />
+                <div className="pp-providerClientCard__body">
+                  <h3>{c.customerName}</h3>
+                  {c.customerEmail ? <p>{c.customerEmail}</p> : null}
+                  <p className="pp-providerClientCard__petLine">
+                    <span aria-hidden>🐾</span> {c.petName}
+                  </p>
                   <small>{visitCountLabel(t, c.visits)}{c.lastVisit ? ` · ${formatDateTime24(new Date(c.lastVisit))}` : ''}</small>
                 </div>
               </article>
@@ -2211,9 +2234,18 @@ function Customers({ companyId, clinicLabel = '' }) {
             <div className="pp-providerEmptyCard" style={{ gridColumn: '1 / -1' }}>{t('providerPortal.noPetsAddedYet')}</div>
           ) : (
             clientPets.map((p) => (
-              <article key={p.id} className="pp-providerClientCard">
-                <div className="pp-providerAvatar" aria-hidden>{p.name.charAt(0)}</div>
-                <div>
+              <article key={p.id} className="pp-providerClientCard pp-providerClientCard--onFile">
+                <PetAvatar
+                  pet={{
+                    name: p.name,
+                    categoryId: p.categoryId || 'dog',
+                    photoUrl: p.photoUrl,
+                    photoDataUrl: p.photoDataUrl,
+                  }}
+                  size={46}
+                  className="pp-providerClientCard__petAvatar"
+                />
+                <div className="pp-providerClientCard__body">
                   <h3>{p.name}</h3>
                   <p>{p.ownerName || t('providerPortal.walkInCustomer')}</p>
                   <small>{p.ownerPhone || t('providerPortal.noPhone')}{p.trackingImei ? ` · ${t('providerPortal.trackerLinked')}` : ''}</small>
