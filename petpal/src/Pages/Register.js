@@ -98,7 +98,7 @@ export default function Register() {
         returnTo: '/',
       });
       if (!cred) {
-        setError(t('auth.errors.redirectInProgress'));
+        // Redirect flow — browser navigates away; keep the busy state.
         return;
       }
       completeRegistrationTransaction(true);

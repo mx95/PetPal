@@ -2,6 +2,7 @@ import {
   GoogleAuthProvider,
   OAuthProvider,
   getRedirectResult,
+  onAuthStateChanged,
   signInWithPopup,
   signInWithRedirect,
 } from 'firebase/auth';
@@ -96,10 +97,20 @@ export function isInstalledWebApp() {
   );
 }
 
+/** Phone/tablet browsers — popup OAuth often drops the session when the tab closes. */
+export function isMobileBrowser() {
+  if (typeof window === 'undefined') return false;
+  const ua = String(navigator.userAgent || '');
+  return (
+    /Android|iPhone|iPad|iPod|Mobile/i.test(ua) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+  );
+}
+
 /**
  * Prefer full-page redirect only when it can complete the session:
- * Capacitor always; installed PWA only when authDomain is first-party.
- * Otherwise use popup (same as mobile Safari/Chrome).
+ * Capacitor always; mobile + installed PWA when authDomain is first-party.
+ * Otherwise use popup (desktop browsers with cross-origin authDomain).
  */
 export function preferSocialRedirect() {
   if (typeof window === 'undefined') return false;
@@ -108,8 +119,41 @@ export function preferSocialRedirect() {
   } catch {
     /* ignore */
   }
-  if (!isInstalledWebApp()) return false;
-  return isAuthDomainFirstParty();
+  if (!isAuthDomainFirstParty()) return false;
+  if (isMobileBrowser() || isInstalledWebApp()) return true;
+  return false;
+}
+
+/**
+ * iOS Safari sometimes closes the Google popup after a successful pick but still
+ * emits auth/popup-closed-by-user before onAuthStateChanged reaches the opener.
+ */
+function waitForAuthUserAfterPopup(maxMs = 4000) {
+  if (!auth?.currentUser) {
+    return new Promise((resolve) => {
+      let settled = false;
+      const finish = (user) => {
+        if (settled) return;
+        settled = true;
+        unsub();
+        clearTimeout(timer);
+        resolve(user || null);
+      };
+      const unsub = onAuthStateChanged(auth, (user) => {
+        if (user) finish(user);
+      });
+      const timer = window.setTimeout(() => finish(auth.currentUser), maxMs);
+    });
+  }
+  return Promise.resolve(auth.currentUser);
+}
+
+function credentialFromUser(user, providerId) {
+  return {
+    user,
+    providerId: providerId === 'apple' ? 'apple.com' : 'google.com',
+    operationType: 'signIn',
+  };
 }
 
 function shouldFallbackToRedirect(err) {
@@ -217,14 +261,25 @@ export async function signInWithSocialProvider(providerId, options = {}) {
   socialSignInInFlight = true;
   try {
     const cred = await signInWithPopup(auth, provider);
+    const user = cred?.user || (await waitForAuthUserAfterPopup(1500));
+    if (!user) return cred;
     try {
-      await ensureSocialUserProfile(cred.user);
+      await ensureSocialUserProfile(user);
     } catch (profileErr) {
       console.warn('social profile ensure failed', profileErr);
     }
-    return cred;
+    return cred?.user ? cred : credentialFromUser(user, providerId);
   } catch (err) {
     if (err?.code === 'auth/popup-closed-by-user' || err?.code === 'auth/cancelled-popup-request') {
+      const recovered = await waitForAuthUserAfterPopup();
+      if (recovered) {
+        try {
+          await ensureSocialUserProfile(recovered);
+        } catch (profileErr) {
+          console.warn('social profile ensure failed', profileErr);
+        }
+        return credentialFromUser(recovered, providerId);
+      }
       throw err;
     }
     if (shouldFallbackToRedirect(err)) {
