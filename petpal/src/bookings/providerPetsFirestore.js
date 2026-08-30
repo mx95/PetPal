@@ -25,6 +25,12 @@ export async function createClientPet(companyId, pet) {
     ownerName: pet?.ownerName ? String(pet.ownerName).trim().slice(0, 120) : '',
     ownerPhone: pet?.ownerPhone ? String(pet.ownerPhone).trim().slice(0, 40) : '',
     notes: pet?.notes ? String(pet.notes).slice(0, 800) : '',
+    photoUrl: pet?.photoUrl ? String(pet.photoUrl).trim().slice(0, 2048) : '',
+    photoDataUrl:
+      typeof pet?.photoDataUrl === 'string' && pet.photoDataUrl.startsWith('data:')
+        ? pet.photoDataUrl.slice(0, 120000)
+        : '',
+    categoryId: pet?.categoryId ? String(pet.categoryId).slice(0, 40) : 'dog',
     trackingImei: pet?.trackingImei ? String(pet.trackingImei).trim().slice(0, 30) : '',
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
