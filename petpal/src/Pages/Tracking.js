@@ -1554,46 +1554,26 @@ export default function Tracking() {
       >
           <div className="pp-trackHistoryLayout">
             <div className="pp-card pp-pad pp-trackHistoryMap">
-              <div className="pp-trackHistoryMap__top">
-                <div>
-                  <h3>{t('trackingPage.historyRouteTitle')}</h3>
-                  {effectiveDeviceId ? (
-                    <p className="pp-subtle pp-trackHistoryMap__device">
-                      {selectedPet
-                        ? `${selectedPet.name} · ${t('trackingPage.historyDeviceHint', { imei: effectiveDeviceId })}`
-                        : t('trackingPage.historyDeviceHint', { imei: effectiveDeviceId })}
-                    </p>
-                  ) : null}
-                  {historyLoading ? <p className="pp-subtle">{t('trackingPage.historyLoading')}</p> : null}
-                  {!historyLoading &&
-                  mapHistoryPoints.length > 0 &&
-                  (historyMapUsesApprox || historyDayCoverage.total > 1) ? (
-                    <p className="pp-subtle pp-trackHistoryMap__sub">
-                      {[
-                        historyMapUsesApprox ? t('trackingPage.historyApproxMapHint') : null,
-                        historyDayCoverage.total > 1
-                          ? t('trackingPage.historyDaysCoverage', {
-                              active: historyDayCoverage.active,
-                              total: historyDayCoverage.total,
-                            })
-                          : null,
-                      ]
-                        .filter(Boolean)
-                        .join(' · ')}
-                    </p>
-                  ) : null}
-                </div>
-                <div className="pp-trackPlayback">
-                  <button type="button" disabled={mapHistoryPoints.length < 2} onClick={() => setHistoryPlaying((v) => !v)}>
-                    {historyPlaying ? t('trackingPage.historyPause') : t('trackingPage.historyPlay')}
-                  </button>
-                  <select value={historySpeed} onChange={(e) => setHistorySpeed(Number(e.target.value))} aria-label={t('trackingPage.historySpeedAria')}>
-                    <option value={1}>1x</option>
-                    <option value={1.5}>1.5x</option>
-                    <option value={2}>2x</option>
-                  </select>
-                </div>
-              </div>
+              {historyLoading ? (
+                <p className="pp-subtle pp-trackHistoryMap__loading">{t('trackingPage.historyLoading')}</p>
+              ) : null}
+              {!historyLoading &&
+              mapHistoryPoints.length > 0 &&
+              (historyMapUsesApprox || historyDayCoverage.total > 1) ? (
+                <p className="pp-subtle pp-trackHistoryMap__sub">
+                  {[
+                    historyMapUsesApprox ? t('trackingPage.historyApproxMapHint') : null,
+                    historyDayCoverage.total > 1
+                      ? t('trackingPage.historyDaysCoverage', {
+                          active: historyDayCoverage.active,
+                          total: historyDayCoverage.total,
+                        })
+                      : null,
+                  ]
+                    .filter(Boolean)
+                    .join(' · ')}
+                </p>
+              ) : null}
               {mapHistoryPoints.length ? (
                 <div className="pp-trackHistoryMap__body">
                   <div className="pp-trackMapFrame pp-trackHistoryFrame pp-trackHistoryFrame--panorama">
@@ -1625,6 +1605,16 @@ export default function Tracking() {
                     }}
                     aria-label={t('trackingPage.historyScrubAria')}
                   />
+                  <div className="pp-trackPlayback pp-trackPlayback--below">
+                    <button type="button" disabled={mapHistoryPoints.length < 2} onClick={() => setHistoryPlaying((v) => !v)}>
+                      {historyPlaying ? t('trackingPage.historyPause') : t('trackingPage.historyPlay')}
+                    </button>
+                    <select value={historySpeed} onChange={(e) => setHistorySpeed(Number(e.target.value))} aria-label={t('trackingPage.historySpeedAria')}>
+                      <option value={1}>1x</option>
+                      <option value={1.5}>1.5x</option>
+                      <option value={2}>2x</option>
+                    </select>
+                  </div>
                 </div>
               ) : (
                 <div className="pp-trackHistoryEmpty">

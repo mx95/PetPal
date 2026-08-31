@@ -4408,7 +4408,12 @@ html[data-theme="dark"] .pp-timeRangeRow--readOnly .pp-timeRangeRow__control {
   display: flex;
   flex-direction: column;
   min-height: 0;
-  padding: 14px 16px !important;
+  padding: 10px 12px !important;
+}
+
+.pp-trackHistoryMap__loading {
+  margin: 0 0 8px;
+  font-size: 13px;
 }
 
 .pp-trackHistoryMap__body {
@@ -4416,35 +4421,11 @@ html[data-theme="dark"] .pp-timeRangeRow--readOnly .pp-timeRangeRow__control {
   min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-}
-
-.pp-trackHistoryMap__top {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 8px;
-  flex-shrink: 0;
-}
-
-.pp-trackHistoryMap__top h3,
-.pp-trackHistoryTimeline__head h3 {
-  margin: 0;
-  color: var(--pp-text);
-  font-size: 18px;
-  font-weight: 950;
-  letter-spacing: -0.035em;
-}
-
-.pp-trackHistoryMap__top p {
-  margin: 3px 0 0;
-  color: var(--pp-text-2);
-  font-weight: 800;
+  gap: 10px;
 }
 
 .pp-trackHistoryMap__sub {
-  margin: 4px 0 0;
+  margin: 0 0 8px;
   font-size: 12px;
   line-height: 1.4;
   font-weight: 650;
@@ -4456,6 +4437,20 @@ html[data-theme="dark"] .pp-timeRangeRow--readOnly .pp-timeRangeRow__control {
   gap: 8px;
   flex-wrap: wrap;
   justify-content: flex-end;
+}
+
+.pp-trackPlayback--below {
+  justify-content: stretch;
+}
+
+.pp-trackPlayback--below button {
+  flex: 1;
+  min-width: 0;
+}
+
+.pp-trackPlayback--below select {
+  flex: 0 0 auto;
+  min-width: 72px;
 }
 
 .pp-trackPlayback button,
@@ -4476,8 +4471,8 @@ html[data-theme="dark"] .pp-timeRangeRow--readOnly .pp-timeRangeRow__control {
 
 .pp-trackHistoryFrame {
   flex: 0 0 auto;
-  min-height: min(36vh, 340px);
-  height: min(36vh, 340px);
+  min-height: min(44vh, 400px);
+  height: min(44vh, 400px);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -4611,8 +4606,8 @@ html[data-theme="dark"] .pp-timeRangeRow--readOnly .pp-timeRangeRow__control {
   .pp-trackHistoryFrame--panorama {
     border-radius: 24px;
     clip-path: none;
-    min-height: min(34vh, 320px);
-    height: min(34vh, 320px);
+    min-height: min(46vh, 420px);
+    height: min(46vh, 420px);
   }
 }
 
@@ -4623,6 +4618,14 @@ html[data-theme="dark"] .pp-timeRangeRow--readOnly .pp-timeRangeRow__control {
   gap: 10px;
   margin-bottom: 10px;
   flex-shrink: 0;
+}
+
+.pp-trackHistoryTimeline__head h3 {
+  margin: 0;
+  color: var(--pp-text);
+  font-size: 18px;
+  font-weight: 950;
+  letter-spacing: -0.035em;
 }
 
 .pp-trackHistoryTimeline__head span {
@@ -10324,7 +10327,6 @@ body,
   }
 
   .pp-trackHistoryRangeCard__head,
-  .pp-trackHistoryMap__top,
   .pp-trackHistoryTimeline__head {
     flex-direction: column;
     align-items: stretch;
