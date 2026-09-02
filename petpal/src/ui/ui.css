@@ -20279,6 +20279,7 @@ html[data-theme="dark"] .pp-nearby-list > li {
   padding: 0;
   background: transparent;
   overflow: hidden;
+  display: block;
 }
 
 .pp-shopPlanFeatures__nfcLogo {
