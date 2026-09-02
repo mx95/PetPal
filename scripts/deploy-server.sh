@@ -133,15 +133,7 @@ maintenance_enable
 
 if [ "$SKIP_GIT" != "1" ]; then
   log "Updating repo at $PETPAL_ROOT (branch: $DEPLOY_BRANCH)"
-  cd "$PETPAL_ROOT"
-  rm -f "$PETPAL_ROOT/.git/index.lock"
-  # Drop a stale remote-tracking ref before fetch — overlapping deploys can leave
-  # "cannot lock ref … expected X but is at Y" and abort the whole deploy.
-  git update-ref -d "refs/remotes/origin/${DEPLOY_BRANCH}" 2>/dev/null || true
-  git fetch origin "+refs/heads/${DEPLOY_BRANCH}:refs/remotes/origin/${DEPLOY_BRANCH}" --prune
-  git checkout "$DEPLOY_BRANCH"
-  git reset --hard "origin/$DEPLOY_BRANCH"
-  log "Now at $(git rev-parse --short HEAD) — $(git log -1 --pretty=%s)"
+  bash "$PETPAL_ROOT/scripts/git-sync-server.sh" "$PETPAL_ROOT" "$DEPLOY_BRANCH"
   restore_tracker_db_if_needed "$positions_before"
   # Mobile native projects are separate GitLab repos — not served by the tracker.
   rm -rf "$PETPAL_ROOT/mobile-android" "$PETPAL_ROOT/mobile-ios" "$PETPAL_ROOT/export" 2>/dev/null || true

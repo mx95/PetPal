@@ -1,4 +1,7 @@
-# Push to main → SSH to Hetzner, pull, build SPA, reload PM2 tracker.
+# Push to main → rsync checkout to Hetzner, build SPA, reload PM2 tracker.
+#
+# Code sync uses rsync from the Actions runner (no git pull on the server), which
+# avoids HTTPS credential prompts and concurrent git lock failures.
 #
 # One-time setup (GitHub repo → Settings → Secrets and variables → Actions):
 #   DEPLOY_HOST      e.g. 116.203.209.68
@@ -9,13 +12,9 @@
 #   DEPLOY_PATH      default /root/PetPal
 #
 # One-time setup on the server:
-#   1. Clone repo: git clone https://github.com/mx95/PetPal.git ~/PetPal
-#   2. petpal/.env.local with Firebase keys + REACT_APP_XEXUN_HTTP_BASE_URL=same
-#   3. cd tracker-tcp-server && pm2 start ecosystem.config.cjs && pm2 save
+#   1. mkdir -p /root/PetPal && petpal/.env.local with Firebase keys
+#   2. cd tracker-tcp-server && pm2 start ecosystem.config.cjs && pm2 save
 #   4. Add the GitHub Actions public key to ~/.ssh/authorized_keys
-#
-# Firebase Cloud Functions (contact form, shop, etc.) are NOT on this server —
-# deploy those separately: firebase deploy --only functions:...
 
 name: Deploy server
 
@@ -38,21 +37,46 @@ on:
         required: false
         default: ''
 
+permissions:
+  contents: read
+
 concurrency:
-  group: deploy-server
-  cancel-in-progress: true
+  group: petpal-server-ssh
+  cancel-in-progress: false
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch || github.ref }}
+          fetch-depth: 1
+
+      - name: Rsync checkout to server
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          SSH_KEY_FILE: ~/.ssh/deploy_key
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          export DEPLOY_PATH="${DEPLOY_PATH:-/root/PetPal}"
+          export DEPLOY_PORT="${DEPLOY_PORT:-22}"
+          bash scripts/ci-rsync-to-server.sh
+
       - name: Deploy over SSH
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ secrets.DEPLOY_PORT || 22 }}
           command_timeout: 20m
           script: |
             set -euo pipefail
@@ -61,25 +85,7 @@ jobs:
             export PETPAL_ROOT
             export DEPLOY_BRANCH="${{ github.event.inputs.branch || github.ref_name }}"
             export CLEAR_DEVICE_POSITIONS_IMEI="${{ github.event.inputs.clear_imei || '' }}"
-            # Pull first so we use the latest deploy script, then restore a Google-compatible
-            # authDomain (custom domain needs OAuth redirect URI first or login 400s).
-            cd "$PETPAL_ROOT"
-            git_sync_ok=0
-            for attempt in 1 2 3 4 5; do
-              rm -f "$PETPAL_ROOT/.git/index.lock"
-              if git fetch origin "+refs/heads/${DEPLOY_BRANCH}:refs/remotes/origin/${DEPLOY_BRANCH}" --prune \
-                && git checkout "$DEPLOY_BRANCH" \
-                && git reset --hard "origin/${DEPLOY_BRANCH}"; then
-                git_sync_ok=1
-                break
-              fi
-              echo "[deploy] git sync attempt $attempt failed — retrying in $((attempt * 5))s"
-              sleep $((attempt * 5))
-            done
-            if [ "$git_sync_ok" != "1" ]; then
-              echo "[deploy] git sync failed after retries"
-              exit 1
-            fi
+            printf '%s\n' "${{ github.sha }}" > "$PETPAL_ROOT/.deploy-sha"
             ENVF="$PETPAL_ROOT/petpal/.env.local"
             PLACES_KEY="${{ secrets.GOOGLE_PLACES_API_KEY }}"
             if [ -z "$PLACES_KEY" ] && [ -n "${{ github.event.inputs.places_api_key }}" ]; then
@@ -110,10 +116,8 @@ jobs:
             export SKIP_GIT=1
             export PETPAL_FIREBASE_AUTH_DOMAIN="$AUTH_DOMAIN"
             bash "$PETPAL_ROOT/scripts/deploy-server.sh"
-            # Clear shared broadcast inbox once (script may be new after this pull).
             CLEAR_INBOX_MARKER="/var/lib/petpal/broadcast-inbox-cleared-2026-08-21b"
             CLEAR_INBOX_SCRIPT="$PETPAL_ROOT/petpal/scripts/clear-broadcast-inbox.cjs"
-            # Drop stale false-success marker from earlier failed Admin-only attempts.
             rm -f /var/lib/petpal/broadcast-inbox-cleared-2026-08-21 2>/dev/null || true
             if [ -f "$CLEAR_INBOX_SCRIPT" ] && [ ! -f "$CLEAR_INBOX_MARKER" ]; then
               echo "[deploy] Clearing broadcast inbox (post-deploy one-shot)"
@@ -138,7 +142,6 @@ jobs:
                 fi
               fi
             fi
-            # Seed pending demo shelter once (Admin → Company approvals).
             SHELTER_SEED_MARKER="/var/lib/petpal/shelter-pending-seeded-2026-08-27"
             SHELTER_SEED_SCRIPT="$PETPAL_ROOT/petpal/scripts/create-shelter-pending.cjs"
             if [ -f "$SHELTER_SEED_SCRIPT" ] && [ ! -f "$SHELTER_SEED_MARKER" ]; then
@@ -160,7 +163,6 @@ jobs:
                 echo "[deploy] Pending shelter seed skipped or failed (Admin credentials may be missing on server)"
               fi
             fi
-            # If the pre-pull deploy script ignored CLEAR_*, clear here after git update.
             CLEAR_IMEI="${CLEAR_DEVICE_POSITIONS_IMEI:-}"
             if [ -n "$CLEAR_IMEI" ]; then
               TRACKER_DB="${PETPAL_TRACKER_DB:-/var/lib/petpal/petpal.sqlite}"
