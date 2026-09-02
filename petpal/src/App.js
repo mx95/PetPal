@@ -21,6 +21,7 @@ import {
   AdminDeviceRegistry,
   AdminEmailSettings,
   AdminHub,
+  AdminNearbyPlaces,
   AdminOrders,
   AdminShopAssets,
   AdminSiteMode,
@@ -170,6 +171,14 @@ function App() {
                 element={
                   <RequireAuth>
                     <AdminBroadcast />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/admin/nearby-places"
+                element={
+                  <RequireAuth>
+                    <AdminNearbyPlaces />
                   </RequireAuth>
                 }
               />

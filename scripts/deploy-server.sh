@@ -259,6 +259,43 @@ configure_places_functions_config() {
   fi
 }
 
+bootstrap_nearby_places_cache_if_needed() {
+  local key sa marker
+  key="$(read_places_api_key)"
+  [ -n "$key" ] || {
+    log "Nearby cache bootstrap skipped (no GOOGLE_PLACES_API_KEY on server)"
+    return 0
+  }
+
+  marker="/var/lib/petpal/nearby-places-cache-ready"
+  if [ -f "$marker" ] && [ "${FORCE_NEARBY_BOOTSTRAP:-0}" != "1" ]; then
+    log "Nearby cache already bootstrapped ($marker)"
+    return 0
+  fi
+
+  sa=""
+  if [ -f /root/serviceAccount.json ]; then
+    sa=/root/serviceAccount.json
+  elif [ -f "$PETPAL_DIR/serviceAccount.json" ]; then
+    sa="$PETPAL_DIR/serviceAccount.json"
+  fi
+  [ -n "$sa" ] || {
+    log "Nearby cache bootstrap skipped (no serviceAccount.json)"
+    return 0
+  }
+
+  export GOOGLE_APPLICATION_CREDENTIALS="$sa"
+  export GOOGLE_PLACES_API_KEY="$key"
+  log "Bootstrapping Nearby Places cache (CY + GR) — may take several minutes"
+  if (cd "$PETPAL_DIR" && node scripts/bootstrap-nearby-places-cache.cjs); then
+    mkdir -p /var/lib/petpal
+    touch "$marker"
+    log "Nearby Places cache bootstrap OK"
+  else
+    log "Nearby Places cache bootstrap failed — use Admin → Nearby places cache or bootstrap-nearby-places workflow"
+  fi
+}
+
 deploy_firestore_rules() {
   local sa=""
   if [ -f /root/serviceAccount.json ]; then
@@ -336,6 +373,7 @@ deploy_firebase_functions() {
 deploy_firestore_rules
 configure_places_functions_config
 deploy_firebase_functions
+bootstrap_nearby_places_cache_if_needed
 
 ensure_firebase_auth_domain_for_redirect() {
   # Google OAuth must allow https://petpal.com.cy/__/auth/handler before we can
