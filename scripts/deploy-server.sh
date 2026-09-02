@@ -213,7 +213,7 @@ deploy_firebase_cli() {
     printf '%s\n' firebase
     return
   fi
-  printf '%s\n' "npx --yes firebase-tools@15.28.2"
+  printf '%s\n' "npx firebase-tools@13.29.1"
 }
 
 read_places_api_key() {
