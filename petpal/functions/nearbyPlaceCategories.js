@@ -32,9 +32,6 @@ const NEARBY_CATEGORIES = [
 const PET_CAFE_EXTRA_SEARCHES = [
   { keyword: 'pet friendly cafe' },
   { keyword: 'dog friendly cafe' },
-  { keyword: 'cat cafe' },
-  { keyword: 'pets allowed cafe' },
-  { type: 'cafe', keyword: 'pet friendly' },
 ];
 
 /** Regions refreshed twice monthly (1st & 15th, Europe/Nicosia). */
@@ -52,8 +49,8 @@ const NEARBY_CACHE_REGIONS = {
     latMax: 41.75,
     lngMin: 19.35,
     lngMax: 29.65,
-    gridStep: 0.55,
-    searchRadiusM: 30000,
+    gridStep: 0.75,
+    searchRadiusM: 35000,
   },
 };
 

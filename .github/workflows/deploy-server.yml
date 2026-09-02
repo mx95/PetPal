@@ -33,6 +33,10 @@ on:
         description: Optional IMEI — wipe all position history after deploy
         required: false
         default: ''
+      places_api_key:
+        description: Optional server Places API key (stored on server only, not in git)
+        required: false
+        default: ''
 
 concurrency:
   group: deploy-server
@@ -66,6 +70,23 @@ jobs:
             git checkout "$DEPLOY_BRANCH"
             git reset --hard "origin/${DEPLOY_BRANCH}"
             ENVF="$PETPAL_ROOT/petpal/.env.local"
+            PLACES_KEY="${{ secrets.GOOGLE_PLACES_API_KEY }}"
+            if [ -z "$PLACES_KEY" ] && [ -n "${{ github.event.inputs.places_api_key }}" ]; then
+              PLACES_KEY="${{ github.event.inputs.places_api_key }}"
+            fi
+            if [ -n "$PLACES_KEY" ]; then
+              mkdir -p /var/lib/petpal
+              printf '%s\n' "$PLACES_KEY" > /var/lib/petpal/places-api-key
+              chmod 600 /var/lib/petpal/places-api-key
+              if [ -f "$ENVF" ]; then
+                if grep -qE '^GOOGLE_PLACES_API_KEY=' "$ENVF"; then
+                  sed -i.bak "s|^GOOGLE_PLACES_API_KEY=.*|GOOGLE_PLACES_API_KEY=${PLACES_KEY}|" "$ENVF"
+                else
+                  printf '\nGOOGLE_PLACES_API_KEY=%s\n' "$PLACES_KEY" >> "$ENVF"
+                fi
+              fi
+              echo "[deploy] GOOGLE_PLACES_API_KEY configured on server (not in git)"
+            fi
             AUTH_DOMAIN="${PETPAL_FIREBASE_AUTH_DOMAIN:-petpal.com.cy}"
             if [ -f "$ENVF" ]; then
               if grep -qE '^REACT_APP_FIREBASE_AUTH_DOMAIN=' "$ENVF"; then

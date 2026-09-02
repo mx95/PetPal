@@ -210,9 +210,52 @@ clear_broadcast_inbox_once
 
 deploy_firebase_cli() {
   if command -v firebase >/dev/null 2>&1; then
-    echo firebase
+    printf '%s\n' firebase
+    return
+  fi
+  printf '%s\n' "npx --yes firebase-tools@15.28.2"
+}
+
+read_places_api_key() {
+  local key=""
+  if [ -f /var/lib/petpal/places-api-key ]; then
+    key="$(tr -d '\r\n' < /var/lib/petpal/places-api-key)"
+  fi
+  if [ -z "$key" ] && [ -f "$PETPAL_DIR/.env.local" ]; then
+    key="$(grep -E '^GOOGLE_PLACES_API_KEY=' "$PETPAL_DIR/.env.local" 2>/dev/null | tail -1 | cut -d= -f2- | sed 's/^["'\'' ]*//;s/["'\'' ]*$//' | tr -d '\r')"
+  fi
+  printf '%s' "$key"
+}
+
+configure_places_functions_config() {
+  local key fb
+  key="$(read_places_api_key)"
+  [ -n "$key" ] || {
+    log "No GOOGLE_PLACES_API_KEY — skip Nearby Places functions.config (see scripts/configure-places-api-key.sh)"
+    return 0
+  }
+
+  local sa=""
+  if [ -f /root/serviceAccount.json ]; then
+    sa=/root/serviceAccount.json
+  elif [ -f "$PETPAL_DIR/serviceAccount.json" ]; then
+    sa="$PETPAL_DIR/serviceAccount.json"
+  fi
+
+  fb="$(deploy_firebase_cli)"
+  cd "$PETPAL_DIR"
+  if [ -n "$sa" ]; then
+    export GOOGLE_APPLICATION_CREDENTIALS="$sa"
+  elif ! $fb projects:list --project petpal-aecda --non-interactive >/dev/null 2>&1; then
+    log "Skipping places.key config (no Firebase credentials)"
+    return 0
+  fi
+
+  log "Setting Firebase functions.config places.key for Nearby cache refresh"
+  if $fb functions:config:set "places.key=${key}" --project petpal-aecda --non-interactive; then
+    log "functions.config places.key OK"
   else
-    echo "npx firebase-tools@13.29.1"
+    log "functions.config places.key failed — run: bash scripts/configure-places-api-key.sh"
   fi
 }
 
@@ -291,6 +334,7 @@ deploy_firebase_functions() {
 }
 
 deploy_firestore_rules
+configure_places_functions_config
 deploy_firebase_functions
 
 ensure_firebase_auth_domain_for_redirect() {

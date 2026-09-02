@@ -17,8 +17,8 @@ const { filterAcceptableNearbyPlaces } = require('./nearbyPlaceQuality');
 const COLLECTION = 'nearbyPlacesCache';
 const META_DOC = 'adminConfig/nearbyPlaces';
 const PLACES_CHUNK_SIZE = 400;
-const REQUEST_GAP_MS = 280;
-const PAGE_TOKEN_DELAY_MS = 2100;
+const REQUEST_GAP_MS = 400;
+const NEARBY_SEARCH_MAX_PAGES = 1;
 
 function ensureAdminApp() {
   try {
@@ -120,19 +120,17 @@ async function nearbySearchAllPages(args) {
   let pageToken = null;
   /** @type {any[]} */
   const merged = [];
-  for (let page = 0; page < 3; page += 1) {
+  for (let page = 0; page < NEARBY_SEARCH_MAX_PAGES; page += 1) {
     // eslint-disable-next-line no-await-in-loop
     const json = await nearbySearchOnce({ ...args, pageToken });
     if (Array.isArray(json.results)) merged.push(...json.results);
     if (!json.next_page_token) break;
     pageToken = json.next_page_token;
-    // eslint-disable-next-line no-await-in-loop
-    await sleep(PAGE_TOKEN_DELAY_MS);
   }
   return merged;
 }
 
-async function runNearbyQueryWithRetry(args, retries = 1) {
+async function runNearbyQueryWithRetry(args, retries = 0) {
   try {
     return await nearbySearchAllPages(args);
   } catch (e) {
