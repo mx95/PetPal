@@ -1734,6 +1734,8 @@ const en = {
     infoTitle: 'How nearby search works',
     infoClose: 'Close',
     infoLearnMore: 'Learn more',
+    allServicesHint:
+      'All services runs one search per category (more map API usage). Results are cached for 10 minutes in this session.',
     cats: {
       pet_store: { label: 'Pet shop', desc: 'Pet stores & supplies' },
       veterinary_care: { label: 'Vet', desc: 'Veterinary clinics' },

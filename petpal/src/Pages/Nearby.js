@@ -4,12 +4,18 @@ import { Link } from 'react-router-dom';
 import {
   getCategoryById,
   NEARBY_CATEGORIES,
+  NEARBY_DEFAULT_CATEGORY_ID,
   NEARBY_SEARCH_RADIUS_M,
   PET_CAFE_EXTRA_SEARCHES,
   nearbySearchFields,
 } from '../config/nearbyPlaceCategories';
 import { nearbyCategoryForPlace } from '../nearby/classifyNearbyPlace';
 import { filterAcceptableNearbyPlaces } from '../nearby/nearbyPlaceQuality';
+import {
+  getNearbyPlacesCache,
+  nearbyPlacesCacheKey,
+  setNearbyPlacesCache,
+} from '../nearby/nearbyPlacesCache';
 import NearbyCategoryPin from '../nearby/NearbyCategoryPin';
 import { GOOGLE_MAPS_LOADER_ID } from '../config/googleMapsLoaderId';
 import { subscribeGoogleMapsAuthFailure } from '../config/googleMapsAuthFailure';
@@ -102,8 +108,9 @@ function NearbyMap({ apiKey }) {
   const [searchCenter, setSearchCenter] = useState(DEFAULT_CENTER);
   const moreSearchGenRef = useRef(0);
   const [locationNote, setLocationNote] = useState(() => ({ kind: 'default' }));
-  const [selectedCategoryId, setSelectedCategoryId] = useState('more');
+  const [selectedCategoryId, setSelectedCategoryId] = useState(NEARBY_DEFAULT_CATEGORY_ID);
   const [searchScope, setSearchScope] = useState('radius');
+  const [geoSettled, setGeoSettled] = useState(false);
   const [places, setPlaces] = useState([]);
   const [searchStatus, setSearchStatus] = useState('idle');
   const [activePlace, setActivePlace] = useState(null);
@@ -170,19 +177,24 @@ function NearbyMap({ apiKey }) {
   searchScopeRef.current = searchScope;
 
   const runPlacesSearch = useCallback(
-    (mode, centerOverride) => {
+    (mode, centerOverride, { skipCache = false } = {}) => {
       if (!map || !isLoaded || !window.google?.maps?.places) return;
       const scope = mode || searchScopeRef.current;
       const center = centerOverride || searchCenterRef.current;
-      // Cancel any in-flight All-services search and start a new generation.
       const searchGen = ++moreSearchGenRef.current;
       setSearchStatus('loading');
-      // Keep existing pins + selection until new results arrive (avoids flash/flicker).
 
       const service = new window.google.maps.places.PlacesService(map);
       const cat = NEARBY_CATEGORIES.find((c) => c.id === selectedCategoryId) || NEARBY_CATEGORIES[0];
+      const boundsForCache = scope === 'bounds' ? map.getBounds() : null;
+      const cacheKey = nearbyPlacesCacheKey({
+        categoryId: cat.id,
+        scope,
+        center,
+        bounds: boundsForCache,
+      });
 
-      const publishPlaces = (merged, { max = 60 } = {}) => {
+      const publishPlaces = (merged, { max = 60, fromCache = false } = {}) => {
         if (moreSearchGenRef.current !== searchGen) return;
         const sortCenter = userLocationRef.current || center;
         const filtered = filterAcceptableNearbyPlaces(merged, {
@@ -196,15 +208,27 @@ function NearbyMap({ apiKey }) {
           if (db == null) return -1;
           return da - db;
         });
+        const nextPlaces = ranked.length ? ranked.slice(0, max) : [];
 
         setPlaces((prev) => {
           if (moreSearchGenRef.current !== searchGen) return prev;
-          if (!ranked.length) return [];
+          if (!nextPlaces.length) return [];
           const prevById = new Map(prev.map((p) => [p.place_id, p]));
-          return ranked.slice(0, max).map((p) => prevById.get(p.place_id) || p);
+          return nextPlaces.map((p) => prevById.get(p.place_id) || p);
         });
-        setSearchStatus(ranked.length ? 'ok' : 'empty');
+        setSearchStatus(nextPlaces.length ? 'ok' : 'empty');
+        if (!fromCache && nextPlaces.length) {
+          setNearbyPlacesCache(cacheKey, nextPlaces);
+        }
       };
+
+      if (!skipCache) {
+        const cached = getNearbyPlacesCache(cacheKey);
+        if (cached?.length) {
+          publishPlaces(cached, { max: cat.id === 'more' ? 60 : cat.id === 'pet_cafe' ? 40 : 20, fromCache: true });
+          return;
+        }
+      }
 
       if (cat.id === 'more') {
         const sources = NEARBY_CATEGORIES.filter((c) => c.id !== 'more');
@@ -219,8 +243,8 @@ function NearbyMap({ apiKey }) {
         }
         /** @type {Map<string, google.maps.places.PlaceResult & { nearbySourceCategoryIds?: string[] }>} */
         const byId = new Map();
-        const BATCH_SIZE = 3;
-        const BATCH_GAP_MS = 180;
+        const BATCH_SIZE = 1;
+        const BATCH_GAP_MS = 350;
 
         const runOne = (entry) =>
           new Promise((resolve) => {
@@ -239,9 +263,9 @@ function NearbyMap({ apiKey }) {
                 }
                 if (
                   status === window.google.maps.places.PlacesServiceStatus.OVER_QUERY_LIMIT &&
-                  retry < 2
+                  retry < 1
                 ) {
-                  window.setTimeout(() => attempt(retry + 1), 700 * (retry + 1));
+                  window.setTimeout(() => attempt(retry + 1), 900 * (retry + 1));
                   return;
                 }
                 resolve([]);
@@ -319,9 +343,9 @@ function NearbyMap({ apiKey }) {
                 }
                 if (
                   status === window.google.maps.places.PlacesServiceStatus.OVER_QUERY_LIMIT &&
-                  retry < 2
+                  retry < 1
                 ) {
-                  window.setTimeout(() => attempt(retry + 1), 700 * (retry + 1));
+                  window.setTimeout(() => attempt(retry + 1), 900 * (retry + 1));
                   return;
                 }
                 resolve([]);
@@ -391,8 +415,9 @@ function NearbyMap({ apiKey }) {
   );
 
   useEffect(() => {
-    if (isLoaded && map) runPlacesSearch();
-  }, [isLoaded, map, selectedCategoryId, searchCenter.lat, searchCenter.lng, runPlacesSearch]);
+    if (!isLoaded || !map || !geoSettled) return;
+    runPlacesSearch();
+  }, [isLoaded, map, geoSettled, selectedCategoryId, searchCenter.lat, searchCenter.lng, runPlacesSearch]);
 
   // Intentionally uncontrolled map: do not bind `center`/`zoom` props (they fight
   // user pans and remount overlays). Pan only when searchCenter changes on purpose.
@@ -409,10 +434,15 @@ function NearbyMap({ apiKey }) {
     map.panTo(new window.google.maps.LatLng(mapCenter.lat, mapCenter.lng));
   }, [map, mapCenter.lat, mapCenter.lng]);
 
+  const settleGeo = useCallback(() => {
+    setGeoSettled(true);
+  }, []);
+
   const requestUserLocation = useCallback(
     ({ silent = false } = {}) => {
       if (!navigator.geolocation) {
         if (!silent) setLocationNote({ kind: 'text', message: t('nearbyPage.locUnavailable') });
+        settleGeo();
         return;
       }
       if (!window.isSecureContext && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
@@ -422,6 +452,7 @@ function NearbyMap({ apiKey }) {
             message: t('nearbyPage.locHttpsRequired'),
           });
         }
+        settleGeo();
         return;
       }
       setLocFetching(true);
@@ -439,9 +470,11 @@ function NearbyMap({ apiKey }) {
             lastPanRef.current = { lat: next.lat, lng: next.lng };
           }
           setSearchScope('radius');
+          settleGeo();
         },
         (err) => {
           setLocFetching(false);
+          settleGeo();
           if (!silent) {
             setSearchStatus('idle');
             const reason =
@@ -462,7 +495,7 @@ function NearbyMap({ apiKey }) {
         { enableHighAccuracy: true, maximumAge: 60_000, timeout: 20_000 }
       );
     },
-    [map, t]
+    [map, settleGeo, t]
   );
 
   useEffect(() => {
@@ -478,7 +511,7 @@ function NearbyMap({ apiKey }) {
 
   function onSearchThisArea() {
     setSearchScope('bounds');
-    runPlacesSearch('bounds');
+    runPlacesSearch('bounds', undefined, { skipCache: true });
   }
 
   const onPinClick = useCallback((place) => {
@@ -576,6 +609,11 @@ function NearbyMap({ apiKey }) {
           <span>{t('nearbyPage.nearYouKm', { km: radiusKm })}</span>
         )}
       </p>
+      {selectedCategoryId === 'more' ? (
+        <p className="pp-subtle" style={{ marginTop: 6, marginBottom: 0 }}>
+          {t('nearbyPage.allServicesHint')}
+        </p>
+      ) : null}
 
       <div className="pp-nearby-body pp-nearby-body--separated">
         <section className="pp-nearby-mapStage pp-card" aria-label={t('nearbyPage.nearbyMapAria')}>
