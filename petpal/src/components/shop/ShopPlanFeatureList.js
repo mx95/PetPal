@@ -18,13 +18,26 @@ function LocationIcon() {
 function NfcIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <circle cx="12" cy="12" r="8.25" stroke="currentColor" strokeWidth="1.55" />
+      <circle cx="9.25" cy="12" r="1.1" fill="currentColor" />
       <path
-        d="M6.5 8.5a6 6 0 0 1 8.5 0M9 11a3 3 0 0 1 4.2 0"
+        d="M10.6 10.65a1.65 1.65 0 0 1 2.33 0"
         stroke="currentColor"
-        strokeWidth="1.8"
+        strokeWidth="1.55"
         strokeLinecap="round"
       />
-      <rect x="4" y="4" width="16" height="16" rx="3" stroke="currentColor" strokeWidth="1.8" />
+      <path
+        d="M9.15 9.2a3.35 3.35 0 0 1 4.74 0"
+        stroke="currentColor"
+        strokeWidth="1.55"
+        strokeLinecap="round"
+      />
+      <path
+        d="M7.7 7.75a5.05 5.05 0 0 1 7.14 0"
+        stroke="currentColor"
+        strokeWidth="1.55"
+        strokeLinecap="round"
+      />
     </svg>
   );
 }
