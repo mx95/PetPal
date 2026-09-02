@@ -20276,9 +20276,8 @@ html[data-theme="dark"] .pp-nearby-list > li {
 }
 
 .pp-shopPlanFeatures__icon--nfc {
-  color: transparent;
-  background: transparent;
-  padding: 0;
+  color: #047857;
+  background: rgba(16, 185, 129, 0.12);
 }
 
 .pp-shopPlanExpand {
