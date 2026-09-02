@@ -60,6 +60,7 @@ import {
   ShelterPublicProfile,
   SheltersHub,
   Shop,
+  ShopNfc,
   ShopCheckout,
   StrayAdoption,
   TermsOfService,
@@ -302,10 +303,8 @@ function App() {
                   </RequireAuth>
                 }
               />
-              <Route
-                path="/shop"
-                element={<Shop />}
-              />
+              <Route path="/shop/nfc" element={<ShopNfc />} />
+              <Route path="/shop" element={<Shop />} />
               <Route
                 path="/payment/success"
                 element={
@@ -375,14 +374,7 @@ function App() {
                   </RequireAuth>
                 }
               />
-              <Route
-                path="/nearby"
-                element={
-                  <RequireAuth>
-                    <Nearby />
-                  </RequireAuth>
-                }
-              />
+              <Route path="/nearby" element={<Nearby />} />
               <Route
                 path="/tracking"
                 element={

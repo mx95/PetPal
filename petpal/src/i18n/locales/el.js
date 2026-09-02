@@ -2341,6 +2341,9 @@ const el = {
     nfcDesignNext: 'Επόμενα σχέδια NFC',
     productsLead:
       'Προϊόντα από εγγεγραμμένες επιχειρήσεις PetPal. Προσθέστε στο καλάθι για έλεγχο πριν το checkout.',
+    productsHardwareLead: 'GPS trackers και NFC tags από το PetPal Care Hub.',
+    productsNfcCustomizeCta: 'Επιλογή σχεδίου',
+    subCarouselAria: 'Πλάνα συνδρομής',
     productsEmptyTitle: 'Δεν υπάρχουν προϊόντα ακόμα',
     productsEmptyBody: 'Το κατάστημα είναι έτοιμο — τα προϊόντα από επιχειρήσεις PetPal θα εμφανιστούν σύντομα.',
     addToCart: 'Προσθήκη στο καλάθι',
@@ -2360,6 +2363,15 @@ const el = {
     cartAria: 'Καλάθι αγορών',
     collarStatCombo: 'Ζεύγη checkout Plus + tracker (καταγεγραμμένα): {combo}',
     collarStatTotal: 'Πληρωμένα checkouts tracker (όλοι οι πελάτες): {total}',
+  },
+  shopNfcPage: {
+    title: 'NFC tags',
+    lead: 'Επιλέξτε σχέδιο και συνδέστε tag επικοινωνίας με το κατοικίδιό σας. Συνδεθείτε για checkout.',
+    backToShop: '← Πίσω στο shop',
+    guestBanner: 'Δείτε σχέδια NFC ανά πάσα στιγμή. Συνδεθείτε για σύνδεση tags και checkout.',
+    unavailable: 'Τα NFC tags δεν είναι διαθέσιμα αυτή τη στιγμή.',
+    yearlyHint: 'Το ετήσιο PetPal Plus περιλαμβάνει δωρεάν NFC tag και έκπτωση GPS tracker.',
+    yearlyCta: 'Ή δωρεάν tag με το Yearly',
   },
   paymentSuccess: {
     badge: 'PetPal Shop',

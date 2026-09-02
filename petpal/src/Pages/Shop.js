@@ -8,6 +8,7 @@ import { useI18n } from '../i18n/I18nContext';
 import { subscribeProviderProfile } from '../bookings/providerDirectoryFirestore';
 import { providerBookingsBoostIsActive, providerNearbyBoostIsActive } from '../bookings/bookingBrowseUtils';
 import ShopCartBar from '../components/shop/ShopCartBar';
+import SubscriptionCarousel from '../components/shop/SubscriptionCarousel';
 import ShopPetPicker from '../components/shop/ShopPetPicker';
 import NfcDesignSelector from '../components/shop/NfcDesignSelector';
 import ImeiQrScannerButton from '../components/ImeiQrScannerButton';
@@ -16,6 +17,7 @@ import ShopDeferredImage from '../components/shop/ShopDeferredImage';
 import {
   NFC_TAG_ADDON_CENTS,
   PLUS_SKUS,
+  HARDWARE_SKUS,
   PLUS_YEARLY_RENEWAL_CENTS,
   SHOP_PRODUCTS,
   BUSINESS_BOOST_PRODUCTS,
@@ -26,7 +28,7 @@ import {
   localizeShopProduct,
   monthlyFirstPaymentCents,
 } from '../shop/catalog';
-import { MARKETPLACE_PRODUCTS } from '../shop/marketplaceProducts';
+import { MARKETPLACE_PRODUCTS, MARKETPLACE_SELLER } from '../shop/marketplaceProducts';
 import { useShopCart } from '../shop/ShopCartContext';
 import { requestSubscriptionCancel } from '../shop/requestSubscriptionCancel';
 import { cancelBusinessBoost } from '../shop/cancelBusinessBoost';
@@ -35,9 +37,7 @@ import { subscribeShopSubscriptionState } from '../shop/shopSubscriptionsFiresto
 import { normalizeTrackerImei } from '../tracking/trackerImeiIndex';
 import ProfilePaymentMethod from '../components/ProfilePaymentMethod';
 
-const SUBSCRIPTION_PRODUCTS = SHOP_PRODUCTS.filter(
-  (p) => PLUS_SKUS.includes(p.id) || p.id === 'NFC_TAG_HARDWARE' || p.id === 'TRACKER_HARDWARE'
-);
+const SUBSCRIPTION_PRODUCTS = SHOP_PRODUCTS.filter((p) => PLUS_SKUS.includes(p.id));
 
 function petForImei(pets, imei) {
   const key = normalizeTrackerImei(imei);
@@ -76,6 +76,16 @@ export default function Shop() {
     [t]
   );
 
+  const localizedMarketplaceProducts = useMemo(
+    () =>
+      MARKETPLACE_PRODUCTS.map((product) => ({
+        ...product,
+        title: t(product.titleKey),
+        description: t(product.descKey),
+      })),
+    [t]
+  );
+
   useEffect(() => {
     if (checkout !== 'success') return;
     const q = searchParams.toString();
@@ -91,7 +101,6 @@ export default function Shop() {
   const [monthlyExistingImei, setMonthlyExistingImei] = useState('');
   const [monthlyNfcPetIds, setMonthlyNfcPetIds] = useState(/** @type {string[]} */ ([]));
   const [yearlyNfcPetIds, setYearlyNfcPetIds] = useState(/** @type {string[]} */ ([]));
-  const [nfcHardwarePetIds, setNfcHardwarePetIds] = useState(/** @type {string[]} */ ([]));
   const { nfcDesigns, trackerImage } = useShopAssets();
   const [selectedNfcDesignId, setSelectedNfcDesignId] = useState(1);
   const [activeTrackerSubs, setActiveTrackerSubs] = useState(/** @type {Array<{ id: string, sku?: string, status?: string, createdAt?: unknown }>} */ ([]));
@@ -129,6 +138,13 @@ export default function Shop() {
   }, [uid, showBusinessBoosts]);
 
   useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab === 'products') setShopTab('products');
+    if (focusSku && HARDWARE_SKUS.includes(focusSku)) setShopTab('products');
+    if (focusSku && PLUS_SKUS.includes(focusSku)) setShopTab('subscriptions');
+  }, [focusSku, searchParams]);
+
+  useEffect(() => {
     if (focusSku && BOOST_SKUS.includes(focusSku)) {
       setShopTab('subscriptions');
     }
@@ -143,10 +159,10 @@ export default function Shop() {
   useEffect(() => {
     if (!focusSku) return;
     const id = window.setTimeout(() => {
-      cardRefs.current[focusSku]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      cardRefs.current[focusSku]?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
     }, 250);
     return () => window.clearTimeout(id);
-  }, [focusSku]);
+  }, [focusSku, shopTab]);
 
   useEffect(() => {
     if (!uid) {
@@ -234,10 +250,6 @@ export default function Shop() {
       setErr(t('shopPage.nfcSelectPetRequired'));
       return;
     }
-    if (product.id === 'NFC_TAG_HARDWARE' && !nfcHardwarePetIds.length) {
-      setErr(t('shopPage.nfcSelectPetRequired'));
-      return;
-    }
     if (product.id === 'PETPAL_PLUS_MONTHLY' && monthlyUseExistingImei) {
       const imei = normalizeTrackerImei(monthlyExistingImei);
       if (!imei) {
@@ -252,13 +264,13 @@ export default function Shop() {
     const includeNfc =
       product.id === 'PETPAL_PLUS_MONTHLY'
         ? monthlyIncludeNfc
-        : product.id === 'PETPAL_PLUS_YEARLY' || product.id === 'NFC_TAG_HARDWARE';
+        : product.id === 'PETPAL_PLUS_YEARLY';
     const nfcPetIds =
       product.id === 'PETPAL_PLUS_MONTHLY'
         ? monthlyNfcPetIds
         : product.id === 'PETPAL_PLUS_YEARLY'
           ? yearlyNfcPetIds
-          : nfcHardwarePetIds;
+          : [];
     const petNames = petOptions.filter((p) => nfcPetIds.includes(p.id)).map((p) => p.name);
     addToCart(
       buildSubscriptionCartItem(product, {
@@ -282,9 +294,18 @@ export default function Shop() {
       setMonthlyNfcPetIds([]);
       setMonthlyUseExistingImei(false);
       setMonthlyExistingImei('');
-    } else if (product.id === 'NFC_TAG_HARDWARE') {
-      setNfcHardwarePetIds([]);
     }
+  }
+
+  function onMarketplaceProduct(product) {
+    setErr('');
+    if (product.shopSku === 'NFC_TAG_HARDWARE') {
+      navigate('/shop/nfc');
+      return;
+    }
+    const shopProduct = SHOP_PRODUCTS.find((row) => row.id === product.shopSku);
+    if (!shopProduct) return;
+    addSubscriptionToCart(localizeShopProduct(shopProduct, t));
   }
 
   async function onCancelBoost(product) {
@@ -453,7 +474,7 @@ export default function Shop() {
             </section>
           ) : null}
 
-          <div className="pp-shopGrid">
+          <SubscriptionCarousel ariaLabel={t('shopPage.subCarouselAria')}>
             {localizedSubscriptionProducts.map((p) => {
               const planActive = PLUS_SKUS.includes(p.id)
                 ? p.id === 'PETPAL_PLUS_MONTHLY'
@@ -473,8 +494,7 @@ export default function Shop() {
               const monthlyCanAddToCart = monthlyTrackerSourceSelected && monthlyExistingImeiValid;
               const showNfcPicker =
                 (p.id === 'PETPAL_PLUS_MONTHLY' && monthlyIncludeNfc) ||
-                p.id === 'PETPAL_PLUS_YEARLY' ||
-                p.id === 'NFC_TAG_HARDWARE';
+                p.id === 'PETPAL_PLUS_YEARLY';
               const inCartQty = cartItems
                 .filter((row) => row.sku === p.id)
                 .reduce((sum, row) => sum + (row.qty || 1), 0);
@@ -485,15 +505,13 @@ export default function Shop() {
                   ref={(el) => {
                     cardRefs.current[p.id] = el;
                   }}
-                  className={`pp-card pp-shopCard${focusSku === p.id ? ' pp-shopCard--focus' : ''}${p.id === 'PETPAL_PLUS_YEARLY' ? ' pp-shopCard--featured' : ''}`}
+                  className={`pp-card pp-shopCard pp-shopCard--featured${focusSku === p.id ? ' pp-shopCard--focus' : ''}`}
                 >
                   <div className="pp-shopCard__body">
                     <span className="pp-shopCard__badge">{p.badge}</span>
-                    {p.id !== 'PETPAL_PLUS_MONTHLY' ? (
-                      <h2 className="pp-sectionTitle" style={{ margin: '6px 0 4px' }}>
-                        {p.title}
-                      </h2>
-                    ) : null}
+                    <h2 className="pp-sectionTitle" style={{ margin: '6px 0 4px' }}>
+                      {p.title}
+                    </h2>
                     {inCartQty > 0 ? (
                       <p className="pp-shopCard__inCart">{t('shopPage.inCartQty', { count: inCartQty })}</p>
                     ) : null}
@@ -501,13 +519,6 @@ export default function Shop() {
                       <p className="pp-subtle" style={{ marginTop: 0 }}>
                         {p.subtitle}
                       </p>
-                    ) : null}
-                    {p.id === 'TRACKER_HARDWARE' ? (
-                      <ShopDeferredImage
-                        className="pp-shopCard__productImg"
-                        src={trackerImage}
-                        alt={p.title}
-                      />
                     ) : null}
                     {PLUS_SKUS.includes(p.id) ? (
                       <p className={`pp-shopCard__status${planActive ? ' pp-shopCard__status--on' : ''}`}>
@@ -630,19 +641,13 @@ export default function Shop() {
                           pets={petOptions}
                           guest={!user}
                           selectedIds={
-                            p.id === 'PETPAL_PLUS_MONTHLY'
-                              ? monthlyNfcPetIds
-                              : p.id === 'PETPAL_PLUS_YEARLY'
-                                ? yearlyNfcPetIds
-                                : nfcHardwarePetIds
+                            p.id === 'PETPAL_PLUS_MONTHLY' ? monthlyNfcPetIds : yearlyNfcPetIds
                           }
                           disabled={isLoading}
                           onChange={
                             p.id === 'PETPAL_PLUS_MONTHLY'
                               ? setMonthlyNfcPetIds
-                              : p.id === 'PETPAL_PLUS_YEARLY'
-                                ? setYearlyNfcPetIds
-                                : setNfcHardwarePetIds
+                              : setYearlyNfcPetIds
                           }
                         />
                         <NfcDesignSelector
@@ -710,7 +715,7 @@ export default function Shop() {
                 </article>
               );
             })}
-          </div>
+          </SubscriptionCarousel>
 
           {user ? <ProfilePaymentMethod /> : null}
 
@@ -786,36 +791,51 @@ export default function Shop() {
           {hasMarketplaceProducts ? (
             <>
               <p className="pp-subtle pp-shopProductsLead">{t('shopPage.productsLead')}</p>
-              <div className="pp-shopProductGrid">
-                {MARKETPLACE_PRODUCTS.map((product) => (
-                  <article key={product.id} className="pp-card pp-shopProductCard">
-                    <div className="pp-shopProductCard__emoji" aria-hidden>
-                      {product.emoji}
-                    </div>
-                    <p className="pp-shopProductCard__company">{product.companyName}</p>
-                    <h3 className="pp-shopProductCard__title">{product.title}</h3>
-                    <p className="pp-subtle pp-shopProductCard__desc">{product.description}</p>
-                    <div className="pp-shopProductCard__foot">
-                      <strong>{formatEur(product.priceCents)}</strong>
-                      <button
-                        type="button"
-                        className="pp-btn pp-btn--primary"
-                        onClick={() => {
-                          setErr('');
-                          addToCart({
-                            key: product.id,
-                            title: product.title,
-                            subtitle: product.companyName,
-                            priceCents: product.priceCents,
-                          });
-                        }}
-                      >
-                        {t('shopPage.addToCart')}
-                      </button>
-                    </div>
-                  </article>
-                ))}
-              </div>
+              <section className="pp-shopSellerSection" aria-labelledby="shop-seller-heading">
+                <h2 id="shop-seller-heading" className="pp-sectionTitle">
+                  {MARKETPLACE_SELLER}
+                </h2>
+                <p className="pp-subtle pp-shopSellerSection__sub">{t('shopPage.productsHardwareLead')}</p>
+                <div className="pp-shopProductGrid">
+                  {localizedMarketplaceProducts.map((product) => (
+                    <article
+                      key={product.id}
+                      ref={(el) => {
+                        cardRefs.current[product.shopSku] = el;
+                      }}
+                      className={`pp-card pp-shopProductCard pp-shopProductCard--hardware${focusSku === product.shopSku ? ' pp-shopCard--focus' : ''}`}
+                    >
+                      {product.shopSku === 'TRACKER_HARDWARE' ? (
+                        <ShopDeferredImage
+                          className="pp-shopProductCard__img"
+                          src={trackerImage}
+                          alt={product.title}
+                        />
+                      ) : (
+                        <div className="pp-shopProductCard__emoji" aria-hidden>
+                          {product.emoji}
+                        </div>
+                      )}
+                      <p className="pp-shopProductCard__company">{product.companyName}</p>
+                      <span className="pp-shopProductCard__category">{product.category}</span>
+                      <h3 className="pp-shopProductCard__title">{product.title}</h3>
+                      <p className="pp-subtle pp-shopProductCard__desc">{product.description}</p>
+                      <div className="pp-shopProductCard__foot">
+                        <strong>{formatEur(product.priceCents)}</strong>
+                        <button
+                          type="button"
+                          className="pp-btn pp-btn--primary"
+                          onClick={() => onMarketplaceProduct(product)}
+                        >
+                          {product.shopSku === 'NFC_TAG_HARDWARE'
+                            ? t('shopPage.productsNfcCustomizeCta')
+                            : t('shopPage.addToCart')}
+                        </button>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </section>
             </>
           ) : (
             <div className="pp-shopEmptyProducts" role="status">

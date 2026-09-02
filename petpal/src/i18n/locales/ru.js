@@ -2310,6 +2310,9 @@ const ru = {
     nfcDesignNext: 'Следующие дизайны NFC',
     productsLead:
       'Товары зарегистрированных бизнесов PetPal. Добавьте в корзину для проверки перед оплатой.',
+    productsHardwareLead: 'GPS-трекеры и NFC-метки от PetPal Care Hub.',
+    productsNfcCustomizeCta: 'Выбрать дизайн',
+    subCarouselAria: 'Планы подписки',
     productsEmptyTitle: 'Пока нет товаров',
     productsEmptyBody: 'Магазин готов — товары от бизнесов PetPal появятся здесь скоро.',
     addToCart: 'В корзину',
@@ -2329,6 +2332,15 @@ const ru = {
     cartAria: 'Корзина покупок',
     collarStatCombo: 'Пар checkout Plus + трекер (записано): {combo}',
     collarStatTotal: 'Оплаченных checkout трекера (все клиенты): {total}',
+  },
+  shopNfcPage: {
+    title: 'NFC-метки',
+    lead: 'Выберите дизайн и привяжите метку к питомцу. Войдите для оформления заказа.',
+    backToShop: '← Назад в магазин',
+    guestBanner: 'Смотрите дизайны NFC в любое время. Войдите, чтобы привязать метки и оформить заказ.',
+    unavailable: 'NFC-метки сейчас недоступны.',
+    yearlyHint: 'Годовой PetPal Plus включает бесплатную NFC-метку и скидку на GPS-трекер.',
+    yearlyCta: 'Или бесплатная метка с Yearly',
   },
   paymentSuccess: {
     badge: 'PetPal Shop',
