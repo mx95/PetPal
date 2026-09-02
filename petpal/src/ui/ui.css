@@ -20276,8 +20276,17 @@ html[data-theme="dark"] .pp-nearby-list > li {
 }
 
 .pp-shopPlanFeatures__icon--nfc {
-  color: #047857;
-  background: rgba(16, 185, 129, 0.12);
+  padding: 0;
+  background: transparent;
+  overflow: hidden;
+}
+
+.pp-shopPlanFeatures__nfcLogo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 8px;
 }
 
 .pp-shopPlanExpand {
