@@ -2486,6 +2486,28 @@ const en = {
       emailDesc: 'Configure outgoing mail for support and booking emails.',
       siteModeTitle: 'Test / Live mode',
       siteModeDesc: 'Switch JCC payments between test and live credentials.',
+      nearbyPlacesTitle: 'Nearby places cache',
+      nearbyPlacesDesc: 'Build Cyprus & Greece pet-place listings for the public Nearby map.',
+    },
+    nearbyPlaces: {
+      title: 'Nearby places cache',
+      lead:
+        'Populate the Firestore cache used by the public Nearby map. Run once after configuring your Google Places API key, then refresh automatically twice each month.',
+      statusTitle: 'Cache status',
+      statusLabel: 'Status',
+      lastRefresh: 'Last refresh',
+      tileCount: 'Tiles written',
+      lastError: 'Last error',
+      bootstrapTitle: 'Build / refresh cache',
+      bootstrapLead:
+        'This searches Google Places for Cyprus and Greece (all categories). It can take several minutes. Paste your server Places API key if functions.config is not set yet.',
+      keyLabel: 'Google Places API key (optional)',
+      keyPlaceholder: 'Server Places key — used only for this refresh',
+      keyHint: 'Leave blank if places.key is already configured on Cloud Functions.',
+      bootstrapCta: 'Run cache refresh',
+      bootstrapBusy: 'Refreshing… (may take up to 9 minutes)',
+      bootstrapOk: 'Cache refresh finished ({tiles} tiles). Nearby should populate within a minute.',
+      refreshStatus: 'Refresh status',
     },
     broadcast: {
       title: 'Broadcast message',

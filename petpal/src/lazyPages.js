@@ -13,6 +13,7 @@ export const AdminHub = lazyWithRetry(() => import('./Pages/AdminHub'));
 export const AdminCompanyQueue = lazyWithRetry(() => import('./Pages/AdminCompanyQueue'));
 export const AdminDeviceRegistry = lazyWithRetry(() => import('./Pages/AdminDeviceRegistry'));
 export const AdminBroadcast = lazyWithRetry(() => import('./Pages/AdminBroadcast'));
+export const AdminNearbyPlaces = lazyWithRetry(() => import('./Pages/AdminNearbyPlaces'));
 export const AdminBookings = lazyWithRetry(() => import('./Pages/AdminBookings'));
 export const AdminSupport = lazyWithRetry(() => import('./Pages/AdminSupport'));
 export const AdminEmailSettings = lazyWithRetry(() => import('./Pages/AdminEmailSettings'));

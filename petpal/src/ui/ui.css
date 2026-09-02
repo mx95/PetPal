@@ -859,6 +859,20 @@ select.pp-input:focus {
   font-size: 13px;
 }
 
+.pp-adminMetaList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 0.92rem;
+}
+
+.pp-adminMetaList li {
+  margin: 0;
+}
+
 .pp-passwordRules {
   list-style: none;
   margin: 6px 0 0;

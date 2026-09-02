@@ -38,7 +38,9 @@ function getConfig(path, fallback = null) {
   }
 }
 
-function getPlacesApiKey() {
+function getPlacesApiKey(override = null) {
+  const fromOverride = override != null ? String(override).trim() : '';
+  if (fromOverride) return fromOverride;
   const key =
     process.env.GOOGLE_PLACES_API_KEY ||
     getConfig('places.key') ||
@@ -244,10 +246,10 @@ async function readPlacesFromDoc(db, docId) {
   return { ...data, places };
 }
 
-async function refreshAllNearbyPlacesCache() {
+async function refreshAllNearbyPlacesCache(apiKeyOverride = null) {
   ensureAdminApp();
   const db = admin.firestore();
-  const apiKey = getPlacesApiKey();
+  const apiKey = getPlacesApiKey(apiKeyOverride);
   const startedAt = admin.firestore.FieldValue.serverTimestamp();
   let tileCount = 0;
 
@@ -341,9 +343,11 @@ exports.refreshNearbyPlacesCache = functions
 exports.bootstrapRefreshNearbyPlacesCache = functions
   .region('europe-west1')
   .runWith(refreshRuntime)
-  .https.onCall(async (_data, context) => {
+  .https.onCall(async (data, context) => {
     await requireCallerAdmin(context);
-    const result = await refreshAllNearbyPlacesCache();
+    const placesApiKey =
+      data && typeof data.placesApiKey === 'string' ? data.placesApiKey.trim() : null;
+    const result = await refreshAllNearbyPlacesCache(placesApiKey || null);
     return { ok: true, ...result };
   });
 
@@ -358,4 +362,6 @@ module.exports._internal = {
   collectCategoryPlaces,
   serializePlace,
   gridPoints,
+  refreshAllNearbyPlacesCache,
+  getPlacesApiKey,
 };

@@ -1,0 +1,41 @@
+name: Bootstrap Nearby Places cache
+
+on:
+  workflow_dispatch:
+    inputs:
+      places_api_key:
+        description: Google Places API key (server Nearby Search)
+        required: true
+        type: string
+
+concurrency:
+  group: bootstrap-nearby-places
+  cancel-in-progress: false
+
+jobs:
+  bootstrap:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Configure key and bootstrap over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          command_timeout: 18m
+          script: |
+            set -euo pipefail
+            PETPAL_ROOT="${{ secrets.DEPLOY_PATH }}"
+            if [ -z "$PETPAL_ROOT" ]; then PETPAL_ROOT="/root/PetPal"; fi
+            PLACES_KEY="${{ github.event.inputs.places_api_key }}"
+            export GOOGLE_PLACES_API_KEY="$PLACES_KEY"
+            bash "$PETPAL_ROOT/scripts/configure-places-api-key.sh" "$PLACES_KEY"
+            if [ -f /root/serviceAccount.json ]; then
+              export GOOGLE_APPLICATION_CREDENTIALS=/root/serviceAccount.json
+            elif [ -f "$PETPAL_ROOT/petpal/serviceAccount.json" ]; then
+              export GOOGLE_APPLICATION_CREDENTIALS="$PETPAL_ROOT/petpal/serviceAccount.json"
+            fi
+            cd "$PETPAL_ROOT/petpal"
+            FORCE_NEARBY_BOOTSTRAP=1 node scripts/bootstrap-nearby-places-cache.cjs
+            echo "[nearby-bootstrap] Complete"
