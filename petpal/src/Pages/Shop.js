@@ -9,6 +9,7 @@ import { subscribeProviderProfile } from '../bookings/providerDirectoryFirestore
 import { providerBookingsBoostIsActive, providerNearbyBoostIsActive } from '../bookings/bookingBrowseUtils';
 import ShopCartBar from '../components/shop/ShopCartBar';
 import SubscriptionCarousel from '../components/shop/SubscriptionCarousel';
+import ShopPlanFeatureList from '../components/shop/ShopPlanFeatureList';
 import ShopPetPicker from '../components/shop/ShopPetPicker';
 import NfcDesignSelector from '../components/shop/NfcDesignSelector';
 import ImeiQrScannerButton from '../components/ImeiQrScannerButton';
@@ -101,6 +102,7 @@ export default function Shop() {
   const [monthlyExistingImei, setMonthlyExistingImei] = useState('');
   const [monthlyNfcPetIds, setMonthlyNfcPetIds] = useState(/** @type {string[]} */ ([]));
   const [yearlyNfcPetIds, setYearlyNfcPetIds] = useState(/** @type {string[]} */ ([]));
+  const [monthlyOptionsExpanded, setMonthlyOptionsExpanded] = useState(false);
   const { nfcDesigns, trackerImage } = useShopAssets();
   const [selectedNfcDesignId, setSelectedNfcDesignId] = useState(1);
   const [activeTrackerSubs, setActiveTrackerSubs] = useState(/** @type {Array<{ id: string, sku?: string, status?: string, createdAt?: unknown }>} */ ([]));
@@ -158,6 +160,7 @@ export default function Shop() {
 
   useEffect(() => {
     if (!focusSku) return;
+    if (focusSku === 'PETPAL_PLUS_MONTHLY') setMonthlyOptionsExpanded(true);
     const id = window.setTimeout(() => {
       cardRefs.current[focusSku]?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
     }, 250);
@@ -508,10 +511,17 @@ export default function Shop() {
                   className={`pp-card pp-shopCard pp-shopCard--featured${focusSku === p.id ? ' pp-shopCard--focus' : ''}`}
                 >
                   <div className="pp-shopCard__body">
-                    <span className="pp-shopCard__badge">{p.badge}</span>
-                    <h2 className="pp-sectionTitle" style={{ margin: '6px 0 4px' }}>
-                      {p.title}
+                    <h2 className="pp-sectionTitle pp-shopCard__planTitle" style={{ margin: '0 0 2px' }}>
+                      {p.id === 'PETPAL_PLUS_MONTHLY'
+                        ? monthlyIncludeNfc
+                          ? t('shopPage.planTitleLiveGpsNfc')
+                          : t('shopPage.planTitleLiveGps')
+                        : p.id === 'PETPAL_PLUS_YEARLY'
+                          ? t('shopPage.planTitleLiveGpsNfc')
+                          : p.title}
                     </h2>
+                    <p className="pp-shopCard__planPeriod">{p.title}</p>
+                    <ShopPlanFeatureList />
                     {inCartQty > 0 ? (
                       <p className="pp-shopCard__inCart">{t('shopPage.inCartQty', { count: inCartQty })}</p>
                     ) : null}
@@ -531,6 +541,24 @@ export default function Shop() {
                       </p>
                     ) : null}
                     {p.id === 'PETPAL_PLUS_MONTHLY' && (!planActive || monthlyAddOnMode) ? (
+                      <>
+                        <button
+                          type="button"
+                          className="pp-shopPlanExpand"
+                          aria-expanded={monthlyOptionsExpanded}
+                          onClick={() => setMonthlyOptionsExpanded((prev) => !prev)}
+                        >
+                          <span>
+                            {monthlyOptionsExpanded
+                              ? t('shopPage.subPlanCollapse')
+                              : t('shopPage.subPlanExpand')}
+                          </span>
+                          <span
+                            className={`pp-shopPlanExpand__chev${monthlyOptionsExpanded ? ' is-open' : ''}`}
+                            aria-hidden
+                          />
+                        </button>
+                        {monthlyOptionsExpanded ? (
                       <div className="pp-shopAddons">
                         <label className="pp-shopTrackerOpt">
                           <input
@@ -634,6 +662,34 @@ export default function Shop() {
                           </span>
                         </label>
                       </div>
+                        ) : null}
+                      </>
+                    ) : null}
+                    {p.id === 'PETPAL_PLUS_YEARLY' ? (
+                      <div className="pp-shopAddons pp-shopAddons--yearly">
+                        <div
+                          className="pp-shopTrackerOpt pp-shopTrackerOpt--withImage pp-shopTrackerOpt--included"
+                          aria-disabled="true"
+                        >
+                          <div className="pp-shopTrackerOpt__imgWrap" aria-hidden>
+                            <ShopDeferredImage
+                              className="pp-shopTrackerOpt__img"
+                              src={trackerImage}
+                              alt=""
+                            />
+                          </div>
+                          <span className="pp-shopTrackerOpt__copy">
+                            <strong>{t('shopPage.planTitleLiveGps')}</strong>
+                            <small>{t('shopPage.yearlyTrackerIncludedSub')}</small>
+                          </span>
+                          <span className="pp-shopTrackerOpt__meta">
+                            <span className="pp-shopTrackerOpt__price pp-shopTrackerOpt__price--included">
+                              {t('shopPage.yearlyTrackerIncludedBadge')}
+                            </span>
+                            <span className="pp-shopTrackerOpt__switch" aria-hidden />
+                          </span>
+                        </div>
+                      </div>
                     ) : null}
                     {showNfcPicker ? (
                       <>
@@ -665,9 +721,6 @@ export default function Shop() {
                           amount: formatEur(NFC_TAG_ADDON_CENTS * monthlyNfcPetIds.length),
                         })}
                       </p>
-                    ) : null}
-                    {p.id === 'PETPAL_PLUS_YEARLY' ? (
-                      <p className="pp-shopCard__highlight">{t('shopPage.yearlyFreeHardwareIncluded')}</p>
                     ) : null}
                     <div className="pp-shopCard__price">{formatShopPrice(p, t)}</div>
                     {p.id === 'PETPAL_PLUS_YEARLY' ? (
