@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   mergeNfcTagDesigns,
+  resolveNfcProductShowcaseImage,
   resolveTrackerShopImage,
   DEFAULT_NFC_TAG_DESIGNS,
   DEFAULT_TRACKER_SHOP_IMAGE,
@@ -36,11 +37,17 @@ export function useShopAssets() {
     return resolveTrackerShopImage(raw) || DEFAULT_TRACKER_SHOP_IMAGE;
   }, [raw, loading]);
 
+  const nfcProductImage = useMemo(() => {
+    if (loading) return '';
+    return resolveNfcProductShowcaseImage(raw);
+  }, [raw, loading]);
+
   return {
     raw,
     loading,
     err,
     nfcDesigns: nfcDesigns.length ? nfcDesigns : DEFAULT_NFC_TAG_DESIGNS,
     trackerImage,
+    nfcProductImage,
   };
 }

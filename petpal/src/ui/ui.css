@@ -20396,6 +20396,12 @@ html[data-theme="dark"] .pp-nearby-list > li {
   border: 1px solid rgba(16, 24, 40, 0.06);
 }
 
+.pp-shopProductCard__img--nfc {
+  max-height: 160px;
+  padding: 8px;
+  object-fit: contain;
+}
+
 .pp-shopProductCard__category {
   align-self: flex-start;
   font-size: 0.68rem;

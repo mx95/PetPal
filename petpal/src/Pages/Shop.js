@@ -102,7 +102,7 @@ export default function Shop() {
   const [monthlyExistingImei, setMonthlyExistingImei] = useState('');
   const [monthlyNfcPetIds, setMonthlyNfcPetIds] = useState(/** @type {string[]} */ ([]));
   const [yearlyNfcPetIds, setYearlyNfcPetIds] = useState(/** @type {string[]} */ ([]));
-  const { nfcDesigns, trackerImage } = useShopAssets();
+  const { nfcDesigns, trackerImage, nfcProductImage } = useShopAssets();
   const [selectedNfcDesignId, setSelectedNfcDesignId] = useState(1);
   const [activeTrackerSubs, setActiveTrackerSubs] = useState(/** @type {Array<{ id: string, sku?: string, status?: string, createdAt?: unknown }>} */ ([]));
   const [legacyMonthlyActive, setLegacyMonthlyActive] = useState(false);
@@ -848,6 +848,12 @@ export default function Shop() {
                         <ShopDeferredImage
                           className="pp-shopProductCard__img"
                           src={trackerImage}
+                          alt={product.title}
+                        />
+                      ) : product.shopSku === 'NFC_TAG_HARDWARE' ? (
+                        <ShopDeferredImage
+                          className="pp-shopProductCard__img pp-shopProductCard__img--nfc"
+                          src={nfcProductImage}
                           alt={product.title}
                         />
                       ) : (
