@@ -17,38 +17,37 @@ function LocationIcon() {
 
 function NfcIcon() {
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <circle cx="12" cy="12" r="11" fill="#3d4451" />
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
       <path
-        d="M6.8 15.2a1.15 1.15 0 0 1 1.62 0"
-        stroke="#fff"
-        strokeWidth="1.35"
+        d="M7 15.5a1.1 1.1 0 0 1 1.55 0"
+        stroke="currentColor"
+        strokeWidth="1.45"
         strokeLinecap="round"
       />
       <path
-        d="M5.55 13.95a2.65 2.65 0 0 1 3.75 0"
-        stroke="#fff"
-        strokeWidth="1.35"
+        d="M5.75 14.25a2.5 2.5 0 0 1 3.54 0"
+        stroke="currentColor"
+        strokeWidth="1.45"
         strokeLinecap="round"
       />
       <path
-        d="M4.3 12.7a4.15 4.15 0 0 1 5.88 0"
-        stroke="#fff"
-        strokeWidth="1.35"
+        d="M4.5 13a3.9 3.9 0 0 1 5.52 0"
+        stroke="currentColor"
+        strokeWidth="1.45"
         strokeLinecap="round"
       />
       <path
-        d="M3.05 11.45a5.65 5.65 0 0 1 8 0"
-        stroke="#fff"
-        strokeWidth="1.35"
+        d="M3.25 11.75a5.3 5.3 0 0 1 7.5 0"
+        stroke="currentColor"
+        strokeWidth="1.45"
         strokeLinecap="round"
       />
       <text
         x="12"
-        y="20.2"
+        y="20.4"
         textAnchor="middle"
-        fill="#fff"
-        fontSize="5.2"
+        fill="currentColor"
+        fontSize="5"
         fontWeight="700"
         fontFamily="system-ui, -apple-system, sans-serif"
       >
