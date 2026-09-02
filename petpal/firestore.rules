@@ -322,6 +322,22 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Nearby Places cache (CY + GR) — written by scheduled Cloud Function only.
+    match /nearbyPlacesCache/{docId} {
+      allow read: if true;
+      allow write: if false;
+
+      match /chunks/{chunkId} {
+        allow read: if true;
+        allow write: if false;
+      }
+    }
+
+    match /adminConfig/nearbyPlaces {
+      allow read: if true;
+      allow write: if false;
+    }
+
     // Contact form submissions — written by Cloud Functions; admins review in Admin tools.
     match /contactMessages/{messageId} {
       allow read: if isAdmin();

@@ -40,17 +40,21 @@ function iconForCategory(categoryId, active) {
 }
 
 function NearbyCategoryPin({ place, category, active, onClick }) {
-  const loc = place?.geometry?.location;
+  const latLng =
+    place?.geometry?.location ||
+    (Number.isFinite(place?.lat) && Number.isFinite(place?.lng)
+      ? { lat: place.lat, lng: place.lng }
+      : null);
   const icon = useMemo(
     () => iconForCategory(category?.id, Boolean(active)),
     [category?.id, active]
   );
 
-  if (!loc) return null;
+  if (!latLng) return null;
 
   return (
     <Marker
-      position={loc}
+      position={latLng}
       title={place.name || category?.label}
       icon={icon}
       zIndex={active ? 1000 : 1}
@@ -67,6 +71,8 @@ export default memo(NearbyCategoryPin, (prev, next) => {
     prev.place?.place_id === next.place?.place_id &&
     prev.active === next.active &&
     prev.category?.id === next.category?.id &&
-    prev.place?.geometry?.location === next.place?.geometry?.location
+    prev.place?.geometry?.location === next.place?.geometry?.location &&
+    prev.place?.lat === next.place?.lat &&
+    prev.place?.lng === next.place?.lng
   );
 });
