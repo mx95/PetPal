@@ -17,20 +17,38 @@ function LocationIcon() {
 
 function NfcIcon() {
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <circle cx="12" cy="12" r="10.5" fill="#047857" />
-      <g stroke="#fff" strokeWidth="1.35" strokeLinecap="round" fill="none">
-        <path d="M9.1 11.05A1.05 1.05 0 0 1 9.1 9" />
-        <path d="M10.3 11.45A1.45 1.45 0 0 1 10.3 8.55" />
-        <path d="M11.5 11.85A1.85 1.85 0 0 1 11.5 8.15" />
-        <path d="M12.7 12.25A2.25 2.25 0 0 1 12.7 7.75" />
-      </g>
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <circle cx="12" cy="12" r="8.25" stroke="currentColor" strokeWidth="1.8" />
+      <path
+        d="M9.1 10.35A1.05 1.05 0 0 1 9.1 8.3"
+        stroke="currentColor"
+        strokeWidth="1.45"
+        strokeLinecap="round"
+      />
+      <path
+        d="M10.3 10.75A1.45 1.45 0 0 1 10.3 7.85"
+        stroke="currentColor"
+        strokeWidth="1.45"
+        strokeLinecap="round"
+      />
+      <path
+        d="M11.5 11.15A1.85 1.85 0 0 1 11.5 7.45"
+        stroke="currentColor"
+        strokeWidth="1.45"
+        strokeLinecap="round"
+      />
+      <path
+        d="M12.7 11.55A2.25 2.25 0 0 1 12.7 7.05"
+        stroke="currentColor"
+        strokeWidth="1.45"
+        strokeLinecap="round"
+      />
       <text
         x="12"
-        y="16.75"
+        y="16.1"
         textAnchor="middle"
-        fill="#fff"
-        fontSize="4.6"
+        fill="currentColor"
+        fontSize="4.4"
         fontWeight="700"
         fontFamily="system-ui, -apple-system, sans-serif"
       >
