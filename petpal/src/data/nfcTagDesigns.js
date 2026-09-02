@@ -48,16 +48,16 @@ export function getNfcTagDesignById(id, catalog = DEFAULT_NFC_TAG_DESIGNS) {
 
 export const DEFAULT_TRACKER_SHOP_IMAGE = '/images/shop/gps-tracker-v4.png';
 
-/** Charlie Blue — example image on Products tab NFC hardware card */
-export const NFC_PRODUCT_SHOWCASE_DESIGN_ID = 3;
+/** Classic Paw (Luna) — example image on Products tab NFC hardware card */
+export const NFC_PRODUCT_SHOWCASE_DESIGN_ID = 1;
 
 /** @param {{ nfcDesigns?: Array<{ id: number|string, name?: string, image?: string, enabled?: boolean }> } | null | undefined} assets */
 export function resolveNfcProductShowcaseImage(assets) {
   const designs = mergeNfcTagDesigns(assets);
-  const charlie =
-    designs.find((d) => /charlie/i.test(String(d.name || ''))) ||
+  const classicPaw =
+    designs.find((d) => /classic paw|luna/i.test(String(d.name || ''))) ||
     getNfcTagDesignById(NFC_PRODUCT_SHOWCASE_DESIGN_ID, designs);
-  return charlie?.image || '/images/nfc-tags/nfc-tag-03.png';
+  return classicPaw?.image || '/images/nfc-tags/nfc-tag-01.png';
 }
 
 /** @param {{ trackerImage?: string } | null | undefined} assets */

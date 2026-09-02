@@ -851,11 +851,16 @@ export default function Shop() {
                           alt={product.title}
                         />
                       ) : product.shopSku === 'NFC_TAG_HARDWARE' ? (
-                        <ShopDeferredImage
-                          className="pp-shopProductCard__img pp-shopProductCard__img--nfc"
-                          src={nfcProductImage}
-                          alt={product.title}
-                        />
+                        <div className="pp-shopProductCard__nfcExample">
+                          <span className="pp-shopProductCard__nfcExampleLabel">
+                            {t('shopPage.productsNfcExample')}
+                          </span>
+                          <ShopDeferredImage
+                            className="pp-shopProductCard__img pp-shopProductCard__img--nfc"
+                            src={nfcProductImage}
+                            alt={product.title}
+                          />
+                        </div>
                       ) : (
                         <div className="pp-shopProductCard__emoji" aria-hidden>
                           {product.emoji}

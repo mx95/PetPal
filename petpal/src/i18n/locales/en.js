@@ -2188,6 +2188,7 @@ const en = {
     productsLead: 'Products from registered PetPal businesses. Add items to your cart to review before checkout.',
     productsHardwareLead: 'GPS trackers and NFC tags sold by PetPal Care Hub.',
     productsNfcCustomizeCta: 'Choose design',
+    productsNfcExample: 'Example',
     subCarouselAria: 'Subscription plans',
     planTitleLiveGps: 'Live GPS',
     planTitleLiveGpsNfc: 'Live GPS + NFC',

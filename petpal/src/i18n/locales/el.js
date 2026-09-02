@@ -2343,6 +2343,7 @@ const el = {
       'Προϊόντα από εγγεγραμμένες επιχειρήσεις PetPal. Προσθέστε στο καλάθι για έλεγχο πριν το checkout.',
     productsHardwareLead: 'GPS trackers και NFC tags από το PetPal Care Hub.',
     productsNfcCustomizeCta: 'Επιλογή σχεδίου',
+    productsNfcExample: 'Παράδειγμα',
     subCarouselAria: 'Πλάνα συνδρομής',
     planTitleLiveGps: 'Live GPS',
     planTitleLiveGpsNfc: 'Live GPS + NFC',

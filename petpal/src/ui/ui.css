@@ -20276,8 +20276,9 @@ html[data-theme="dark"] .pp-nearby-list > li {
 }
 
 .pp-shopPlanFeatures__icon--nfc {
-  color: #047857;
-  background: rgba(16, 185, 129, 0.12);
+  color: transparent;
+  background: transparent;
+  padding: 0;
 }
 
 .pp-shopPlanExpand {
@@ -20394,6 +20395,22 @@ html[data-theme="dark"] .pp-nearby-list > li {
   border-radius: 12px;
   background: rgba(248, 250, 252, 0.9);
   border: 1px solid rgba(16, 24, 40, 0.06);
+}
+
+.pp-shopProductCard__nfcExample {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+
+.pp-shopProductCard__nfcExampleLabel {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .pp-shopProductCard__img--nfc {
