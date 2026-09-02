@@ -32,6 +32,7 @@ export const Profile = lazyWithRetry(() => import('./Pages/Profile'));
 export const ProviderPortal = lazyWithRetry(() => import('./Pages/ProviderPortal'));
 export const ShopCheckout = lazyWithRetry(() => import('./Pages/ShopCheckout'));
 export const Shop = lazyWithRetry(() => import('./Pages/Shop'));
+export const ShopNfc = lazyWithRetry(() => import('./Pages/ShopNfc'));
 export const PaymentSuccess = lazyWithRetry(() => import('./Pages/PaymentSuccess'));
 export const PaymentFailed = lazyWithRetry(() => import('./Pages/PaymentFailed'));
 export const MyOrders = lazyWithRetry(() => import('./Pages/MyOrders'));

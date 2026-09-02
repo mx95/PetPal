@@ -13,7 +13,7 @@ export const APP_ROUTE_CATALOG = [
   { path: '/register', labelKey: 'docs.route.register.label', descKey: 'docs.route.register.desc', auth: 'public', mvpNav: true },
   { path: '/pets', labelKey: 'docs.route.pets.label', descKey: 'docs.route.pets.desc', auth: 'auth', mvpNav: true },
   { path: '/tracking', labelKey: 'docs.route.tracking.label', descKey: 'docs.route.tracking.desc', auth: 'auth', mvpNav: true },
-  { path: '/nearby', labelKey: 'docs.route.nearby.label', descKey: 'docs.route.nearby.desc', auth: 'auth', mvpNav: true },
+  { path: '/nearby', labelKey: 'docs.route.nearby.label', descKey: 'docs.route.nearby.desc', auth: 'public', mvpNav: true },
   { path: '/bookings', labelKey: 'docs.route.bookings.label', descKey: 'docs.route.bookings.desc', auth: 'auth', mvpNav: true },
   { path: '/bookings/provider/:providerId', labelKey: 'docs.route.providerProfile.label', descKey: 'docs.route.providerProfile.desc', auth: 'auth', mvpNav: true },
   { path: '/bookings/provider/:providerId/book/:serviceId', labelKey: 'docs.route.bookService.label', descKey: 'docs.route.bookService.desc', auth: 'auth', mvpNav: true },

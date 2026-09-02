@@ -54,7 +54,6 @@ export const NOINDEX_PREFIXES = [
   '/admin',
   '/dashboard',
   '/tracking',
-  '/nearby',
   '/profile',
   '/provider',
   '/payment',
@@ -79,6 +78,13 @@ export const ROUTE_SEO = [
     description: DEFAULT_DESCRIPTION,
     index: true,
     jsonLd: buildHomeJsonLd(),
+  },
+  {
+    match: (path) => path === '/nearby',
+    title: `Pet-friendly places — ${SITE_NAME}`,
+    description:
+      'Find vets, pet shops, dog parks, and pet-friendly cafés near you in Cyprus and Greece on PetPal Care Hub.',
+    index: true,
   },
   {
     match: (path) => path === '/shop' || path.startsWith('/shop/'),

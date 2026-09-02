@@ -87,14 +87,14 @@ export default function TopNav() {
               {t('nav.bookings')}
             </NavLink>
           ) : null}
-          <NavLink className={navItemClassName} to="/nearby">
-            {t('nav.nearby')}
-          </NavLink>
           <NavLink className={navItemClassName} to="/tracking">
             {t('nav.tracking')}
           </NavLink>
         </>
       ) : null}
+      <NavLink className={navItemClassName} to="/nearby">
+        {t('nav.nearby')}
+      </NavLink>
       {MVP_NAV.showShop ? (
         <NavLink className={navItemClassName} to="/shop">
           {t('nav.shop')}

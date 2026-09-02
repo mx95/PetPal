@@ -9,8 +9,8 @@ const LIVE_TRACKING_SRC = `${process.env.PUBLIC_URL || ''}/images/home-live-trac
 const NFC_FEATURE_SRC = `${process.env.PUBLIC_URL || ''}/images/home-nfc-feature.jpg`;
 
 const APP_CAPABILITIES = [
-  { key: 'gps', to: '/tracking', accent: 'gps' },
-  { key: 'nfc', to: '/shop', accent: 'nfc', mvp: MVP_NAV.showShop },
+  { key: 'gps', to: '/shop?sku=PETPAL_PLUS_MONTHLY', accent: 'gps' },
+  { key: 'nfc', to: '/shop/nfc', accent: 'nfc', mvp: MVP_NAV.showShop },
   { key: 'nearby', to: '/nearby', accent: 'nearby' },
   { key: 'booking', to: '/bookings', accent: 'booking', mvp: MVP_NAV.showBookings },
   { key: 'shop', to: '/shop', accent: 'shop', mvp: MVP_NAV.showShop },
