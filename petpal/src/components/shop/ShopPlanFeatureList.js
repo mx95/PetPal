@@ -15,7 +15,7 @@ function LocationIcon() {
   );
 }
 
-const NFC_PLAN_BADGE_SRC = '/images/shop/nfc-plan-badge.jpg';
+const NFC_PLAN_BADGE_SRC = '/images/shop/nfc-plan-badge-v2.jpg';
 
 function NfcIcon() {
   return (
