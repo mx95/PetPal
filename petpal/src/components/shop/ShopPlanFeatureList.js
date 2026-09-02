@@ -18,24 +18,36 @@ function LocationIcon() {
 function NfcIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <circle cx="12" cy="12" r="9" fill="currentColor" />
-      <g transform="translate(11.5 10.25)" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" fill="none">
-        <path d="M0 .75a1.05 1.05 0 0 1 1.48 0" />
-        <path d="M-1.15 -.4a2.35 2.35 0 0 1 3.32 0" />
-        <path d="M-2.3 -1.55a3.65 3.65 0 0 1 5.16 0" />
-        <path d="M-3.45 -2.7a4.95 4.95 0 0 1 7 0" />
-      </g>
+      <circle cx="12" cy="12" r="8.4" fill="#fff" stroke="currentColor" strokeWidth="2.35" />
+      <path
+        d="M8 11.15a4 4 0 0 1 8 0"
+        stroke="currentColor"
+        strokeWidth="1.55"
+        strokeLinecap="round"
+      />
+      <path
+        d="M9.6 11.15a2.4 2.4 0 0 1 4.8 0"
+        stroke="currentColor"
+        strokeWidth="1.55"
+        strokeLinecap="round"
+      />
       <text
         x="12"
-        y="16.85"
+        y="14.35"
         textAnchor="middle"
-        fill="#fff"
-        fontSize="5.6"
+        fill="currentColor"
+        fontSize="6"
         fontWeight="800"
         fontFamily="system-ui, -apple-system, sans-serif"
       >
         NFC
       </text>
+      <path
+        d="M9.6 16.85a2.4 2.4 0 0 0 4.8 0"
+        stroke="currentColor"
+        strokeWidth="1.55"
+        strokeLinecap="round"
+      />
     </svg>
   );
 }
