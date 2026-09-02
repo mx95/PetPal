@@ -2312,6 +2312,7 @@ const ru = {
       'Товары зарегистрированных бизнесов PetPal. Добавьте в корзину для проверки перед оплатой.',
     productsHardwareLead: 'GPS-трекеры и NFC-метки от PetPal Care Hub.',
     productsNfcCustomizeCta: 'Выбрать дизайн',
+    productsNfcExample: 'Пример',
     subCarouselAria: 'Планы подписки',
     planTitleLiveGps: 'Live GPS',
     planTitleLiveGpsNfc: 'Live GPS + NFC',

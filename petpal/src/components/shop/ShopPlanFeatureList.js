@@ -17,27 +17,43 @@ function LocationIcon() {
 
 function NfcIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <circle cx="12" cy="12" r="8.25" stroke="currentColor" strokeWidth="1.55" />
-      <circle cx="9.25" cy="12" r="1.1" fill="currentColor" />
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <circle cx="12" cy="12" r="11" fill="#3d4451" />
       <path
-        d="M10.6 10.65a1.65 1.65 0 0 1 2.33 0"
-        stroke="currentColor"
-        strokeWidth="1.55"
+        d="M6.8 15.2a1.15 1.15 0 0 1 1.62 0"
+        stroke="#fff"
+        strokeWidth="1.35"
         strokeLinecap="round"
       />
       <path
-        d="M9.15 9.2a3.35 3.35 0 0 1 4.74 0"
-        stroke="currentColor"
-        strokeWidth="1.55"
+        d="M5.55 13.95a2.65 2.65 0 0 1 3.75 0"
+        stroke="#fff"
+        strokeWidth="1.35"
         strokeLinecap="round"
       />
       <path
-        d="M7.7 7.75a5.05 5.05 0 0 1 7.14 0"
-        stroke="currentColor"
-        strokeWidth="1.55"
+        d="M4.3 12.7a4.15 4.15 0 0 1 5.88 0"
+        stroke="#fff"
+        strokeWidth="1.35"
         strokeLinecap="round"
       />
+      <path
+        d="M3.05 11.45a5.65 5.65 0 0 1 8 0"
+        stroke="#fff"
+        strokeWidth="1.35"
+        strokeLinecap="round"
+      />
+      <text
+        x="12"
+        y="20.2"
+        textAnchor="middle"
+        fill="#fff"
+        fontSize="5.2"
+        fontWeight="700"
+        fontFamily="system-ui, -apple-system, sans-serif"
+      >
+        NFC
+      </text>
     </svg>
   );
 }
