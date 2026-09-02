@@ -83,7 +83,7 @@ jobs:
               echo "[firebase-deploy] Deploying shop Cloud Functions"
               set +e
               $FB deploy \
-                --only functions:createJccCheckout,functions:createJccUpdateCard,functions:jccPaymentReturn,functions:billingRenewal,functions:expireProviderBoosts,functions:assignSubscriptionImei,functions:linkTrackerSubscriptionPet,functions:createCustomerBooking,functions:sendBookingConfirmation,functions:submitContactForm,functions:getSupportEmailStatus,functions:saveSupportSmtpConfig,functions:getSitePaymentModeStatus,functions:setSitePaymentMode,functions:saveSiteJccCredentials,functions:clearBroadcastInbox,functions:bootstrapClearBroadcastInbox,functions:uploadShopAsset,functions:adminPurgeOrdersKeepLatestLive,functions:adminDeleteUser \
+                --only functions:createJccCheckout,functions:createJccUpdateCard,functions:jccPaymentReturn,functions:billingRenewal,functions:expireProviderBoosts,functions:assignSubscriptionImei,functions:linkTrackerSubscriptionPet,functions:createCustomerBooking,functions:sendBookingConfirmation,functions:submitContactForm,functions:getSupportEmailStatus,functions:saveSupportSmtpConfig,functions:getSitePaymentModeStatus,functions:setSitePaymentMode,functions:saveSiteJccCredentials,functions:clearBroadcastInbox,functions:bootstrapClearBroadcastInbox,functions:uploadShopAsset,functions:adminPurgeOrdersKeepLatestLive,functions:adminDeleteUser,functions:refreshNearbyPlacesCache,functions:bootstrapRefreshNearbyPlacesCache,functions:getNearbyPlacesCacheMeta \
                 --project petpal-aecda \
                 --non-interactive
               DEPLOY_RC=$?

@@ -281,7 +281,7 @@ deploy_firebase_functions() {
   fi
   cd "$PETPAL_DIR"
   if $fb deploy \
-    --only functions:createJccCheckout,functions:createJccUpdateCard,functions:jccPaymentReturn,functions:billingRenewal,functions:expireProviderBoosts,functions:assignSubscriptionImei,functions:linkTrackerSubscriptionPet,functions:createCustomerBooking,functions:sendBookingConfirmation,functions:submitContactForm,functions:getSupportEmailStatus,functions:saveSupportSmtpConfig,functions:uploadShopAsset \
+    --only functions:createJccCheckout,functions:createJccUpdateCard,functions:jccPaymentReturn,functions:billingRenewal,functions:expireProviderBoosts,functions:assignSubscriptionImei,functions:linkTrackerSubscriptionPet,functions:createCustomerBooking,functions:sendBookingConfirmation,functions:submitContactForm,functions:getSupportEmailStatus,functions:saveSupportSmtpConfig,functions:uploadShopAsset,functions:refreshNearbyPlacesCache,functions:bootstrapRefreshNearbyPlacesCache,functions:getNearbyPlacesCacheMeta \
     --project petpal-aecda \
     --non-interactive; then
     log "Cloud Functions deployed OK"

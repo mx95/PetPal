@@ -6,8 +6,6 @@ import {
   NEARBY_CATEGORIES,
   NEARBY_DEFAULT_CATEGORY_ID,
   NEARBY_SEARCH_RADIUS_M,
-  PET_CAFE_EXTRA_SEARCHES,
-  nearbySearchFields,
 } from '../config/nearbyPlaceCategories';
 import { nearbyCategoryForPlace } from '../nearby/classifyNearbyPlace';
 import { filterAcceptableNearbyPlaces } from '../nearby/nearbyPlaceQuality';
@@ -16,6 +14,8 @@ import {
   nearbyPlacesCacheKey,
   setNearbyPlacesCache,
 } from '../nearby/nearbyPlacesCache';
+import { fetchCachedNearbyPlaces } from '../nearby/nearbyPlacesServerCache';
+import { distanceKm } from '../nearby/placeMapUtils';
 import NearbyCategoryPin from '../nearby/NearbyCategoryPin';
 import { GOOGLE_MAPS_LOADER_ID } from '../config/googleMapsLoaderId';
 import { subscribeGoogleMapsAuthFailure } from '../config/googleMapsAuthFailure';
@@ -35,27 +35,6 @@ function placePhotoUrl(place, width = 360, height = 220) {
   } catch {
     return '';
   }
-}
-
-function placeLatLng(place) {
-  const loc = place?.geometry?.location;
-  if (!loc) return null;
-  const lat = typeof loc.lat === 'function' ? loc.lat() : loc.lat;
-  const lng = typeof loc.lng === 'function' ? loc.lng() : loc.lng;
-  return Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null;
-}
-
-function distanceKm(from, place) {
-  const to = placeLatLng(place);
-  if (!from || !to) return null;
-  const r = 6371;
-  const toRad = (d) => (d * Math.PI) / 180;
-  const dLat = toRad(to.lat - from.lat);
-  const dLng = toRad(to.lng - from.lng);
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(toRad(from.lat)) * Math.cos(toRad(to.lat)) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
-  return Math.round(r * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)) * 10) / 10;
 }
 
 function mapsUrl(place) {
@@ -101,7 +80,6 @@ function NearbyMap({ apiKey }) {
   const { isLoaded, loadError } = useJsApiLoader({
     id: GOOGLE_MAPS_LOADER_ID,
     googleMapsApiKey: apiKey,
-    libraries: ['places'],
   });
 
   const [map, setMap] = useState(null);
@@ -177,16 +155,25 @@ function NearbyMap({ apiKey }) {
   searchScopeRef.current = searchScope;
 
   const runPlacesSearch = useCallback(
-    (mode, centerOverride, { skipCache = false } = {}) => {
-      if (!map || !isLoaded || !window.google?.maps?.places) return;
+    async (mode, centerOverride, { skipCache = false } = {}) => {
+      if (!map) return;
+      if (!isFirebaseConfigured()) {
+        setSearchStatus('cache_unavailable');
+        return;
+      }
+
       const scope = mode || searchScopeRef.current;
       const center = centerOverride || searchCenterRef.current;
       const searchGen = ++moreSearchGenRef.current;
       setSearchStatus('loading');
 
-      const service = new window.google.maps.places.PlacesService(map);
       const cat = NEARBY_CATEGORIES.find((c) => c.id === selectedCategoryId) || NEARBY_CATEGORIES[0];
       const boundsForCache = scope === 'bounds' ? map.getBounds() : null;
+      if (scope === 'bounds' && !boundsForCache) {
+        setSearchStatus('error');
+        return;
+      }
+
       const cacheKey = nearbyPlacesCacheKey({
         categoryId: cat.id,
         scope,
@@ -194,7 +181,9 @@ function NearbyMap({ apiKey }) {
         bounds: boundsForCache,
       });
 
-      const publishPlaces = (merged, { max = 60, fromCache = false } = {}) => {
+      const maxResults = cat.id === 'more' ? 60 : cat.id === 'pet_cafe' ? 40 : 20;
+
+      const publishPlaces = (merged, { fromSessionCache = false } = {}) => {
         if (moreSearchGenRef.current !== searchGen) return;
         const sortCenter = userLocationRef.current || center;
         const filtered = filterAcceptableNearbyPlaces(merged, {
@@ -208,7 +197,7 @@ function NearbyMap({ apiKey }) {
           if (db == null) return -1;
           return da - db;
         });
-        const nextPlaces = ranked.length ? ranked.slice(0, max) : [];
+        const nextPlaces = ranked.length ? ranked.slice(0, maxResults) : [];
 
         setPlaces((prev) => {
           if (moreSearchGenRef.current !== searchGen) return prev;
@@ -217,201 +206,34 @@ function NearbyMap({ apiKey }) {
           return nextPlaces.map((p) => prevById.get(p.place_id) || p);
         });
         setSearchStatus(nextPlaces.length ? 'ok' : 'empty');
-        if (!fromCache && nextPlaces.length) {
+        if (!fromSessionCache && nextPlaces.length) {
           setNearbyPlacesCache(cacheKey, nextPlaces);
         }
       };
 
       if (!skipCache) {
-        const cached = getNearbyPlacesCache(cacheKey);
-        if (cached?.length) {
-          publishPlaces(cached, { max: cat.id === 'more' ? 60 : cat.id === 'pet_cafe' ? 40 : 20, fromCache: true });
+        const sessionCached = getNearbyPlacesCache(cacheKey);
+        if (sessionCached?.length) {
+          publishPlaces(sessionCached, { fromSessionCache: true });
           return;
         }
       }
 
-      if (cat.id === 'more') {
-        const sources = NEARBY_CATEGORIES.filter((c) => c.id !== 'more');
-        const loc =
-          scope === 'bounds'
-            ? null
-            : new window.google.maps.LatLng(center.lat, center.lng);
-        const bounds = scope === 'bounds' ? map.getBounds() : null;
-        if (scope === 'bounds' && !bounds) {
-          setSearchStatus('error');
-          return;
-        }
-        /** @type {Map<string, google.maps.places.PlaceResult & { nearbySourceCategoryIds?: string[] }>} */
-        const byId = new Map();
-        const BATCH_SIZE = 1;
-        const BATCH_GAP_MS = 350;
-
-        const runOne = (entry) =>
-          new Promise((resolve) => {
-            const request = { ...nearbySearchFields(entry) };
-            if (bounds) request.bounds = bounds;
-            else {
-              request.location = loc;
-              request.radius = Math.max(NEARBY_SEARCH_RADIUS_M, 10000);
-            }
-
-            const attempt = (retry) => {
-              service.nearbySearch(request, (results, status) => {
-                if (status === window.google.maps.places.PlacesServiceStatus.OK && results) {
-                  resolve(results);
-                  return;
-                }
-                if (
-                  status === window.google.maps.places.PlacesServiceStatus.OVER_QUERY_LIMIT &&
-                  retry < 1
-                ) {
-                  window.setTimeout(() => attempt(retry + 1), 900 * (retry + 1));
-                  return;
-                }
-                resolve([]);
-              });
-            };
-            attempt(0);
-          });
-
-        (async () => {
-          for (let i = 0; i < sources.length; i += BATCH_SIZE) {
-            if (moreSearchGenRef.current !== searchGen) return;
-            const batch = sources.slice(i, i + BATCH_SIZE);
-            // eslint-disable-next-line no-await-in-loop
-            const batchResults = await Promise.all(batch.map((entry) => runOne(entry)));
-            if (moreSearchGenRef.current !== searchGen) return;
-            batch.forEach((entry, idx) => {
-              (batchResults[idx] || []).forEach((place) => {
-                if (!place.place_id) return;
-                const prev = byId.get(place.place_id);
-                const ids = new Set(prev?.nearbySourceCategoryIds || []);
-                ids.add(entry.id);
-                if (prev) {
-                  prev.nearbySourceCategoryIds = [...ids];
-                } else {
-                  byId.set(place.place_id, {
-                    ...place,
-                    nearbySourceCategoryIds: [...ids],
-                  });
-                }
-              });
-            });
-            const isLast = i + BATCH_SIZE >= sources.length;
-            if (!isLast) {
-              // eslint-disable-next-line no-await-in-loop
-              await new Promise((r) => window.setTimeout(r, BATCH_GAP_MS));
-            }
-          }
-          // Publish once when every category batch is done — avoids pin churn while panning.
-          if (moreSearchGenRef.current === searchGen) {
-            publishPlaces([...byId.values()], { max: 60 });
-          }
-        })();
-        return;
-      }
-
-      // Cafe tab: merge type=cafe + pet keywords with cat/dog café keyword searches.
-      if (cat.id === 'pet_cafe') {
-        const loc =
-          scope === 'bounds'
-            ? null
-            : new window.google.maps.LatLng(center.lat, center.lng);
-        const bounds = scope === 'bounds' ? map.getBounds() : null;
-        if (scope === 'bounds' && !bounds) {
-          setSearchStatus('error');
-          return;
-        }
-        /** @type {Map<string, google.maps.places.PlaceResult & { nearbySourceCategoryIds?: string[] }>} */
-        const byId = new Map();
-        const queries = [{ ...cat }, ...PET_CAFE_EXTRA_SEARCHES];
-
-        const runOne = (entry) =>
-          new Promise((resolve) => {
-            const request = { ...nearbySearchFields(entry) };
-            if (bounds) request.bounds = bounds;
-            else {
-              request.location = loc;
-              request.radius = NEARBY_SEARCH_RADIUS_M;
-            }
-
-            const attempt = (retry) => {
-              service.nearbySearch(request, (results, status) => {
-                if (status === window.google.maps.places.PlacesServiceStatus.OK && results) {
-                  resolve(results);
-                  return;
-                }
-                if (
-                  status === window.google.maps.places.PlacesServiceStatus.OVER_QUERY_LIMIT &&
-                  retry < 1
-                ) {
-                  window.setTimeout(() => attempt(retry + 1), 900 * (retry + 1));
-                  return;
-                }
-                resolve([]);
-              });
-            };
-            attempt(0);
-          });
-
-        (async () => {
-          const resultsList = await Promise.all(queries.map((entry) => runOne(entry)));
-          if (moreSearchGenRef.current !== searchGen) return;
-          resultsList.forEach((results) => {
-            (results || []).forEach((place) => {
-              if (!place.place_id) return;
-              const prev = byId.get(place.place_id);
-              if (prev) return;
-              byId.set(place.place_id, {
-                ...place,
-                nearbySourceCategoryIds: ['pet_cafe'],
-              });
-            });
-          });
-          publishPlaces([...byId.values()], { max: 40 });
-        })();
-        return;
-      }
-
-      const request = { ...nearbySearchFields(cat) };
-
-      if (scope === 'bounds') {
-        const bounds = map.getBounds();
-        if (!bounds) {
-          setSearchStatus('error');
-          return;
-        }
-        request.bounds = bounds;
-      } else {
-        const loc = new window.google.maps.LatLng(center.lat, center.lng);
-        request.location = loc;
-        request.radius = NEARBY_SEARCH_RADIUS_M;
-      }
-
-      service.nearbySearch(request, (results, status) => {
+      try {
+        const merged = await fetchCachedNearbyPlaces({
+          categoryId: cat.id,
+          center,
+          scope,
+          mapBounds: boundsForCache,
+        });
         if (moreSearchGenRef.current !== searchGen) return;
-        if (status === window.google.maps.places.PlacesServiceStatus.OK && results) {
-          const mapped = results.slice(0, 40).map((place) => ({
-            ...place,
-            nearbySourceCategoryIds: [cat.id],
-          }));
-          // Category keyword hits (non–pet-café tabs).
-          publishPlaces(mapped, { max: 20 });
-          return;
-        }
-        if (status === window.google.maps.places.PlacesServiceStatus.ZERO_RESULTS) {
-          setPlaces([]);
-          setSearchStatus('empty');
-          return;
-        }
-        if (status === window.google.maps.places.PlacesServiceStatus.INVALID_REQUEST) {
-          setSearchStatus('invalid_area');
-          return;
-        }
+        publishPlaces(merged);
+      } catch {
+        if (moreSearchGenRef.current !== searchGen) return;
         setSearchStatus('error');
-      });
+      }
     },
-    [map, isLoaded, selectedCategoryId]
+    [map, selectedCategoryId]
   );
 
   useEffect(() => {
@@ -717,7 +539,10 @@ function NearbyMap({ apiKey }) {
             </p>
           ) : null}
           {searchStatus === 'error' ? (
-            <p className="pp-error">{t('nearbyPage.searchFailedPlaces')}</p>
+            <p className="pp-error">{t('nearbyPage.searchFailedCache')}</p>
+          ) : null}
+          {searchStatus === 'cache_unavailable' ? (
+            <p className="pp-error">{t('nearbyPage.cacheUnavailable')}</p>
           ) : null}
           {searchStatus === 'ok' && !places.length ? (
             <p className="pp-subtle">{t('nearbyPage.noMarkers')}</p>
@@ -791,6 +616,7 @@ function NearbyMap({ apiKey }) {
               {t('nearbyPage.introTrail', { radiusKm })}
             </p>
             <p>{t('nearbyPage.locDefaultHint')}</p>
+            <p>{t('nearbyPage.serverCacheHint')}</p>
           </div>
         ) : null}
       </section>

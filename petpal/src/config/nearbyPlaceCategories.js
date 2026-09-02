@@ -10,8 +10,8 @@
 
 export const NEARBY_SEARCH_RADIUS_M = 5000;
 
-/** Default Nearby tab — one Places request instead of “All services” (many requests). */
-export const NEARBY_DEFAULT_CATEGORY_ID = 'veterinary_care';
+/** Default Nearby tab — Pet shop (single category, server cache). */
+export const NEARBY_DEFAULT_CATEGORY_ID = 'pet_store';
 
 /** Legacy Places Nearby Search Table 1 types used by PetPal. */
 export const NEARBY_SEARCH_TYPE_WHITELIST = new Set([

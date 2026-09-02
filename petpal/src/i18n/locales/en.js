@@ -1735,7 +1735,11 @@ const en = {
     infoClose: 'Close',
     infoLearnMore: 'Learn more',
     allServicesHint:
-      'All services runs one search per category (more map API usage). Results are cached for 10 minutes in this session.',
+      'All services combines every cached category near you (no live Google search). Data refreshes twice a month.',
+    searchFailedCache: 'Could not load cached places. Try again in a moment.',
+    cacheUnavailable: 'Nearby listings need Firebase — configure the app environment first.',
+    serverCacheHint:
+      'Listings for Cyprus and Greece are refreshed on the 1st and 15th of each month. Pan the map and tap Search this area to filter the cached list.',
     cats: {
       pet_store: { label: 'Pet shop', desc: 'Pet stores & supplies' },
       veterinary_care: { label: 'Vet', desc: 'Veterinary clinics' },
