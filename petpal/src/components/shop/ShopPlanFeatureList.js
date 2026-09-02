@@ -15,40 +15,19 @@ function LocationIcon() {
   );
 }
 
+const NFC_PLAN_BADGE_SRC = '/images/shop/nfc-plan-badge.jpg';
+
 function NfcIcon() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <circle cx="12" cy="12" r="8.4" fill="#fff" stroke="currentColor" strokeWidth="2.35" />
-      <path
-        d="M8 11.15a4 4 0 0 1 8 0"
-        stroke="currentColor"
-        strokeWidth="1.55"
-        strokeLinecap="round"
-      />
-      <path
-        d="M9.6 11.15a2.4 2.4 0 0 1 4.8 0"
-        stroke="currentColor"
-        strokeWidth="1.55"
-        strokeLinecap="round"
-      />
-      <text
-        x="12"
-        y="14.35"
-        textAnchor="middle"
-        fill="currentColor"
-        fontSize="6"
-        fontWeight="800"
-        fontFamily="system-ui, -apple-system, sans-serif"
-      >
-        NFC
-      </text>
-      <path
-        d="M9.6 16.85a2.4 2.4 0 0 0 4.8 0"
-        stroke="currentColor"
-        strokeWidth="1.55"
-        strokeLinecap="round"
-      />
-    </svg>
+    <img
+      src={NFC_PLAN_BADGE_SRC}
+      alt=""
+      aria-hidden
+      className="pp-shopPlanFeatures__nfcLogo"
+      width={28}
+      height={28}
+      decoding="async"
+    />
   );
 }
 
