@@ -64,11 +64,22 @@ jobs:
             # Pull first so we use the latest deploy script, then restore a Google-compatible
             # authDomain (custom domain needs OAuth redirect URI first or login 400s).
             cd "$PETPAL_ROOT"
-            rm -f "$PETPAL_ROOT/.git/index.lock"
-            git update-ref -d "refs/remotes/origin/${DEPLOY_BRANCH}" 2>/dev/null || true
-            git fetch origin "+refs/heads/${DEPLOY_BRANCH}:refs/remotes/origin/${DEPLOY_BRANCH}" --prune
-            git checkout "$DEPLOY_BRANCH"
-            git reset --hard "origin/${DEPLOY_BRANCH}"
+            git_sync_ok=0
+            for attempt in 1 2 3 4 5; do
+              rm -f "$PETPAL_ROOT/.git/index.lock"
+              if git fetch origin "+refs/heads/${DEPLOY_BRANCH}:refs/remotes/origin/${DEPLOY_BRANCH}" --prune \
+                && git checkout "$DEPLOY_BRANCH" \
+                && git reset --hard "origin/${DEPLOY_BRANCH}"; then
+                git_sync_ok=1
+                break
+              fi
+              echo "[deploy] git sync attempt $attempt failed — retrying in $((attempt * 5))s"
+              sleep $((attempt * 5))
+            done
+            if [ "$git_sync_ok" != "1" ]; then
+              echo "[deploy] git sync failed after retries"
+              exit 1
+            fi
             ENVF="$PETPAL_ROOT/petpal/.env.local"
             PLACES_KEY="${{ secrets.GOOGLE_PLACES_API_KEY }}"
             if [ -z "$PLACES_KEY" ] && [ -n "${{ github.event.inputs.places_api_key }}" ]; then
