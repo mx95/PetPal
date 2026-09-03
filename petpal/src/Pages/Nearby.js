@@ -15,6 +15,7 @@ import {
   setNearbyPlacesCache,
 } from '../nearby/nearbyPlacesCache';
 import { fetchCachedNearbyPlaces } from '../nearby/nearbyPlacesServerCache';
+import { fetchLiveNearbyPlaces } from '../nearby/nearbyPlacesLiveSearch';
 import { distanceKm } from '../nearby/placeMapUtils';
 import NearbyCategoryPin from '../nearby/NearbyCategoryPin';
 import { GOOGLE_MAPS_LOADER_ID } from '../config/googleMapsLoaderId';
@@ -80,6 +81,7 @@ function NearbyMap({ apiKey }) {
   const { isLoaded, loadError } = useJsApiLoader({
     id: GOOGLE_MAPS_LOADER_ID,
     googleMapsApiKey: apiKey,
+    libraries: ['places'],
   });
 
   const [map, setMap] = useState(null);
@@ -220,15 +222,50 @@ function NearbyMap({ apiKey }) {
       }
 
       try {
-        const merged = await fetchCachedNearbyPlaces({
+        let merged = await fetchCachedNearbyPlaces({
           categoryId: cat.id,
           center,
           scope,
           mapBounds: boundsForCache,
         });
         if (moreSearchGenRef.current !== searchGen) return;
-        publishPlaces(merged);
+
+        // Server cache not populated yet (or no places in this radius) — fall back
+        // to live Google Places so the map is not empty for users.
+        if (!merged?.length && window.google?.maps?.places) {
+          try {
+            merged = await fetchLiveNearbyPlaces({
+              map,
+              categoryId: cat.id,
+              center,
+              scope,
+              mapBounds: boundsForCache,
+            });
+          } catch {
+            // Keep empty merged; publishPlaces will show empty status.
+          }
+        }
+        if (moreSearchGenRef.current !== searchGen) return;
+        publishPlaces(merged || []);
       } catch {
+        if (moreSearchGenRef.current !== searchGen) return;
+        // Firestore unavailable — try live Places before failing.
+        if (window.google?.maps?.places) {
+          try {
+            const live = await fetchLiveNearbyPlaces({
+              map,
+              categoryId: cat.id,
+              center,
+              scope,
+              mapBounds: boundsForCache,
+            });
+            if (moreSearchGenRef.current !== searchGen) return;
+            publishPlaces(live || []);
+            return;
+          } catch {
+            /* fall through */
+          }
+        }
         if (moreSearchGenRef.current !== searchGen) return;
         setSearchStatus('error');
       }
