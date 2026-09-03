@@ -4,10 +4,7 @@ import { useI18n } from '../i18n/I18nContext';
 import { defaultMapCenter } from './locationDefaults';
 import { searchOsmPlaces } from './placeSearch';
 import FillFromAboveButton from './FillFromAboveButton';
-
-const mapsLib = ['places'];
-/** Must match `../config/googleMapsLoaderId` and the id used in Nearby — one script load for the whole app. */
-const mapsScriptId = 'petpal-google-maps';
+import { GOOGLE_MAPS_LIBRARIES, GOOGLE_MAPS_LOADER_ID } from '../config/googleMapsLoaderId';
 
 function formatGoogleOpeningHours(openingHours) {
   if (!openingHours?.weekday_text?.length) return '';
@@ -31,9 +28,9 @@ export default function CompanyPlaceSearchField({ onPicked, businessName, addres
 function GooglePlaceSearch({ apiKey, onPicked, businessName, addressLine }) {
   const { t } = useI18n();
   const { isLoaded, loadError } = useJsApiLoader({
-    id: mapsScriptId,
+    id: GOOGLE_MAPS_LOADER_ID,
     googleMapsApiKey: apiKey,
-    libraries: mapsLib,
+    libraries: GOOGLE_MAPS_LIBRARIES,
   });
   const [q, setQ] = useState('');
   const [rows, setRows] = useState(/** @type {any[]} */ ([]));

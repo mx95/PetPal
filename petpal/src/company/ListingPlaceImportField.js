@@ -3,9 +3,8 @@ import { useJsApiLoader } from '@react-google-maps/api';
 import { haversineKm } from '../bookings/bookingBrowseUtils';
 import { useI18n } from '../i18n/I18nContext';
 import { searchOsmPlaces } from './placeSearch';
+import { GOOGLE_MAPS_LIBRARIES, GOOGLE_MAPS_LOADER_ID } from '../config/googleMapsLoaderId';
 
-const mapsLib = ['places'];
-const mapsScriptId = 'petpal-google-maps';
 /** Max km between registered pin and Google listing — prevents importing another store. */
 const MAX_PIN_DISTANCE_KM = 0.2;
 
@@ -62,9 +61,9 @@ export default function ListingPlaceImportField({ profile, onImport }) {
 function VerifiedGoogleListingImport({ apiKey, profile, onImport }) {
   const { t } = useI18n();
   const { isLoaded, loadError } = useJsApiLoader({
-    id: mapsScriptId,
+    id: GOOGLE_MAPS_LOADER_ID,
     googleMapsApiKey: apiKey,
-    libraries: mapsLib,
+    libraries: GOOGLE_MAPS_LIBRARIES,
   });
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
