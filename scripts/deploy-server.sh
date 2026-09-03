@@ -259,7 +259,7 @@ bootstrap_nearby_places_cache_if_needed() {
     return 0
   }
 
-  marker="/var/lib/petpal/nearby-places-cache-ready"
+  marker="/var/lib/petpal/nearby-places-cache-ready-2026-09-03"
   if [ -f "$marker" ] && [ "${FORCE_NEARBY_BOOTSTRAP:-0}" != "1" ]; then
     log "Nearby cache already bootstrapped ($marker)"
     return 0
