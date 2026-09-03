@@ -468,11 +468,6 @@ function NearbyMap({ apiKey }) {
           <span>{t('nearbyPage.nearYouKm', { km: radiusKm })}</span>
         )}
       </p>
-      {selectedCategoryId === 'more' ? (
-        <p className="pp-subtle" style={{ marginTop: 6, marginBottom: 0 }}>
-          {t('nearbyPage.allServicesHint')}
-        </p>
-      ) : null}
 
       <div className="pp-nearby-body pp-nearby-body--separated">
         <section className="pp-nearby-mapStage pp-card" aria-label={t('nearbyPage.nearbyMapAria')}>
