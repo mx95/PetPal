@@ -21998,6 +21998,115 @@ html[data-theme="dark"] .pp-nearbyPartnerCard__badge--partner {
   margin-top: 12px;
 }
 
+.pp-inboxNotifyPrefs {
+  margin-bottom: 0;
+}
+
+.pp-inboxNotifyToggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.pp-inboxNotifyToggle input {
+  margin-top: 4px;
+}
+
+.pp-inboxNotifyToggle strong {
+  display: block;
+  font-weight: 800;
+}
+
+.pp-inboxNotifyToggle .pp-subtle {
+  display: block;
+  margin-top: 4px;
+}
+
+.pp-inboxListItem__meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 0.82rem;
+  color: rgba(16, 24, 40, 0.62);
+}
+
+.pp-inboxTypeBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.pp-inboxTypeBadge--announcement {
+  background: rgba(91, 55, 255, 0.12);
+  color: #5b37ff;
+}
+
+.pp-inboxTypeBadge--admin {
+  background: rgba(180, 35, 24, 0.12);
+  color: #b42318;
+}
+
+.pp-inboxTypeBadge--booking {
+  background: rgba(2, 122, 72, 0.12);
+  color: #027a48;
+}
+
+.pp-inboxTypeBadge--order {
+  background: rgba(181, 71, 8, 0.12);
+  color: #b54708;
+}
+
+.pp-inboxTypeBadge--system {
+  background: rgba(16, 24, 40, 0.08);
+  color: rgba(16, 24, 40, 0.72);
+}
+
+.pp-inboxUnreadPill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(91, 55, 255, 0.12);
+  color: #5b37ff;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.pp-inboxDetail__actions {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(16, 24, 40, 0.08);
+}
+
+.pp-inboxAudienceFieldset {
+  border: 0;
+  margin: 0 0 12px;
+  padding: 0;
+}
+
+.pp-inboxAudienceOption {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid rgba(16, 24, 40, 0.12);
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.pp-inboxAudienceOption:has(input:checked) {
+  border-color: rgba(91, 55, 255, 0.35);
+  background: rgba(91, 55, 255, 0.08);
+}
+
 @media (max-width: 720px) {
   .pp-inboxLayout {
     grid-template-columns: 1fr;
