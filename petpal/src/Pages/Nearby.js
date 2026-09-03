@@ -18,7 +18,7 @@ import { fetchCachedNearbyPlaces } from '../nearby/nearbyPlacesServerCache';
 import { fetchLiveNearbyPlaces } from '../nearby/nearbyPlacesLiveSearch';
 import { distanceKm } from '../nearby/placeMapUtils';
 import NearbyCategoryPin from '../nearby/NearbyCategoryPin';
-import { GOOGLE_MAPS_LOADER_ID } from '../config/googleMapsLoaderId';
+import { GOOGLE_MAPS_LOADER_ID, GOOGLE_MAPS_LIBRARIES } from '../config/googleMapsLoaderId';
 import { subscribeGoogleMapsAuthFailure } from '../config/googleMapsAuthFailure';
 import { useI18n } from '../i18n/I18nContext';
 import { subscribeProviders } from '../bookings/providerDirectoryFirestore';
@@ -81,7 +81,7 @@ function NearbyMap({ apiKey }) {
   const { isLoaded, loadError } = useJsApiLoader({
     id: GOOGLE_MAPS_LOADER_ID,
     googleMapsApiKey: apiKey,
-    libraries: ['places'],
+    libraries: GOOGLE_MAPS_LIBRARIES,
   });
 
   const [map, setMap] = useState(null);

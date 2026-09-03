@@ -18,7 +18,7 @@ import icon2x from 'leaflet/dist/images/marker-icon-2x.png';
 import icon from 'leaflet/dist/images/marker-icon.png';
 import shadow from 'leaflet/dist/images/marker-shadow.png';
 
-import { GOOGLE_MAPS_LOADER_ID } from '../config/googleMapsLoaderId';
+import { GOOGLE_MAPS_LOADER_ID, GOOGLE_MAPS_LIBRARIES } from '../config/googleMapsLoaderId';
 import { subscribeGoogleMapsAuthFailure } from '../config/googleMapsAuthFailure';
 import { accuracyRadiusMeters, useAnimatedLatLng } from './mapLiveUtils';
 import {
@@ -1065,7 +1065,7 @@ function GooglePositionMap({
   const { isLoaded, loadError } = useJsApiLoader({
     id: GOOGLE_MAPS_LOADER_ID,
     googleMapsApiKey: apiKey,
-    libraries: ['places'],
+    libraries: GOOGLE_MAPS_LIBRARIES,
   });
 
   const routePath = useMemo(() => flattenRoutePath(path), [path]);
