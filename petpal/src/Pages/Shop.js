@@ -347,17 +347,8 @@ export default function Shop() {
     }
   }
 
-  if (!isFirebaseConfigured()) {
-    return (
-      <div className="pp-pad">
-        <h1 className="pp-pageHeader__title">{t('shopPage.needFirebaseTitle')}</h1>
-        <p className="pp-subtle">{t('shopPage.needFirebaseSub')}</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="pp-pad pp-shopPage">
+  const shopSeoIntro = (
+    <>
       <header className="pp-pageHeader pp-shopPage__header">
         <div className="pp-pageHeader__copy">
           <span className="pp-publicHero__eyebrow">{t('shopPage.badge')}</span>
@@ -386,6 +377,22 @@ export default function Shop() {
           {t('shopPage.seoLinkGps')}
         </Link>
       </p>
+    </>
+  );
+
+  if (!isFirebaseConfigured()) {
+    return (
+      <div className="pp-pad pp-shopPage">
+        {shopSeoIntro}
+        <h2 className="pp-sectionTitle">{t('shopPage.needFirebaseTitle')}</h2>
+        <p className="pp-subtle">{t('shopPage.needFirebaseSub')}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="pp-pad pp-shopPage">
+      {shopSeoIntro}
       {!user ? (
         <div className="pp-shopGuestBanner" role="note">
           <p className="pp-shopGuestBanner__text">{t('shopPage.guestBanner')}</p>
