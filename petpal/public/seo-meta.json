@@ -1,0 +1,165 @@
+{
+  "siteUrl": "https://petpal.com.cy",
+  "siteName": "PetPal Care Hub",
+  "defaultOgImage": "https://petpal.com.cy/images/home-hero.jpg",
+  "defaultTitle": "PetPal Care Hub | Smart Pet Safety & Care",
+  "defaultDescription": "PetPal Care Hub helps pet owners keep their pets safe, connected and cared for through NFC identification, GPS tracking, digital pet profiles, lost-pet recovery and pet-friendly places across Cyprus.",
+  "routes": [
+    {
+      "path": "/",
+      "title": "PetPal Care Hub | Smart Pet Safety & Care",
+      "description": "PetPal Care Hub helps pet owners keep their pets safe, connected and cared for through NFC identification, GPS tracking, digital pet profiles, lost-pet recovery and pet-friendly places across Cyprus.",
+      "index": true,
+      "sitemap": true,
+      "changefreq": "weekly",
+      "priority": 1.0,
+      "h1": "PetPal Care Hub",
+      "crawlHtml": "<h1>PetPal Care Hub</h1><p>PetPal Care Hub is a smart pet safety and care platform for pet owners. Keep pets safe, connected and cared for with NFC pet identification, GPS pet tracking, digital pet profiles, lost-pet recovery tools, and pet-friendly places and services.</p><ul><li><a href=\"/gps-pet-trackers\">GPS pet trackers</a> for live location</li><li><a href=\"/nfc-pet-tags\">NFC pet tags</a> for tap-to-identify profiles</li><li><a href=\"/lost-pet-safety\">Lost pet safety</a> and recovery help</li><li><a href=\"/pet-friendly-places\">Pet-friendly places</a> and local services</li><li><a href=\"/shop\">Shop</a> NFC tags, GPS trackers and care plans</li><li><a href=\"/discover\">Discover</a> pet care features and community tips</li><li><a href=\"/contact\">Contact</a> PetPal support</li></ul>"
+    },
+    {
+      "path": "/shop",
+      "title": "Shop NFC Pet Tags & GPS Trackers | PetPal Care Hub",
+      "description": "Shop PetPal NFC pet ID tags, GPS collar trackers and PetPal Plus care plans. Browse hardware and subscriptions for safer, connected pet care in Cyprus.",
+      "index": true,
+      "sitemap": true,
+      "changefreq": "weekly",
+      "priority": 0.9,
+      "h1": "PetPal Shop — NFC tags, GPS trackers & care plans",
+      "crawlHtml": "<h1>PetPal Shop — NFC tags, GPS trackers &amp; care plans</h1><p>Browse PetPal products for pet safety and everyday care.</p><ul><li><strong>PetPal Plus Monthly</strong> — subscription care plan with optional GPS tracker and NFC tag add-ons.</li><li><strong>PetPal Plus Yearly</strong> — yearly plan with discounted GPS tracker and free NFC tag options.</li><li><strong>GPS tracker</strong> — collar tracker for live location in PetPal Care Hub.</li><li><strong>NFC tag</strong> — tap-to-open digital pet profile tag for lost-pet identification.</li></ul><p><a href=\"/nfc-pet-tags\">Learn about NFC pet tags</a> · <a href=\"/gps-pet-trackers\">Learn about GPS trackers</a> · <a href=\"/contact\">Contact</a></p>"
+    },
+    {
+      "path": "/discover",
+      "title": "Discover Pet Care Features | PetPal Care Hub",
+      "description": "Explore PetPal Care Hub features — GPS tracking, NFC identification, nearby pet-friendly places, bookings, community tips and everyday pet care tools.",
+      "index": true,
+      "sitemap": true,
+      "changefreq": "weekly",
+      "priority": 0.8,
+      "h1": "Discover PetPal Care Hub",
+      "crawlHtml": "<h1>Discover PetPal Care Hub</h1><p>Explore features that help you keep pets safe and cared for: live GPS tracking, NFC collar identification, digital pet profiles, nearby pet-friendly places, bookings, and community tips.</p><p><a href=\"/shop\">Shop</a> · <a href=\"/pet-friendly-places\">Pet-friendly places</a> · <a href=\"/lost-pet-safety\">Lost pet safety</a></p>"
+    },
+    {
+      "path": "/contact",
+      "title": "Contact PetPal Care Hub",
+      "description": "Contact PetPal Care Hub support for help with GPS trackers, NFC tags, bookings, shop orders and account questions.",
+      "index": true,
+      "sitemap": true,
+      "changefreq": "monthly",
+      "priority": 0.6,
+      "h1": "Contact PetPal Care Hub",
+      "crawlHtml": "<h1>Contact PetPal Care Hub</h1><p>Get help with GPS trackers, NFC tags, bookings, shop orders and your PetPal account. Email <a href=\"mailto:info@petpal.com.cy\">info@petpal.com.cy</a>.</p>"
+    },
+    {
+      "path": "/docs",
+      "title": "Help & Documentation | PetPal Care Hub",
+      "description": "Guides for GPS tracking, NFC tags, bookings, shop orders, pet profiles and account setup on PetPal Care Hub.",
+      "index": true,
+      "sitemap": true,
+      "changefreq": "monthly",
+      "priority": 0.5,
+      "h1": "PetPal Help & Documentation",
+      "crawlHtml": "<h1>PetPal Help &amp; Documentation</h1><p>How-to guides for GPS tracking, NFC tags, bookings, shop orders, pet profiles and installing the PetPal Care Hub app.</p><p><a href=\"/install\">Install the app</a> · <a href=\"/contact\">Contact support</a></p>"
+    },
+    {
+      "path": "/install",
+      "title": "Install PetPal Care Hub App",
+      "description": "Install PetPal Care Hub on iPhone or Android — add to your home screen for quick access to GPS tracking, NFC pet profiles and pet care tools.",
+      "index": true,
+      "sitemap": false,
+      "h1": "Install PetPal Care Hub",
+      "crawlHtml": "<h1>Install PetPal Care Hub</h1><p>Add PetPal Care Hub to your phone home screen on iOS or Android for faster access to tracking and pet care features.</p>"
+    },
+    {
+      "path": "/nfc-pet-tags",
+      "title": "NFC Pet Tags for Identification | PetPal Care Hub",
+      "description": "PetPal NFC pet tags link to a digital pet profile. If your pet is found, a quick tap can help someone reach you — simple identification for everyday safety.",
+      "index": true,
+      "sitemap": true,
+      "changefreq": "monthly",
+      "priority": 0.85,
+      "h1": "NFC pet tags for safer identification",
+      "crawlHtml": "<h1>NFC pet tags for safer identification</h1><p>PetPal NFC tags help identify your pet if they wander. A tap can open a digital pet profile so a finder can contact you quickly.</p><p><a href=\"/shop\">Shop NFC tags</a> · <a href=\"/lost-pet-safety\">Lost pet safety</a> · <a href=\"/gps-pet-trackers\">GPS pet trackers</a></p>"
+    },
+    {
+      "path": "/gps-pet-trackers",
+      "title": "GPS Pet Trackers | PetPal Care Hub",
+      "description": "PetPal GPS pet trackers help you follow your pet’s location in the Care Hub app — live tracking support for safer walks and peace of mind in Cyprus.",
+      "index": true,
+      "sitemap": true,
+      "changefreq": "monthly",
+      "priority": 0.85,
+      "h1": "GPS pet trackers for live location",
+      "crawlHtml": "<h1>GPS pet trackers for live location</h1><p>PetPal GPS collar trackers work with PetPal Care Hub so you can check where your pet is and stay connected while they explore.</p><p><a href=\"/shop\">Shop GPS trackers</a> · <a href=\"/nfc-pet-tags\">NFC pet tags</a> · <a href=\"/discover\">Discover features</a></p>"
+    },
+    {
+      "path": "/lost-pet-safety",
+      "title": "Lost Pet Safety & Recovery | PetPal Care Hub",
+      "description": "Prepare for lost-pet moments with PetPal: NFC identification, GPS tracking, digital pet profiles and tools that help you act quickly if a pet goes missing.",
+      "index": true,
+      "sitemap": true,
+      "changefreq": "monthly",
+      "priority": 0.8,
+      "h1": "Lost pet safety and recovery",
+      "crawlHtml": "<h1>Lost pet safety and recovery</h1><p>PetPal Care Hub combines NFC identification, GPS tracking and digital pet profiles so you can prepare before a pet goes missing and respond faster if it happens.</p><p><a href=\"/nfc-pet-tags\">NFC pet tags</a> · <a href=\"/gps-pet-trackers\">GPS trackers</a> · <a href=\"/shop\">Shop</a></p>"
+    },
+    {
+      "path": "/pet-friendly-places",
+      "title": "Pet-Friendly Places & Services | PetPal Care Hub",
+      "description": "Find pet-friendly places and services with PetPal Care Hub — explore vets, parks, shops and local pet care options designed for everyday pet owners.",
+      "index": true,
+      "sitemap": true,
+      "changefreq": "monthly",
+      "priority": 0.75,
+      "h1": "Pet-friendly places and services",
+      "crawlHtml": "<h1>Pet-friendly places and services</h1><p>PetPal Care Hub helps you discover pet-friendly places and local services — from vets and parks to shops and care providers near you.</p><p><a href=\"/discover\">Discover</a> · <a href=\"/nearby\">Open Nearby map</a> · <a href=\"/\">Home</a></p>"
+    },
+    {
+      "path": "/privacy",
+      "title": "Privacy Policy | PetPal Care Hub",
+      "description": "PetPal Care Hub privacy policy — how we handle location data, account information and cookies.",
+      "index": false,
+      "sitemap": false,
+      "h1": "Privacy Policy",
+      "crawlHtml": "<h1>Privacy Policy</h1><p>Read how PetPal Care Hub handles account data, location information and cookies.</p>"
+    },
+    {
+      "path": "/terms",
+      "title": "Terms of Service | PetPal Care Hub",
+      "description": "PetPal Care Hub terms of service and conditions of use.",
+      "index": false,
+      "sitemap": false,
+      "h1": "Terms of Service",
+      "crawlHtml": "<h1>Terms of Service</h1><p>Terms and conditions for using PetPal Care Hub.</p>"
+    },
+    {
+      "path": "/cookies",
+      "title": "Cookie Policy | PetPal Care Hub",
+      "description": "PetPal Care Hub cookie policy — necessary cookies and optional analytics.",
+      "index": false,
+      "sitemap": false,
+      "h1": "Cookie Policy",
+      "crawlHtml": "<h1>Cookie Policy</h1><p>How PetPal Care Hub uses necessary and optional cookies.</p>"
+    },
+    {
+      "path": "/login",
+      "title": "Log in | PetPal Care Hub",
+      "description": "Sign in to your PetPal Care Hub account to track pets, manage bookings and shop.",
+      "index": false,
+      "sitemap": false
+    },
+    {
+      "path": "/register",
+      "title": "Create account | PetPal Care Hub",
+      "description": "Register for PetPal Care Hub — GPS tracking, NFC tags and pet care in one place.",
+      "index": false,
+      "sitemap": false
+    },
+    {
+      "path": "/forgot-password",
+      "title": "Reset password | PetPal Care Hub",
+      "description": "Reset your PetPal Care Hub account password.",
+      "index": false,
+      "sitemap": false
+    }
+  ]
+}

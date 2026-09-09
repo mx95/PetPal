@@ -88,17 +88,35 @@ export function AppFooter() {
             © {new Date().getFullYear()} PetPal. {t('footer.rightsAndByline')}
           </p>
           <nav className="pp-footer__legal" aria-label={t('footer.legal')}>
-            <Link className="pp-footer__inlineLink" to="/privacy">
-              {t('footer.privacyPolicy')}
+            <Link className="pp-footer__inlineLink" to="/discover">
+              Discover
             </Link>
-            <Link className="pp-footer__inlineLink" to="/terms">
-              {t('footer.terms')}
+            <Link className="pp-footer__inlineLink" to="/shop">
+              Shop
+            </Link>
+            <Link className="pp-footer__inlineLink" to="/docs">
+              Help
+            </Link>
+            <Link className="pp-footer__inlineLink" to="/nfc-pet-tags">
+              NFC tags
+            </Link>
+            <Link className="pp-footer__inlineLink" to="/gps-pet-trackers">
+              GPS trackers
             </Link>
             <Link className="pp-footer__inlineLink" to="/contact">
               {t('footer.contact')}
             </Link>
             <Link className="pp-footer__inlineLink" to="/install">
               {t('footer.installApp')}
+            </Link>
+            <Link className="pp-footer__inlineLink" to="/privacy">
+              {t('footer.privacyPolicy')}
+            </Link>
+            <Link className="pp-footer__inlineLink" to="/terms">
+              {t('footer.terms')}
+            </Link>
+            <Link className="pp-footer__inlineLink" to="/cookies">
+              Cookies
             </Link>
             <button type="button" className="pp-footer__inlineLink pp-footer__linkBtn" onClick={reopenCookieSettings}>
               {t('footer.cookieSettings')}

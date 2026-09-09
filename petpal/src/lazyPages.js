@@ -27,6 +27,7 @@ export const TermsOfService = lazyWithRetry(() => import('./Pages/TermsOfService
 export const CookiePolicy = lazyWithRetry(() => import('./Pages/CookiePolicy'));
 export const InstallApp = lazyWithRetry(() => import('./Pages/InstallApp'));
 export const Documentation = lazyWithRetry(() => import('./Pages/Documentation'));
+export const SeoMarketingPage = lazyWithRetry(() => import('./Pages/SeoMarketingPage'));
 export const Dashboard = lazyWithRetry(() => import('./Pages/Dashboard'));
 export const ActivityHub = lazyWithRetry(() => import('./Pages/ActivityHub'));
 export const Profile = lazyWithRetry(() => import('./Pages/Profile'));
