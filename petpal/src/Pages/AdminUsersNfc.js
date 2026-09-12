@@ -7,6 +7,7 @@ import { useI18n } from '../i18n/I18nContext';
 import { getFirebaseApp } from '../firebase';
 import AdminCopyButton from '../admin/AdminCopyButton';
 import { fetchAdminUsersDirectory, filterAdminDirectory, publicPetAbsoluteUrl, publicPetPath } from '../admin/adminDirectory';
+import { formatDateTime24 } from '../formatTime24';
 import { adminAssignPetTrackingDevice, adminExtendSubscriptionFreeMonths } from '../shop/subscriptionImeiClient';
 
 const REGION = 'europe-west1';
@@ -248,6 +249,30 @@ export default function AdminUsersNfc() {
                   {t('admin.hub.userUid')}: <code>{row.uid}</code>
                   <AdminCopyButton value={row.uid} label={t('admin.hub.copyUid')} />
                 </div>
+                {Array.isArray(row.subscriptions) && row.subscriptions.length ? (
+                  <div className="pp-adminUserCard__subs">
+                    {row.subscriptions.map((sub) => (
+                      <div key={sub.subscriptionId || sub.id} className="pp-adminUserCard__subRow">
+                        <div>
+                          <span className="pp-adminPetNfc__label">{t('adminUsersNfc.paymentId')}</span>{' '}
+                          <code>{sub.paymentId || '—'}</code>
+                          {sub.paymentId ? (
+                            <AdminCopyButton value={sub.paymentId} label={t('admin.hub.copy')} />
+                          ) : null}
+                        </div>
+                        <div className="pp-subtle">
+                          <span className="pp-adminPetNfc__label">{t('adminUsersNfc.nextPayment')}</span>{' '}
+                          {sub.nextRenewalAtMs
+                            ? formatDateTime24(new Date(sub.nextRenewalAtMs))
+                            : t('adminUsersNfc.nextPaymentUnknown')}
+                          {sub.sku ? ` · ${sub.sku}` : ''}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="pp-subtle pp-adminUserCard__subsEmpty">{t('adminUsersNfc.noSubscription')}</div>
+                )}
               </div>
               <div className="pp-adminUserCard__headActions">
                 <span className="pp-badge">{t('admin.hub.petCount', { n: row.pets.length })}</span>

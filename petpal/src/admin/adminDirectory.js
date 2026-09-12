@@ -28,7 +28,41 @@ function emptyUser(uid, extras = {}) {
     profileStatus: '',
     profileId: '',
     pets: [],
+    subscriptions: [],
     ...extras,
+  };
+}
+
+function tsToMillis(value) {
+  if (!value) return null;
+  if (typeof value.toMillis === 'function') return value.toMillis();
+  if (typeof value.toDate === 'function') return value.toDate().getTime();
+  if (typeof value.seconds === 'number') return value.seconds * 1000;
+  if (value instanceof Date) return value.getTime();
+  return null;
+}
+
+/**
+ * @param {Record<string, unknown>} data
+ * @param {string} id
+ * @param {string} [ownerUid]
+ */
+function mapSubscriptionRow(data, id, ownerUid = '') {
+  const paymentId =
+    str(data.paymentId) ||
+    str(data.createdFromOrderNumber) ||
+    str(data.orderNumber) ||
+    '';
+  const nextMs = tsToMillis(data.nextRenewalAt);
+  return {
+    id: str(id),
+    uid: str(data.uid) || str(ownerUid),
+    paymentId,
+    subscriptionId: str(data.subscriptionId) || str(id),
+    sku: str(data.sku) || 'PETPAL_PLUS_MONTHLY',
+    status: str(data.status) || 'active',
+    trackerImei: str(data.trackerImei) || str(data.imei),
+    nextRenewalAtMs: nextMs,
   };
 }
 
@@ -39,9 +73,17 @@ function emptyUser(uid, extras = {}) {
  *   publicDocs?: Array<{ id: string, data?: Record<string, unknown> }>,
  *   companyDocs?: Array<{ id: string, ownerUid?: string, businessName?: string, status?: string, [key: string]: unknown }>,
  *   shelterDocs?: Array<{ id: string, ownerUid?: string, shelterName?: string, status?: string, [key: string]: unknown }>,
+ *   subscriptionDocs?: Array<{ id: string, ownerUid?: string, data?: Record<string, unknown> }>,
  * }} input
  */
-export function mergeAdminDirectory({ userDocs = [], petDocs = [], publicDocs = [], companyDocs = [], shelterDocs = [] } = {}) {
+export function mergeAdminDirectory({
+  userDocs = [],
+  petDocs = [],
+  publicDocs = [],
+  companyDocs = [],
+  shelterDocs = [],
+  subscriptionDocs = [],
+} = {}) {
   /** @type {Map<string, ReturnType<typeof emptyUser>>} */
   const usersByUid = new Map();
 
@@ -176,6 +218,29 @@ export function mergeAdminDirectory({ userDocs = [], petDocs = [], publicDocs = 
     user.pets.sort((a, b) => a.name.localeCompare(b.name));
   }
 
+  for (const sub of subscriptionDocs) {
+    const ownerUid = str(sub.ownerUid) || str(sub.data?.uid);
+    if (!ownerUid) continue;
+    if (!usersByUid.has(ownerUid)) {
+      usersByUid.set(ownerUid, emptyUser(ownerUid, { accountType: 'unknown' }));
+    }
+    const row = mapSubscriptionRow(sub.data || {}, sub.id, ownerUid);
+    if (row.status && row.status !== 'active') continue;
+    const user = usersByUid.get(ownerUid);
+    const dup = user.subscriptions.some(
+      (s) => s.subscriptionId === row.subscriptionId || (row.paymentId && s.paymentId === row.paymentId && s.sku === row.sku)
+    );
+    if (!dup) user.subscriptions.push(row);
+  }
+
+  for (const user of usersByUid.values()) {
+    user.subscriptions.sort((a, b) => {
+      const am = a.nextRenewalAtMs == null ? Number.POSITIVE_INFINITY : a.nextRenewalAtMs;
+      const bm = b.nextRenewalAtMs == null ? Number.POSITIVE_INFINITY : b.nextRenewalAtMs;
+      return am - bm;
+    });
+  }
+
   return Array.from(usersByUid.values()).sort((a, b) => {
     const an = (a.name || a.email || a.uid).toLowerCase();
     const bn = (b.name || b.email || b.uid).toLowerCase();
@@ -200,6 +265,7 @@ export function filterAdminDirectory(users, queryText) {
       u.profileStatus,
       u.profileId,
       ...u.pets.flatMap((p) => [p.name, p.publicId, p.imei, p.id, p.breed]),
+      ...((u.subscriptions || []).flatMap((s) => [s.paymentId, s.subscriptionId, s.sku, s.trackerImei])),
     ]
       .filter(Boolean)
       .join(' ')
@@ -223,11 +289,12 @@ export function publicPetAbsoluteUrl(publicId, origin = '') {
 export async function fetchAdminUsersDirectory() {
   if (!isFirebaseConfigured()) return [];
   const db = getDb();
-  const [usersSnap, publicSnap, companiesSnap, sheltersSnap] = await Promise.all([
+  const [usersSnap, publicSnap, companiesSnap, sheltersSnap, billingSnap] = await Promise.all([
     getDocs(collection(db, 'users')),
     getDocs(collection(db, 'publicPets')),
     getDocs(collection(db, 'companies')),
     getDocs(collection(db, 'shelters')),
+    getDocs(collection(db, 'billingSubscriptions')),
   ]);
 
   const userDocs = usersSnap.docs.map((d) => ({ id: d.id, data: d.data() || {} }));
@@ -256,5 +323,44 @@ export async function fetchAdminUsersDirectory() {
     );
   }
 
-  return mergeAdminDirectory({ userDocs, petDocs, publicDocs, companyDocs, shelterDocs });
+  /** @type {Array<{ id: string, ownerUid: string, data: Record<string, unknown> }>} */
+  let subscriptionDocs = [];
+  try {
+    const trackerSnap = await getDocs(collectionGroup(db, 'trackerSubscriptions'));
+    subscriptionDocs = trackerSnap.docs.map((d) => ({
+      id: d.id,
+      ownerUid: d.ref.parent?.parent?.id || str(d.data()?.uid),
+      data: d.data() || {},
+    }));
+  } catch {
+    const snaps = await Promise.all(
+      usersSnap.docs.map((u) => getDocs(collection(db, 'users', u.id, 'trackerSubscriptions')))
+    );
+    subscriptionDocs = snaps.flatMap((snap, i) =>
+      snap.docs.map((d) => ({
+        id: d.id,
+        ownerUid: usersSnap.docs[i].id,
+        data: d.data() || {},
+      }))
+    );
+  }
+
+  for (const d of billingSnap.docs) {
+    const data = d.data() || {};
+    if (str(data.status) && str(data.status) !== 'active') continue;
+    subscriptionDocs.push({
+      id: d.id,
+      ownerUid: str(data.uid),
+      data,
+    });
+  }
+
+  return mergeAdminDirectory({
+    userDocs,
+    petDocs,
+    publicDocs,
+    companyDocs,
+    shelterDocs,
+    subscriptionDocs,
+  });
 }

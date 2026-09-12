@@ -163,6 +163,11 @@ service cloud.firestore {
       allow read: if true;
     }
 
+    // Collection-group queries on tracker subscriptions (admin Users directory).
+    match /{path=**}/trackerSubscriptions/{subscriptionId} {
+      allow read: if isAdmin();
+    }
+
     // App user profiles keyed by auth uid.
     // Needed for signup username/business-name availability checks.
     match /users/{userId} {
@@ -208,7 +213,7 @@ service cloud.firestore {
 
       // Per-tracker monthly subscriptions (one doc per collar subscription).
       match /trackerSubscriptions/{subscriptionId} {
-        allow read: if request.auth != null && request.auth.uid == userId;
+        allow read: if request.auth != null && (request.auth.uid == userId || isAdmin());
         allow write: if false;
       }
 
@@ -312,7 +317,8 @@ service cloud.firestore {
 
     // Active subscriptions (renewed by scheduled Cloud Function).
     match /billingSubscriptions/{subId} {
-      allow read: if request.auth != null && resource.data.uid == request.auth.uid;
+      allow read: if isAdmin()
+        || (request.auth != null && resource.data.uid == request.auth.uid);
       allow write: if false;
     }
 

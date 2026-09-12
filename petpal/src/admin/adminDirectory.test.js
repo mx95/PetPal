@@ -40,6 +40,40 @@ describe('mergeAdminDirectory', () => {
     expect(bob.pets[0]).toEqual(
       expect.objectContaining({ id: 'pet2', name: 'Rex', publicId: 'orphan-id' })
     );
+    expect(ada.subscriptions).toEqual([]);
+  });
+
+  it('attaches active subscription payment id and next renewal', () => {
+    const users = mergeAdminDirectory({
+      userDocs: [{ id: 'u1', data: { email: 'ada@example.com', accountName: 'Ada' } }],
+      subscriptionDocs: [
+        {
+          id: 'PP-123-S1',
+          ownerUid: 'u1',
+          data: {
+            uid: 'u1',
+            paymentId: 'PP-123',
+            status: 'active',
+            sku: 'PETPAL_PLUS_MONTHLY',
+            nextRenewalAt: { seconds: 1791800000 },
+          },
+        },
+        {
+          id: 'cancelled',
+          ownerUid: 'u1',
+          data: { uid: 'u1', paymentId: 'PP-OLD', status: 'cancelled' },
+        },
+      ],
+    });
+    const ada = users.find((u) => u.uid === 'u1');
+    expect(ada.subscriptions).toHaveLength(1);
+    expect(ada.subscriptions[0]).toEqual(
+      expect.objectContaining({
+        paymentId: 'PP-123',
+        subscriptionId: 'PP-123-S1',
+        nextRenewalAtMs: 1791800000 * 1000,
+      })
+    );
   });
 
   it('enriches users with company and shelter profile metadata', () => {

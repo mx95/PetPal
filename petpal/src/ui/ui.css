@@ -24551,6 +24551,30 @@ html[lang='ru'] .pp-brand {
   font-size: 0.9rem;
 }
 
+.pp-adminUserCard__subs {
+  margin-top: 10px;
+  display: grid;
+  gap: 8px;
+}
+
+.pp-adminUserCard__subRow {
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(91, 55, 255, 0.05);
+  border: 1px solid rgba(91, 55, 255, 0.1);
+  display: grid;
+  gap: 4px;
+  font-size: 0.88rem;
+}
+
+.pp-adminUserCard__subRow code {
+  word-break: break-all;
+}
+
+.pp-adminUserCard__subsEmpty {
+  margin-top: 8px;
+}
+
 .pp-adminPetNfc {
   padding: 12px 0 0;
   border-top: 1px solid var(--pp-border, rgba(16, 24, 40, 0.08));
