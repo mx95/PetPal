@@ -10,7 +10,7 @@ import { localizeCartItem } from '../shop/shopCartHelpers';
 import { nfcDesignIdFromOrderItem, orderItemHasNfcDesign } from '../shop/orderItemDisplay';
 import { getNfcTagDesignById } from '../data/nfcTagDesigns';
 import { useShopAssets } from '../hooks/useShopAssets';
-import { adminAssignSubscriptionImei } from '../shop/subscriptionImeiClient';
+import { adminAssignSubscriptionImei, adminExtendSubscriptionFreeMonths } from '../shop/subscriptionImeiClient';
 import { formatDateTime24 } from '../formatTime24';
 import { getFirebaseApp } from '../firebase';
 import { getFunctions, httpsCallable, connectFunctionsEmulator } from 'firebase/functions';
@@ -47,6 +47,7 @@ export default function AdminOrders() {
   const [draftNotes, setDraftNotes] = useState({});
   const [imeiDrafts, setImeiDrafts] = useState({});
   const [imeiBusyKey, setImeiBusyKey] = useState('');
+  const [freeMonthBusyKey, setFreeMonthBusyKey] = useState('');
   const [purgeBusy, setPurgeBusy] = useState(false);
 
   useEffect(() => {
@@ -131,31 +132,70 @@ export default function AdminOrders() {
 
   async function assignImei(row, line) {
     const key = `${row.id}:${line.subscriptionId}`;
-    const imei = String(imeiDrafts[key] || '').trim();
+    const imei = String(imeiDrafts[key] ?? line.trackerImei ?? '').trim();
     if (!imei) {
       setErr(t('adminOrders.errEnterCollarImei'));
+      return;
+    }
+    if (!row.uid) {
+      setErr(t('adminOrders.errMissingUid'));
       return;
     }
     setImeiBusyKey(key);
     setErr('');
     setOk('');
     try {
-      await adminAssignSubscriptionImei({
+      const result = await adminAssignSubscriptionImei({
         uid: row.uid,
         paymentId: line.paymentId || row.paymentId || row.id,
         subPaymentId: line.subPaymentId,
         subscriptionId: line.subscriptionId,
         imei,
       });
-      setOk(t('adminOrders.trackerImeiAssignedForPayment', {
+      let msg = t('adminOrders.trackerImeiAssignedForPayment', {
         payment: line.paymentId || row.paymentId,
         sub: line.subPaymentId,
-      }));
-      setImeiDrafts((prev) => ({ ...prev, [key]: '' }));
+      });
+      if (result?.petLinkWarning) {
+        msg = `${msg} (${t('adminOrders.trackerImeiPetWarn')}: ${result.petLinkWarning})`;
+      } else if (result?.petName) {
+        msg = `${msg} · ${t('adminOrders.trackerImeiPetLinked', { name: result.petName })}`;
+      }
+      setOk(msg);
     } catch (e) {
       setErr(e?.message || String(e));
     } finally {
       setImeiBusyKey('');
+    }
+  }
+
+  async function grantFreeMonth(row, line) {
+    const key = `${row.id}:${line.subscriptionId || line.subPaymentId || 'sub'}`;
+    if (!row.uid) {
+      setErr(t('adminOrders.errMissingUid'));
+      return;
+    }
+    if (!window.confirm(t('adminOrders.freeMonthConfirm'))) return;
+    setFreeMonthBusyKey(key);
+    setErr('');
+    setOk('');
+    try {
+      const result = await adminExtendSubscriptionFreeMonths({
+        uid: row.uid,
+        months: 1,
+        paymentId: line.paymentId || row.paymentId || row.id,
+        subPaymentId: line.subPaymentId,
+        subscriptionId: line.subscriptionId,
+        note: 'Granted from Shop orders admin',
+      });
+      const next = result?.extended?.[0]?.nextRenewalAt
+        ? new Date(result.extended[0].nextRenewalAt).toLocaleString()
+        : '—';
+      setOk(t('adminOrders.freeMonthOk', { next }));
+    } catch (e) {
+      setErr(e?.message || String(e));
+    } finally {
+      setFreeMonthBusyKey('');
     }
   }
 
@@ -295,6 +335,8 @@ export default function AdminOrders() {
                         {row.trackerSubscriptions.map((line) => {
                           const key = `${row.id}:${line.subscriptionId}`;
                           const assigned = line.trackerImei ? String(line.trackerImei) : '';
+                          const draft = imeiDrafts[key] ?? assigned;
+                          const freeKey = key;
                           return (
                             <li key={line.subscriptionId} className="pp-adminOrdersList__trackerRow">
                               <div className="pp-subtle">
@@ -313,31 +355,45 @@ export default function AdminOrders() {
                                 <p className="pp-subtle" style={{ margin: '6px 0 0' }}>
                                   {t('adminOrders.trackerImeiAssigned', { imei: assigned })}
                                 </p>
-                              ) : (
-                                <div className="pp-adminOrdersList__imeiRow">
-                                  <input
-                                    type="text"
-                                    className="pp-input"
-                                    inputMode="numeric"
-                                    placeholder={t('adminOrders.trackerImeiLabel')}
-                                    value={imeiDrafts[key] || ''}
-                                    disabled={imeiBusyKey === key}
-                                    onChange={(e) =>
-                                      setImeiDrafts((prev) => ({ ...prev, [key]: e.target.value }))
-                                    }
-                                  />
-                                  <button
-                                    type="button"
-                                    className="pp-btn pp-btn--primary"
-                                    disabled={imeiBusyKey === key}
-                                    onClick={() => void assignImei(row, line)}
-                                  >
-                                    {imeiBusyKey === key
-                                      ? t('adminOrders.trackerImeiBusy')
+                              ) : null}
+                              <div className="pp-adminOrdersList__imeiRow">
+                                <input
+                                  type="text"
+                                  className="pp-input"
+                                  inputMode="numeric"
+                                  placeholder={t('adminOrders.trackerImeiLabel')}
+                                  value={draft}
+                                  disabled={imeiBusyKey === key}
+                                  onChange={(e) =>
+                                    setImeiDrafts((prev) => ({ ...prev, [key]: e.target.value }))
+                                  }
+                                />
+                                <button
+                                  type="button"
+                                  className="pp-btn pp-btn--primary"
+                                  disabled={imeiBusyKey === key || !String(draft).trim()}
+                                  onClick={() => void assignImei(row, line)}
+                                >
+                                  {imeiBusyKey === key
+                                    ? t('adminOrders.trackerImeiBusy')
+                                    : assigned
+                                      ? t('adminOrders.trackerImeiUpdate')
                                       : t('adminOrders.trackerImeiAssign')}
-                                  </button>
-                                </div>
-                              )}
+                                </button>
+                              </div>
+                              <div className="pp-adminOrdersList__freeMonthRow">
+                                <button
+                                  type="button"
+                                  className="pp-btn pp-btn--ghost"
+                                  disabled={freeMonthBusyKey === freeKey || !row.uid}
+                                  onClick={() => void grantFreeMonth(row, line)}
+                                >
+                                  {freeMonthBusyKey === freeKey
+                                    ? t('adminOrders.freeMonthBusy')
+                                    : t('adminOrders.freeMonthCta')}
+                                </button>
+                                <span className="pp-subtle">{t('adminOrders.freeMonthHint')}</span>
+                              </div>
                             </li>
                           );
                         })}

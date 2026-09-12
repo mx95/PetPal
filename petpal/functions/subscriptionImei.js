@@ -89,11 +89,21 @@ async function resolveSubscriptionRef(db, uid, subscriptionId, paymentId, subPay
  * @param {number} subPaymentId
  * @param {string} preferredSubscriptionId
  */
+async function findOrderSnap(db, paymentId) {
+  if (!paymentId) return null;
+  const direct = await db.collection('orders').doc(paymentId).get();
+  if (direct.exists) return direct;
+  const byPayment = await db.collection('orders').where('paymentId', '==', paymentId).limit(1).get();
+  if (!byPayment.empty) return byPayment.docs[0];
+  const byNumber = await db.collection('orders').where('orderNumber', '==', paymentId).limit(1).get();
+  if (!byNumber.empty) return byNumber.docs[0];
+  return null;
+}
+
 async function ensureSubscriptionFromOrder(db, uid, paymentId, subPaymentId, preferredSubscriptionId) {
   if (!uid || !paymentId) return null;
-  const orderRef = db.collection('orders').doc(paymentId);
-  const orderSnap = await orderRef.get();
-  if (!orderSnap.exists) return null;
+  const orderSnap = await findOrderSnap(db, paymentId);
+  if (!orderSnap) return null;
   const order = orderSnap.data() || {};
   const rows = Array.isArray(order.trackerSubscriptions) ? order.trackerSubscriptions : [];
   const line =
@@ -103,7 +113,9 @@ async function ensureSubscriptionFromOrder(db, uid, paymentId, subPaymentId, pre
         (Number.isFinite(subPaymentId) &&
           Number(row.subPaymentId) === subPaymentId &&
           String(row.paymentId || paymentId) === paymentId)
-    ) || null;
+    ) ||
+    rows[0] ||
+    null;
 
   const subscriptionId = String(
     preferredSubscriptionId ||
@@ -116,6 +128,9 @@ async function ensureSubscriptionFromOrder(db, uid, paymentId, subPaymentId, pre
   const existing = await ref.get();
   if (existing.exists) return { ref, snap: existing, subscriptionId };
 
+  const nextRenewal = new Date();
+  nextRenewal.setMonth(nextRenewal.getMonth() + 1);
+
   await ref.set(
     {
       uid,
@@ -123,16 +138,20 @@ async function ensureSubscriptionFromOrder(db, uid, paymentId, subPaymentId, pre
       paymentId: String(paymentId).slice(0, 36),
       subPaymentId: Number(subPaymentId) || Number(line?.subPaymentId) || 1,
       sku: 'PETPAL_PLUS_MONTHLY',
+      amountCents: 499,
+      currency: '978',
       status: 'active',
       includeTracker: line?.includeTracker !== false,
       includeNfc: Boolean(line?.includeNfc),
       nfcPetIds: Array.isArray(line?.nfcPetIds) ? line.nfcPetIds : null,
-      trackerImei: null,
-      imei: null,
+      trackerImei: normalizeImei(line?.trackerImei) || null,
+      imei: normalizeImei(line?.trackerImei) || null,
       petId: null,
       petName: null,
+      bindingId: order.bindingId || null,
+      nextRenewalAt: admin.firestore.Timestamp.fromDate(nextRenewal),
       orderNumber: String(paymentId).slice(0, 36),
-      createdFromOrderNumber: String(paymentId).slice(0, 36),
+      createdFromOrderNumber: String(orderSnap.id || paymentId).slice(0, 36),
       recoveredByAdmin: true,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -307,43 +326,57 @@ exports.assignSubscriptionImei = functions.region('europe-west1').https.onCall(a
     updatedAt: admin.firestore.FieldValue.serverTimestamp(),
   };
 
+  // Save IMEI on the subscription first — pet linking must never block fulfilment.
+  await subRef.set(patch, { merge: true });
+
   let linkedPetId = null;
   let linkedPetName = null;
+  let petLinkWarning = '';
 
-  if (petIdOpt) {
-    const petWrite = await writePetTrackingDevice(db, uid, petIdOpt, imei);
-    linkedPetId = petWrite.petId;
-    linkedPetName = petWrite.petName;
-    patch.petId = linkedPetId;
-    patch.petName = linkedPetName;
-  } else {
-    const petDoc = await findPetByImei(db, uid, imei);
-    if (petDoc) {
-      linkedPetId = petDoc.id;
-      linkedPetName = String((petDoc.data() || {}).name || '').slice(0, 80);
-      patch.petId = linkedPetId;
-      patch.petName = linkedPetName;
+  try {
+    if (petIdOpt) {
+      const petWrite = await writePetTrackingDevice(db, uid, petIdOpt, imei);
+      linkedPetId = petWrite.petId;
+      linkedPetName = petWrite.petName;
     } else {
-      // Convenience: if the user has exactly one pet, attach the collar there too.
-      const petsSnap = await db.collection('users').doc(uid).collection('pets').limit(2).get();
-      if (petsSnap.size === 1) {
-        const onlyPet = petsSnap.docs[0];
-        const petWrite = await writePetTrackingDevice(db, uid, onlyPet.id, imei);
-        linkedPetId = petWrite.petId;
-        linkedPetName = petWrite.petName;
-        patch.petId = linkedPetId;
-        patch.petName = linkedPetName;
+      const petDoc = await findPetByImei(db, uid, imei);
+      if (petDoc) {
+        linkedPetId = petDoc.id;
+        linkedPetName = String((petDoc.data() || {}).name || '').slice(0, 80);
+      } else {
+        const petsSnap = await db.collection('users').doc(uid).collection('pets').limit(2).get();
+        if (petsSnap.size === 1) {
+          const onlyPet = petsSnap.docs[0];
+          const petWrite = await writePetTrackingDevice(db, uid, onlyPet.id, imei);
+          linkedPetId = petWrite.petId;
+          linkedPetName = petWrite.petName;
+        }
       }
     }
+    if (linkedPetId) {
+      await subRef.set(
+        {
+          petId: linkedPetId,
+          petName: linkedPetName,
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        },
+        { merge: true }
+      );
+    }
+  } catch (petErr) {
+    petLinkWarning = String(petErr?.message || petErr || 'Pet link failed');
+    functions.logger.warn('assignSubscriptionImei pet link skipped', {
+      uid,
+      subscriptionId,
+      imei,
+      message: petLinkWarning,
+    });
   }
-
-  await subRef.set(patch, { merge: true });
 
   const orderNumber = String(sub.createdFromOrderNumber || sub.orderNumber || paymentId || '').trim();
   if (orderNumber) {
-    const orderRef = db.collection('orders').doc(orderNumber);
-    const orderSnap = await orderRef.get();
-    if (orderSnap.exists) {
+    const orderSnap = await findOrderSnap(db, orderNumber);
+    if (orderSnap) {
       const order = orderSnap.data() || {};
       const rows = Array.isArray(order.trackerSubscriptions) ? order.trackerSubscriptions : [];
       let matched = false;
@@ -369,14 +402,129 @@ exports.assignSubscriptionImei = functions.region('europe-west1').https.onCall(a
           trackerImei: imei,
         });
       }
-      await orderRef.set(
+      await orderSnap.ref.set(
         { trackerSubscriptions: nextRows, updatedAt: admin.firestore.FieldValue.serverTimestamp() },
         { merge: true }
       );
     }
   }
 
-  return { ok: true, imei, subscriptionId, petId: linkedPetId, petName: linkedPetName };
+  return {
+    ok: true,
+    imei,
+    subscriptionId,
+    petId: linkedPetId,
+    petName: linkedPetName,
+    petLinkWarning: petLinkWarning || null,
+  };
+});
+
+/**
+ * Admin grants free subscription months by pushing nextRenewalAt forward.
+ * Pass subscriptionId and/or paymentId+subPaymentId, or omit them to extend every active tracker sub for the user.
+ */
+exports.adminExtendSubscriptionFreeMonths = functions.region('europe-west1').https.onCall(async (data, context) => {
+  if (!context.auth?.uid) {
+    throw new functions.https.HttpsError('unauthenticated', 'Sign in as admin.');
+  }
+  const db = admin.firestore();
+  if (!(await isAdminUid(db, context.auth.uid))) {
+    throw new functions.https.HttpsError('permission-denied', 'Admin access required.');
+  }
+
+  const uid = String(data?.uid || '').trim();
+  const months = Math.min(12, Math.max(1, Math.round(Number(data?.months) || 1)));
+  let subscriptionId = String(data?.subscriptionId || '').trim().slice(0, 36);
+  const paymentId = String(data?.paymentId || '').trim();
+  const subPaymentId = Number(data?.subPaymentId);
+  const note = String(data?.note || '').trim().slice(0, 200);
+
+  if (!uid) {
+    throw new functions.https.HttpsError('invalid-argument', 'User uid is required.');
+  }
+
+  /** @type {FirebaseFirestore.QueryDocumentSnapshot[] | FirebaseFirestore.DocumentSnapshot[]} */
+  let targets = [];
+
+  if (subscriptionId || paymentId) {
+    if (!subscriptionId && paymentId && Number.isFinite(subPaymentId) && subPaymentId > 0) {
+      subscriptionId = buildSubscriptionId(paymentId, subPaymentId);
+    }
+    let resolved = await resolveSubscriptionRef(db, uid, subscriptionId, paymentId, subPaymentId);
+    if (!resolved) {
+      resolved = await ensureSubscriptionFromOrder(db, uid, paymentId, subPaymentId, subscriptionId);
+    }
+    if (!resolved) {
+      throw new functions.https.HttpsError('not-found', 'Subscription not found.');
+    }
+    targets = [resolved.snap];
+  } else {
+    const snap = await db
+      .collection('users')
+      .doc(uid)
+      .collection('trackerSubscriptions')
+      .where('status', '==', 'active')
+      .get();
+    targets = snap.docs;
+    if (!targets.length) {
+      // Fall back to legacy billingSubscriptions monthly/yearly docs.
+      for (const sku of ['PETPAL_PLUS_MONTHLY', 'PETPAL_PLUS_YEARLY']) {
+        const legacy = await db.collection('billingSubscriptions').doc(`${uid}_${sku}`).get();
+        if (legacy.exists && legacy.data()?.status === 'active') targets.push(legacy);
+      }
+    }
+    if (!targets.length) {
+      throw new functions.https.HttpsError('not-found', 'No active subscription found for this user.');
+    }
+  }
+
+  const now = new Date();
+  const results = [];
+  for (const snap of targets) {
+    const dataRow = snap.data() || {};
+    let base = now;
+    const current = dataRow.nextRenewalAt;
+    if (current?.toDate) {
+      const d = current.toDate();
+      if (d > now) base = d;
+    } else if (current?.seconds) {
+      const d = new Date(current.seconds * 1000);
+      if (d > now) base = d;
+    }
+    const next = new Date(base);
+    next.setMonth(next.getMonth() + months);
+    const patch = {
+      nextRenewalAt: admin.firestore.Timestamp.fromDate(next),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      freeMonthsGrantedAt: admin.firestore.FieldValue.serverTimestamp(),
+      freeMonthsGranted: admin.firestore.FieldValue.increment(months),
+    };
+    if (note) patch.freeMonthsNote = note;
+    await snap.ref.set(patch, { merge: true });
+    results.push({
+      path: snap.ref.path,
+      subscriptionId: snap.id,
+      nextRenewalAt: next.toISOString(),
+    });
+  }
+
+  if (paymentId || results[0]?.subscriptionId) {
+    const orderKey = paymentId || String(results[0]?.subscriptionId || '').replace(/-S\d+$/, '');
+    const orderSnap = orderKey ? await findOrderSnap(db, orderKey) : null;
+    if (orderSnap) {
+      const existingNotes = String(orderSnap.data()?.adminNotes || '');
+      const stamp = `${new Date().toISOString().slice(0, 10)}: +${months} free month(s)`;
+      const adminNotes = existingNotes.includes(stamp)
+        ? existingNotes
+        : [existingNotes, stamp, note].filter(Boolean).join('\n').slice(0, 2000);
+      await orderSnap.ref.set(
+        { adminNotes, updatedAt: admin.firestore.FieldValue.serverTimestamp() },
+        { merge: true }
+      );
+    }
+  }
+
+  return { ok: true, months, extended: results };
 });
 
 /** Admin sets a pet's collar IMEI (trackingDeviceId) from Users & NFC. */

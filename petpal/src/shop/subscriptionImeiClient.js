@@ -46,6 +46,21 @@ export async function adminAssignSubscriptionImei(payload) {
 }
 
 /**
+ * @param {{ uid: string, months?: number, subscriptionId?: string, paymentId?: string, subPaymentId?: number, note?: string }} payload
+ */
+export async function adminExtendSubscriptionFreeMonths(payload) {
+  const fn = httpsCallable(functionsClient(), 'adminExtendSubscriptionFreeMonths', {
+    timeout: CALLABLE_TIMEOUT_MS,
+  });
+  try {
+    const res = await fn(payload);
+    return res.data;
+  } catch (err) {
+    throw new Error(callableErrorMessage(err));
+  }
+}
+
+/**
  * @param {{ uid: string, petId: string, imei?: string, clear?: boolean }} payload
  */
 export async function adminAssignPetTrackingDevice(payload) {

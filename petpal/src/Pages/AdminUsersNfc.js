@@ -7,7 +7,7 @@ import { useI18n } from '../i18n/I18nContext';
 import { getFirebaseApp } from '../firebase';
 import AdminCopyButton from '../admin/AdminCopyButton';
 import { fetchAdminUsersDirectory, filterAdminDirectory, publicPetAbsoluteUrl, publicPetPath } from '../admin/adminDirectory';
-import { adminAssignPetTrackingDevice } from '../shop/subscriptionImeiClient';
+import { adminAssignPetTrackingDevice, adminExtendSubscriptionFreeMonths } from '../shop/subscriptionImeiClient';
 
 const REGION = 'europe-west1';
 
@@ -33,6 +33,7 @@ export default function AdminUsersNfc() {
   const [busyUid, setBusyUid] = useState('');
   const [imeiDrafts, setImeiDrafts] = useState({});
   const [imeiBusyKey, setImeiBusyKey] = useState('');
+  const [freeMonthBusyUid, setFreeMonthBusyUid] = useState('');
 
   const reload = () => {
     setLoading(true);
@@ -126,6 +127,29 @@ export default function AdminUsersNfc() {
       setErr(e?.message || t('adminUsersNfc.collarSaveFailed'));
     } finally {
       setImeiBusyKey('');
+    }
+  }
+
+  async function onGrantFreeMonth(uid, label) {
+    if (!window.confirm(t('adminUsersNfc.freeMonthConfirm', { name: label || uid }))) return;
+    setFreeMonthBusyUid(uid);
+    setErr('');
+    setOk('');
+    try {
+      const result = await adminExtendSubscriptionFreeMonths({
+        uid,
+        months: 1,
+        note: 'Granted from Users & NFC admin',
+      });
+      const next = result?.extended?.[0]?.nextRenewalAt
+        ? new Date(result.extended[0].nextRenewalAt).toLocaleString()
+        : '—';
+      const count = result?.extended?.length || 0;
+      setOk(t('adminUsersNfc.freeMonthOk', { count, next }));
+    } catch (e) {
+      setErr(e?.message || t('adminUsersNfc.freeMonthFailed'));
+    } finally {
+      setFreeMonthBusyUid('');
     }
   }
 
@@ -227,6 +251,16 @@ export default function AdminUsersNfc() {
               </div>
               <div className="pp-adminUserCard__headActions">
                 <span className="pp-badge">{t('admin.hub.petCount', { n: row.pets.length })}</span>
+                <button
+                  type="button"
+                  className="pp-btn pp-btn--ghost"
+                  disabled={Boolean(busyUid) || freeMonthBusyUid === row.uid}
+                  onClick={() => void onGrantFreeMonth(row.uid, row.name || row.email)}
+                >
+                  {freeMonthBusyUid === row.uid
+                    ? t('adminUsersNfc.freeMonthBusy')
+                    : t('adminUsersNfc.freeMonthCta')}
+                </button>
                 <button
                   type="button"
                   className="pp-btn pp-btn--ghost pp-adminShopAssets__removeBtn"

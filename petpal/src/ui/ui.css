@@ -21120,6 +21120,14 @@ html[data-theme="dark"] .pp-nearby-list > li {
   min-width: 0;
 }
 
+.pp-adminOrdersList__freeMonthRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: 10px;
+}
+
 .pp-adminOrdersList__line {
   list-style: none;
 }
