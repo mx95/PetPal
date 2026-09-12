@@ -24590,6 +24590,25 @@ html[lang='ru'] .pp-brand {
   margin-top: 8px;
 }
 
+.pp-adminPetNfc__collar {
+  margin-top: 10px;
+  display: grid;
+  gap: 6px;
+}
+
+.pp-adminPetNfc__collarRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.pp-adminPetNfc__collarRow .pp-input {
+  flex: 1 1 180px;
+  min-width: 0;
+  max-width: 280px;
+}
+
 .pp-adminPetNfc__url {
   margin-top: 6px;
   word-break: break-all;
