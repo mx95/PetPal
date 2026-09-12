@@ -6,6 +6,10 @@ import { useAuth } from '../auth/AuthProvider';
 import { getDb, isFirebaseConfigured } from '../firebase';
 import { useI18n } from '../i18n/I18nContext';
 import { formatEur } from '../shop/catalog';
+import {
+  computeDiscountedCharge,
+  fetchActiveDiscountCode,
+} from '../shop/discountCodesFirestore';
 import { clearPendingCheckout, readPendingCheckout } from '../shop/pendingCheckout';
 import { clearShopCartItems } from '../shop/shopCartStorage';
 import { localizeCartItem } from '../shop/shopCartHelpers';
@@ -37,6 +41,10 @@ export default function ShopCheckout() {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
+  const [discountInput, setDiscountInput] = useState('');
+  const [discountBusy, setDiscountBusy] = useState(false);
+  const [discountErr, setDiscountErr] = useState('');
+  const [appliedDiscount, setAppliedDiscount] = useState(null);
 
   useEffect(() => {
     if (!user) return;
@@ -81,14 +89,46 @@ export default function ShopCheckout() {
     };
   }, [user]);
 
+  const discountPreview = useMemo(() => {
+    if (!appliedDiscount || !pending?.amountCents) return null;
+    return computeDiscountedCharge(pending.amountCents, appliedDiscount);
+  }, [appliedDiscount, pending]);
+
+  const payableCents = discountPreview?.chargeCents ?? pending?.amountCents ?? 0;
+  const itemCount = (pending?.cartItems || []).reduce((sum, row) => sum + (row.qty || 1), 0);
+
   if (!pending?.cartItems?.length || !pending.payload) {
     return <Navigate to="/shop" replace />;
   }
 
-  const itemCount = pending.cartItems.reduce((sum, row) => sum + (row.qty || 1), 0);
-
   function updateField(key, value) {
     setForm((prev) => ({ ...prev, [key]: value }));
+  }
+
+  async function handleApplyDiscount(e) {
+    e.preventDefault();
+    setDiscountErr('');
+    setDiscountBusy(true);
+    try {
+      const row = await fetchActiveDiscountCode(discountInput);
+      const preview = computeDiscountedCharge(pending.amountCents, row);
+      if (!preview) {
+        throw new Error(t('checkoutDetails.discountInvalid'));
+      }
+      setAppliedDiscount(row);
+      setDiscountInput(row.code);
+    } catch (ex) {
+      setAppliedDiscount(null);
+      setDiscountErr(ex?.message || t('checkoutDetails.discountInvalid'));
+    } finally {
+      setDiscountBusy(false);
+    }
+  }
+
+  function handleClearDiscount() {
+    setAppliedDiscount(null);
+    setDiscountInput('');
+    setDiscountErr('');
   }
 
   async function handleSubmit(e) {
@@ -109,6 +149,7 @@ export default function ShopCheckout() {
       await startJccCheckout({
         ...pending.payload,
         shippingContact: shipping,
+        discountCode: appliedDiscount?.code || undefined,
         t,
       });
       clearPendingCheckout();
@@ -342,9 +383,65 @@ export default function ShopCheckout() {
               );
             })}
           </ul>
+          <div className="pp-shopCheckout__discount">
+            <label className="pp-shopCheckout__field" htmlFor="checkout-discount">
+              <span className="pp-shopCheckout__label">{t('checkoutDetails.discountLabel')}</span>
+              <div className="pp-shopCheckout__discountRow">
+                <input
+                  id="checkout-discount"
+                  type="text"
+                  value={discountInput}
+                  disabled={busy || discountBusy || Boolean(appliedDiscount)}
+                  onChange={(e) => setDiscountInput(e.target.value.toUpperCase())}
+                  placeholder={t('checkoutDetails.discountPlaceholder')}
+                  autoComplete="off"
+                />
+                {appliedDiscount ? (
+                  <button
+                    type="button"
+                    className="pp-btn pp-btn--ghost"
+                    disabled={busy}
+                    onClick={handleClearDiscount}
+                  >
+                    {t('checkoutDetails.discountClear')}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="pp-btn pp-btn--ghost"
+                    disabled={busy || discountBusy || !discountInput.trim()}
+                    onClick={(e) => void handleApplyDiscount(e)}
+                  >
+                    {discountBusy ? t('checkoutDetails.discountApplying') : t('checkoutDetails.discountApply')}
+                  </button>
+                )}
+              </div>
+            </label>
+            {discountErr ? <div className="pp-error">{discountErr}</div> : null}
+            {appliedDiscount && discountPreview ? (
+              <p className="pp-subtle">
+                {t('checkoutDetails.discountApplied', {
+                  code: appliedDiscount.code,
+                  amount: formatEur(discountPreview.discountCents),
+                })}
+              </p>
+            ) : null}
+          </div>
+          {discountPreview ? (
+            <div className="pp-shopCheckout__summarySubtotal">
+              <span>{t('checkoutDetails.summarySubtotal')}</span>
+              <span>{formatEur(pending.amountCents)}</span>
+            </div>
+          ) : null}
+          {discountPreview ? (
+            <div className="pp-shopCheckout__summaryDiscount">
+              <span>{t('checkoutDetails.summaryDiscount')}</span>
+              <span>−{formatEur(discountPreview.discountCents)}</span>
+            </div>
+          ) : null}
           <div className="pp-shopCheckout__summaryTotal">
             <span>{t('checkoutDetails.summaryItems', { count: itemCount })}</span>
-            <strong>{formatEur(pending.amountCents)}</strong>
+            <strong>{formatEur(payableCents)}</strong>
           </div>
           <p className="pp-subtle pp-shopCheckout__summaryNote">{t('checkoutDetails.lead')}</p>
         </div>

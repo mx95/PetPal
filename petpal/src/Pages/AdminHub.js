@@ -139,6 +139,12 @@ export default function AdminHub() {
             desc={t('admin.hub.shopAssetsDesc')}
           />
           <AdminActionCard
+            to="/admin/discount-codes"
+            icon="🏷️"
+            title={t('admin.hub.discountCodesTitle')}
+            desc={t('admin.hub.discountCodesDesc')}
+          />
+          <AdminActionCard
             to="/admin/nearby-places"
             icon="📍"
             title={t('admin.hub.nearbyPlacesTitle')}

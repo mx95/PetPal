@@ -177,6 +177,7 @@ async function createPendingOrder(db, payload) {
     nfcPetIds,
     currency,
     paymentMode,
+    discountMeta,
   } = payload;
   const items = annotateOrderItemsWithSubPayments(
     buildOrderItems(sku, {
@@ -203,6 +204,11 @@ async function createPendingOrder(db, payload) {
         status: 'pending_payment',
         amountCents: pricing.chargeCents,
         currency: currency || '978',
+        discountCode: discountMeta?.code || null,
+        discountType: discountMeta?.type || null,
+        discountAmount: discountMeta?.amount ?? null,
+        discountCents: discountMeta?.discountCents ?? null,
+        subtotalCents: discountMeta?.subtotalCents ?? null,
         items,
         shipping,
         customer: {

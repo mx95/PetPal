@@ -351,6 +351,14 @@ service cloud.firestore {
       allow update: if isAdmin();
     }
 
+    // Shop discount codes — admins manage; signed-in users may read an active code by id (checkout apply).
+    match /discountCodes/{codeId} {
+      allow list: if isAdmin();
+      allow get: if isAdmin()
+        || (request.auth != null && resource.data.active == true);
+      allow create, update, delete: if isAdmin();
+    }
+
     // SMTP / JCC / site mode — Admin SDK + admin UI only.
     // shopAssets is public product imagery for the Shop (NFC designs + tracker photo).
     match /adminConfig/shopAssets {
