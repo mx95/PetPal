@@ -111,6 +111,7 @@ export async function startJccCheckout(opts) {
       includeNfc: Boolean(opts.includeNfc),
       nfcPetIds,
       cartItems,
+      discountCode: opts.discountCode ? String(opts.discountCode).trim() : undefined,
       shippingContact: opts.shippingContact
         ? {
             email: String(opts.shippingContact.email || ''),
@@ -149,13 +150,22 @@ export async function startJccCheckout(opts) {
     cartItems: opts.cartItems,
   });
   const charged = Number(data?.amountCents);
-  if (expected != null && Number.isFinite(charged) && charged !== expected) {
+  const discountCents = Math.max(0, Number(data?.discountCents) || 0);
+  const expectedAfterDiscount =
+    expected != null && discountCents > 0
+      ? Math.max(1, expected - discountCents)
+      : expected;
+  if (
+    expectedAfterDiscount != null &&
+    Number.isFinite(charged) &&
+    charged !== expectedAfterDiscount
+  ) {
     throw new Error(
       tx(
         t,
         'shopPage.checkoutErrPriceMismatch',
-        { charged: formatEur(charged), expected: formatEur(expected) },
-        `Payment server sent ${formatEur(charged)} but this plan should be ${formatEur(expected)}. ` +
+        { charged: formatEur(charged), expected: formatEur(expectedAfterDiscount) },
+        `Payment server sent ${formatEur(charged)} but this plan should be ${formatEur(expectedAfterDiscount)}. ` +
           'Deploy the latest Cloud Functions (createJccCheckout) — the live server may still be on old €4.99 pricing.'
       )
     );

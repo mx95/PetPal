@@ -234,6 +234,11 @@ function uniqueOrderNumber(prefix) {
 }
 
 const { SKUS, PLUS_SKUS, resolveCheckoutPricing, resolveMarketplaceCartPricing, validateMarketplaceCartLines, PRICES } = require('./shopPricing');
+const {
+  normalizeDiscountCode,
+  loadActiveDiscountCode,
+  applyDiscountToPricing,
+} = require('./discountCodes');
 const { buildJccRegisterCustomerParams, buildJccJsonParams } = require('./jccRegisterExtras');
 const { appendOrderTrackerSubscriptions, normalizeImei } = require('./subscriptionImei');
 const {
@@ -906,6 +911,7 @@ exports.createJccCheckout = functions.region('europe-west1').https.onCall(async 
       ? data.nfcPetIds.map(String).filter(Boolean).slice(0, 20)
       : [];
     const rawCartItems = Array.isArray(data?.cartItems) ? data.cartItems : [];
+    const rawDiscountCode = normalizeDiscountCode(data?.discountCode);
     const shipping = normalizeShipping(data?.shippingContact);
     const shippingErr = validateShipping(shipping);
     if (shippingErr) {
@@ -961,6 +967,24 @@ exports.createJccCheckout = functions.region('europe-west1').https.onCall(async 
 
     const orderNumber = uniqueOrderNumber('PP');
     const db = admin.firestore();
+
+    let discountMeta = null;
+    if (rawDiscountCode) {
+      const discount = await loadActiveDiscountCode(db, rawDiscountCode);
+      if (!discount) {
+        throw new functions.https.HttpsError(
+          'invalid-argument',
+          'This discount code is invalid or inactive.'
+        );
+      }
+      const applied = applyDiscountToPricing(pricing, discount);
+      pricing = applied.pricing;
+      discountMeta = applied.discountMeta;
+      if (!discountMeta) {
+        throw new functions.https.HttpsError('invalid-argument', 'This discount code could not be applied.');
+      }
+    }
+
     const sessionRef = db.collection('paymentSessions').doc(orderNumber);
     await sessionRef.set(
       omitUndefined({
@@ -976,6 +1000,11 @@ exports.createJccCheckout = functions.region('europe-west1').https.onCall(async 
         companyId: companyId || null,
         amountCents: pricing.chargeCents,
         renewalAmountCents: pricing.renewalCents ?? null,
+        discountCode: discountMeta?.code || null,
+        discountType: discountMeta?.type || null,
+        discountAmount: discountMeta?.amount ?? null,
+        discountCents: discountMeta?.discountCents ?? null,
+        subtotalCents: discountMeta?.subtotalCents ?? null,
         currency,
         paymentMode: mode,
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -995,6 +1024,7 @@ exports.createJccCheckout = functions.region('europe-west1').https.onCall(async 
       nfcPetIds,
       currency,
       paymentMode: mode,
+      discountMeta,
     });
 
     const jccCartLines =
@@ -1058,6 +1088,9 @@ exports.createJccCheckout = functions.region('europe-west1').https.onCall(async 
       orderNumber,
       jccOrderId: reg.orderId,
       amountCents: pricing.chargeCents,
+      subtotalCents: discountMeta?.subtotalCents ?? pricing.chargeCents,
+      discountCode: discountMeta?.code || null,
+      discountCents: discountMeta?.discountCents ?? 0,
       includeTracker: pricing.includeTracker,
       includeNfc: pricing.includeNfc,
     };

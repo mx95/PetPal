@@ -19,6 +19,7 @@ import {
   AdminBroadcast,
   AdminCompanyQueue,
   AdminDeviceRegistry,
+  AdminDiscountCodes,
   AdminEmailSettings,
   AdminHub,
   AdminNearbyPlaces,
@@ -227,6 +228,14 @@ function App() {
                 element={
                   <RequireAuth>
                     <AdminShopAssets />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/admin/discount-codes"
+                element={
+                  <RequireAuth>
+                    <AdminDiscountCodes />
                   </RequireAuth>
                 }
               />

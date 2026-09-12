@@ -20886,6 +20886,43 @@ html[data-theme="dark"] .pp-nearby-list > li {
   font-weight: 600;
 }
 
+.pp-shopCheckout__summarySubtotal,
+.pp-shopCheckout__summaryDiscount {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 8px;
+  font-size: 14px;
+  color: #475467;
+}
+
+.pp-shopCheckout__summaryDiscount {
+  color: #027a48;
+  font-weight: 600;
+}
+
+.pp-shopCheckout__discount {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(16, 24, 40, 0.08);
+}
+
+.pp-shopCheckout__discountRow {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.pp-shopCheckout__discountRow input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.pp-shopCheckout__discountRow .pp-btn {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
 .pp-shopCheckout__summaryTotal {
   display: flex;
   justify-content: space-between;
