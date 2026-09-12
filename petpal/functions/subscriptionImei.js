@@ -16,6 +16,10 @@ async function isAdminUid(db, uid) {
   return snap.exists;
 }
 
+function buildSubscriptionId(paymentId, subPaymentId) {
+  return `${String(paymentId || '').trim()}-S${Number(subPaymentId) || 1}`.slice(0, 36);
+}
+
 /**
  * @param {*} db
  * @param {string} uid
@@ -36,6 +40,168 @@ async function findPetByImei(db, uid, imei) {
     if (!snap.empty) return snap.docs[0];
   }
   return null;
+}
+
+/**
+ * @param {*} db
+ * @param {string} uid
+ * @param {string} subscriptionId
+ * @param {string} paymentId
+ * @param {number} subPaymentId
+ */
+async function resolveSubscriptionRef(db, uid, subscriptionId, paymentId, subPaymentId) {
+  const userSubs = db.collection('users').doc(uid).collection('trackerSubscriptions');
+  const candidates = [];
+  if (subscriptionId) candidates.push(subscriptionId);
+  if (paymentId && Number.isFinite(subPaymentId) && subPaymentId > 0) {
+    const built = buildSubscriptionId(paymentId, subPaymentId);
+    if (!candidates.includes(built)) candidates.push(built);
+  }
+
+  for (const id of candidates) {
+    const ref = userSubs.doc(id);
+    const snap = await ref.get();
+    if (snap.exists) return { ref, snap, subscriptionId: id };
+  }
+
+  if (paymentId && Number.isFinite(subPaymentId) && subPaymentId > 0) {
+    const allSnap = await userSubs.limit(50).get();
+    const match = allSnap.docs.find((d) => {
+      const data = d.data() || {};
+      return (
+        String(data.paymentId || '') === String(paymentId).slice(0, 36) &&
+        Number(data.subPaymentId) === subPaymentId
+      );
+    });
+    if (match) {
+      return { ref: match.ref, snap: match, subscriptionId: match.id };
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Recover a missing subscription doc from the order so admin can still assign IMEI.
+ * @param {*} db
+ * @param {string} uid
+ * @param {string} paymentId
+ * @param {number} subPaymentId
+ * @param {string} preferredSubscriptionId
+ */
+async function ensureSubscriptionFromOrder(db, uid, paymentId, subPaymentId, preferredSubscriptionId) {
+  if (!uid || !paymentId) return null;
+  const orderRef = db.collection('orders').doc(paymentId);
+  const orderSnap = await orderRef.get();
+  if (!orderSnap.exists) return null;
+  const order = orderSnap.data() || {};
+  const rows = Array.isArray(order.trackerSubscriptions) ? order.trackerSubscriptions : [];
+  const line =
+    rows.find(
+      (row) =>
+        (preferredSubscriptionId && String(row.subscriptionId) === preferredSubscriptionId) ||
+        (Number.isFinite(subPaymentId) &&
+          Number(row.subPaymentId) === subPaymentId &&
+          String(row.paymentId || paymentId) === paymentId)
+    ) || null;
+
+  const subscriptionId = String(
+    preferredSubscriptionId ||
+      line?.subscriptionId ||
+      buildSubscriptionId(paymentId, subPaymentId || line?.subPaymentId || 1)
+  ).slice(0, 36);
+  if (!subscriptionId) return null;
+
+  const ref = db.collection('users').doc(uid).collection('trackerSubscriptions').doc(subscriptionId);
+  const existing = await ref.get();
+  if (existing.exists) return { ref, snap: existing, subscriptionId };
+
+  await ref.set(
+    {
+      uid,
+      subscriptionId,
+      paymentId: String(paymentId).slice(0, 36),
+      subPaymentId: Number(subPaymentId) || Number(line?.subPaymentId) || 1,
+      sku: 'PETPAL_PLUS_MONTHLY',
+      status: 'active',
+      includeTracker: line?.includeTracker !== false,
+      includeNfc: Boolean(line?.includeNfc),
+      nfcPetIds: Array.isArray(line?.nfcPetIds) ? line.nfcPetIds : null,
+      trackerImei: null,
+      imei: null,
+      petId: null,
+      petName: null,
+      orderNumber: String(paymentId).slice(0, 36),
+      createdFromOrderNumber: String(paymentId).slice(0, 36),
+      recoveredByAdmin: true,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    },
+    { merge: true }
+  );
+  const snap = await ref.get();
+  return { ref, snap, subscriptionId };
+}
+
+/**
+ * @param {*} db
+ * @param {string} uid
+ * @param {string} petId
+ * @param {string} imei
+ */
+async function writePetTrackingDevice(db, uid, petId, imei) {
+  const petRef = db.collection('users').doc(uid).collection('pets').doc(petId);
+  const petSnap = await petRef.get();
+  if (!petSnap.exists) {
+    throw new functions.https.HttpsError('not-found', 'Pet not found.');
+  }
+  const pet = petSnap.data() || {};
+  const prevImei = normalizeImei(pet.trackingDeviceId);
+
+  // Refuse if another pet (any user) already owns this IMEI via index.
+  const indexRef = db.collection('trackerImeiIndex').doc(imei);
+  const indexSnap = await indexRef.get();
+  if (indexSnap.exists) {
+    const row = indexSnap.data() || {};
+    if (row.uid && row.petId && (row.uid !== uid || row.petId !== petId)) {
+      throw new functions.https.HttpsError(
+        'already-exists',
+        'This collar IMEI is already linked to another pet.'
+      );
+    }
+  }
+
+  await petRef.set(
+    {
+      trackingDeviceId: imei,
+      linkedTracker: true,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    },
+    { merge: true }
+  );
+
+  if (prevImei && prevImei !== imei) {
+    const prevRef = db.collection('trackerImeiIndex').doc(prevImei);
+    const prevSnap = await prevRef.get();
+    if (prevSnap.exists) {
+      const row = prevSnap.data() || {};
+      if (row.uid === uid && row.petId === petId) {
+        await prevRef.delete();
+      }
+    }
+  }
+
+  await indexRef.set(
+    {
+      uid,
+      petId,
+      petName: String(pet.name || '').slice(0, 80),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    },
+    { merge: true }
+  );
+
+  return { petId, petName: String(pet.name || '').slice(0, 80), prevImei };
 }
 
 /**
@@ -86,28 +252,37 @@ exports.assignSubscriptionImei = functions.region('europe-west1').https.onCall(a
   }
 
   const uid = String(data?.uid || '').trim();
-  let subscriptionId = String(data?.subscriptionId || '').trim();
+  let subscriptionId = String(data?.subscriptionId || '').trim().slice(0, 36);
   const paymentId = String(data?.paymentId || '').trim();
   const subPaymentId = Number(data?.subPaymentId);
+  const petIdOpt = String(data?.petId || '').trim();
   if (!subscriptionId && paymentId && Number.isFinite(subPaymentId) && subPaymentId > 0) {
-    subscriptionId = `${paymentId}-S${subPaymentId}`.slice(0, 36);
+    subscriptionId = buildSubscriptionId(paymentId, subPaymentId);
   }
   const imei = normalizeImei(data?.imei);
-  if (!uid || !subscriptionId) {
-    throw new functions.https.HttpsError('invalid-argument', 'User and subscription id are required.');
+  if (!uid) {
+    throw new functions.https.HttpsError('invalid-argument', 'User uid is required.');
   }
   if (!imei) {
     throw new functions.https.HttpsError('invalid-argument', 'Enter a valid tracker IMEI (10–20 digits).');
   }
 
-  const subRef = db.collection('users').doc(uid).collection('trackerSubscriptions').doc(subscriptionId);
-  const subSnap = await subRef.get();
-  if (!subSnap.exists) {
-    throw new functions.https.HttpsError('not-found', 'Subscription not found.');
+  let resolved = await resolveSubscriptionRef(db, uid, subscriptionId, paymentId, subPaymentId);
+  if (!resolved) {
+    resolved = await ensureSubscriptionFromOrder(db, uid, paymentId, subPaymentId, subscriptionId);
   }
+  if (!resolved) {
+    throw new functions.https.HttpsError(
+      'not-found',
+      `Subscription not found for this payment (${subscriptionId || paymentId || 'unknown'}).`
+    );
+  }
+
+  const { ref: subRef, snap: subSnap } = resolved;
+  subscriptionId = resolved.subscriptionId;
   const sub = subSnap.data() || {};
-  if (sub.status !== 'active') {
-    throw new functions.https.HttpsError('failed-precondition', 'Subscription is not active.');
+  if (sub.status && sub.status !== 'active') {
+    throw new functions.https.HttpsError('failed-precondition', `Subscription is not active (status: ${sub.status}).`);
   }
 
   const activeSnap = await db
@@ -127,35 +302,73 @@ exports.assignSubscriptionImei = functions.region('europe-west1').https.onCall(a
   const patch = {
     trackerImei: imei,
     imei,
+    status: 'active',
     imeiAssignedAt: admin.firestore.FieldValue.serverTimestamp(),
     updatedAt: admin.firestore.FieldValue.serverTimestamp(),
   };
 
-  const petDoc = await findPetByImei(db, uid, imei);
-  if (petDoc) {
-    const pet = petDoc.data() || {};
-    patch.petId = petDoc.id;
-    patch.petName = String(pet.name || '').slice(0, 80);
+  let linkedPetId = null;
+  let linkedPetName = null;
+
+  if (petIdOpt) {
+    const petWrite = await writePetTrackingDevice(db, uid, petIdOpt, imei);
+    linkedPetId = petWrite.petId;
+    linkedPetName = petWrite.petName;
+    patch.petId = linkedPetId;
+    patch.petName = linkedPetName;
+  } else {
+    const petDoc = await findPetByImei(db, uid, imei);
+    if (petDoc) {
+      linkedPetId = petDoc.id;
+      linkedPetName = String((petDoc.data() || {}).name || '').slice(0, 80);
+      patch.petId = linkedPetId;
+      patch.petName = linkedPetName;
+    } else {
+      // Convenience: if the user has exactly one pet, attach the collar there too.
+      const petsSnap = await db.collection('users').doc(uid).collection('pets').limit(2).get();
+      if (petsSnap.size === 1) {
+        const onlyPet = petsSnap.docs[0];
+        const petWrite = await writePetTrackingDevice(db, uid, onlyPet.id, imei);
+        linkedPetId = petWrite.petId;
+        linkedPetName = petWrite.petName;
+        patch.petId = linkedPetId;
+        patch.petName = linkedPetName;
+      }
+    }
   }
 
   await subRef.set(patch, { merge: true });
 
-  const orderNumber = String(sub.createdFromOrderNumber || sub.orderNumber || '').trim();
+  const orderNumber = String(sub.createdFromOrderNumber || sub.orderNumber || paymentId || '').trim();
   if (orderNumber) {
     const orderRef = db.collection('orders').doc(orderNumber);
     const orderSnap = await orderRef.get();
     if (orderSnap.exists) {
       const order = orderSnap.data() || {};
       const rows = Array.isArray(order.trackerSubscriptions) ? order.trackerSubscriptions : [];
-      const nextRows = rows.map((row) =>
-        String(row.subscriptionId) === subscriptionId ||
-        (paymentId &&
-          Number.isFinite(subPaymentId) &&
-          String(row.paymentId) === paymentId &&
-          Number(row.subPaymentId) === subPaymentId)
-          ? { ...row, trackerImei: imei, subscriptionId }
-          : row
-      );
+      let matched = false;
+      const nextRows = rows.map((row) => {
+        const hit =
+          String(row.subscriptionId) === subscriptionId ||
+          (paymentId &&
+            Number.isFinite(subPaymentId) &&
+            String(row.paymentId) === paymentId &&
+            Number(row.subPaymentId) === subPaymentId);
+        if (hit) matched = true;
+        return hit ? { ...row, trackerImei: imei, subscriptionId } : row;
+      });
+      if (!matched) {
+        nextRows.push({
+          paymentId: String(paymentId || orderNumber).slice(0, 36),
+          subPaymentId: Number.isFinite(subPaymentId) ? subPaymentId : 1,
+          subscriptionId,
+          uid,
+          includeTracker: true,
+          includeNfc: Boolean(sub.includeNfc),
+          nfcPetIds: Array.isArray(sub.nfcPetIds) ? sub.nfcPetIds : [],
+          trackerImei: imei,
+        });
+      }
       await orderRef.set(
         { trackerSubscriptions: nextRows, updatedAt: admin.firestore.FieldValue.serverTimestamp() },
         { merge: true }
@@ -163,7 +376,84 @@ exports.assignSubscriptionImei = functions.region('europe-west1').https.onCall(a
     }
   }
 
-  return { ok: true, imei, petId: patch.petId || null, petName: patch.petName || null };
+  return { ok: true, imei, subscriptionId, petId: linkedPetId, petName: linkedPetName };
+});
+
+/** Admin sets a pet's collar IMEI (trackingDeviceId) from Users & NFC. */
+exports.adminAssignPetTrackingDevice = functions.region('europe-west1').https.onCall(async (data, context) => {
+  if (!context.auth?.uid) {
+    throw new functions.https.HttpsError('unauthenticated', 'Sign in as admin.');
+  }
+  const db = admin.firestore();
+  if (!(await isAdminUid(db, context.auth.uid))) {
+    throw new functions.https.HttpsError('permission-denied', 'Admin access required.');
+  }
+
+  const uid = String(data?.uid || '').trim();
+  const petId = String(data?.petId || '').trim();
+  const clear = Boolean(data?.clear);
+  const imei = clear ? '' : normalizeImei(data?.imei);
+
+  if (!uid || !petId) {
+    throw new functions.https.HttpsError('invalid-argument', 'User and pet id are required.');
+  }
+  if (!clear && !imei) {
+    throw new functions.https.HttpsError('invalid-argument', 'Enter a valid tracker IMEI (10–20 digits).');
+  }
+
+  const petRef = db.collection('users').doc(uid).collection('pets').doc(petId);
+  const petSnap = await petRef.get();
+  if (!petSnap.exists) {
+    throw new functions.https.HttpsError('not-found', 'Pet not found.');
+  }
+  const pet = petSnap.data() || {};
+  const prevImei = normalizeImei(pet.trackingDeviceId);
+
+  if (clear || !imei) {
+    await petRef.set(
+      {
+        trackingDeviceId: null,
+        linkedTracker: false,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      },
+      { merge: true }
+    );
+    if (prevImei) {
+      const prevRef = db.collection('trackerImeiIndex').doc(prevImei);
+      const prevSnap = await prevRef.get();
+      if (prevSnap.exists) {
+        const row = prevSnap.data() || {};
+        if (row.uid === uid && row.petId === petId) await prevRef.delete();
+      }
+    }
+    return { ok: true, imei: null, petId, cleared: true };
+  }
+
+  const write = await writePetTrackingDevice(db, uid, petId, imei);
+
+  // Link matching paid subscription if admin already assigned this IMEI on an order.
+  const subsSnap = await db
+    .collection('users')
+    .doc(uid)
+    .collection('trackerSubscriptions')
+    .where('status', '==', 'active')
+    .get();
+  for (const doc of subsSnap.docs) {
+    const subImei = normalizeImei(doc.data()?.trackerImei || doc.data()?.imei);
+    if (subImei === imei) {
+      await doc.ref.set(
+        {
+          petId,
+          petName: write.petName,
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        },
+        { merge: true }
+      );
+      break;
+    }
+  }
+
+  return { ok: true, imei, petId, petName: write.petName };
 });
 
 /** When a user links a collar IMEI on My pets, attach the matching paid subscription. */

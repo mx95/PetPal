@@ -7,6 +7,7 @@ import { useI18n } from '../i18n/I18nContext';
 import { getFirebaseApp } from '../firebase';
 import AdminCopyButton from '../admin/AdminCopyButton';
 import { fetchAdminUsersDirectory, filterAdminDirectory, publicPetAbsoluteUrl, publicPetPath } from '../admin/adminDirectory';
+import { adminAssignPetTrackingDevice } from '../shop/subscriptionImeiClient';
 
 const REGION = 'europe-west1';
 
@@ -30,6 +31,8 @@ export default function AdminUsersNfc() {
   const [ok, setOk] = useState('');
   const [search, setSearch] = useState('');
   const [busyUid, setBusyUid] = useState('');
+  const [imeiDrafts, setImeiDrafts] = useState({});
+  const [imeiBusyKey, setImeiBusyKey] = useState('');
 
   const reload = () => {
     setLoading(true);
@@ -84,6 +87,45 @@ export default function AdminUsersNfc() {
       setErr(e?.message || t('adminUsersNfc.deleteFailed'));
     } finally {
       setBusyUid('');
+    }
+  }
+
+  function imeiKey(uid, petId) {
+    return `${uid}:${petId}`;
+  }
+
+  async function onSavePetImei(uid, pet) {
+    const key = imeiKey(uid, pet.id);
+    const draft = String(imeiDrafts[key] ?? pet.imei ?? '').trim();
+    setImeiBusyKey(key);
+    setErr('');
+    setOk('');
+    try {
+      await adminAssignPetTrackingDevice({ uid, petId: pet.id, imei: draft });
+      setOk(t('adminUsersNfc.collarSaved', { name: pet.name || pet.id, imei: draft }));
+      await reload();
+    } catch (e) {
+      setErr(e?.message || t('adminUsersNfc.collarSaveFailed'));
+    } finally {
+      setImeiBusyKey('');
+    }
+  }
+
+  async function onClearPetImei(uid, pet) {
+    const key = imeiKey(uid, pet.id);
+    if (!window.confirm(t('adminUsersNfc.confirmClearCollar', { name: pet.name || pet.id }))) return;
+    setImeiBusyKey(key);
+    setErr('');
+    setOk('');
+    try {
+      await adminAssignPetTrackingDevice({ uid, petId: pet.id, clear: true });
+      setImeiDrafts((prev) => ({ ...prev, [key]: '' }));
+      setOk(t('adminUsersNfc.collarCleared', { name: pet.name || pet.id }));
+      await reload();
+    } catch (e) {
+      setErr(e?.message || t('adminUsersNfc.collarSaveFailed'));
+    } finally {
+      setImeiBusyKey('');
     }
   }
 
@@ -201,18 +243,15 @@ export default function AdminUsersNfc() {
                 {row.pets.map((pet) => {
                   const path = publicPetPath(pet.publicId);
                   const url = publicPetAbsoluteUrl(pet.publicId, origin);
+                  const key = imeiKey(row.uid, pet.id);
+                  const draft = imeiDrafts[key] ?? pet.imei ?? '';
+                  const saving = imeiBusyKey === key;
                   return (
                     <li key={`${row.uid}:${pet.id}`} className="pp-adminPetNfc">
                       <div className="pp-adminPetNfc__name">
                         <strong>{pet.name}</strong>
                         {pet.breed ? <span className="pp-subtle"> · {pet.breed}</span> : null}
                         {pet.nfcTag ? <span className="pp-adminPetNfc__chip">{t('admin.hub.nfcYes')}</span> : null}
-                        {pet.imei ? (
-                          <span className="pp-subtle">
-                            {' '}
-                            · {t('admin.hub.imei')}: <code>{pet.imei}</code>
-                          </span>
-                        ) : null}
                       </div>
                       {pet.publicId ? (
                         <div className="pp-adminPetNfc__id">
@@ -231,6 +270,43 @@ export default function AdminUsersNfc() {
                       ) : (
                         <p className="pp-subtle">{t('admin.hub.missingPublicId')}</p>
                       )}
+                      <div className="pp-adminPetNfc__collar">
+                        <label className="pp-subtle" htmlFor={`collar-${key}`}>
+                          {t('adminUsersNfc.collarLabel')}
+                        </label>
+                        <div className="pp-adminPetNfc__collarRow">
+                          <input
+                            id={`collar-${key}`}
+                            type="text"
+                            inputMode="numeric"
+                            className="pp-input"
+                            placeholder={t('adminUsersNfc.collarPlaceholder')}
+                            value={draft}
+                            disabled={saving || Boolean(busyUid)}
+                            onChange={(e) =>
+                              setImeiDrafts((prev) => ({ ...prev, [key]: e.target.value.trim() }))
+                            }
+                          />
+                          <button
+                            type="button"
+                            className="pp-btn pp-btn--primary"
+                            disabled={saving || Boolean(busyUid) || !String(draft).trim()}
+                            onClick={() => void onSavePetImei(row.uid, pet)}
+                          >
+                            {saving ? t('adminUsersNfc.collarSaving') : t('adminUsersNfc.collarSave')}
+                          </button>
+                          {pet.imei ? (
+                            <button
+                              type="button"
+                              className="pp-btn pp-btn--ghost"
+                              disabled={saving || Boolean(busyUid)}
+                              onClick={() => void onClearPetImei(row.uid, pet)}
+                            >
+                              {t('adminUsersNfc.collarClear')}
+                            </button>
+                          ) : null}
+                        </div>
+                      </div>
                     </li>
                   );
                 })}
