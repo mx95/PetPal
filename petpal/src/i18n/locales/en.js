@@ -95,8 +95,15 @@ const en = {
         liveAlt: 'PetPal live GPS tracking with map, safe zone, and in-app navigation',
         nfcAlt: 'NFC collar scan opening a lost pet contact form with call, WhatsApp, and maps buttons',
       },
+      learnTitle: 'Learn about PetPal safety & care',
+      learnSub:
+        'Explore NFC identification, GPS tracking, lost-pet safety, pet-friendly places, Discover tips and the PetPal shop.',
+      learnNfc: 'NFC pet tags',
+      learnGps: 'GPS pet trackers',
+      learnLost: 'Lost pet safety',
+      learnPlaces: 'Pet-friendly places',
       docsLink: 'All pages & APIs →',
-      discoverLink: 'Local tips & offers →',
+      discoverLink: 'Discover features →',
       premiumLink: 'Premium tools',
     },
     publicHero: {
@@ -2006,6 +2013,11 @@ const en = {
   shopPage: {
     badge: 'PetPal Shop',
     title: 'Subscriptions',
+    seoTitle: 'NFC pet tags, GPS trackers & care plans',
+    seoSub:
+      'Browse PetPal Plus plans, GPS collar trackers and NFC identification tags. Product details below load instantly from the catalog — sign in only when you are ready to checkout.',
+    seoLinkNfc: 'About NFC pet tags',
+    seoLinkGps: 'About GPS pet trackers',
     sub: 'Choose monthly or yearly PetPal Plus. Add a GPS tracker or NFC tag to your first monthly payment if you like.',
     back: 'Back',
     signInTitle: 'Sign in to shop',
@@ -3311,6 +3323,10 @@ const en = {
     route: {
       home: { label: 'Home', desc: 'Welcome screen with feature overview.' },
       discover: { label: 'Discover feed', desc: 'Local tips, offers, and sponsored cards (/discover).' },
+      nfcTags: { label: 'NFC pet tags', desc: 'SEO landing page about NFC identification tags.' },
+      gpsTrackers: { label: 'GPS pet trackers', desc: 'SEO landing page about GPS collar trackers.' },
+      lostSafety: { label: 'Lost pet safety', desc: 'SEO landing page about lost-pet preparation and recovery.' },
+      petPlaces: { label: 'Pet-friendly places', desc: 'SEO landing page about pet-friendly places and services.' },
       login: { label: 'Log in', desc: 'Email/password sign-in (Firebase Auth).' },
       forgotPassword: { label: 'Forgot password', desc: 'Request a password reset email.' },
       contact: { label: 'Contact us', desc: 'Send a message to the PetPal team.' },

@@ -95,6 +95,11 @@ export default function TopNav() {
       <NavLink className={navItemClassName} to="/nearby">
         {t('nav.nearby')}
       </NavLink>
+      {!user ? (
+        <NavLink className={navItemClassName} to="/discover">
+          Discover
+        </NavLink>
+      ) : null}
       {MVP_NAV.showShop ? (
         <NavLink className={navItemClassName} to="/shop">
           {t('nav.shop')}

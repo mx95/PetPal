@@ -7,6 +7,10 @@
 export const APP_ROUTE_CATALOG = [
   { path: '/', labelKey: 'docs.route.home.label', descKey: 'docs.route.home.desc', auth: 'public', mvpNav: true },
   { path: '/discover', labelKey: 'docs.route.discover.label', descKey: 'docs.route.discover.desc', auth: 'public', mvpNav: false },
+  { path: '/nfc-pet-tags', labelKey: 'docs.route.nfcTags.label', descKey: 'docs.route.nfcTags.desc', auth: 'public', mvpNav: false },
+  { path: '/gps-pet-trackers', labelKey: 'docs.route.gpsTrackers.label', descKey: 'docs.route.gpsTrackers.desc', auth: 'public', mvpNav: false },
+  { path: '/lost-pet-safety', labelKey: 'docs.route.lostSafety.label', descKey: 'docs.route.lostSafety.desc', auth: 'public', mvpNav: false },
+  { path: '/pet-friendly-places', labelKey: 'docs.route.petPlaces.label', descKey: 'docs.route.petPlaces.desc', auth: 'public', mvpNav: false },
   { path: '/login', labelKey: 'docs.route.login.label', descKey: 'docs.route.login.desc', auth: 'public', mvpNav: true },
   { path: '/forgot-password', labelKey: 'docs.route.forgotPassword.label', descKey: 'docs.route.forgotPassword.desc', auth: 'public', mvpNav: false },
   { path: '/contact', labelKey: 'docs.route.contact.label', descKey: 'docs.route.contact.desc', auth: 'public', mvpNav: true },

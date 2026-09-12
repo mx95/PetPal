@@ -347,10 +347,44 @@ export default function Shop() {
     }
   }
 
+  const shopSeoIntro = (
+    <>
+      <header className="pp-pageHeader pp-shopPage__header">
+        <div className="pp-pageHeader__copy">
+          <span className="pp-publicHero__eyebrow">{t('shopPage.badge')}</span>
+          <h1 className="pp-pageHeader__title">{t('shopPage.seoTitle')}</h1>
+          <p className="pp-pageHeader__sub">{t('shopPage.seoSub')}</p>
+        </div>
+      </header>
+      <ul className="pp-shopSeoProductList">
+        {SHOP_PRODUCTS.map((product) => {
+          const localized = localizeShopProduct(product, t);
+          return (
+            <li key={product.id}>
+              <strong>{localized.title}</strong>
+              {localized.subtitle ? <span> — {localized.subtitle}</span> : null}
+              <span> ({formatShopPrice(localized, t)})</span>
+            </li>
+          );
+        })}
+      </ul>
+      <p className="pp-shopSeoLinks">
+        <Link className="pp-link" to="/nfc-pet-tags">
+          {t('shopPage.seoLinkNfc')}
+        </Link>
+        {' · '}
+        <Link className="pp-link" to="/gps-pet-trackers">
+          {t('shopPage.seoLinkGps')}
+        </Link>
+      </p>
+    </>
+  );
+
   if (!isFirebaseConfigured()) {
     return (
-      <div className="pp-pad">
-        <h1 className="pp-pageHeader__title">{t('shopPage.needFirebaseTitle')}</h1>
+      <div className="pp-pad pp-shopPage">
+        {shopSeoIntro}
+        <h2 className="pp-sectionTitle">{t('shopPage.needFirebaseTitle')}</h2>
         <p className="pp-subtle">{t('shopPage.needFirebaseSub')}</p>
       </div>
     );
@@ -358,6 +392,7 @@ export default function Shop() {
 
   return (
     <div className="pp-pad pp-shopPage">
+      {shopSeoIntro}
       {!user ? (
         <div className="pp-shopGuestBanner" role="note">
           <p className="pp-shopGuestBanner__text">{t('shopPage.guestBanner')}</p>

@@ -38,6 +38,8 @@ location @petpal_maintenance {
 EOF
 
 log "Writing $SITE"
+# Note: www and apex both proxy to Express. Canonical www→apex SEO redirects
+# are enforced in tracker-tcp-server (seoSpaInject / Host header).
 cat > "$SITE" <<EOF
 server {
     listen 80;

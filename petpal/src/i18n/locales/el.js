@@ -119,8 +119,15 @@ const el = {
         nfcAlt:
           'Σάρωση NFC κολαριού που ανοίγει φόρμα επικοινωνίας με κουμπιά κλήσης, WhatsApp και χάρτη',
       },
+      learnTitle: 'Μάθετε για την ασφάλεια & φροντίδα PetPal',
+      learnSub:
+        'Εξερευνήστε NFC αναγνώριση, GPS παρακολούθηση, ασφάλεια χαμένου κατοικιδίου, φιλικά προς κατοικίδια μέρη, Discover και το κατάστημα PetPal.',
+      learnNfc: 'NFC ετικέτες',
+      learnGps: 'GPS trackers',
+      learnLost: 'Ασφάλεια χαμένου κατοικιδίου',
+      learnPlaces: 'Φιλικά προς κατοικίδια μέρη',
       docsLink: 'Όλες οι σελίδες & APIs →',
-      discoverLink: 'Τοπικές συμβουλές & προσφορές →',
+      discoverLink: 'Ανακαλύψτε δυνατότητες →',
       premiumLink: 'Premium εργαλεία',
     },
     publicHero: {
@@ -2142,6 +2149,11 @@ const el = {
   shopPage: {
     badge: 'PetPal Shop',
     title: 'Συνδρομές',
+    seoTitle: 'NFC ετικέτες, GPS trackers & πλάνα φροντίδας',
+    seoSub:
+      'Δείτε πλάνα PetPal Plus, GPS trackers και NFC ετικέτες αναγνώρισης. Οι λεπτομέρειες προϊόντων εμφανίζονται αμέσως από τον κατάλογο — συνδεθείτε μόνο όταν είστε έτοιμοι για checkout.',
+    seoLinkNfc: 'Σχετικά με NFC ετικέτες',
+    seoLinkGps: 'Σχετικά με GPS trackers',
     sub:
       'Επιλέξτε μηνιαία ή ετήσια PetPal Plus. Προσθέστε GPS tracker ή NFC tag στην πρώτη μηνιαία πληρωμή αν θέλετε.',
     back: 'Πίσω',
