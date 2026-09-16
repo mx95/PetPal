@@ -108,7 +108,8 @@ function buildPositionPayload(imei, d) {
     }
     if (d.battery != null || d.signal != null || d.source || d.charging != null) {
       const approxCoords =
-        isPlausibleLatLng(rawLat, rawLng) && (d.source === "lbs" || d.source === "wifi");
+        isPlausibleLatLng(rawLat, rawLng) && (d.source === "lbs" || d.source === "wifi") && d.gpsLockLost !== true;
+      const lockLost = d.gpsLockLost === true || (d.source === "lbs" && !approxCoords);
       return {
         imei,
         provider: d.provider ?? null,
@@ -125,7 +126,22 @@ function buildPositionPayload(imei, d) {
         deviceTimeUtc: deviceFixTime,
         secondsAgo,
         warningApproximate: d.source === "lbs" || d.source === "wifi",
-        gpsValid: d.gpsValid === true,
+        gpsValid: false,
+        gpsLockLost: lockLost,
+        statusText: lockLost
+          ? "Connected — waiting for GPS lock"
+          : undefined,
+        accuracyText: lockLost ? "No GPS fix yet" : undefined,
+        freshness:
+          typeof secondsAgo === "number"
+            ? secondsAgo < 60
+              ? "live"
+              : secondsAgo < 300
+                ? "recent"
+                : "stale"
+            : null,
+        lbs: d.lbs ?? null,
+        staleGps: d.staleGps ?? null,
       };
     }
     return { error: "no_position" };
