@@ -24279,6 +24279,45 @@ html[data-theme="dark"] .pp-nearbyPartnerCard__badge--partner {
   border-color: rgba(180, 35, 24, 0.5);
 }
 
+.pp-adminTrackerLoc__meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px 16px;
+  margin: 0 0 16px;
+}
+
+.pp-adminTrackerLoc__meta dt {
+  margin: 0;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--pp-muted, #667085);
+}
+
+.pp-adminTrackerLoc__meta dd {
+  margin: 2px 0 0;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.pp-adminTrackerLoc__mapWrap {
+  position: relative;
+  width: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--pp-border, rgba(0, 0, 0, 0.08));
+  background: #e8eef3;
+  aspect-ratio: 16 / 9;
+  min-height: 240px;
+}
+
+.pp-adminTrackerLoc__map {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
 /* Bookings hub — inline wizard (replaces bottom-sheet modal) */
 .pp-bookHubWizard {
   max-width: 640px;

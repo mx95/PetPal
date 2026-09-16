@@ -39,6 +39,7 @@ export const APP_ROUTE_CATALOG = [
   { path: '/admin/company-approvals', labelKey: 'docs.route.adminCompanies.label', descKey: 'docs.route.adminCompanies.desc', auth: 'admin', mvpNav: false },
   { path: '/admin/tracker', labelKey: 'docs.route.adminTracker.label', descKey: 'docs.route.adminTracker.desc', auth: 'admin', mvpNav: false },
   { path: '/admin/devices', labelKey: 'docs.route.adminDevices.label', descKey: 'docs.route.adminDevices.desc', auth: 'admin', mvpNav: false },
+  { path: '/admin/tracker-location', labelKey: 'docs.route.adminTrackerLocation.label', descKey: 'docs.route.adminTrackerLocation.desc', auth: 'admin', mvpNav: false },
   { path: '/admin/broadcast', labelKey: 'docs.route.adminBroadcast.label', descKey: 'docs.route.adminBroadcast.desc', auth: 'admin', mvpNav: false },
   { path: '/admin/support', labelKey: 'docs.route.adminSupport.label', descKey: 'docs.route.adminSupport.desc', auth: 'admin', mvpNav: false },
   { path: '/admin/email', labelKey: 'docs.route.adminEmail.label', descKey: 'docs.route.adminEmail.desc', auth: 'admin', mvpNav: false },
