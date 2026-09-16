@@ -222,3 +222,40 @@ test("position payload hides non-explicit homeLocation", () => {
   assert.equal(payload.homeLat, null);
   assert.equal(payload.homeLng, null);
 });
+
+test("memory store — GT06 gpsLockLost clears stale live pin", () => {
+  const store = createMemoryStore();
+  const { parseGt06Packet } = require("../src/protocol/gt06");
+  const imei = "868022030666239";
+
+  store.upsert(imei, {
+    imei,
+    provider: "gt06",
+    source: "gps",
+    gpsValid: true,
+    location: { lat: 34.98491, lng: 33.84486, source: "gps" },
+    gps: { lat: 34.98491, lng: 33.84486, timestamp: "2026-09-12T13:13:06.000Z" },
+    receivedAt: "2026-09-12T13:13:07.270Z",
+  });
+  assert.equal(store.get(imei).location?.lat, 34.98491);
+
+  const frame = hex(
+    "78 78 1F 12 1A 09 10 0B 0B 05 C3 03 C0 E3 AC 03 A1 93 A4 00 04 00 01 18 01 04 61 01 FE 15 00 2C 02 66 0D 0A"
+  );
+  const parsed = parseGt06Packet(frame, imei);
+  assert.equal(parsed.gpsLockLost, true);
+  const recorded = store.upsert(imei, { ...parsed, imei, provider: "gt06", receivedAt: new Date().toISOString() });
+  assert.equal(recorded, false, "must not append stale coords to history");
+
+  const rec = store.get(imei);
+  assert.equal(rec.gpsLockLost, true);
+  assert.equal(rec.location, null);
+  assert.equal(rec.gps?.lat, null);
+  assert.equal(rec.gpsValid, false);
+
+  const payload = buildPositionPayload(imei, rec);
+  assert.equal(payload.lat, null);
+  assert.equal(payload.lng, null);
+  assert.equal(payload.gpsLockLost, true);
+  assert.match(String(payload.statusText || ""), /waiting for GPS/i);
+});

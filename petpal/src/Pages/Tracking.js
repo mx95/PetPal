@@ -982,6 +982,10 @@ export default function Tracking() {
       if (home) return home;
       return null;
     }
+    // Collar connected but GPS ACC bit clear — do not plot stale last-known as "live".
+    if (position?.gpsLockLost || (position?.source === 'lbs' && !hasValidCoords(position) && position?.gpsValid === false)) {
+      return null;
+    }
     if (position && !isTrustedGpsFix(position) && hasValidCoords(position)) {
       const fallback = pickLastKnownMapCoords(
         effectiveDeviceId,

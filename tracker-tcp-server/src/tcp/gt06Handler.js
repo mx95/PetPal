@@ -10,6 +10,58 @@ const {
 const { logPrefix, formatCyprusTime } = require("../logging/time");
 const { DEVICE, logDeviceConnect, logDeviceIdentified, logListenerReady } = require("../logging/deviceLog");
 const { promoteCloudDeviceToDirectTcp } = require("../directTcpPromote");
+const { geocodeLbsTowers, LBS_GEOCODE_ENABLED } = require("../geo/lbsGeocode");
+
+function scheduleGt06LbsGeocode(store, imei, parsed) {
+  if (!LBS_GEOCODE_ENABLED || !imei || parsed?.gpsLockLost !== true) return;
+  const lbs = parsed?.lbs;
+  if (!lbs || lbs.mcc == null || lbs.lac == null || lbs.cellId == null) return;
+  const towers = {
+    mcc: Number(lbs.mcc),
+    mnc: Number(lbs.mnc),
+    cells: [{ lac: Number(lbs.lac), cellId: Number(lbs.cellId) }],
+  };
+
+  void geocodeLbsTowers(towers)
+    .then((geo) => {
+      if (!geo) {
+        console.log(
+          `${logPrefix({ dir: "in", tag: "GT06" })} LBS geocode: no match for ${imei} (MCC ${towers.mcc} MNC ${towers.mnc} LAC ${towers.cells[0].lac} CID ${towers.cells[0].cellId})`
+        );
+        return;
+      }
+      console.log(
+        `${logPrefix({ dir: "in", tag: "GT06" })} LBS geocoded ${imei}: ${geo.lat}, ${geo.lng} (${geo.provider})`
+      );
+      const ts = parsed.gps?.timestamp || parsed.receivedAt || new Date().toISOString();
+      store.upsert(imei, {
+        imei,
+        provider: "gt06",
+        source: "lbs",
+        accuracy: "lbs",
+        gpsValid: false,
+        gpsLockLost: false,
+        location: { lat: geo.lat, lng: geo.lng, source: "lbs" },
+        gps: {
+          lat: geo.lat,
+          lng: geo.lng,
+          source: "lbs",
+          timestamp: ts,
+        },
+        lbs,
+        battery: parsed.battery ?? parsed.deviceStatus?.battery,
+        signal: parsed.signal ?? parsed.deviceStatus?.signal,
+        receivedAt: new Date().toISOString(),
+        _recordPosition: true,
+      });
+    })
+    .catch((e) => {
+      console.log(
+        `${logPrefix({ dir: "in", tag: "GT06" })} LBS geocode error for ${imei}:`,
+        e?.message || String(e)
+      );
+    });
+}
 
 function asciiPreview(buf, max = 160) {
   if (!Buffer.isBuffer(buf) || buf.length === 0) return null;
@@ -156,6 +208,9 @@ function processGt06Frame({ store, socket, frame, port, receivedAt = new Date() 
       receivedAt: receivedAt.toISOString(),
     });
     store.bindSocket(imei, socket);
+    if (parsed.gpsLockLost) {
+      scheduleGt06LbsGeocode(store, imei, { ...parsed, receivedAt: receivedAt.toISOString() });
+    }
     const promoted = promoteCloudDeviceToDirectTcp(store, imei, "gt06");
     if (promoted?.switched) {
       console.log(

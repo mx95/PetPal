@@ -56,10 +56,13 @@ function normalizeIncomingDevice(prev, incoming, canonicalImei = null) {
     return mergeDeviceRecord(prev, {
       ...incoming,
       imei: canonicalImei || incoming.imei || prev?.imei || null,
+      gpsLockLost: incoming.gpsLockLost === true,
       _recordPosition:
         incoming._recordPosition !== undefined
           ? Boolean(incoming._recordPosition)
-          : incomingHasNewLocationFix(incoming),
+          : incoming.gpsLockLost === true
+            ? false
+            : incomingHasNewLocationFix(incoming),
     });
   }
 
@@ -92,6 +95,9 @@ function normalizeIncomingDevice(prev, incoming, canonicalImei = null) {
           : prev?.gpsValid === true
             ? true
             : false,
+    gpsLockLost: p.gpsLockLost === true,
+    staleGps: p.staleGps || null,
+    lbs: p.lbs || null,
     source: p.source || gps.source || null, // "gps" | "lbs"
     accuracy: p.accuracy || null, // "gps" | "wifi" | "lbs" (wifi not implemented yet)
     satellites: p.satellites ?? gps.satellites ?? null,
@@ -130,7 +136,7 @@ function normalizeIncomingDevice(prev, incoming, canonicalImei = null) {
   next.gps = next.location
     ? { lat: next.location.lat, lng: next.location.lng, speedKmh: next.speed, timestamp: ds.timestamp ?? gps.timestamp ?? null }
     : { lat: null, lng: null, speedKmh: next.speed, timestamp: ds.timestamp ?? gps.timestamp ?? null };
-  next._recordPosition = incomingHasNewLocationFix(p);
+  next._recordPosition = next.gpsLockLost ? false : incomingHasNewLocationFix(p);
 
   return mergeDeviceRecord(prev, next);
 }
@@ -165,51 +171,77 @@ function mergeDeviceRecord(prev, incoming) {
     if (prev?.homeLocation) merged.homeLocation = prev.homeLocation;
     if (prev?.homeExplicit != null) merged.homeExplicit = prev.homeExplicit;
   }
-  const incomingWifi = incoming.atHomeWifi || incoming.source === "wifi";
-  const prevWifi = prev?.atHomeWifi || prev?.source === "wifi";
-  if (
-    !incomingWifi &&
-    prevWifi &&
-    incoming.source === "lbs" &&
-    !hasValidGps(incoming.location)
-  ) {
-    merged.source = "wifi";
-    merged.atHomeWifi = true;
-    merged.location = null;
-    merged.gps = {
-      lat: null,
-      lng: null,
-      speedKmh: incoming.speed ?? prev.speed ?? null,
-      timestamp: incoming.lastUpdate ?? prev.lastUpdate ?? null,
-    };
-  }
-  if (incoming.atHomeWifi && !hasValidGps(incoming.location)) {
-    merged.location = null;
-    merged.gps = {
-      lat: null,
-      lng: null,
-      speedKmh: incoming.speed ?? null,
-      timestamp: incoming.lastUpdate ?? null,
-    };
-  } else if (!merged.atHomeWifi && !hasValidGps(incoming.gps) && hasValidGps(prev.gps)) {
-    merged.gps = prev.gps;
-    if (!incoming.gpsRaw && prev.gpsRaw) merged.gpsRaw = prev.gpsRaw;
-  }
-  if (
-    !merged.atHomeWifi &&
-    (!incoming.location || !hasValidGps(incoming.location)) &&
-    prev.location &&
-    hasValidGps(prev.location)
-  ) {
-    merged.location = prev.location;
-  }
-  if (merged.location && (!merged.gps || !hasValidGps(merged.gps))) {
-    merged.gps = {
-      lat: merged.location.lat,
-      lng: merged.location.lng,
-      speedKmh: merged.speed ?? null,
-      timestamp: incoming.gps?.timestamp ?? prev?.gps?.timestamp ?? null,
-    };
+
+  // GT06/G365 ACC bit clear: firmware echoed last GPS — drop it, do not keep prior live pin.
+  if (incoming.gpsLockLost === true) {
+    merged.gpsLockLost = true;
+    merged.gpsValid = false;
+    merged.source = incoming.source || "lbs";
+    merged.location = hasValidGps(incoming.location) ? incoming.location : null;
+    merged.gps = hasValidGps(incoming.gps)
+      ? incoming.gps
+      : {
+          lat: null,
+          lng: null,
+          speedKmh: incoming.speed ?? prev?.speed ?? null,
+          timestamp:
+            incoming.gps?.timestamp ??
+            incoming.lastUpdate ??
+            prev?.lastUpdate ??
+            null,
+        };
+    if (incoming.staleGps) merged.staleGps = incoming.staleGps;
+    else if (prev?.staleGps) merged.staleGps = prev.staleGps;
+    if (incoming.lbs) merged.lbs = incoming.lbs;
+    // Skip restoring previous GPS/location as a live fix.
+  } else {
+    merged.gpsLockLost = false;
+    const incomingWifi = incoming.atHomeWifi || incoming.source === "wifi";
+    const prevWifi = prev?.atHomeWifi || prev?.source === "wifi";
+    if (
+      !incomingWifi &&
+      prevWifi &&
+      incoming.source === "lbs" &&
+      !hasValidGps(incoming.location)
+    ) {
+      merged.source = "wifi";
+      merged.atHomeWifi = true;
+      merged.location = null;
+      merged.gps = {
+        lat: null,
+        lng: null,
+        speedKmh: incoming.speed ?? prev.speed ?? null,
+        timestamp: incoming.lastUpdate ?? prev.lastUpdate ?? null,
+      };
+    }
+    if (incoming.atHomeWifi && !hasValidGps(incoming.location)) {
+      merged.location = null;
+      merged.gps = {
+        lat: null,
+        lng: null,
+        speedKmh: incoming.speed ?? null,
+        timestamp: incoming.lastUpdate ?? null,
+      };
+    } else if (!merged.atHomeWifi && !hasValidGps(incoming.gps) && hasValidGps(prev.gps)) {
+      merged.gps = prev.gps;
+      if (!incoming.gpsRaw && prev.gpsRaw) merged.gpsRaw = prev.gpsRaw;
+    }
+    if (
+      !merged.atHomeWifi &&
+      (!incoming.location || !hasValidGps(incoming.location)) &&
+      prev.location &&
+      hasValidGps(prev.location)
+    ) {
+      merged.location = prev.location;
+    }
+    if (merged.location && (!merged.gps || !hasValidGps(merged.gps))) {
+      merged.gps = {
+        lat: merged.location.lat,
+        lng: merged.location.lng,
+        speedKmh: merged.speed ?? null,
+        timestamp: incoming.gps?.timestamp ?? prev?.gps?.timestamp ?? null,
+      };
+    }
   }
   if (incoming.battery == null && prev?.battery != null) merged.battery = prev.battery;
   if (incoming.signal == null && prev?.signal != null) merged.signal = prev.signal;

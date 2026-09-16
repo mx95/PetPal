@@ -297,23 +297,39 @@ function parseGt06Packet(frame, sessionImei = null) {
     const block = parseGpsLbsBlock(content);
     if (!block) return { ...base, kind: "location", error: "short_gps_body", needsAck: true };
     const gps = block.gps;
+    const positioned = Boolean(gps.gpsValid);
+    // When ACC "GPS positioned" is clear, firmware often still echoes the last
+    // GPS lat/lng. Those are stale — never treat them as a live LBS fix.
     return {
       ...base,
       kind: "location",
-      source: gps.gpsValid ? "gps" : "lbs",
-      accuracy: gps.gpsValid ? "high" : "low",
-      gpsValid: Boolean(gps.gpsValid),
-      gps: {
-        lat: gps.lat,
-        lng: gps.lng,
-        speedKmh: gps.speedKmh,
-        timestamp: gps.timestamp,
-        satellites: gps.satellites,
-        courseDeg: gps.courseDeg,
-      },
-      location:
-        gps.lat != null && gps.lng != null
-          ? { lat: gps.lat, lng: gps.lng, source: gps.gpsValid ? "gps" : "lbs" }
+      source: positioned ? "gps" : "lbs",
+      accuracy: positioned ? "high" : "low",
+      gpsValid: positioned,
+      gpsLockLost: !positioned,
+      gps: positioned
+        ? {
+            lat: gps.lat,
+            lng: gps.lng,
+            speedKmh: gps.speedKmh,
+            timestamp: gps.timestamp,
+            satellites: gps.satellites,
+            courseDeg: gps.courseDeg,
+          }
+        : {
+            lat: null,
+            lng: null,
+            speedKmh: gps.speedKmh,
+            timestamp: gps.timestamp,
+            satellites: gps.satellites,
+            courseDeg: gps.courseDeg,
+          },
+      location: positioned
+        ? { lat: gps.lat, lng: gps.lng, source: "gps" }
+        : null,
+      staleGps:
+        !positioned && gps.lat != null && gps.lng != null
+          ? { lat: gps.lat, lng: gps.lng, satellites: gps.satellites }
           : null,
       lbs: block.lbs,
       speed: gps.speedKmh,
@@ -399,22 +415,34 @@ function parseGt06Packet(frame, sessionImei = null) {
 
     const battery = voltageLevelToBattery(voltageLevel);
     const signal = gsmLevelToSignal(gsmLevel);
+    const positioned = Boolean(course.gpsPositioned);
 
     return {
       ...base,
       kind: "alarm",
-      source: course.gpsPositioned ? "gps" : "lbs",
-      accuracy: course.gpsPositioned ? "high" : "low",
-      gpsValid: course.gpsPositioned,
-      gps: {
-        lat,
-        lng,
-        speedKmh,
-        timestamp,
-        satellites,
-        courseDeg: course.courseDeg,
-      },
-      location: { lat, lng, source: course.gpsPositioned ? "gps" : "lbs" },
+      source: positioned ? "gps" : "lbs",
+      accuracy: positioned ? "high" : "low",
+      gpsValid: positioned,
+      gpsLockLost: !positioned,
+      gps: positioned
+        ? {
+            lat,
+            lng,
+            speedKmh,
+            timestamp,
+            satellites,
+            courseDeg: course.courseDeg,
+          }
+        : {
+            lat: null,
+            lng: null,
+            speedKmh,
+            timestamp,
+            satellites,
+            courseDeg: course.courseDeg,
+          },
+      location: positioned ? { lat, lng, source: "gps" } : null,
+      staleGps: !positioned ? { lat, lng, satellites } : null,
       lbs: { mcc, mnc, lac, cellId },
       battery,
       signal,

@@ -68,12 +68,33 @@ test("gt06 — location 0x12 GPS + LBS", () => {
   const parsed = parseGt06Packet(frame, "123456789012345");
   assert.equal(parsed.kind, "location");
   assert.equal(parsed.gpsValid, true);
+  assert.equal(parsed.gpsLockLost, false);
   assert.ok(parsed.gps.lat > 20 && parsed.gps.lat < 30);
   assert.ok(parsed.gps.lng > 110 && parsed.gps.lng < 120);
   assert.equal(parsed.lbs.mcc, 460);
   const ack = buildGt06AckForParsed(parsed);
   assert.equal(toHex(ack), toHex(buildGt06Ack(PROTO.LOCATION, 1)));
   assert.match(toHex(ack), /^78780512/);
+});
+
+test("gt06 — unpositioned 0x12 drops stale GPS body coords", () => {
+  // Live collar packet: ACC GPS bit clear, same lat/lng echoed every minute.
+  const frame = hex(
+    "78 78 1F 12 1A 09 10 0B 0B 05 C3 03 C0 E3 AC 03 A1 93 A4 00 04 00 01 18 01 04 61 01 FE 15 00 2C 02 66 0D 0A"
+  );
+  assert.equal(verifyFrameCrc(frame), true);
+  const parsed = parseGt06Packet(frame, "868022030666239");
+  assert.equal(parsed.kind, "location");
+  assert.equal(parsed.gpsValid, false);
+  assert.equal(parsed.gpsLockLost, true);
+  assert.equal(parsed.source, "lbs");
+  assert.equal(parsed.location, null);
+  assert.equal(parsed.gps.lat, null);
+  assert.equal(parsed.gps.lng, null);
+  assert.ok(parsed.staleGps?.lat > 34 && parsed.staleGps?.lat < 35);
+  assert.equal(parsed.lbs.mcc, 280);
+  assert.equal(parsed.lbs.lac, 1121);
+  assert.equal(parsed.lbs.cellId, 130581);
 });
 
 test("gt06 — status / heartbeat 0x13 battery + signal", () => {
@@ -95,9 +116,9 @@ test("gt06 — status / heartbeat 0x13 battery + signal", () => {
 });
 
 test("gt06 — alarm 0x16 GPS + terminal info", () => {
-  // Course 00 14 (N/E positioned), LBS length 04… then terminal/voltage/gsm/alarm
+  // Course 14 00 (N/E positioned), LBS length 04… then terminal/voltage/gsm/alarm
   const content = hex(
-    "0B 0B 0F 0E 41 3A C8 02 7A C7 FE 0C 46 58 49 00 00 14 04 01 CC 00 28 7D 00 1F B8 40 05 04 00 02"
+    "0B 0B 0F 0E 41 3A C8 02 7A C7 FE 0C 46 58 49 00 14 00 04 01 CC 00 28 7D 00 1F B8 40 05 04 00 02"
   );
   assert.equal(content.length, 32);
   const payload = Buffer.alloc(1 + 1 + content.length + 2);
@@ -110,6 +131,8 @@ test("gt06 — alarm 0x16 GPS + terminal info", () => {
   assert.equal(verifyFrameCrc(frame), true);
   const parsed = parseGt06Packet(frame, "868120150038850");
   assert.equal(parsed.kind, "alarm");
+  assert.equal(parsed.gpsValid, true);
+  assert.equal(parsed.gpsLockLost, false);
   assert.ok(parsed.gps.lat != null);
   assert.equal(parsed.battery, 75);
   assert.equal(parsed.signal, 100);
