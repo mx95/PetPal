@@ -22,6 +22,7 @@ import {
   AdminDiscountCodes,
   AdminEmailSettings,
   AdminHub,
+  AdminTrackerLocation,
   AdminNearbyPlaces,
   AdminOrders,
   AdminShopAssets,
@@ -164,6 +165,14 @@ function App() {
                 element={
                   <RequireAuth>
                     <AdminDeviceRegistry />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/admin/tracker-location"
+                element={
+                  <RequireAuth>
+                    <AdminTrackerLocation />
                   </RequireAuth>
                 }
               />

@@ -41,6 +41,24 @@ function deviceConfigPayload(row, live) {
   if (!row && !live) return null;
   const imei = String(row?.imei || live?.imei || "").trim();
   const observed = live?.provider ?? row?.provider ?? inferDeviceProvider(live || {});
+  const loc = live?.location || null;
+  const lastLat =
+    loc?.lat != null
+      ? Number(loc.lat)
+      : live?.lat != null
+        ? Number(live.lat)
+        : row?.last_lat != null
+          ? Number(row.last_lat)
+          : null;
+  const lastLng =
+    loc?.lng != null
+      ? Number(loc.lng)
+      : live?.lng != null
+        ? Number(live.lng)
+        : row?.last_lng != null
+          ? Number(row.last_lng)
+          : null;
+  const source = live?.source ?? row?.source ?? null;
   return {
     imei,
     name: live?.name ?? row?.name ?? null,
@@ -57,6 +75,11 @@ function deviceConfigPayload(row, live) {
     lastUpdate: live?.lastUpdate ?? row?.last_update ?? null,
     battery: live?.battery ?? row?.battery ?? null,
     signal: live?.signal ?? row?.signal ?? null,
+    lastLat: Number.isFinite(lastLat) ? lastLat : null,
+    lastLng: Number.isFinite(lastLng) ? lastLng : null,
+    source,
+    accuracy: live?.accuracy ?? null,
+    gpsValid: live?.gpsValid ?? (source === "gps"),
   };
 }
 

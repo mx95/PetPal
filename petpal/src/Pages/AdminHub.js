@@ -103,6 +103,12 @@ export default function AdminHub() {
             desc={t('admin.hub.deviceRegistryDesc')}
           />
           <AdminActionCard
+            to="/admin/tracker-location"
+            icon="📍"
+            title={t('admin.hub.trackerLocationTitle')}
+            desc={t('admin.hub.trackerLocationDesc')}
+          />
+          <AdminActionCard
             to="/admin/broadcast"
             icon="📬"
             title={t('admin.hub.broadcastTitle')}

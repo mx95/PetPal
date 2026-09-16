@@ -566,6 +566,12 @@ export default function AdminDeviceRegistry() {
                     >
                       {saving ? t('admin.saving') : t('admin.save')}
                     </button>
+                    <Link
+                      className="pp-btn pp-btn--ghost"
+                      to={`/admin/tracker-location?imei=${encodeURIComponent(device.imei)}`}
+                    >
+                      {t('admin.devices.viewLocation')}
+                    </Link>
                     <button
                       type="button"
                       className="pp-btn pp-adminDeviceCard__danger"
