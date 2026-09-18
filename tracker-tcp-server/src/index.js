@@ -14,7 +14,7 @@ const { registerAdminDeviceRoutes } = require("./http/adminDeviceRoutes");
 const { registerFirebaseAuthProxy } = require("./http/firebaseAuthProxy");
 const { logPrefix } = require("./logging/time");
 const { buildPositionPayload } = require("./http/positionPayload");
-const { repairStaleLastFixFromHistory } = require("./geo/repairStaleLastFix");
+const { repairStaleLastFixFromHistory, restoreHeldLastKnownFromHistory } = require("./geo/repairStaleLastFix");
 const { inferDeviceProvider } = require("./deviceProvider");
 
 function withProvider(d) {
@@ -259,11 +259,16 @@ app.get("/api/app/position", (req, res) => {
   d = withProvider(d);
   const healed = repairStaleLastFixFromHistory(store, d);
   d = withProvider(healed.device);
+  const restored = restoreHeldLastKnownFromHistory(store, d);
+  d = withProvider(restored.device);
   const payload = buildPositionPayload(imei, d);
   if (payload.error === "no_position") return res.status(404).json({ error: "no_position" });
   if (healed.repaired) {
     payload.repairedFromHistory = true;
     payload.repairDistanceM = healed.from?.distanceM ?? null;
+  }
+  if (restored.restored) {
+    payload.restoredLastKnownFromHistory = true;
   }
   res.json(payload);
 });
@@ -389,6 +394,8 @@ app.get("/position", (req, res) => {
   d = withProvider(d);
   const healed = repairStaleLastFixFromHistory(store, d);
   d = withProvider(healed.device);
+  const restored = restoreHeldLastKnownFromHistory(store, d);
+  d = withProvider(restored.device);
   const payload = buildPositionPayload(imei, d);
   if (payload.error === "no_position") return res.status(404).json({ error: "no_position" });
   res.json(payload);

@@ -177,10 +177,77 @@ function repairStaleLastFixFromHistory(store, device) {
   };
 }
 
+/**
+ * When GPS lock is lost and the live pin was cleared, restore the last GPS
+ * history point so clients still show last known location + when it was received.
+ */
+function restoreHeldLastKnownFromHistory(store, device) {
+  if (!device || typeof store?.history !== "function") {
+    return { device, restored: false };
+  }
+  const imei = String(device.imei || "").trim();
+  if (!imei) return { device, restored: false };
+
+  const hasLive =
+    isPlausibleLatLng(device?.location?.lat, device?.location?.lng) ||
+    isPlausibleLatLng(device?.gps?.lat, device?.gps?.lng);
+  if (hasLive) {
+    return { device, restored: false };
+  }
+
+  let history;
+  try {
+    history = store.history(imei, { limit: 80 });
+  } catch {
+    return { device, restored: false };
+  }
+  if (!Array.isArray(history) || history.length === 0) {
+    return { device, restored: false };
+  }
+
+  const lastGps = history.find(
+    (row) =>
+      (row.source === "gps" || row.gpsValid === true) &&
+      isPlausibleLatLng(row.lat, row.lng)
+  );
+  if (!lastGps) return { device, restored: false };
+
+  const receivedAt = lastGps.receivedAt || lastGps.timestamp || null;
+  const next = {
+    ...device,
+    location: { lat: Number(lastGps.lat), lng: Number(lastGps.lng), source: "gps" },
+    gps: {
+      lat: Number(lastGps.lat),
+      lng: Number(lastGps.lng),
+      speedKmh: device.gps?.speedKmh ?? device.speed ?? null,
+      timestamp: lastGps.deviceTimeUtc || receivedAt,
+    },
+    source: "gps",
+    gpsValid: false,
+    gpsLockLost: true,
+    heldLastKnown: true,
+    lastFixAt: receivedAt,
+  };
+
+  if (typeof store.upsert === "function") {
+    store.upsert(imei, {
+      ...next,
+      imei,
+      _recordPosition: false,
+      receivedAt: device.receivedAt || receivedAt || new Date().toISOString(),
+    });
+    const saved = typeof store.get === "function" ? store.get(imei) : null;
+    return { device: saved || next, restored: true, from: lastGps };
+  }
+
+  return { device: next, restored: true, from: lastGps };
+}
+
 module.exports = {
   haversineMeters,
   pickFresherHistoryFix,
   repairStaleLastFixFromHistory,
+  restoreHeldLastKnownFromHistory,
   hasConsistentDeviceClock,
   MIN_SKEW_MS,
   MIN_DISTANCE_M,

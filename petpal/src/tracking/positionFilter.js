@@ -79,6 +79,7 @@ export function isTrustedGpsFix(p) {
   if (!p) return false;
   if (p.warningApproximate) return false;
   if (p.positionHeldFromPreviousGps) return false;
+  if (p.heldLastKnown || p.gpsLockLost) return false;
 
   const src = String(p.source || '').toLowerCase();
   if (src === 'lbs' || src === 'wifi' || src === 'cell' || src.includes('triangul') || src.includes('tower') || src.includes('gsm')) {

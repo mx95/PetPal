@@ -44,6 +44,23 @@ function resolveServerReceivedAt(d) {
   );
 }
 
+function resolveLastFixAt(d) {
+  return (
+    d.lastFixAt ||
+    d.gps?.timestamp ||
+    d.deviceStatus?.timestamp ||
+    (d.heldLastKnown ? resolveServerReceivedAt(d) : null) ||
+    null
+  );
+}
+
+function freshnessFromSecondsAgo(secondsAgo) {
+  if (typeof secondsAgo !== "number") return null;
+  if (secondsAgo < 60) return "live";
+  if (secondsAgo < 300) return "recent";
+  return "stale";
+}
+
 /** Live position JSON — freshness uses server receive time; device GPS clock is separate. */
 function buildPositionPayload(imei, d) {
   const loc = d.location || d.gps || {};
@@ -51,12 +68,20 @@ function buildPositionPayload(imei, d) {
   const rawLng = loc.lng != null ? Number(loc.lng) : Number.NaN;
   const deviceFixTime = d.gps?.timestamp || d.deviceStatus?.timestamp || null;
   const serverReceivedAt = resolveServerReceivedAt(d);
+  const lastFixAt = resolveLastFixAt(d);
   const cloudSyncedAt = d.cloudSyncedAt || serverReceivedAt || null;
   const nowMs = Date.now();
   const serverMs = serverReceivedAt ? Date.parse(serverReceivedAt) : Number.NaN;
-  const secondsAgo = Number.isFinite(serverMs)
-    ? Math.max(0, Math.round((nowMs - serverMs) / 1000))
-    : null;
+  const lastFixMs = lastFixAt ? Date.parse(lastFixAt) : Number.NaN;
+  const heldLastKnown = d.heldLastKnown === true || d.gpsLockLost === true;
+  // Age the pin from when the last trusted GPS was received, not the latest lock-lost uplink.
+  const pinMs =
+    heldLastKnown && Number.isFinite(lastFixMs) ? lastFixMs : serverMs;
+  const secondsAgo = Number.isFinite(pinMs)
+    ? Math.max(0, Math.round((nowMs - pinMs) / 1000))
+    : Number.isFinite(serverMs)
+      ? Math.max(0, Math.round((nowMs - serverMs) / 1000))
+      : null;
   const deviceFixMs = deviceFixTime ? Date.parse(deviceFixTime) : Number.NaN;
   const deviceClockSkewSec =
     Number.isFinite(deviceFixMs) && Number.isFinite(serverMs)
@@ -107,14 +132,12 @@ function buildPositionPayload(imei, d) {
       };
     }
     if (d.battery != null || d.signal != null || d.source || d.charging != null) {
-      const approxCoords =
-        isPlausibleLatLng(rawLat, rawLng) && (d.source === "lbs" || d.source === "wifi") && d.gpsLockLost !== true;
-      const lockLost = d.gpsLockLost === true || (d.source === "lbs" && !approxCoords);
+      const lockLost = d.gpsLockLost === true;
       return {
         imei,
         provider: d.provider ?? null,
-        lat: approxCoords ? rawLat : null,
-        lng: approxCoords ? rawLng : null,
+        lat: null,
+        lng: null,
         homeLat,
         homeLng,
         source: d.source ?? null,
@@ -128,18 +151,12 @@ function buildPositionPayload(imei, d) {
         warningApproximate: d.source === "lbs" || d.source === "wifi",
         gpsValid: false,
         gpsLockLost: lockLost,
+        heldLastKnown: false,
         statusText: lockLost
           ? "Connected — waiting for GPS lock"
           : undefined,
         accuracyText: lockLost ? "No GPS fix yet" : undefined,
-        freshness:
-          typeof secondsAgo === "number"
-            ? secondsAgo < 60
-              ? "live"
-              : secondsAgo < 300
-                ? "recent"
-                : "stale"
-            : null,
+        freshness: freshnessFromSecondsAgo(secondsAgo),
         lbs: d.lbs ?? null,
         staleGps: d.staleGps ?? null,
       };
@@ -169,27 +186,29 @@ function buildPositionPayload(imei, d) {
   const batteryStatus = status.batteryStatus;
   const signalStatus = status.signalStatus;
 
-  const freshness =
-    typeof secondsAgo === "number"
-      ? secondsAgo < 60
-        ? "live"
-        : secondsAgo < 300
-          ? "recent"
-          : "stale"
-      : null;
+  const freshness = freshnessFromSecondsAgo(secondsAgo);
 
   const statusText =
-    warningDeviceClockStale && (freshness === "live" || freshness === "recent")
-      ? "Connected now — GPS time on collar may be outdated"
-      : d.provider === "gpspos" && platformOnline && freshness === "stale" && isPlausibleLatLng(lat, lng)
-        ? "Connected — last location from collar"
-        : freshness === "live"
-          ? "Live tracking"
-          : freshness === "recent"
-            ? "Updated recently"
-            : "Last seen a while ago";
-  const accuracyText =
-    source === "gps" ? "Precise GPS location" : source === "wifi" ? "Wi‑Fi location" : "Approximate location";
+    heldLastKnown
+      ? freshness === "live" || freshness === "recent"
+        ? "Last known location — waiting for GPS lock"
+        : "Last known location"
+      : warningDeviceClockStale && (freshness === "live" || freshness === "recent")
+        ? "Connected now — GPS time on collar may be outdated"
+        : d.provider === "gpspos" && platformOnline && freshness === "stale" && isPlausibleLatLng(lat, lng)
+          ? "Connected — last location from collar"
+          : freshness === "live"
+            ? "Live tracking"
+            : freshness === "recent"
+              ? "Updated recently"
+              : "Last seen a while ago";
+  const accuracyText = heldLastKnown
+    ? "Last known GPS location"
+    : source === "gps"
+      ? "Precise GPS location"
+      : source === "wifi"
+        ? "Wi‑Fi location"
+        : "Approximate location";
   const movementText = d.moving ? "Moving" : "Not moving";
 
   return {
@@ -208,21 +227,31 @@ function buildPositionPayload(imei, d) {
     isCharging: status.isCharging,
     steps: status.steps,
     isMoving: d.moving === true,
-    lastUpdate: serverReceivedAt,
-    receivedAt: serverReceivedAt,
+    lastUpdate: heldLastKnown && lastFixAt ? lastFixAt : serverReceivedAt,
+    receivedAt: heldLastKnown && lastFixAt ? lastFixAt : serverReceivedAt,
+    lastFixAt: lastFixAt || null,
+    lastHeardAt: serverReceivedAt,
     secondsAgo,
     freshness,
     statusText,
     accuracyText,
     movementText,
     warningApproximate: isApproximate,
-    warningStale: freshness === "stale" && !platformOnline,
+    warningStale: heldLastKnown || (freshness === "stale" && !platformOnline),
     warningDeviceClockStale,
     deviceClockSkewSec,
     platformOnline,
     cloudSyncedAt,
-    // Prefer source over a stale false flag (status packets / SQLite reload).
-    gpsValid: isApproximate ? false : source === "gps" ? true : d.gpsValid === true,
+    gpsLockLost: d.gpsLockLost === true,
+    heldLastKnown,
+    // Held last-known is still a real GPS fix — mark valid so maps can plot it as lastKnown.
+    gpsValid: heldLastKnown
+      ? true
+      : isApproximate
+        ? false
+        : source === "gps"
+          ? true
+          : d.gpsValid === true,
     satellites: d.satellites ?? null,
     speed: d.speed != null ? Number(d.speed) : null,
     lastUpdateServer: serverReceivedAt,

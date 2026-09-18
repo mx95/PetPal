@@ -146,7 +146,19 @@ function normalizeIncomingDevice(prev, incoming, canonicalImei = null) {
  * which would clear coordinates for GET /position unless we keep the last fix.
  */
 function mergeDeviceRecord(prev, incoming) {
-  if (!prev) return incoming;
+  if (!prev) {
+    const seed = { ...incoming };
+    if (
+      seed.source === "gps" &&
+      hasValidGps(seed.location || seed.gps) &&
+      !seed.lastFixAt
+    ) {
+      seed.lastFixAt = seed.receivedAt || seed.lastUpdate || new Date().toISOString();
+      seed.heldLastKnown = false;
+      seed.gpsLockLost = false;
+    }
+    return seed;
+  }
   const merged = { ...incoming };
   if (!incoming.source && prev?.source) merged.source = prev.source;
   if (!incoming.atHomeWifi && prev?.atHomeWifi) merged.atHomeWifi = prev.atHomeWifi;
@@ -172,30 +184,71 @@ function mergeDeviceRecord(prev, incoming) {
     if (prev?.homeExplicit != null) merged.homeExplicit = prev.homeExplicit;
   }
 
-  // GT06/G365 ACC bit clear: firmware echoed last GPS — drop it, do not keep prior live pin.
+  // GT06 ACC bit clear: firmware echoed stale GPS — do not adopt those coords,
+  // but keep the previous trusted GPS pin so the app can show "last known".
   if (incoming.gpsLockLost === true) {
     merged.gpsLockLost = true;
+    merged.heldLastKnown = true;
     merged.gpsValid = false;
-    merged.source = incoming.source || "lbs";
-    merged.location = hasValidGps(incoming.location) ? incoming.location : null;
-    merged.gps = hasValidGps(incoming.gps)
-      ? incoming.gps
-      : {
-          lat: null,
-          lng: null,
-          speedKmh: incoming.speed ?? prev?.speed ?? null,
-          timestamp:
-            incoming.gps?.timestamp ??
-            incoming.lastUpdate ??
-            prev?.lastUpdate ??
-            null,
-        };
     if (incoming.staleGps) merged.staleGps = incoming.staleGps;
     else if (prev?.staleGps) merged.staleGps = prev.staleGps;
     if (incoming.lbs) merged.lbs = incoming.lbs;
-    // Skip restoring previous GPS/location as a live fix.
+
+    const prevTrusted =
+      hasValidGps(prev?.location) &&
+      (prev.source === "gps" ||
+        prev.gpsValid === true ||
+        prev.heldLastKnown === true ||
+        (prev.source !== "lbs" && prev.source !== "wifi"));
+
+    if (hasValidGps(incoming.location)) {
+      // Explicit restore (history) or approximate geocode provided coords.
+      merged.location = incoming.location;
+      merged.source = incoming.source || "gps";
+      merged.lastFixAt =
+        incoming.lastFixAt || incoming.receivedAt || incoming.lastUpdate || null;
+      merged.gps = hasValidGps(incoming.gps)
+        ? incoming.gps
+        : {
+            lat: incoming.location.lat,
+            lng: incoming.location.lng,
+            speedKmh: incoming.speed ?? prev?.speed ?? null,
+            timestamp: incoming.lastFixAt || incoming.gps?.timestamp || null,
+          };
+    } else if (prevTrusted) {
+      merged.location = prev.location;
+      merged.source = "gps";
+      merged.lastFixAt = prev.lastFixAt || prev.receivedAt || prev.lastUpdate || null;
+      merged.gps = {
+        lat: prev.location.lat,
+        lng: prev.location.lng,
+        speedKmh: prev.gps?.speedKmh ?? prev.speed ?? null,
+        timestamp: prev.gps?.timestamp || prev.lastFixAt || prev.receivedAt || null,
+      };
+    } else {
+      merged.location = null;
+      merged.source = incoming.source || "lbs";
+      merged.gps = {
+        lat: null,
+        lng: null,
+        speedKmh: incoming.speed ?? prev?.speed ?? null,
+        timestamp:
+          incoming.gps?.timestamp ??
+          incoming.lastUpdate ??
+          prev?.lastUpdate ??
+          null,
+      };
+    }
   } else {
     merged.gpsLockLost = false;
+    if (incoming.source === "gps" && hasValidGps(incoming.location || incoming.gps)) {
+      merged.heldLastKnown = false;
+      merged.lastFixAt = incoming.receivedAt || incoming.lastUpdate || new Date().toISOString();
+    } else if (prev?.heldLastKnown != null && incoming.heldLastKnown == null) {
+      merged.heldLastKnown = prev.heldLastKnown;
+    }
+    if (prev?.lastFixAt && !merged.lastFixAt) merged.lastFixAt = prev.lastFixAt;
+
     const incomingWifi = incoming.atHomeWifi || incoming.source === "wifi";
     const prevWifi = prev?.atHomeWifi || prev?.source === "wifi";
     if (

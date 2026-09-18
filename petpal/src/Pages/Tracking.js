@@ -971,6 +971,18 @@ export default function Tracking() {
     if (hasValidCoords(mapPosition) && mapPosition.positionHeldFromPreviousGps) {
       return { lat: Number(mapPosition.lat), lng: Number(mapPosition.lng), mode: 'lastKnown' };
     }
+    // Collar lost GPS lock — keep showing last known GPS (or history/local fallback), not a blank map.
+    if (position?.gpsLockLost || position?.heldLastKnown || mapPosition?.heldLastKnown) {
+      const held = hasValidCoords(position)
+        ? position
+        : hasValidCoords(mapPosition)
+          ? mapPosition
+          : null;
+      if (held) {
+        return { lat: Number(held.lat), lng: Number(held.lng), mode: 'lastKnown' };
+      }
+      return pickLastKnownMapCoords(effectiveDeviceId, liveHistoryFallback, lastKnownLiveRef);
+    }
     if (hasValidCoords(mapPosition) && !mapPosition.positionHiddenApproximate && isTrustedGpsFix(mapPosition)) {
       return { lat: Number(mapPosition.lat), lng: Number(mapPosition.lng), mode: 'live' };
     }
@@ -980,10 +992,6 @@ export default function Tracking() {
     if (wifiTrackingEnabled && displayPosition?.atHomeWifi) {
       const home = pickHomeMapCoords(effectiveDeviceId, displayPosition);
       if (home) return home;
-      return null;
-    }
-    // Collar connected but GPS ACC bit clear — do not plot stale last-known as "live".
-    if (position?.gpsLockLost || (position?.source === 'lbs' && !hasValidCoords(position) && position?.gpsValid === false)) {
       return null;
     }
     if (position && !isTrustedGpsFix(position) && hasValidCoords(position)) {
