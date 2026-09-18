@@ -209,6 +209,10 @@ function normalizeXexunPosition(json) {
     isMoving: json.isMoving ?? null,
     warningStale: json.warningStale ?? null,
     gpsValid: json.gpsValid === true ? true : json.gpsValid === false ? false : null,
+    gpsLockLost: json.gpsLockLost === true,
+    heldLastKnown: json.heldLastKnown === true,
+    lastFixAt: json.lastFixAt || null,
+    lastHeardAt: json.lastHeardAt || null,
     satellites: json.satellites != null ? Number(json.satellites) : null,
     wifiBssids: Array.isArray(json.wifiBssids)
       ? json.wifiBssids.map((s) => String(s).toLowerCase()).filter(Boolean)

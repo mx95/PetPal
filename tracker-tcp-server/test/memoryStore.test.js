@@ -223,7 +223,7 @@ test("position payload hides non-explicit homeLocation", () => {
   assert.equal(payload.homeLng, null);
 });
 
-test("memory store — GT06 gpsLockLost clears stale live pin", () => {
+test("memory store — GT06 gpsLockLost keeps last known GPS pin", () => {
   const store = createMemoryStore();
   const { parseGt06Packet } = require("../src/protocol/gt06");
   const imei = "868022030666239";
@@ -238,24 +238,33 @@ test("memory store — GT06 gpsLockLost clears stale live pin", () => {
     receivedAt: "2026-09-12T13:13:07.270Z",
   });
   assert.equal(store.get(imei).location?.lat, 34.98491);
+  assert.equal(store.get(imei).lastFixAt, "2026-09-12T13:13:07.270Z");
 
   const frame = hex(
     "78 78 1F 12 1A 09 10 0B 0B 05 C3 03 C0 E3 AC 03 A1 93 A4 00 04 00 01 18 01 04 61 01 FE 15 00 2C 02 66 0D 0A"
   );
   const parsed = parseGt06Packet(frame, imei);
   assert.equal(parsed.gpsLockLost, true);
-  const recorded = store.upsert(imei, { ...parsed, imei, provider: "gt06", receivedAt: new Date().toISOString() });
+  const recorded = store.upsert(imei, {
+    ...parsed,
+    imei,
+    provider: "gt06",
+    receivedAt: "2026-09-16T11:11:06.129Z",
+  });
   assert.equal(recorded, false, "must not append stale coords to history");
 
   const rec = store.get(imei);
   assert.equal(rec.gpsLockLost, true);
-  assert.equal(rec.location, null);
-  assert.equal(rec.gps?.lat, null);
-  assert.equal(rec.gpsValid, false);
+  assert.equal(rec.heldLastKnown, true);
+  assert.equal(rec.location?.lat, 34.98491);
+  assert.equal(rec.location?.lng, 33.84486);
+  assert.equal(rec.source, "gps");
+  assert.equal(rec.lastFixAt, "2026-09-12T13:13:07.270Z");
 
   const payload = buildPositionPayload(imei, rec);
-  assert.equal(payload.lat, null);
-  assert.equal(payload.lng, null);
+  assert.equal(payload.lat, 34.98491);
+  assert.equal(payload.lng, 33.84486);
+  assert.equal(payload.heldLastKnown, true);
   assert.equal(payload.gpsLockLost, true);
-  assert.match(String(payload.statusText || ""), /waiting for GPS/i);
+  assert.match(String(payload.statusText || ""), /last known/i);
 });
