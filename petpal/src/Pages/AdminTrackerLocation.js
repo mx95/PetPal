@@ -1,14 +1,19 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
 import { useCompany } from '../company/CompanyContext';
 import { useI18n } from '../i18n/I18nContext';
+import PositionMap from '../tracking/PositionMap';
 import {
   getLatestPositionWithSync,
   getPositionHistory,
   mapsLink,
 } from '../tracking/petpalVendorClient';
 import { normalizeTrackerImei } from '../tracking/trackerImeiIndex';
+
+const HISTORY_DAYS = 14;
+const HISTORY_LIMIT = 2000;
+const HISTORY_MAP_MAX = 800;
 
 function formatWhen(iso) {
   if (!iso) return '—';
@@ -24,6 +29,31 @@ function osmEmbedUrl(lat, lng) {
   const top = lat + pad;
   const bottom = lat - pad;
   return `https://www.openstreetmap.org/export/embed.html?bbox=${left}%2C${bottom}%2C${right}%2C${top}&layer=mapnik&marker=${lat}%2C${lng}`;
+}
+
+function historyRangeIso(days) {
+  const to = new Date();
+  const from = new Date(to.getTime() - days * 24 * 60 * 60 * 1000);
+  return { from: from.toISOString(), to: to.toISOString() };
+}
+
+function downsamplePath(points, maxPoints) {
+  if (!Array.isArray(points) || points.length <= maxPoints) return points;
+  const out = [points[0]];
+  const last = points.length - 1;
+  const step = last / (maxPoints - 1);
+  for (let i = 1; i < maxPoints - 1; i += 1) {
+    out.push(points[Math.min(last, Math.round(i * step))]);
+  }
+  if (last > 0) out.push(points[last]);
+  return out;
+}
+
+function hasRealHomePin(position) {
+  const lat = Number(position?.homeLat);
+  const lng = Number(position?.homeLng);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return false;
+  return Math.abs(lat) > 0.0001 || Math.abs(lng) > 0.0001;
 }
 
 export default function AdminTrackerLocation() {
@@ -53,10 +83,11 @@ export default function AdminTrackerLocation() {
       setHistory([]);
       setLookedUpImei(imei);
       setSearchParams({ imei }, { replace: true });
+      const range = historyRangeIso(HISTORY_DAYS);
       try {
         const [pos, histRes] = await Promise.all([
           getLatestPositionWithSync(imei),
-          getPositionHistory(imei, { limit: 25 }),
+          getPositionHistory(imei, { limit: HISTORY_LIMIT, from: range.from, to: range.to }),
         ]);
         const hist = Array.isArray(histRes?.history)
           ? histRes.history
@@ -84,6 +115,49 @@ export default function AdminTrackerLocation() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- lookup once from URL
   }, []);
 
+  const historyPoints = useMemo(
+    () =>
+      history.filter(
+        (row) => Number.isFinite(Number(row.lat)) && Number.isFinite(Number(row.lng))
+      ),
+    [history]
+  );
+
+  const historyMapPath = useMemo(() => {
+    const pts = historyPoints.map((p) => ({ lat: Number(p.lat), lng: Number(p.lng) }));
+    return downsamplePath(pts, HISTORY_MAP_MAX);
+  }, [historyPoints]);
+
+  const historyStart = historyPoints[0] || null;
+  const historyEnd = historyPoints.length ? historyPoints[historyPoints.length - 1] : null;
+
+  const historyRouteMarkers = useMemo(() => {
+    if (!historyStart || !historyEnd) return [];
+    const markers = [
+      {
+        id: 'start',
+        lat: Number(historyStart.lat),
+        lng: Number(historyStart.lng),
+        kind: 'start',
+        label: t('adminTrackerLocation.routeStart'),
+      },
+    ];
+    if (
+      historyPoints.length > 1 &&
+      (Number(historyStart.lat) !== Number(historyEnd.lat) ||
+        Number(historyStart.lng) !== Number(historyEnd.lng))
+    ) {
+      markers.push({
+        id: 'end',
+        lat: Number(historyEnd.lat),
+        lng: Number(historyEnd.lng),
+        kind: 'end',
+        label: t('adminTrackerLocation.routeEnd'),
+      });
+    }
+    return markers;
+  }, [historyStart, historyEnd, historyPoints.length, t]);
+
   if (!user) return <Navigate to="/login" replace />;
   if (!firebaseReady) return <p className="pp-error">{t('admin.firebaseNotConfigured')}</p>;
   if (!adminReady) return <p className="pp-subtle">{t('admin.loading')}</p>;
@@ -91,6 +165,7 @@ export default function AdminTrackerLocation() {
 
   const hasCoords =
     position && Number.isFinite(Number(position.lat)) && Number.isFinite(Number(position.lng));
+  const showHistoryMap = historyMapPath.length > 0;
 
   return (
     <div className="pp-grid">
@@ -189,7 +264,7 @@ export default function AdminTrackerLocation() {
                     : ''}
                 </dd>
               </div>
-              {Number.isFinite(Number(position.homeLat)) && Number.isFinite(Number(position.homeLng)) ? (
+              {hasRealHomePin(position) ? (
                 <div>
                   <dt>{t('adminTrackerLocation.homePin')}</dt>
                   <dd>
@@ -216,6 +291,11 @@ export default function AdminTrackerLocation() {
               >
                 {t('adminTrackerLocation.refresh')}
               </button>
+              {showHistoryMap ? (
+                <a className="pp-btn pp-btn--ghost" href="#admin-history-map">
+                  {t('adminTrackerLocation.jumpHistoryMap')}
+                </a>
+              ) : null}
             </div>
 
             <div className="pp-adminTrackerLoc__mapWrap">
@@ -227,6 +307,50 @@ export default function AdminTrackerLocation() {
                 referrerPolicy="no-referrer-when-downgrade"
               />
             </div>
+          </div>
+        </div>
+      ) : null}
+
+      {showHistoryMap ? (
+        <div className="pp-col-12" id="admin-history-map">
+          <div className="pp-card" style={{ padding: 16 }}>
+            <h2 className="pp-h2" style={{ marginTop: 0 }}>
+              {t('adminTrackerLocation.historyMapTitle', { count: historyPoints.length })}
+            </h2>
+            <p className="pp-subtle" style={{ marginTop: 0 }}>
+              {t('adminTrackerLocation.historyMapIntro', { days: HISTORY_DAYS })}
+            </p>
+            {historyStart && historyEnd ? (
+              <p className="pp-subtle" style={{ marginTop: 4 }}>
+                {t('adminTrackerLocation.historyMapRange', {
+                  from: formatWhen(historyStart.receivedAt || historyStart.timestamp),
+                  to: formatWhen(historyEnd.receivedAt || historyEnd.timestamp),
+                })}
+              </p>
+            ) : null}
+            <div className="pp-adminTrackerLoc__historyMap">
+              <PositionMap
+                fill
+                showRouteVertices
+                mapActive={showHistoryMap}
+                lat={Number(historyEnd.lat)}
+                lng={Number(historyEnd.lng)}
+                path={historyMapPath.length > 1 ? historyMapPath : []}
+                fitPath={historyMapPath.length > 1 ? historyMapPath : undefined}
+                fitMaxZoom={16}
+                routeMarkers={historyRouteMarkers}
+                accuracyM={historyMapPath.length <= 1 ? 45 : null}
+              />
+            </div>
+          </div>
+        </div>
+      ) : lookedUpImei && !busy ? (
+        <div className="pp-col-12">
+          <div className="pp-card" style={{ padding: 16 }}>
+            <h2 className="pp-h2" style={{ marginTop: 0 }}>
+              {t('adminTrackerLocation.historyMapTitle', { count: 0 })}
+            </h2>
+            <p className="pp-subtle">{t('adminTrackerLocation.historyMapEmpty')}</p>
           </div>
         </div>
       ) : null}
