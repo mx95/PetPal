@@ -234,6 +234,7 @@ export default function Profile() {
   }
 
   const items = [
+    { key: 'inbox', to: '/inbox', icon: '📬', accent: 'docs' },
     { key: 'pets', to: '/pets', icon: ICONS.pets, accent: 'pets' },
     { key: 'orders', to: '/profile/orders', icon: ICONS.orders, accent: 'docs' },
     ...(MVP_NAV.showBookings ? [{ key: 'bookings', to: '/bookings', icon: ICONS.docs, accent: 'docs' }] : []),
