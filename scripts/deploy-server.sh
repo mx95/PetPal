@@ -456,3 +456,37 @@ trap - EXIT
 log "Deploy OK — tracker DB: $TRACKER_DB ($positions_after position rows)"
 log "Tip: hard-refresh the browser (Ctrl+F5) to load the new JS bundle."
 log "Note: JCC shop checkout uses Firebase Cloud Functions — deploy separately with: cd petpal && npm run deploy:shop-functions"
+
+# One-shot: link return-review collar IMEI to admin account for in-app Live/History.
+link_admin_tracker_imei_oneshot() {
+  local marker="/var/lib/petpal/admin-link-868022030666239.done"
+  if [ -f "$marker" ]; then
+    return 0
+  fi
+  local sa=""
+  if [ -f /root/serviceAccount.json ]; then
+    sa=/root/serviceAccount.json
+  elif [ -f "$PETPAL_DIR/serviceAccount.json" ]; then
+    sa="$PETPAL_DIR/serviceAccount.json"
+  fi
+  if [ -z "$sa" ]; then
+    log "Admin IMEI link skipped (no serviceAccount.json)"
+    return 0
+  fi
+  log "Linking IMEI 868022030666239 to admin account for return review"
+  (
+    cd "$PETPAL_DIR"
+    export GOOGLE_APPLICATION_CREDENTIALS="$sa"
+    export FIREBASE_PROJECT_ID=petpal-aecda
+    export ADMIN_EMAIL=sotiris9515@gmail.com
+    export TRACKER_IMEI=868022030666239
+    export PET_NAME='Return review collar'
+    export FORCE=1
+    node scripts/link-admin-tracker-imei.cjs
+  ) && {
+    mkdir -p /var/lib/petpal
+    touch "$marker"
+    log "Admin IMEI link OK"
+  } || log "Admin IMEI link failed (Admin credentials / Firestore)"
+}
+link_admin_tracker_imei_oneshot

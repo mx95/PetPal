@@ -1,0 +1,53 @@
+# One-off: link a collar IMEI to the admin account for in-app Live/History review.
+# Runs over SSH using the server Firebase Admin service account.
+
+name: Link admin tracker IMEI
+
+on:
+  workflow_dispatch:
+    inputs:
+      email:
+        description: Admin email
+        required: false
+        default: sotiris9515@gmail.com
+      imei:
+        description: Collar IMEI
+        required: false
+        default: '868022030666239'
+      pet_name:
+        description: Pet display name (used if creating a new pet)
+        required: false
+        default: Return review collar
+
+jobs:
+  link:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Link IMEI over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          command_timeout: 8m
+          script: |
+            set -euo pipefail
+            PETPAL_ROOT="${{ secrets.DEPLOY_PATH }}"
+            if [ -z "$PETPAL_ROOT" ]; then PETPAL_ROOT="/root/PetPal"; fi
+            cd "$PETPAL_ROOT"
+            git fetch origin main
+            git checkout main
+            git reset --hard origin/main
+            cd petpal
+            export FIREBASE_PROJECT_ID=petpal-aecda
+            export ADMIN_EMAIL='${{ github.event.inputs.email || 'sotiris9515@gmail.com' }}'
+            export TRACKER_IMEI='${{ github.event.inputs.imei || '868022030666239' }}'
+            export PET_NAME='${{ github.event.inputs.pet_name || 'Return review collar' }}'
+            export FORCE=1
+            if [ -f /root/serviceAccount.json ]; then
+              export GOOGLE_APPLICATION_CREDENTIALS=/root/serviceAccount.json
+            elif [ -f "$PETPAL_ROOT/petpal/serviceAccount.json" ]; then
+              export GOOGLE_APPLICATION_CREDENTIALS="$PETPAL_ROOT/petpal/serviceAccount.json"
+            fi
+            node scripts/link-admin-tracker-imei.cjs
