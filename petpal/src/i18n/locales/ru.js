@@ -2576,6 +2576,7 @@ const ru = {
     deleteOk: 'Удалён пользователь {uid}.',
     deleteOkWithEmail: 'Удалён пользователь {email} ({uid}).',
     deleteFailed: 'Не удалось удалить пользователя.',
+    liveHistory: 'Онлайн / История',
   },
   admin: {
     badge: 'Админ',
