@@ -480,7 +480,8 @@ link_admin_tracker_imei_oneshot() {
     export ADMIN_EMAIL=sotiris9515@gmail.com
     export TRACKER_IMEI=868022030666239
     export PET_NAME='Return review collar'
-    export FORCE=1
+    # Do not steal IMEI from another user's pet (set FORCE=1 only if intentional).
+    export FORCE=0
     export HOME="${HOME:-/root}"
     node scripts/link-admin-tracker-imei.cjs
   ) && {

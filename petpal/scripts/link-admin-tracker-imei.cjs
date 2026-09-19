@@ -10,7 +10,8 @@
  *
  * Optional:
  *   PET_NAME="Return review collar"
- *   FORCE=1   — steal IMEI from another pet if already linked
+ *   FORCE=1   — ONLY if explicitly set: steal IMEI from another pet if already linked
+ *               Default is 0 (refuse to take it off another account).
  */
 const fs = require('fs');
 const os = require('os');
@@ -22,7 +23,7 @@ const EMAIL = String(process.env.ADMIN_EMAIL || 'sotiris9515@gmail.com')
   .toLowerCase();
 const IMEI = String(process.env.TRACKER_IMEI || '868022030666239').trim();
 const PET_NAME = String(process.env.PET_NAME || 'Return review collar').trim();
-const FORCE = String(process.env.FORCE || '1').trim() !== '0';
+const FORCE = String(process.env.FORCE || '0').trim() === '1';
 
 const FIREBASE_TOOLS_CLIENT_ID =
   '563584335869-fgrhgmd47bqnekij5i8b5pr03ho849e6.apps.googleusercontent.com';
