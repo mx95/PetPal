@@ -364,6 +364,16 @@ export default function AdminUsersNfc() {
                               {t('adminUsersNfc.collarClear')}
                             </button>
                           ) : null}
+                          {/^\d{10,20}$/.test(String(draft || pet.imei || '').replace(/\D/g, '')) ? (
+                            <Link
+                              className="pp-btn pp-btn--ghost"
+                              to={`/admin/tracker-location?imei=${encodeURIComponent(
+                                String(draft || pet.imei).replace(/\D/g, '')
+                              )}`}
+                            >
+                              {t('adminUsersNfc.liveHistory')}
+                            </Link>
+                          ) : null}
                         </div>
                       </div>
                     </li>

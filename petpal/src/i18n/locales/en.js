@@ -2394,6 +2394,7 @@ const en = {
     collarPlaceholder: 'e.g. 868022030666239',
     collarSave: 'Save collar',
     collarClear: 'Clear',
+    liveHistory: 'Live / History',
     collarSaving: 'Saving…',
     collarSaved: 'Saved collar {imei} on {name}.',
     collarCleared: 'Cleared collar on {name}.',
