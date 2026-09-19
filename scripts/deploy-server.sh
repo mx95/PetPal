@@ -463,30 +463,30 @@ link_admin_tracker_imei_oneshot() {
   if [ -f "$marker" ]; then
     return 0
   fi
-  local sa=""
-  if [ -f /root/serviceAccount.json ]; then
-    sa=/root/serviceAccount.json
-  elif [ -f "$PETPAL_DIR/serviceAccount.json" ]; then
-    sa="$PETPAL_DIR/serviceAccount.json"
-  fi
-  if [ -z "$sa" ]; then
-    log "Admin IMEI link skipped (no serviceAccount.json)"
-    return 0
-  fi
   log "Linking IMEI 868022030666239 to admin account for return review"
   (
     cd "$PETPAL_DIR"
-    export GOOGLE_APPLICATION_CREDENTIALS="$sa"
+    if [ -f /root/serviceAccount.json ]; then
+      export GOOGLE_APPLICATION_CREDENTIALS=/root/serviceAccount.json
+    elif [ -f "$PETPAL_DIR/serviceAccount.json" ]; then
+      export GOOGLE_APPLICATION_CREDENTIALS="$PETPAL_DIR/serviceAccount.json"
+    else
+      adc="$(ls -1 /root/.config/firebase/*_application_default_credentials.json 2>/dev/null | head -n 1 || true)"
+      if [ -n "$adc" ] && [ -f "$adc" ]; then
+        export GOOGLE_APPLICATION_CREDENTIALS="$adc"
+      fi
+    fi
     export FIREBASE_PROJECT_ID=petpal-aecda
     export ADMIN_EMAIL=sotiris9515@gmail.com
     export TRACKER_IMEI=868022030666239
     export PET_NAME='Return review collar'
     export FORCE=1
+    export HOME="${HOME:-/root}"
     node scripts/link-admin-tracker-imei.cjs
   ) && {
     mkdir -p /var/lib/petpal
     touch "$marker"
     log "Admin IMEI link OK"
-  } || log "Admin IMEI link failed (Admin credentials / Firestore)"
+  } || log "Admin IMEI link failed (Firebase Admin / CLI credentials may be missing on server)"
 }
 link_admin_tracker_imei_oneshot
