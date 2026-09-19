@@ -24318,6 +24318,18 @@ html[data-theme="dark"] .pp-nearbyPartnerCard__badge--partner {
   border: 0;
 }
 
+.pp-adminTrackerLoc__historyMap {
+  position: relative;
+  width: 100%;
+  min-height: min(56vh, 480px);
+  height: min(56vh, 480px);
+  margin-top: 12px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--pp-border, rgba(0, 0, 0, 0.08));
+  background: #e8eef3;
+}
+
 /* Bookings hub — inline wizard (replaces bottom-sheet modal) */
 .pp-bookHubWizard {
   max-width: 640px;
