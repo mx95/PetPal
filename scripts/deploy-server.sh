@@ -523,3 +523,33 @@ restore_oscar_tracker_imei_oneshot() {
 }
 link_admin_tracker_imei_oneshot
 restore_oscar_tracker_imei_oneshot
+
+# One-shot: print Oscar public share URL to deploy logs.
+print_oscar_share_link_oneshot() {
+  local marker="/var/lib/petpal/print-oscar-share-link.done"
+  if [ -f "$marker" ]; then
+    return 0
+  fi
+  log "Printing Oscar public share link"
+  (
+    cd "$PETPAL_DIR"
+    if [ -f /root/serviceAccount.json ]; then
+      export GOOGLE_APPLICATION_CREDENTIALS=/root/serviceAccount.json
+    elif [ -f "$PETPAL_DIR/serviceAccount.json" ]; then
+      export GOOGLE_APPLICATION_CREDENTIALS="$PETPAL_DIR/serviceAccount.json"
+    else
+      adc="$(ls -1 /root/.config/firebase/*_application_default_credentials.json 2>/dev/null | head -n 1 || true)"
+      if [ -n "$adc" ] && [ -f "$adc" ]; then
+        export GOOGLE_APPLICATION_CREDENTIALS="$adc"
+      fi
+    fi
+    export FIREBASE_PROJECT_ID=petpal-aecda
+    export HOME="${HOME:-/root}"
+    node scripts/print-oscar-share-link.cjs
+  ) && {
+    mkdir -p /var/lib/petpal
+    touch "$marker"
+    log "Oscar share link printed OK"
+  } || log "Oscar share link print failed"
+}
+print_oscar_share_link_oneshot
