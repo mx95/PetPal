@@ -490,4 +490,36 @@ link_admin_tracker_imei_oneshot() {
     log "Admin IMEI link OK"
   } || log "Admin IMEI link failed (Firebase Admin / CLI credentials may be missing on server)"
 }
+
+# One-shot: undo accidental steal of Oscar's IMEI during admin return-review link.
+restore_oscar_tracker_imei_oneshot() {
+  local marker="/var/lib/petpal/restore-oscar-868022030666239.done"
+  if [ -f "$marker" ]; then
+    return 0
+  fi
+  log "Restoring IMEI 868022030666239 to Oscar (undo admin reassignment)"
+  (
+    cd "$PETPAL_DIR"
+    if [ -f /root/serviceAccount.json ]; then
+      export GOOGLE_APPLICATION_CREDENTIALS=/root/serviceAccount.json
+    elif [ -f "$PETPAL_DIR/serviceAccount.json" ]; then
+      export GOOGLE_APPLICATION_CREDENTIALS="$PETPAL_DIR/serviceAccount.json"
+    else
+      adc="$(ls -1 /root/.config/firebase/*_application_default_credentials.json 2>/dev/null | head -n 1 || true)"
+      if [ -n "$adc" ] && [ -f "$adc" ]; then
+        export GOOGLE_APPLICATION_CREDENTIALS="$adc"
+      fi
+    fi
+    export FIREBASE_PROJECT_ID=petpal-aecda
+    export HOME="${HOME:-/root}"
+    node scripts/restore-oscar-tracker-imei.cjs
+  ) && {
+    mkdir -p /var/lib/petpal
+    touch "$marker"
+    # Prevent future deploys from re-stealing onto admin.
+    touch /var/lib/petpal/admin-link-868022030666239.done 2>/dev/null || true
+    log "Oscar IMEI restore OK"
+  } || log "Oscar IMEI restore failed (Firebase Admin / CLI credentials may be missing on server)"
+}
 link_admin_tracker_imei_oneshot
+restore_oscar_tracker_imei_oneshot
