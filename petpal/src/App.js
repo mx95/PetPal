@@ -8,6 +8,7 @@ import './ui/ui.css';
 import { useI18n } from './i18n/I18nContext';
 import ScrollToTop from './components/ScrollToTop';
 import { RouteSeo } from './components/RouteSeo';
+import { SeoCrawlContentCleanup } from './components/SeoCrawlContentCleanup';
 import BottomNav from './components/BottomNav';
 import TopNav from './components/TopNav';
 import ShopCartMobilePanel from './components/shop/ShopCartMobilePanel';
@@ -62,6 +63,7 @@ import {
   ShelterDashboard,
   ShelterPublicProfile,
   SheltersHub,
+  SeoMarketingPage,
   Shop,
   ShopNfc,
   ShopCheckout,
@@ -111,6 +113,7 @@ function App() {
     <div className="pp-shell">
       <ScrollToTop />
       <RouteSeo />
+      <SeoCrawlContentCleanup />
       <MedicationReminderHost />
       <TopNav />
       <ShopCartMobilePanel />
@@ -121,6 +124,10 @@ function App() {
             <Routes>
               <Route path="/" element={<HomeScreen />} />
               <Route path="/discover" element={<DiscoverHome />} />
+              <Route path="/nfc-pet-tags" element={<SeoMarketingPage />} />
+              <Route path="/gps-pet-trackers" element={<SeoMarketingPage />} />
+              <Route path="/lost-pet-safety" element={<SeoMarketingPage />} />
+              <Route path="/pet-friendly-places" element={<SeoMarketingPage />} />
               <Route path="/pet/:id" element={<PublicPetProfile />} />
               <Route path="/pet" element={<PublicPetProfile />} />
               <Route path="/login" element={<Login />} />

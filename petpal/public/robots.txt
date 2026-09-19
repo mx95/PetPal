@@ -1,6 +1,8 @@
 # https://www.robotstxt.org/robotstxt.html
 User-agent: *
 Allow: /
+
+# Private / app-only areas — keep out of search indexes
 Disallow: /admin
 Disallow: /dashboard
 Disallow: /tracking
@@ -17,5 +19,7 @@ Disallow: /activity
 Disallow: /inbox
 Disallow: /shop/checkout
 Disallow: /company/apply
+Disallow: /shelter/dashboard
+Disallow: /shelter/apply
 
 Sitemap: https://petpal.com.cy/sitemap.xml

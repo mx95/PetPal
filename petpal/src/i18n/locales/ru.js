@@ -119,8 +119,15 @@ const ru = {
         nfcAlt:
           'Скан NFC-ошейника открывает форму контакта с кнопками звонка, WhatsApp и карт',
       },
+      learnTitle: 'Узнайте о безопасности и уходе PetPal',
+      learnSub:
+        'Изучите NFC-идентификацию, GPS-трекинг, безопасность при пропаже, места для питомцев, Discover и магазин PetPal.',
+      learnNfc: 'NFC-метки',
+      learnGps: 'GPS-трекеры',
+      learnLost: 'Безопасность при пропаже',
+      learnPlaces: 'Места для питомцев',
       docsLink: 'Все страницы и API →',
-      discoverLink: 'Местные советы и акции →',
+      discoverLink: 'Возможности Discover →',
       premiumLink: 'Premium-инструменты',
     },
     publicHero: {
@@ -2119,6 +2126,11 @@ const ru = {
   shopPage: {
     badge: 'PetPal Shop',
     title: 'Подписки',
+    seoTitle: 'NFC-метки, GPS-трекеры и планы ухода',
+    seoSub:
+      'Смотрите планы PetPal Plus, GPS-ошейники и NFC-метки. Сведения о товарах сразу из каталога — войдите только когда будете готовы к оплате.',
+    seoLinkNfc: 'Об NFC-метках',
+    seoLinkGps: 'О GPS-трекерах',
     sub:
       'Выберите месячную или годовую PetPal Plus. При желании добавьте GPS-трекер или NFC-метку к первому месячному платежу.',
     back: 'Назад',
