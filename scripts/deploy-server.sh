@@ -553,3 +553,33 @@ print_oscar_share_link_oneshot() {
   } || log "Oscar share link print failed"
 }
 print_oscar_share_link_oneshot
+
+# One-shot: remove mistaken admin "Return review collar" pet.
+delete_admin_return_review_pet_oneshot() {
+  local marker="/var/lib/petpal/delete-admin-return-review-pet.done"
+  if [ -f "$marker" ]; then
+    return 0
+  fi
+  log "Deleting mistaken admin Return review collar pet"
+  (
+    cd "$PETPAL_DIR"
+    if [ -f /root/serviceAccount.json ]; then
+      export GOOGLE_APPLICATION_CREDENTIALS=/root/serviceAccount.json
+    elif [ -f "$PETPAL_DIR/serviceAccount.json" ]; then
+      export GOOGLE_APPLICATION_CREDENTIALS="$PETPAL_DIR/serviceAccount.json"
+    else
+      adc="$(ls -1 /root/.config/firebase/*_application_default_credentials.json 2>/dev/null | head -n 1 || true)"
+      if [ -n "$adc" ] && [ -f "$adc" ]; then
+        export GOOGLE_APPLICATION_CREDENTIALS="$adc"
+      fi
+    fi
+    export FIREBASE_PROJECT_ID=petpal-aecda
+    export HOME="${HOME:-/root}"
+    node scripts/delete-admin-return-review-pet.cjs
+  ) && {
+    mkdir -p /var/lib/petpal
+    touch "$marker"
+    log "Admin Return review collar pet deleted OK"
+  } || log "Admin Return review collar pet delete failed"
+}
+delete_admin_return_review_pet_oneshot

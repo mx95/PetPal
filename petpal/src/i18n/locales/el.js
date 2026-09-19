@@ -2610,6 +2610,7 @@ const el = {
     deleteOk: 'Διαγράφηκε ο χρήστης {uid}.',
     deleteOkWithEmail: 'Διαγράφηκε ο χρήστης {email} ({uid}).',
     deleteFailed: 'Αποτυχία διαγραφής χρήστη.',
+    liveHistory: 'Ζωντανά / Ιστορικό',
   },
   admin: {
     badge: 'Διαχείριση',
