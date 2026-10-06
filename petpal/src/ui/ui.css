@@ -13520,10 +13520,10 @@ select.pp-bookConfirmField__control {
 
 .pp-hubSnap {
   position: relative;
-  border-radius: 18px;
+  border-radius: 20px;
   padding: 14px 14px 16px;
-  min-height: 108px;
-  border: 1px solid rgba(16, 24, 40, 0.08);
+  min-height: 118px;
+  border: 1px solid rgba(16, 24, 40, 0.06);
   overflow: hidden;
   box-shadow: 0 10px 28px rgba(16, 24, 40, 0.06);
   transition:
@@ -13536,35 +13536,75 @@ select.pp-bookConfirmField__control {
   box-shadow: 0 16px 40px rgba(16, 24, 40, 0.1);
 }
 
-.pp-hubSnap--today {
-  background: linear-gradient(135deg, rgba(47, 128, 255, 0.14) 0%, #fff 70%);
+.pp-hubSnap__head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  position: relative;
+  z-index: 1;
 }
 
-.pp-hubSnap--week {
-  background: linear-gradient(135deg, rgba(18, 183, 106, 0.14) 0%, #fff 70%);
+.pp-hubSnap__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.pp-hubSnap--distance .pp-hubSnap__icon {
+  color: #2f80ff;
+  background: rgba(47, 128, 255, 0.12);
+}
+
+.pp-hubSnap--calories .pp-hubSnap__icon {
+  color: #f97316;
+  background: rgba(249, 115, 22, 0.14);
+}
+
+.pp-hubSnap--streak .pp-hubSnap__icon {
+  color: #d97706;
+  background: rgba(245, 158, 11, 0.16);
+}
+
+.pp-hubSnap--level .pp-hubSnap__icon {
+  color: #7c5cff;
+  background: rgba(124, 92, 255, 0.14);
+}
+
+.pp-hubSnap--distance {
+  background: linear-gradient(145deg, #eaf3ff 0%, #ffffff 68%);
+}
+
+.pp-hubSnap--calories {
+  background: linear-gradient(145deg, #fff4e8 0%, #ffffff 70%);
 }
 
 .pp-hubSnap--streak {
-  background: linear-gradient(135deg, rgba(245, 158, 11, 0.16) 0%, #fff 72%);
+  background: linear-gradient(145deg, #fff8e6 0%, #ffffff 72%);
 }
 
 .pp-hubSnap--level {
-  background: linear-gradient(135deg, rgba(91, 55, 255, 0.14) 0%, #fff 72%);
+  background: linear-gradient(145deg, #f1ecff 0%, #ffffff 72%);
 }
 
 .pp-hubSnap__label {
   display: block;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
   color: #475467;
 }
 
 .pp-hubSnap__value {
   display: block;
-  margin-top: 8px;
-  font-size: 26px;
+  position: relative;
+  z-index: 1;
+  margin-top: 10px;
+  font-size: 24px;
   font-weight: 900;
   letter-spacing: -0.02em;
   color: #101828;
@@ -13572,9 +13612,154 @@ select.pp-bookConfirmField__control {
 
 .pp-hubSnap__hint {
   display: block;
-  margin-top: 6px;
+  position: relative;
+  z-index: 1;
+  margin-top: 4px;
   font-size: 12px;
   color: #667085;
+}
+
+.pp-hubSnap__deco {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  width: 52px;
+  height: 52px;
+  opacity: 0.18;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.pp-hubSnap__deco--path {
+  background:
+    radial-gradient(circle at 78% 72%, rgba(47, 128, 255, 0.55) 0 7px, transparent 8px),
+    linear-gradient(115deg, transparent 40%, rgba(47, 128, 255, 0.45) 42%, transparent 48%);
+  border-radius: 50%;
+}
+
+.pp-hubSnap__deco--flame {
+  background: radial-gradient(ellipse at 50% 70%, rgba(249, 115, 22, 0.7) 0 18%, transparent 55%);
+  border-radius: 50% 50% 45% 45%;
+}
+
+.pp-hubSnap__deco--trophy {
+  border-radius: 50%;
+  background: rgba(34, 197, 94, 0.2);
+  box-shadow: inset 0 0 0 8px rgba(34, 197, 94, 0.12);
+}
+
+.pp-hubSnap__deco--paw {
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 58%, rgba(124, 92, 255, 0.45) 0 10px, transparent 11px),
+    radial-gradient(circle at 32% 38%, rgba(124, 92, 255, 0.4) 0 5px, transparent 6px),
+    radial-gradient(circle at 50% 30%, rgba(124, 92, 255, 0.4) 0 5px, transparent 6px),
+    radial-gradient(circle at 68% 38%, rgba(124, 92, 255, 0.4) 0 5px, transparent 6px);
+}
+
+.pp-hubWeekCard {
+  margin-top: 14px;
+  padding: 18px 18px 16px;
+  border-radius: 22px;
+  background: #fff;
+  border: 1px solid rgba(16, 24, 40, 0.06);
+  box-shadow: 0 12px 32px rgba(16, 24, 40, 0.06);
+}
+
+.pp-hubWeekCard__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pp-hubWeekCard__icon {
+  display: inline-flex;
+  color: #2f80ff;
+}
+
+.pp-hubWeekCard__title {
+  margin: 0;
+  flex: 1;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #667085;
+}
+
+.pp-hubWeekCard__more {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  color: #667085;
+  background: #f2f4f7;
+  text-decoration: none;
+}
+
+.pp-hubWeekCard__km {
+  margin: 12px 0 14px;
+  text-align: center;
+  font-size: 34px;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  color: #101828;
+}
+
+.pp-hubWeekCard__stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.pp-hubWeekCard__stat {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.pp-hubWeekCard__stat strong {
+  display: block;
+  font-size: 15px;
+  font-weight: 800;
+  color: #101828;
+}
+
+.pp-hubWeekCard__stat span {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  color: #667085;
+}
+
+.pp-hubWeekCard__statIcon {
+  display: inline-flex;
+  margin-top: 2px;
+}
+
+.pp-hubWeekCard__statIcon--flame {
+  color: #f97316;
+}
+
+.pp-hubWeekCard__statIcon--bars {
+  color: #2f80ff;
+}
+
+.pp-hubWeekCard__bar {
+  height: 10px;
+  border-radius: 999px;
+  background: #eef2f6;
+  overflow: hidden;
+}
+
+.pp-hubWeekCard__barFill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #2f80ff, #56a0ff);
+  transition: width 0.25s ease;
 }
 
 .pp-hubProgressCard {
