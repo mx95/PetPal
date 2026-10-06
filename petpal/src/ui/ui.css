@@ -13548,29 +13548,27 @@ select.pp-bookConfirmField__control {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 22px;
-  height: 22px;
-  border-radius: 8px;
+  width: 26px;
+  height: 26px;
+  border-radius: 9px;
   flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06);
 }
 
 .pp-hubSnap--distance .pp-hubSnap__icon {
-  color: #2f80ff;
   background: rgba(47, 128, 255, 0.12);
 }
 
 .pp-hubSnap--calories .pp-hubSnap__icon {
-  color: #f97316;
   background: rgba(249, 115, 22, 0.14);
 }
 
 .pp-hubSnap--streak .pp-hubSnap__icon {
-  color: #d97706;
   background: rgba(245, 158, 11, 0.16);
 }
 
 .pp-hubSnap--level .pp-hubSnap__icon {
-  color: #7c5cff;
   background: rgba(124, 92, 255, 0.14);
 }
 
@@ -13621,40 +13619,28 @@ select.pp-bookConfirmField__control {
 
 .pp-hubSnap__deco {
   position: absolute;
-  right: 8px;
-  bottom: 8px;
-  width: 52px;
-  height: 52px;
-  opacity: 0.18;
+  right: 2px;
+  bottom: 2px;
+  width: 64px;
+  height: 64px;
   pointer-events: none;
   z-index: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
 }
 
-.pp-hubSnap__deco--path {
-  background:
-    radial-gradient(circle at 78% 72%, rgba(47, 128, 255, 0.55) 0 7px, transparent 8px),
-    linear-gradient(115deg, transparent 40%, rgba(47, 128, 255, 0.45) 42%, transparent 48%);
-  border-radius: 50%;
+.pp-hubSnap__decoSvg {
+  width: 58px;
+  height: 58px;
+  display: block;
 }
 
-.pp-hubSnap__deco--flame {
-  background: radial-gradient(ellipse at 50% 70%, rgba(249, 115, 22, 0.7) 0 18%, transparent 55%);
-  border-radius: 50% 50% 45% 45%;
-}
-
-.pp-hubSnap__deco--trophy {
-  border-radius: 50%;
-  background: rgba(34, 197, 94, 0.2);
-  box-shadow: inset 0 0 0 8px rgba(34, 197, 94, 0.12);
-}
-
-.pp-hubSnap__deco--paw {
-  border-radius: 50%;
-  background:
-    radial-gradient(circle at 50% 58%, rgba(124, 92, 255, 0.45) 0 10px, transparent 11px),
-    radial-gradient(circle at 32% 38%, rgba(124, 92, 255, 0.4) 0 5px, transparent 6px),
-    radial-gradient(circle at 50% 30%, rgba(124, 92, 255, 0.4) 0 5px, transparent 6px),
-    radial-gradient(circle at 68% 38%, rgba(124, 92, 255, 0.4) 0 5px, transparent 6px);
+.pp-hubSnap__decoSvg--lg {
+  width: 68px;
+  height: 68px;
+  margin-right: -4px;
+  margin-bottom: -2px;
 }
 
 .pp-hubWeekCard {
@@ -13674,7 +13660,12 @@ select.pp-bookConfirmField__control {
 
 .pp-hubWeekCard__icon {
   display: inline-flex;
-  color: #2f80ff;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 9px;
+  background: rgba(47, 128, 255, 0.1);
 }
 
 .pp-hubWeekCard__title {

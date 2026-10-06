@@ -9,6 +9,17 @@ import { walkStreakDays, kmTodayForPetFromSessions, latestWalkSessionForPet } fr
 import { estimateWalkCalories, petWalkCalorieOpts } from '../walk/walkCalories';
 import { useAutoGpsWalks } from '../walk/useAutoGpsWalks';
 import LifetimeAchievements from '../components/LifetimeAchievements';
+import {
+  SnapPinIcon,
+  SnapFlameIcon,
+  SnapTrophyIcon,
+  SnapBarsIcon,
+  SnapDualPawIcon,
+  DecoPathTrail,
+  DecoFlameWatermark,
+  DecoCalendarBadge,
+  DecoPawBadge,
+} from '../components/HubSnapshotIcons';
 import { formatDateTime24 } from '../formatTime24';
 import { playMissionCompleteSound } from '../sound/playMissionComplete';
 
@@ -258,9 +269,7 @@ export default function ActivityHub() {
           <div className="pp-hubSnap pp-hubSnap--distance">
             <div className="pp-hubSnap__head">
               <span className="pp-hubSnap__icon" aria-hidden>
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-                  <path d="M12 2C8.1 2 5 5.1 5 9c0 5.2 7 13 7 13s7-7.8 7-13c0-3.9-3.1-7-7-7zm0 9.5c-1.4 0-2.5-1.1-2.5-2.5S10.6 6.5 12 6.5s2.5 1.1 2.5 2.5S13.4 11.5 12 11.5z" />
-                </svg>
+                <SnapPinIcon />
               </span>
               <span className="pp-hubSnap__label">{t('activityHub.snapshotDistance')}</span>
             </div>
@@ -268,56 +277,56 @@ export default function ActivityHub() {
             <span className="pp-hubSnap__hint">
               {trackerDeviceId ? t('activityHub.gpsTracked') : t('activityHub.walkedToday')}
             </span>
-            <span className="pp-hubSnap__deco pp-hubSnap__deco--path" aria-hidden />
+            <span className="pp-hubSnap__deco" aria-hidden>
+              <DecoPathTrail />
+            </span>
           </div>
           <div className="pp-hubSnap pp-hubSnap--calories">
             <div className="pp-hubSnap__head">
               <span className="pp-hubSnap__icon" aria-hidden>
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-                  <path d="M12 23c-3.9 0-7-2.9-7-7.2 0-3.1 1.9-5.6 3.5-7.3.5-.5 1.3-.1 1.3.6 0 1.1.3 2.1.8 2.8.4-3.5 2.5-6.4 4.9-8.5.5-.4 1.2.1 1.1.7-.3 2.2.1 3.9 1.1 5.4 1.1-1 1.8-2.4 2-3.8.1-.6.9-.8 1.2-.3C20.2 7.6 21 10 21 12.5 21 18.4 17.1 23 12 23z" />
-                </svg>
+                <SnapFlameIcon />
               </span>
               <span className="pp-hubSnap__label">{t('activityHub.snapshotCalories')}</span>
             </div>
             <span className="pp-hubSnap__value">{cal(todayCalories)}</span>
             <span className="pp-hubSnap__hint">{t('activityHub.burnedToday')}</span>
-            <span className="pp-hubSnap__deco pp-hubSnap__deco--flame" aria-hidden />
+            <span className="pp-hubSnap__deco" aria-hidden>
+              <DecoFlameWatermark />
+            </span>
           </div>
           <div className="pp-hubSnap pp-hubSnap--streak">
             <div className="pp-hubSnap__head">
               <span className="pp-hubSnap__icon" aria-hidden>
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-                  <path d="M12 2l2.4 4.9 5.4.8-3.9 3.8.9 5.4L12 14.8 7.2 17l.9-5.4L4.2 7.7l5.4-.8L12 2z" />
-                </svg>
+                <SnapTrophyIcon />
               </span>
               <span className="pp-hubSnap__label">{t('activityHub.snapshotStreak')}</span>
             </div>
             <span className="pp-hubSnap__value">
               {streakDays} {t('activityHub.daysUnitShort')}
             </span>
-            <span className="pp-hubSnap__deco pp-hubSnap__deco--trophy" aria-hidden />
+            <span className="pp-hubSnap__deco" aria-hidden>
+              <DecoCalendarBadge />
+            </span>
           </div>
           <div className="pp-hubSnap pp-hubSnap--level">
             <div className="pp-hubSnap__head">
               <span className="pp-hubSnap__icon" aria-hidden>
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-                  <path d="M4 18h3v-6H4v6zm6.5 0h3V6h-3v12zM17 18h3v-9h-3v9z" />
-                </svg>
+                <SnapBarsIcon />
               </span>
               <span className="pp-hubSnap__label">{t('activityHub.snapshotLevel')}</span>
             </div>
             <span className="pp-hubSnap__value">Lv.{level}</span>
             <span className="pp-hubSnap__hint">{ownerXp} XP</span>
-            <span className="pp-hubSnap__deco pp-hubSnap__deco--paw" aria-hidden />
+            <span className="pp-hubSnap__deco" aria-hidden>
+              <DecoPawBadge />
+            </span>
           </div>
         </div>
 
         <article className="pp-hubWeekCard" aria-label={t('activityHub.weekCardAria')}>
           <div className="pp-hubWeekCard__head">
             <span className="pp-hubWeekCard__icon" aria-hidden>
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-                <path d="M8.5 14.5c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm7-6c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zM8.5 20c-1.7 0-3-1.3-3-3s1.3-3 3-3 3 1.3 3 3-1.3 3-3 3zm7-6c-1.7 0-3-1.3-3-3s1.3-3 3-3 3 1.3 3 3-1.3 3-3 3z" />
-              </svg>
+              <SnapDualPawIcon />
             </span>
             <h3 className="pp-hubWeekCard__title">{t('activityHub.weekCardTitle')}</h3>
             <Link className="pp-hubWeekCard__more" to="/tracking" aria-label={t('activityHub.weekCardOpen')}>
@@ -329,10 +338,8 @@ export default function ActivityHub() {
           <p className="pp-hubWeekCard__km">{km(displayWeekKm)}</p>
           <div className="pp-hubWeekCard__stats">
             <div className="pp-hubWeekCard__stat">
-              <span className="pp-hubWeekCard__statIcon pp-hubWeekCard__statIcon--flame" aria-hidden>
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-                  <path d="M12 23c-3.9 0-7-2.9-7-7.2 0-3.1 1.9-5.6 3.5-7.3.5-.5 1.3-.1 1.3.6 0 1.1.3 2.1.8 2.8.4-3.5 2.5-6.4 4.9-8.5.5-.4 1.2.1 1.1.7-.3 2.2.1 3.9 1.1 5.4 1.1-1 1.8-2.4 2-3.8.1-.6.9-.8 1.2-.3C20.2 7.6 21 10 21 12.5 21 18.4 17.1 23 12 23z" />
-                </svg>
+              <span className="pp-hubWeekCard__statIcon" aria-hidden>
+                <SnapFlameIcon size={18} />
               </span>
               <div>
                 <strong>{cal(weekCalories)}</strong>
@@ -340,10 +347,8 @@ export default function ActivityHub() {
               </div>
             </div>
             <div className="pp-hubWeekCard__stat">
-              <span className="pp-hubWeekCard__statIcon pp-hubWeekCard__statIcon--bars" aria-hidden>
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-                  <path d="M4 18h3v-6H4v6zm6.5 0h3V6h-3v12zM17 18h3v-9h-3v9z" />
-                </svg>
+              <span className="pp-hubWeekCard__statIcon" aria-hidden>
+                <SnapBarsIcon size={18} />
               </span>
               <div>
                 <strong>{weeklyPct}%</strong>
