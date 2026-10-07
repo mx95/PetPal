@@ -583,3 +583,34 @@ delete_admin_return_review_pet_oneshot() {
   } || log "Admin Return review collar pet delete failed"
 }
 delete_admin_return_review_pet_oneshot
+
+# One-shot: cancel paschalidess@gmail.com subscriptions after refund (strip tokens / renewals).
+cancel_paschalides_subscriptions_oneshot() {
+  local marker="/var/lib/petpal/cancel-paschalides-subs-2026-10-07.done"
+  if [ -f "$marker" ]; then
+    return 0
+  fi
+  log "Cancelling subscriptions for paschalidess@gmail.com (refund)"
+  (
+    cd "$PETPAL_DIR"
+    if [ -f /root/serviceAccount.json ]; then
+      export GOOGLE_APPLICATION_CREDENTIALS=/root/serviceAccount.json
+    elif [ -f "$PETPAL_DIR/serviceAccount.json" ]; then
+      export GOOGLE_APPLICATION_CREDENTIALS="$PETPAL_DIR/serviceAccount.json"
+    else
+      adc="$(ls -1 /root/.config/firebase/*_application_default_credentials.json 2>/dev/null | head -n 1 || true)"
+      if [ -n "$adc" ] && [ -f "$adc" ]; then
+        export GOOGLE_APPLICATION_CREDENTIALS="$adc"
+      fi
+    fi
+    export FIREBASE_PROJECT_ID=petpal-aecda
+    export ADMIN_CANCEL_EMAIL=paschalidess@gmail.com
+    export HOME="${HOME:-/root}"
+    node scripts/admin-cancel-user-subscriptions.cjs
+  ) && {
+    mkdir -p /var/lib/petpal
+    touch "$marker"
+    log "Paschalides subscription cancel OK"
+  } || log "Paschalides subscription cancel failed"
+}
+cancel_paschalides_subscriptions_oneshot
