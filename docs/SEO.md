@@ -1,67 +1,52 @@
 # SEO & Google Search indexing
 
-PetPal is a client-rendered React app. Google can index it, but you must **submit the site manually** — it will not appear in search results until Google discovers and indexes it.
+PetPal is a **Create React App** SPA served by the Express tracker (`tracker-tcp-server`) behind nginx — not Firebase Hosting.
+
+Google can index the site, but indexing is **not instant**. After deploy you must ask Google to recrawl; local build success does not mean Search Console is fixed.
 
 ## What is configured in the repo
 
 | File | Purpose |
 |------|---------|
-| `petpal/public/index.html` | Default title, description, Open Graph, JSON-LD |
-| `petpal/public/sitemap.xml` | Public URLs for crawlers |
-| `petpal/public/robots.txt` | Allows public pages; blocks `/admin`, `/dashboard`, etc. |
-| `petpal/src/components/RouteSeo.js` | Per-route title, description, canonical, `noindex` |
-| `petpal/src/config/seo.js` | Site URL and route SEO map |
-| `tracker-tcp-server/src/index.js` | Explicit `/robots.txt` and `/sitemap.xml` routes |
+| `petpal/public/index.html` | Default homepage title, description, Open Graph, JSON-LD, noscript |
+| `petpal/src/config/seo-meta.json` | Shared per-route titles, descriptions, crawl HTML, sitemap flags |
+| `petpal/src/config/seo.js` | Client `resolveSeo()` + JSON-LD helpers |
+| `petpal/src/components/RouteSeo.js` | Updates head tags on client navigation |
+| `petpal/public/sitemap.xml` | Canonical **index-worthy** public URLs only |
+| `petpal/public/robots.txt` | Allows public pages; blocks private app areas |
+| `tracker-tcp-server/src/seoSpaInject.js` | **Server** per-route meta/canonical/robots + crawl HTML injection |
+| `tracker-tcp-server/src/index.js` | `/robots.txt`, `/sitemap.xml`, www→apex, trailing-slash redirects |
 
----
+### Critical SPA fix
 
-## ✅ Domain verified (Cloudflare DNS)
+Without server injection, every URL returned the **same** homepage `<title>` / canonical until JavaScript ran. Express now rewrites those tags from `seo-meta.json` based on `req.path`.
 
-If Search Console shows **“Ownership auto verified”** via Cloudflare, you are done with verification for the whole domain (`petpal.com.cy` + subdomains).
+## Canonical domain
 
-### Do these next (in order)
+Preferred host: **`https://petpal.com.cy`** (non-www).
 
-#### 1. Deploy the latest code
+- Express 301-redirects `www.petpal.com.cy` → apex
+- nginx setup script should also redirect www (re-run `scripts/setup-nginx-domain.sh` on the server if needed)
+- Trailing slashes on HTML routes 301 to the non-slash form
+- `/index.html` 301 → `/`
 
-The SEO meta tags and sitemap only work **after deploy**. Until then, Google still sees the old `PetPal GPS Tracker` page and `/sitemap.xml` returns HTML.
+## Sitemap policy (fewer, higher-quality URLs)
 
-After deploy, confirm:
+**Included:** `/`, `/shop`, `/discover`, `/contact`, `/docs`, plus SEO landings:
+`/nfc-pet-tags`, `/gps-pet-trackers`, `/lost-pet-safety`, `/pet-friendly-places`
 
-- `https://petpal.com.cy/sitemap.xml` → XML list of URLs (not the React app)
-- View source on `/` → title should be **“PetPal Care Hub | GPS Pet Tracker & NFC Tags — Cyprus”**
+**Excluded on purpose:** `/privacy`, `/terms`, `/cookies` (accessible, `noindex`), `/install` (utility), app-only routes, redirecting URLs.
 
-#### Sitemap error: “Sitemap is HTML”
+## After deploy — Search Console
 
-Google read `/sitemap.xml` **before** the SEO deploy (every URL returned the React app). The file is valid XML now.
-
-**Fix:**
-
-1. Open `https://petpal.com.cy/sitemap.xml` on your phone — must start with `<?xml version="1.0"`, not the PetPal app.
-2. Search Console → **Sitemaps** → delete the failed submission.
-3. Submit again: enter only `sitemap.xml` (not `https://petpal.com.cy/sitemap.xml`).
-4. Wait **24–48 hours** — status should become **Success** with ~9 pages discovered.
-
-Optional: **Cloudflare** → Caching → **Purge Everything** once so edge cache does not serve old HTML.
-
-#### 2. Submit your sitemap
-
-In [Google Search Console](https://search.google.com/search-console):
-
-1. Open your **petpal.com.cy** property
-2. Left menu → **Sitemaps** (under “Indexing”)
-3. Enter: `sitemap.xml` → **Submit**
-
-#### 3. Request indexing for key pages
-
-1. Left menu → **URL inspection** (top search bar)
-2. Enter `https://petpal.com.cy/` → **Request indexing**
-3. Repeat for `https://petpal.com.cy/shop`
-
-#### 4. Wait for data
-
-The Overview page shows **“Processing data, please check again in a day or so”** — that is normal for a new property. Indexing often takes **3–14 days** before brand searches like `PetPal Cyprus` return results.
-
----
+1. Confirm:
+   - `https://petpal.com.cy/robots.txt` → 200, allows `/`, lists Sitemap
+   - `https://petpal.com.cy/sitemap.xml` → XML (not HTML)
+   - `curl -s https://petpal.com.cy/shop | grep canonical` → `https://petpal.com.cy/shop`
+2. **Sitemaps** → resubmit `sitemap.xml` (or wait for Google to refresh)
+3. **URL inspection** → Request indexing for `/`, `/shop`, `/discover`, and new landings
+4. Expect **days to weeks** for “Discovered – currently not indexed” to shrink — Google still decides what to index
+5. Optional: Cloudflare → Purge cache once after deploy
 
 ## Production env (before `npm run build`)
 
@@ -69,29 +54,10 @@ The Overview page shows **“Processing data, please check again in a day or so�
 REACT_APP_SITE_URL=https://petpal.com.cy
 ```
 
-DNS verification is already done — you do **not** need `REACT_APP_GOOGLE_SITE_VERIFICATION` unless you add a second verification method.
+## Indexable vs private
 
-## Pick one canonical domain
+**Indexable (public marketing):** `/`, `/shop`, `/discover`, SEO landings, `/contact`, `/docs`
 
-Use either `petpal.com.cy` or `www.petpal.com.cy` in marketing links. Redirect the other in nginx to avoid duplicate listings.
+**noindex / robots Disallow:** `/admin`, `/dashboard`, `/tracking`, `/nearby` (use `/pet-friendly-places` for SEO), `/profile`, bookings, checkout, etc.
 
-## Search terms
-
-You will usually appear first for **brand searches** (`PetPal`, `PetPal Cyprus`, `petpal.com.cy`) before generic terms (`GPS pet tracker Cyprus`).
-
-## Updating the sitemap
-
-When you add new **public** pages, add a `<url>` to `petpal/public/sitemap.xml`, redeploy, then resubmit the sitemap in Search Console.
-
-## Indexable vs private routes
-
-**Indexed (public):** `/`, `/shop`, `/contact`, `/install`, `/docs`, `/discover`, legal pages, `/pet/:id`
-
-**Not indexed (`noindex`):** `/admin`, `/dashboard`, `/tracking`, `/nearby`, `/profile`, `/bookings`, checkout, etc.
-
-## Optional next steps
-
-- Add a 1200×630 share image at `public/images/og-share.png`
-- Enable `REACT_APP_FIREBASE_MEASUREMENT_ID` for traffic analytics
-- **Register Google Business Profile** — step-by-step: [GOOGLE_BUSINESS_PROFILE.md](./GOOGLE_BUSINESS_PROFILE.md)
-- Link Instagram / social profiles to `petpal.com.cy`
+**Accessible but not promoted:** legal pages (`noindex` + out of sitemap)

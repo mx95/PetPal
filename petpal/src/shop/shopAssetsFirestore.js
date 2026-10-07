@@ -1,5 +1,5 @@
 import { doc, onSnapshot, setDoc, serverTimestamp } from 'firebase/firestore';
-import { getDb } from '../firebase';
+import { getDb, isFirebaseConfigured } from '../firebase';
 import { DEFAULT_NFC_TAG_DESIGNS, DEFAULT_TRACKER_SHOP_IMAGE } from '../data/nfcTagDesigns';
 
 export const SHOP_ASSETS_DOC = 'shopAssets';
@@ -30,11 +30,11 @@ export function defaultShopAssetsDoc() {
  * @param {(err: Error) => void} [onError]
  */
 export function subscribeShopAssets(onData, onError) {
-  const db = getDb();
-  if (!db) {
+  if (!isFirebaseConfigured()) {
     onData(null);
     return () => {};
   }
+  const db = getDb();
   return onSnapshot(
     doc(db, 'adminConfig', SHOP_ASSETS_DOC),
     (snap) => {

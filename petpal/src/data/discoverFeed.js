@@ -48,7 +48,7 @@ const BASE = [
     likes: 892,
     comments: 67,
     ctaLabelKey: 'discover.feed.readMore',
-    ctaTo: '/documentation',
+    ctaTo: '/docs',
     createdAt: agoHours(5),
   },
   {

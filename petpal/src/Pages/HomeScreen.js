@@ -173,6 +173,7 @@ export default function HomeScreen() {
           <h2 id="home-showcase-title" className="pp-homeWelcome__showcaseTitle">
             {t('home.welcome.showcase.title')}
           </h2>
+          <p className="pp-homeWelcome__showcaseSub">{t('home.welcome.showcase.sub')}</p>
         </header>
         <div className="pp-homeWelcome__showcaseGrid">
           {SHOWCASE_ITEMS.map(({ key, src, altKey }) => (
@@ -181,6 +182,36 @@ export default function HomeScreen() {
             </figure>
           ))}
         </div>
+      </section>
+
+      <section className="pp-homeWelcome__seoLinks" aria-labelledby="home-learn-title">
+        <h2 id="home-learn-title" className="pp-homeWelcome__showcaseTitle">
+          {t('home.welcome.learnTitle')}
+        </h2>
+        <p className="pp-homeWelcome__showcaseSub">{t('home.welcome.learnSub')}</p>
+        <ul className="pp-homeWelcome__learnList">
+          <li>
+            <Link to="/discover">{t('home.welcome.discoverLink')}</Link>
+          </li>
+          <li>
+            <Link to="/shop">{t('home.welcome.capability.shop.title')}</Link>
+          </li>
+          <li>
+            <Link to="/nfc-pet-tags">{t('home.welcome.learnNfc')}</Link>
+          </li>
+          <li>
+            <Link to="/gps-pet-trackers">{t('home.welcome.learnGps')}</Link>
+          </li>
+          <li>
+            <Link to="/lost-pet-safety">{t('home.welcome.learnLost')}</Link>
+          </li>
+          <li>
+            <Link to="/pet-friendly-places">{t('home.welcome.learnPlaces')}</Link>
+          </li>
+          <li>
+            <Link to="/contact">{t('footer.contact')}</Link>
+          </li>
+        </ul>
       </section>
     </div>
   );
