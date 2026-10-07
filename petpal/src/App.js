@@ -22,6 +22,7 @@ import {
   AdminDiscountCodes,
   AdminEmailSettings,
   AdminHub,
+  AdminSubscriptions,
   AdminTrackerLocation,
   AdminNearbyPlaces,
   AdminOrders,
@@ -245,6 +246,14 @@ function App() {
                 element={
                   <RequireAuth>
                     <AdminDiscountCodes />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/admin/subscriptions"
+                element={
+                  <RequireAuth>
+                    <AdminSubscriptions />
                   </RequireAuth>
                 }
               />

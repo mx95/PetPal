@@ -190,5 +190,6 @@ Object.assign(exports, require('./clearBroadcastInbox'));
 Object.assign(exports, require('./shopAssets'));
 Object.assign(exports, require('./adminOrders'));
 Object.assign(exports, require('./adminUsers'));
+Object.assign(exports, require('./adminSubscriptions'));
 Object.assign(exports, require('./nearbyPlacesCache'));
 
