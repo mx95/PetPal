@@ -104,6 +104,12 @@ See before/after inventories. **All existing paths and nav labels unchanged.** O
 5. Confirm no WAF rule blocks `OAI-SearchBot` / Bingbot.
 6. Optional: Google Business Profile; outreach (section H).
 
+### Safari “plain text” sitemap display (follow-up)
+
+**Root cause:** The live sitemap was already valid XML (`application/xml` with `<urlset>` / `<url>` / `<loc>`). iOS Safari/WebKit hides XML tags and shows only text nodes, which looks like concatenated plain text.
+
+**Fix in repo:** `xml-stylesheet` → `/sitemap.xsl` plus explicit Content-Type on the Express SEO file routes. After deploy, Safari should show an HTML table; crawlers still parse the raw XML.
+
 ---
 
 ## H. Prioritized next steps

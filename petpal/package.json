@@ -24,11 +24,12 @@
   "scripts": {
     "build:tw": "node ./node_modules/tailwindcss/lib/cli.js -i ./src/tailwind.input.css -o ./src/tailwind.generated.css",
     "prestart": "npm run build:tw",
-    "prebuild": "npm run build:tw",
+    "prebuild": "npm run sitemap:generate && npm run build:tw",
     "start": "react-scripts start",
     "build": "react-scripts build",
     "build:mobile:web": "node scripts/build-mobile-web.cjs",
     "test": "react-scripts test",
+    "sitemap:generate": "node scripts/generate-sitemap.cjs",
     "seo:validate": "node scripts/seo-validate.cjs",
     "eject": "react-scripts eject",
     "add-admin": "node scripts/add-admin.cjs",
@@ -37,6 +38,7 @@
   "devDependencies": {
     "@babel/plugin-proposal-private-property-in-object": "^7.21.0",
     "@tailwindcss/cli": "^4.3.0",
+    "@xmldom/xmldom": "^0.9.8",
     "autoprefixer": "^10.5.0",
     "firebase-admin": "^13.0.0",
     "postcss": "^8.5.14",
