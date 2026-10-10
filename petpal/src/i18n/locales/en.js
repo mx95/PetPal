@@ -67,13 +67,13 @@ const en = {
       featuresTitle: 'What you can do here',
       featuresSub: 'Simple tools for everyday pet life — each one does one thing well.',
       capability: {
-        gps: { title: 'Live GPS Tracking', desc: 'See your pet on the map in real time.' },
+        gps: { title: 'Live GPS Tracking', desc: 'See your pet on the map in real time with history routes.' },
         lost: { title: 'Lost Pets', desc: 'Photo-first alerts when a pet goes missing.' },
         shelters: { title: 'Shelters', desc: 'Browse verified shelters and adoptable animals.' },
-        nfc: { title: 'NFC Collar', desc: 'Tap-to-contact if they ever get lost.' },
+        nfc: { title: 'NFC Collar', desc: 'Tap-to-open a digital pet profile — not live GPS.' },
         nearby: { title: 'Nearby pet-friendly places', desc: 'Vets, parks, and spots close to home.' },
         booking: { title: 'Booking', desc: 'Book grooming, vet visits, and more.' },
-        shop: { title: 'Shop', desc: 'Collars, NFC tags, and care plans.' },
+        shop: { title: 'Shop', desc: 'GPS trackers, NFC tags, and Care Hub plans.' },
         achievements: { title: 'Earn achievements', desc: 'Unlock badges and celebrate everyday wins.' },
       },
       stayLine: 'Made for everyday pet parents — free to start, no clutter.',
@@ -100,7 +100,7 @@ const en = {
       premiumLink: 'Premium tools',
     },
     publicHero: {
-      eyebrow: 'For pets and the people who love them',
+      eyebrow: 'Pet-care technology for Cyprus',
       headlineBefore: 'PetPal Care Hub —',
       headlineAfter: 'one calm home for every pet you care for.',
       ctaPrimary: 'Create account',
@@ -1166,6 +1166,8 @@ const en = {
     badge: 'LOST PETS',
     title: 'Lost Pets',
     tagline: 'Help bring a missing pet home.',
+    seoHowBody:
+      'Create a photo-first alert with last-seen details and contact options. Pair alerts with a GPS tracker for live location when the collar is online, and an NFC tag so a finder can open your pet’s public profile. Recovery is never guaranteed — act quickly and share clearly.',
     backDash: '← Dashboard',
     intro:
       'Urgent, structured posts to help get your pet home: last known area, how to contact you, and an optional reward.',
@@ -1696,6 +1698,8 @@ const en = {
       'Configure REACT_APP_GOOGLE_MAPS_API_KEY in petpal/.env.local, enable Maps JavaScript API and Places API in Google Cloud, then restart yarn start.',
     loadingMap: 'Loading map…',
     title: 'Pet-friendly places',
+    seoLead:
+      'Find veterinary clinics, pet shops, parks, beaches, and cafés near you in Cyprus and Greece. Results come from map data for the area you search — PetPal does not invent listings.',
     introLead: 'Choose a category, then use',
     introSearchArea: 'Search this area',
     introMid: 'after you pan or zoom the map to load results for the whole view — or',
@@ -2016,6 +2020,17 @@ const en = {
   shopPage: {
     badge: 'PetPal Shop',
     title: 'Subscriptions',
+    seoTitle: 'GPS trackers & PetPal Plus',
+    seoLead:
+      'Live GPS tracking for dogs and cats in Cyprus — location history, routes, and alerts in PetPal Care Hub. Choose a plan, add hardware at checkout, or order a tracker on its own.',
+    seoGpsTitle: 'What the PetPal GPS tracker does',
+    seoGpsBody:
+      'When a PetPal GPS collar is linked and online, you can see your pet’s live location in the app, review location history and routes, and use distance or location alerts. Live tracking requires an active PetPal Plus subscription for that tracker.',
+    seoPricingBody:
+      'Typical prices: monthly Plus from €4.99, yearly Plus from €89.99 (first year includes a free NFC tag and discounted GPS tracker; renews at a lower yearly rate), GPS tracker hardware from €39.99, NFC tags from €9.99. Shipping and fulfilment details appear at checkout.',
+    seoNfcDiffBody:
+      'Need identification without live tracking? NFC tags open a public pet profile when tapped — they do not replace GPS.',
+    seoNfcLink: 'View NFC tags',
     sub: 'Choose monthly or yearly PetPal Plus. Add a GPS tracker or NFC tag to your first monthly payment if you like.',
     back: 'Back',
     signInTitle: 'Sign in to shop',
@@ -2062,12 +2077,14 @@ const en = {
       },
       gpsTracker: {
         title: 'GPS tracker',
-        subtitle: 'Carbon-fiber GPS collar tracker for live location in PetPal.',
+        subtitle:
+          'GPS collar tracker for dogs and cats — live location, history routes, and alerts in PetPal Care Hub (subscription required for live tracking).',
         badge: 'Hardware',
       },
       nfcTag: {
         title: 'NFC tag',
-        subtitle: 'Tap-to-open pet profile tag for your pet.',
+        subtitle:
+          'Tap-to-open digital pet profile so a finder can contact you. NFC identification is not live GPS tracking.',
         badge: 'Hardware',
       },
       nearbyBoost: {
@@ -2231,6 +2248,13 @@ const en = {
   shopNfcPage: {
     title: 'NFC tags',
     lead: 'Choose a design and link a tap-to-contact tag to your pet. Sign in to checkout.',
+    seoHowBody:
+      'How it works: a finder taps the NFC tag with a smartphone to open your pet’s public digital profile and the contact options you enabled. Unlike microchips, no special scanner is required — any modern phone with NFC can open the link. NFC tags do not show live GPS location.',
+    seoDiffTitle: 'NFC vs GPS vs microchips',
+    seoDiffBody:
+      'NFC helps a person who finds your pet contact you. GPS tracking shows where the collar is when it is online. A conventional microchip stores an ID for veterinary scanners and does not open a PetPal profile by itself.',
+    seoGpsLinkLead: 'Looking for live tracking?',
+    seoGpsLink: 'Shop GPS trackers & plans',
     backToShop: '← Back to shop',
     guestBanner: 'Browse NFC designs anytime. Sign in to link tags to your pets and checkout.',
     unavailable: 'NFC tags are not available right now.',

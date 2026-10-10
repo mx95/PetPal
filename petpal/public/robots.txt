@@ -1,16 +1,46 @@
 # https://www.robotstxt.org/robotstxt.html
+# PetPal Care Hub — https://petpal.com.cy/
+#
+# Public product and marketing pages are allowed.
+# Private account, checkout, and admin areas are disallowed.
+#
+# GPTBot (model-training crawler) is intentionally not configured here.
+# OAI-SearchBot below is for ChatGPT Search discovery only — separate from training.
+
 User-agent: *
 Allow: /
 Disallow: /admin
 Disallow: /dashboard
 Disallow: /tracking
-Disallow: /nearby
 Disallow: /profile
 Disallow: /provider
 Disallow: /payment
 Disallow: /bookings
 Disallow: /pets
 Disallow: /premium
+Disallow: /shelters
+Disallow: /shelter
+Disallow: /community
+Disallow: /leaderboard
+Disallow: /activity
+Disallow: /inbox
+Disallow: /shop/checkout
+Disallow: /company/apply
+
+# ChatGPT Search crawler — public pages only (same Allow/Disallow as above)
+User-agent: OAI-SearchBot
+Allow: /
+Disallow: /admin
+Disallow: /dashboard
+Disallow: /tracking
+Disallow: /profile
+Disallow: /provider
+Disallow: /payment
+Disallow: /bookings
+Disallow: /pets
+Disallow: /premium
+Disallow: /shelters
+Disallow: /shelter
 Disallow: /community
 Disallow: /leaderboard
 Disallow: /activity

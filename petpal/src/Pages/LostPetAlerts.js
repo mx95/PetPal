@@ -121,6 +121,9 @@ export default function LostPetAlerts() {
             <span className="pp-publicHero__eyebrow pp-publicHero__eyebrow--lost">{t('lostPet.badge')}</span>
             <h1 className="pp-pageHeader__title">{t('lostPet.title')}</h1>
             <p className="pp-pageHeader__sub">{t('lostPet.tagline')}</p>
+            <p className="pp-subtle" style={{ marginTop: 8, maxWidth: 640 }}>
+              {t('lostPet.seoHowBody')}
+            </p>
           </div>
         </header>
       </div>

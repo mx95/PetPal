@@ -128,7 +128,8 @@ export const SHOP_PRODUCTS = [
   {
     id: 'TRACKER_HARDWARE',
     title: 'GPS tracker',
-    subtitle: 'Carbon-fiber GPS collar tracker for live location in PetPal.',
+    subtitle:
+      'GPS collar tracker for dogs and cats — live location, history routes, and alerts in PetPal Care Hub (subscription required for live tracking).',
     amountCents: TRACKER_ADDON_CENTS,
     currency: '978',
     recurring: false,
@@ -138,7 +139,8 @@ export const SHOP_PRODUCTS = [
   {
     id: 'NFC_TAG_HARDWARE',
     title: 'NFC tag',
-    subtitle: 'Tap-to-open pet profile tag for your pet.',
+    subtitle:
+      'Tap-to-open digital pet profile so a finder can contact you. NFC identification is not live GPS tracking.',
     amountCents: NFC_TAG_ADDON_CENTS,
     currency: '978',
     recurring: false,
