@@ -114,6 +114,7 @@ export default function ShopNfc() {
           {t('shopNfcPage.title')}
         </h1>
         <p className="pp-subtle">{t('shopNfcPage.lead')}</p>
+        <p className="pp-subtle">{t('shopNfcPage.seoHowBody')}</p>
       </header>
 
       {cartItems.length ? <ShopCartBar /> : null}
@@ -157,6 +158,21 @@ export default function ShopNfc() {
           </Link>
         </div>
       </article>
+
+      <section className="pp-shopInfoBox" style={{ marginTop: 20 }} aria-labelledby="nfc-seo-diff-title">
+        <h2 id="nfc-seo-diff-title" className="pp-sectionTitle" style={{ marginTop: 0 }}>
+          {t('shopNfcPage.seoDiffTitle')}
+        </h2>
+        <p className="pp-subtle" style={{ marginBottom: 8 }}>
+          {t('shopNfcPage.seoDiffBody')}
+        </p>
+        <p className="pp-subtle" style={{ marginBottom: 0 }}>
+          {t('shopNfcPage.seoGpsLinkLead')}{' '}
+          <Link className="pp-link" to="/shop">
+            {t('shopNfcPage.seoGpsLink')}
+          </Link>
+        </p>
+      </section>
     </div>
   );
 }

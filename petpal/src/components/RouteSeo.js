@@ -58,6 +58,7 @@ export function RouteSeo() {
     upsertMeta('property', 'og:description', seo.description);
     upsertMeta('property', 'og:image', DEFAULT_OG_IMAGE);
     upsertMeta('property', 'og:site_name', SITE_NAME);
+    upsertMeta('property', 'og:locale', 'en_CY');
     upsertMeta('name', 'twitter:card', 'summary_large_image');
     upsertMeta('name', 'twitter:title', seo.title);
     upsertMeta('name', 'twitter:description', seo.description);

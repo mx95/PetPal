@@ -29,6 +29,7 @@
     "build": "react-scripts build",
     "build:mobile:web": "node scripts/build-mobile-web.cjs",
     "test": "react-scripts test",
+    "seo:validate": "node scripts/seo-validate.cjs",
     "eject": "react-scripts eject",
     "add-admin": "node scripts/add-admin.cjs",
     "deploy:shop-functions": "firebase deploy --only functions:createJccCheckout,functions:createJccUpdateCard,functions:jccPaymentReturn,functions:billingRenewal,functions:expireProviderBoosts,functions:assignSubscriptionImei,functions:linkTrackerSubscriptionPet,functions:adminAssignPetTrackingDevice,functions:adminExtendSubscriptionFreeMonths,functions:adminLookupSubscriptions,functions:adminSetSubscriptionNextRenewal,functions:adminCancelSubscription,functions:adminClearPaymentMethod,functions:createCustomerBooking,functions:sendBookingConfirmation,functions:submitContactForm,functions:getSupportEmailStatus,functions:saveSupportSmtpConfig,functions:refreshNearbyPlacesCache,functions:bootstrapRefreshNearbyPlacesCache,functions:getNearbyPlacesCacheMeta"

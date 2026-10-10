@@ -400,6 +400,13 @@ function NearbyMap({ apiKey }) {
 
   return (
     <div className="pp-nearby-page">
+      <header className="pp-pageHeader" style={{ marginBottom: 8 }}>
+        <div className="pp-pageHeader__copy">
+          <h1 className="pp-pageHeader__title">{t('nearbyPage.title')}</h1>
+          <p className="pp-pageHeader__sub">{t('nearbyPage.seoLead')}</p>
+        </div>
+      </header>
+
       {isBookingBrowseEnabled() && petpalPartners.length ? (
         <section
           className={`pp-nearbyPartners${petpalPartners.length > 1 ? ' pp-nearbyPartners--carousel' : ''}`}
