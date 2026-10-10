@@ -436,9 +436,13 @@ function sendStaticSeoFile(res, fileName, contentType) {
   ];
   for (const filePath of candidates) {
     if (!fs.existsSync(filePath)) continue;
+    const body = fs.readFileSync(filePath);
     res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
     res.setHeader("Pragma", "no-cache");
-    return res.type(contentType).send(fs.readFileSync(filePath, "utf8"));
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    // Explicit charset — do not rely on Express mime defaults for XML/XSL.
+    res.setHeader("Content-Type", `${contentType}; charset=utf-8`);
+    return res.status(200).send(body);
   }
   return false;
 }
@@ -451,6 +455,11 @@ if (fs.existsSync(WEB_INDEX_HTML)) {
   app.get("/sitemap.xml", (_req, res) => {
     if (sendStaticSeoFile(res, "sitemap.xml", "application/xml")) return;
     res.status(404).type("text/plain").send("sitemap not found — rebuild petpal after adding public/sitemap.xml");
+  });
+  // XSLT for human browsers (Safari otherwise shows only text nodes from the XML).
+  app.get("/sitemap.xsl", (_req, res) => {
+    if (sendStaticSeoFile(res, "sitemap.xsl", "text/xsl")) return;
+    res.status(404).type("text/plain").send("sitemap.xsl not found");
   });
   const legacyHomeImages = {
     "/images/home-hero.png": "home-hero.jpg",

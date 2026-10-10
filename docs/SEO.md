@@ -53,11 +53,20 @@ Ask ChatGPT Search / Perplexity / Bing Copilot / Gemini:
 
 Record: whether PetPal is mentioned, whether petpal.com.cy is cited, and which alternatives appear. Results are not guaranteed.
 
+## Sitemap generation
+
+Public URLs live in `petpal/scripts/sitemap-public-entries.cjs`.  
+`npm run sitemap:generate` writes `public/sitemap.xml` (also runs on `prebuild`).
+
+`public/sitemap.xsl` is a **browser-only** stylesheet so Safari/WebKit show a table instead of stripped text nodes. Search engines ignore the stylesheet and parse the raw `<urlset>`.
+
 ## Validation
 
 ```bash
 cd petpal
-node scripts/seo-validate.cjs
+npm run sitemap:generate
+npm run seo:validate
+node --test scripts/generate-sitemap.test.cjs
 CI=true npm test -- --watchAll=false src/config/seo.test.js
 npm run build
 ```
