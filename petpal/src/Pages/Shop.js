@@ -37,6 +37,7 @@ import { buildSubscriptionCartItem } from '../shop/shopCartHelpers';
 import { subscribeShopSubscriptionState } from '../shop/shopSubscriptionsFirestore';
 import { normalizeTrackerImei } from '../tracking/trackerImeiIndex';
 import ProfilePaymentMethod from '../components/ProfilePaymentMethod';
+import ViewMore from '../components/ViewMore';
 
 const SUBSCRIPTION_PRODUCTS = SHOP_PRODUCTS.filter((p) => PLUS_SKUS.includes(p.id));
 
@@ -375,7 +376,15 @@ export default function Shop() {
       <header className="pp-pageHeader" style={{ marginBottom: 12 }}>
         <div className="pp-pageHeader__copy">
           <h1 className="pp-pageHeader__title">{t('shopPage.seoTitle')}</h1>
-          <p className="pp-pageHeader__sub">{t('shopPage.seoLead')}</p>
+          <ViewMore className="pp-pageHeader__viewMore">
+            <p className="pp-pageHeader__sub">{t('shopPage.seoLead')}</p>
+            <h2 className="pp-sectionTitle" style={{ marginTop: 12, marginBottom: 6 }}>
+              {t('shopPage.seoGpsTitle')}
+            </h2>
+            <p className="pp-subtle" style={{ margin: 0 }}>
+              {t('shopPage.seoGpsBody')}
+            </p>
+          </ViewMore>
         </div>
       </header>
 
@@ -837,7 +846,6 @@ export default function Shop() {
         <>
           {hasMarketplaceProducts ? (
             <>
-              <p className="pp-subtle pp-shopProductsLead">{t('shopPage.productsLead')}</p>
               <section className="pp-shopSellerSection" aria-labelledby="shop-seller-heading">
                 <h2 id="shop-seller-heading" className="pp-sectionTitle">
                   {MARKETPLACE_SELLER}
@@ -904,23 +912,6 @@ export default function Shop() {
         </>
       )}
 
-      <section className="pp-shopInfoBox" style={{ marginTop: 24 }} aria-labelledby="shop-seo-gps-title">
-        <h2 id="shop-seo-gps-title" className="pp-sectionTitle" style={{ marginTop: 0 }}>
-          {t('shopPage.seoGpsTitle')}
-        </h2>
-        <p className="pp-subtle" style={{ marginBottom: 8 }}>
-          {t('shopPage.seoGpsBody')}
-        </p>
-        <p className="pp-subtle" style={{ marginBottom: 8 }}>
-          {t('shopPage.seoPricingBody')}
-        </p>
-        <p className="pp-subtle" style={{ marginBottom: 0 }}>
-          {t('shopPage.seoNfcDiffBody')}{' '}
-          <Link className="pp-link" to="/shop/nfc">
-            {t('shopPage.seoNfcLink')}
-          </Link>
-        </p>
-      </section>
     </div>
   );
 }

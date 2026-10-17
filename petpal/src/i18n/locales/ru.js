@@ -1327,6 +1327,8 @@ const ru = {
     refreshing: 'Обновление…',
     save: 'Сохранить',
     cancel: 'Отмена',
+    viewMore: 'Ещё',
+    viewLess: 'Свернуть',
     error: 'ошибка',
     errorGeneric: 'Что-то пошло не так. Попробуйте снова.',
   },

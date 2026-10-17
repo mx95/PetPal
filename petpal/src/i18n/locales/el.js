@@ -1340,6 +1340,8 @@ const el = {
     refreshing: 'Ανανέωση…',
     save: 'Αποθήκευση',
     cancel: 'Ακύρωση',
+    viewMore: 'Περισσότερα',
+    viewLess: 'Λιγότερα',
     error: 'σφάλμα',
     errorGeneric: 'Κάτι πήγε στραβά. Δοκιμάστε ξανά.',
   },

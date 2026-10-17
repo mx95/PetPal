@@ -1255,6 +1255,8 @@ const en = {
     refreshing: 'Refreshing…',
     save: 'Save',
     cancel: 'Cancel',
+    viewMore: 'View more',
+    viewLess: 'View less',
     error: 'error',
     errorGeneric: 'Something went wrong. Please try again.',
   },

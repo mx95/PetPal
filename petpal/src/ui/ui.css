@@ -20281,6 +20281,37 @@ html[data-theme="dark"] .pp-nearby-list > li {
   line-height: 1.45;
 }
 
+.pp-viewMore {
+  margin-top: 6px;
+}
+
+.pp-viewMore__body {
+  margin-bottom: 6px;
+}
+
+.pp-viewMore__body .pp-pageHeader__sub {
+  margin: 0;
+}
+
+.pp-viewMore__toggle {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  color: #5b37ff;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 750;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.pp-viewMore__toggle:hover {
+  color: #4c1d95;
+}
+
 .pp-shopManage__list {
   list-style: none;
   margin: 12px 0 0;

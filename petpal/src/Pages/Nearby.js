@@ -25,6 +25,7 @@ import { subscribeProviders } from '../bookings/providerDirectoryFirestore';
 import { providerNearbyBoostIsActive, providerDistanceKm } from '../bookings/bookingBrowseUtils';
 import { isBookingBrowseEnabled } from '../bookings/bookingFeature';
 import { isFirebaseConfigured } from '../firebase';
+import ViewMore from '../components/ViewMore';
 
 const mapContainerStyle = { width: '100%', height: 'min(62vh, 640px)', minHeight: 340, borderRadius: 28 };
 const DEFAULT_CENTER = { lat: 35.173, lng: 33.364 };
@@ -403,7 +404,9 @@ function NearbyMap({ apiKey }) {
       <header className="pp-pageHeader" style={{ marginBottom: 8 }}>
         <div className="pp-pageHeader__copy">
           <h1 className="pp-pageHeader__title">{t('nearbyPage.title')}</h1>
-          <p className="pp-pageHeader__sub">{t('nearbyPage.seoLead')}</p>
+          <ViewMore className="pp-pageHeader__viewMore">
+            <p className="pp-pageHeader__sub">{t('nearbyPage.seoLead')}</p>
+          </ViewMore>
         </div>
       </header>
 
