@@ -1,17 +1,23 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../auth/AuthProvider';
 import { isFirebaseConfigured } from '../firebase';
+import { useI18n } from '../i18n/I18nContext';
+import { subscribeNotifications } from '../notifications/notificationsFirestore';
+import { syncPush } from '../notifications/pushMessaging';
 import { subscribeBroadcastMessages, subscribeInboxReads } from './inboxFirestore';
 
 const InboxContext = createContext({
   messages: [],
   readIds: new Set(),
+  alerts: [],
   unreadCount: 0,
   loading: true,
 });
 
 export function InboxProvider({ children }) {
   const { user } = useAuth();
+  const { language } = useI18n();
+  const [alerts, setAlerts] = useState([]);
   const [messages, setMessages] = useState([]);
   const [readIds, setReadIds] = useState(() => new Set());
   const [loading, setLoading] = useState(true);
@@ -64,14 +70,31 @@ export function InboxProvider({ children }) {
     };
   }, [user?.uid]);
 
+  useEffect(() => {
+    if (!user?.uid || !isFirebaseConfigured()) {
+      setAlerts([]);
+      return undefined;
+    }
+    return subscribeNotifications(
+      user.uid,
+      (rows) => setAlerts(rows),
+      () => setAlerts([])
+    );
+  }, [user?.uid]);
+
+  useEffect(() => {
+    if (user?.uid) void syncPush(user.uid, language);
+  }, [user?.uid, language]);
+
   const unreadCount = useMemo(() => {
-    if (!messages.length) return 0;
-    return messages.filter((m) => !readIds.has(m.id)).length;
-  }, [messages, readIds]);
+    const broadcastUnread = messages.filter((m) => !readIds.has(m.id)).length;
+    const alertUnread = alerts.filter((a) => !a.read).length;
+    return broadcastUnread + alertUnread;
+  }, [messages, readIds, alerts]);
 
   const value = useMemo(
-    () => ({ messages, readIds, unreadCount, loading }),
-    [messages, readIds, unreadCount, loading]
+    () => ({ messages, readIds, alerts, unreadCount, loading }),
+    [messages, readIds, alerts, unreadCount, loading]
   );
 
   return <InboxContext.Provider value={value}>{children}</InboxContext.Provider>;
