@@ -1418,29 +1418,25 @@ export default function Tracking() {
       >
         {liveMapCoords ? (
           <>
-            <div className="pp-trackLiveStatus" role="status" aria-live="polite">
-              <div className="pp-trackLiveStatus__row">
-                <span className={`pp-trackLiveStatus__fresh${signalLive ? ' is-live' : ''}`}>{lastUpdateLabel}</span>
-                <span
-                  className={`pp-trackLiveStatus__source pp-trackLiveStatus__source--${liveSourceKind}`}
-                  title={
-                    position?.source
-                      ? `${liveSourceTooltip} (${String(position.source)})`
-                      : liveSourceTooltip
-                  }
-                >
-                  <IconTrackSource kind={liveSourceKind} size={13} />
-                  {liveSourceLabel}
-                </span>
-                {batPct != null ? <TrackBatteryBadge pct={batPct} isCharging={isCharging} t={t} /> : null}
-              </div>
-              {liveMapBanner ? (
-                <p className="pp-trackLiveStatus__alert">
-                  {liveMapBanner}
-                </p>
-              ) : null}
-            </div>
             <div className="pp-trackLiveMap__stage">
+              <div className="pp-trackLiveStatus pp-trackLiveStatus--inMap" role="status" aria-live="polite">
+                <div className="pp-trackLiveStatus__row">
+                  <span className={`pp-trackLiveStatus__fresh${signalLive ? ' is-live' : ''}`}>{lastUpdateLabel}</span>
+                  <span
+                    className={`pp-trackLiveStatus__source pp-trackLiveStatus__source--${liveSourceKind}`}
+                    title={
+                      position?.source
+                        ? `${liveSourceTooltip} (${String(position.source)})`
+                        : liveSourceTooltip
+                    }
+                  >
+                    <IconTrackSource kind={liveSourceKind} size={13} />
+                    {liveSourceLabel}
+                  </span>
+                  {batPct != null ? <TrackBatteryBadge pct={batPct} isCharging={isCharging} t={t} /> : null}
+                </div>
+                {liveMapBanner ? <p className="pp-trackLiveStatus__alert">{liveMapBanner}</p> : null}
+              </div>
               <div className="pp-trackLiveMap__frame">
                 <PositionMap
                   liveMode
@@ -1501,8 +1497,8 @@ export default function Tracking() {
             </div>
           </>
         ) : (
-          <>
-            <div className="pp-trackLiveStatus pp-trackLiveStatus--quiet" role="status">
+          <div className="pp-trackLiveMap__stage pp-trackLiveMap__stage--empty">
+            <div className="pp-trackLiveStatus pp-trackLiveStatus--inMap pp-trackLiveStatus--quiet" role="status">
               {displayPosition?.source || batPct != null ? (
                 <div className="pp-trackLiveStatus__row">
                   <span className={`pp-trackLiveStatus__fresh${signalLive ? ' is-live' : ''}`}>{lastUpdateLabel}</span>
@@ -1521,33 +1517,31 @@ export default function Tracking() {
                   : error || t('trackingPage.noLiveSignalBody')}
               </p>
             </div>
-            <div className="pp-trackLiveMap__stage pp-trackLiveMap__stage--empty">
-              <div className="pp-trackMapEmpty pp-trackNoSignal">
-                <h3>{displayPosition?.atHomeWifi ? t('trackingPage.mapWifiHomeTitle') : t('trackingPage.noLiveSignalTitle')}</h3>
-                {showOneTapHome ? (
-                  <>
-                    <p className="pp-subtle pp-trackOneTapHome__lead">{t('trackingPage.mapOneTapHomeLead')}</p>
-                    <button
-                      type="button"
-                      className="pp-btn pp-btnPrimary pp-trackOneTapHome__btn"
-                      disabled={homeSaving || !effectiveDeviceId}
-                      onClick={() => void handleOneTapHome()}
-                    >
-                      {homeSaving ? t('trackingPage.mapOneTapHomeBusy') : t('trackingPage.mapOneTapHome')}
-                    </button>
-                    {homeSaveError ? (
-                      <p className="pp-trackOneTapHome__err" role="alert">
-                        {homeSaveError}
-                      </p>
-                    ) : null}
-                  </>
-                ) : null}
-                <button type="button" className="pp-btn pp-btn--ghost" disabled={loading || !effectiveDeviceId} onClick={() => void refresh()}>
-                  {t('trackingPage.quickRefresh')}
-                </button>
-              </div>
+            <div className="pp-trackMapEmpty pp-trackNoSignal">
+              <h3>{displayPosition?.atHomeWifi ? t('trackingPage.mapWifiHomeTitle') : t('trackingPage.noLiveSignalTitle')}</h3>
+              {showOneTapHome ? (
+                <>
+                  <p className="pp-subtle pp-trackOneTapHome__lead">{t('trackingPage.mapOneTapHomeLead')}</p>
+                  <button
+                    type="button"
+                    className="pp-btn pp-btnPrimary pp-trackOneTapHome__btn"
+                    disabled={homeSaving || !effectiveDeviceId}
+                    onClick={() => void handleOneTapHome()}
+                  >
+                    {homeSaving ? t('trackingPage.mapOneTapHomeBusy') : t('trackingPage.mapOneTapHome')}
+                  </button>
+                  {homeSaveError ? (
+                    <p className="pp-trackOneTapHome__err" role="alert">
+                      {homeSaveError}
+                    </p>
+                  ) : null}
+                </>
+              ) : null}
+              <button type="button" className="pp-btn pp-btn--ghost" disabled={loading || !effectiveDeviceId} onClick={() => void refresh()}>
+                {t('trackingPage.quickRefresh')}
+              </button>
             </div>
-          </>
+          </div>
         )}
       </section>
 
