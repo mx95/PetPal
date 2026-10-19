@@ -134,6 +134,7 @@ function shopJsonLd() {
         name: "PetPal Plus Monthly",
         description:
           "Monthly PetPal Plus subscription for live GPS pet tracking, location history, and related Care Hub features in Cyprus. Optional GPS tracker and NFC tag add-ons at checkout.",
+        image: [OG_IMAGE],
         brand: { "@type": "Brand", name: SITE_NAME },
         sku: "PETPAL_PLUS_MONTHLY",
         offers: {
@@ -150,6 +151,7 @@ function shopJsonLd() {
         name: "PetPal Plus Yearly",
         description:
           "Yearly PetPal Plus plan for Cyprus pet owners. Includes a discounted GPS tracker and a free NFC tag with the first-year purchase; renews at a lower yearly rate.",
+        image: [OG_IMAGE],
         brand: { "@type": "Brand", name: SITE_NAME },
         sku: "PETPAL_PLUS_YEARLY",
         offers: {
