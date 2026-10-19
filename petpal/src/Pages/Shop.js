@@ -37,8 +37,6 @@ import { buildSubscriptionCartItem } from '../shop/shopCartHelpers';
 import { subscribeShopSubscriptionState } from '../shop/shopSubscriptionsFirestore';
 import { normalizeTrackerImei } from '../tracking/trackerImeiIndex';
 import ProfilePaymentMethod from '../components/ProfilePaymentMethod';
-import ViewMore from '../components/ViewMore';
-
 const SUBSCRIPTION_PRODUCTS = SHOP_PRODUCTS.filter((p) => PLUS_SKUS.includes(p.id));
 
 function petForImei(pets, imei) {
@@ -372,21 +370,6 @@ export default function Shop() {
           </div>
         </div>
       ) : null}
-
-      <header className="pp-pageHeader" style={{ marginBottom: 12 }}>
-        <div className="pp-pageHeader__copy">
-          <h1 className="pp-pageHeader__title">{t('shopPage.seoTitle')}</h1>
-          <ViewMore className="pp-pageHeader__viewMore">
-            <p className="pp-pageHeader__sub">{t('shopPage.seoLead')}</p>
-            <h2 className="pp-sectionTitle" style={{ marginTop: 12, marginBottom: 6 }}>
-              {t('shopPage.seoGpsTitle')}
-            </h2>
-            <p className="pp-subtle" style={{ margin: 0 }}>
-              {t('shopPage.seoGpsBody')}
-            </p>
-          </ViewMore>
-        </div>
-      </header>
 
       <div className="pp-shopTabs" role="tablist" aria-label={t('shopPage.tabsAria')}>
         <button

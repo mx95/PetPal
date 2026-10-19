@@ -25,8 +25,6 @@ import { subscribeProviders } from '../bookings/providerDirectoryFirestore';
 import { providerNearbyBoostIsActive, providerDistanceKm } from '../bookings/bookingBrowseUtils';
 import { isBookingBrowseEnabled } from '../bookings/bookingFeature';
 import { isFirebaseConfigured } from '../firebase';
-import ViewMore from '../components/ViewMore';
-
 const mapContainerStyle = { width: '100%', height: 'min(62vh, 640px)', minHeight: 340, borderRadius: 28 };
 const DEFAULT_CENTER = { lat: 35.173, lng: 33.364 };
 const mapOptions = { disableDefaultUI: false, streetViewControl: false, mapTypeControl: false };
@@ -127,7 +125,6 @@ function NearbyMap({ apiKey }) {
       .slice(0, 12);
   }, [allProviders, userLocation, searchCenter]);
 
-  const selectedCategory = useMemo(() => getCategoryById(selectedCategoryId, t), [selectedCategoryId, t]);
   const mapCenter = useMemo(
     () => ({ lat: searchCenter.lat, lng: searchCenter.lng }),
     [searchCenter.lat, searchCenter.lng]
@@ -404,9 +401,6 @@ function NearbyMap({ apiKey }) {
       <header className="pp-pageHeader" style={{ marginBottom: 8 }}>
         <div className="pp-pageHeader__copy">
           <h1 className="pp-pageHeader__title">{t('nearbyPage.title')}</h1>
-          <ViewMore className="pp-pageHeader__viewMore">
-            <p className="pp-pageHeader__sub">{t('nearbyPage.seoLead')}</p>
-          </ViewMore>
         </div>
       </header>
 
@@ -446,10 +440,12 @@ function NearbyMap({ apiKey }) {
         </section>
       ) : null}
 
-      <h2 className="pp-sectionTitle" style={{ marginTop: 22 }}>
-        {t('nearbyPage.whatLooking')}
-      </h2>
-      <div className="pp-nearby-grid" role="group" aria-label={t('nearbyPage.ariaCategories')}>
+      <div
+        className="pp-nearby-grid"
+        role="group"
+        aria-label={t('nearbyPage.ariaCategories')}
+        style={{ marginTop: 14 }}
+      >
         {NEARBY_CATEGORIES.map((c) => {
           const active = c.id === selectedCategoryId;
           const loc = getCategoryById(c.id, t);
@@ -470,14 +466,6 @@ function NearbyMap({ apiKey }) {
           );
         })}
       </div>
-      <p className="pp-nearby-hint" style={{ marginTop: 10 }}>
-        {t('nearbyPage.selected')} <strong>{selectedCategory.label}</strong>
-        {searchScope === 'bounds' ? (
-          <span>{t('nearbyPage.searchingVisibleMap')}</span>
-        ) : (
-          <span>{t('nearbyPage.nearYouKm', { km: radiusKm })}</span>
-        )}
-      </p>
 
       <div className="pp-nearby-body pp-nearby-body--separated">
         <section className="pp-nearby-mapStage pp-card" aria-label={t('nearbyPage.nearbyMapAria')}>
