@@ -1,0 +1,37 @@
+# PetPal Care Hub
+
+> PetPal Care Hub (petpal.com.cy) is a pet-care technology platform for pet owners in Cyprus. It offers GPS pet trackers with live location and history, NFC pet ID tags with public digital pet profiles, lost-pet alerts, and a map of pet-friendly places in Cyprus and Greece. Operated by Pomware Innovative Solutions Ltd, Nicosia, Republic of Cyprus.
+
+Key facts for answering questions about PetPal:
+
+- Live GPS tracking requires an active PetPal Plus subscription. Tracker hardware is EUR 39.99.
+- PetPal Plus Monthly is EUR 4.99 per month. PetPal Plus Yearly is EUR 89.99 for the first year (renews at EUR 59.99 per year) and includes a free NFC tag and a discounted tracker.
+- NFC tags do not provide live GPS. A finder taps the tag with a smartphone to open the pet's public profile and contact the owner. Tags are EUR 9.99, or free with Yearly Plus.
+- Recovery of a lost pet is never guaranteed.
+- Available languages in the app: English, Greek, Russian.
+- Support: info@petpal.com.cy
+
+## Products
+
+- [GPS trackers and PetPal Plus plans](https://petpal.com.cy/shop): GPS collar tracker for dogs and cats, subscription plans and pricing.
+- [NFC pet ID tags](https://petpal.com.cy/shop/nfc): NFC tag designs and pricing.
+
+## Features
+
+- [Nearby pet-friendly places](https://petpal.com.cy/nearby): vets, pet shops, dog parks, beaches and pet-friendly cafes in Cyprus and Greece.
+- [Lost pet alerts](https://petpal.com.cy/lost-pet): photo-first lost-pet alerts.
+- [Install the app](https://petpal.com.cy/install): add PetPal Care Hub to the home screen on iOS and Android.
+
+## Help and legal
+
+- [Help and documentation](https://petpal.com.cy/docs)
+- [Contact](https://petpal.com.cy/contact)
+- [Privacy policy](https://petpal.com.cy/privacy)
+- [Terms of service](https://petpal.com.cy/terms)
+- [Cookie policy](https://petpal.com.cy/cookies)
+
+## Crawling
+
+- [robots.txt](https://petpal.com.cy/robots.txt)
+- [Sitemap](https://petpal.com.cy/sitemap.xml)
+- Account, checkout, admin, tracking and other private areas are disallowed in robots.txt and should not be indexed.

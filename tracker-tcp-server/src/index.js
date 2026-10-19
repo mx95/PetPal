@@ -12,6 +12,7 @@ const { registerG365HttpApi } = require("./http/g365ApiRoutes");
 const { registerGpsposHttpApi } = require("./http/gpsposApiRoutes");
 const { registerAdminDeviceRoutes } = require("./http/adminDeviceRoutes");
 const { registerFirebaseAuthProxy } = require("./http/firebaseAuthProxy");
+const { renderSpaHtml } = require("./http/seoPages");
 const { logPrefix } = require("./logging/time");
 const { buildPositionPayload } = require("./http/positionPayload");
 const { repairStaleLastFixFromHistory, restoreHeldLastKnownFromHistory } = require("./geo/repairStaleLastFix");
@@ -414,13 +415,16 @@ registerFirebaseAuthProxy(app);
 /** Rewrite legacy http:// tracker API calls to same-origin (HTTPS mixed-content safety). */
 const TRACKER_FETCH_SHIM = `<script id="petpal-tracker-fetch-shim">(function(){var h=String(window.location.hostname||"").toLowerCase();if(!window.isSecureContext||h!=="petpal.com.cy"&&h!=="www.petpal.com.cy")return;var legacy=["http://116.203.209.68:5002","http://127.0.0.1:5002"];var f=window.fetch;window.fetch=function(i,n){var u=typeof i==="string"?i:i&&i.url;if(typeof u!=="string")return f.call(this,i,n);for(var k=0;k<legacy.length;k++){var b=legacy[k];if(u.indexOf(b)===0){u=u.slice(b.length)||"/";break;}}if(u!==(typeof i==="string"?i:i.url)){i=typeof i==="string"?u:new Request(u,i);}return f.call(this,i,n);};})();</script>`;
 
-function sendSpaIndex(_req, res) {
+function sendSpaIndex(req, res) {
   try {
     let html = fs.readFileSync(WEB_INDEX_HTML, "utf8");
+    const seo = renderSpaHtml(html, req.path);
+    html = seo.html;
     if (!html.includes("petpal-tracker-fetch-shim")) {
       html = html.replace("</head>", `${TRACKER_FETCH_SHIM}</head>`);
     }
     res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+    if (!seo.index) res.setHeader("X-Robots-Tag", "noindex, follow");
     res.type("html").send(html);
   } catch (err) {
     console.warn(`[web] Failed to read ${WEB_INDEX_HTML}: ${err.message || err}`);
@@ -451,6 +455,10 @@ if (fs.existsSync(WEB_INDEX_HTML)) {
   app.get("/robots.txt", (_req, res) => {
     if (sendStaticSeoFile(res, "robots.txt", "text/plain")) return;
     res.type("text/plain").send("User-agent: *\nAllow: /\n");
+  });
+  app.get("/llms.txt", (_req, res) => {
+    if (sendStaticSeoFile(res, "llms.txt", "text/plain")) return;
+    res.status(404).type("text/plain").send("llms.txt not found");
   });
   app.get("/sitemap.xml", (_req, res) => {
     if (sendStaticSeoFile(res, "sitemap.xml", "application/xml")) return;
@@ -498,6 +506,10 @@ if (fs.existsSync(WEB_INDEX_HTML)) {
 // ✅ 3. SAFE FALLBACK (NO "*")
 // 
 app.use((req, res) => {
+  // Missing files (e.g. /ai.txt, /ads.txt) must be real 404s, not the SPA shell with a 200.
+  if (/\.[a-z0-9]{1,8}$/i.test(req.path)) {
+    return res.status(404).type("text/plain").send("not found");
+  }
   if (fs.existsSync(WEB_INDEX_HTML)) {
     return sendSpaIndex(req, res);
   }
