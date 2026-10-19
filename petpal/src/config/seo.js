@@ -323,6 +323,7 @@ export const ROUTE_SEO = [
     match: (path) => path.startsWith('/pet'),
     title: `Pet Profile — ${SITE_NAME}`,
     description: `Public pet profile on PetPal Care Hub — opened from an NFC tag scan with owner contact options when the owner has enabled them.`,
+    index: false,
   },
   {
     match: (path) => path === '/login',
