@@ -8,11 +8,11 @@ module.exports = {
   stylesheetHref: '/sitemap.xsl',
   /** @type {{ path: string, changefreq?: string, priority?: string, lastmod?: string }[]} */
   entries: [
-    { path: '/', changefreq: 'weekly', priority: '1.0', lastmod: '2026-10-10' },
-    { path: '/shop', changefreq: 'weekly', priority: '0.9', lastmod: '2026-10-10' },
-    { path: '/shop/nfc', changefreq: 'weekly', priority: '0.85', lastmod: '2026-10-10' },
-    { path: '/nearby', changefreq: 'weekly', priority: '0.8' },
-    { path: '/lost-pet', changefreq: 'weekly', priority: '0.75' },
+    { path: '/', changefreq: 'weekly', priority: '1.0', lastmod: '2026-10-19' },
+    { path: '/shop', changefreq: 'weekly', priority: '0.9', lastmod: '2026-10-19' },
+    { path: '/shop/nfc', changefreq: 'weekly', priority: '0.85', lastmod: '2026-10-19' },
+    { path: '/nearby', changefreq: 'weekly', priority: '0.8', lastmod: '2026-10-19' },
+    { path: '/lost-pet', changefreq: 'weekly', priority: '0.75', lastmod: '2026-10-19' },
     { path: '/contact', changefreq: 'monthly', priority: '0.7' },
     { path: '/install', changefreq: 'monthly', priority: '0.7' },
     { path: '/docs', changefreq: 'monthly', priority: '0.6' },
