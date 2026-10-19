@@ -4,14 +4,18 @@ import { useAuth } from '../auth/AuthProvider';
 import { useCompany } from '../company/CompanyContext';
 import { clearAllBroadcastMessages, createBroadcastMessage } from '../inbox/inboxFirestore';
 import { clearBroadcastInboxRemote } from '../inbox/clearBroadcastInboxClient';
+import { createUserNotification } from '../inbox/userNotificationsFirestore';
 import { useI18n } from '../i18n/I18nContext';
 
 export default function AdminBroadcast() {
   const { t } = useI18n();
   const { user } = useAuth();
   const { isAdmin, firebaseReady } = useCompany();
+  const [audience, setAudience] = useState('all');
+  const [targetUid, setTargetUid] = useState('');
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
+  const [link, setLink] = useState('');
   const [sending, setSending] = useState(false);
   const [clearing, setClearing] = useState(false);
   const [err, setErr] = useState('');
@@ -35,15 +39,30 @@ export default function AdminBroadcast() {
     setOk('');
     setSending(true);
     try {
-      await createBroadcastMessage({
-        title,
-        body,
-        createdBy: user.uid,
-        createdByEmail: user.email || null,
-      });
-      setTitle('');
-      setBody('');
-      setOk(t('admin.broadcast.sent'));
+      if (audience === 'user') {
+        await createUserNotification(String(targetUid || '').trim(), {
+          title,
+          body,
+          type: 'admin',
+          link: link.trim() || null,
+          createdBy: user.uid,
+          createdByEmail: user.email || null,
+        });
+        setTitle('');
+        setBody('');
+        setLink('');
+        setOk(t('admin.broadcast.sentUser'));
+      } else {
+        await createBroadcastMessage({
+          title,
+          body,
+          createdBy: user.uid,
+          createdByEmail: user.email || null,
+        });
+        setTitle('');
+        setBody('');
+        setOk(t('admin.broadcast.sent'));
+      }
     } catch (ex) {
       setErr(ex?.message || t('admin.broadcast.errSend'));
     } finally {
@@ -96,6 +115,56 @@ export default function AdminBroadcast() {
 
       <div className="pp-col-12 pp-col-md-8">
         <form className="pp-card pp-pad pp-inboxBroadcastForm" onSubmit={(e) => void handleSubmit(e)}>
+          <fieldset className="pp-inboxAudienceFieldset">
+            <legend className="pp-field__label">{t('admin.broadcast.audience')}</legend>
+            <div className="pp-row" style={{ gap: 10, flexWrap: 'wrap' }}>
+              <label className="pp-inboxAudienceOption">
+                <input
+                  type="radio"
+                  name="audience"
+                  value="all"
+                  checked={audience === 'all'}
+                  onChange={() => setAudience('all')}
+                />
+                <span>{t('admin.broadcast.audienceAll')}</span>
+              </label>
+              <label className="pp-inboxAudienceOption">
+                <input
+                  type="radio"
+                  name="audience"
+                  value="user"
+                  checked={audience === 'user'}
+                  onChange={() => setAudience('user')}
+                />
+                <span>{t('admin.broadcast.audienceUser')}</span>
+              </label>
+            </div>
+          </fieldset>
+
+          {audience === 'user' ? (
+            <>
+              <label className="pp-field">
+                <span className="pp-field__label">{t('admin.broadcast.targetUid')}</span>
+                <input
+                  className="pp-input"
+                  value={targetUid}
+                  onChange={(e) => setTargetUid(e.target.value)}
+                  required
+                  placeholder={t('admin.broadcast.targetUidPlaceholder')}
+                />
+              </label>
+              <label className="pp-field">
+                <span className="pp-field__label">{t('admin.broadcast.linkOptional')}</span>
+                <input
+                  className="pp-input"
+                  value={link}
+                  onChange={(e) => setLink(e.target.value)}
+                  placeholder={t('admin.broadcast.linkPlaceholder')}
+                />
+              </label>
+            </>
+          ) : null}
+
           <label className="pp-field">
             <span className="pp-field__label">{t('admin.broadcast.subject')}</span>
             <input
@@ -123,16 +192,22 @@ export default function AdminBroadcast() {
           {ok ? <p className="pp-subtle" style={{ color: '#15803d', fontWeight: 700 }}>{ok}</p> : null}
           <div className="pp-row" style={{ gap: 10, marginTop: 8, flexWrap: 'wrap' }}>
             <button type="submit" className="pp-btn pp-btnPrimary" disabled={sending || clearing}>
-              {sending ? t('admin.broadcast.sending') : t('admin.broadcast.send')}
+              {sending
+                ? t('admin.broadcast.sending')
+                : audience === 'user'
+                  ? t('admin.broadcast.sendUser')
+                  : t('admin.broadcast.send')}
             </button>
-            <button
-              type="button"
-              className="pp-btn pp-btn--ghost"
-              disabled={sending || clearing}
-              onClick={() => void handleClearAll()}
-            >
-              {clearing ? t('admin.broadcast.clearing') : t('admin.broadcast.clearAll')}
-            </button>
+            {audience === 'all' ? (
+              <button
+                type="button"
+                className="pp-btn pp-btn--ghost"
+                disabled={sending || clearing}
+                onClick={() => void handleClearAll()}
+              >
+                {clearing ? t('admin.broadcast.clearing') : t('admin.broadcast.clearAll')}
+              </button>
+            ) : null}
           </div>
         </form>
       </div>

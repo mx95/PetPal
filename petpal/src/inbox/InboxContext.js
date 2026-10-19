@@ -1,7 +1,9 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../auth/AuthProvider';
 import { isFirebaseConfigured } from '../firebase';
+import { countUnreadInboxMessages, mergeInboxMessages } from './inboxMerge';
 import { subscribeBroadcastMessages, subscribeInboxReads } from './inboxFirestore';
+import { subscribeUserNotifications } from './userNotificationsFirestore';
 
 const InboxContext = createContext({
   messages: [],
@@ -12,34 +14,51 @@ const InboxContext = createContext({
 
 export function InboxProvider({ children }) {
   const { user } = useAuth();
-  const [messages, setMessages] = useState([]);
+  const [broadcasts, setBroadcasts] = useState([]);
+  const [personal, setPersonal] = useState([]);
   const [readIds, setReadIds] = useState(() => new Set());
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!user?.uid || !isFirebaseConfigured()) {
-      setMessages([]);
+      setBroadcasts([]);
+      setPersonal([]);
       setReadIds(new Set());
       setLoading(false);
       return undefined;
     }
 
     setLoading(true);
-    let msgReady = false;
+    let broadcastReady = false;
+    let personalReady = false;
     let readReady = false;
     const maybeDone = () => {
-      if (msgReady && readReady) setLoading(false);
+      if (broadcastReady && personalReady && readReady) setLoading(false);
     };
 
-    const unsubMsg = subscribeBroadcastMessages(
+    const unsubBroadcast = subscribeBroadcastMessages(
       (rows) => {
-        setMessages(rows);
-        msgReady = true;
+        setBroadcasts(rows);
+        broadcastReady = true;
         maybeDone();
       },
       () => {
-        setMessages([]);
-        msgReady = true;
+        setBroadcasts([]);
+        broadcastReady = true;
+        maybeDone();
+      }
+    );
+
+    const unsubPersonal = subscribeUserNotifications(
+      user.uid,
+      (rows) => {
+        setPersonal(rows);
+        personalReady = true;
+        maybeDone();
+      },
+      () => {
+        setPersonal([]);
+        personalReady = true;
         maybeDone();
       }
     );
@@ -59,15 +78,15 @@ export function InboxProvider({ children }) {
     );
 
     return () => {
-      unsubMsg();
+      unsubBroadcast();
+      unsubPersonal();
       unsubRead();
     };
   }, [user?.uid]);
 
-  const unreadCount = useMemo(() => {
-    if (!messages.length) return 0;
-    return messages.filter((m) => !readIds.has(m.id)).length;
-  }, [messages, readIds]);
+  const messages = useMemo(() => mergeInboxMessages(broadcasts, personal, readIds), [broadcasts, personal, readIds]);
+
+  const unreadCount = useMemo(() => countUnreadInboxMessages(messages), [messages]);
 
   const value = useMemo(
     () => ({ messages, readIds, unreadCount, loading }),
