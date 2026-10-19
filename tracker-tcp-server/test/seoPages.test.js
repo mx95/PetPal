@@ -48,6 +48,9 @@ test("renderSpaHtml gives each public route its own canonical, title and JSON-LD
   assert.match(shop, /<link rel="canonical" href="https:\/\/petpal\.com\.cy\/shop"/);
   assert.match(shop, /<title>Pet GPS Tracker in Cyprus \| PetPal Care Hub<\/title>/);
   assert.match(shop, /"@type":"Product"/);
+  const products = JSON.parse(/<script type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/.exec(shop)[1])["@graph"].filter((n) => n["@type"] === "Product");
+  assert.equal(products.length, 3);
+  for (const product of products) assert.ok(product.image?.length, `${product.name} needs an image`);
   assert.match(shop, /<meta name="robots" content="index,follow"/);
   assert.equal((shop.match(/<title>/g) || []).length, 1);
   assert.equal((shop.match(/rel="canonical"/g) || []).length, 1);
