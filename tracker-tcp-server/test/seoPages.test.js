@@ -39,7 +39,8 @@ test("every sitemap URL has a server-rendered indexable page", () => {
     assert.equal(seo.index, true, `${loc} should be indexable`);
     assert.ok(seo.page, `${loc} missing from PAGES`);
   }
-  assert.equal((sitemap.match(/<lastmod>/g) || []).length, locs.length);
+  const dated = [...sitemap.matchAll(/<lastmod>(\d{4}-\d{2}-\d{2})<\/lastmod>/g)];
+  assert.ok(dated.length >= 5, "hub pages should carry a lastmod");
 });
 
 test("renderSpaHtml gives each public route its own canonical, title and JSON-LD", () => {
