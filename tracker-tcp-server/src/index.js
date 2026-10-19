@@ -119,6 +119,12 @@ function seedSampleDeviceFromEnv() {
   console.log(`[seed] Preloaded ${imei} at ${lat}, ${lng} (set SEED_DEVICE_* in env)`);
 }
 
+try {
+  require("./alerts").startAlerts({ store });
+} catch (err) {
+  console.warn("[alerts] Failed to start — alerts disabled:", err?.message || err);
+}
+
 seedSampleDeviceFromEnv();
 
 if (GPS365_TCP_ENABLED) {
@@ -482,7 +488,10 @@ if (fs.existsSync(WEB_INDEX_HTML)) {
     express.static(WEB_BUILD_DIR, {
       index: false,
       setHeaders(res, filePath) {
-        if (filePath.endsWith(`${path.sep}index.html`)) {
+        if (
+          filePath.endsWith(`${path.sep}index.html`) ||
+          filePath.endsWith(`${path.sep}firebase-messaging-sw.js`)
+        ) {
           res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
           return;
         }
