@@ -88,4 +88,4 @@ function buildPushText(type, lang, params = {}) {
   return { title: fill(table.title, params), body: fill(table.body, params) };
 }
 
-module.exports = { ALERT_TYPES, buildPushText, normalizeLang };
+module.exports = { ALERT_TYPES, MESSAGES, buildPushText, normalizeLang };

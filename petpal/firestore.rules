@@ -232,6 +232,41 @@ service cloud.firestore {
         allow write: if false;
       }
 
+      // Safe zone per pet (doc id = petId). Private: pets are publicly readable, home coordinates must not be.
+      match /safeZones/{petId} {
+        allow read, delete: if request.auth != null && request.auth.uid == userId;
+        allow create, update: if request.auth != null && request.auth.uid == userId
+          && request.resource.data.lat is number
+          && request.resource.data.lat >= -90 && request.resource.data.lat <= 90
+          && request.resource.data.lng is number
+          && request.resource.data.lng >= -180 && request.resource.data.lng <= 180
+          && request.resource.data.radiusM is number
+          && request.resource.data.radiusM >= 50 && request.resource.data.radiusM <= 5000
+          && request.resource.data.enabled is bool;
+      }
+
+      // Alert history written by the tracker server (Admin SDK); the owner can only mark read / delete.
+      match /notifications/{notificationId} {
+        allow read, delete: if request.auth != null && request.auth.uid == userId;
+        allow create: if false;
+        allow update: if request.auth != null && request.auth.uid == userId
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
+      }
+
+      // Web push (FCM) registration tokens, one doc per browser.
+      match /pushTokens/{tokenId} {
+        allow read, delete: if request.auth != null && request.auth.uid == userId;
+        allow create, update: if request.auth != null && request.auth.uid == userId
+          && request.resource.data.token is string
+          && request.resource.data.token.size() > 0
+          && request.resource.data.token.size() < 4096;
+      }
+
+      // Notification preferences (document id: notifications).
+      match /settings/{settingId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId && settingId == 'notifications';
+      }
+
       // Per-user read state for admin broadcast inbox.
       match /inboxReads/{messageId} {
         allow read, create, update: if request.auth != null && request.auth.uid == userId;
