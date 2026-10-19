@@ -87,17 +87,9 @@ function NearbyMap({ apiKey }) {
   const [map, setMap] = useState(null);
   const [searchCenter, setSearchCenter] = useState(DEFAULT_CENTER);
   const moreSearchGenRef = useRef(0);
-  const categoryStripRef = useRef(null);
   const [locationNote, setLocationNote] = useState(() => ({ kind: 'default' }));
   const [selectedCategoryId, setSelectedCategoryId] = useState(NEARBY_DEFAULT_CATEGORY_ID);
 
-  useEffect(() => {
-    const strip = categoryStripRef.current;
-    const active = strip?.querySelector('.pp-nearby-tile--active');
-    if (!strip || !active || strip.scrollWidth <= strip.clientWidth) return;
-    const target = active.offsetLeft - (strip.clientWidth - active.offsetWidth) / 2;
-    strip.scrollTo({ left: Math.max(0, target), behavior: 'smooth' });
-  }, [selectedCategoryId]);
   const [searchScope, setSearchScope] = useState('radius');
   const [geoSettled, setGeoSettled] = useState(false);
   const [places, setPlaces] = useState([]);
@@ -454,7 +446,6 @@ function NearbyMap({ apiKey }) {
         className="pp-nearby-grid"
         role="group"
         aria-label={t('nearbyPage.ariaCategories')}
-        ref={categoryStripRef}
       >
         {NEARBY_CATEGORIES.map((c) => {
           const active = c.id === selectedCategoryId;
@@ -471,8 +462,8 @@ function NearbyMap({ apiKey }) {
                 className="pp-nearby-tile__img"
                 src={nearbyCategoryIconUrl(c.id)}
                 alt=""
-                width="30"
-                height="30"
+                width="32"
+                height="32"
                 loading="eager"
                 decoding="async"
               />
