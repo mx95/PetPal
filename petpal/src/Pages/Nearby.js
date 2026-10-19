@@ -6,6 +6,7 @@ import {
   NEARBY_CATEGORIES,
   NEARBY_DEFAULT_CATEGORY_ID,
   NEARBY_SEARCH_RADIUS_M,
+  nearbyCategoryIconUrl,
 } from '../config/nearbyPlaceCategories';
 import { nearbyCategoryForPlace } from '../nearby/classifyNearbyPlace';
 import { filterAcceptableNearbyPlaces } from '../nearby/nearbyPlaceQuality';
@@ -86,8 +87,17 @@ function NearbyMap({ apiKey }) {
   const [map, setMap] = useState(null);
   const [searchCenter, setSearchCenter] = useState(DEFAULT_CENTER);
   const moreSearchGenRef = useRef(0);
+  const categoryStripRef = useRef(null);
   const [locationNote, setLocationNote] = useState(() => ({ kind: 'default' }));
   const [selectedCategoryId, setSelectedCategoryId] = useState(NEARBY_DEFAULT_CATEGORY_ID);
+
+  useEffect(() => {
+    const strip = categoryStripRef.current;
+    const active = strip?.querySelector('.pp-nearby-tile--active');
+    if (!strip || !active || strip.scrollWidth <= strip.clientWidth) return;
+    const target = active.offsetLeft - (strip.clientWidth - active.offsetWidth) / 2;
+    strip.scrollTo({ left: Math.max(0, target), behavior: 'smooth' });
+  }, [selectedCategoryId]);
   const [searchScope, setSearchScope] = useState('radius');
   const [geoSettled, setGeoSettled] = useState(false);
   const [places, setPlaces] = useState([]);
@@ -444,7 +454,7 @@ function NearbyMap({ apiKey }) {
         className="pp-nearby-grid"
         role="group"
         aria-label={t('nearbyPage.ariaCategories')}
-        style={{ marginTop: 14 }}
+        ref={categoryStripRef}
       >
         {NEARBY_CATEGORIES.map((c) => {
           const active = c.id === selectedCategoryId;
@@ -457,11 +467,16 @@ function NearbyMap({ apiKey }) {
               onClick={() => setSelectedCategoryId(c.id)}
               aria-pressed={active}
             >
-              <span className="pp-nearby-tile__icon" aria-hidden>
-                {c.icon}
-              </span>
+              <img
+                className="pp-nearby-tile__img"
+                src={nearbyCategoryIconUrl(c.id)}
+                alt=""
+                width="30"
+                height="30"
+                loading="eager"
+                decoding="async"
+              />
               <span className="pp-nearby-tile__label">{loc.label}</span>
-              <span className="pp-nearby-tile__desc">{loc.description}</span>
             </button>
           );
         })}
