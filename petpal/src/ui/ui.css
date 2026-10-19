@@ -23608,6 +23608,21 @@ html[data-theme="dark"] .pp-nearbyPartnerCard__badge--partner {
   color: #344054;
 }
 
+.pp-trackLiveStatus__bat--high {
+  background: rgba(34, 197, 94, 0.12);
+  color: #15803d;
+}
+
+.pp-trackLiveStatus__bat--mid {
+  background: rgba(234, 179, 8, 0.14);
+  color: #a16207;
+}
+
+.pp-trackLiveStatus__bat--low {
+  background: rgba(239, 68, 68, 0.12);
+  color: #b91c1c;
+}
+
 .pp-trackLiveStatus__bat.is-charging {
   background: rgba(34, 197, 94, 0.12);
   color: #027a48;

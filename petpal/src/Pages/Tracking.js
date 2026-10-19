@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom';
 import { useI18n } from '../i18n/I18nContext';
 import PetAvatar from '../components/PetAvatar';
-import IconBattery from '../components/icons/IconBattery';
+import IconBattery, { batteryTone } from '../components/icons/IconBattery';
 import IconTrackSource from '../components/icons/IconTrackSource';
 import TimeInput24 from '../components/TimeInput24';
 import { formatDateTime24, formatTime24 } from '../formatTime24';
@@ -192,27 +192,19 @@ function TrackTabIcon({ tabId }) {
   );
 }
 
-function batteryFillStyle(pct) {
-  const n = Math.min(100, Math.max(0, pct));
-  let fill;
-  if (n > 60) fill = 'linear-gradient(90deg,#22c55e,#4ade80)';
-  else if (n > 30) fill = 'linear-gradient(90deg,#eab308,#facc15)';
-  else fill = 'linear-gradient(90deg,#f97316,#ef4444)';
-  return { width: `${n}%`, background: fill };
-}
-
 function TrackBatteryBadge({ pct, isCharging, t }) {
   if (pct == null) return null;
+  const tone = batteryTone(pct);
   return (
     <span
-      className={`pp-trackLiveStatus__bat${isCharging ? ' is-charging' : ''}`}
+      className={`pp-trackLiveStatus__bat pp-trackLiveStatus__bat--${tone}${isCharging ? ' is-charging' : ''}`}
       aria-label={
         isCharging
           ? t('trackingPage.batteryChargingAria', { pct })
           : t('trackingPage.batteryPctAria', { pct })
       }
     >
-      <IconBattery pct={pct} size={16} charging={isCharging} />
+      <IconBattery pct={pct} size={16} charging={isCharging} colored />
       {isCharging ? t('trackingPage.batteryPctCharging', { pct }) : `${pct}%`}
     </span>
   );
