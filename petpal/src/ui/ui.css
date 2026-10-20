@@ -25823,3 +25823,567 @@ html[data-theme="dark"] .pp-safeZone__map { border-color: rgba(74, 222, 128, 0.3
   border-width: 1.5px;
   background: #fff;
 }
+
+/* ===== My Pets / Public profile friendly redesign ===== */
+.pp-myPetsHeader__sub {
+  margin: 6px 0 0;
+  color: var(--pp-muted, #667085);
+  font-size: 14px;
+}
+.pp-myPetsAddWide {
+  width: 100%;
+  margin-top: 12px;
+  min-height: 48px;
+  border-radius: 16px;
+}
+.pp-myPetsPackCard {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  padding: 0;
+}
+.pp-petCardFriendly {
+  display: grid;
+  gap: 12px;
+}
+.pp-petCardFriendly__top {
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  gap: 12px;
+  align-items: start;
+}
+.pp-petCardFriendly__photo {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: zoom-in;
+}
+.pp-petCardFriendly__photo:disabled {
+  cursor: default;
+}
+.pp-petCardFriendly__photo .pp-petAvatar {
+  width: 64px !important;
+  height: 64px !important;
+  box-shadow: 0 0 0 3px #fff, 0 0 0 5px rgba(91, 55, 255, 0.12);
+}
+.pp-petGender {
+  font-weight: 800;
+}
+.pp-petGender.is-m { color: #2e90fa; }
+.pp-petGender.is-f { color: #f670c7; }
+.pp-petTag--soft {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 0;
+}
+.pp-petTag--soft.is-on {
+  background: rgba(18, 183, 106, 0.12);
+  color: #027a48;
+}
+.pp-petTag--soft.is-profile {
+  background: rgba(91, 55, 255, 0.1);
+  color: #5b37ff;
+}
+.pp-petTag--soft.is-off {
+  background: rgba(152, 162, 179, 0.16);
+  color: #475467;
+}
+.pp-petCardFriendly__actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.pp-petCardFriendly__manage {
+  flex: 1;
+  min-height: 42px;
+  border-radius: 12px;
+  color: #5b37ff;
+  border-color: rgba(91, 55, 255, 0.35);
+  background: #fff;
+}
+.pp-btnOutline {
+  color: #5b37ff;
+  border: 1px solid rgba(91, 55, 255, 0.35);
+  background: #fff;
+}
+.pp-btnDangerOutline {
+  color: #d92d20;
+  border: 1px solid rgba(217, 45, 32, 0.28);
+  background: #fff;
+}
+.pp-petCardFriendly__more {
+  width: 42px;
+  height: 42px;
+  min-height: 42px;
+  padding: 0;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+}
+.pp-petCardFriendly__moreWrap {
+  position: relative;
+}
+.pp-petCardFriendly__menu {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 6px);
+  min-width: 220px;
+  background: #fff;
+  border: 1px solid rgba(16, 24, 40, 0.08);
+  border-radius: 14px;
+  box-shadow: 0 16px 40px rgba(16, 24, 40, 0.14);
+  padding: 6px;
+  z-index: 5;
+  display: grid;
+}
+.pp-petCardFriendly__menu button {
+  border: 0;
+  background: transparent;
+  text-align: left;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font: inherit;
+  font-weight: 700;
+  font-size: 13px;
+  color: #152033;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+.pp-petCardFriendly__menu button:hover {
+  background: rgba(91, 55, 255, 0.06);
+}
+.pp-petCardFriendly__menu button.is-danger {
+  color: #d92d20;
+}
+
+.pp-speciesGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.pp-speciesChip {
+  border: 1px solid rgba(16, 24, 40, 0.08);
+  background: #fff;
+  border-radius: 14px;
+  min-height: 70px;
+  display: grid;
+  place-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 800;
+  color: #152033;
+  cursor: pointer;
+}
+.pp-speciesChip span {
+  font-size: 22px;
+  line-height: 1;
+}
+.pp-speciesChip.is-on {
+  border-color: #5b37ff;
+  background: rgba(91, 55, 255, 0.1);
+  color: #5b37ff;
+  box-shadow: 0 0 0 3px rgba(91, 55, 255, 0.08);
+}
+.pp-photoDrop {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  border: 1.5px dashed rgba(91, 55, 255, 0.28);
+  border-radius: 16px;
+  padding: 18px 14px;
+  text-align: center;
+  background: rgba(91, 55, 255, 0.04);
+  margin-bottom: 14px;
+  cursor: pointer;
+}
+.pp-photoDrop__ico {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: rgba(91, 55, 255, 0.1);
+  color: #5b37ff;
+}
+.pp-photoDrop strong {
+  font-size: 14px;
+}
+.pp-photoDrop span {
+  color: var(--pp-muted, #667085);
+  font-size: 12px;
+}
+.pp-photoDrop__input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.pp-iconRoundBtn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid rgba(16, 24, 40, 0.1);
+  background: #fff;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  cursor: pointer;
+}
+.pp-modalHead__lead {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+}
+.pp-editHubStrip {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.pp-btnGhostSm {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  min-height: 34px;
+  padding: 0 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(16, 24, 40, 0.1);
+  background: #fff;
+  font-size: 12px;
+  font-weight: 750;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+.pp-editNavList {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+.pp-editNavItem {
+  display: grid;
+  grid-template-columns: 44px 1fr auto;
+  gap: 12px;
+  align-items: center;
+  padding: 14px;
+  border-radius: 18px;
+  background: #fff;
+  border: 1px solid rgba(16, 24, 40, 0.08);
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+.pp-editNavItem strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  flex-wrap: wrap;
+}
+.pp-editNavItem small {
+  display: block;
+  color: var(--pp-muted, #667085);
+  font-size: 12px;
+  margin-top: 3px;
+  line-height: 1.3;
+}
+.pp-editNavChev {
+  color: #98a2b3;
+  font-size: 20px;
+}
+.pp-editNavIco {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.pp-editNavIco svg { width: 18px; height: 18px; }
+.pp-editNavIco.is-purple { background: rgba(91, 55, 255, 0.1); color: #5b37ff; }
+.pp-editNavIco.is-green { background: #e8f8ef; color: #12b76a; }
+.pp-editNavIco.is-blue { background: rgba(79, 110, 247, 0.12); color: #4f6ef7; }
+.pp-editNavIco.is-pink { background: rgba(246, 61, 104, 0.12); color: #f63d68; }
+
+.pp-gpsLiveToggle {
+  align-items: center;
+}
+.pp-gpsLinkedCard,
+.pp-gpsEmptyCard {
+  margin-top: 14px;
+  border-radius: 18px;
+  padding: 14px;
+  border: 1px solid rgba(16, 24, 40, 0.08);
+  background: #fff;
+}
+.pp-gpsLinkedCard__row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.pp-gpsLinkedCard__img {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #f3f0ff;
+  border: 1px solid rgba(16, 24, 40, 0.08);
+}
+.pp-gpsLinkedCard__actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 14px;
+}
+.pp-gpsEmptyCard {
+  text-align: center;
+  background: linear-gradient(160deg, #f5f3ff, #eef2ff);
+  border-color: rgba(91, 55, 255, 0.12);
+  padding: 28px 16px;
+}
+.pp-gpsEmptyCard__ico {
+  width: 72px;
+  height: 72px;
+  margin: 0 auto 12px;
+  border-radius: 22px;
+  background: rgba(91, 55, 255, 0.1);
+  color: #5b37ff;
+  display: grid;
+  place-items: center;
+}
+.pp-helpBar {
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: #eff8ff;
+  color: #175cd3;
+  font-weight: 750;
+  font-size: 13px;
+  text-decoration: none;
+}
+.pp-helpBar .pp-editNavChev { margin-left: auto; }
+.pp-nfcActiveBanner {
+  margin-top: 12px;
+  border-radius: 16px;
+  padding: 14px;
+  background: #e8f8ef;
+  color: #027a48;
+  display: grid;
+  gap: 2px;
+}
+.pp-nfcActiveBanner small { opacity: 0.9; font-size: 12px; }
+.pp-nfcHow {
+  margin-top: 14px;
+  border-radius: 16px;
+  padding: 14px;
+  background: #f4f0ff;
+  color: #3e1c96;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.pp-nfcHow strong { display: block; font-size: 14px; }
+.pp-nfcHow small { display: block; font-size: 12px; margin-top: 3px; line-height: 1.35; opacity: 0.9; }
+
+.pp-addSuccess__body {
+  text-align: center;
+  padding: 8px 8px 20px;
+}
+.pp-addSuccess__photoWrap {
+  position: relative;
+  width: 120px;
+  margin: 8px auto 0;
+}
+.pp-addSuccess__check {
+  position: absolute;
+  right: -2px;
+  bottom: 4px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #12b76a;
+  color: #fff;
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+  box-shadow: 0 4px 10px rgba(18, 183, 106, 0.35);
+}
+.pp-addSuccess__body h2 {
+  margin: 18px 0 8px;
+  font-size: 24px;
+}
+.pp-linkBtn {
+  background: none;
+  border: 0;
+  color: #5b37ff;
+  font-weight: 800;
+  font-size: 14px;
+  margin-top: 12px;
+  cursor: pointer;
+}
+
+/* Public pet profile */
+.pp-publicPet__sheet {
+  background: #fff;
+  border-radius: 24px;
+  overflow: hidden;
+  border: 1px solid rgba(16, 24, 40, 0.08);
+  box-shadow: 0 12px 32px rgba(21, 32, 51, 0.08);
+}
+.pp-publicPet__banner {
+  height: 168px;
+  background: #ddd;
+}
+.pp-publicPet__bannerImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.pp-publicPet__sheetBody {
+  padding: 0 16px 20px;
+}
+.pp-publicPet__identity {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  margin-top: -36px;
+}
+.pp-publicPet__avatar {
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid #fff;
+  box-shadow: 0 6px 16px rgba(21, 32, 51, 0.12);
+  background: #eee;
+}
+.pp-publicPet__identityText {
+  padding-bottom: 6px;
+  min-width: 0;
+}
+.pp-publicPet__identityText h1 {
+  margin: 0;
+  font-size: 24px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #152033;
+}
+.pp-publicPet__gender.is-m { color: #2e90fa; }
+.pp-publicPet__gender.is-f { color: #f670c7; }
+.pp-publicPet__metaLine {
+  margin: 4px 0 0;
+  color: #667085;
+  font-size: 13px;
+}
+.pp-publicPet__foundNote {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: #fff7ed;
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  color: #9a3412;
+  font-size: 13px;
+  line-height: 1.4;
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+.pp-publicPet__foundNote strong {
+  display: block;
+  margin-bottom: 2px;
+}
+.pp-publicPet__contactBar {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  gap: 8px;
+  align-items: center;
+}
+.pp-publicPet__contactMain {
+  min-height: 48px;
+  border-radius: 16px;
+  background: linear-gradient(90deg, #5b37ff, #4f6ef7) !important;
+  border: 0 !important;
+}
+.pp-publicPet__contactMain.is-disabled {
+  opacity: 0.55;
+  pointer-events: none;
+}
+.pp-publicPet__iconBtn {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 1px solid rgba(91, 55, 255, 0.28);
+  color: #5b37ff;
+  display: grid;
+  place-items: center;
+  background: #fff;
+  text-decoration: none;
+}
+.pp-publicPet__ownerLine {
+  margin: 10px 0 0;
+  color: #667085;
+  font-size: 13px;
+}
+.pp-publicPet__section {
+  margin-top: 18px;
+}
+.pp-publicPet__section h2 {
+  margin: 0 0 8px;
+  font-size: 15px;
+  font-weight: 900;
+  color: #152033;
+}
+.pp-publicPet__about {
+  margin: 0;
+  color: #667085;
+  font-size: 14px;
+  line-height: 1.45;
+}
+.pp-publicPet__sheet .pp-publicPet__friendlyChip {
+  background: rgba(91, 55, 255, 0.08);
+  color: #5b37ff;
+  font-size: 13px;
+  border: 1px solid rgba(91, 55, 255, 0.16);
+}
+.pp-publicPet__sheet .pp-publicPet__kvRow {
+  border-bottom: 1px solid rgba(16, 24, 40, 0.08);
+  font-size: 13px;
+}
+.pp-publicPet__sheet .pp-publicPet__kvRow dt { color: #667085; }
+.pp-publicPet__sheet .pp-publicPet__kvRow dd { color: #152033; }
+.pp-publicPet__sheet .pp-publicPet__actions .pp-btn {
+  min-height: 46px;
+  font-size: 14px;
+  background: #5b37ff;
+}
+.pp-publicPet__sheet .pp-publicPet__tips {
+  color: #667085;
+  font-size: 13px;
+}
+.pp-publicPet__sheet .pp-publicPet__footer,
+.pp-publicPet__sheet .pp-publicPet__homeLink {
+  color: #667085;
+}
+@media (max-width: 420px) {
+  .pp-publicPet__contactBar {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+  .pp-publicPet__contactMain {
+    grid-column: 1 / -1;
+  }
+}

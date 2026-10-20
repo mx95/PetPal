@@ -18,16 +18,54 @@ function firstNonEmpty(...values) {
   return '';
 }
 
-function ContactRow({ label, value, href }) {
+function formatAgeFromDob(dob, t) {
+  if (!dob) return '';
+  const born = new Date(`${dob}T00:00:00`);
+  if (Number.isNaN(born.getTime())) return '';
+  const now = new Date();
+  let years = now.getFullYear() - born.getFullYear();
+  const m = now.getMonth() - born.getMonth();
+  if (m < 0 || (m === 0 && now.getDate() < born.getDate())) years -= 1;
+  if (years < 1) {
+    let months = (now.getFullYear() - born.getFullYear()) * 12 + (now.getMonth() - born.getMonth());
+    if (now.getDate() < born.getDate()) months -= 1;
+    if (months < 1) return t('myPets.ageUnderOneMonth');
+    return t('myPets.ageMonths', { count: months });
+  }
+  return t('myPets.ageYears', { count: years });
+}
+
+function IconPhone() {
   return (
-    <div className="pp-publicPet__metaRow">
-      <span className="pp-publicPet__metaLabel">{label}</span>
-      {href && value ? (
-        <a className="pp-publicPet__metaValue" href={href}>{value}</a>
-      ) : (
-        <span className="pp-publicPet__metaValue">{value || '-'}</span>
-      )}
-    </div>
+    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M8 3h3l1.5 4-2 1.5a11 11 0 0 0 5 5L17 11.5 21 13v3a2 2 0 0 1-2 2A14 14 0 0 1 5 5a2 2 0 0 1 2-2z" />
+    </svg>
+  );
+}
+
+function IconMsg() {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 5h16v12H8l-4 3V5z" />
+    </svg>
+  );
+}
+
+function IconMail() {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <path d="m4 7 8 6 8-6" />
+    </svg>
+  );
+}
+
+function IconAlert() {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 9v4M12 17h.01" />
+      <path d="M10.3 4.2 2.6 18a2 2 0 0 0 1.7 3h15.4a2 2 0 0 0 1.7-3L13.7 4.2a2 2 0 0 0-3.4 0z" />
+    </svg>
   );
 }
 
@@ -41,8 +79,7 @@ export default function PublicPetProfile() {
 
   const petId = useMemo(() => {
     const q = new URLSearchParams(location.search).get('id');
-    const candidate = (q || params.id || '').trim();
-    return candidate;
+    return (q || params.id || '').trim();
   }, [location.search, params.id]);
 
   useEffect(() => {
@@ -88,7 +125,6 @@ export default function PublicPetProfile() {
           gender: raw.gender === 'female' ? 'female' : 'male',
           dob: firstNonEmpty(raw.dob, raw.dateOfBirth),
           color: firstNonEmpty(raw.color, raw.colorScheme),
-          microchip: firstNonEmpty(raw.microchip, raw.microchipNo, petId),
           traits: firstNonEmpty(raw.traits, raw.identifyingMarks),
           notes: firstNonEmpty(raw.notes, raw.medicalNotes, raw.description),
           veterinarian: getSafe(raw.veterinarian),
@@ -134,6 +170,21 @@ export default function PublicPetProfile() {
     };
   }, [petId, t]);
 
+  const ageLabel = profile ? formatAgeFromDob(profile.dob, t) : '';
+  const metaLine = profile
+    ? [profile.breed, ageLabel, profile.color].filter(Boolean).join(' · ')
+    : '';
+  const aboutText = profile ? firstNonEmpty(profile.notes, profile.traits, t('petPublic.aboutFallback')) : '';
+  const phoneDigits = profile?.owner?.phone1 ? profile.owner.phone1.replace(/\D/g, '') : '';
+  const friendlyActive = profile
+    ? [
+        profile.friendlyWith.dogs ? ['dogs', t('petPublic.dogs')] : null,
+        profile.friendlyWith.people ? ['people', t('petPublic.people')] : null,
+        profile.friendlyWith.children ? ['children', t('petPublic.children')] : null,
+        profile.friendlyWith.cats ? ['cats', t('petPublic.cats')] : null,
+      ].filter(Boolean)
+    : [];
+
   return (
     <div className="pp-publicPet">
       <main className="pp-publicPet__wrap">
@@ -142,100 +193,143 @@ export default function PublicPetProfile() {
         {!loading && error ? <p className="pp-publicPet__state pp-publicPet__state--error">{error}</p> : null}
 
         {!loading && !error && profile ? (
-          <>
-            <section className="pp-publicPet__hero">
-              <img className="pp-publicPet__photo" src={profile.imageUrl} alt={profile.name} />
-              <h1>{profile.name}</h1>
-              <p>{t('petPublic.heroMessage')}</p>
-            </section>
+          <article className="pp-publicPet__sheet">
+            <div className="pp-publicPet__banner">
+              <img className="pp-publicPet__bannerImg" src={profile.imageUrl} alt="" />
+            </div>
 
-            <section className="pp-publicPet__card">
-              <h2>{t('petPublic.dogInfo')}</h2>
-              <dl className="pp-publicPet__kv">
-                <div className="pp-publicPet__kvRow"><dt>{t('petPublic.name')}</dt><dd>{profile.name}</dd></div>
-                <div className="pp-publicPet__kvRow"><dt>{t('petPublic.breed')}</dt><dd>{profile.breed || '-'}</dd></div>
-                <div className="pp-publicPet__kvRow"><dt>{t('petPublic.gender')}</dt><dd>{profile.gender === 'female' ? t('petPublic.female') : t('petPublic.male')}</dd></div>
-                <div className="pp-publicPet__kvRow"><dt>{t('petPublic.dob')}</dt><dd>{profile.dob || '-'}</dd></div>
-                <div className="pp-publicPet__kvRow"><dt>{t('petPublic.color')}</dt><dd>{profile.color || '-'}</dd></div>
-                <div className="pp-publicPet__kvRow"><dt>{t('petPublic.microchip')}</dt><dd>{profile.microchip}</dd></div>
-                <div className="pp-publicPet__kvRow"><dt>{t('petPublic.traits')}</dt><dd>{profile.traits || '-'}</dd></div>
-                <div className="pp-publicPet__kvRow"><dt>{t('petPublic.medicalNotes')}</dt><dd>{profile.notes || '-'}</dd></div>
-                <div className="pp-publicPet__kvRow"><dt>{t('petPublic.veterinarian')}</dt><dd>{profile.veterinarian || '-'}</dd></div>
-              </dl>
-            </section>
+            <div className="pp-publicPet__sheetBody">
+              <header className="pp-publicPet__identity">
+                <img className="pp-publicPet__avatar" src={profile.imageUrl} alt={profile.name} />
+                <div className="pp-publicPet__identityText">
+                  <h1>
+                    {profile.name}{' '}
+                    <span className={`pp-publicPet__gender ${profile.gender === 'female' ? 'is-f' : 'is-m'}`} aria-hidden>
+                      {profile.gender === 'female' ? '♀' : '♂'}
+                    </span>
+                  </h1>
+                  {metaLine ? <p className="pp-publicPet__metaLine">{metaLine}</p> : null}
+                </div>
+              </header>
 
-            <section className="pp-publicPet__card">
-              <h2>{t('petPublic.friendly')}</h2>
-              <div className="pp-publicPet__friendlyRow">
-                <span className={`pp-publicPet__friendlyChip ${profile.friendlyWith.people ? 'is-yes' : 'is-no'}`}>
-                  {profile.friendlyWith.people ? '✅' : '❌'} {t('petPublic.people')}
-                </span>
-                <span className={`pp-publicPet__friendlyChip ${profile.friendlyWith.children ? 'is-yes' : 'is-no'}`}>
-                  {profile.friendlyWith.children ? '✅' : '❌'} {t('petPublic.children')}
-                </span>
-                <span className={`pp-publicPet__friendlyChip ${profile.friendlyWith.dogs ? 'is-yes' : 'is-no'}`}>
-                  {profile.friendlyWith.dogs ? '✅' : '❌'} {t('petPublic.dogs')}
-                </span>
-                <span className={`pp-publicPet__friendlyChip ${profile.friendlyWith.cats ? 'is-yes' : 'is-no'}`}>
-                  {profile.friendlyWith.cats ? '✅' : '❌'} {t('petPublic.cats')}
-                </span>
+              <div className="pp-publicPet__foundNote" role="note">
+                <IconAlert />
+                <div>
+                  <strong>{t('petPublic.foundTitle')}</strong>
+                  <span>{t('petPublic.foundBody')}</span>
+                </div>
               </div>
-            </section>
 
-            <section className="pp-publicPet__card">
-              <h2>{t('petPublic.contactOwner')}</h2>
-              <div className="pp-publicPet__meta">
-                <ContactRow label={t('petPublic.owner')} value={profile.owner.name || '-'} />
-                <ContactRow label={t('petPublic.phone')} value={profile.owner.phone1} />
-                <ContactRow label={t('petPublic.email')} value={profile.owner.email} href={profile.owner.email ? `mailto:${profile.owner.email}` : ''} />
-                <ContactRow label={t('petPublic.location')} value={profile.owner.location} />
-              </div>
-              <div className="pp-publicPet__actions">
-                {profile.owner.phone1 ? <a className="pp-btn pp-btnPrimary" href={`tel:${profile.owner.phone1}`}>{t('petPublic.callNow')}</a> : null}
-                {profile.owner.phone1 ? <a className="pp-btn" href={`https://wa.me/${profile.owner.phone1.replace(/\D/g, '')}`} target="_blank" rel="noreferrer">{t('petPublic.sendWhatsApp')}</a> : null}
-                {profile.owner.mapsQuery || profile.owner.location ? (
-                  <a className="pp-btn" href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(profile.owner.mapsQuery || profile.owner.location)}`} target="_blank" rel="noreferrer">
-                    {t('petPublic.openMaps')}
+              <div className="pp-publicPet__contactBar">
+                {profile.owner.phone1 ? (
+                  <a className="pp-btn pp-btnPrimary pp-publicPet__contactMain" href={`tel:${profile.owner.phone1}`}>
+                    {t('petPublic.contactOwner')}
+                  </a>
+                ) : (
+                  <span className="pp-btn pp-btnPrimary pp-publicPet__contactMain is-disabled">{t('petPublic.contactOwner')}</span>
+                )}
+                {profile.owner.phone1 ? (
+                  <a className="pp-publicPet__iconBtn" href={`tel:${profile.owner.phone1}`} aria-label={t('petPublic.callNow')}>
+                    <IconPhone />
+                  </a>
+                ) : null}
+                {phoneDigits ? (
+                  <a
+                    className="pp-publicPet__iconBtn"
+                    href={`https://wa.me/${phoneDigits}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label={t('petPublic.sendWhatsApp')}
+                  >
+                    <IconMsg />
+                  </a>
+                ) : null}
+                {profile.owner.email ? (
+                  <a className="pp-publicPet__iconBtn" href={`mailto:${profile.owner.email}`} aria-label={t('petPublic.email')}>
+                    <IconMail />
                   </a>
                 ) : null}
               </div>
-            </section>
 
-            <section className="pp-publicPet__card">
-              <h2>{t('petPublic.contactVet')}</h2>
-              <p className="pp-publicPet__person">{profile.vet.name || t('petPublic.vet')}</p>
-              <div className="pp-publicPet__meta">
-                <ContactRow label={t('petPublic.phone')} value={profile.vet.phone1} />
-                <ContactRow label={t('petPublic.email')} value={profile.vet.email} />
-                <ContactRow label={t('petPublic.location')} value={profile.vet.location} />
-              </div>
-              <div className="pp-publicPet__actions">
-                {profile.vet.phone1 ? <a className="pp-btn pp-btnPrimary" href={`tel:${profile.vet.phone1}`}>{t('petPublic.callNow')}</a> : null}
-                {profile.vet.phone1 ? <a className="pp-btn" href={`https://wa.me/${profile.vet.phone1.replace(/\D/g, '')}`} target="_blank" rel="noreferrer">{t('petPublic.sendWhatsApp')}</a> : null}
-                {profile.vet.mapsQuery || profile.vet.location ? (
-                  <a className="pp-btn" href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(profile.vet.mapsQuery || profile.vet.location)}`} target="_blank" rel="noreferrer">
-                    {t('petPublic.openMaps')}
-                  </a>
-                ) : null}
-              </div>
-            </section>
+              {profile.owner.name || profile.owner.location ? (
+                <p className="pp-publicPet__ownerLine">
+                  {profile.owner.name ? <strong>{profile.owner.name}</strong> : null}
+                  {profile.owner.name && profile.owner.location ? ' · ' : null}
+                  {profile.owner.location || null}
+                </p>
+              ) : null}
 
-            <section className="pp-publicPet__card">
-              <h2>{t('petPublic.emergencyTitle')}</h2>
-              <ol className="pp-publicPet__tips">
-                <li>{t('petPublic.emergencyText1')}</li>
-                <li>{t('petPublic.emergencyText2')}</li>
-                <li>{t('petPublic.emergencyText3')}</li>
-                <li>{t('petPublic.emergencyText4')}</li>
-              </ol>
-            </section>
+              <section className="pp-publicPet__section">
+                <h2>{t('petPublic.aboutHeading')}</h2>
+                <p className="pp-publicPet__about">{aboutText}</p>
+              </section>
 
-            <p className="pp-publicPet__nfc">📡 {t('petPublic.nfcNote')}</p>
-            <p className="pp-publicPet__footer">{t('petPublic.footerThank')}</p>
-            <p className="pp-publicPet__homeLink">
-              <Link to="/">PetPal</Link>
-            </p>
-          </>
+              {friendlyActive.length ? (
+                <section className="pp-publicPet__section">
+                  <h2>{t('petPublic.friendly')}</h2>
+                  <div className="pp-publicPet__friendlyRow">
+                    {friendlyActive.map(([key, label]) => (
+                      <span key={key} className="pp-publicPet__friendlyChip is-yes">
+                        {label}
+                      </span>
+                    ))}
+                  </div>
+                </section>
+              ) : null}
+
+              <section className="pp-publicPet__section">
+                <h2>{t('petPublic.dogInfo')}</h2>
+                <dl className="pp-publicPet__kv">
+                  <div className="pp-publicPet__kvRow"><dt>{t('petPublic.breed')}</dt><dd>{profile.breed || '-'}</dd></div>
+                  <div className="pp-publicPet__kvRow">
+                    <dt>{t('petPublic.gender')}</dt>
+                    <dd>{profile.gender === 'female' ? t('petPublic.female') : t('petPublic.male')}</dd>
+                  </div>
+                  <div className="pp-publicPet__kvRow"><dt>{t('petPublic.dob')}</dt><dd>{profile.dob || '-'}</dd></div>
+                  <div className="pp-publicPet__kvRow"><dt>{t('petPublic.color')}</dt><dd>{profile.color || '-'}</dd></div>
+                  {profile.traits ? (
+                    <div className="pp-publicPet__kvRow"><dt>{t('petPublic.traits')}</dt><dd>{profile.traits}</dd></div>
+                  ) : null}
+                  {profile.notes ? (
+                    <div className="pp-publicPet__kvRow"><dt>{t('petPublic.medicalNotes')}</dt><dd>{profile.notes}</dd></div>
+                  ) : null}
+                  {profile.veterinarian ? (
+                    <div className="pp-publicPet__kvRow"><dt>{t('petPublic.veterinarian')}</dt><dd>{profile.veterinarian}</dd></div>
+                  ) : null}
+                </dl>
+              </section>
+
+              {(profile.vet.name || profile.vet.phone1 || profile.vet.email) ? (
+                <section className="pp-publicPet__section">
+                  <h2>{t('petPublic.contactVet')}</h2>
+                  {profile.vet.name ? <p className="pp-publicPet__person">{profile.vet.name}</p> : null}
+                  <div className="pp-publicPet__actions">
+                    {profile.vet.phone1 ? <a className="pp-btn pp-btnPrimary" href={`tel:${profile.vet.phone1}`}>{t('petPublic.callNow')}</a> : null}
+                    {profile.vet.phone1 ? (
+                      <a className="pp-btn" href={`https://wa.me/${profile.vet.phone1.replace(/\D/g, '')}`} target="_blank" rel="noreferrer">
+                        {t('petPublic.sendWhatsApp')}
+                      </a>
+                    ) : null}
+                  </div>
+                </section>
+              ) : null}
+
+              <section className="pp-publicPet__section">
+                <h2>{t('petPublic.emergencyTitle')}</h2>
+                <ol className="pp-publicPet__tips">
+                  <li>{t('petPublic.emergencyText1')}</li>
+                  <li>{t('petPublic.emergencyText2')}</li>
+                  <li>{t('petPublic.emergencyText3')}</li>
+                  <li>{t('petPublic.emergencyText4')}</li>
+                </ol>
+              </section>
+
+              <p className="pp-publicPet__footer">{t('petPublic.footerThank')}</p>
+              <p className="pp-publicPet__homeLink">
+                <Link to="/">PetPal</Link>
+              </p>
+            </div>
+          </article>
         ) : null}
       </main>
     </div>
