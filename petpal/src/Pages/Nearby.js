@@ -6,6 +6,7 @@ import {
   NEARBY_CATEGORIES,
   NEARBY_DEFAULT_CATEGORY_ID,
   NEARBY_SEARCH_RADIUS_M,
+  nearbyCategoryIconUrl,
 } from '../config/nearbyPlaceCategories';
 import { nearbyCategoryForPlace } from '../nearby/classifyNearbyPlace';
 import { filterAcceptableNearbyPlaces } from '../nearby/nearbyPlaceQuality';
@@ -88,6 +89,7 @@ function NearbyMap({ apiKey }) {
   const moreSearchGenRef = useRef(0);
   const [locationNote, setLocationNote] = useState(() => ({ kind: 'default' }));
   const [selectedCategoryId, setSelectedCategoryId] = useState(NEARBY_DEFAULT_CATEGORY_ID);
+
   const [searchScope, setSearchScope] = useState('radius');
   const [geoSettled, setGeoSettled] = useState(false);
   const [places, setPlaces] = useState([]);
@@ -444,7 +446,6 @@ function NearbyMap({ apiKey }) {
         className="pp-nearby-grid"
         role="group"
         aria-label={t('nearbyPage.ariaCategories')}
-        style={{ marginTop: 14 }}
       >
         {NEARBY_CATEGORIES.map((c) => {
           const active = c.id === selectedCategoryId;
@@ -457,11 +458,16 @@ function NearbyMap({ apiKey }) {
               onClick={() => setSelectedCategoryId(c.id)}
               aria-pressed={active}
             >
-              <span className="pp-nearby-tile__icon" aria-hidden>
-                {c.icon}
-              </span>
+              <img
+                className="pp-nearby-tile__img"
+                src={nearbyCategoryIconUrl(c.id)}
+                alt=""
+                width="32"
+                height="32"
+                loading="eager"
+                decoding="async"
+              />
               <span className="pp-nearby-tile__label">{loc.label}</span>
-              <span className="pp-nearby-tile__desc">{loc.description}</span>
             </button>
           );
         })}

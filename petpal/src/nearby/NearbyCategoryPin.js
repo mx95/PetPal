@@ -19,7 +19,7 @@ function mapsPoint(x, y) {
 }
 
 /**
- * Static SVG pins under /nearby-pins — real URLs (not canvas data-URLs) so iOS
+ * Static PNG pins (cropped category artwork) under /nearby-pins — real URLs (not canvas data-URLs) so iOS
  * Maps renders them, without Marker emoji labels that Google strokes/doubles.
  */
 function iconForCategory(categoryId, active) {
@@ -28,7 +28,7 @@ function iconForCategory(categoryId, active) {
   const cached = ICON_CACHE.get(key);
   if (cached) return cached;
 
-  const file = active ? `${id}-active.svg` : `${id}.svg`;
+  const file = active ? `${id}-active.png` : `${id}.png`;
   const icon = {
     url: `${process.env.PUBLIC_URL || ''}/nearby-pins/${file}`,
     scaledSize: mapsSize(48, 55),

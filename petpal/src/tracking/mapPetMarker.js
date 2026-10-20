@@ -55,7 +55,7 @@ export function buildMapPetPinHtml({ photoUrl, placeholderEmoji, sourceKind, nam
 
   return `
     <div class="pp-mapPetPin" role="img" aria-label="${safeName}">
-      <span class="pp-mapPetPin__badge pp-mapPetPin__badge--${badge.kind}" title="${badge.kind}">${trackSourceIconSvg(badge.kind, 11)}</span>
+      <span class="pp-mapPetPin__badge pp-mapPetPin__badge--${badge.kind}" title="${badge.kind}">${trackSourceIconSvg(badge.kind, badge.kind === 'wifi' ? 11 : 25)}</span>
       <div class="pp-mapPetPin__head">${inner}</div>
       <span class="pp-mapPetPin__stem" aria-hidden="true"></span>
     </div>`;

@@ -1445,7 +1445,7 @@ export default function Tracking() {
                         : liveSourceTooltip
                     }
                   >
-                    <IconTrackSource kind={liveSourceKind} size={13} />
+                    <IconTrackSource kind={liveSourceKind} size={liveSourceKind === 'wifi' ? 13 : 20} />
                     {liveSourceLabel}
                   </span>
                   {batPct != null ? <TrackBatteryBadge pct={batPct} isCharging={isCharging} t={t} /> : null}
@@ -1520,7 +1520,7 @@ export default function Tracking() {
                   <span className={`pp-trackLiveStatus__fresh${signalLive ? ' is-live' : ''}`}>{lastUpdateLabel}</span>
                   {displayPosition?.source ? (
                     <span className={`pp-trackLiveStatus__source pp-trackLiveStatus__source--${liveSourceKind}`}>
-                      <IconTrackSource kind={liveSourceKind} size={13} />
+                      <IconTrackSource kind={liveSourceKind} size={liveSourceKind === 'wifi' ? 13 : 20} />
                       {liveSourceLabel}
                     </span>
                   ) : null}

@@ -118,6 +118,11 @@ export const PET_CAFE_EXTRA_SEARCHES = [
   { type: 'cafe', keyword: 'pet friendly' },
 ];
 
+/** Cropped category artwork in /public/nearby-icons/<id>.png */
+export function nearbyCategoryIconUrl(id) {
+  return `${process.env.PUBLIC_URL || ''}/nearby-icons/${id}.png`;
+}
+
 export function getCategoryById(id, t) {
   const c = NEARBY_CATEGORIES.find((x) => x.id === id) || NEARBY_CATEGORIES[0];
   if (typeof t !== 'function') return c;

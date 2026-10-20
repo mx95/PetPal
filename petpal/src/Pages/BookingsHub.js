@@ -127,12 +127,12 @@ function BrowseProviders() {
 
   const serviceTabs = useMemo(
     () => [
-      { id: 'vet', emoji: '🐾', label: t('bookingsHub.tabVet') },
-      { id: 'hotel', emoji: '🏨', label: t('bookingsHub.tabHotel') },
-      { id: 'bath', emoji: '🛁', label: t('bookingsHub.tabBath') },
-      { id: 'saloon', emoji: '✂️', label: t('bookingsHub.tabGroom') },
-      { id: 'spa', emoji: '✨', label: t('bookingsHub.tabSpa') },
-      { id: 'walker', emoji: '🦮', label: t('bookingsHub.tabWalker') },
+      { id: 'vet', emoji: '🐾', iconSrc: `${process.env.PUBLIC_URL || ''}/ui-icons/book-vet.png`, label: t('bookingsHub.tabVet') },
+      { id: 'hotel', emoji: '🏨', iconSrc: `${process.env.PUBLIC_URL || ''}/ui-icons/book-hotel.png`, label: t('bookingsHub.tabHotel') },
+      { id: 'bath', emoji: '🛁', iconSrc: `${process.env.PUBLIC_URL || ''}/ui-icons/book-bath.png`, label: t('bookingsHub.tabBath') },
+      { id: 'saloon', emoji: '✂️', iconSrc: `${process.env.PUBLIC_URL || ''}/ui-icons/book-saloon.png`, label: t('bookingsHub.tabGroom') },
+      { id: 'spa', emoji: '✨', iconSrc: `${process.env.PUBLIC_URL || ''}/ui-icons/book-spa.png`, label: t('bookingsHub.tabSpa') },
+      { id: 'walker', emoji: '🦮', iconSrc: `${process.env.PUBLIC_URL || ''}/ui-icons/book-walker.png`, label: t('bookingsHub.tabWalker') },
     ],
     [t]
   );
