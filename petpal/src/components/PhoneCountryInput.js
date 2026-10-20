@@ -12,6 +12,7 @@ import { getPhoneCountry, PHONE_COUNTRIES } from '../shop/phoneCountries';
  *   required?: boolean,
  *   id?: string,
  *   placeholder?: string,
+ *   compact?: boolean,
  * }} props
  */
 export default function PhoneCountryInput({
@@ -23,16 +24,19 @@ export default function PhoneCountryInput({
   required = false,
   id = 'checkout-phone',
   placeholder = '',
+  compact = false,
 }) {
   const { t } = useI18n();
   const selected = getPhoneCountry(countryCode) || PHONE_COUNTRIES[0];
 
   return (
-    <div className="pp-phoneCountryInput">
+    <div className={`pp-phoneCountryInput${compact ? ' pp-phoneCountryInput--compact' : ''}`}>
       <label className="pp-phoneCountryInput__countryWrap" htmlFor={`${id}-country`}>
-        <span className="pp-phoneCountryInput__flag" aria-hidden="true">
-          {selected.flag}
-        </span>
+        {compact ? null : (
+          <span className="pp-phoneCountryInput__flag" aria-hidden="true">
+            {selected.flag}
+          </span>
+        )}
         <select
           id={`${id}-country`}
           className="pp-phoneCountryInput__country"

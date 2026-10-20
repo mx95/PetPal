@@ -21066,6 +21066,28 @@ html[data-theme="dark"] .pp-nearby-list > li {
   box-shadow: 0 0 0 3px rgba(91, 55, 255, 0.12);
 }
 
+/* Compact dial code (~4 chars like +357) + wide national number */
+.pp-phoneCountryInput--compact {
+  grid-template-columns: 64px minmax(0, 1fr);
+  gap: 8px;
+}
+.pp-phoneCountryInput--compact .pp-phoneCountryInput__country {
+  padding: 12px 4px;
+  text-align: center;
+}
+.pp-phoneCountryInput--compact .pp-phoneCountryInput__dial {
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.pp-phoneCountryInput--compact .pp-phoneCountryInput__number {
+  min-width: 0;
+  flex: 1;
+}
+
 .pp-shopCheckout__actions {
   display: flex;
   flex-wrap: wrap;
@@ -21254,6 +21276,9 @@ html[data-theme="dark"] .pp-nearby-list > li {
   .pp-phoneCountryInput {
     grid-template-columns: minmax(108px, 132px) minmax(0, 1fr);
     gap: 8px;
+  }
+  .pp-phoneCountryInput--compact {
+    grid-template-columns: 64px minmax(0, 1fr);
   }
 }
 
@@ -25974,22 +25999,67 @@ html[data-theme="dark"] .pp-safeZone__map { border-color: rgba(74, 222, 128, 0.3
   gap: 8px;
   margin-bottom: 14px;
 }
+.pp-speciesCarousel {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  gap: 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+  min-height: 86px;
+  padding: 2px 2px 10px;
+  margin: 0 -4px 14px;
+  scrollbar-width: thin;
+}
+.pp-speciesCarousel::-webkit-scrollbar {
+  height: 4px;
+}
+.pp-speciesCarousel::-webkit-scrollbar-thumb {
+  background: rgba(16, 24, 40, 0.18);
+  border-radius: 999px;
+}
 .pp-speciesChip {
   border: 1px solid rgba(16, 24, 40, 0.08);
   background: #fff;
   border-radius: 14px;
-  min-height: 70px;
-  display: grid;
-  place-items: center;
-  gap: 4px;
+  min-height: 74px;
+  min-width: 72px;
+  width: 72px;
+  flex: 0 0 72px;
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 4px;
   font-size: 11px;
   font-weight: 800;
   color: #152033;
   cursor: pointer;
+  text-align: center;
 }
-.pp-speciesChip span {
+.pp-speciesChip__ico,
+.pp-speciesChip span:first-child {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
   font-size: 22px;
   line-height: 1;
+}
+.pp-speciesChip__label {
+  display: block;
+  width: 100%;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.15;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .pp-speciesChip.is-on {
   border-color: #5b37ff;
@@ -26319,6 +26389,9 @@ html[data-theme="dark"] .pp-safeZone__map { border-color: rgba(74, 222, 128, 0.3
 .pp-profileField--phone .pp-phoneCountryInput {
   width: 100%;
   min-width: 0;
+}
+.pp-profileField--phone .pp-phoneCountryInput--compact {
+  grid-template-columns: 64px minmax(0, 1fr);
 }
 .pp-profileExtraCard {
   border-radius: 16px;

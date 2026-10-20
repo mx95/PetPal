@@ -747,6 +747,7 @@ export default function Profile() {
                             onCountryChange={setPhoneCountry}
                             onNationalChange={setPhoneNational}
                             placeholder="9999 7740"
+                            compact
                           />
                         </div>
                       </div>
@@ -790,6 +791,7 @@ export default function Profile() {
                                   nationalValue={phone2National}
                                   onCountryChange={setPhone2Country}
                                   onNationalChange={setPhone2National}
+                                  compact
                                 />
                               </div>
                             </div>
@@ -803,6 +805,7 @@ export default function Profile() {
                                   nationalValue={waNational}
                                   onCountryChange={setWaCountry}
                                   onNationalChange={setWaNational}
+                                  compact
                                 />
                               </div>
                             </div>

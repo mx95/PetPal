@@ -865,34 +865,19 @@ export default function MyPets() {
             </div>
 
             <form className="pp-form pp-modalForm" onSubmit={submitAdd}>
-              <div className="pp-speciesGrid" role="group" aria-label={t('myPets.category')}>
-                {['dog', 'cat', 'rabbit', 'other'].map((id) => {
-                  const c = PET_CATEGORIES.find((row) => row.id === id) || PET_CATEGORIES[0];
-                  return (
-                    <button
-                      key={c.id}
-                      type="button"
-                      className={`pp-speciesChip ${categoryId === c.id ? 'is-on' : ''}`}
-                      onClick={() => setCategoryId(c.id)}
-                    >
-                      <span aria-hidden>{c.emoji}</span>
-                      {t(`categories.${c.id}`)}
-                    </button>
-                  );
-                })}
+              <div className="pp-speciesCarousel" role="group" aria-label={t('myPets.category')}>
+                {PET_CATEGORIES.map((c) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    className={`pp-speciesChip ${categoryId === c.id ? 'is-on' : ''}`}
+                    onClick={() => setCategoryId(c.id)}
+                  >
+                    <span className="pp-speciesChip__ico" aria-hidden>{c.emoji}</span>
+                    <span className="pp-speciesChip__label">{t(`categories.${c.id}`)}</span>
+                  </button>
+                ))}
               </div>
-              {!['dog', 'cat', 'rabbit', 'other'].includes(categoryId) ? (
-                <div style={{ marginBottom: 12 }}>
-                  <div className="pp-label">{t('myPets.category')}</div>
-                  <PrettySelect value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
-                    {PET_CATEGORIES.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.emoji} {t(`categories.${c.id}`)}
-                      </option>
-                    ))}
-                  </PrettySelect>
-                </div>
-              ) : null}
 
               <label className="pp-photoDrop pp-photoDrop--compact" htmlFor={addPhotoInputId}>
                 <span className="pp-photoDrop__ico" aria-hidden><IconCam /></span>

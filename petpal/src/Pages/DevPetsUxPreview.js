@@ -100,11 +100,23 @@ export default function DevPetsUxPreview() {
         <div className="pp-modalCard pp-modalCard--petAdd pp-pad">
           <h2 className="pp-sectionTitle" style={{ marginTop: 0 }}>Add a pet</h2>
           <p className="pp-subtle">Start with the basics — you can link GPS later.</p>
-          <div className="pp-speciesGrid">
-            <button type="button" className="pp-speciesChip is-on"><span>🐕</span>Dog</button>
-            <button type="button" className="pp-speciesChip"><span>🐈</span>Cat</button>
-            <button type="button" className="pp-speciesChip"><span>🐰</span>Rabbit</button>
-            <button type="button" className="pp-speciesChip"><span>🐾</span>Other</button>
+          <div className="pp-speciesCarousel">
+            {[
+              ['🐕', 'Dog', true],
+              ['🐈', 'Cat'],
+              ['🐰', 'Rabbit'],
+              ['🐦', 'Bird'],
+              ['🐴', 'Horse'],
+              ['🦎', 'Reptile'],
+              ['🐠', 'Fish'],
+              ['🐹', 'Small'],
+              ['🐾', 'Other'],
+            ].map(([emoji, label, on]) => (
+              <button key={label} type="button" className={`pp-speciesChip${on ? ' is-on' : ''}`}>
+                <span className="pp-speciesChip__ico">{emoji}</span>
+                <span className="pp-speciesChip__label">{label}</span>
+              </button>
+            ))}
           </div>
           <div className="pp-photoDrop pp-photoDrop--compact">
             <span className="pp-photoDrop__ico">📷</span>
@@ -442,9 +454,8 @@ export default function DevPetsUxPreview() {
                 <div className="pp-label">Phone number *</div>
                 <div className="pp-profileField pp-profileField--phone">
                   <span className="pp-profileField__ico is-purple" aria-hidden>☎</span>
-                  <div className="pp-phoneCountryInput">
+                  <div className="pp-phoneCountryInput pp-phoneCountryInput--compact">
                     <label className="pp-phoneCountryInput__countryWrap">
-                      <span className="pp-phoneCountryInput__flag">🇨🇾</span>
                       <select className="pp-phoneCountryInput__country" defaultValue="CY" disabled>
                         <option value="CY">🇨🇾 Cyprus (+357)</option>
                       </select>
@@ -471,9 +482,8 @@ export default function DevPetsUxPreview() {
                     <div className="pp-label">Phone 2</div>
                     <div className="pp-profileField pp-profileField--phone">
                       <span className="pp-profileField__ico is-purple" aria-hidden>☎</span>
-                      <div className="pp-phoneCountryInput">
+                      <div className="pp-phoneCountryInput pp-phoneCountryInput--compact">
                         <label className="pp-phoneCountryInput__countryWrap">
-                          <span className="pp-phoneCountryInput__flag">🇨🇾</span>
                           <select className="pp-phoneCountryInput__country" defaultValue="CY" disabled>
                             <option value="CY">🇨🇾 Cyprus (+357)</option>
                           </select>
@@ -487,9 +497,8 @@ export default function DevPetsUxPreview() {
                     <div className="pp-label">WhatsApp</div>
                     <div className="pp-profileField pp-profileField--phone">
                       <span className="pp-profileField__ico is-green" aria-hidden>💬</span>
-                      <div className="pp-phoneCountryInput">
+                      <div className="pp-phoneCountryInput pp-phoneCountryInput--compact">
                         <label className="pp-phoneCountryInput__countryWrap">
-                          <span className="pp-phoneCountryInput__flag">🇨🇾</span>
                           <select className="pp-phoneCountryInput__country" defaultValue="CY" disabled>
                             <option value="CY">🇨🇾 Cyprus (+357)</option>
                           </select>

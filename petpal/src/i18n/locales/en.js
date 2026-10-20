@@ -1031,8 +1031,10 @@ const en = {
     cat: 'Cat',
     rabbit: 'Rabbit',
     bird: 'Bird',
-    reptile: 'Reptile / amphibian',
-    small: 'Small pet (hamster, etc.)',
+    horse: 'Horse',
+    reptile: 'Reptile',
+    fish: 'Fish',
+    small: 'Small',
     other: 'Other',
   },
   myPets: {
