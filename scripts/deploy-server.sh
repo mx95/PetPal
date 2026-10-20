@@ -365,7 +365,6 @@ deploy_firebase_functions() {
 deploy_firestore_rules
 configure_places_functions_config
 deploy_firebase_functions
-bootstrap_nearby_places_cache_if_needed
 
 ensure_firebase_auth_domain_for_redirect() {
   # Google OAuth must allow https://petpal.com.cy/__/auth/handler before we can
@@ -456,6 +455,15 @@ trap - EXIT
 log "Deploy OK — tracker DB: $TRACKER_DB ($positions_after position rows)"
 log "Tip: hard-refresh the browser (Ctrl+F5) to load the new JS bundle."
 log "Note: JCC shop checkout uses Firebase Cloud Functions — deploy separately with: cd petpal && npm run deploy:shop-functions"
+
+# Nearby CY+GR bootstrap can take >20m; run after the app is live so SSH
+# timeouts do not leave the SPA/tracker undeployed.
+log "Starting Nearby Places cache bootstrap in background (see /var/log/petpal-nearby-bootstrap.log)"
+(
+  set +e
+  bootstrap_nearby_places_cache_if_needed
+) >/var/log/petpal-nearby-bootstrap.log 2>&1 &
+
 
 # One-shot: link return-review collar IMEI to admin account for in-app Live/History.
 link_admin_tracker_imei_oneshot() {
