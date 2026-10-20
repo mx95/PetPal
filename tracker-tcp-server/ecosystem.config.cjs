@@ -40,6 +40,9 @@ function loadEnvFile(filePath) {
   return out;
 }
 
+const serviceAccountCandidates = ["/root/serviceAccount.json", path.join(serverRoot, "..", "petpal", "serviceAccount.json")];
+const serviceAccountFile = serviceAccountCandidates.find((p) => fs.existsSync(p));
+
 const adminEnvFile = process.env.PETPAL_ADMIN_ENV || "/var/lib/petpal/tracker-admin.env";
 const adminEnv = loadEnvFile(adminEnvFile);
 
@@ -65,6 +68,7 @@ module.exports = {
         GPSPOS_DEVICE_IDS: "861397052428990,868022030670736,868022030670793",
         GPSPOS_IMEI_MAP: "861397052428990:9705242899",
         GPSPOS_POLL_INTERVAL_SEC: "60",
+        ...(serviceAccountFile ? { GOOGLE_APPLICATION_CREDENTIALS: serviceAccountFile } : {}),
         ...adminEnv,
       },
     },

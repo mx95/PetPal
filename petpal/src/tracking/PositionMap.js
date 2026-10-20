@@ -484,24 +484,52 @@ function LeafletMapClick({ onMapClick }) {
   return null;
 }
 
-function LeafletHomeLayers({ homeLocation, atHome = false }) {
+const SAFE_ZONE_COLOR = '#16a34a';
+const SAFE_ZONE_STYLE = {
+  color: SAFE_ZONE_COLOR,
+  weight: 2,
+  opacity: 0.85,
+  dashArray: '6 6',
+  fillColor: SAFE_ZONE_COLOR,
+  fillOpacity: 0.1,
+};
+
+function validSafeZone(zone) {
+  if (!zone || zone.enabled === false) return null;
+  const { lat, lng, radiusM } = zone;
+  return Number.isFinite(lat) && Number.isFinite(lng) && Number.isFinite(radiusM) && radiusM > 0 ? zone : null;
+}
+
+function LeafletHomeLayers({ homeLocation, safeZone = null, atHome = false }) {
   const home = homeLocation && Number.isFinite(homeLocation.lat) && Number.isFinite(homeLocation.lng)
     ? homeLocation
     : null;
   const icon = useMemo(() => buildLeafletHomeMarkerIcon({ atHome }), [atHome]);
-  if (!home) return null;
+  const zone = validSafeZone(safeZone);
+  if (!home && !zone) return null;
   return (
     <>
-      <Circle
-        center={[home.lat, home.lng]}
-        radius={HOME_GEOFENCE_METERS}
-        pathOptions={homeGeofencePathOptions()}
-      />
-      <LeafletMarker
-        position={[home.lat, home.lng]}
-        icon={icon}
-        zIndexOffset={atHome ? 200 : 400}
-      />
+      {zone ? (
+        <Circle
+          center={[zone.lat, zone.lng]}
+          radius={zone.radiusM}
+          pathOptions={{ ...SAFE_ZONE_STYLE, interactive: false }}
+        />
+      ) : null}
+      {home ? (
+        <>
+          <Circle
+            center={[home.lat, home.lng]}
+            radius={HOME_GEOFENCE_METERS}
+            pathOptions={homeGeofencePathOptions()}
+          />
+          <LeafletMarker
+            position={[home.lat, home.lng]}
+            icon={icon}
+            zIndexOffset={atHome ? 200 : 400}
+          />
+        </>
+      ) : null}
     </>
   );
 }
@@ -516,6 +544,7 @@ function LeafletLiveLayers({
   liveTrail = [],
   petMarker = null,
   homeLocation = null,
+  safeZone = null,
   atHome = false,
 }) {
   const smooth = useAnimatedLatLng(lat, lng, { enabled: true });
@@ -547,7 +576,7 @@ function LeafletLiveLayers({
           pathOptions={{ color: LIVE_TRAIL, weight: 3, opacity: 0.85, lineCap: 'round', lineJoin: 'round' }}
         />
       ) : null}
-      <LeafletHomeLayers homeLocation={homeLocation} atHome={atHome} />
+      <LeafletHomeLayers homeLocation={homeLocation} safeZone={safeZone} atHome={atHome} />
       {accuracyM != null && accuracyM > 0 ? (
         <Circle center={[smooth.lat, smooth.lng]} radius={accuracyM} pathOptions={accStyle} />
       ) : null}
@@ -613,6 +642,7 @@ function LeafletPositionMap({
   showRouteVertices = false,
   petMarker = null,
   homeLocation = null,
+  safeZone = null,
   atHome = false,
   onMapClick = null,
   mapActive = true,
@@ -706,11 +736,11 @@ function LeafletPositionMap({
             markerLabel={markerLabel}
             liveTrail={liveTrail}
             petMarker={petMarker}
-            homeLocation={homeLocation}
+            homeLocation={homeLocation} safeZone={safeZone}
             atHome={atHome}
           />
         ) : null}
-        {!liveMode ? <LeafletHomeLayers homeLocation={homeLocation} atHome={false} /> : null}
+        {!liveMode ? <LeafletHomeLayers homeLocation={homeLocation} safeZone={safeZone} atHome={false} /> : null}
         {!hasPath && accuracyM != null && accuracyM > 0 ? (
           <Circle
             center={[lat, lng]}
@@ -940,28 +970,48 @@ function GoogleHomeOverlay({ lat, lng, atHome = false }) {
   return null;
 }
 
-function GoogleHomeLayers({ homeLocation, atHome = false }) {
+function GoogleHomeLayers({ homeLocation, safeZone = null, atHome = false }) {
   const home =
     homeLocation && Number.isFinite(homeLocation.lat) && Number.isFinite(homeLocation.lng)
       ? homeLocation
       : null;
-  if (!home) return null;
+  const zone = validSafeZone(safeZone);
+  if (!home && !zone) return null;
   return (
     <>
-      <GoogleCircle
-        center={{ lat: home.lat, lng: home.lng }}
-        radius={HOME_GEOFENCE_METERS}
-        options={{
-          strokeColor: HOME_ACCENT,
-          strokeOpacity: 0.75,
-          strokeWeight: 2,
-          fillColor: HOME_ACCENT,
-          fillOpacity: 0.12,
-          clickable: false,
-          zIndex: 0,
-        }}
-      />
-      <GoogleHomeOverlay lat={home.lat} lng={home.lng} atHome={atHome} />
+      {zone ? (
+        <GoogleCircle
+          center={{ lat: zone.lat, lng: zone.lng }}
+          radius={zone.radiusM}
+          options={{
+            strokeColor: SAFE_ZONE_COLOR,
+            strokeOpacity: 0.85,
+            strokeWeight: 2,
+            fillColor: SAFE_ZONE_COLOR,
+            fillOpacity: 0.1,
+            clickable: false,
+            zIndex: 0,
+          }}
+        />
+      ) : null}
+      {home ? (
+        <>
+          <GoogleCircle
+            center={{ lat: home.lat, lng: home.lng }}
+            radius={HOME_GEOFENCE_METERS}
+            options={{
+              strokeColor: HOME_ACCENT,
+              strokeOpacity: 0.75,
+              strokeWeight: 2,
+              fillColor: HOME_ACCENT,
+              fillOpacity: 0.12,
+              clickable: false,
+              zIndex: 0,
+            }}
+          />
+          <GoogleHomeOverlay lat={home.lat} lng={home.lng} atHome={atHome} />
+        </>
+      ) : null}
     </>
   );
 }
@@ -977,6 +1027,7 @@ function GoogleLiveMapInner({
   onUserPan,
   petMarker = null,
   homeLocation = null,
+  safeZone = null,
   atHome = false,
 }) {
   const smooth = useAnimatedLatLng(lat, lng, { enabled: true });
@@ -996,7 +1047,7 @@ function GoogleLiveMapInner({
       <GoogleUserPanDetector onUserPan={onUserPan} />
       <GoogleFollowPan lat={smooth.lat} lng={smooth.lng} follow={follow} zoom={LIVE_MAP_ZOOM} />
       {trailPath.length > 1 ? <GoogleLiveTrail path={trailPath} /> : null}
-      <GoogleHomeLayers homeLocation={homeLocation} atHome={atHome} />
+      <GoogleHomeLayers homeLocation={homeLocation} safeZone={safeZone} atHome={atHome} />
       {accuracyM != null && accuracyM > 0 ? (
         <GoogleCircle
           center={{ lat: smooth.lat, lng: smooth.lng }}
@@ -1050,6 +1101,7 @@ function GooglePositionMap({
   showRouteVertices = false,
   petMarker = null,
   homeLocation = null,
+  safeZone = null,
   atHome = false,
   onMapClick = null,
   mapActive = true,
@@ -1116,7 +1168,7 @@ function GooglePositionMap({
         recenterLabel={recenterLabel}
         showRouteVertices={showRouteVertices}
         petMarker={petMarker}
-        homeLocation={homeLocation}
+        homeLocation={homeLocation} safeZone={safeZone}
         atHome={atHome}
         onMapClick={onMapClick}
         mapActive={mapActive}
@@ -1189,11 +1241,11 @@ function GooglePositionMap({
             follow={followEnabled}
             onUserPan={() => setFollowEnabled(false)}
             petMarker={petMarker}
-            homeLocation={homeLocation}
+            homeLocation={homeLocation} safeZone={safeZone}
             atHome={atHome}
           />
         ) : null}
-        {!liveMode ? <GoogleHomeLayers homeLocation={homeLocation} atHome={false} /> : null}
+        {!liveMode ? <GoogleHomeLayers homeLocation={homeLocation} safeZone={safeZone} atHome={false} /> : null}
         {!hasPath && accuracyM != null && accuracyM > 0 ? (
           <GoogleCircle
             center={{ lat, lng }}
@@ -1275,6 +1327,7 @@ export default function PositionMap({
   showRouteVertices = false,
   petMarker = null,
   homeLocation = null,
+  safeZone = null,
   atHome = false,
   onMapClick = null,
   mapActive = true,
@@ -1303,7 +1356,7 @@ export default function PositionMap({
           recenterLabel={recenterLabel}
           showRouteVertices={showRouteVertices}
           petMarker={petMarker}
-          homeLocation={homeLocation}
+          homeLocation={homeLocation} safeZone={safeZone}
           atHome={atHome}
           onMapClick={onMapClick}
           mapActive={mapActive}
@@ -1327,7 +1380,7 @@ export default function PositionMap({
           recenterLabel={recenterLabel}
           showRouteVertices={showRouteVertices}
           petMarker={petMarker}
-          homeLocation={homeLocation}
+          homeLocation={homeLocation} safeZone={safeZone}
           atHome={atHome}
           onMapClick={onMapClick}
           mapActive={mapActive}

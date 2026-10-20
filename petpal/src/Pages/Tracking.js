@@ -1,6 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useAuth } from '../auth/AuthProvider';
 import { useI18n } from '../i18n/I18nContext';
+import { useSafeZone } from '../notifications/useSafeZone';
+import SafeZoneTab from '../components/tracking/SafeZoneTab';
 import PetAvatar from '../components/PetAvatar';
 import IconBattery, { batteryTone } from '../components/icons/IconBattery';
 import IconTrackSource from '../components/icons/IconTrackSource';
@@ -181,6 +184,14 @@ function TrackTabIcon({ tabId }) {
         <rect x="3.5" y="2.5" width="9" height="11" rx="1.8" stroke="currentColor" strokeWidth="1.5" />
         <path d="M6.2 12.2h3.6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
         <circle cx="8" cy="5.2" r="1.1" fill="currentColor" />
+      </svg>
+    );
+  }
+  if (tabId === 'zone') {
+    return (
+      <svg {...common}>
+        <circle cx="8" cy="8" r="5.5" stroke="currentColor" strokeWidth="1.5" strokeDasharray="2.4 2" />
+        <path d="M8 5.2l2.3 1.1v2.1c0 1.4-1 2.4-2.3 2.9-1.3-.5-2.3-1.5-2.3-2.9V6.3L8 5.2z" fill="currentColor" />
       </svg>
     );
   }
@@ -628,6 +639,8 @@ export default function Tracking() {
   }, [wifiTrackingEnabled, trackerTab]);
 
   const selectedPet = useMemo(() => pets.find((p) => p.id === selectedPetId), [pets, selectedPetId]);
+  const { user: authUser } = useAuth();
+  const { zone: savedSafeZone, loaded: safeZoneLoaded } = useSafeZone(authUser?.uid, selectedPet?.id);
 
   const savedDeviceIdTrimmed = useMemo(() => (selectedPet?.trackingDeviceId || '').trim(), [selectedPet?.trackingDeviceId]);
 
@@ -1393,10 +1406,12 @@ export default function Tracking() {
                 ['live', t('trackingPage.tabLive')],
                 ['device', t('trackingPage.tabDevice')],
                 ['history', t('trackingPage.tabHistory')],
+                ['zone', t('trackingPage.tabZone')],
               ]
             : [
                 ['live', t('trackingPage.tabLive')],
                 ['history', t('trackingPage.tabHistory')],
+                ['zone', t('trackingPage.tabZone')],
               ]
         ).map(([id, label]) => (
           <button
@@ -1450,6 +1465,7 @@ export default function Tracking() {
                   liveTrail={liveTrail}
                   petMarker={livePetMarker}
                   homeLocation={liveHomeLocation}
+                  safeZone={savedSafeZone}
                   atHome={petAtHome}
                   recenterLabel={t('trackingPage.mapFollowPet')}
                 />
@@ -1857,6 +1873,16 @@ export default function Tracking() {
             setHomeAnchorTick((n) => n + 1);
             void refresh();
           }}
+        />
+      ) : null}
+
+      {trackerTab === 'zone' ? (
+        <SafeZoneTab
+          pet={selectedPet || null}
+          imei={effectiveDeviceId}
+          saved={savedSafeZone}
+          loaded={safeZoneLoaded}
+          livePos={liveMapCoords}
         />
       ) : null}
 
