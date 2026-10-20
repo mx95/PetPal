@@ -220,44 +220,44 @@ export default function PublicPetProfile() {
                 </div>
               </div>
 
-              <div className="pp-publicPet__contactBar">
-                {profile.owner.phone1 ? (
-                  <a className="pp-btn pp-btnPrimary pp-publicPet__contactMain" href={`tel:${profile.owner.phone1}`}>
-                    {t('petPublic.contactOwner')}
-                  </a>
-                ) : (
-                  <span className="pp-btn pp-btnPrimary pp-publicPet__contactMain is-disabled">{t('petPublic.contactOwner')}</span>
-                )}
-                {profile.owner.phone1 ? (
-                  <a className="pp-publicPet__iconBtn" href={`tel:${profile.owner.phone1}`} aria-label={t('petPublic.callNow')}>
-                    <IconPhone />
-                  </a>
+              <section className="pp-publicPet__ownerCard">
+                <h2>{t('petPublic.ownerHeading')}</h2>
+                {profile.owner.name ? <p className="pp-publicPet__ownerName">{profile.owner.name}</p> : null}
+                {profile.owner.location ? <p className="pp-publicPet__ownerMeta">{profile.owner.location}</p> : null}
+                {profile.owner.phone1 ? <p className="pp-publicPet__ownerMeta">{profile.owner.phone1}</p> : null}
+                {profile.owner.email ? <p className="pp-publicPet__ownerMeta">{profile.owner.email}</p> : null}
+                {!profile.owner.name && !profile.owner.location && !profile.owner.phone1 && !profile.owner.email ? (
+                  <p className="pp-publicPet__ownerMeta">{t('petPublic.ownerUnavailable')}</p>
                 ) : null}
-                {phoneDigits ? (
-                  <a
-                    className="pp-publicPet__iconBtn"
-                    href={`https://wa.me/${phoneDigits}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    aria-label={t('petPublic.sendWhatsApp')}
-                  >
-                    <IconMsg />
-                  </a>
-                ) : null}
-                {profile.owner.email ? (
-                  <a className="pp-publicPet__iconBtn" href={`mailto:${profile.owner.email}`} aria-label={t('petPublic.email')}>
-                    <IconMail />
-                  </a>
-                ) : null}
-              </div>
-
-              {profile.owner.name || profile.owner.location ? (
-                <p className="pp-publicPet__ownerLine">
-                  {profile.owner.name ? <strong>{profile.owner.name}</strong> : null}
-                  {profile.owner.name && profile.owner.location ? ' · ' : null}
-                  {profile.owner.location || null}
-                </p>
-              ) : null}
+                <div className="pp-publicPet__quickActions">
+                  {profile.owner.phone1 ? (
+                    <a className="pp-publicPet__quickAction" href={`tel:${profile.owner.phone1}`}>
+                      <IconPhone /> {t('petPublic.callNow')}
+                    </a>
+                  ) : (
+                    <span className="pp-publicPet__quickAction is-disabled"><IconPhone /> {t('petPublic.callNow')}</span>
+                  )}
+                  {phoneDigits ? (
+                    <a
+                      className="pp-publicPet__quickAction"
+                      href={`https://wa.me/${phoneDigits}`}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      <IconMsg /> {t('petPublic.sendWhatsApp')}
+                    </a>
+                  ) : (
+                    <span className="pp-publicPet__quickAction is-disabled"><IconMsg /> {t('petPublic.sendWhatsApp')}</span>
+                  )}
+                  {profile.owner.email ? (
+                    <a className="pp-publicPet__quickAction" href={`mailto:${profile.owner.email}`}>
+                      <IconMail /> {t('petPublic.email')}
+                    </a>
+                  ) : (
+                    <span className="pp-publicPet__quickAction is-disabled"><IconMail /> {t('petPublic.email')}</span>
+                  )}
+                </div>
+              </section>
 
               <section className="pp-publicPet__section">
                 <h2>{t('petPublic.aboutHeading')}</h2>
