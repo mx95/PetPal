@@ -4,6 +4,7 @@ import { lazyWithRetry } from './lazyWithRetry';
 export const HomeScreen = lazyWithRetry(() => import('./Pages/HomeScreen'));
 export const DiscoverHome = lazyWithRetry(() => import('./discover/DiscoverHome'));
 export const PublicPetProfile = lazyWithRetry(() => import('./Pages/PublicPetProfile'));
+export const DevPetsUxPreview = lazyWithRetry(() => import('./Pages/DevPetsUxPreview'));
 export const Login = lazyWithRetry(() => import('./Pages/Login'));
 export const ForgotPassword = lazyWithRetry(() => import('./Pages/ForgotPassword'));
 export const Contact = lazyWithRetry(() => import('./Pages/Contact'));

@@ -57,6 +57,7 @@ import {
   Profile,
   ProviderPortal,
   PublicPetProfile,
+  DevPetsUxPreview,
   Register,
   ShelterAnimalDetail,
   ShelterApply,
@@ -124,6 +125,7 @@ function App() {
               <Route path="/discover" element={<DiscoverHome />} />
               <Route path="/pet/:id" element={<PublicPetProfile />} />
               <Route path="/pet" element={<PublicPetProfile />} />
+              <Route path="/dev/pets-ux" element={<DevPetsUxPreview />} />
               <Route path="/login" element={<Login />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/contact" element={<Contact />} />
