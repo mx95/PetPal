@@ -7,6 +7,7 @@ import { uploadCompanyLogo } from '../company/companyLogoStorage';
 import LocationPicker, { defaultMapCenter } from '../company/LocationPicker';
 import CompanyPlaceSearchField from '../company/CompanyPlaceSearchField';
 import { useI18n } from '../i18n/I18nContext';
+import useBodyScrollLock from '../hooks/useBodyScrollLock';
 
 function mapsLink(lat, lng) {
   return `https://www.google.com/maps?q=${encodeURIComponent(`${lat},${lng}`)}`;
@@ -110,12 +111,7 @@ export default function CompanyApply() {
     return () => document.removeEventListener('keydown', onKey);
   }, [modalOpen]);
 
-  useEffect(() => {
-    const cls = 'pp-noScroll';
-    if (modalOpen) document.body.classList.add(cls);
-    else document.body.classList.remove(cls);
-    return () => document.body.classList.remove(cls);
-  }, [modalOpen]);
+  useBodyScrollLock(Boolean(modalOpen));
 
   async function onUploadLogo(file) {
     if (!file || !user?.uid) return;

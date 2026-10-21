@@ -3,6 +3,7 @@ import { useI18n } from '../i18n/I18nContext';
 import { createDiscoverPost } from './discoverFeedFirestore';
 import { CATEGORY_EMOJI } from './discoverFeedModel';
 import { isBookingBrowseEnabled } from '../bookings/bookingFeature';
+import useBodyScrollLock from '../hooks/useBodyScrollLock';
 
 const CATEGORIES = [
   { id: 'vet', labelKey: 'discover.promote.catVet' },
@@ -21,6 +22,7 @@ export default function DiscoverPromoteModal({ open, onClose, companyProfile, ui
   const [sponsored, setSponsored] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
+  useBodyScrollLock(Boolean(open && companyProfile && uid));
 
   if (!open || !companyProfile || !uid) return null;
 

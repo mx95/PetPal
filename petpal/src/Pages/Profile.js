@@ -6,7 +6,7 @@ import { useAuth } from '../auth/AuthProvider';
 import { useCompany } from '../company/CompanyContext';
 import { useI18n } from '../i18n/I18nContext';
 import { usePets } from '../pets/PetsContext';
-import { syncOwnerContactToPets } from '../pets/petsFirestore';
+import { syncOwnerContactToPets } from '../pets/petsRepo';
 import { useGame } from '../game/GameContext';
 import { walkStreakDays } from '../walk/walkStats';
 import { getDb, isFirebaseConfigured } from '../firebase';
@@ -14,6 +14,7 @@ import UserAvatar from '../components/UserAvatar';
 import { useToast } from '../components/Toast';
 import { getEffectiveProfilePhotoUrl, removeUserProfilePhoto, saveUserProfilePhoto } from '../profile/userProfilePhoto';
 import { MVP_NAV } from '../config/mvpNav';
+import useBodyScrollLock from '../hooks/useBodyScrollLock';
 
 const ICONS = {
   pets: '🐾',
@@ -111,6 +112,7 @@ export default function Profile() {
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [profilePanel, setProfilePanel] = useState('hub'); // hub | personal | contact
   const [extraContactOpen, setExtraContactOpen] = useState(true);
+  useBodyScrollLock(profileModalOpen);
   const [form, setForm] = useState({
     username: '',
     firstName: '',
