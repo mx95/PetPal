@@ -118,31 +118,39 @@ export default function DevPetsUxPreview() {
               </button>
             ))}
           </div>
-          <div className="pp-photoDrop pp-photoDrop--compact">
-            <span className="pp-photoDrop__ico">📷</span>
-            <strong>Add a photo</strong>
-            <span>Optional — helps if someone finds them</span>
+          <div className="pp-photoAlign">
+            <div className="pp-photoAlign__circle">
+              <img src={HERO} alt="" style={{ objectPosition: '35% 40%' }} />
+            </div>
+            <div className="pp-photoAlign__controls">
+              <label className="pp-photoAlign__slider">
+                <span>Horizontal</span>
+                <input type="range" min="0" max="100" defaultValue="35" readOnly />
+              </label>
+              <label className="pp-photoAlign__slider">
+                <span>Vertical</span>
+                <input type="range" min="0" max="100" defaultValue="40" readOnly />
+              </label>
+              <span className="pp-btn pp-btnGhostSm">📷 Change photo</span>
+            </div>
           </div>
           <div className="pp-label">Name *</div>
-          <input className="pp-input" placeholder="e.g. Odin" readOnly />
+          <input className="pp-input" placeholder="Pet name" readOnly />
           <div className="pp-label" style={{ marginTop: 10 }}>Breed *</div>
           <input className="pp-input" placeholder="e.g. Jack Russell" readOnly />
           <div className="pp-label" style={{ marginTop: 10 }}>Gender</div>
           <div className="pp-genderSeg">
             <button type="button" className="pp-genderSeg__btn is-on">
               <span className="pp-genderSeg__ico is-m" aria-hidden>♂</span>
-              Male
+              <span>Male</span>
             </button>
             <button type="button" className="pp-genderSeg__btn">
               <span className="pp-genderSeg__ico is-f" aria-hidden>♀</span>
-              Female
+              <span>Female</span>
             </button>
           </div>
           <div className="pp-label" style={{ marginTop: 10 }}>Date of birth *</div>
-          <label className="pp-dateField">
-            <span className="pp-dateField__ico" aria-hidden>📅</span>
-            <input className="pp-input pp-dateField__input" type="date" defaultValue="2021-06-12" readOnly />
-          </label>
+          <input className="pp-input pp-dateField__inputNative" type="date" defaultValue="2021-06-12" readOnly />
           <div className="pp-label" style={{ marginTop: 10 }}>Colour *</div>
           <input className="pp-input" placeholder="e.g. White & brown" readOnly />
           <button
@@ -174,7 +182,10 @@ export default function DevPetsUxPreview() {
             </div>
           ) : null}
           <p className="pp-subtle" style={{ fontSize: 12 }}>Tracker IMEI is set later under GPS.</p>
-          <button type="button" className="pp-btn pp-btnPrimary" style={{ width: '100%', marginTop: 12 }}>Add to my pack</button>
+          <div style={{ display: 'grid', gap: 10, marginTop: 16 }}>
+            <button type="button" className="pp-btn pp-btnPrimary" style={{ width: '100%', minHeight: 48 }}>Add to my pack</button>
+            <button type="button" className="pp-btn" style={{ width: '100%', minHeight: 48 }}>Cancel</button>
+          </div>
         </div>
       ) : null}
 
@@ -359,6 +370,23 @@ export default function DevPetsUxPreview() {
                 <div className="pp-publicPet__kvRow"><dt>Colour</dt><dd>White & brown</dd></div>
               </dl>
             </section>
+            <section className="pp-publicPet__foundBlock" aria-label="Found me">
+              <div className="pp-publicPet__foundNote" role="note">
+                <span aria-hidden>⚠</span>
+                <div>
+                  <strong>Found this pet?</strong>
+                  <span>Please contact the owner — keep them calm and stay nearby if you can.</span>
+                </div>
+              </div>
+              <h2>Found me? Here&apos;s what to do</h2>
+              <ol className="pp-publicPet__tips">
+                <li>Please keep me in a safe place.</li>
+                <li>Give me some water if you can.</li>
+                <li>Call or message my owner using the details above.</li>
+                <li>Stay nearby until they arrive if it is safe.</li>
+              </ol>
+              <p className="pp-publicPet__footer">Thank you for helping — whether we just met or you found me. PetPal</p>
+            </section>
           </div>
         </article>
       ) : null}
@@ -389,31 +417,22 @@ export default function DevPetsUxPreview() {
               <h3 className="pp-profileEditorTitle">Personal details</h3>
               <p className="pp-profileEditorSub">Manage your profile and contact information.</p>
             </header>
-            <div className="pp-profileIdentityCard">
-              <button type="button" className="pp-profileIdentityCard__avatarBtn">
+            <button type="button" className="pp-profileIdentityCard pp-profileIdentityCard--merged">
+              <span className="pp-profileIdentityCard__avatarBtn">
                 <img className="pp-petAvatar" src={HERO} alt="" width={72} height={72} style={{ width: 72, height: 72, objectPosition: '28% 42%', borderRadius: '50%' }} />
                 <span className="pp-profilePhotoEdit__badge" aria-hidden>📷</span>
-              </button>
-              <div className="pp-profileIdentityCard__copy">
-                <button type="button" className="pp-profileIdentityCard__nameBtn">
-                  <strong>Sotiris Kapnoullas</strong>
-                  <span className="pp-profileIdentityCard__handle">@Kapnoullas</span>
-                </button>
-                <button type="button" className="pp-profileIdentityCard__photoLink">Change photo</button>
-              </div>
-              <button type="button" className="pp-profileIdentityCard__chevBtn">
-                <span className="pp-editNavChev" aria-hidden>›</span>
-              </button>
-            </div>
+              </span>
+              <span className="pp-profileIdentityCard__copy">
+                <strong>Sotiris Kapnoullas</strong>
+                <span className="pp-profileIdentityCard__handle">@Kapnoullas</span>
+                <span className="pp-profileIdentityCard__photoLink">Change photo</span>
+                <small className="pp-profileIdentityCard__meta">
+                  First name: Sotiris · Last name: Kapnoullas · Location: Xylofagou
+                </small>
+              </span>
+              <span className="pp-editNavChev" aria-hidden>›</span>
+            </button>
             <div className="pp-editNavList pp-profileHubList">
-              <button type="button" className="pp-editNavItem">
-                <span className="pp-editNavIco is-purple">👤</span>
-                <span>
-                  <strong>Personal information</strong>
-                  <small>First name: Sotiris · Last name: Kapnoullas · Location: Xylofagou</small>
-                </span>
-                <span className="pp-editNavChev">›</span>
-              </button>
               <button type="button" className="pp-editNavItem">
                 <span className="pp-editNavIco is-green">☎</span>
                 <span>
