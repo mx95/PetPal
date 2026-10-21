@@ -129,8 +129,14 @@ export default function DevPetsUxPreview() {
           <input className="pp-input" placeholder="e.g. Jack Russell" readOnly />
           <div className="pp-label" style={{ marginTop: 10 }}>Gender</div>
           <div className="pp-genderSeg">
-            <button type="button" className="pp-genderSeg__btn is-on">Male</button>
-            <button type="button" className="pp-genderSeg__btn">Female</button>
+            <button type="button" className="pp-genderSeg__btn is-on">
+              <span className="pp-genderSeg__ico is-m" aria-hidden>♂</span>
+              Male
+            </button>
+            <button type="button" className="pp-genderSeg__btn">
+              <span className="pp-genderSeg__ico is-f" aria-hidden>♀</span>
+              Female
+            </button>
           </div>
           <div className="pp-label" style={{ marginTop: 10 }}>Date of birth *</div>
           <label className="pp-dateField">

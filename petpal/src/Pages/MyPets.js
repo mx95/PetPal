@@ -916,6 +916,7 @@ export default function MyPets() {
                     className={`pp-genderSeg__btn ${gender === 'male' ? 'is-on' : ''}`}
                     onClick={() => setGender('male')}
                   >
+                    <span className="pp-genderSeg__ico is-m" aria-hidden>♂</span>
                     {t('petPublic.male')}
                   </button>
                   <button
@@ -923,6 +924,7 @@ export default function MyPets() {
                     className={`pp-genderSeg__btn ${gender === 'female' ? 'is-on' : ''}`}
                     onClick={() => setGender('female')}
                   >
+                    <span className="pp-genderSeg__ico is-f" aria-hidden>♀</span>
                     {t('petPublic.female')}
                   </button>
                 </div>
@@ -1234,6 +1236,7 @@ export default function MyPets() {
                         className={`pp-genderSeg__btn ${editGender === 'male' ? 'is-on' : ''}`}
                         onClick={() => setEditGender('male')}
                       >
+                        <span className="pp-genderSeg__ico is-m" aria-hidden>♂</span>
                         {t('petPublic.male')}
                       </button>
                       <button
@@ -1241,6 +1244,7 @@ export default function MyPets() {
                         className={`pp-genderSeg__btn ${editGender === 'female' ? 'is-on' : ''}`}
                         onClick={() => setEditGender('female')}
                       >
+                        <span className="pp-genderSeg__ico is-f" aria-hidden>♀</span>
                         {t('petPublic.female')}
                       </button>
                     </div>

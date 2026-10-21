@@ -26237,12 +26237,33 @@ html[data-theme="dark"] .pp-safeZone__map { border-color: rgba(74, 222, 128, 0.3
   font-weight: 750;
   font-size: 14px;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.pp-genderSeg__ico {
+  font-size: 18px;
+  line-height: 1;
+  font-weight: 800;
+}
+.pp-genderSeg__ico.is-m {
+  color: #2e90fa;
+}
+.pp-genderSeg__ico.is-f {
+  color: #f63d68;
 }
 .pp-genderSeg__btn.is-on {
   border-color: #5b37ff;
   background: rgba(91, 55, 255, 0.1);
   color: #5b37ff;
   box-shadow: 0 0 0 3px rgba(91, 55, 255, 0.08);
+}
+.pp-genderSeg__btn.is-on .pp-genderSeg__ico.is-m {
+  color: #2e90fa;
+}
+.pp-genderSeg__btn.is-on .pp-genderSeg__ico.is-f {
+  color: #f63d68;
 }
 .pp-dateField {
   position: relative;
