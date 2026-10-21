@@ -3223,7 +3223,8 @@ html[data-theme="dark"] .pp-medModal__timeInput .pp-timeInput24__select {
     padding: max(12px, env(safe-area-inset-top)) 0 calc(76px + env(safe-area-inset-bottom, 0px));
   }
 
-  .pp-modalCard {
+  /* Only real modal sheets (inside .pp-modalWrap) become bottom sheets */
+  .pp-modalWrap .pp-modalCard {
     width: 100%;
     max-width: 100%;
     height: min(calc(92dvh - 76px - env(safe-area-inset-bottom, 0px)), 780px);
@@ -3245,7 +3246,7 @@ html[data-theme="dark"] .pp-medModal__timeInput .pp-timeInput24__select {
     padding: 16px 16px 12px;
   }
 
-  .pp-modalForm {
+  .pp-modalWrap .pp-modalForm {
     padding: 14px 16px 18px;
   }
 }
