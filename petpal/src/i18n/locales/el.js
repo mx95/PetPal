@@ -1193,6 +1193,7 @@ const el = {
     breedPh: 'π.χ. Jack Russell',
     photoAlignX: 'Οριζόντια',
     photoAlignY: 'Κάθετα',
+    photoAlignHint: 'Σύρε τη φωτογραφία για να την στοιχίσεις',
     age: 'Ηλικία (προαιρετικό)',
     agePh: 'π.χ. 3 ετών, 8 μηνών',
     description: 'Περιγραφή (προαιρετικό)',

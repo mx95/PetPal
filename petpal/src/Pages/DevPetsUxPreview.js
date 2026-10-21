@@ -119,18 +119,11 @@ export default function DevPetsUxPreview() {
             ))}
           </div>
           <div className="pp-photoAlign">
-            <div className="pp-photoAlign__circle">
-              <img src={HERO} alt="" style={{ objectPosition: '35% 40%' }} />
+            <div className="pp-photoAlign__circle" style={{ cursor: 'grab' }}>
+              <img src={HERO} alt="" draggable={false} style={{ objectPosition: '35% 40%' }} />
             </div>
             <div className="pp-photoAlign__controls">
-              <label className="pp-photoAlign__slider">
-                <span>Horizontal</span>
-                <input type="range" min="0" max="100" defaultValue="35" readOnly />
-              </label>
-              <label className="pp-photoAlign__slider">
-                <span>Vertical</span>
-                <input type="range" min="0" max="100" defaultValue="40" readOnly />
-              </label>
+              <p className="pp-photoAlign__hint">Drag the photo to frame it</p>
               <span className="pp-btn pp-btnGhostSm">📷 Change photo</span>
             </div>
           </div>

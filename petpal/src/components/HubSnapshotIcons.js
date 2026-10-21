@@ -71,25 +71,17 @@ export function SnapDualPawIcon({ size = 18 }) {
   );
 }
 
-/** Clean walk-route deco for the Distance snapshot card (path + pin, no paw blob). */
+/** Soft badge deco for the Distance snapshot card (matches streak/level style). */
 export function DecoWalkRoute() {
   return (
     <svg className="pp-hubSnap__decoSvg" viewBox="0 0 72 72" aria-hidden fill="none">
+      <circle cx="40" cy="40" r="22" fill="#DBEAFE" opacity="0.95" />
       <path
-        d="M12 54c10-12 16-10 24-18 8-8 14-10 24-12"
-        stroke="#5BA0FF"
-        strokeWidth="3"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        opacity="0.5"
-      />
-      <circle cx="12" cy="54" r="3" fill="#2F80FF" opacity="0.55" />
-      <path
-        d="M52 18c5.5 0 10 4.2 10 9.4 0 7.2-10 14.6-10 14.6S42 34.6 42 27.4C42 22.2 46.5 18 52 18z"
+        d="M40 26c5.2 0 9.4 4 9.4 9 0 7.4-9.4 15.6-9.4 15.6S30.6 42.4 30.6 35c0-5 4.2-9 9.4-9z"
         fill="#2F80FF"
-        opacity="0.38"
+        opacity="0.9"
       />
-      <circle cx="52" cy="27.2" r="3.2" fill="#fff" opacity="0.9" />
+      <circle cx="40" cy="35" r="3.4" fill="#fff" />
     </svg>
   );
 }

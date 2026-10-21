@@ -1106,6 +1106,7 @@ const en = {
     breedPh: 'e.g. Jack Russell',
     photoAlignX: 'Horizontal',
     photoAlignY: 'Vertical',
+    photoAlignHint: 'Drag the photo to frame it',
     age: 'Age (optional)',
     agePh: 'e.g. 3 years, 8 months, senior',
     description: 'Description (optional)',

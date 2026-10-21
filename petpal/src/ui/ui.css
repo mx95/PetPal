@@ -26333,36 +26333,43 @@ html[data-theme="dark"] .pp-safeZone__map { border-color: rgba(74, 222, 128, 0.3
   background: rgba(91, 55, 255, 0.04);
 }
 .pp-photoAlign__circle {
-  width: 96px;
-  height: 96px;
+  width: 112px;
+  height: 112px;
   border-radius: 50%;
   overflow: hidden;
   border: 3px solid #fff;
   box-shadow: 0 8px 20px rgba(16, 24, 40, 0.14);
   background: #eef2ff;
   flex-shrink: 0;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.pp-photoAlign__circle.is-dragging {
+  cursor: grabbing;
+  box-shadow: 0 0 0 3px rgba(91, 55, 255, 0.22), 0 10px 24px rgba(16, 24, 40, 0.16);
 }
 .pp-photoAlign__circle img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
+  pointer-events: none;
+  -webkit-user-drag: none;
 }
 .pp-photoAlign__controls {
   display: grid;
-  gap: 8px;
+  gap: 10px;
   min-width: 0;
+  align-content: center;
 }
-.pp-photoAlign__slider {
-  display: grid;
-  gap: 4px;
-  font-size: 11px;
-  font-weight: 700;
-  color: #667085;
-}
-.pp-photoAlign__slider input[type="range"] {
-  width: 100%;
-  accent-color: #5b37ff;
+.pp-photoAlign__hint {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.35;
+  color: #475467;
 }
 
 /* Profile edit modal — personal details hub + contact form */

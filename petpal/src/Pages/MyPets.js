@@ -255,6 +255,7 @@ export default function MyPets() {
   const [addMoreOpen, setAddMoreOpen] = useState(true);
   const [addPhotoPreview, setAddPhotoPreview] = useState('');
   const [addPhotoFocus, setAddPhotoFocus] = useState({ x: 0.5, y: 0.5 });
+  const addPhotoDragRef = useRef(null);
   const [categoryId, setCategoryId] = useState('dog');
   const [editingId, setEditingId] = useState(null);
   const [editName, setEditName] = useState('');
@@ -894,34 +895,53 @@ export default function MyPets() {
 
               {addPhotoPreview ? (
                 <div className="pp-photoAlign">
-                  <div className="pp-photoAlign__circle">
+                  <div
+                    className="pp-photoAlign__circle"
+                    role="presentation"
+                    aria-label={t('myPets.photoAlignHint')}
+                    onPointerDown={(e) => {
+                      e.preventDefault();
+                      const el = e.currentTarget;
+                      el.setPointerCapture?.(e.pointerId);
+                      addPhotoDragRef.current = {
+                        active: true,
+                        x: e.clientX,
+                        y: e.clientY,
+                        w: el.clientWidth || 1,
+                        h: el.clientHeight || 1,
+                      };
+                      el.classList.add('is-dragging');
+                    }}
+                    onPointerMove={(e) => {
+                      const drag = addPhotoDragRef.current;
+                      if (!drag?.active) return;
+                      const dx = e.clientX - drag.x;
+                      const dy = e.clientY - drag.y;
+                      drag.x = e.clientX;
+                      drag.y = e.clientY;
+                      setAddPhotoFocus((p) => ({
+                        x: Math.min(1, Math.max(0, p.x - dx / drag.w)),
+                        y: Math.min(1, Math.max(0, p.y - dy / drag.h)),
+                      }));
+                    }}
+                    onPointerUp={(e) => {
+                      addPhotoDragRef.current = null;
+                      e.currentTarget.classList.remove('is-dragging');
+                    }}
+                    onPointerCancel={(e) => {
+                      addPhotoDragRef.current = null;
+                      e.currentTarget.classList.remove('is-dragging');
+                    }}
+                  >
                     <img
                       src={addPhotoPreview}
                       alt=""
+                      draggable={false}
                       style={{ objectPosition: `${addPhotoFocus.x * 100}% ${addPhotoFocus.y * 100}%` }}
                     />
                   </div>
                   <div className="pp-photoAlign__controls">
-                    <label className="pp-photoAlign__slider">
-                      <span>{t('myPets.photoAlignX')}</span>
-                      <input
-                        type="range"
-                        min="0"
-                        max="100"
-                        value={Math.round(addPhotoFocus.x * 100)}
-                        onChange={(e) => setAddPhotoFocus((p) => ({ ...p, x: Number(e.target.value) / 100 }))}
-                      />
-                    </label>
-                    <label className="pp-photoAlign__slider">
-                      <span>{t('myPets.photoAlignY')}</span>
-                      <input
-                        type="range"
-                        min="0"
-                        max="100"
-                        value={Math.round(addPhotoFocus.y * 100)}
-                        onChange={(e) => setAddPhotoFocus((p) => ({ ...p, y: Number(e.target.value) / 100 }))}
-                      />
-                    </label>
+                    <p className="pp-photoAlign__hint">{t('myPets.photoAlignHint')}</p>
                     <label className="pp-btn pp-btnGhostSm" htmlFor={addPhotoInputId}>
                       <IconCam /> {t('myPets.changePhoto')}
                     </label>
