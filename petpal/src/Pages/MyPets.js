@@ -892,22 +892,20 @@ export default function MyPets() {
                 />
               </label>
 
-              <div className="pp-modalGrid2">
-                <div>
-                  <div className="pp-label">{t('myPets.name')} *</div>
-                  <input
-                    className="pp-input"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder={t('myPets.namePh')}
-                    autoComplete="off"
-                    autoFocus
-                  />
-                </div>
-                <div>
-                  <div className="pp-label">{t('petPublic.breed')} *</div>
-                  <input className="pp-input" value={breed} onChange={(e) => setBreed(e.target.value)} required />
-                </div>
+              <div>
+                <div className="pp-label">{t('myPets.name')} *</div>
+                <input
+                  className="pp-input"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder={t('myPets.namePh')}
+                  autoComplete="off"
+                  autoFocus
+                />
+              </div>
+              <div style={{ marginTop: 12 }}>
+                <div className="pp-label">{t('petPublic.breed')} *</div>
+                <input className="pp-input" value={breed} onChange={(e) => setBreed(e.target.value)} required />
               </div>
 
               <div>
@@ -1202,31 +1200,29 @@ export default function MyPets() {
 
               {editPanel === 'details' ? (
                 <>
-                  <div className="pp-modalGrid2">
-                    <div>
-                      <div className="pp-label">{t('myPets.category')} *</div>
-                      <PrettySelect value={editCategoryId} onChange={(e) => setEditCategoryId(e.target.value)}>
-                        {PET_CATEGORIES.map((c) => (
-                          <option key={c.id} value={c.id}>
-                            {c.emoji} {t(`categories.${c.id}`)}
-                          </option>
-                        ))}
-                      </PrettySelect>
-                    </div>
-                    <div>
-                      <div className="pp-label">{t('myPets.name')} *</div>
-                      <input
-                        className="pp-input"
-                        value={editName}
-                        onChange={(e) => setEditName(e.target.value)}
-                        placeholder={t('myPets.namePh')}
-                        autoComplete="off"
-                        autoFocus
-                        required
-                      />
-                    </div>
-                  </div>
                   <div>
+                    <div className="pp-label">{t('myPets.category')} *</div>
+                    <PrettySelect value={editCategoryId} onChange={(e) => setEditCategoryId(e.target.value)}>
+                      {PET_CATEGORIES.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.emoji} {t(`categories.${c.id}`)}
+                        </option>
+                      ))}
+                    </PrettySelect>
+                  </div>
+                  <div style={{ marginTop: 12 }}>
+                    <div className="pp-label">{t('myPets.name')} *</div>
+                    <input
+                      className="pp-input"
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      placeholder={t('myPets.namePh')}
+                      autoComplete="off"
+                      autoFocus
+                      required
+                    />
+                  </div>
+                  <div style={{ marginTop: 12 }}>
                     <div className="pp-label">{t('petPublic.breed')} *</div>
                     <input className="pp-input" value={editBreed} onChange={(e) => setEditBreed(e.target.value)} required />
                   </div>

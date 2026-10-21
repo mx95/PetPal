@@ -11,10 +11,8 @@ import { useGame } from '../game/GameContext';
 import { walkStreakDays } from '../walk/walkStats';
 import { getDb, isFirebaseConfigured } from '../firebase';
 import UserAvatar from '../components/UserAvatar';
-import PhoneCountryInput from '../components/PhoneCountryInput';
 import { useToast } from '../components/Toast';
 import { getEffectiveProfilePhotoUrl, removeUserProfilePhoto, saveUserProfilePhoto } from '../profile/userProfilePhoto';
-import { formatInternationalPhone, parseInternationalPhone } from '../shop/phoneCountries';
 import { MVP_NAV } from '../config/mvpNav';
 
 const ICONS = {
@@ -122,12 +120,6 @@ export default function Profile() {
     whatsapp: '',
     location: '',
   });
-  const [phoneCountry, setPhoneCountry] = useState('CY');
-  const [phoneNational, setPhoneNational] = useState('');
-  const [phone2Country, setPhone2Country] = useState('CY');
-  const [phone2National, setPhone2National] = useState('');
-  const [waCountry, setWaCountry] = useState('CY');
-  const [waNational, setWaNational] = useState('');
   const [profileMeta, setProfileMeta] = useState({
     accountType: 'individual',
     accountNameNormalized: '',
@@ -155,27 +147,15 @@ export default function Profile() {
         const snap = await getDoc(doc(getDb(), 'users', user.uid));
         const data = snap.exists() ? snap.data() : {};
         if (cancelled) return;
-        const nextPhone = String(data.phone || '').trim();
-        const nextPhone2 = String(data.phone2 || '').trim();
-        const nextWa = String(data.whatsapp || '').trim();
-        const p1 = parseInternationalPhone(nextPhone);
-        const p2 = parseInternationalPhone(nextPhone2);
-        const pw = parseInternationalPhone(nextWa);
         setForm({
           username: String(data.accountName || user.displayName || '').trim(),
           firstName: String(data.firstName || '').trim(),
           lastName: String(data.lastName || '').trim(),
-          phone: nextPhone,
-          phone2: nextPhone2,
-          whatsapp: nextWa,
+          phone: String(data.phone || '').trim(),
+          phone2: String(data.phone2 || '').trim(),
+          whatsapp: String(data.whatsapp || '').trim(),
           location: String(data.location || '').trim(),
         });
-        setPhoneCountry(p1.country);
-        setPhoneNational(p1.national);
-        setPhone2Country(p2.country);
-        setPhone2National(p2.national);
-        setWaCountry(pw.country);
-        setWaNational(pw.national);
         setProfileMeta({
           accountType: String(data.accountType || 'individual'),
           accountNameNormalized: String(data.accountNameNormalized || '').trim().toLocaleLowerCase(),
@@ -222,9 +202,9 @@ export default function Profile() {
     if (!user?.uid || !isFirebaseConfigured() || profileBusy) return;
     setProfileErr('');
 
-    const phone = normalizePhone(formatInternationalPhone(phoneCountry, phoneNational) || form.phone);
-    const phone2 = normalizePhone(formatInternationalPhone(phone2Country, phone2National) || form.phone2);
-    const whatsapp = normalizePhone(formatInternationalPhone(waCountry, waNational) || form.whatsapp);
+    const phone = normalizePhone(form.phone);
+    const phone2 = normalizePhone(form.phone2);
+    const whatsapp = normalizePhone(form.whatsapp);
     const username = String(form.username || '').trim();
     const nextNameNormalized = normalizeAccountName(username);
 
@@ -604,7 +584,7 @@ export default function Profile() {
                         <span>
                           <strong>{t('profile.form.contactTitleShort')}</strong>
                           <small>
-                            {t('profile.form.phone')}: {formatPhoneDisplay(form.phone || formatInternationalPhone(phoneCountry, phoneNational))}
+                            {t('profile.form.phone')}: {formatPhoneDisplay(form.phone)}
                             {' · '}
                             {t('profile.form.email')}: {user?.email || '—'}
                           </small>
@@ -624,9 +604,9 @@ export default function Profile() {
                         <span>
                           <strong>{t('profile.form.extraContactTitle')}</strong>
                           <small>
-                            {t('profile.form.phone2')}: {formatPhoneDisplay(form.phone2 || formatInternationalPhone(phone2Country, phone2National))}
+                            {t('profile.form.phone2')}: {formatPhoneDisplay(form.phone2)}
                             {' · '}
-                            {t('profile.form.whatsapp')}: {formatPhoneDisplay(form.whatsapp || formatInternationalPhone(waCountry, waNational))}
+                            {t('profile.form.whatsapp')}: {formatPhoneDisplay(form.whatsapp)}
                           </small>
                         </span>
                         <span className="pp-editNavChev">›</span>
@@ -738,16 +718,17 @@ export default function Profile() {
                         <label className="pp-label" htmlFor="pp-phone">
                           {t('profile.form.phoneNumber')} <span aria-hidden>*</span>
                         </label>
-                        <div className="pp-profileField pp-profileField--phone">
+                        <div className="pp-profileField">
                           <span className="pp-profileField__ico is-purple" aria-hidden><IconPhone /></span>
-                          <PhoneCountryInput
+                          <input
                             id="pp-phone"
-                            countryCode={phoneCountry}
-                            nationalValue={phoneNational}
-                            onCountryChange={setPhoneCountry}
-                            onNationalChange={setPhoneNational}
-                            placeholder="9999 7740"
-                            compact
+                            className="pp-input pp-profileField__input"
+                            type="tel"
+                            inputMode="tel"
+                            autoComplete="tel"
+                            value={form.phone}
+                            onChange={(e) => onFieldChange('phone', e.target.value)}
+                            placeholder="+35799123456"
                           />
                         </div>
                       </div>
@@ -783,29 +764,33 @@ export default function Profile() {
                           <div className="pp-profileExtraCard__body">
                             <div>
                               <label className="pp-label" htmlFor="pp-phone2">{t('profile.form.phone2')}</label>
-                              <div className="pp-profileField pp-profileField--phone">
+                              <div className="pp-profileField">
                                 <span className="pp-profileField__ico is-purple" aria-hidden><IconPhone /></span>
-                                <PhoneCountryInput
+                                <input
                                   id="pp-phone2"
-                                  countryCode={phone2Country}
-                                  nationalValue={phone2National}
-                                  onCountryChange={setPhone2Country}
-                                  onNationalChange={setPhone2National}
-                                  compact
+                                  className="pp-input pp-profileField__input"
+                                  type="tel"
+                                  inputMode="tel"
+                                  autoComplete="tel"
+                                  value={form.phone2}
+                                  onChange={(e) => onFieldChange('phone2', e.target.value)}
+                                  placeholder="+35722123456"
                                 />
                               </div>
                             </div>
                             <div>
                               <label className="pp-label" htmlFor="pp-whatsapp">{t('profile.form.whatsapp')}</label>
-                              <div className="pp-profileField pp-profileField--phone">
+                              <div className="pp-profileField">
                                 <span className="pp-profileField__ico is-green" aria-hidden><IconWhatsApp /></span>
-                                <PhoneCountryInput
+                                <input
                                   id="pp-whatsapp"
-                                  countryCode={waCountry}
-                                  nationalValue={waNational}
-                                  onCountryChange={setWaCountry}
-                                  onNationalChange={setWaNational}
-                                  compact
+                                  className="pp-input pp-profileField__input"
+                                  type="tel"
+                                  inputMode="tel"
+                                  autoComplete="tel"
+                                  value={form.whatsapp}
+                                  onChange={(e) => onFieldChange('whatsapp', e.target.value)}
+                                  placeholder="+35799123456"
                                 />
                               </div>
                             </div>

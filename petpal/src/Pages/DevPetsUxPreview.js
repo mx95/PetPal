@@ -123,16 +123,10 @@ export default function DevPetsUxPreview() {
             <strong>Add a photo</strong>
             <span>Optional — helps if someone finds them</span>
           </div>
-          <div className="pp-modalGrid2">
-            <div>
-              <div className="pp-label">Name *</div>
-              <input className="pp-input" placeholder="e.g. Odin" readOnly />
-            </div>
-            <div>
-              <div className="pp-label">Breed *</div>
-              <input className="pp-input" placeholder="e.g. Jack Russell" readOnly />
-            </div>
-          </div>
+          <div className="pp-label">Name *</div>
+          <input className="pp-input" placeholder="e.g. Odin" readOnly />
+          <div className="pp-label" style={{ marginTop: 10 }}>Breed *</div>
+          <input className="pp-input" placeholder="e.g. Jack Russell" readOnly />
           <div className="pp-label" style={{ marginTop: 10 }}>Gender</div>
           <div className="pp-genderSeg">
             <button type="button" className="pp-genderSeg__btn is-on">Male</button>
@@ -452,17 +446,9 @@ export default function DevPetsUxPreview() {
             <div className="pp-profileFieldStack">
               <div>
                 <div className="pp-label">Phone number *</div>
-                <div className="pp-profileField pp-profileField--phone">
+                <div className="pp-profileField">
                   <span className="pp-profileField__ico is-purple" aria-hidden>☎</span>
-                  <div className="pp-phoneCountryInput pp-phoneCountryInput--compact">
-                    <label className="pp-phoneCountryInput__countryWrap">
-                      <select className="pp-phoneCountryInput__country" defaultValue="CY" disabled>
-                        <option value="CY">🇨🇾 Cyprus (+357)</option>
-                      </select>
-                      <span className="pp-phoneCountryInput__dial">+357</span>
-                    </label>
-                    <input className="pp-phoneCountryInput__number" value="9999 7740" readOnly />
-                  </div>
+                  <input className="pp-input pp-profileField__input" value="+35799997740" readOnly />
                 </div>
               </div>
               <div>
@@ -480,32 +466,16 @@ export default function DevPetsUxPreview() {
                 <div className="pp-profileExtraCard__body">
                   <div>
                     <div className="pp-label">Phone 2</div>
-                    <div className="pp-profileField pp-profileField--phone">
+                    <div className="pp-profileField">
                       <span className="pp-profileField__ico is-purple" aria-hidden>☎</span>
-                      <div className="pp-phoneCountryInput pp-phoneCountryInput--compact">
-                        <label className="pp-phoneCountryInput__countryWrap">
-                          <select className="pp-phoneCountryInput__country" defaultValue="CY" disabled>
-                            <option value="CY">🇨🇾 Cyprus (+357)</option>
-                          </select>
-                          <span className="pp-phoneCountryInput__dial">+357</span>
-                        </label>
-                        <input className="pp-phoneCountryInput__number" value="2212 3456" readOnly />
-                      </div>
+                      <input className="pp-input pp-profileField__input" value="+35722123456" readOnly />
                     </div>
                   </div>
                   <div>
                     <div className="pp-label">WhatsApp</div>
-                    <div className="pp-profileField pp-profileField--phone">
+                    <div className="pp-profileField">
                       <span className="pp-profileField__ico is-green" aria-hidden>💬</span>
-                      <div className="pp-phoneCountryInput pp-phoneCountryInput--compact">
-                        <label className="pp-phoneCountryInput__countryWrap">
-                          <select className="pp-phoneCountryInput__country" defaultValue="CY" disabled>
-                            <option value="CY">🇨🇾 Cyprus (+357)</option>
-                          </select>
-                          <span className="pp-phoneCountryInput__dial">+357</span>
-                        </label>
-                        <input className="pp-phoneCountryInput__number" value="9912 3456" readOnly />
-                      </div>
+                      <input className="pp-input pp-profileField__input" value="+35799123456" readOnly />
                     </div>
                   </div>
                   <p className="pp-profilePhoneHint">
