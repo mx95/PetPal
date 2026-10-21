@@ -376,18 +376,6 @@ export default function Profile() {
   return (
     <div className="pp-grid">
       <div className="pp-col-12">
-        <header className="pp-pageHeader">
-          <div className="pp-pageHeader__copy">
-            <span className="pp-publicHero__eyebrow" style={{ display: 'inline-block', width: 'fit-content' }}>
-              {t('profile.badge')}
-            </span>
-            <h1 className="pp-pageHeader__title">{t('profile.titleFriendly', { name: titleName || t('profile.youFallback') })}</h1>
-            <p className="pp-pageHeader__sub">{t('profile.introFriendly')}</p>
-          </div>
-        </header>
-      </div>
-
-      <div className="pp-col-12">
         <section className="pp-heroCard" aria-label={t('profile.headerAria')}>
           <input
             ref={fileRef}
@@ -524,61 +512,49 @@ export default function Profile() {
                       <p className="pp-profileEditorSub">{t('profile.form.subtitleShort')}</p>
                     </header>
 
-                    <div className="pp-profileIdentityCard">
-                      <button
-                        type="button"
+                    <button
+                      type="button"
+                      className="pp-profileIdentityCard pp-profileIdentityCard--merged"
+                      onClick={() => setProfilePanel('personal')}
+                    >
+                      <span
                         className="pp-profileIdentityCard__avatarBtn"
-                        onClick={() => fileRef.current?.click()}
-                        disabled={photoBusy}
+                        role="button"
+                        tabIndex={0}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          fileRef.current?.click();
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            fileRef.current?.click();
+                          }
+                        }}
                         aria-label={photoBusy ? t('profile.photo.uploading') : t('profile.form.changePhoto')}
                       >
                         <UserAvatar user={user} size={72} />
                         <span className="pp-profilePhotoEdit__badge" aria-hidden>📷</span>
-                      </button>
-                      <div className="pp-profileIdentityCard__copy">
-                        <button
-                          type="button"
-                          className="pp-profileIdentityCard__nameBtn"
-                          onClick={() => setProfilePanel('personal')}
-                        >
-                          <strong>{fullName}</strong>
-                          {handleLabel ? <span className="pp-profileIdentityCard__handle">{handleLabel}</span> : null}
-                        </button>
-                        <button
-                          type="button"
-                          className="pp-profileIdentityCard__photoLink"
-                          disabled={photoBusy}
-                          onClick={() => fileRef.current?.click()}
-                        >
+                      </span>
+                      <span className="pp-profileIdentityCard__copy">
+                        <strong>{fullName}</strong>
+                        {handleLabel ? <span className="pp-profileIdentityCard__handle">{handleLabel}</span> : null}
+                        <span className="pp-profileIdentityCard__photoLink">
                           {photoBusy ? t('profile.photo.uploading') : t('profile.form.changePhoto')}
-                        </button>
-                      </div>
-                      <button
-                        type="button"
-                        className="pp-profileIdentityCard__chevBtn"
-                        onClick={() => setProfilePanel('personal')}
-                        aria-label={t('profile.form.personalTitle')}
-                      >
-                        <span className="pp-editNavChev" aria-hidden>›</span>
-                      </button>
-                    </div>
+                        </span>
+                        <small className="pp-profileIdentityCard__meta">
+                          {t('profile.form.firstName')}: {form.firstName || '—'}
+                          {' · '}
+                          {t('profile.form.lastName')}: {form.lastName || '—'}
+                          {' · '}
+                          {t('profile.form.location')}: {form.location || '—'}
+                        </small>
+                      </span>
+                      <span className="pp-editNavChev" aria-hidden>›</span>
+                    </button>
 
                     <div className="pp-editNavList pp-profileHubList">
-                      <button type="button" className="pp-editNavItem" onClick={() => setProfilePanel('personal')}>
-                        <span className="pp-editNavIco is-purple"><IconPerson /></span>
-                        <span>
-                          <strong>{t('profile.form.personalTitle')}</strong>
-                          <small>
-                            {t('profile.form.firstName')}: {form.firstName || '—'}
-                            {' · '}
-                            {t('profile.form.lastName')}: {form.lastName || '—'}
-                            {' · '}
-                            {t('profile.form.location')}: {form.location || '—'}
-                          </small>
-                        </span>
-                        <span className="pp-editNavChev">›</span>
-                      </button>
-
                       <button type="button" className="pp-editNavItem" onClick={() => setProfilePanel('contact')}>
                         <span className="pp-editNavIco is-green"><IconPhone /></span>
                         <span>

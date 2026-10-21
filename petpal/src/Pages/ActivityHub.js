@@ -15,7 +15,7 @@ import {
   SnapTrophyIcon,
   SnapBarsIcon,
   SnapDualPawIcon,
-  DecoPathTrail,
+  DecoWalkRoute,
   DecoFlameWatermark,
   DecoCalendarBadge,
   DecoPawBadge,
@@ -264,7 +264,6 @@ export default function ActivityHub() {
 
       {/* 2. Snapshot */}
       <section className="pp-activityHub__block" aria-label={t('activityHub.snapshotAria')}>
-        <h2 className="pp-feed__sectionTitle">{t('activityHub.snapshotTitle')}</h2>
         <div className="pp-hubSnapGrid">
           <div className="pp-hubSnap pp-hubSnap--distance">
             <div className="pp-hubSnap__head">
@@ -278,7 +277,7 @@ export default function ActivityHub() {
               {trackerDeviceId ? t('activityHub.gpsTracked') : t('activityHub.walkedToday')}
             </span>
             <span className="pp-hubSnap__deco" aria-hidden>
-              <DecoPathTrail />
+              <DecoWalkRoute />
             </span>
           </div>
           <div className="pp-hubSnap pp-hubSnap--calories">

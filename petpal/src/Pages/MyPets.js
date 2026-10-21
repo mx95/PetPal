@@ -252,7 +252,9 @@ export default function MyPets() {
   const [ownerEmail, setOwnerEmail] = useState('');
   const [accountType, setAccountType] = useState('individual');
   const [friendlyWith, setFriendlyWith] = useState({ dogs: false, cats: false, people: false, children: false });
-  const [addMoreOpen, setAddMoreOpen] = useState(false);
+  const [addMoreOpen, setAddMoreOpen] = useState(true);
+  const [addPhotoPreview, setAddPhotoPreview] = useState('');
+  const [addPhotoFocus, setAddPhotoFocus] = useState({ x: 0.5, y: 0.5 });
   const [categoryId, setCategoryId] = useState('dog');
   const [editingId, setEditingId] = useState(null);
   const [editName, setEditName] = useState('');
@@ -501,7 +503,13 @@ export default function MyPets() {
     if (createdPetId && f && f[0] && user?.uid) {
       setAddPhotoBusy(true);
       try {
-        const photoUpload = await uploadPetPhoto({ uid: user.uid, file: f[0], petId: createdPetId });
+        const photoUpload = await uploadPetPhoto({
+          uid: user.uid,
+          file: f[0],
+          petId: createdPetId,
+          focusX: addPhotoFocus.x,
+          focusY: addPhotoFocus.y,
+        });
         if (photoUpload) {
           photoUrl = photoUpload.photoUrl || '';
           updatePet(createdPetId, {
@@ -530,8 +538,13 @@ export default function MyPets() {
     setOwnerPhone('');
     setOwnerEmail('');
     setFriendlyWith({ dogs: false, cats: false, people: false, children: false });
-    setAddMoreOpen(false);
+    setAddMoreOpen(true);
     setCategoryId('dog');
+    setAddPhotoPreview((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return '';
+    });
+    setAddPhotoFocus({ x: 0.5, y: 0.5 });
     if (addPhotoRef.current) addPhotoRef.current.value = '';
     setAddPetDrawerOpen(false);
     if (createdPetId) {
@@ -879,18 +892,78 @@ export default function MyPets() {
                 ))}
               </div>
 
-              <label className="pp-photoDrop pp-photoDrop--compact" htmlFor={addPhotoInputId}>
-                <span className="pp-photoDrop__ico" aria-hidden><IconCam /></span>
-                <strong>{t('myPets.photoDropTitle')}</strong>
-                <span>{t('myPets.photoDropHint')}</span>
-                <input
-                  id={addPhotoInputId}
-                  ref={addPhotoRef}
-                  type="file"
-                  accept="image/*"
-                  className="pp-photoDrop__input"
-                />
-              </label>
+              {addPhotoPreview ? (
+                <div className="pp-photoAlign">
+                  <div className="pp-photoAlign__circle">
+                    <img
+                      src={addPhotoPreview}
+                      alt=""
+                      style={{ objectPosition: `${addPhotoFocus.x * 100}% ${addPhotoFocus.y * 100}%` }}
+                    />
+                  </div>
+                  <div className="pp-photoAlign__controls">
+                    <label className="pp-photoAlign__slider">
+                      <span>{t('myPets.photoAlignX')}</span>
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        value={Math.round(addPhotoFocus.x * 100)}
+                        onChange={(e) => setAddPhotoFocus((p) => ({ ...p, x: Number(e.target.value) / 100 }))}
+                      />
+                    </label>
+                    <label className="pp-photoAlign__slider">
+                      <span>{t('myPets.photoAlignY')}</span>
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        value={Math.round(addPhotoFocus.y * 100)}
+                        onChange={(e) => setAddPhotoFocus((p) => ({ ...p, y: Number(e.target.value) / 100 }))}
+                      />
+                    </label>
+                    <label className="pp-btn pp-btnGhostSm" htmlFor={addPhotoInputId}>
+                      <IconCam /> {t('myPets.changePhoto')}
+                    </label>
+                  </div>
+                  <input
+                    id={addPhotoInputId}
+                    ref={addPhotoRef}
+                    type="file"
+                    accept="image/*"
+                    className="pp-photoDrop__input"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      setAddPhotoPreview((prev) => {
+                        if (prev) URL.revokeObjectURL(prev);
+                        return file ? URL.createObjectURL(file) : '';
+                      });
+                      setAddPhotoFocus({ x: 0.5, y: 0.5 });
+                    }}
+                  />
+                </div>
+              ) : (
+                <label className="pp-photoDrop pp-photoDrop--compact" htmlFor={addPhotoInputId}>
+                  <span className="pp-photoDrop__ico" aria-hidden><IconCam /></span>
+                  <strong>{t('myPets.photoDropTitle')}</strong>
+                  <span>{t('myPets.photoDropHint')}</span>
+                  <input
+                    id={addPhotoInputId}
+                    ref={addPhotoRef}
+                    type="file"
+                    accept="image/*"
+                    className="pp-photoDrop__input"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      setAddPhotoPreview((prev) => {
+                        if (prev) URL.revokeObjectURL(prev);
+                        return file ? URL.createObjectURL(file) : '';
+                      });
+                      setAddPhotoFocus({ x: 0.5, y: 0.5 });
+                    }}
+                  />
+                </label>
+              )}
 
               <div>
                 <div className="pp-label">{t('myPets.name')} *</div>
@@ -905,7 +978,13 @@ export default function MyPets() {
               </div>
               <div style={{ marginTop: 12 }}>
                 <div className="pp-label">{t('petPublic.breed')} *</div>
-                <input className="pp-input" value={breed} onChange={(e) => setBreed(e.target.value)} required />
+                <input
+                  className="pp-input"
+                  value={breed}
+                  onChange={(e) => setBreed(e.target.value)}
+                  placeholder={t('myPets.breedPh')}
+                  required
+                />
               </div>
 
               <div>
@@ -917,7 +996,7 @@ export default function MyPets() {
                     onClick={() => setGender('male')}
                   >
                     <span className="pp-genderSeg__ico is-m" aria-hidden>♂</span>
-                    {t('petPublic.male')}
+                    <span>{t('petPublic.male')}</span>
                   </button>
                   <button
                     type="button"
@@ -925,23 +1004,20 @@ export default function MyPets() {
                     onClick={() => setGender('female')}
                   >
                     <span className="pp-genderSeg__ico is-f" aria-hidden>♀</span>
-                    {t('petPublic.female')}
+                    <span>{t('petPublic.female')}</span>
                   </button>
                 </div>
               </div>
 
               <div>
                 <div className="pp-label">{t('petPublic.dob')} *</div>
-                <label className="pp-dateField">
-                  <span className="pp-dateField__ico" aria-hidden>📅</span>
-                  <input
-                    className="pp-input pp-dateField__input"
-                    type="date"
-                    value={dateOfBirth}
-                    onChange={(e) => setDateOfBirth(e.target.value)}
-                    required
-                  />
-                </label>
+                <input
+                  className="pp-input pp-dateField__inputNative"
+                  type="date"
+                  value={dateOfBirth}
+                  onChange={(e) => setDateOfBirth(e.target.value)}
+                  required
+                />
               </div>
 
               <div>
@@ -1237,7 +1313,7 @@ export default function MyPets() {
                         onClick={() => setEditGender('male')}
                       >
                         <span className="pp-genderSeg__ico is-m" aria-hidden>♂</span>
-                        {t('petPublic.male')}
+                        <span>{t('petPublic.male')}</span>
                       </button>
                       <button
                         type="button"
@@ -1245,22 +1321,19 @@ export default function MyPets() {
                         onClick={() => setEditGender('female')}
                       >
                         <span className="pp-genderSeg__ico is-f" aria-hidden>♀</span>
-                        {t('petPublic.female')}
+                        <span>{t('petPublic.female')}</span>
                       </button>
                     </div>
                   </div>
                   <div>
                     <div className="pp-label">{t('petPublic.dob')} *</div>
-                    <label className="pp-dateField">
-                      <span className="pp-dateField__ico" aria-hidden>📅</span>
-                      <input
-                        className="pp-input pp-dateField__input"
-                        type="date"
-                        value={editDateOfBirth}
-                        onChange={(e) => setEditDateOfBirth(e.target.value)}
-                        required
-                      />
-                    </label>
+                    <input
+                      className="pp-input pp-dateField__inputNative"
+                      type="date"
+                      value={editDateOfBirth}
+                      onChange={(e) => setEditDateOfBirth(e.target.value)}
+                      required
+                    />
                   </div>
                   <div>
                     <div className="pp-label">{t('petPublic.color')} *</div>

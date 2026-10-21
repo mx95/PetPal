@@ -71,31 +71,38 @@ export function SnapDualPawIcon({ size = 18 }) {
   );
 }
 
-export function DecoPathTrail() {
+/** Cleaner walk-route deco for the Distance snapshot card. */
+export function DecoWalkRoute() {
   return (
     <svg className="pp-hubSnap__decoSvg" viewBox="0 0 72 72" aria-hidden fill="none">
       <path
-        d="M8 48c10-2 14-14 22-18 8-4 14 2 20-2 5-3 8-10 14-12"
-        stroke="#7EB6FF"
-        strokeWidth="3.2"
+        d="M14 52c8-10 14-8 22-16s12-10 22-14"
+        stroke="#5BA0FF"
+        strokeWidth="3"
         strokeLinecap="round"
         strokeLinejoin="round"
         opacity="0.55"
       />
+      <circle cx="14" cy="52" r="3.2" fill="#2F80FF" opacity="0.55" />
       <path
-        d="M10 54c9-1 13-11 20-15 8-4 15 1 21-2"
-        stroke="#A9D0FF"
-        strokeWidth="2"
+        d="M52 28c0 0 6 2 8 10 1.2 4.5-1 8-4 9.5"
+        stroke="#2F80FF"
+        strokeWidth="2.4"
         strokeLinecap="round"
-        opacity="0.4"
+        opacity="0.45"
       />
-      <ellipse cx="56" cy="48" rx="8" ry="6.5" fill="#7EB6FF" opacity="0.45" />
-      <circle cx="50.5" cy="40.5" r="2.4" fill="#7EB6FF" opacity="0.45" />
-      <circle cx="55.2" cy="38.2" r="2.5" fill="#7EB6FF" opacity="0.45" />
-      <circle cx="60.2" cy="39" r="2.4" fill="#7EB6FF" opacity="0.45" />
-      <circle cx="63.2" cy="43.2" r="2.2" fill="#7EB6FF" opacity="0.45" />
+      <ellipse cx="58" cy="52" rx="7" ry="5.5" fill="#2F80FF" opacity="0.35" />
+      <circle cx="53.2" cy="45.5" r="2" fill="#2F80FF" opacity="0.4" />
+      <circle cx="58" cy="43.8" r="2.1" fill="#2F80FF" opacity="0.4" />
+      <circle cx="62.4" cy="45.2" r="2" fill="#2F80FF" opacity="0.4" />
+      <circle cx="64.6" cy="49" r="1.8" fill="#2F80FF" opacity="0.4" />
     </svg>
   );
+}
+
+/** @deprecated Use DecoWalkRoute */
+export function DecoPathTrail() {
+  return <DecoWalkRoute />;
 }
 
 export function DecoFlameWatermark() {

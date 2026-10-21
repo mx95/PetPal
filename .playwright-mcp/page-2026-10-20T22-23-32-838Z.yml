@@ -1,0 +1,45 @@
+- generic [ref=f53e3]:
+  - banner [ref=f53e4]:
+    - generic [ref=f53e5]:
+      - link "Home" [ref=f53e6] [cursor=pointer]:
+        - /url: /
+        - generic [ref=f53e8]:
+          - generic [ref=f53e9]: PetPal
+          - generic [ref=f53e10]: Care hub
+      - generic [ref=f53e11]:
+        - generic [ref=f53e12]:
+          - generic [ref=f53e13]: Language
+          - 'button "Select language: English" [ref=f53e15] [cursor=pointer]'
+        - link "Log in" [ref=f53e21] [cursor=pointer]:
+          - /url: /login
+        - link "Get started" [ref=f53e22] [cursor=pointer]:
+          - /url: /login
+  - generic [ref=f53e23]:
+    - status "Loading…" [ref=f53e25]:
+      - generic [ref=f53e27]:
+        - generic [ref=f53e28]: PetPal
+        - paragraph [ref=f53e30]: Loading…
+    - contentinfo [ref=f53e38]:
+      - generic [ref=f53e39]:
+        - region "PetPal" [ref=f53e41]:
+          - heading "PetPal" [level=3] [ref=f53e42]
+          - paragraph [ref=f53e43]: Supporting pet families with reliable care tools and trusted local resources.
+          - navigation "PetPal on social media" [ref=f53e44]:
+            - link "Instagram" [ref=f53e45] [cursor=pointer]:
+              - /url: https://www.instagram.com/petpalcarehub
+            - link "Facebook" [ref=f53e51] [cursor=pointer]:
+              - /url: https://www.facebook.com/profile.php?id=61591283802491
+            - link "TikTok" [ref=f53e55] [cursor=pointer]:
+              - /url: https://www.tiktok.com/@petpal.care.hub
+        - generic [ref=f53e59]:
+          - paragraph [ref=f53e60]: © 2026 PetPal. All rights reserved · Created with ❤️ by fellow pet parents.
+          - navigation "Legal" [ref=f53e61]:
+            - link "Privacy Policy" [ref=f53e62] [cursor=pointer]:
+              - /url: /privacy
+            - link "Terms & Conditions" [ref=f53e63] [cursor=pointer]:
+              - /url: /terms
+            - link "Contact us" [ref=f53e64] [cursor=pointer]:
+              - /url: /contact
+            - link "Add to Home Screen" [ref=f53e65] [cursor=pointer]:
+              - /url: /install
+            - button "Cookie settings" [ref=f53e66] [cursor=pointer]

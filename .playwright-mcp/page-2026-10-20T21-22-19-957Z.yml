@@ -1,0 +1,35 @@
+- generic [ref=f48e2]:
+  - generic [ref=f48e3]:
+    - button "Home hero" [ref=f48e4] [cursor=pointer]
+    - button "My Pets" [ref=f48e5] [cursor=pointer]
+    - button "Add pet" [ref=f48e6] [cursor=pointer]
+    - button "Edit · Overview" [ref=f48e7] [cursor=pointer]
+    - button "Edit · GPS" [active] [ref=f48e8] [cursor=pointer]
+    - button "Edit · Public page" [ref=f48e9] [cursor=pointer]
+  - generic [ref=f48e23]:
+    - generic [ref=f48e24]:
+      - generic [ref=f48e25]:
+        - generic [ref=f48e26]: ‹ Manage Bailey
+        - heading "GPS tracker" [level=2] [ref=f48e27]
+        - paragraph [ref=f48e28]: Show Bailey on the live map when a collar is linked.
+      - button "✕" [ref=f48e29] [cursor=pointer]
+    - generic [ref=f48e30]:
+      - img "PetPal GPS tracker" [ref=f48e32]
+      - generic [ref=f48e34]:
+        - strong [ref=f48e35]: Show on live map
+        - generic [ref=f48e36]: Needs a linked tracker IMEI.
+      - generic [ref=f48e38]:
+        - generic [ref=f48e39]:
+          - strong [ref=f48e40]: Tracker linked
+          - generic [ref=f48e41]: Ready
+        - generic [ref=f48e42]:
+          - generic [ref=f48e43]: IMEI
+          - textbox [ref=f48e47]: "359632108765432"
+        - paragraph [ref=f48e48]: Linked means the collar ID is saved. Open Tracker to see if location has arrived yet.
+        - generic [ref=f48e49]:
+          - button "Change" [ref=f48e50] [cursor=pointer]
+          - button "Unlink" [ref=f48e53] [cursor=pointer]
+      - paragraph [ref=f48e54]: Where is the IMEI? On the collar box or the QR card — a 15-digit number.
+    - generic [ref=f48e55]:
+      - button "Save changes" [ref=f48e56] [cursor=pointer]
+      - button "Cancel" [ref=f48e57] [cursor=pointer]

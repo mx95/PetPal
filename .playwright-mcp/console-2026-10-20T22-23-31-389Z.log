@@ -1,0 +1,211 @@
+[    1266ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ http://localhost:3000/static/js/bundle.js:104653
+[    1352ms] [WARNING] <meta name="apple-mobile-web-app-capable" content="yes"> is deprecated. Please include <meta name="mobile-web-app-capable" content="yes"> @ http://localhost:3000/dev/pets-ux:0
+[    1365ms] [WARNING] ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition. @ http://localhost:3000/static/js/bundle.js:107942
+[    1365ms] [WARNING] ⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath. @ http://localhost:3000/static/js/bundle.js:107942
+[   17331ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ http://localhost:3000/static/js/bundle.js:104653
+[   17377ms] [WARNING] ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition. @ http://localhost:3000/static/js/bundle.js:107942
+[   17377ms] [WARNING] ⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath. @ http://localhost:3000/static/js/bundle.js:107942
+[   17388ms] [WARNING] <meta name="apple-mobile-web-app-capable" content="yes"> is deprecated. Please include <meta name="mobile-web-app-capable" content="yes"> @ http://localhost:3000/dev/pets-ux:0
+[   21611ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ http://localhost:3000/static/js/bundle.js:104653
+[   21655ms] [WARNING] ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition. @ http://localhost:3000/static/js/bundle.js:107942
+[   21655ms] [WARNING] ⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath. @ http://localhost:3000/static/js/bundle.js:107942
+[   21665ms] [WARNING] <meta name="apple-mobile-web-app-capable" content="yes"> is deprecated. Please include <meta name="mobile-web-app-capable" content="yes"> @ http://localhost:3000/:0
+[   21679ms] [ERROR] Warning: React does not recognize the `%s` prop on a DOM element. If you intentionally want it to appear in the DOM as a custom attribute, spell it as lowercase `%s` instead. If you accidentally passed it from a parent component, remove it from the DOM element.%s fetchPriority fetchpriority 
+    at img
+    at div
+    at section
+    at div
+    at HomeScreen (http://localhost:3000/static/js/src_Pages_HomeScreen_js.chunk.js:391:65)
+    at RenderedRoute (http://localhost:3000/static/js/bundle.js:107526:5)
+    at Routes (http://localhost:3000/static/js/bundle.js:108260:5)
+    at Suspense
+    at div
+    at div
+    at div
+    at App (http://localhost:3000/static/js/bundle.js:99:66)
+    at ToastProvider (http://localhost:3000/static/js/bundle.js:5001:3)
+    at CommunityProvider (http://localhost:3000/static/js/bundle.js:19711:3)
+    at PublicWalkProvider (http://localhost:3000/static/js/bundle.js:14724:3)
+    at GameProvider (http://localhost:3000/static/js/bundle.js:7433:3)
+    at LostPetProvider (http://localhost:3000/static/js/bundle.js:15209:3)
+    at PetsProvider (http://localhost:3000/static/js/bundle.js:16916:3)
+    at ShopCartProvider (http://localhost:3000/static/js/bundle.js:18700:3)
+    at InboxProvider (http://localhost:3000/static/js/bundle.js:13775:3)
+    at CompanyProvider (http://localhost:3000/static/js/bundle.js:2611:3)
+    at AuthProvider (http://localhost:3000/static/js/bundle.js:1340:3)
+    at I18nProvider (http://localhost:3000/static/js/bundle.js:8719:3)
+    at Router (http://localhost:3000/static/js/bundle.js:108194:15)
+    at BrowserRouter (http://localhost:3000/static/js/bundle.js:106095:5)
+    at ErrorBoundary (http://localhost:3000/static/js/bundle.js:1162:5) @ http://localhost:3000/static/js/bundle.js:78967
+[   66316ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ http://localhost:3000/static/js/bundle.js:104653
+[   66363ms] [WARNING] ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition. @ http://localhost:3000/static/js/bundle.js:107942
+[   66363ms] [WARNING] ⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath. @ http://localhost:3000/static/js/bundle.js:107942
+[   66373ms] [WARNING] <meta name="apple-mobile-web-app-capable" content="yes"> is deprecated. Please include <meta name="mobile-web-app-capable" content="yes"> @ http://localhost:3000/dev/pets-ux:0
+[   71741ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ http://localhost:3000/static/js/bundle.js:104653
+[   71790ms] [WARNING] ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition. @ http://localhost:3000/static/js/bundle.js:107942
+[   71790ms] [WARNING] ⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath. @ http://localhost:3000/static/js/bundle.js:107942
+[   71800ms] [WARNING] <meta name="apple-mobile-web-app-capable" content="yes"> is deprecated. Please include <meta name="mobile-web-app-capable" content="yes"> @ http://localhost:3000/:0
+[   71815ms] [ERROR] Warning: React does not recognize the `%s` prop on a DOM element. If you intentionally want it to appear in the DOM as a custom attribute, spell it as lowercase `%s` instead. If you accidentally passed it from a parent component, remove it from the DOM element.%s fetchPriority fetchpriority 
+    at img
+    at div
+    at section
+    at div
+    at HomeScreen (http://localhost:3000/static/js/src_Pages_HomeScreen_js.chunk.js:391:65)
+    at RenderedRoute (http://localhost:3000/static/js/bundle.js:107526:5)
+    at Routes (http://localhost:3000/static/js/bundle.js:108260:5)
+    at Suspense
+    at div
+    at div
+    at div
+    at App (http://localhost:3000/static/js/bundle.js:99:66)
+    at ToastProvider (http://localhost:3000/static/js/bundle.js:5001:3)
+    at CommunityProvider (http://localhost:3000/static/js/bundle.js:19711:3)
+    at PublicWalkProvider (http://localhost:3000/static/js/bundle.js:14724:3)
+    at GameProvider (http://localhost:3000/static/js/bundle.js:7433:3)
+    at LostPetProvider (http://localhost:3000/static/js/bundle.js:15209:3)
+    at PetsProvider (http://localhost:3000/static/js/bundle.js:16916:3)
+    at ShopCartProvider (http://localhost:3000/static/js/bundle.js:18700:3)
+    at InboxProvider (http://localhost:3000/static/js/bundle.js:13775:3)
+    at CompanyProvider (http://localhost:3000/static/js/bundle.js:2611:3)
+    at AuthProvider (http://localhost:3000/static/js/bundle.js:1340:3)
+    at I18nProvider (http://localhost:3000/static/js/bundle.js:8719:3)
+    at Router (http://localhost:3000/static/js/bundle.js:108194:15)
+    at BrowserRouter (http://localhost:3000/static/js/bundle.js:106095:5)
+    at ErrorBoundary (http://localhost:3000/static/js/bundle.js:1162:5) @ http://localhost:3000/static/js/bundle.js:78967
+[  126265ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ http://localhost:3000/static/js/bundle.js:104653
+[  126334ms] [WARNING] <meta name="apple-mobile-web-app-capable" content="yes"> is deprecated. Please include <meta name="mobile-web-app-capable" content="yes"> @ http://localhost:3000/dev/pets-ux:0
+[  126335ms] [WARNING] ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition. @ http://localhost:3000/static/js/bundle.js:107942
+[  126336ms] [WARNING] ⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath. @ http://localhost:3000/static/js/bundle.js:107942
+[  131083ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ http://localhost:3000/static/js/bundle.js:104653
+[  131125ms] [WARNING] ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition. @ http://localhost:3000/static/js/bundle.js:107942
+[  131126ms] [WARNING] ⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath. @ http://localhost:3000/static/js/bundle.js:107942
+[  131135ms] [WARNING] <meta name="apple-mobile-web-app-capable" content="yes"> is deprecated. Please include <meta name="mobile-web-app-capable" content="yes"> @ http://localhost:3000/:0
+[  131156ms] [ERROR] Warning: React does not recognize the `%s` prop on a DOM element. If you intentionally want it to appear in the DOM as a custom attribute, spell it as lowercase `%s` instead. If you accidentally passed it from a parent component, remove it from the DOM element.%s fetchPriority fetchpriority 
+    at img
+    at div
+    at section
+    at div
+    at HomeScreen (http://localhost:3000/static/js/src_Pages_HomeScreen_js.chunk.js:391:65)
+    at RenderedRoute (http://localhost:3000/static/js/bundle.js:107526:5)
+    at Routes (http://localhost:3000/static/js/bundle.js:108260:5)
+    at Suspense
+    at div
+    at div
+    at div
+    at App (http://localhost:3000/static/js/bundle.js:99:66)
+    at ToastProvider (http://localhost:3000/static/js/bundle.js:5001:3)
+    at CommunityProvider (http://localhost:3000/static/js/bundle.js:19711:3)
+    at PublicWalkProvider (http://localhost:3000/static/js/bundle.js:14724:3)
+    at GameProvider (http://localhost:3000/static/js/bundle.js:7433:3)
+    at LostPetProvider (http://localhost:3000/static/js/bundle.js:15209:3)
+    at PetsProvider (http://localhost:3000/static/js/bundle.js:16916:3)
+    at ShopCartProvider (http://localhost:3000/static/js/bundle.js:18700:3)
+    at InboxProvider (http://localhost:3000/static/js/bundle.js:13775:3)
+    at CompanyProvider (http://localhost:3000/static/js/bundle.js:2611:3)
+    at AuthProvider (http://localhost:3000/static/js/bundle.js:1340:3)
+    at I18nProvider (http://localhost:3000/static/js/bundle.js:8719:3)
+    at Router (http://localhost:3000/static/js/bundle.js:108194:15)
+    at BrowserRouter (http://localhost:3000/static/js/bundle.js:106095:5)
+    at ErrorBoundary (http://localhost:3000/static/js/bundle.js:1162:5) @ http://localhost:3000/static/js/bundle.js:78967
+[  201307ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ http://localhost:3000/static/js/bundle.js:104653
+[  201371ms] [WARNING] <meta name="apple-mobile-web-app-capable" content="yes"> is deprecated. Please include <meta name="mobile-web-app-capable" content="yes"> @ http://localhost:3000/dev/pets-ux:0
+[  201373ms] [WARNING] ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition. @ http://localhost:3000/static/js/bundle.js:107942
+[  201373ms] [WARNING] ⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath. @ http://localhost:3000/static/js/bundle.js:107942
+[  263889ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ http://localhost:3000/static/js/bundle.js:104653
+[  263960ms] [WARNING] ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition. @ http://localhost:3000/static/js/bundle.js:107942
+[  263960ms] [WARNING] ⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath. @ http://localhost:3000/static/js/bundle.js:107942
+[  263964ms] [WARNING] <meta name="apple-mobile-web-app-capable" content="yes"> is deprecated. Please include <meta name="mobile-web-app-capable" content="yes"> @ http://localhost:3000/dev/pets-ux:0
+[  271266ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ http://localhost:3000/static/js/bundle.js:104653
+[  271330ms] [WARNING] <meta name="apple-mobile-web-app-capable" content="yes"> is deprecated. Please include <meta name="mobile-web-app-capable" content="yes"> @ http://localhost:3000/dev/pets-ux:0
+[  271331ms] [WARNING] ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition. @ http://localhost:3000/static/js/bundle.js:107942
+[  271331ms] [WARNING] ⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath. @ http://localhost:3000/static/js/bundle.js:107942
+[  275013ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ http://localhost:3000/static/js/bundle.js:104653
+[  275058ms] [WARNING] ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition. @ http://localhost:3000/static/js/bundle.js:107942
+[  275058ms] [WARNING] ⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath. @ http://localhost:3000/static/js/bundle.js:107942
+[  275067ms] [WARNING] <meta name="apple-mobile-web-app-capable" content="yes"> is deprecated. Please include <meta name="mobile-web-app-capable" content="yes"> @ http://localhost:3000/:0
+[  275082ms] [ERROR] Warning: React does not recognize the `%s` prop on a DOM element. If you intentionally want it to appear in the DOM as a custom attribute, spell it as lowercase `%s` instead. If you accidentally passed it from a parent component, remove it from the DOM element.%s fetchPriority fetchpriority 
+    at img
+    at div
+    at section
+    at div
+    at HomeScreen (http://localhost:3000/static/js/src_Pages_HomeScreen_js.chunk.js:391:65)
+    at RenderedRoute (http://localhost:3000/static/js/bundle.js:107526:5)
+    at Routes (http://localhost:3000/static/js/bundle.js:108260:5)
+    at Suspense
+    at div
+    at div
+    at div
+    at App (http://localhost:3000/static/js/bundle.js:99:66)
+    at ToastProvider (http://localhost:3000/static/js/bundle.js:5001:3)
+    at CommunityProvider (http://localhost:3000/static/js/bundle.js:19711:3)
+    at PublicWalkProvider (http://localhost:3000/static/js/bundle.js:14724:3)
+    at GameProvider (http://localhost:3000/static/js/bundle.js:7433:3)
+    at LostPetProvider (http://localhost:3000/static/js/bundle.js:15209:3)
+    at PetsProvider (http://localhost:3000/static/js/bundle.js:16916:3)
+    at ShopCartProvider (http://localhost:3000/static/js/bundle.js:18700:3)
+    at InboxProvider (http://localhost:3000/static/js/bundle.js:13775:3)
+    at CompanyProvider (http://localhost:3000/static/js/bundle.js:2611:3)
+    at AuthProvider (http://localhost:3000/static/js/bundle.js:1340:3)
+    at I18nProvider (http://localhost:3000/static/js/bundle.js:8719:3)
+    at Router (http://localhost:3000/static/js/bundle.js:108194:15)
+    at BrowserRouter (http://localhost:3000/static/js/bundle.js:106095:5)
+    at ErrorBoundary (http://localhost:3000/static/js/bundle.js:1162:5) @ http://localhost:3000/static/js/bundle.js:78967
+[ 2261842ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ http://localhost:3000/static/js/bundle.js:104658
+[ 2261912ms] [WARNING] <meta name="apple-mobile-web-app-capable" content="yes"> is deprecated. Please include <meta name="mobile-web-app-capable" content="yes"> @ http://localhost:3000/:0
+[ 2261914ms] [WARNING] ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition. @ http://localhost:3000/static/js/bundle.js:107947
+[ 2261914ms] [WARNING] ⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath. @ http://localhost:3000/static/js/bundle.js:107947
+[ 2261951ms] [ERROR] Warning: React does not recognize the `%s` prop on a DOM element. If you intentionally want it to appear in the DOM as a custom attribute, spell it as lowercase `%s` instead. If you accidentally passed it from a parent component, remove it from the DOM element.%s fetchPriority fetchpriority 
+    at img
+    at div
+    at section
+    at div
+    at HomeScreen (http://localhost:3000/static/js/src_Pages_HomeScreen_js.chunk.js:391:65)
+    at RenderedRoute (http://localhost:3000/static/js/bundle.js:107531:5)
+    at Routes (http://localhost:3000/static/js/bundle.js:108265:5)
+    at Suspense
+    at div
+    at div
+    at div
+    at App (http://localhost:3000/static/js/bundle.js:99:66)
+    at ToastProvider (http://localhost:3000/static/js/bundle.js:5001:3)
+    at CommunityProvider (http://localhost:3000/static/js/bundle.js:19716:3)
+    at PublicWalkProvider (http://localhost:3000/static/js/bundle.js:14729:3)
+    at GameProvider (http://localhost:3000/static/js/bundle.js:7433:3)
+    at LostPetProvider (http://localhost:3000/static/js/bundle.js:15214:3)
+    at PetsProvider (http://localhost:3000/static/js/bundle.js:16921:3)
+    at ShopCartProvider (http://localhost:3000/static/js/bundle.js:18705:3)
+    at InboxProvider (http://localhost:3000/static/js/bundle.js:13780:3)
+    at CompanyProvider (http://localhost:3000/static/js/bundle.js:2611:3)
+    at AuthProvider (http://localhost:3000/static/js/bundle.js:1340:3)
+    at I18nProvider (http://localhost:3000/static/js/bundle.js:8719:3)
+    at Router (http://localhost:3000/static/js/bundle.js:108199:15)
+    at BrowserRouter (http://localhost:3000/static/js/bundle.js:106100:5)
+    at ErrorBoundary (http://localhost:3000/static/js/bundle.js:1162:5) @ http://localhost:3000/static/js/bundle.js:78972
+[ 2319926ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ http://localhost:3000/static/js/bundle.js:104658
+[ 2319993ms] [WARNING] <meta name="apple-mobile-web-app-capable" content="yes"> is deprecated. Please include <meta name="mobile-web-app-capable" content="yes"> @ http://localhost:3000/dev/pets-ux:0
+[ 2319994ms] [WARNING] ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition. @ http://localhost:3000/static/js/bundle.js:107947
+[ 2319995ms] [WARNING] ⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath. @ http://localhost:3000/static/js/bundle.js:107947
+[ 3532891ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ http://localhost:3000/static/js/bundle.js:104662
+[ 3532967ms] [WARNING] <meta name="apple-mobile-web-app-capable" content="yes"> is deprecated. Please include <meta name="mobile-web-app-capable" content="yes"> @ http://localhost:3000/dev/pets-ux:0
+[ 3532969ms] [WARNING] ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition. @ http://localhost:3000/static/js/bundle.js:107951
+[ 3532970ms] [WARNING] ⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath. @ http://localhost:3000/static/js/bundle.js:107951
+[ 3573049ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ http://localhost:3000/static/js/bundle.js:104662
+[ 3573117ms] [WARNING] <meta name="apple-mobile-web-app-capable" content="yes"> is deprecated. Please include <meta name="mobile-web-app-capable" content="yes"> @ http://localhost:3000/dev/pets-ux:0
+[ 3573120ms] [WARNING] ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition. @ http://localhost:3000/static/js/bundle.js:107951
+[ 3573120ms] [WARNING] ⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath. @ http://localhost:3000/static/js/bundle.js:107951
+[ 3613250ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ http://localhost:3000/static/js/bundle.js:104662
+[ 3613308ms] [WARNING] ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition. @ http://localhost:3000/static/js/bundle.js:107951
+[ 3613308ms] [WARNING] ⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath. @ http://localhost:3000/static/js/bundle.js:107951
+[ 3613310ms] [WARNING] <meta name="apple-mobile-web-app-capable" content="yes"> is deprecated. Please include <meta name="mobile-web-app-capable" content="yes"> @ http://localhost:3000/dev/pets-ux:0
+[ 3816520ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ http://localhost:3000/static/js/bundle.js:104662
+[ 3816592ms] [WARNING] <meta name="apple-mobile-web-app-capable" content="yes"> is deprecated. Please include <meta name="mobile-web-app-capable" content="yes"> @ http://localhost:3000/dev/pets-ux:0
+[ 3816594ms] [WARNING] ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition. @ http://localhost:3000/static/js/bundle.js:107951
+[ 3816594ms] [WARNING] ⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath. @ http://localhost:3000/static/js/bundle.js:107951
+[ 3871220ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ http://localhost:3000/static/js/bundle.js:104662
+[ 3871272ms] [WARNING] ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition. @ http://localhost:3000/static/js/bundle.js:107951
+[ 3871273ms] [WARNING] ⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath. @ http://localhost:3000/static/js/bundle.js:107951
+[ 3871282ms] [WARNING] <meta name="apple-mobile-web-app-capable" content="yes"> is deprecated. Please include <meta name="mobile-web-app-capable" content="yes"> @ http://localhost:3000/dev/pets-ux:0
+[ 4628768ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ http://localhost:3000/static/js/bundle.js:104673
+[ 4628840ms] [WARNING] <meta name="apple-mobile-web-app-capable" content="yes"> is deprecated. Please include <meta name="mobile-web-app-capable" content="yes"> @ http://localhost:3000/dev/pets-ux:0
+[ 4628842ms] [WARNING] ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition. @ http://localhost:3000/static/js/bundle.js:107962
+[ 4628842ms] [WARNING] ⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath. @ http://localhost:3000/static/js/bundle.js:107962
