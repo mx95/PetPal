@@ -125,8 +125,9 @@ const ru = {
     },
     publicHero: {
       eyebrow: 'Технологии ухода за питомцами для Кипра',
-      headlineBefore: 'PetPal Care Hub —',
-      headlineAfter: 'один спокойный дом для каждого питомца.',
+      headline: 'Всё, что нужно вашему питомцу',
+      headlineBefore: 'Всё, что нужно вашему питомцу',
+      headlineAfter: '',
       ctaPrimary: 'Создать аккаунт',
       ctaSecondary: 'Уже участник',
       bullet1Title: 'Ежедневные прогулки',
