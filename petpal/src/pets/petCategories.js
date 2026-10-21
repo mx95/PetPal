@@ -6,8 +6,10 @@ export const PET_CATEGORIES = [
   { id: 'cat', label: 'Cat', emoji: '🐈' },
   { id: 'rabbit', label: 'Rabbit', emoji: '🐰' },
   { id: 'bird', label: 'Bird', emoji: '🐦' },
-  { id: 'reptile', label: 'Reptile / amphibian', emoji: '🦎' },
-  { id: 'small', label: 'Small pet (hamster, etc.)', emoji: '🐹' },
+  { id: 'horse', label: 'Horse', emoji: '🐴' },
+  { id: 'reptile', label: 'Reptile', emoji: '🦎' },
+  { id: 'fish', label: 'Fish', emoji: '🐠' },
+  { id: 'small', label: 'Small', emoji: '🐹' },
   { id: 'other', label: 'Other', emoji: '🐾' },
 ];
 

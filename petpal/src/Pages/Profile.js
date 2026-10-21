@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { updateProfile } from 'firebase/auth';
 import { doc, getDoc, runTransaction, serverTimestamp, setDoc } from 'firebase/firestore';
@@ -24,6 +24,59 @@ const ICONS = {
   orders: '📦',
   signOut: '👋',
 };
+
+function IconPerson() {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="8" r="3.2" />
+      <path d="M5.5 19.5c1.2-3.2 3.4-4.8 6.5-4.8s5.3 1.6 6.5 4.8" />
+    </svg>
+  );
+}
+
+function IconPhone() {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M8.5 4.5h3l1.2 3.2-1.6 1.2a11 11 0 0 0 4.7 4.7l1.2-1.6 3.2 1.2v3a2 2 0 0 1-2.2 2A14.5 14.5 0 0 1 4.5 6.7a2 2 0 0 1 2-2.2z" />
+    </svg>
+  );
+}
+
+function IconMail() {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3.5" y="5.5" width="17" height="13" rx="2" />
+      <path d="M4.5 7.5 12 13l7.5-5.5" />
+    </svg>
+  );
+}
+
+function IconPin() {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 21s6-5.2 6-10a6 6 0 1 0-12 0c0 4.8 6 10 6 10z" />
+      <circle cx="12" cy="11" r="2.2" />
+    </svg>
+  );
+}
+
+function IconWhatsApp() {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="currentColor">
+      <path d="M12.04 3.5a8.4 8.4 0 0 0-7.2 12.7L4 20.5l4.45-.9A8.4 8.4 0 1 0 12.04 3.5zm4.9 11.9c-.2.57-1.17 1.05-1.62 1.12-.41.06-.94.09-1.52-.09-.35-.11-.8-.26-1.38-.51-2.43-1.05-4.01-3.5-4.13-3.66-.12-.16-1-1.33-1-2.54 0-1.2.63-1.8.86-2.04.22-.24.49-.3.65-.3h.47c.15 0 .35-.06.55.42.2.5.69 1.72.75 1.84.06.12.1.27.02.43-.08.16-.12.27-.24.41-.12.15-.25.33-.36.44-.12.12-.24.25-.1.48.14.24.63 1.04 1.35 1.68.93.83 1.71 1.09 1.95 1.21.24.12.38.1.52-.06.14-.16.6-.7.76-.94.16-.24.32-.2.54-.12.22.08 1.4.66 1.64.78.24.12.4.18.46.28.06.1.06.57-.14 1.14z" />
+    </svg>
+  );
+}
+
+function formatPhoneDisplay(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return '—';
+  const digits = raw.replace(/[^\d+]/g, '');
+  if (digits.startsWith('+357') && digits.length >= 12) {
+    return `+357 ${digits.slice(4, 8)} ${digits.slice(8)}`;
+  }
+  return raw;
+}
 
 function ProfileActionCard({ to, icon, title, desc, accent, onClick }) {
   const cls = `pp-actionCard pp-actionCard--${accent}`;
@@ -56,6 +109,8 @@ export default function Profile() {
   const [profileLoaded, setProfileLoaded] = useState(false);
   const [profileErr, setProfileErr] = useState('');
   const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [profilePanel, setProfilePanel] = useState('hub'); // hub | personal | contact
+  const [extraContactOpen, setExtraContactOpen] = useState(true);
   const [form, setForm] = useState({
     username: '',
     firstName: '',
@@ -133,6 +188,14 @@ export default function Profile() {
   function normalizeAccountName(value) {
     return String(value || '').trim().toLocaleLowerCase();
   }
+
+  const fullName = useMemo(() => {
+    const parts = [form.firstName, form.lastName].map((s) => String(s || '').trim()).filter(Boolean);
+    if (parts.length) return parts.join(' ');
+    return displayName || t('profile.youFallback');
+  }, [form.firstName, form.lastName, displayName, t]);
+
+  const handleLabel = form.username ? `@${form.username.replace(/^@/, '')}` : '';
 
   async function onSaveProfile(e) {
     e.preventDefault();
@@ -224,6 +287,8 @@ export default function Profile() {
         // Firestore stays source of truth even if auth displayName update fails.
       }
       setProfileMeta((prev) => ({ ...prev, accountNameNormalized: nextNameNormalized }));
+      setForm((prev) => ({ ...prev, phone, phone2, whatsapp }));
+      setProfilePanel('hub');
       setProfileModalOpen(false);
       show(t('profile.form.saved'), { kind: 'success' });
     } catch {
@@ -231,6 +296,19 @@ export default function Profile() {
     } finally {
       setProfileBusy(false);
     }
+  }
+
+  function openProfileModal() {
+    setProfileErr('');
+    setProfilePanel('hub');
+    setExtraContactOpen(true);
+    setProfileModalOpen(true);
+  }
+
+  function closeProfileModal() {
+    setProfileModalOpen(false);
+    setProfilePanel('hub');
+    setProfileErr('');
   }
 
   const items = [
@@ -398,10 +476,7 @@ export default function Profile() {
             title={t('profile.action.editProfile.title')}
             desc={t('profile.action.editProfile.desc')}
             accent="docs"
-            onClick={() => {
-              setProfileErr('');
-              setProfileModalOpen(true);
-            }}
+            onClick={openProfileModal}
           />
           {items.map((it) => (
             <ProfileActionCard
@@ -424,88 +499,342 @@ export default function Profile() {
       </div>
 
       {profileModalOpen ? (
-        <div className="pp-modalWrap" role="dialog" aria-modal="true" aria-label={t('profile.form.title')}>
-          <div className="pp-modalBackdrop" aria-hidden />
-          <section className="pp-modalCard" onClick={(e) => e.stopPropagation()}>
-            <div className="pp-modalHead">
-              <h3 className="pp-profileEditorTitle" style={{ margin: 0 }}>{t('profile.form.title')}</h3>
-            </div>
-
+        <div
+          className="pp-modalWrap"
+          role="dialog"
+          aria-modal="true"
+          aria-label={
+            profilePanel === 'contact'
+              ? t('profile.form.contactTitle')
+              : profilePanel === 'personal'
+                ? t('profile.form.personalTitle')
+                : t('profile.form.title')
+          }
+        >
+          <div className="pp-modalBackdrop" aria-hidden onClick={closeProfileModal} />
+          <section className="pp-modalCard pp-profileModalCard" onClick={(e) => e.stopPropagation()}>
             {!profileLoaded ? (
-              <p className="pp-subtle" style={{ padding: '0 18px 18px' }}>{t('profile.form.loading')}</p>
+              <p className="pp-subtle" style={{ padding: '18px' }}>{t('profile.form.loading')}</p>
             ) : (
-              <form className="pp-modalForm" onSubmit={onSaveProfile}>
-                <p className="pp-profileEditorSub" style={{ marginTop: 0 }}>{t('profile.form.subtitle')}</p>
+              <form className="pp-modalForm pp-profileModalForm" onSubmit={onSaveProfile}>
+                {profilePanel === 'hub' ? (
+                  <>
+                    <header className="pp-profileModalHead">
+                      <h3 className="pp-profileEditorTitle">{t('profile.form.title')}</h3>
+                      <p className="pp-profileEditorSub">{t('profile.form.subtitleShort')}</p>
+                    </header>
 
-                <h3 className="pp-profilePhotoTitle" style={{ marginBottom: 14 }}>{t('profile.photo.title')}</h3>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 12 }}>
-                  <UserAvatar user={user} size={68} />
-                  <div className="pp-profilePhotoRow" style={{ marginBottom: 0 }}>
-                    <button
-                      type="button"
-                      className="pp-btn pp-btnPrimary"
-                      disabled={photoBusy}
-                      onClick={() => fileRef.current?.click()}
-                    >
-                      {photoBusy ? t('profile.photo.uploading') : t('profile.photo.upload')}
-                    </button>
-                    {hasPhoto ? (
-                      <button type="button" className="pp-btn pp-btn--ghost" disabled={photoBusy} onClick={onRemovePhoto}>
-                        {t('profile.photo.remove')}
+                    <div className="pp-profileIdentityCard">
+                      <button
+                        type="button"
+                        className="pp-profileIdentityCard__avatarBtn"
+                        onClick={() => fileRef.current?.click()}
+                        disabled={photoBusy}
+                        aria-label={photoBusy ? t('profile.photo.uploading') : t('profile.form.changePhoto')}
+                      >
+                        <UserAvatar user={user} size={72} />
+                        <span className="pp-profilePhotoEdit__badge" aria-hidden>📷</span>
                       </button>
-                    ) : null}
-                  </div>
-                </div>
+                      <div className="pp-profileIdentityCard__copy">
+                        <button
+                          type="button"
+                          className="pp-profileIdentityCard__nameBtn"
+                          onClick={() => setProfilePanel('personal')}
+                        >
+                          <strong>{fullName}</strong>
+                          {handleLabel ? <span className="pp-profileIdentityCard__handle">{handleLabel}</span> : null}
+                        </button>
+                        <button
+                          type="button"
+                          className="pp-profileIdentityCard__photoLink"
+                          disabled={photoBusy}
+                          onClick={() => fileRef.current?.click()}
+                        >
+                          {photoBusy ? t('profile.photo.uploading') : t('profile.form.changePhoto')}
+                        </button>
+                      </div>
+                      <button
+                        type="button"
+                        className="pp-profileIdentityCard__chevBtn"
+                        onClick={() => setProfilePanel('personal')}
+                        aria-label={t('profile.form.personalTitle')}
+                      >
+                        <span className="pp-editNavChev" aria-hidden>›</span>
+                      </button>
+                    </div>
 
-                <div className="pp-profileEditorGrid">
-                  <div>
-                    <label className="pp-label" htmlFor="pp-username">{t('profile.form.username')}</label>
-                    <input id="pp-username" className="pp-input" value={form.username} onChange={(e) => onFieldChange('username', e.target.value)} minLength={2} />
-                  </div>
-                  <div>
-                    <label className="pp-label" htmlFor="pp-first-name">{t('profile.form.firstName')}</label>
-                    <input id="pp-first-name" className="pp-input" value={form.firstName} onChange={(e) => onFieldChange('firstName', e.target.value)} />
-                  </div>
-                  <div>
-                    <label className="pp-label" htmlFor="pp-last-name">{t('profile.form.lastName')}</label>
-                    <input id="pp-last-name" className="pp-input" value={form.lastName} onChange={(e) => onFieldChange('lastName', e.target.value)} />
-                  </div>
-                  <div>
-                    <label className="pp-label" htmlFor="pp-phone">{t('profile.form.phone')}</label>
-                    <input id="pp-phone" className="pp-input" value={form.phone} onChange={(e) => onFieldChange('phone', e.target.value)} placeholder="+35799123456" />
-                  </div>
-                  <div>
-                    <label className="pp-label" htmlFor="pp-phone2">{t('profile.form.phone2')}</label>
-                    <input id="pp-phone2" className="pp-input" value={form.phone2} onChange={(e) => onFieldChange('phone2', e.target.value)} placeholder="+35722123456" />
-                  </div>
-                  <div>
-                    <label className="pp-label" htmlFor="pp-contact-email">{t('profile.form.email')}</label>
-                    <input id="pp-contact-email" className="pp-input" type="email" value={user?.email || ''} disabled readOnly />
-                  </div>
-                  <div>
-                    <label className="pp-label" htmlFor="pp-whatsapp">{t('profile.form.whatsapp')}</label>
-                    <input id="pp-whatsapp" className="pp-input" value={form.whatsapp} onChange={(e) => onFieldChange('whatsapp', e.target.value)} placeholder="+35799123456" />
-                  </div>
-                  <div className="pp-profileEditorGrid__full">
-                    <label className="pp-label" htmlFor="pp-location">{t('profile.form.location')}</label>
-                    <input id="pp-location" className="pp-input" value={form.location} onChange={(e) => onFieldChange('location', e.target.value)} placeholder={t('profile.form.locationPlaceholder')} />
-                  </div>
-                </div>
+                    <div className="pp-editNavList pp-profileHubList">
+                      <button type="button" className="pp-editNavItem" onClick={() => setProfilePanel('personal')}>
+                        <span className="pp-editNavIco is-purple"><IconPerson /></span>
+                        <span>
+                          <strong>{t('profile.form.personalTitle')}</strong>
+                          <small>
+                            {t('profile.form.firstName')}: {form.firstName || '—'}
+                            {' · '}
+                            {t('profile.form.lastName')}: {form.lastName || '—'}
+                            {' · '}
+                            {t('profile.form.location')}: {form.location || '—'}
+                          </small>
+                        </span>
+                        <span className="pp-editNavChev">›</span>
+                      </button>
 
-                <p className="pp-subtle pp-profileEditorHint">{t('profile.form.phoneHint')}</p>
+                      <button type="button" className="pp-editNavItem" onClick={() => setProfilePanel('contact')}>
+                        <span className="pp-editNavIco is-green"><IconPhone /></span>
+                        <span>
+                          <strong>{t('profile.form.contactTitleShort')}</strong>
+                          <small>
+                            {t('profile.form.phone')}: {formatPhoneDisplay(form.phone)}
+                            {' · '}
+                            {t('profile.form.email')}: {user?.email || '—'}
+                          </small>
+                        </span>
+                        <span className="pp-editNavChev">›</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        className="pp-editNavItem"
+                        onClick={() => {
+                          setExtraContactOpen(true);
+                          setProfilePanel('contact');
+                        }}
+                      >
+                        <span className="pp-editNavIco is-green"><IconWhatsApp /></span>
+                        <span>
+                          <strong>{t('profile.form.extraContactTitle')}</strong>
+                          <small>
+                            {t('profile.form.phone2')}: {formatPhoneDisplay(form.phone2)}
+                            {' · '}
+                            {t('profile.form.whatsapp')}: {formatPhoneDisplay(form.whatsapp)}
+                          </small>
+                        </span>
+                        <span className="pp-editNavChev">›</span>
+                      </button>
+                    </div>
+                  </>
+                ) : null}
+
+                {profilePanel === 'personal' ? (
+                  <>
+                    <header className="pp-profileModalHead pp-profileModalHead--back">
+                      <button
+                        type="button"
+                        className="pp-iconRoundBtn"
+                        onClick={() => setProfilePanel('hub')}
+                        aria-label={t('common.back')}
+                      >
+                        ←
+                      </button>
+                      <div>
+                        <h3 className="pp-profileEditorTitle">{t('profile.form.personalTitle')}</h3>
+                        <p className="pp-profileEditorSub">{t('profile.form.personalSub')}</p>
+                      </div>
+                    </header>
+
+                    <div className="pp-profileFieldStack">
+                      <div>
+                        <label className="pp-label" htmlFor="pp-username">{t('profile.form.username')}</label>
+                        <div className="pp-profileField">
+                          <span className="pp-profileField__ico is-purple" aria-hidden><IconPerson /></span>
+                          <input
+                            id="pp-username"
+                            className="pp-input pp-profileField__input"
+                            value={form.username}
+                            onChange={(e) => onFieldChange('username', e.target.value)}
+                            minLength={2}
+                            required
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="pp-label" htmlFor="pp-first-name">{t('profile.form.firstName')}</label>
+                        <div className="pp-profileField">
+                          <span className="pp-profileField__ico is-purple" aria-hidden><IconPerson /></span>
+                          <input
+                            id="pp-first-name"
+                            className="pp-input pp-profileField__input"
+                            value={form.firstName}
+                            onChange={(e) => onFieldChange('firstName', e.target.value)}
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="pp-label" htmlFor="pp-last-name">{t('profile.form.lastName')}</label>
+                        <div className="pp-profileField">
+                          <span className="pp-profileField__ico is-purple" aria-hidden><IconPerson /></span>
+                          <input
+                            id="pp-last-name"
+                            className="pp-input pp-profileField__input"
+                            value={form.lastName}
+                            onChange={(e) => onFieldChange('lastName', e.target.value)}
+                          />
+                        </div>
+                      </div>
+                      <div className="pp-profileLocCard">
+                        <div className="pp-profileLocCard__head">
+                          <span className="pp-editNavIco is-purple"><IconPin /></span>
+                          <div>
+                            <strong>{t('profile.form.location')}</strong>
+                            <small>{t('profile.form.locationHint')}</small>
+                          </div>
+                        </div>
+                        <input
+                          id="pp-location-personal"
+                          className="pp-input"
+                          value={form.location}
+                          onChange={(e) => onFieldChange('location', e.target.value)}
+                          placeholder={t('profile.form.locationPlaceholder')}
+                        />
+                      </div>
+                      {hasPhoto ? (
+                        <button type="button" className="pp-btn pp-btn--ghost" disabled={photoBusy} onClick={onRemovePhoto}>
+                          {t('profile.photo.remove')}
+                        </button>
+                      ) : null}
+                    </div>
+                  </>
+                ) : null}
+
+                {profilePanel === 'contact' ? (
+                  <>
+                    <header className="pp-profileModalHead pp-profileModalHead--back">
+                      <button
+                        type="button"
+                        className="pp-iconRoundBtn"
+                        onClick={() => setProfilePanel('hub')}
+                        aria-label={t('common.back')}
+                      >
+                        ←
+                      </button>
+                      <div>
+                        <h3 className="pp-profileEditorTitle">{t('profile.form.contactTitle')}</h3>
+                        <p className="pp-profileEditorSub">{t('profile.form.contactSub')}</p>
+                      </div>
+                    </header>
+
+                    <div className="pp-profileFieldStack">
+                      <div>
+                        <label className="pp-label" htmlFor="pp-phone">
+                          {t('profile.form.phoneNumber')} <span aria-hidden>*</span>
+                        </label>
+                        <div className="pp-profileField">
+                          <span className="pp-profileField__ico is-purple" aria-hidden><IconPhone /></span>
+                          <input
+                            id="pp-phone"
+                            className="pp-input pp-profileField__input"
+                            type="tel"
+                            inputMode="tel"
+                            autoComplete="tel"
+                            value={form.phone}
+                            onChange={(e) => onFieldChange('phone', e.target.value)}
+                            placeholder="+35799123456"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="pp-label" htmlFor="pp-contact-email">
+                          {t('profile.form.email')} <span aria-hidden>*</span>
+                        </label>
+                        <div className="pp-profileField">
+                          <span className="pp-profileField__ico is-purple" aria-hidden><IconMail /></span>
+                          <input
+                            id="pp-contact-email"
+                            className="pp-input pp-profileField__input"
+                            type="email"
+                            value={user?.email || ''}
+                            disabled
+                            readOnly
+                          />
+                        </div>
+                      </div>
+
+                      <div className={`pp-profileExtraCard ${extraContactOpen ? 'is-open' : ''}`}>
+                        <button
+                          type="button"
+                          className="pp-profileExtraCard__toggle"
+                          aria-expanded={extraContactOpen}
+                          onClick={() => setExtraContactOpen((v) => !v)}
+                        >
+                          <span>{t('profile.form.extraContactTitle')}</span>
+                          <span aria-hidden>{extraContactOpen ? '▴' : '▾'}</span>
+                        </button>
+                        {extraContactOpen ? (
+                          <div className="pp-profileExtraCard__body">
+                            <div>
+                              <label className="pp-label" htmlFor="pp-phone2">{t('profile.form.phone2')}</label>
+                              <div className="pp-profileField">
+                                <span className="pp-profileField__ico is-purple" aria-hidden><IconPhone /></span>
+                                <input
+                                  id="pp-phone2"
+                                  className="pp-input pp-profileField__input"
+                                  type="tel"
+                                  inputMode="tel"
+                                  autoComplete="tel"
+                                  value={form.phone2}
+                                  onChange={(e) => onFieldChange('phone2', e.target.value)}
+                                  placeholder="+35722123456"
+                                />
+                              </div>
+                            </div>
+                            <div>
+                              <label className="pp-label" htmlFor="pp-whatsapp">{t('profile.form.whatsapp')}</label>
+                              <div className="pp-profileField">
+                                <span className="pp-profileField__ico is-green" aria-hidden><IconWhatsApp /></span>
+                                <input
+                                  id="pp-whatsapp"
+                                  className="pp-input pp-profileField__input"
+                                  type="tel"
+                                  inputMode="tel"
+                                  autoComplete="tel"
+                                  value={form.whatsapp}
+                                  onChange={(e) => onFieldChange('whatsapp', e.target.value)}
+                                  placeholder="+35799123456"
+                                />
+                              </div>
+                            </div>
+                            <p className="pp-profilePhoneHint">
+                              <span aria-hidden>ℹ</span>
+                              {t('profile.form.phoneHintShort')}
+                            </p>
+                          </div>
+                        ) : null}
+                      </div>
+
+                      <div className="pp-profileLocCard">
+                        <div className="pp-profileLocCard__head">
+                          <span className="pp-editNavIco is-purple"><IconPin /></span>
+                          <div>
+                            <strong>{t('profile.form.location')}</strong>
+                            <small>{t('profile.form.locationHint')}</small>
+                          </div>
+                        </div>
+                        <input
+                          id="pp-location"
+                          className="pp-input"
+                          value={form.location}
+                          onChange={(e) => onFieldChange('location', e.target.value)}
+                          placeholder={t('profile.form.locationPlaceholder')}
+                        />
+                      </div>
+                    </div>
+                  </>
+                ) : null}
+
                 {profileErr ? <div className="pp-error">{profileErr}</div> : null}
 
-                <div className="pp-modalActions">
+                <div className="pp-profileModalActions">
+                  <button type="submit" className="pp-btn pp-btnPrimary pp-profileModalActions__save" disabled={profileBusy}>
+                    {profileBusy ? t('profile.form.saving') : t('profile.form.save')}
+                  </button>
                   <button
                     type="button"
-                    className="pp-btn pp-btn--ghost"
-                    onClick={() => setProfileModalOpen(false)}
+                    className="pp-btn pp-profileModalActions__cancel"
+                    onClick={closeProfileModal}
                     disabled={profileBusy || photoBusy}
                   >
                     {t('common.cancel')}
-                  </button>
-                  <button type="submit" className="pp-btn pp-btnPrimary" disabled={profileBusy}>
-                    {profileBusy ? t('profile.form.saving') : t('profile.form.save')}
                   </button>
                 </div>
               </form>

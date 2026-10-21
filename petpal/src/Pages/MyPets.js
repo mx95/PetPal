@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
 import { useAuth } from '../auth/AuthProvider';
 import { getDb, isFirebaseConfigured } from '../firebase';
@@ -16,15 +16,6 @@ import IconMedPill from '../components/icons/IconMedPill';
 import { sharePetWithEmail } from '../pets/petShareFirestore';
 import { linkPetTrackerImei } from '../tracking/linkPetTrackerImei';
 import { fetchRegisteredTrackerImeis } from '../tracking/registeredDeviceClient';
-
-function IconPencil() {
-  return (
-    <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 20h9" />
-      <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
-    </svg>
-  );
-}
 
 function IconShare() {
   return (
@@ -88,26 +79,180 @@ function IconDownload() {
   );
 }
 
+function IconPin() {
+  return (
+    <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 21s7-5.2 7-11a7 7 0 1 0-14 0c0 5.8 7 11 7 11z" />
+      <circle cx="12" cy="10" r="2.5" />
+    </svg>
+  );
+}
+
+function IconSignal() {
+  return (
+    <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4.5 14.5a8.5 8.5 0 0 1 15 0" />
+      <path d="M7.5 17a4.5 4.5 0 0 1 9 0" />
+      <circle cx="12" cy="20" r="1" />
+    </svg>
+  );
+}
+
+function IconMore() {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="currentColor">
+      <circle cx="5" cy="12" r="1.6" />
+      <circle cx="12" cy="12" r="1.6" />
+      <circle cx="19" cy="12" r="1.6" />
+    </svg>
+  );
+}
+
+function IconBack() {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M15 18l-6-6 6-6" />
+    </svg>
+  );
+}
+
+function IconDoc() {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M7 3h7l4 4v14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" />
+      <path d="M14 3v5h5M9 13h6M9 17h4" />
+    </svg>
+  );
+}
+
+function IconPaw() {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="7" cy="8" r="1.8" />
+      <circle cx="12" cy="5.8" r="1.8" />
+      <circle cx="17" cy="8" r="1.8" />
+      <path d="M8.5 14c0-2 1.5-3.2 3.5-3.2s3.5 1.2 3.5 3.2c0 2.2-1.4 3.8-3.5 3.8S8.5 16.2 8.5 14z" />
+    </svg>
+  );
+}
+
+function IconMoreAbout() {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M8 4h8a2 2 0 0 1 2 2v14l-3-2-3 2-3-2-3 2V6a2 2 0 0 1 2-2z" />
+      <path d="M9 9h6M9 13h6" />
+    </svg>
+  );
+}
+
+/** Solid green circle + white tick (NFC active / enabled states). */
+function IconGreenTick({ size = 28, soft = false }) {
+  if (soft) {
+    return (
+      <svg viewBox="0 0 32 32" width={size} height={size} aria-hidden="true">
+        <circle cx="16" cy="16" r="16" fill="#d1fadf" />
+        <path
+          d="M10.5 16.2l3.2 3.2 7.8-7.8"
+          fill="none"
+          stroke="#039855"
+          strokeWidth="2.4"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    );
+  }
+  return (
+    <svg viewBox="0 0 32 32" width={size} height={size} aria-hidden="true">
+      <circle cx="16" cy="16" r="16" fill="#12b76a" />
+      <path
+        d="M10.5 16.2l3.2 3.2 7.8-7.8"
+        fill="none"
+        stroke="#fff"
+        strokeWidth="2.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function IconCam() {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 8h3l2-2h6l2 2h3v11H4V8z" />
+      <circle cx="12" cy="13" r="3.5" />
+    </svg>
+  );
+}
+
+function IconInfo() {
+  return (
+    <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 10v6M12 7h.01" />
+    </svg>
+  );
+}
+
+function IconKey() {
+  return (
+    <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="8" cy="15" r="4" />
+      <path d="M12 15h9l-2 2 2 2" />
+    </svg>
+  );
+}
+
+function IconDevice() {
+  return (
+    <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="7" y="3" width="10" height="18" rx="2" />
+      <path d="M11 18h2" />
+    </svg>
+  );
+}
+
+const GPS_TRACKER_IMG = `${process.env.PUBLIC_URL || ''}/images/shop/gps-tracker-v4.png`;
+
+function formatPetAge(dateOfBirth, t) {
+  if (!dateOfBirth) return '';
+  const born = new Date(`${dateOfBirth}T00:00:00`);
+  if (Number.isNaN(born.getTime())) return '';
+  const now = new Date();
+  let years = now.getFullYear() - born.getFullYear();
+  const m = now.getMonth() - born.getMonth();
+  if (m < 0 || (m === 0 && now.getDate() < born.getDate())) years -= 1;
+  if (years < 1) {
+    let months = (now.getFullYear() - born.getFullYear()) * 12 + (now.getMonth() - born.getMonth());
+    if (now.getDate() < born.getDate()) months -= 1;
+    if (months < 1) return t('myPets.ageUnderOneMonth');
+    return t('myPets.ageMonths', { count: months });
+  }
+  return t('myPets.ageYears', { count: years });
+}
+
 export default function MyPets() {
   const { user } = useAuth();
   const { t } = useI18n();
   const { show } = useToast();
   const location = useLocation();
+  const navigate = useNavigate();
   const { pets, ownedPets, sharedPets, addPet, updatePet, removePet, getCategory } = usePets();
   const [name, setName] = useState('');
-  const [addDeviceId, setAddDeviceId] = useState('');
   const [breed, setBreed] = useState('');
   const [gender, setGender] = useState('male');
-  const [microchipNo, setMicrochipNo] = useState('');
   const [dateOfBirth, setDateOfBirth] = useState('');
   const [colorScheme, setColorScheme] = useState('');
   const [identifyingMarks, setIdentifyingMarks] = useState('');
   const [medicalNotes, setMedicalNotes] = useState('');
+  const [veterinarian, setVeterinarian] = useState('');
   const [ownerName, setOwnerName] = useState('');
   const [ownerPhone, setOwnerPhone] = useState('');
   const [ownerEmail, setOwnerEmail] = useState('');
   const [accountType, setAccountType] = useState('individual');
   const [friendlyWith, setFriendlyWith] = useState({ dogs: false, cats: false, people: false, children: false });
+  const [addMoreOpen, setAddMoreOpen] = useState(false);
   const [categoryId, setCategoryId] = useState('dog');
   const [editingId, setEditingId] = useState(null);
   const [editName, setEditName] = useState('');
@@ -133,10 +278,14 @@ export default function MyPets() {
   const [editColorScheme, setEditColorScheme] = useState('');
   const [editIdentifyingMarks, setEditIdentifyingMarks] = useState('');
   const [editDescription, setEditDescription] = useState('');
+  const [editVeterinarian, setEditVeterinarian] = useState('');
   const [editFriendlyWith, setEditFriendlyWith] = useState({ dogs: false, cats: false, people: false, children: false });
   const [addPhotoBusy, setAddPhotoBusy] = useState(false);
   const [editPhotoBusy, setEditPhotoBusy] = useState(false);
   const [addPetDrawerOpen, setAddPetDrawerOpen] = useState(false);
+  const [editPanel, setEditPanel] = useState('hub');
+  const [menuPetId, setMenuPetId] = useState(null);
+  const [addedSuccess, setAddedSuccess] = useState(null);
   const [fullscreenPhotoUrl, setFullscreenPhotoUrl] = useState('');
   const [medModalPet, setMedModalPet] = useState(null);
   const [sharePet, setSharePet] = useState(null);
@@ -171,7 +320,7 @@ export default function MyPets() {
     if (!q) return ownedPets;
     return ownedPets.filter((p) => {
       const c = getCategory(p);
-      return [p.name, p.breed, p.microchipNo, p.trackingDeviceId, c.id]
+      return [p.name, p.breed, p.trackingDeviceId, c.id]
         .filter(Boolean)
         .some((x) => String(x).toLowerCase().includes(q));
     });
@@ -233,6 +382,7 @@ export default function MyPets() {
     const p = pets.find((row) => row.id === petId);
     if (!p) return;
     setEditingId(p.id);
+    setEditPanel('hub');
     setEditName(p.name);
     setEditCategoryId(p.categoryId);
     setEditDevice(p.trackingDeviceId || '');
@@ -245,6 +395,7 @@ export default function MyPets() {
     setEditColorScheme(p.colorScheme || '');
     setEditIdentifyingMarks(p.identifyingMarks || '');
     setEditDescription(p.description || '');
+    setEditVeterinarian(p.veterinarian || '');
     const setFrom = Array.isArray(p.friendlyWith) ? p.friendlyWith : [];
     setEditFriendlyWith({
       dogs: setFrom.includes('dogs'),
@@ -313,14 +464,6 @@ export default function MyPets() {
     };
   }, [user]);
 
-  const onScanImeiAdd = useCallback(
-    (imei) => {
-      setAddDeviceId(imei);
-      show(t('myPets.scanQrSuccess'), { kind: 'success' });
-    },
-    [show, t]
-  );
-
   const onScanImeiEdit = useCallback(
     (imei) => {
       setEditDevice(imei);
@@ -336,28 +479,31 @@ export default function MyPets() {
       name: name.trim(),
       categoryId,
       gender,
-      trackingDeviceId: addDeviceId.trim() || null,
+      trackingDeviceId: null,
       breed,
-      microchipNo,
       dateOfBirth,
       colorScheme,
       identifyingMarks,
       medicalNotes,
-      ownerName: accountType === 'vet' ? ownerName : ownerName,
-      ownerPhone: accountType === 'vet' ? ownerPhone : ownerPhone,
-      ownerEmail: accountType === 'vet' ? ownerEmail : ownerEmail,
+      description: medicalNotes,
+      veterinarian: veterinarian.trim(),
+      ownerName: ownerName.trim(),
+      ownerPhone: ownerPhone.trim(),
+      ownerEmail: ownerEmail.trim(),
       nfcTag: false,
       friendlyWith: Object.entries(friendlyWith)
         .filter(([, v]) => !!v)
         .map(([k]) => k),
     });
 
+    let photoUrl = '';
     const f = addPhotoRef.current?.files;
     if (createdPetId && f && f[0] && user?.uid) {
       setAddPhotoBusy(true);
       try {
         const photoUpload = await uploadPetPhoto({ uid: user.uid, file: f[0], petId: createdPetId });
         if (photoUpload) {
+          photoUrl = photoUpload.photoUrl || '';
           updatePet(createdPetId, {
             photoUrl: photoUpload.photoUrl,
             photoStoragePath: photoUpload.photoStoragePath,
@@ -370,27 +516,38 @@ export default function MyPets() {
         setAddPhotoBusy(false);
       }
     }
+    const addedName = name.trim();
+    const addedCategoryId = categoryId;
     setName('');
     setBreed('');
     setGender('male');
-    setMicrochipNo('');
     setDateOfBirth('');
-    setAddDeviceId('');
     setColorScheme('');
     setIdentifyingMarks('');
     setMedicalNotes('');
+    setVeterinarian('');
+    setOwnerName('');
+    setOwnerPhone('');
+    setOwnerEmail('');
     setFriendlyWith({ dogs: false, cats: false, people: false, children: false });
+    setAddMoreOpen(false);
     setCategoryId('dog');
     if (addPhotoRef.current) addPhotoRef.current.value = '';
     setAddPetDrawerOpen(false);
-    const newImei = addDeviceId.trim();
-    if (createdPetId && newImei) {
-      void linkPetTrackerImei(newImei).catch(() => {});
+    if (createdPetId) {
+      setAddedSuccess({
+        id: createdPetId,
+        name: addedName,
+        categoryId: addedCategoryId,
+        photoUrl,
+      });
     }
   }
 
-  function startEdit(p) {
+  function startEdit(p, panel = 'hub') {
     setEditingId(p.id);
+    setEditPanel(panel);
+    setMenuPetId(null);
     setEditName(p.name);
     setEditCategoryId(p.categoryId);
     setEditDevice(p.trackingDeviceId || '');
@@ -403,6 +560,7 @@ export default function MyPets() {
     setEditColorScheme(p.colorScheme || '');
     setEditIdentifyingMarks(p.identifyingMarks || '');
     setEditDescription(p.description || '');
+    setEditVeterinarian(p.veterinarian || '');
     const setFrom = Array.isArray(p.friendlyWith) ? p.friendlyWith : [];
     setEditFriendlyWith({
       dogs: setFrom.includes('dogs'),
@@ -456,6 +614,7 @@ export default function MyPets() {
       colorScheme: editColorScheme,
       identifyingMarks: editIdentifyingMarks,
       description: editDescription,
+      veterinarian: editVeterinarian.trim(),
       friendlyWith: Object.entries(editFriendlyWith)
         .filter(([, v]) => !!v)
         .map(([k]) => k),
@@ -478,6 +637,7 @@ export default function MyPets() {
       <div className="pp-col-12">
         <div className="pp-myPetsHeader">
           <h1 className="pp-h1 pp-myPetsHeader__title">{t('myPets.title')}</h1>
+          <p className="pp-myPetsHeader__sub">{t('myPets.packSub')}</p>
         </div>
         <div className="pp-myPetsToolbar">
           <div className="pp-petSearchBox pp-myPetsToolbar__search">
@@ -519,152 +679,134 @@ export default function MyPets() {
             >
               <IconDownload />
             </button>
-            <button
-              id="add-pet-open"
-              type="button"
-              className="pp-btn pp-btnPrimary pp-myPetsToolbar__addBtn"
-              onClick={() => setAddPetDrawerOpen(true)}
-            >
-              + {t('myPets.addTitle')}
-            </button>
           </div>
         </div>
+        <button
+          id="add-pet-open"
+          type="button"
+          className="pp-btn pp-btnPrimary pp-myPetsAddWide"
+          onClick={() => setAddPetDrawerOpen(true)}
+        >
+          + {t('myPets.addTitle')}
+        </button>
       </div>
 
       <div className="pp-col-12">
-        <div className="pp-card pp-pad">
-          <h2 className="pp-sectionTitle">{t('myPets.yourPackCount', { count: ownedPets.length })}</h2>
+        <div className="pp-card pp-pad pp-myPetsPackCard">
           {ownedPets.length === 0 ? (
             <p className="pp-subtle">{t('myPets.noPets')}</p>
           ) : (
             <ul className="pp-petList">
-              {filteredPets.map((p) => (
-                <li key={p.id} className="pp-petList__item">
-                  <>
-                      <div className="pp-petList__row" style={{ alignItems: 'flex-start', justifyContent: 'space-between' }}>
-                        <div style={{ display: 'flex', gap: 12, flex: 1, minWidth: 0 }}>
-                          <button
-                            type="button"
-                            onClick={() => setFullscreenPhotoUrl(p.photoUrl || p.photoDataUrl || '')}
-                            style={{ border: 0, padding: 0, background: 'transparent', cursor: p.photoUrl || p.photoDataUrl ? 'zoom-in' : 'default' }}
-                            aria-label={p.photoUrl || p.photoDataUrl ? t('myPets.openPhotoFullscreen') : t('myPets.noPhoto')}
-                            disabled={!p.photoUrl && !p.photoDataUrl}
-                          >
-                            <PetAvatar pet={p} size={56} />
-                          </button>
-                          <div style={{ minWidth: 0 }}>
-                            <div className="pp-petList__name">{getCategory(p).emoji} {p.name}</div>
-                            <div className="pp-petList__tags" style={{ marginTop: 8 }}>
-                              <span
-                                className="pp-petTag"
-                                style={{
-                                  borderColor: p.linkedTracker ? 'rgba(22,163,74,.45)' : 'rgba(220,38,38,.45)',
-                                  background: p.linkedTracker ? 'rgba(22,163,74,.10)' : 'rgba(220,38,38,.10)',
-                                  color: p.linkedTracker ? '#166534' : '#991b1b',
-                                }}
-                              >
-                                {t('myPets.linkedTracker')}: {p.linkedTracker ? t('petPublic.yes') : t('petPublic.no')}
-                              </span>
-                              <span
-                                className="pp-petTag"
-                                style={{
-                                  borderColor: p.nfcTag ? 'rgba(22,163,74,.45)' : 'rgba(220,38,38,.45)',
-                                  background: p.nfcTag ? 'rgba(22,163,74,.10)' : 'rgba(220,38,38,.10)',
-                                  color: p.nfcTag ? '#166534' : '#991b1b',
-                                }}
-                              >
-                                {t('myPets.nfcTag')}: {p.nfcTag ? t('petPublic.yes') : t('petPublic.no')}
-                              </span>
-                            </div>
-
-                            {p.microchipNo ? (
-                              <div className="pp-petList__meta" style={{ marginTop: 8 }}>
-                                <strong>{t('petPublic.microchip')}:</strong> {p.microchipNo}
-                              </div>
-                            ) : null}
-                            {p.breed ? (
-                              <div className="pp-petList__meta" style={{ marginTop: 4 }}>
-                                <strong>{t('petPublic.breed')}:</strong> {p.breed}
-                              </div>
-                            ) : null}
-                            <div className="pp-petList__meta" style={{ marginTop: 4 }}>
-                              <strong>{t('petPublic.gender')}:</strong>{' '}
-                              {p.gender === 'female' ? t('petPublic.female') : t('petPublic.male')}
-                            </div>
-
-                            {p.description ? (
-                              <p className="pp-petList__desc">{p.description}</p>
-                            ) : null}
+              {filteredPets.map((p) => {
+                const age = formatPetAge(p.dateOfBirth, t);
+                const meta = [p.breed, age].filter(Boolean).join(' · ');
+                const gpsOn = Boolean(p.linkedTracker || p.trackingDeviceId);
+                const profileOn = Boolean(p.nfcTag || p.publicProfileId || p.id);
+                return (
+                  <li key={p.id} className="pp-petList__item pp-petCardFriendly">
+                    <div className="pp-petCardFriendly__top">
+                      <button
+                        type="button"
+                        className="pp-petCardFriendly__photo"
+                        onClick={() => setFullscreenPhotoUrl(p.photoUrl || p.photoDataUrl || '')}
+                        aria-label={p.photoUrl || p.photoDataUrl ? t('myPets.openPhotoFullscreen') : t('myPets.noPhoto')}
+                        disabled={!p.photoUrl && !p.photoDataUrl}
+                      >
+                        <PetAvatar pet={p} size={64} />
+                      </button>
+                      <div className="pp-petCardFriendly__main">
+                        <div className="pp-petList__name">
+                          {p.name}{' '}
+                          <span className={`pp-petGender ${p.gender === 'female' ? 'is-f' : 'is-m'}`} aria-hidden>
+                            {p.gender === 'female' ? '♀' : '♂'}
+                          </span>
+                        </div>
+                        {meta ? <div className="pp-petList__meta">{meta}</div> : null}
+                        <div className="pp-petList__tags">
+                          <span className={`pp-petTag pp-petTag--soft ${gpsOn ? 'is-on' : 'is-off'}`}>
+                            <IconPin /> {gpsOn ? t('myPets.gpsLinked') : t('myPets.noTracker')}
+                          </span>
+                          <span className={`pp-petTag pp-petTag--soft ${profileOn ? 'is-profile' : 'is-off'}`}>
+                            <IconSignal /> {t('myPets.profileActive')}
+                          </span>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        className="pp-petCardFriendly__chev"
+                        onClick={() => startEdit(p)}
+                        aria-label={t('myPets.manage')}
+                      >
+                        ›
+                      </button>
+                    </div>
+                    <button
+                      type="button"
+                      className="pp-btn pp-petCardFriendly__publicBtn"
+                      onClick={() => {
+                        const publicId = p.publicProfileId || p.id;
+                        window.location.href = `/pet/${encodeURIComponent(publicId)}`;
+                      }}
+                    >
+                      <IconEye /> {t('myPets.viewPublicProfile')}
+                    </button>
+                    <div className="pp-petCardFriendly__actions">
+                      <button type="button" className="pp-btn pp-btnOutline pp-petCardFriendly__manage" onClick={() => startEdit(p)}>
+                        {t('myPets.manage')}
+                      </button>
+                      <div className="pp-petCardFriendly__moreWrap">
+                        <button
+                          type="button"
+                          className="pp-btn pp-petCardFriendly__more"
+                          aria-label={t('myPets.moreActions')}
+                          aria-expanded={menuPetId === p.id}
+                          onClick={() => setMenuPetId((id) => (id === p.id ? null : p.id))}
+                        >
+                          <IconMore />
+                        </button>
+                        {menuPetId === p.id ? (
+                          <div className="pp-petCardFriendly__menu" role="menu">
+                            <button
+                              type="button"
+                              role="menuitem"
+                              className="is-danger"
+                              onClick={async () => {
+                                setMenuPetId(null);
+                                if (!window.confirm(t('myPets.removeConfirm', { name: p.name }))) return;
+                                await deletePetPhoto({ photoStoragePath: p.photoStoragePath, photoUrl: p.photoUrl });
+                                removePet(p.id);
+                              }}
+                            >
+                              <IconTrash /> {t('myPets.remove')}
+                            </button>
                           </div>
-                        </div>
-                        <div className="pp-petActions" style={{ marginLeft: 12 }}>
-                          <button
-                            type="button"
-                            className="pp-btn pp-iconBtn pp-iconBtn--outline pp-tooltipBtn"
-                            data-tooltip={t('myPets.viewPublicProfile')}
-                            onClick={() => {
-                              const publicId = p.publicProfileId || p.id;
-                              window.location.href = `/pet/${encodeURIComponent(publicId)}`;
-                            }}
-                            aria-label={t('myPets.viewPublicProfile')}
-                          >
-                            <IconEye />
-                          </button>
-                          <button
-                            type="button"
-                            className="pp-btn pp-iconBtn pp-iconBtn--outline pp-tooltipBtn"
-                            data-tooltip={t('myPets.edit')}
-                            onClick={() => startEdit(p)}
-                            aria-label={t('myPets.edit')}
-                          >
-                            <IconPencil />
-                          </button>
-                          <button
-                            type="button"
-                            className="pp-btn pp-iconBtn pp-iconBtn--outline pp-iconBtn--danger pp-tooltipBtn"
-                            data-tooltip={t('myPets.remove')}
-                            aria-label={t('myPets.remove')}
-                            onClick={async () => {
-                              if (!window.confirm(t('myPets.removeConfirm', { name: p.name }))) return;
-                              await deletePetPhoto({ photoStoragePath: p.photoStoragePath, photoUrl: p.photoUrl });
-                              removePet(p.id);
-                            }}
-                          >
-                            <IconTrash />
-                          </button>
-                        </div>
+                        ) : null}
                       </div>
-                      {p.trackingDeviceId ? (
-                        <div className="pp-petList__meta" style={{ marginTop: 8 }}>
-                          {t('myPets.listDevice')} {p.trackingDeviceId}
-                        </div>
-                      ) : null}
-                      <div className="pp-petList__medRow">
-                        <button
-                          type="button"
-                          className="pp-btn pp-iconBtn pp-iconBtn--outline pp-tooltipBtn"
-                          data-tooltip={t('myPets.medsOpen')}
-                          onClick={() => setMedModalPet(p)}
-                          aria-label={t('myPets.medsOpen')}
-                        >
-                          <IconMedPill />
-                        </button>
-                        <button
-                          type="button"
-                          className="pp-btn pp-iconBtn pp-iconBtn--outline pp-tooltipBtn"
-                          data-tooltip={t('myPets.sharePet')}
-                          onClick={() => {
-                            setSharePet(p);
-                            setShareEmail('');
-                          }}
-                          aria-label={t('myPets.sharePet')}
-                        >
-                          <IconShare />
-                        </button>
-                      </div>
-                  </>
-                </li>
-              ))}
+                    </div>
+                    <div className="pp-petCardFriendly__quick">
+                      <button
+                        type="button"
+                        className="pp-btn pp-petCardFriendly__quickBtn"
+                        onClick={() => setMedModalPet(p)}
+                      >
+                        <IconMedPill size={16} />
+                        <span>{t('myPets.medsOpen')}</span>
+                      </button>
+                      <button
+                        type="button"
+                        className="pp-btn pp-petCardFriendly__quickBtn"
+                        onClick={() => {
+                          setSharePet(p);
+                          setShareEmail('');
+                        }}
+                      >
+                        <IconShare />
+                        <span>{t('myPets.sharePet')}</span>
+                      </button>
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
           )}
           {sharedPets.length ? (
@@ -723,154 +865,173 @@ export default function MyPets() {
             </div>
 
             <form className="pp-form pp-modalForm" onSubmit={submitAdd}>
-              <div className="pp-modalGrid2">
-                <div>
-                  <div className="pp-label">{t('myPets.category')} *</div>
-                  <PrettySelect value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
-                    {PET_CATEGORIES.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.emoji} {t(`categories.${c.id}`)}
-                      </option>
-                    ))}
-                  </PrettySelect>
-                </div>
-                <div>
-                  <div className="pp-label">{t('myPets.name')} *</div>
-                  <input
-                    className="pp-input"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder={t('myPets.namePh')}
-                    autoComplete="off"
-                    autoFocus
-                  />
-                </div>
+              <div className="pp-speciesCarousel" role="group" aria-label={t('myPets.category')}>
+                {PET_CATEGORIES.map((c) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    className={`pp-speciesChip ${categoryId === c.id ? 'is-on' : ''}`}
+                    onClick={() => setCategoryId(c.id)}
+                  >
+                    <span className="pp-speciesChip__ico" aria-hidden>{c.emoji}</span>
+                    <span className="pp-speciesChip__label">{t(`categories.${c.id}`)}</span>
+                  </button>
+                ))}
               </div>
 
-              <div className="pp-modalGrid2">
-                <div>
-                  <div className="pp-label">{t('petPublic.breed')} *</div>
-                  <input className="pp-input" value={breed} onChange={(e) => setBreed(e.target.value)} required />
-                </div>
-                <div>
-                  <div className="pp-label">{t('petPublic.gender')}</div>
-                  <PrettySelect value={gender} onChange={(e) => setGender(e.target.value)}>
-                    {genderOptions.map(([value, label]) => (
-                      <option key={value} value={value}>
-                        {label}
-                      </option>
-                    ))}
-                  </PrettySelect>
-                </div>
-              </div>
-
-              <div className="pp-modalGrid2">
-                <div>
-                  <div className="pp-label">{t('petPublic.dob')} *</div>
-                  <input className="pp-input" type="date" value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)} required />
-                </div>
-                <div>
-                  <div className="pp-label">{t('petPublic.color')} *</div>
-                  <input
-                    className="pp-input"
-                    value={colorScheme}
-                    onChange={(e) => setColorScheme(e.target.value)}
-                    maxLength={120}
-                    placeholder={t('myPets.colorPh')}
-                    autoComplete="off"
-                    required
-                  />
-                </div>
-                <div>
-                  <div className="pp-label">{t('petPublic.traits')}</div>
-                  <input className="pp-input" value={identifyingMarks} onChange={(e) => setIdentifyingMarks(e.target.value)} />
-                </div>
-              </div>
-
-              <div className="pp-modalGrid2">
-                <div>
-                  <div className="pp-label">{t('myPets.gpsDeviceId')}</div>
-                  <div className="pp-row" style={{ alignItems: 'stretch', gap: 8, flexWrap: 'wrap' }}>
-                    <input
-                      className="pp-input"
-                      style={{ flex: '1 1 160px', minWidth: 0 }}
-                      value={addDeviceId}
-                      onChange={(e) => setAddDeviceId(e.target.value)}
-                      placeholder={t('myPets.deviceIdPh')}
-                      autoComplete="off"
-                      inputMode="numeric"
-                      list="registered-tracker-imeis"
-                    />
-                    <ImeiQrScannerButton onImei={onScanImeiAdd} disabled={addPhotoBusy} />
-                  </div>
-                </div>
-                <div>
-                  <div className="pp-label">{t('myPets.microchipNo')}</div>
-                  <input className="pp-input" value={microchipNo} onChange={(e) => setMicrochipNo(e.target.value)} />
-                </div>
-              </div>
-
-              <div>
-                <div className="pp-label">{t('petPublic.medicalNotes')}</div>
-                <textarea
-                  className="pp-input"
-                  value={medicalNotes}
-                  onChange={(e) => setMedicalNotes(e.target.value)}
-                  maxLength={2000}
-                  style={{ minHeight: 80, resize: 'vertical' }}
-                />
-              </div>
-
-              {accountType === 'vet' ? (
-                <div className="pp-modalGrid2">
-                  <div>
-                    <div className="pp-label">{t('myPets.ownerName')}</div>
-                    <input className="pp-input" value={ownerName} onChange={(e) => setOwnerName(e.target.value)} />
-                  </div>
-                  <div>
-                    <div className="pp-label">{t('myPets.ownerPhone')}</div>
-                    <input className="pp-input" value={ownerPhone} onChange={(e) => setOwnerPhone(e.target.value)} />
-                  </div>
-                  <div>
-                    <div className="pp-label">{t('myPets.ownerEmail')}</div>
-                    <input className="pp-input" type="email" value={ownerEmail} onChange={(e) => setOwnerEmail(e.target.value)} />
-                  </div>
-                </div>
-              ) : null}
-
-              <div>
-                <div className="pp-label">{t('petPublic.friendly')}</div>
-                <p className="pp-subtle" style={{ fontSize: 12, marginTop: 0, marginBottom: 6 }}>
-                  {t('myPets.friendlyHint')}
-                </p>
-                <div className="pp-row" style={{ gap: 8, flexWrap: 'wrap' }}>
-                  {friendlyWithOptions.map(([key, label]) => (
-                    <label key={key} className="pp-chipCheck">
-                      <input
-                        type="checkbox"
-                        checked={friendlyWith[key]}
-                        onChange={(e) => setFriendlyWith((s) => ({ ...s, [key]: e.target.checked }))}
-                      />
-                      <span>{label}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <div className="pp-label">{t('myPets.photo')}</div>
+              <label className="pp-photoDrop pp-photoDrop--compact" htmlFor={addPhotoInputId}>
+                <span className="pp-photoDrop__ico" aria-hidden><IconCam /></span>
+                <strong>{t('myPets.photoDropTitle')}</strong>
+                <span>{t('myPets.photoDropHint')}</span>
                 <input
                   id={addPhotoInputId}
                   ref={addPhotoRef}
                   type="file"
                   accept="image/*"
+                  className="pp-photoDrop__input"
+                />
+              </label>
+
+              <div>
+                <div className="pp-label">{t('myPets.name')} *</div>
+                <input
                   className="pp-input"
-                  style={{ fontSize: 14 }}
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder={t('myPets.namePh')}
+                  autoComplete="off"
+                  autoFocus
+                />
+              </div>
+              <div style={{ marginTop: 12 }}>
+                <div className="pp-label">{t('petPublic.breed')} *</div>
+                <input className="pp-input" value={breed} onChange={(e) => setBreed(e.target.value)} required />
+              </div>
+
+              <div>
+                <div className="pp-label">{t('petPublic.gender')}</div>
+                <div className="pp-genderSeg" role="group" aria-label={t('petPublic.gender')}>
+                  <button
+                    type="button"
+                    className={`pp-genderSeg__btn ${gender === 'male' ? 'is-on' : ''}`}
+                    onClick={() => setGender('male')}
+                  >
+                    <span className="pp-genderSeg__ico is-m" aria-hidden>♂</span>
+                    {t('petPublic.male')}
+                  </button>
+                  <button
+                    type="button"
+                    className={`pp-genderSeg__btn ${gender === 'female' ? 'is-on' : ''}`}
+                    onClick={() => setGender('female')}
+                  >
+                    <span className="pp-genderSeg__ico is-f" aria-hidden>♀</span>
+                    {t('petPublic.female')}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <div className="pp-label">{t('petPublic.dob')} *</div>
+                <label className="pp-dateField">
+                  <span className="pp-dateField__ico" aria-hidden>📅</span>
+                  <input
+                    className="pp-input pp-dateField__input"
+                    type="date"
+                    value={dateOfBirth}
+                    onChange={(e) => setDateOfBirth(e.target.value)}
+                    required
+                  />
+                </label>
+              </div>
+
+              <div>
+                <div className="pp-label">{t('petPublic.color')} *</div>
+                <input
+                  className="pp-input"
+                  value={colorScheme}
+                  onChange={(e) => setColorScheme(e.target.value)}
+                  maxLength={120}
+                  placeholder={t('myPets.colorPh')}
+                  autoComplete="off"
+                  required
                 />
               </div>
 
+              <button
+                type="button"
+                className={`pp-addMoreToggle ${addMoreOpen ? 'is-open' : ''}`}
+                aria-expanded={addMoreOpen}
+                onClick={() => setAddMoreOpen((v) => !v)}
+              >
+                <span>{t('myPets.addOptionalToggle')}</span>
+                <span aria-hidden>{addMoreOpen ? '▴' : '▾'}</span>
+              </button>
+
+              {addMoreOpen ? (
+                <div className="pp-addMorePanel">
+                  <div>
+                    <div className="pp-label">{t('petPublic.traits')}</div>
+                    <input className="pp-input" value={identifyingMarks} onChange={(e) => setIdentifyingMarks(e.target.value)} />
+                  </div>
+
+                  <div>
+                    <div className="pp-label">{t('petPublic.friendly')}</div>
+                    <div className="pp-row" style={{ gap: 8, flexWrap: 'wrap' }}>
+                      {friendlyWithOptions.map(([key, label]) => (
+                        <label key={key} className="pp-chipCheck">
+                          <input
+                            type="checkbox"
+                            checked={friendlyWith[key]}
+                            onChange={(e) => setFriendlyWith((s) => ({ ...s, [key]: e.target.checked }))}
+                          />
+                          <span>{label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="pp-label">{t('myPets.aboutNotes')}</div>
+                    <textarea
+                      className="pp-input"
+                      value={medicalNotes}
+                      onChange={(e) => setMedicalNotes(e.target.value)}
+                      maxLength={2000}
+                      placeholder={t('myPets.aboutNotesPh')}
+                      style={{ minHeight: 80, resize: 'vertical' }}
+                    />
+                  </div>
+
+                  <div>
+                    <div className="pp-label">{t('petPublic.veterinarian')}</div>
+                    <input
+                      className="pp-input"
+                      value={veterinarian}
+                      onChange={(e) => setVeterinarian(e.target.value)}
+                      placeholder={t('myPets.vetPh')}
+                      autoComplete="off"
+                    />
+                  </div>
+
+                  <div className="pp-modalGrid2">
+                    <div>
+                      <div className="pp-label">{t('myPets.ownerName')}</div>
+                      <input className="pp-input" value={ownerName} onChange={(e) => setOwnerName(e.target.value)} />
+                    </div>
+                    <div>
+                      <div className="pp-label">{t('myPets.ownerPhone')}</div>
+                      <input className="pp-input" value={ownerPhone} onChange={(e) => setOwnerPhone(e.target.value)} />
+                    </div>
+                    <div>
+                      <div className="pp-label">{t('myPets.ownerEmail')}</div>
+                      <input className="pp-input" type="email" value={ownerEmail} onChange={(e) => setOwnerEmail(e.target.value)} />
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+
               <p className="pp-subtle" style={{ fontSize: 12, marginTop: 4, marginBottom: 0 }}>
-                {t('myPets.photoHint')}
+                {t('myPets.addGpsLaterHint')}
               </p>
 
               <div className="pp-modalActions">
@@ -882,7 +1043,7 @@ export default function MyPets() {
                   className="pp-btn pp-btnPrimary"
                   disabled={!name.trim() || !breed.trim() || !dateOfBirth || !colorScheme.trim() || addPhotoBusy}
                 >
-                  {addPhotoBusy ? t('myPets.processing') : t('myPets.addPet')}
+                  {addPhotoBusy ? t('myPets.processing') : t('myPets.addToPack')}
                 </button>
               </div>
             </form>
@@ -900,17 +1061,28 @@ export default function MyPets() {
           />
           <div className="pp-modalCard pp-modalCard--petEdit">
             <div className="pp-modalHead">
-              <div>
-                <h2 id="edit-pet-title" className="pp-sectionTitle" style={{ margin: 0 }}>
-                  {t('myPets.edit')} {editingPet.name || ''}
-                </h2>
-                <p className="pp-subtle" style={{ margin: '6px 0 0' }}>
-                  {t('myPets.editPetSub')}
-                </p>
+              <div className="pp-modalHead__lead">
+                {editPanel !== 'hub' ? (
+                  <button type="button" className="pp-iconRoundBtn" onClick={() => setEditPanel('hub')} aria-label={t('common.back')}>
+                    <IconBack />
+                  </button>
+                ) : null}
+                <div>
+                  <h2 id="edit-pet-title" className="pp-sectionTitle" style={{ margin: 0 }}>
+                    {editPanel === 'hub' && t('myPets.editTitle', { name: editingPet.name || '' })}
+                    {editPanel === 'details' && t('myPets.panelDetails')}
+                    {editPanel === 'gps' && t('myPets.panelGps')}
+                    {editPanel === 'nfc' && t('myPets.panelPublic')}
+                    {editPanel === 'more' && t('myPets.panelMore', { name: editingPet.name || '' })}
+                  </h2>
+                  {editPanel === 'hub' ? (
+                    <p className="pp-subtle" style={{ margin: '6px 0 0' }}>{t('myPets.editPetSub')}</p>
+                  ) : null}
+                </div>
               </div>
               <button
                 type="button"
-                className="pp-btn"
+                className="pp-iconRoundBtn"
                 onClick={() => setEditingId(null)}
                 aria-label={t('common.cancel')}
                 title={t('common.cancel')}
@@ -920,177 +1092,394 @@ export default function MyPets() {
             </div>
 
             <form className="pp-form pp-modalForm" onSubmit={saveEdit}>
-              <div className="pp-modalGrid2">
-                <div>
-                  <div className="pp-label">{t('myPets.category')} *</div>
-                  <PrettySelect value={editCategoryId} onChange={(e) => setEditCategoryId(e.target.value)}>
-                    {PET_CATEGORIES.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.emoji} {t(`categories.${c.id}`)}
-                      </option>
-                    ))}
-                  </PrettySelect>
-                </div>
-                <div>
-                  <div className="pp-label">{t('myPets.name')} *</div>
-                  <input
-                    className="pp-input"
-                    value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
-                    placeholder={t('myPets.namePh')}
-                    autoComplete="off"
-                    autoFocus
-                    required
-                  />
-                </div>
-              </div>
+              {editPanel === 'hub' ? (
+                <>
+                  <div className="pp-editHubStrip">
+                    <PetAvatar pet={editingPet} size={72} />
+                    <div>
+                      <div className="pp-petList__name">
+                        {editingPet.name}{' '}
+                        <span className={`pp-petGender ${editGender === 'female' ? 'is-f' : 'is-m'}`} aria-hidden>
+                          {editGender === 'female' ? '♀' : '♂'}
+                        </span>
+                      </div>
+                      <div className="pp-petList__meta">
+                        {[editBreed, formatPetAge(editDateOfBirth, t)].filter(Boolean).join(' · ')}
+                      </div>
+                      <label className="pp-btn pp-btnGhostSm" htmlFor={editPhotoInputId}>
+                        <IconCam /> {t('myPets.changePhoto')}
+                        <input id={editPhotoInputId} ref={editPhotoRef} type="file" accept="image/*" className="pp-photoDrop__input" />
+                      </label>
+                    </div>
+                  </div>
 
-              <div className="pp-modalGrid2">
-                <div>
-                  <div className="pp-label">{t('petPublic.breed')} *</div>
-                  <input className="pp-input" value={editBreed} onChange={(e) => setEditBreed(e.target.value)} required />
-                </div>
-                <div>
-                  <div className="pp-label">{t('petPublic.gender')}</div>
-                  <PrettySelect value={editGender} onChange={(e) => setEditGender(e.target.value)}>
-                    {genderOptions.map(([value, label]) => (
-                      <option key={value} value={value}>
-                        {label}
-                      </option>
-                    ))}
-                  </PrettySelect>
-                </div>
-              </div>
+                  <div className="pp-editNavList">
+                    <button type="button" className="pp-editNavItem" onClick={() => setEditPanel('details')}>
+                      <span className="pp-editNavIco is-purple"><IconDoc /></span>
+                      <span>
+                        <strong>{t('myPets.panelDetails')}</strong>
+                        <small>{t('myPets.panelDetailsSub')}</small>
+                      </span>
+                      <span className="pp-editNavChev">›</span>
+                    </button>
+                    <button type="button" className="pp-editNavItem" onClick={() => setEditPanel('gps')}>
+                      <span className="pp-editNavIco is-green"><IconPin /></span>
+                      <span>
+                        <strong>
+                          {t('myPets.panelGps')}{' '}
+                          {editGpsEnabled && editDevice.trim() ? <span className="pp-petTag pp-petTag--soft is-on">{t('myPets.linkedBadge')}</span> : null}
+                        </strong>
+                        <small>{t('myPets.panelGpsSub')}</small>
+                      </span>
+                      <span className="pp-editNavChev">›</span>
+                    </button>
+                    <button type="button" className="pp-editNavItem" onClick={() => setEditPanel('nfc')}>
+                      <span className="pp-editNavIco is-blue"><IconPaw /></span>
+                      <span>
+                        <strong>
+                          {t('myPets.panelPublic')}{' '}
+                          <span className="pp-petTag pp-petTag--soft is-profile">{t('myPets.activeBadge')}</span>
+                        </strong>
+                        <small>{t('myPets.panelPublicSub')}</small>
+                      </span>
+                      <span className="pp-editNavChev">›</span>
+                    </button>
+                    <button type="button" className="pp-editNavItem" onClick={() => setEditPanel('more')}>
+                      <span className="pp-editNavIco is-orange"><IconMoreAbout /></span>
+                      <span>
+                        <strong>{t('myPets.panelMore', { name: editingPet.name || '' })}</strong>
+                        <small>{t('myPets.panelMoreSub')}</small>
+                      </span>
+                      <span className="pp-editNavChev">›</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="pp-editNavItem"
+                      onClick={() => {
+                        setMedModalPet(editingPet);
+                      }}
+                    >
+                      <span className="pp-editNavIco is-green"><IconMedPill size={18} /></span>
+                      <span>
+                        <strong>{t('myPets.medsOpen')}</strong>
+                        <small>{t('myPets.panelMedsSub')}</small>
+                      </span>
+                      <span className="pp-editNavChev">›</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="pp-editNavItem"
+                      onClick={() => {
+                        setSharePet(editingPet);
+                        setShareEmail('');
+                      }}
+                    >
+                      <span className="pp-editNavIco is-purple"><IconShare /></span>
+                      <span>
+                        <strong>{t('myPets.sharePet')}</strong>
+                        <small>{t('myPets.panelShareSub')}</small>
+                      </span>
+                      <span className="pp-editNavChev">›</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="pp-editNavItem"
+                      onClick={() => {
+                        setEditingId(null);
+                        navigate('/profile');
+                      }}
+                    >
+                      <span className="pp-editNavIco is-blue"><IconDoc /></span>
+                      <span>
+                        <strong>{t('myPets.panelOwner')}</strong>
+                        <small>{t('myPets.panelOwnerSub')}</small>
+                      </span>
+                      <span className="pp-editNavChev">›</span>
+                    </button>
+                  </div>
+                </>
+              ) : null}
 
-              <div className="pp-modalGrid2">
-                <div>
-                  <div className="pp-label">{t('petPublic.dob')} *</div>
-                  <input className="pp-input" type="date" value={editDateOfBirth} onChange={(e) => setEditDateOfBirth(e.target.value)} required />
-                </div>
-                <div>
-                  <div className="pp-label">{t('petPublic.color')} *</div>
-                  <input
-                    className="pp-input"
-                    value={editColorScheme}
-                    onChange={(e) => setEditColorScheme(e.target.value)}
-                    maxLength={120}
-                    placeholder={t('myPets.colorPh')}
-                    autoComplete="off"
-                    required
-                  />
-                </div>
-                <div>
-                  <div className="pp-label">{t('petPublic.traits')}</div>
-                  <input className="pp-input" value={editIdentifyingMarks} onChange={(e) => setEditIdentifyingMarks(e.target.value)} />
-                </div>
-              </div>
+              {editPanel === 'details' ? (
+                <>
+                  <div>
+                    <div className="pp-label">{t('myPets.category')} *</div>
+                    <PrettySelect value={editCategoryId} onChange={(e) => setEditCategoryId(e.target.value)}>
+                      {PET_CATEGORIES.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.emoji} {t(`categories.${c.id}`)}
+                        </option>
+                      ))}
+                    </PrettySelect>
+                  </div>
+                  <div style={{ marginTop: 12 }}>
+                    <div className="pp-label">{t('myPets.name')} *</div>
+                    <input
+                      className="pp-input"
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      placeholder={t('myPets.namePh')}
+                      autoComplete="off"
+                      autoFocus
+                      required
+                    />
+                  </div>
+                  <div style={{ marginTop: 12 }}>
+                    <div className="pp-label">{t('petPublic.breed')} *</div>
+                    <input className="pp-input" value={editBreed} onChange={(e) => setEditBreed(e.target.value)} required />
+                  </div>
+                  <div>
+                    <div className="pp-label">{t('petPublic.gender')}</div>
+                    <div className="pp-genderSeg" role="group" aria-label={t('petPublic.gender')}>
+                      <button
+                        type="button"
+                        className={`pp-genderSeg__btn ${editGender === 'male' ? 'is-on' : ''}`}
+                        onClick={() => setEditGender('male')}
+                      >
+                        <span className="pp-genderSeg__ico is-m" aria-hidden>♂</span>
+                        {t('petPublic.male')}
+                      </button>
+                      <button
+                        type="button"
+                        className={`pp-genderSeg__btn ${editGender === 'female' ? 'is-on' : ''}`}
+                        onClick={() => setEditGender('female')}
+                      >
+                        <span className="pp-genderSeg__ico is-f" aria-hidden>♀</span>
+                        {t('petPublic.female')}
+                      </button>
+                    </div>
+                  </div>
+                  <div>
+                    <div className="pp-label">{t('petPublic.dob')} *</div>
+                    <label className="pp-dateField">
+                      <span className="pp-dateField__ico" aria-hidden>📅</span>
+                      <input
+                        className="pp-input pp-dateField__input"
+                        type="date"
+                        value={editDateOfBirth}
+                        onChange={(e) => setEditDateOfBirth(e.target.value)}
+                        required
+                      />
+                    </label>
+                  </div>
+                  <div>
+                    <div className="pp-label">{t('petPublic.color')} *</div>
+                    <input
+                      className="pp-input"
+                      value={editColorScheme}
+                      onChange={(e) => setEditColorScheme(e.target.value)}
+                      maxLength={120}
+                      placeholder={t('myPets.colorPh')}
+                      autoComplete="off"
+                      required
+                    />
+                  </div>
+                </>
+              ) : null}
 
-              <div className="pp-petFeatureOpts">
-                <label className="pp-shopTrackerOpt">
-                  <input
-                    type="checkbox"
-                    checked={editGpsEnabled}
-                    onChange={(e) => setEditGpsEnabled(e.target.checked)}
-                  />
-                  <span className="pp-shopTrackerOpt__copy">
-                    <strong>{t('myPets.gpsEnabledTitle')}</strong>
-                    <small>{t('myPets.gpsEnabledSub')}</small>
-                  </span>
-                  <span className="pp-shopTrackerOpt__meta">
-                    <span className="pp-shopTrackerOpt__switch" aria-hidden />
-                  </span>
-                </label>
-                <label className="pp-shopTrackerOpt">
-                  <input
-                    type="checkbox"
-                    checked={editNfcEnabled}
-                    onChange={(e) => setEditNfcEnabled(e.target.checked)}
-                  />
-                  <span className="pp-shopTrackerOpt__copy">
-                    <strong>{t('myPets.nfcEnabledTitle')}</strong>
-                    <small>{t('myPets.nfcEnabledSub')}</small>
-                  </span>
-                  <span className="pp-shopTrackerOpt__meta">
-                    <span className="pp-shopTrackerOpt__switch" aria-hidden />
-                  </span>
-                </label>
-              </div>
+              {editPanel === 'gps' ? (
+                <>
+                  <label className="pp-shopTrackerOpt pp-gpsLiveToggle">
+                    <span className="pp-editNavIco is-green"><IconPin /></span>
+                    <span className="pp-shopTrackerOpt__copy">
+                      <strong>{t('myPets.gpsEnabledTitle')}</strong>
+                      <small>{t('myPets.gpsEnabledSubNamed', { name: editingPet.name || '' })}</small>
+                    </span>
+                    <input
+                      type="checkbox"
+                      checked={editGpsEnabled}
+                      onChange={(e) => setEditGpsEnabled(e.target.checked)}
+                    />
+                    <span className="pp-shopTrackerOpt__meta">
+                      <span className="pp-shopTrackerOpt__switch" aria-hidden />
+                    </span>
+                  </label>
 
-              {editGpsEnabled ? (
-                <div>
-                  <div className="pp-label">{t('myPets.deviceId')}</div>
+                  {editGpsEnabled && editDevice.trim() ? (
+                    <div className="pp-gpsLinkedCard">
+                      <div className="pp-gpsLinkedCard__row">
+                        <img className="pp-gpsLinkedCard__img" src={GPS_TRACKER_IMG} alt="" />
+                        <div>
+                          <span className="pp-petTag pp-petTag--soft is-on"><IconKey /> {t('myPets.trackerLinkedBadge')}</span>
+                          <p className="pp-petList__meta" style={{ marginTop: 8 }}>IMEI: {editDevice.trim()}</p>
+                          <p className="pp-petList__meta">{t('myPets.lastSeenUnknown')}</p>
+                        </div>
+                      </div>
+                      <div className="pp-gpsLinkedCard__actions">
+                        <button
+                          type="button"
+                          className="pp-btn pp-btnOutline"
+                          onClick={() => {
+                            setEditDevice('');
+                          }}
+                        >
+                          {t('myPets.changeTracker')}
+                        </button>
+                        <button
+                          type="button"
+                          className="pp-btn pp-btnDangerOutline"
+                          onClick={() => {
+                            setEditGpsEnabled(false);
+                            setEditDevice('');
+                          }}
+                        >
+                          {t('myPets.unlinkTracker')}
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="pp-gpsEmptyCard">
+                      <span className="pp-gpsEmptyCard__ico" aria-hidden><IconDevice /></span>
+                      <strong>{t('myPets.noTracker')}</strong>
+                      <p className="pp-subtle">{t('myPets.linkTrackerHint', { name: editingPet.name || '' })}</p>
+                    </div>
+                  )}
+
+                  <div className="pp-label" style={{ marginTop: 14 }}>
+                    {editGpsEnabled && editDevice.trim() ? t('myPets.linkDifferentTracker') : t('myPets.linkNewTracker')}
+                  </div>
+                  {!(editGpsEnabled && editDevice.trim()) ? (
+                    <p className="pp-subtle" style={{ marginTop: 0 }}>{t('myPets.linkTrackerHelp')}</p>
+                  ) : null}
                   <div className="pp-row" style={{ alignItems: 'stretch', gap: 8, flexWrap: 'wrap' }}>
                     <input
                       className="pp-input"
                       style={{ flex: '1 1 160px', minWidth: 0 }}
                       value={editDevice}
-                      onChange={(e) => setEditDevice(e.target.value)}
+                      onChange={(e) => {
+                        setEditDevice(e.target.value);
+                        if (e.target.value.trim()) setEditGpsEnabled(true);
+                      }}
                       placeholder={t('myPets.deviceIdPh')}
                       autoComplete="off"
                       inputMode="numeric"
                       list="registered-tracker-imeis"
                     />
-                    <ImeiQrScannerButton onImei={onScanImeiEdit} disabled={editPhotoBusy} />
+                    <ImeiQrScannerButton
+                      onImei={(imei) => {
+                        onScanImeiEdit(imei);
+                        setEditGpsEnabled(true);
+                      }}
+                      disabled={editPhotoBusy}
+                    />
                   </div>
-                </div>
+                  {!(editGpsEnabled && editDevice.trim()) ? (
+                    <button
+                      type="button"
+                      className="pp-btn pp-btnPrimary"
+                      style={{ width: '100%', marginTop: 12 }}
+                      onClick={() => {
+                        if (editDevice.trim()) setEditGpsEnabled(true);
+                      }}
+                    >
+                      {t('myPets.linkTrackerCta')}
+                    </button>
+                  ) : null}
+                  <a className="pp-helpBar" href="/docs" onClick={(e) => e.preventDefault()}>
+                    <span className="pp-editNavIco is-blue"><IconInfo /></span>
+                    {t('myPets.whereImei')}
+                    <span className="pp-editNavChev">›</span>
+                  </a>
+                </>
               ) : null}
 
-              <div className="pp-modalGrid2">
-                <div>
-                  <div className="pp-label">{t('myPets.microchipNo')}</div>
-                  <input className="pp-input" value={editMicrochipNo} onChange={(e) => setEditMicrochipNo(e.target.value)} />
-                </div>
-              </div>
+              {editPanel === 'nfc' ? (
+                <>
+                  <label className={`pp-shopTrackerOpt pp-gpsLiveToggle ${editNfcEnabled ? 'is-on' : ''}`}>
+                    <span className="pp-nfcTickWrap" aria-hidden>
+                      <IconGreenTick soft size={36} />
+                    </span>
+                    <span className="pp-shopTrackerOpt__copy">
+                      <strong>{t('myPets.nfcEnabledTitle')}</strong>
+                      <small>{t('myPets.nfcEnabledSubNamed', { name: editingPet.name || '' })}</small>
+                    </span>
+                    <input
+                      type="checkbox"
+                      checked={editNfcEnabled}
+                      onChange={(e) => setEditNfcEnabled(e.target.checked)}
+                    />
+                    <span className="pp-shopTrackerOpt__meta">
+                      <span className={`pp-shopTrackerOpt__switch ${editNfcEnabled ? 'is-on' : ''}`} aria-hidden />
+                    </span>
+                  </label>
+                  {editNfcEnabled ? (
+                    <div className="pp-nfcActiveBanner">
+                      <span className="pp-nfcActiveBanner__tick" aria-hidden>
+                        <IconGreenTick size={28} />
+                      </span>
+                      <div>
+                        <strong>{t('myPets.nfcActiveTitle')}</strong>
+                        <small>{t('myPets.nfcActiveSub', { name: editingPet.name || '' })}</small>
+                      </div>
+                    </div>
+                  ) : null}
+                  <button
+                    type="button"
+                    className="pp-btn pp-btnPrimary"
+                    style={{ width: '100%', marginTop: 14 }}
+                    onClick={() => {
+                      const publicId = editingPet.publicProfileId || editingPet.id;
+                      window.location.href = `/pet/${encodeURIComponent(publicId)}`;
+                    }}
+                  >
+                    {t('myPets.viewPublicProfile')}
+                  </button>
+                  <div className="pp-nfcHow">
+                    <span className="pp-editNavIco is-purple"><IconPaw /></span>
+                    <div>
+                      <strong>{t('myPets.nfcHowTitle')}</strong>
+                      <small>{t('myPets.nfcHowBody')}</small>
+                    </div>
+                  </div>
+                </>
+              ) : null}
 
-              <div>
-                <div className="pp-label">{t('myPets.descriptionLabel')}</div>
-                <textarea
-                  className="pp-input"
-                  value={editDescription}
-                  onChange={(e) => setEditDescription(e.target.value)}
-                  maxLength={2000}
-                  style={{ minHeight: 80, resize: 'vertical' }}
-                />
-              </div>
-
-              <div>
-                <div className="pp-label">{t('petPublic.friendly')}</div>
-                <p className="pp-subtle" style={{ fontSize: 12, marginTop: 0, marginBottom: 6 }}>
-                  {t('myPets.friendlyHint')}
-                </p>
-                <div className="pp-row" style={{ gap: 8, flexWrap: 'wrap' }}>
-                  {friendlyWithOptions.map(([key, label]) => (
-                    <label key={key} className="pp-chipCheck">
-                      <input
-                        type="checkbox"
-                        checked={editFriendlyWith[key]}
-                        onChange={(e) => setEditFriendlyWith((s) => ({ ...s, [key]: e.target.checked }))}
-                      />
-                      <span>{label}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <div className="pp-label">{t('myPets.photo')}</div>
-                <input
-                  id={editPhotoInputId}
-                  ref={editPhotoRef}
-                  type="file"
-                  accept="image/*"
-                  className="pp-input"
-                  style={{ fontSize: 14 }}
-                />
-              </div>
-
-              <p className="pp-subtle" style={{ fontSize: 12, marginTop: 4, marginBottom: 0 }}>
-                {t('myPets.photoHint')}
-              </p>
+              {editPanel === 'more' ? (
+                <>
+                  <div>
+                    <div className="pp-label">{t('petPublic.traits')}</div>
+                    <input className="pp-input" value={editIdentifyingMarks} onChange={(e) => setEditIdentifyingMarks(e.target.value)} />
+                  </div>
+                  <div>
+                    <div className="pp-label">{t('myPets.descriptionLabel')}</div>
+                    <textarea
+                      className="pp-input"
+                      value={editDescription}
+                      onChange={(e) => setEditDescription(e.target.value)}
+                      maxLength={2000}
+                      style={{ minHeight: 80, resize: 'vertical' }}
+                    />
+                  </div>
+                  <div>
+                    <div className="pp-label">{t('petPublic.veterinarian')}</div>
+                    <input
+                      className="pp-input"
+                      value={editVeterinarian}
+                      onChange={(e) => setEditVeterinarian(e.target.value)}
+                      placeholder={t('myPets.vetPh')}
+                    />
+                  </div>
+                  <div>
+                    <div className="pp-label">{t('petPublic.friendly')}</div>
+                    <div className="pp-row" style={{ gap: 8, flexWrap: 'wrap' }}>
+                      {friendlyWithOptions.map(([key, label]) => (
+                        <label key={key} className="pp-chipCheck">
+                          <input
+                            type="checkbox"
+                            checked={editFriendlyWith[key]}
+                            onChange={(e) => setEditFriendlyWith((s) => ({ ...s, [key]: e.target.checked }))}
+                          />
+                          <span>{label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              ) : null}
 
               <div className="pp-modalActions">
-                <button type="button" className="pp-btn" onClick={() => setEditingId(null)}>
-                  {t('common.cancel')}
+                <button type="button" className="pp-btn" onClick={() => (editPanel === 'hub' ? setEditingId(null) : setEditPanel('hub'))}>
+                  {editPanel === 'hub' ? t('common.cancel') : t('common.back')}
                 </button>
                 <button
                   type="submit"
@@ -1101,6 +1490,57 @@ export default function MyPets() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      ) : null}
+
+      {addedSuccess ? (
+        <div className="pp-modalWrap" role="dialog" aria-modal="true" aria-labelledby="add-success-title">
+          <button type="button" className="pp-modalBackdrop" aria-label={t('common.close')} onClick={() => setAddedSuccess(null)} />
+          <div className="pp-modalCard pp-modalCard--petAdd pp-addSuccess">
+            <div className="pp-modalHead">
+              <div />
+              <button type="button" className="pp-iconRoundBtn" onClick={() => setAddedSuccess(null)} aria-label={t('common.close')}>
+                ✕
+              </button>
+            </div>
+            <div className="pp-addSuccess__body">
+              <div className="pp-addSuccess__photoWrap">
+                <PetAvatar pet={addedSuccess} size={120} />
+                <span className="pp-addSuccess__check" aria-hidden>
+                  <IconGreenTick size={34} />
+                </span>
+              </div>
+              <h2 id="add-success-title">{t('myPets.addedTitle', { name: addedSuccess.name })}</h2>
+              <p className="pp-subtle">{t('myPets.addedSub', { name: addedSuccess.name })}</p>
+              <button
+                type="button"
+                className="pp-btn pp-btnPrimary"
+                style={{ width: '100%' }}
+                onClick={() => {
+                  const publicId = addedSuccess.id;
+                  setAddedSuccess(null);
+                  window.location.href = `/pet/${encodeURIComponent(publicId)}`;
+                }}
+              >
+                {t('myPets.viewPublicProfile')}
+              </button>
+              <button
+                type="button"
+                className="pp-btn pp-btnOutline"
+                style={{ width: '100%', marginTop: 10 }}
+                onClick={() => {
+                  const pet = pets.find((row) => row.id === addedSuccess.id) || addedSuccess;
+                  setAddedSuccess(null);
+                  startEdit(pet, 'gps');
+                }}
+              >
+                {t('myPets.setupGpsTracker')}
+              </button>
+              <button type="button" className="pp-linkBtn" onClick={() => { setAddedSuccess(null); setAddPetDrawerOpen(true); }}>
+                {t('myPets.addAnotherPet')}
+              </button>
+            </div>
           </div>
         </div>
       ) : null}
