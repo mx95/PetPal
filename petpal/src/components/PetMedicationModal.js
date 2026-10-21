@@ -8,6 +8,7 @@ import {
   subscribePetMedications,
   updatePetMedication,
 } from '../pets/petMedicationsFirestore';
+import useBodyScrollLock from '../hooks/useBodyScrollLock';
 import IconMedPill from './icons/IconMedPill';
 import TimeInput24 from './TimeInput24';
 
@@ -106,6 +107,7 @@ export default function PetMedicationModal({
   const [draftDosage, setDraftDosage] = useState('');
   const [draftNotes, setDraftNotes] = useState('');
   const [editingId, setEditingId] = useState(/** @type {string | null} */ (null));
+  useBodyScrollLock(Boolean(open));
 
   useEffect(() => {
     if (!open || mode !== 'owner' || !ownerUid || !petId || !isFirebaseConfigured()) {

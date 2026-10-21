@@ -16,6 +16,7 @@ import IconMedPill from '../components/icons/IconMedPill';
 import { sharePetWithEmail } from '../pets/petShareFirestore';
 import { linkPetTrackerImei } from '../tracking/linkPetTrackerImei';
 import { fetchRegisteredTrackerImeis } from '../tracking/registeredDeviceClient';
+import useBodyScrollLock from '../hooks/useBodyScrollLock';
 
 function IconShare() {
   return (
@@ -421,13 +422,9 @@ export default function MyPets() {
     return () => document.removeEventListener('keydown', onKey);
   }, [addPetDrawerOpen, editingId]);
 
-  useEffect(() => {
-    // Prevent iOS/Android "page drag" behind the modal.
-    const cls = 'pp-noScroll';
-    if (addPetDrawerOpen || editingId) document.body.classList.add(cls);
-    else document.body.classList.remove(cls);
-    return () => document.body.classList.remove(cls);
-  }, [addPetDrawerOpen, editingId]);
+  useBodyScrollLock(
+    Boolean(addPetDrawerOpen || editingId || addedSuccess || sharePet || medModalPet || fullscreenPhotoUrl)
+  );
 
   useEffect(() => {
     let cancelled = false;
