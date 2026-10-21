@@ -6,10 +6,10 @@ function randToken() {
   return Math.random().toString(36).slice(2, 10);
 }
 
-export async function uploadPetPhoto({ uid, file, petId }) {
+export async function uploadPetPhoto({ uid, file, petId, focusX = 0.5, focusY = 0.5 }) {
   const storage = getFirebaseStorage();
   if (!storage || !uid || !file) return null;
-  const { blob } = await fileToAvatarJpeg(file);
+  const { blob } = await fileToAvatarJpeg(file, { focusX, focusY });
   const safePetId = String(petId || '').trim();
   if (!safePetId) return null;
   const path = `petPhotos/${uid}/${safePetId}/${Date.now()}-${randToken()}.jpg`;

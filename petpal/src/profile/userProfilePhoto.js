@@ -74,9 +74,10 @@ const MAX_INPUT_BYTES = 12 * 1024 * 1024;
 
 /**
  * @param {File} file
+ * @param {{ focusX?: number, focusY?: number }} [options]
  * @returns {Promise<{ blob: Blob, dataUrl: string }>}
  */
-export async function fileToAvatarJpeg(file) {
+export async function fileToAvatarJpeg(file, options = {}) {
   if (!file?.type?.startsWith('image/')) {
     throw new Error('NOT_IMAGE');
   }
@@ -87,10 +88,12 @@ export async function fileToAvatarJpeg(file) {
   const nw = img.naturalWidth;
   const nh = img.naturalHeight;
   if (nw <= 0 || nh <= 0) throw new Error('BAD_IMAGE');
-  /** Center-crop to a square so circular avatars look consistent everywhere. */
+  /** Square crop; optional focusX/focusY (0–1) shift the crop window. */
+  const focusX = Number.isFinite(options?.focusX) ? Math.min(1, Math.max(0, options.focusX)) : 0.5;
+  const focusY = Number.isFinite(options?.focusY) ? Math.min(1, Math.max(0, options.focusY)) : 0.5;
   const side = Math.min(nw, nh);
-  const sx = (nw - side) / 2;
-  const sy = (nh - side) / 2;
+  const sx = Math.min(nw - side, Math.max(0, focusX * nw - side / 2));
+  const sy = Math.min(nh - side, Math.max(0, focusY * nh - side / 2));
   const out = Math.min(side, AVATAR_MAX);
   const canvas = document.createElement('canvas');
   canvas.width = out;

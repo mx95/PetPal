@@ -2599,7 +2599,8 @@ select.pp-input:focus {
 
 .pp-medModal__footer {
   flex-shrink: 0;
-  padding: 12px 22px calc(14px + env(safe-area-inset-bottom));
+  /* Sheet clears bottom nav via .pp-modalWrap padding; keep a compact footer */
+  padding: 12px 22px calc(14px + env(safe-area-inset-bottom, 0px));
   border-top: 1px solid rgba(15, 23, 42, 0.08);
   background: rgba(255, 255, 255, 0.98);
   box-shadow: 0 -8px 24px rgba(15, 23, 42, 0.06);
@@ -3146,15 +3147,17 @@ html[data-theme="dark"] .pp-medModal__timeInput .pp-timeInput24__select {
   position: relative;
   width: min(780px, calc(100vw - 36px));
   max-width: min(780px, 100vw);
-  max-height: min(88dvh, 860px);
   background: #fff;
   border: 1px solid rgba(16, 24, 40, 0.08);
   border-radius: 20px;
   box-shadow: 0 22px 58px rgba(16, 24, 40, 0.24);
   display: flex;
   flex-direction: column;
-  overflow: hidden;
   touch-action: pan-y;
+}
+.pp-modalWrap .pp-modalCard {
+  max-height: min(88dvh, 860px);
+  overflow: hidden;
 }
 
 .pp-modalHead {
@@ -3218,14 +3221,16 @@ html[data-theme="dark"] .pp-medModal__timeInput .pp-timeInput24__select {
 @media (max-width: 900px) {
   .pp-modalWrap {
     align-items: flex-end;
-    padding: max(12px, env(safe-area-inset-top)) 0 0;
+    /* Keep bottom nav visible; sheet sits above it so Cancel/Save stay clear */
+    padding: max(12px, env(safe-area-inset-top)) 0 calc(76px + env(safe-area-inset-bottom, 0px));
   }
 
-  .pp-modalCard {
+  /* Only real modal sheets (inside .pp-modalWrap) become bottom sheets */
+  .pp-modalWrap .pp-modalCard {
     width: 100%;
     max-width: 100%;
-    height: min(92dvh, 780px);
-    max-height: 92dvh;
+    height: min(calc(92dvh - 76px - env(safe-area-inset-bottom, 0px)), 780px);
+    max-height: calc(92dvh - 76px - env(safe-area-inset-bottom, 0px));
     border-radius: 18px 18px 0 0;
     border-top-left-radius: 18px;
     border-top-right-radius: 18px;
@@ -3243,8 +3248,8 @@ html[data-theme="dark"] .pp-medModal__timeInput .pp-timeInput24__select {
     padding: 16px 16px 12px;
   }
 
-  .pp-modalForm {
-    padding: 14px 16px calc(28px + env(safe-area-inset-bottom, 0px));
+  .pp-modalWrap .pp-modalForm {
+    padding: 14px 16px 18px;
   }
 }
 
@@ -3266,7 +3271,7 @@ html[data-theme="dark"] .pp-medModal__timeInput .pp-timeInput24__select {
     margin-left: -16px;
     margin-right: -16px;
     margin-bottom: -12px;
-    padding: 12px 16px calc(16px + env(safe-area-inset-bottom, 0px));
+    padding: 12px 16px 14px;
     background: linear-gradient(180deg, rgba(255, 255, 255, 0.72), #fff 28%);
     gap: 10px;
   }
@@ -26241,11 +26246,21 @@ html[data-theme="dark"] .pp-safeZone__map { border-color: rgba(74, 222, 128, 0.3
   align-items: center;
   justify-content: center;
   gap: 8px;
+  line-height: 1;
 }
 .pp-genderSeg__ico {
-  font-size: 18px;
+  display: inline-grid;
+  place-items: center;
+  width: 1.25em;
+  height: 1.25em;
+  font-size: 17px;
   line-height: 1;
   font-weight: 800;
+  flex-shrink: 0;
+  /* Optical center for ♂/♀ glyphs next to label text */
+  transform: translateY(0);
+  position: relative;
+  top: 0.02em;
 }
 .pp-genderSeg__ico.is-m {
   color: #2e90fa;
@@ -26268,6 +26283,8 @@ html[data-theme="dark"] .pp-safeZone__map { border-color: rgba(74, 222, 128, 0.3
 .pp-dateField {
   position: relative;
   display: block;
+  max-width: 100%;
+  overflow: hidden;
 }
 .pp-dateField__ico {
   position: absolute;
@@ -26281,6 +26298,78 @@ html[data-theme="dark"] .pp-safeZone__map { border-color: rgba(74, 222, 128, 0.3
 }
 .pp-dateField__input {
   padding-left: 40px !important;
+}
+.pp-dateField__inputNative,
+.pp-input[type='date'] {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
+  appearance: none;
+  -webkit-appearance: none;
+}
+.pp-dateField__inputNative::-webkit-calendar-picker-indicator,
+.pp-input[type='date']::-webkit-calendar-picker-indicator {
+  opacity: 0.65;
+  cursor: pointer;
+}
+/* Prevent iOS/Safari native date controls from overflowing the modal */
+.pp-modalForm input[type='date'].pp-input {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+.pp-photoAlign {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  align-items: center;
+  margin-bottom: 14px;
+  padding: 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(91, 55, 255, 0.18);
+  background: rgba(91, 55, 255, 0.04);
+}
+.pp-photoAlign__circle {
+  width: 112px;
+  height: 112px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 3px solid #fff;
+  box-shadow: 0 8px 20px rgba(16, 24, 40, 0.14);
+  background: #eef2ff;
+  flex-shrink: 0;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.pp-photoAlign__circle.is-dragging {
+  cursor: grabbing;
+  box-shadow: 0 0 0 3px rgba(91, 55, 255, 0.22), 0 10px 24px rgba(16, 24, 40, 0.16);
+}
+.pp-photoAlign__circle img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  pointer-events: none;
+  -webkit-user-drag: none;
+}
+.pp-photoAlign__controls {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  align-content: center;
+}
+.pp-photoAlign__hint {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.35;
+  color: #475467;
 }
 
 /* Profile edit modal — personal details hub + contact form */
@@ -26345,6 +26434,23 @@ html[data-theme="dark"] .pp-safeZone__map { border-color: rgba(74, 222, 128, 0.3
   display: grid;
   gap: 2px;
   min-width: 0;
+}
+.pp-profileIdentityCard--merged {
+  cursor: pointer;
+  align-items: flex-start;
+}
+.pp-profileIdentityCard--merged .pp-profileIdentityCard__copy strong {
+  font-size: 16px;
+  font-weight: 800;
+  color: #101828;
+}
+.pp-profileIdentityCard__meta {
+  display: block;
+  margin-top: 6px;
+  color: var(--pp-muted, #667085);
+  font-size: 12px;
+  line-height: 1.35;
+  white-space: normal;
 }
 .pp-profileIdentityCard__nameBtn {
   display: grid;
@@ -26494,6 +26600,7 @@ html[data-theme="dark"] .pp-safeZone__map { border-color: rgba(74, 222, 128, 0.3
   display: grid;
   gap: 10px;
   margin-top: 4px;
+  padding-bottom: 4px;
 }
 .pp-profileModalActions__save {
   width: 100%;
@@ -26812,12 +26919,35 @@ html[data-theme="dark"] .pp-safeZone__map { border-color: rgba(74, 222, 128, 0.3
   color: #667085;
   font-size: 13px;
 }
-.pp-publicPet__foundNote {
-  margin-top: 14px;
-  padding: 12px 14px;
-  border-radius: 14px;
+.pp-publicPet__foundBlock {
+  margin-top: 18px;
+  padding: 14px;
+  border-radius: 18px;
   background: #fff7ed;
-  border: 1px solid rgba(245, 158, 11, 0.25);
+  border: 1px solid rgba(245, 158, 11, 0.28);
+}
+.pp-publicPet__foundBlock h2 {
+  margin: 14px 0 8px;
+  font-size: 15px;
+  font-weight: 900;
+  color: #9a3412;
+}
+.pp-publicPet__foundBlock .pp-publicPet__tips {
+  margin: 0;
+  padding-left: 1.2em;
+  color: #9a3412;
+}
+.pp-publicPet__foundBlock .pp-publicPet__footer {
+  margin: 14px 0 0;
+  color: #9a3412;
+  font-weight: 750;
+  text-align: center;
+}
+.pp-publicPet__foundNote {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
   color: #9a3412;
   font-size: 13px;
   line-height: 1.4;
@@ -26828,6 +26958,7 @@ html[data-theme="dark"] .pp-safeZone__map { border-color: rgba(74, 222, 128, 0.3
 .pp-publicPet__foundNote strong {
   display: block;
   margin-bottom: 2px;
+  font-size: 15px;
 }
 .pp-publicPet__ownerCard {
   margin-top: 14px;

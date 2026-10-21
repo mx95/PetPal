@@ -212,14 +212,6 @@ export default function PublicPetProfile() {
                 </div>
               </header>
 
-              <div className="pp-publicPet__foundNote" role="note">
-                <IconAlert />
-                <div>
-                  <strong>{t('petPublic.foundTitle')}</strong>
-                  <span>{t('petPublic.foundBody')}</span>
-                </div>
-              </div>
-
               <section className="pp-publicPet__ownerCard">
                 <h2>{t('petPublic.ownerHeading')}</h2>
                 {profile.owner.name ? <p className="pp-publicPet__ownerName">{profile.owner.name}</p> : null}
@@ -314,7 +306,14 @@ export default function PublicPetProfile() {
                 </section>
               ) : null}
 
-              <section className="pp-publicPet__section">
+              <section className="pp-publicPet__foundBlock" aria-label={t('petPublic.emergencyTitle')}>
+                <div className="pp-publicPet__foundNote" role="note">
+                  <IconAlert />
+                  <div>
+                    <strong>{t('petPublic.foundTitle')}</strong>
+                    <span>{t('petPublic.foundBody')}</span>
+                  </div>
+                </div>
                 <h2>{t('petPublic.emergencyTitle')}</h2>
                 <ol className="pp-publicPet__tips">
                   <li>{t('petPublic.emergencyText1')}</li>
@@ -322,9 +321,9 @@ export default function PublicPetProfile() {
                   <li>{t('petPublic.emergencyText3')}</li>
                   <li>{t('petPublic.emergencyText4')}</li>
                 </ol>
+                <p className="pp-publicPet__footer">{t('petPublic.footerThank')}</p>
               </section>
 
-              <p className="pp-publicPet__footer">{t('petPublic.footerThank')}</p>
               <p className="pp-publicPet__homeLink">
                 <Link to="/">PetPal</Link>
               </p>

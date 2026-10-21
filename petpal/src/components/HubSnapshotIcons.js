@@ -71,31 +71,24 @@ export function SnapDualPawIcon({ size = 18 }) {
   );
 }
 
-export function DecoPathTrail() {
+/** Soft badge deco for the Distance snapshot card (matches streak/level style). */
+export function DecoWalkRoute() {
   return (
     <svg className="pp-hubSnap__decoSvg" viewBox="0 0 72 72" aria-hidden fill="none">
+      <circle cx="40" cy="40" r="22" fill="#DBEAFE" opacity="0.95" />
       <path
-        d="M8 48c10-2 14-14 22-18 8-4 14 2 20-2 5-3 8-10 14-12"
-        stroke="#7EB6FF"
-        strokeWidth="3.2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        opacity="0.55"
+        d="M40 26c5.2 0 9.4 4 9.4 9 0 7.4-9.4 15.6-9.4 15.6S30.6 42.4 30.6 35c0-5 4.2-9 9.4-9z"
+        fill="#2F80FF"
+        opacity="0.9"
       />
-      <path
-        d="M10 54c9-1 13-11 20-15 8-4 15 1 21-2"
-        stroke="#A9D0FF"
-        strokeWidth="2"
-        strokeLinecap="round"
-        opacity="0.4"
-      />
-      <ellipse cx="56" cy="48" rx="8" ry="6.5" fill="#7EB6FF" opacity="0.45" />
-      <circle cx="50.5" cy="40.5" r="2.4" fill="#7EB6FF" opacity="0.45" />
-      <circle cx="55.2" cy="38.2" r="2.5" fill="#7EB6FF" opacity="0.45" />
-      <circle cx="60.2" cy="39" r="2.4" fill="#7EB6FF" opacity="0.45" />
-      <circle cx="63.2" cy="43.2" r="2.2" fill="#7EB6FF" opacity="0.45" />
+      <circle cx="40" cy="35" r="3.4" fill="#fff" />
     </svg>
   );
+}
+
+/** @deprecated Use DecoWalkRoute */
+export function DecoPathTrail() {
+  return <DecoWalkRoute />;
 }
 
 export function DecoFlameWatermark() {
