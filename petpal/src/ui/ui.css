@@ -3147,15 +3147,17 @@ html[data-theme="dark"] .pp-medModal__timeInput .pp-timeInput24__select {
   position: relative;
   width: min(780px, calc(100vw - 36px));
   max-width: min(780px, 100vw);
-  max-height: min(88dvh, 860px);
   background: #fff;
   border: 1px solid rgba(16, 24, 40, 0.08);
   border-radius: 20px;
   box-shadow: 0 22px 58px rgba(16, 24, 40, 0.24);
   display: flex;
   flex-direction: column;
-  overflow: hidden;
   touch-action: pan-y;
+}
+.pp-modalWrap .pp-modalCard {
+  max-height: min(88dvh, 860px);
+  overflow: hidden;
 }
 
 .pp-modalHead {
