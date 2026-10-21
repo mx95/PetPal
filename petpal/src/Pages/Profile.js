@@ -6,7 +6,7 @@ import { useAuth } from '../auth/AuthProvider';
 import { useCompany } from '../company/CompanyContext';
 import { useI18n } from '../i18n/I18nContext';
 import { usePets } from '../pets/PetsContext';
-import { syncOwnerContactToPets } from '../pets/petsRepo';
+import { syncOwnerContactToPets } from '../pets/petsFirestore';
 import { useGame } from '../game/GameContext';
 import { walkStreakDays } from '../walk/walkStats';
 import { getDb, isFirebaseConfigured } from '../firebase';
