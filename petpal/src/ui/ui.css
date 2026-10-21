@@ -2599,15 +2599,11 @@ select.pp-input:focus {
 
 .pp-medModal__footer {
   flex-shrink: 0;
-  padding: 12px 22px calc(80px + env(safe-area-inset-bottom));
+  /* Sheet clears bottom nav via .pp-modalWrap padding; keep a compact footer */
+  padding: 12px 22px calc(14px + env(safe-area-inset-bottom, 0px));
   border-top: 1px solid rgba(15, 23, 42, 0.08);
   background: rgba(255, 255, 255, 0.98);
   box-shadow: 0 -8px 24px rgba(15, 23, 42, 0.06);
-}
-@media (min-width: 901px) {
-  .pp-medModal__footer {
-    padding-bottom: calc(14px + env(safe-area-inset-bottom));
-  }
 }
 
 .pp-medModal__footer .pp-medModal__actions {
@@ -3223,14 +3219,15 @@ html[data-theme="dark"] .pp-medModal__timeInput .pp-timeInput24__select {
 @media (max-width: 900px) {
   .pp-modalWrap {
     align-items: flex-end;
-    padding: max(12px, env(safe-area-inset-top)) 0 0;
+    /* Keep bottom nav visible; sheet sits above it so Cancel/Save stay clear */
+    padding: max(12px, env(safe-area-inset-top)) 0 calc(76px + env(safe-area-inset-bottom, 0px));
   }
 
   .pp-modalCard {
     width: 100%;
     max-width: 100%;
-    height: min(92dvh, 780px);
-    max-height: 92dvh;
+    height: min(calc(92dvh - 76px - env(safe-area-inset-bottom, 0px)), 780px);
+    max-height: calc(92dvh - 76px - env(safe-area-inset-bottom, 0px));
     border-radius: 18px 18px 0 0;
     border-top-left-radius: 18px;
     border-top-right-radius: 18px;
@@ -3249,8 +3246,7 @@ html[data-theme="dark"] .pp-medModal__timeInput .pp-timeInput24__select {
   }
 
   .pp-modalForm {
-    /* Clear fixed bottom nav (~72px) so Cancel/Save stay fully visible */
-    padding: 14px 16px calc(88px + env(safe-area-inset-bottom, 0px));
+    padding: 14px 16px 18px;
   }
 }
 
@@ -3272,7 +3268,7 @@ html[data-theme="dark"] .pp-medModal__timeInput .pp-timeInput24__select {
     margin-left: -16px;
     margin-right: -16px;
     margin-bottom: -12px;
-    padding: 12px 16px calc(80px + env(safe-area-inset-bottom, 0px));
+    padding: 12px 16px 14px;
     background: linear-gradient(180deg, rgba(255, 255, 255, 0.72), #fff 28%);
     gap: 10px;
   }
@@ -26250,16 +26246,18 @@ html[data-theme="dark"] .pp-safeZone__map { border-color: rgba(74, 222, 128, 0.3
   line-height: 1;
 }
 .pp-genderSeg__ico {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.15em;
-  height: 1.15em;
-  font-size: 18px;
+  display: inline-grid;
+  place-items: center;
+  width: 1.25em;
+  height: 1.25em;
+  font-size: 17px;
   line-height: 1;
   font-weight: 800;
   flex-shrink: 0;
-  transform: translateY(-0.5px);
+  /* Optical center for ♂/♀ glyphs next to label text */
+  transform: translateY(0);
+  position: relative;
+  top: 0.02em;
 }
 .pp-genderSeg__ico.is-m {
   color: #2e90fa;
@@ -26298,7 +26296,8 @@ html[data-theme="dark"] .pp-safeZone__map { border-color: rgba(74, 222, 128, 0.3
 .pp-dateField__input {
   padding-left: 40px !important;
 }
-.pp-dateField__inputNative {
+.pp-dateField__inputNative,
+.pp-input[type='date'] {
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
@@ -26306,9 +26305,18 @@ html[data-theme="dark"] .pp-safeZone__map { border-color: rgba(74, 222, 128, 0.3
   appearance: none;
   -webkit-appearance: none;
 }
-.pp-dateField__inputNative::-webkit-calendar-picker-indicator {
+.pp-dateField__inputNative::-webkit-calendar-picker-indicator,
+.pp-input[type='date']::-webkit-calendar-picker-indicator {
   opacity: 0.65;
   cursor: pointer;
+}
+/* Prevent iOS/Safari native date controls from overflowing the modal */
+.pp-modalForm input[type='date'].pp-input {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
 }
 .pp-photoAlign {
   display: grid;
@@ -26582,6 +26590,7 @@ html[data-theme="dark"] .pp-safeZone__map { border-color: rgba(74, 222, 128, 0.3
   display: grid;
   gap: 10px;
   margin-top: 4px;
+  padding-bottom: 4px;
 }
 .pp-profileModalActions__save {
   width: 100%;
