@@ -4,7 +4,8 @@ import { useAuth } from '../auth/AuthProvider';
 import { MVP_NAV } from '../config/mvpNav';
 import { useI18n } from '../i18n/I18nContext';
 
-const HOME_HERO_SRC = `${process.env.PUBLIC_URL || ''}/images/home-hero.jpg`;
+// Cache-bust so CDN/browsers pick up the two-dogs hero after asset swaps.
+const HOME_HERO_SRC = `${process.env.PUBLIC_URL || ''}/images/home-hero.jpg?v=2dogs`;
 const LIVE_TRACKING_SRC = `${process.env.PUBLIC_URL || ''}/images/home-live-tracking.jpg`;
 const NFC_FEATURE_SRC = `${process.env.PUBLIC_URL || ''}/images/home-nfc-feature.jpg`;
 
@@ -134,9 +135,7 @@ export default function HomeScreen() {
             <div className="pp-homeWelcome__bannerGreeting">
               <p className="pp-homeWelcome__eyebrow">{t('home.publicHero.eyebrow')}</p>
               <h1 id="home-hero-title" className="pp-homeWelcome__title">
-                {t('home.publicHero.headlineBefore')}
-                <br />
-                {t('home.publicHero.headlineAfter')}
+                {t('home.publicHero.headline')}
               </h1>
             </div>
           </div>

@@ -125,8 +125,9 @@ const el = {
     },
     publicHero: {
       eyebrow: 'Τεχνολογία φροντίδας κατοικιδίων για την Κύπρο',
-      headlineBefore: 'PetPal Care Hub —',
-      headlineAfter: 'όλα όσα χρειάζετε το κατοικίδιό σου.',
+      headline: 'Όλα όσα χρειάζεται το κατοικίδιο σου',
+      headlineBefore: 'Όλα όσα χρειάζεται το κατοικίδιο σου',
+      headlineAfter: '',
       ctaPrimary: 'Δημιουργία λογαριασμού',
       ctaSecondary: 'Είμαι ήδη μέλος',
       bullet1Title: 'Καθημερινές βόλτες',

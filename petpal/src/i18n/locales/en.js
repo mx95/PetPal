@@ -101,8 +101,9 @@ const en = {
     },
     publicHero: {
       eyebrow: 'Pet-care technology for Cyprus',
-      headlineBefore: 'PetPal Care Hub —',
-      headlineAfter: 'one calm home for every pet you care for.',
+      headline: 'Everything that your pet needs',
+      headlineBefore: 'Everything that your pet needs',
+      headlineAfter: '',
       ctaPrimary: 'Create account',
       ctaSecondary: 'Already a member',
       bullet1Title: 'Daily walk tracking',
