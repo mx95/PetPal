@@ -529,8 +529,24 @@ restore_oscar_tracker_imei_oneshot() {
     log "Oscar IMEI restore OK"
   } || log "Oscar IMEI restore failed (Firebase Admin / CLI credentials may be missing on server)"
 }
-link_admin_tracker_imei_oneshot
-restore_oscar_tracker_imei_oneshot
+# If this collar was released for a new customer, never re-link it via legacy oneshots.
+release_tracker_imei_guard() {
+  local imei="868022030666239"
+  local marker="/var/lib/petpal/release-${imei}.done"
+  if [ -f "$marker" ]; then
+    mkdir -p /var/lib/petpal
+    touch /var/lib/petpal/admin-link-868022030666239.done 2>/dev/null || true
+    touch /var/lib/petpal/restore-oscar-868022030666239.done 2>/dev/null || true
+    log "IMEI $imei marked released — skipping admin/Oscar re-link oneshots"
+    return 0
+  fi
+  return 1
+}
+
+if ! release_tracker_imei_guard; then
+  link_admin_tracker_imei_oneshot
+  restore_oscar_tracker_imei_oneshot
+fi
 
 # One-shot: print Oscar public share URL to deploy logs.
 print_oscar_share_link_oneshot() {

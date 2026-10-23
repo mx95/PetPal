@@ -1,0 +1,58 @@
+# One-off: unlink a collar IMEI from all pets/subscriptions so a new user can claim it.
+# Keeps the tracker-server device row + EMNIFY card (handled separately / already re-registered).
+
+name: Release tracker IMEI
+
+on:
+  workflow_dispatch:
+    inputs:
+      imei:
+        description: Collar IMEI to release
+        required: true
+        default: '868022030666239'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Release IMEI over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          command_timeout: 12m
+          script: |
+            set -euo pipefail
+            PETPAL_ROOT="${{ secrets.DEPLOY_PATH }}"
+            if [ -z "$PETPAL_ROOT" ]; then PETPAL_ROOT="/root/PetPal"; fi
+            IMEI='${{ github.event.inputs.imei }}'
+            cd "$PETPAL_ROOT"
+            git fetch origin
+            if git rev-parse --verify origin/cursor/release-tracker-imei-d742 >/dev/null 2>&1; then
+              git checkout -B cursor/release-tracker-imei-d742 origin/cursor/release-tracker-imei-d742
+            else
+              git checkout main
+              git reset --hard origin/main
+            fi
+            cd petpal
+            export FIREBASE_PROJECT_ID=petpal-aecda
+            export TRACKER_IMEI="$IMEI"
+            export HOME="${HOME:-/root}"
+            if [ -f /root/serviceAccount.json ]; then
+              export GOOGLE_APPLICATION_CREDENTIALS=/root/serviceAccount.json
+            elif [ -f "$PETPAL_ROOT/petpal/serviceAccount.json" ]; then
+              export GOOGLE_APPLICATION_CREDENTIALS="$PETPAL_ROOT/petpal/serviceAccount.json"
+            fi
+            if [ ! -f scripts/release-tracker-imei.cjs ]; then
+              echo "scripts/release-tracker-imei.cjs missing"
+              exit 1
+            fi
+            node scripts/release-tracker-imei.cjs
+            # Prevent deploy oneshots from re-linking this IMEI to Oscar / admin.
+            mkdir -p /var/lib/petpal
+            touch "/var/lib/petpal/release-${IMEI}.done"
+            touch /var/lib/petpal/admin-link-868022030666239.done
+            touch /var/lib/petpal/restore-oscar-868022030666239.done
+            echo "Markers written so deploy will not reattach IMEI"
