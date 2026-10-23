@@ -529,21 +529,48 @@ restore_oscar_tracker_imei_oneshot() {
     log "Oscar IMEI restore OK"
   } || log "Oscar IMEI restore failed (Firebase Admin / CLI credentials may be missing on server)"
 }
-# If this collar was released for a new customer, never re-link it via legacy oneshots.
-release_tracker_imei_guard() {
+# One-shot: release collar IMEI for a new customer (unlink pets/subs; keep EMNIFY on tracker server).
+release_tracker_imei_oneshot() {
   local imei="868022030666239"
   local marker="/var/lib/petpal/release-${imei}.done"
   if [ -f "$marker" ]; then
     mkdir -p /var/lib/petpal
     touch /var/lib/petpal/admin-link-868022030666239.done 2>/dev/null || true
     touch /var/lib/petpal/restore-oscar-868022030666239.done 2>/dev/null || true
-    log "IMEI $imei marked released — skipping admin/Oscar re-link oneshots"
+    log "IMEI $imei already released — skipping admin/Oscar re-link oneshots"
     return 0
   fi
-  return 1
+  log "Releasing IMEI $imei for new-user assignment"
+  (
+    cd "$PETPAL_DIR"
+    if [ -f /root/serviceAccount.json ]; then
+      export GOOGLE_APPLICATION_CREDENTIALS=/root/serviceAccount.json
+    elif [ -f "$PETPAL_DIR/serviceAccount.json" ]; then
+      export GOOGLE_APPLICATION_CREDENTIALS="$PETPAL_DIR/serviceAccount.json"
+    else
+      adc="$(ls -1 /root/.config/firebase/*_application_default_credentials.json 2>/dev/null | head -n 1 || true)"
+      if [ -n "$adc" ] && [ -f "$adc" ]; then
+        export GOOGLE_APPLICATION_CREDENTIALS="$adc"
+      fi
+    fi
+    export FIREBASE_PROJECT_ID=petpal-aecda
+    export TRACKER_IMEI="$imei"
+    export HOME="${HOME:-/root}"
+    node scripts/release-tracker-imei.cjs
+  ) && {
+    mkdir -p /var/lib/petpal
+    touch "$marker"
+    touch /var/lib/petpal/admin-link-868022030666239.done 2>/dev/null || true
+    touch /var/lib/petpal/restore-oscar-868022030666239.done 2>/dev/null || true
+    log "IMEI $imei release OK"
+    return 0
+  } || {
+    log "IMEI $imei release failed (Firebase Admin credentials may be missing on server)"
+    return 1
+  }
 }
 
-if ! release_tracker_imei_guard; then
+if ! release_tracker_imei_oneshot; then
   link_admin_tracker_imei_oneshot
   restore_oscar_tracker_imei_oneshot
 fi
