@@ -59,11 +59,9 @@ export default function PetCard({ pet, statusKey, statusValue }) {
           </span>
           <span className="pp-quickAction__label">{t('home.feed.quickManage')}</span>
         </Link>
-        <button
-          type="button"
-          className="pp-quickAction pp-quickAction--alert pp-quickAction--disabled"
-          disabled
-          aria-disabled="true"
+        <Link
+          className="pp-quickAction pp-quickAction--alert"
+          to={`/tracking?pet=${encodeURIComponent(pet.id)}&tab=zone`}
           aria-label={t('home.feed.quickAlert')}
           title={t('home.feed.quickAlert')}
         >
@@ -71,7 +69,7 @@ export default function PetCard({ pet, statusKey, statusValue }) {
             <img className="pp-quickAction__img" src={`${process.env.PUBLIC_URL || ''}/ui-icons/action-alert.png`} alt="" width="44" height="44" decoding="async" />
           </span>
           <span className="pp-quickAction__label">{t('home.feed.quickAlert')}</span>
-        </button>
+        </Link>
       </div>
     </article>
   );

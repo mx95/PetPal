@@ -638,6 +638,25 @@ export default function Tracking() {
     if (!wifiTrackingEnabled && trackerTab === 'device') setTrackerTab('live');
   }, [wifiTrackingEnabled, trackerTab]);
 
+  /** Deep-link from Activity Alert (and similar): /tracking?pet=<id>&tab=zone */
+  const deepLink = useMemo(() => {
+    try {
+      const q = new URLSearchParams(location.search || '');
+      const pet = String(q.get('pet') || '').trim();
+      const tab = String(q.get('tab') || '').trim().toLowerCase();
+      return { pet, tab };
+    } catch {
+      return { pet: '', tab: '' };
+    }
+  }, [location.search]);
+
+  useEffect(() => {
+    const allowed = new Set(['live', 'history', 'zone', ...(wifiTrackingEnabled ? ['device'] : [])]);
+    if (deepLink.tab && allowed.has(deepLink.tab)) {
+      setTrackerTab(deepLink.tab);
+    }
+  }, [deepLink.tab, wifiTrackingEnabled]);
+
   const selectedPet = useMemo(() => pets.find((p) => p.id === selectedPetId), [pets, selectedPetId]);
   const { user: authUser } = useAuth();
   const { zone: savedSafeZone, loaded: safeZoneLoaded } = useSafeZone(authUser?.uid, selectedPet?.id);
@@ -698,6 +717,7 @@ export default function Tracking() {
       return;
     }
     setSelectedPetId((cur) => {
+      if (deepLink.pet && pets.some((p) => p.id === deepLink.pet)) return deepLink.pet;
       try {
         const saved = localStorage.getItem(LAST_LIVE_PET_KEY);
         if (saved && pets.some((p) => p.id === saved)) return saved;
@@ -705,7 +725,7 @@ export default function Tracking() {
       if (cur && pets.some((p) => p.id === cur)) return cur;
       return pets[0].id;
     });
-  }, [pets]);
+  }, [pets, deepLink.pet]);
 
   useEffect(() => {
     if (!selectedPetId) return;
