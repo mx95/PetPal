@@ -1,6 +1,7 @@
 /**
- * Google Analytics 4 (gtag.js) — loaded only after cookie consent allows analytics.
- * Measurement ID from the GA setup UI (Install manually).
+ * Google Analytics 4 (gtag.js) with Consent Mode.
+ * The tag is installed in public/index.html so Google can detect it;
+ * analytics_storage stays denied until cookie consent grants it.
  */
 
 export const GA_MEASUREMENT_ID = String(
@@ -12,12 +13,9 @@ export function isGoogleAnalyticsConfigured() {
 }
 
 let enabled = false;
-let loadPromise = null;
 
-function injectGtagScript(id) {
-  if (typeof document === 'undefined') return;
-  if (document.getElementById('pp-ga-gtag')) return;
-
+function ensureGtag() {
+  if (typeof window === 'undefined') return false;
   window.dataLayer = window.dataLayer || [];
   if (typeof window.gtag !== 'function') {
     window.gtag = function gtag() {
@@ -25,44 +23,45 @@ function injectGtagScript(id) {
       window.dataLayer.push(arguments);
     };
   }
-
-  const script = document.createElement('script');
-  script.id = 'pp-ga-gtag';
-  script.async = true;
-  script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(id)}`;
-  document.head.appendChild(script);
-
-  window.gtag('js', new Date());
-  window.gtag('config', id, {
-    anonymize_ip: true,
-    send_page_view: true,
-  });
+  return true;
 }
 
-/** Load gtag after the user opts into analytics cookies. */
+/** Grant analytics_storage after the user opts into analytics cookies. */
 export function enableGoogleAnalytics() {
   if (!isGoogleAnalyticsConfigured()) return Promise.resolve(false);
-  if (enabled) return Promise.resolve(true);
-  if (loadPromise) return loadPromise;
+  if (!ensureGtag()) return Promise.resolve(false);
+  try {
+    window.gtag('consent', 'update', {
+      analytics_storage: 'granted',
+    });
+    enabled = true;
+    return Promise.resolve(true);
+  } catch {
+    return Promise.resolve(false);
+  }
+}
 
-  loadPromise = new Promise((resolve) => {
-    try {
-      injectGtagScript(GA_MEASUREMENT_ID);
-      enabled = true;
-      resolve(true);
-    } catch {
-      loadPromise = null;
-      resolve(false);
-    }
-  });
-  return loadPromise;
+/** Keep / re-deny analytics when the user chooses essential cookies only. */
+export function disableGoogleAnalytics() {
+  if (!ensureGtag()) return;
+  try {
+    window.gtag('consent', 'update', {
+      analytics_storage: 'denied',
+      ad_storage: 'denied',
+      ad_user_data: 'denied',
+      ad_personalization: 'denied',
+    });
+  } catch {
+    // ignore
+  }
+  enabled = false;
 }
 
 export function isGoogleAnalyticsEnabled() {
   return enabled;
 }
 
-/** SPA route changes — call after consent when the location changes. */
+/** SPA route changes — only meaningful once analytics_storage is granted. */
 export function trackGoogleAnalyticsPageView(pathname, search = '') {
   if (!enabled || typeof window.gtag !== 'function') return;
   const pagePath = `${pathname || '/'}${search || ''}`;
