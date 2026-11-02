@@ -1,6 +1,10 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { enableGoogleAnalytics, isGoogleAnalyticsConfigured } from '../analytics/googleAnalytics';
+import {
+  disableGoogleAnalytics,
+  enableGoogleAnalytics,
+  isGoogleAnalyticsConfigured,
+} from '../analytics/googleAnalytics';
 import { getCookieConsent, setCookieConsent } from '../cookies/cookieConsentStorage';
 import { enableFirebaseAnalytics, isFirebaseAnalyticsConfigured } from '../firebase';
 import { useI18n } from '../i18n/I18nContext';
@@ -8,6 +12,10 @@ import { useI18n } from '../i18n/I18nContext';
 function enableConsentedAnalytics() {
   enableFirebaseAnalytics().catch(() => {});
   enableGoogleAnalytics().catch(() => {});
+}
+
+function disableConsentedAnalytics() {
+  disableGoogleAnalytics();
 }
 
 /**
@@ -49,6 +57,7 @@ export function CookieConsent() {
       enableConsentedAnalytics();
     } else {
       setCookieConsent('necessary');
+      disableConsentedAnalytics();
     }
     setVisible(false);
     setShowCustomize(false);
@@ -62,6 +71,7 @@ export function CookieConsent() {
       return;
     }
     if (c.status === 'necessary') {
+      disableConsentedAnalytics();
       setVisible(false);
       return;
     }

@@ -37,7 +37,35 @@
     <link rel="dns-prefetch" href="https://maps.googleapis.com" />
     <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin />
     <link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin />
+    <link rel="preconnect" href="https://www.googletagmanager.com" crossorigin />
     <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+    <!-- Google tag (gtag.js) G-T0V10MEL5V — Consent Mode defaults denied until cookie opt-in -->
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() {
+        dataLayer.push(arguments);
+      }
+      gtag('consent', 'default', {
+        ad_storage: 'denied',
+        ad_user_data: 'denied',
+        ad_personalization: 'denied',
+        analytics_storage: 'denied',
+        functionality_storage: 'granted',
+        security_storage: 'granted',
+        wait_for_update: 500,
+      });
+      try {
+        var ppConsent = JSON.parse(localStorage.getItem('petpal_cookie_consent_v1') || '{}');
+        if (ppConsent && ppConsent.status === 'all') {
+          gtag('consent', 'update', { analytics_storage: 'granted' });
+        }
+      } catch (e) {}
+    </script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-T0V10MEL5V"></script>
+    <script>
+      gtag('js', new Date());
+      gtag('config', 'G-T0V10MEL5V', { anonymize_ip: true });
+    </script>
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
