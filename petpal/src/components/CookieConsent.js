@@ -1,8 +1,14 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { enableGoogleAnalytics, isGoogleAnalyticsConfigured } from '../analytics/googleAnalytics';
 import { getCookieConsent, setCookieConsent } from '../cookies/cookieConsentStorage';
 import { enableFirebaseAnalytics, isFirebaseAnalyticsConfigured } from '../firebase';
 import { useI18n } from '../i18n/I18nContext';
+
+function enableConsentedAnalytics() {
+  enableFirebaseAnalytics().catch(() => {});
+  enableGoogleAnalytics().catch(() => {});
+}
 
 /**
  * First-visit cookie consent: necessary storage always; optional Google Analytics only after opt-in.
@@ -17,7 +23,7 @@ export function CookieConsent() {
     statistics: false,
     marketing: false,
   });
-  const withAnalytics = isFirebaseAnalyticsConfigured();
+  const withAnalytics = isFirebaseAnalyticsConfigured() || isGoogleAnalyticsConfigured();
   const { t } = useI18n();
 
   useEffect(() => {
@@ -34,13 +40,13 @@ export function CookieConsent() {
   const applyAll = useCallback(() => {
     setCookieConsent('all');
     setVisible(false);
-    enableFirebaseAnalytics().catch(() => {});
+    enableConsentedAnalytics();
   }, []);
 
   const savePreferences = useCallback(() => {
     if (withAnalytics && statisticsEnabled) {
       setCookieConsent('all');
-      enableFirebaseAnalytics().catch(() => {});
+      enableConsentedAnalytics();
     } else {
       setCookieConsent('necessary');
     }
@@ -51,7 +57,7 @@ export function CookieConsent() {
   useEffect(() => {
     const c = getCookieConsent();
     if (c.status === 'all') {
-      enableFirebaseAnalytics().catch(() => {});
+      enableConsentedAnalytics();
       setVisible(false);
       return;
     }
