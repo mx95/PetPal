@@ -3,6 +3,7 @@ import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-
 import { RequireAuth } from './auth/RequireAuth';
 import { useAuth } from './auth/AuthProvider';
 import { AppFooter } from './components/AppFooter';
+import { AnalyticsPageViews } from './analytics/AnalyticsPageViews';
 import { CookieConsent } from './components/CookieConsent';
 import './ui/ui.css';
 import { useI18n } from './i18n/I18nContext';
@@ -428,6 +429,7 @@ function App() {
         <AppFooter />
       </div>
       <CookieConsent />
+      <AnalyticsPageViews />
       <BottomNav />
     </div>
   );
