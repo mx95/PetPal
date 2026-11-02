@@ -487,6 +487,7 @@ if (fs.existsSync(WEB_INDEX_HTML)) {
   app.use(
     express.static(WEB_BUILD_DIR, {
       index: false,
+      // Let Cloudflare edge-cache images/icons aggressively (see Cache-Control below).
       setHeaders(res, filePath) {
         if (
           filePath.endsWith(`${path.sep}index.html`) ||
@@ -495,12 +496,38 @@ if (fs.existsSync(WEB_INDEX_HTML)) {
           res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
           return;
         }
+        // Hashed CRA assets — immutable forever at CDN.
         if (filePath.includes(`${path.sep}static${path.sep}`)) {
           res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+          res.setHeader("CDN-Cache-Control", "public, max-age=31536000");
           return;
         }
-        if (filePath.includes(`${path.sep}images${path.sep}`)) {
-          res.setHeader("Cache-Control", "public, max-age=604800");
+
+        const lower = filePath.toLowerCase();
+        const isImageAsset =
+          /\.(avif|bmp|gif|ico|jpe?g|png|svg|webp)$/i.test(lower) ||
+          lower.includes(`${path.sep}images${path.sep}`) ||
+          lower.includes(`${path.sep}ui-icons${path.sep}`) ||
+          lower.includes(`${path.sep}nearby-icons${path.sep}`) ||
+          lower.includes(`${path.sep}nearby-pins${path.sep}`);
+
+        if (isImageAsset) {
+          // 30 days browser + Cloudflare edge. Safe for marketing/UI images that
+          // change infrequently; rename/query-bust when replacing an asset.
+          res.setHeader(
+            "Cache-Control",
+            "public, max-age=2592000, stale-while-revalidate=86400"
+          );
+          // Cloudflare honors CDN-Cache-Control for edge TTL independently of browsers.
+          res.setHeader("CDN-Cache-Control", "public, max-age=2592000");
+          res.setHeader("Cloudflare-CDN-Cache-Control", "max-age=2592000");
+          return;
+        }
+
+        // Other public files (manifest, robots, etc.) — short shared cache.
+        if (/\.(json|txt|xml|xsl|woff2?|ttf|otf|eot)$/i.test(lower)) {
+          res.setHeader("Cache-Control", "public, max-age=86400");
+          res.setHeader("CDN-Cache-Control", "public, max-age=86400");
         }
       },
     })
