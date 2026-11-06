@@ -57,13 +57,23 @@ function normalizeAppliesToSkus(raw) {
 }
 
 /**
+ * SKU-scoped codes match the top-level checkout SKU, or any cart line SKU
+ * (shop cart checkouts use MARKETPLACE_CART as the outer sku).
  * @param {{ appliesToSkus?: string[]|null }} discount
- * @param {string} sku
+ * @param {string|{ sku?: string, cartItems?: Array<{ sku?: string }> }} skuOrOptions
  */
-function discountAppliesToSku(discount, sku) {
+function discountAppliesToSku(discount, skuOrOptions) {
   const allowed = discount?.appliesToSkus;
   if (!allowed || !allowed.length) return true;
-  return allowed.includes(String(sku || '').trim());
+
+  if (skuOrOptions && typeof skuOrOptions === 'object' && !Array.isArray(skuOrOptions)) {
+    const sku = String(skuOrOptions.sku || '').trim();
+    if (sku && allowed.includes(sku)) return true;
+    const lines = Array.isArray(skuOrOptions.cartItems) ? skuOrOptions.cartItems : [];
+    return lines.some((row) => allowed.includes(String(row?.sku || '').trim()));
+  }
+
+  return allowed.includes(String(skuOrOptions || '').trim());
 }
 
 async function loadActiveDiscountCode(db, rawCode) {
@@ -92,10 +102,10 @@ async function loadActiveDiscountCode(db, rawCode) {
  * Apply discount to pricing. Leaves renewalCents unchanged.
  * @param {{ chargeCents: number, renewalCents?: number|null, title?: string }} pricing
  * @param {{ type: string, amount: number, code: string, appliesToSkus?: string[]|null }} discount
- * @param {{ sku?: string }} [options]
+ * @param {{ sku?: string, cartItems?: Array<{ sku?: string }> }} [options]
  */
 function applyDiscountToPricing(pricing, discount, options = {}) {
-  if (!discountAppliesToSku(discount, options.sku)) {
+  if (!discountAppliesToSku(discount, options)) {
     return { pricing, discountMeta: null };
   }
   const applied = computeDiscountedCharge(pricing.chargeCents, discount);

@@ -78,3 +78,37 @@ test('SKU-scoped discount only applies to listed SKUs', () => {
   assert.equal(ok.pricing.chargeCents, 2500);
   assert.equal(ok.discountMeta.discountCents, 1499);
 });
+
+test('SKU-scoped discount matches MARKETPLACE_CART line items', () => {
+  const discount = {
+    code: 'TRACKER25',
+    type: 'fixed',
+    amount: 1499,
+    appliesToSkus: ['TRACKER_HARDWARE'],
+  };
+  assert.equal(
+    discountAppliesToSku(discount, {
+      sku: 'MARKETPLACE_CART',
+      cartItems: [{ sku: 'TRACKER_HARDWARE', priceCents: 3999, qty: 1 }],
+    }),
+    true
+  );
+  assert.equal(
+    discountAppliesToSku(discount, {
+      sku: 'MARKETPLACE_CART',
+      cartItems: [{ sku: 'NFC_TAG_HARDWARE', priceCents: 999, qty: 1 }],
+    }),
+    false
+  );
+
+  const applied = applyDiscountToPricing(
+    { chargeCents: 3999, title: 'Cart' },
+    discount,
+    {
+      sku: 'MARKETPLACE_CART',
+      cartItems: [{ sku: 'TRACKER_HARDWARE' }],
+    }
+  );
+  assert.equal(applied.pricing.chargeCents, 2500);
+  assert.equal(applied.discountMeta.discountCents, 1499);
+});
