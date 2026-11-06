@@ -113,7 +113,8 @@ export default function ShopCheckout() {
     try {
       const row = await fetchActiveDiscountCode(discountInput);
       const checkoutSku = pending?.payload?.sku || pending?.sku || '';
-      if (!discountAppliesToSku(row, checkoutSku)) {
+      const cartItems = pending?.cartItems || pending?.payload?.cartItems || [];
+      if (!discountAppliesToSku(row, { sku: checkoutSku, cartItems })) {
         throw new Error(t('checkoutDetails.discountWrongProduct'));
       }
       const preview = computeDiscountedCharge(pending.amountCents, row);

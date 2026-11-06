@@ -977,7 +977,10 @@ exports.createJccCheckout = functions.region('europe-west1').https.onCall(async 
           'This discount code is invalid or inactive.'
         );
       }
-      const applied = applyDiscountToPricing(pricing, discount, { sku });
+      const applied = applyDiscountToPricing(pricing, discount, {
+        sku,
+        cartItems: sessionCartItems || rawCartItems,
+      });
       pricing = applied.pricing;
       discountMeta = applied.discountMeta;
       if (!discountMeta) {

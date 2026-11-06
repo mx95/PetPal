@@ -74,11 +74,24 @@ function mapDiscountDoc(id, data) {
   };
 }
 
-/** True when the code has no SKU filter, or the checkout SKU is listed. */
-export function discountAppliesToSku(discount, sku) {
+/**
+ * True when the code has no SKU filter, or the checkout SKU / a cart line SKU is listed.
+ * Shop cart checkouts use MARKETPLACE_CART as the outer sku with hardware lines inside.
+ * @param {{ appliesToSkus?: string[]|null }} discount
+ * @param {string|{ sku?: string, cartItems?: Array<{ sku?: string }> }} skuOrOptions
+ */
+export function discountAppliesToSku(discount, skuOrOptions) {
   const allowed = discount?.appliesToSkus;
   if (!allowed || !allowed.length) return true;
-  return allowed.includes(String(sku || '').trim());
+
+  if (skuOrOptions && typeof skuOrOptions === 'object' && !Array.isArray(skuOrOptions)) {
+    const sku = String(skuOrOptions.sku || '').trim();
+    if (sku && allowed.includes(sku)) return true;
+    const lines = Array.isArray(skuOrOptions.cartItems) ? skuOrOptions.cartItems : [];
+    return lines.some((row) => allowed.includes(String(row?.sku || '').trim()));
+  }
+
+  return allowed.includes(String(skuOrOptions || '').trim());
 }
 
 /**
