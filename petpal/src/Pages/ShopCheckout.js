@@ -8,6 +8,7 @@ import { useI18n } from '../i18n/I18nContext';
 import { formatEur } from '../shop/catalog';
 import {
   computeDiscountedCharge,
+  discountAppliesToSku,
   fetchActiveDiscountCode,
 } from '../shop/discountCodesFirestore';
 import { clearPendingCheckout, readPendingCheckout } from '../shop/pendingCheckout';
@@ -111,6 +112,10 @@ export default function ShopCheckout() {
     setDiscountBusy(true);
     try {
       const row = await fetchActiveDiscountCode(discountInput);
+      const checkoutSku = pending?.payload?.sku || pending?.sku || '';
+      if (!discountAppliesToSku(row, checkoutSku)) {
+        throw new Error(t('checkoutDetails.discountWrongProduct'));
+      }
       const preview = computeDiscountedCharge(pending.amountCents, row);
       if (!preview) {
         throw new Error(t('checkoutDetails.discountInvalid'));

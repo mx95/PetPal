@@ -50,6 +50,22 @@ function computeDiscountedCharge(subtotalCents, discount) {
  * @param {*} db
  * @param {string} rawCode
  */
+function normalizeAppliesToSkus(raw) {
+  if (!Array.isArray(raw) || !raw.length) return null;
+  const skus = [...new Set(raw.map((s) => String(s || '').trim()).filter(Boolean))];
+  return skus.length ? skus : null;
+}
+
+/**
+ * @param {{ appliesToSkus?: string[]|null }} discount
+ * @param {string} sku
+ */
+function discountAppliesToSku(discount, sku) {
+  const allowed = discount?.appliesToSkus;
+  if (!allowed || !allowed.length) return true;
+  return allowed.includes(String(sku || '').trim());
+}
+
 async function loadActiveDiscountCode(db, rawCode) {
   const code = normalizeDiscountCode(rawCode);
   if (!code || !isValidDiscountCodeFormat(code)) return null;
@@ -68,15 +84,20 @@ async function loadActiveDiscountCode(db, rawCode) {
     type,
     amount: Math.floor(amount),
     active: true,
+    appliesToSkus: normalizeAppliesToSkus(data.appliesToSkus),
   };
 }
 
 /**
  * Apply discount to pricing. Leaves renewalCents unchanged.
  * @param {{ chargeCents: number, renewalCents?: number|null, title?: string }} pricing
- * @param {{ type: string, amount: number, code: string }} discount
+ * @param {{ type: string, amount: number, code: string, appliesToSkus?: string[]|null }} discount
+ * @param {{ sku?: string }} [options]
  */
-function applyDiscountToPricing(pricing, discount) {
+function applyDiscountToPricing(pricing, discount, options = {}) {
+  if (!discountAppliesToSku(discount, options.sku)) {
+    return { pricing, discountMeta: null };
+  }
   const applied = computeDiscountedCharge(pricing.chargeCents, discount);
   if (!applied) {
     return { pricing, discountMeta: null };
@@ -94,6 +115,7 @@ function applyDiscountToPricing(pricing, discount) {
       amount: discount.amount,
       subtotalCents,
       discountCents: applied.discountCents,
+      appliesToSkus: discount.appliesToSkus || null,
     },
   };
 }
@@ -102,6 +124,8 @@ module.exports = {
   normalizeDiscountCode,
   isValidDiscountCodeFormat,
   computeDiscountedCharge,
+  normalizeAppliesToSkus,
+  discountAppliesToSku,
   loadActiveDiscountCode,
   applyDiscountToPricing,
 };

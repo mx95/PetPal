@@ -163,6 +163,24 @@ jobs:
                 echo "[deploy] Pending shelter seed skipped or failed (Admin credentials may be missing on server)"
               fi
             fi
+            TRACKER25_SEED_MARKER="/var/lib/petpal/tracker25-discount-seeded-2026-11-06"
+            TRACKER25_SEED_SCRIPT="$PETPAL_ROOT/petpal/scripts/seed-tracker25-discount.cjs"
+            if [ -f "$TRACKER25_SEED_SCRIPT" ] && [ ! -f "$TRACKER25_SEED_MARKER" ]; then
+              echo "[deploy] Seeding TRACKER25 discount (post-deploy one-shot)"
+              mkdir -p /var/lib/petpal
+              export FIREBASE_PROJECT_ID=petpal-aecda
+              if [ -f /root/serviceAccount.json ]; then
+                export GOOGLE_APPLICATION_CREDENTIALS=/root/serviceAccount.json
+              elif [ -f "$PETPAL_ROOT/petpal/serviceAccount.json" ]; then
+                export GOOGLE_APPLICATION_CREDENTIALS="$PETPAL_ROOT/petpal/serviceAccount.json"
+              fi
+              if (cd "$PETPAL_ROOT/petpal" && node scripts/seed-tracker25-discount.cjs); then
+                touch "$TRACKER25_SEED_MARKER"
+                echo "[deploy] TRACKER25 discount seeded OK"
+              else
+                echo "[deploy] TRACKER25 seed skipped or failed (Admin credentials may be missing on server)"
+              fi
+            fi
             CLEAR_IMEI="${CLEAR_DEVICE_POSITIONS_IMEI:-}"
             if [ -n "$CLEAR_IMEI" ]; then
               TRACKER_DB="${PETPAL_TRACKER_DB:-/var/lib/petpal/petpal.sqlite}"

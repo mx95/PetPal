@@ -4,6 +4,7 @@ const {
   normalizeDiscountCode,
   isValidDiscountCodeFormat,
   computeDiscountedCharge,
+  discountAppliesToSku,
   applyDiscountToPricing,
 } = require('./discountCodes');
 
@@ -44,4 +45,36 @@ test('applyDiscountToPricing keeps renewal cents', () => {
   assert.equal(pricing.renewalCents, 499);
   assert.equal(discountMeta.code, 'SAVE10');
   assert.equal(discountMeta.discountCents, 99);
+});
+
+test('TRACKER25 fixed off brings tracker hardware to €25', () => {
+  const TRACKER_CENTS = 3999;
+  const OFF_CENTS = 1499;
+  const applied = computeDiscountedCharge(TRACKER_CENTS, { type: 'fixed', amount: OFF_CENTS });
+  assert.deepEqual(applied, { discountCents: 1499, chargeCents: 2500 });
+});
+
+test('SKU-scoped discount only applies to listed SKUs', () => {
+  assert.equal(
+    discountAppliesToSku({ appliesToSkus: ['TRACKER_HARDWARE'] }, 'TRACKER_HARDWARE'),
+    true
+  );
+  assert.equal(discountAppliesToSku({ appliesToSkus: ['TRACKER_HARDWARE'] }, 'PETPAL_PLUS_YEARLY'), false);
+  assert.equal(discountAppliesToSku({ appliesToSkus: null }, 'PETPAL_PLUS_YEARLY'), true);
+
+  const { pricing, discountMeta } = applyDiscountToPricing(
+    { chargeCents: 3999, title: 'Tracker' },
+    { code: 'TRACKER25', type: 'fixed', amount: 1499, appliesToSkus: ['TRACKER_HARDWARE'] },
+    { sku: 'PETPAL_PLUS_MONTHLY' }
+  );
+  assert.equal(pricing.chargeCents, 3999);
+  assert.equal(discountMeta, null);
+
+  const ok = applyDiscountToPricing(
+    { chargeCents: 3999, title: 'Tracker' },
+    { code: 'TRACKER25', type: 'fixed', amount: 1499, appliesToSkus: ['TRACKER_HARDWARE'] },
+    { sku: 'TRACKER_HARDWARE' }
+  );
+  assert.equal(ok.pricing.chargeCents, 2500);
+  assert.equal(ok.discountMeta.discountCents, 1499);
 });

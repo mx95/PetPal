@@ -977,11 +977,14 @@ exports.createJccCheckout = functions.region('europe-west1').https.onCall(async 
           'This discount code is invalid or inactive.'
         );
       }
-      const applied = applyDiscountToPricing(pricing, discount);
+      const applied = applyDiscountToPricing(pricing, discount, { sku });
       pricing = applied.pricing;
       discountMeta = applied.discountMeta;
       if (!discountMeta) {
-        throw new functions.https.HttpsError('invalid-argument', 'This discount code could not be applied.');
+        throw new functions.https.HttpsError(
+          'invalid-argument',
+          'This discount code does not apply to this product.'
+        );
       }
     }
 

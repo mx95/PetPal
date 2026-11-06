@@ -2447,6 +2447,7 @@ const en = {
     discountClear: 'Remove',
     discountApplied: 'Code {code} saves {amount}',
     discountInvalid: 'This discount code is invalid or inactive.',
+    discountWrongProduct: 'This discount code does not apply to this product.',
     country: 'Country/Region',
     countryCyprus: 'Cyprus',
     title: 'Delivery & contact details',

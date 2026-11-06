@@ -2575,6 +2575,7 @@ const ru = {
     discountClear: 'Удалить',
     discountApplied: 'Код {code} экономит {amount}',
     discountInvalid: 'Этот промокод недействителен или неактивен.',
+    discountWrongProduct: 'Этот промокод не действует для этого товара.',
     country: 'Страна/регион',
     countryCyprus: 'Кипр',
     title: 'Доставка и контакты',
