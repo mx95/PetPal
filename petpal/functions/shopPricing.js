@@ -197,7 +197,9 @@ function validateMarketplaceCartLines(lines) {
     if (catalog.recurring && !line.saveCard) {
       return 'This plan bills on a schedule — enable “Save card securely” on each subscription in your cart.';
     }
-    if (line.includeTracker && !PLUS_SKUS.has(sku)) {
+    // Standalone TRACKER_HARDWARE lines set includeTracker for fulfilment flags;
+    // the Plus-addon rule must not block buying the tracker alone.
+    if (line.includeTracker && sku !== 'TRACKER_HARDWARE' && !PLUS_SKUS.has(sku)) {
       return 'GPS tracker is only available with PetPal Plus plans.';
     }
     if (sku === 'PETPAL_PLUS_MONTHLY' && line.trackerImei && !/^\d{10,20}$/.test(String(line.trackerImei).trim())) {
