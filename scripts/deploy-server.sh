@@ -665,3 +665,38 @@ cancel_paschalides_subscriptions_oneshot() {
   } || log "Paschalides subscription cancel failed"
 }
 cancel_paschalides_subscriptions_oneshot
+
+# One-shot: seed TRACKER25 (€39.99 GPS tracker → €25) discount code.
+seed_tracker25_discount_oneshot() {
+  local marker="/var/lib/petpal/tracker25-discount-seeded-2026-11-06.done"
+  local script="$PETPAL_DIR/scripts/seed-tracker25-discount.cjs"
+  if [ -f "$marker" ]; then
+    return 0
+  fi
+  if [ ! -f "$script" ]; then
+    log "TRACKER25 seed script missing — skip"
+    return 0
+  fi
+  log "Seeding TRACKER25 discount (tracker hardware €25)"
+  (
+    cd "$PETPAL_DIR"
+    if [ -f /root/serviceAccount.json ]; then
+      export GOOGLE_APPLICATION_CREDENTIALS=/root/serviceAccount.json
+    elif [ -f "$PETPAL_DIR/serviceAccount.json" ]; then
+      export GOOGLE_APPLICATION_CREDENTIALS="$PETPAL_DIR/serviceAccount.json"
+    else
+      adc="$(ls -1 /root/.config/firebase/*_application_default_credentials.json 2>/dev/null | head -n 1 || true)"
+      if [ -n "$adc" ] && [ -f "$adc" ]; then
+        export GOOGLE_APPLICATION_CREDENTIALS="$adc"
+      fi
+    fi
+    export FIREBASE_PROJECT_ID=petpal-aecda
+    export HOME="${HOME:-/root}"
+    node scripts/seed-tracker25-discount.cjs
+  ) && {
+    mkdir -p /var/lib/petpal
+    touch "$marker"
+    log "TRACKER25 discount seeded OK"
+  } || log "TRACKER25 discount seed failed (Firebase Admin credentials may be missing on server)"
+}
+seed_tracker25_discount_oneshot

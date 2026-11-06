@@ -2608,6 +2608,7 @@ const el = {
     discountClear: 'Αφαίρεση',
     discountApplied: 'Ο κωδικός {code} εξοικονομεί {amount}',
     discountInvalid: 'Αυτός ο κωδικός έκπτωσης δεν είναι έγκυρος ή δεν είναι ενεργός.',
+    discountWrongProduct: 'Αυτός ο κωδικός έκπτωσης δεν ισχύει για αυτό το προϊόν.',
     country: 'Χώρα/Περιοχή',
     countryCyprus: 'Κύπρος',
     title: 'Στοιχεία παράδοσης & επικοινωνίας',

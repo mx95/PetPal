@@ -53,6 +53,12 @@ export function computeDiscountedCharge(subtotalCents, discount) {
   return { discountCents: subtotal - chargeCents, chargeCents };
 }
 
+function normalizeAppliesToSkus(raw) {
+  if (!Array.isArray(raw) || !raw.length) return null;
+  const skus = [...new Set(raw.map((s) => String(s || '').trim()).filter(Boolean))];
+  return skus.length ? skus : null;
+}
+
 function mapDiscountDoc(id, data) {
   return {
     id,
@@ -61,10 +67,18 @@ function mapDiscountDoc(id, data) {
     type: data.type === 'fixed' ? 'fixed' : 'percentage',
     amount: Math.max(0, Math.floor(Number(data.amount) || 0)),
     note: data.note ? String(data.note) : '',
+    appliesToSkus: normalizeAppliesToSkus(data.appliesToSkus),
     createdAt: data.createdAt || null,
     updatedAt: data.updatedAt || null,
     createdBy: data.createdBy || null,
   };
+}
+
+/** True when the code has no SKU filter, or the checkout SKU is listed. */
+export function discountAppliesToSku(discount, sku) {
+  const allowed = discount?.appliesToSkus;
+  if (!allowed || !allowed.length) return true;
+  return allowed.includes(String(sku || '').trim());
 }
 
 /**
@@ -109,8 +123,9 @@ export function subscribeDiscountCodes(onData, onError) {
 /**
  * Admin: create or overwrite a discount code.
  * Fixed amounts are stored in cents; percentage is 1–100.
+ * Optional appliesToSkus limits the code to those checkout SKUs.
  */
-export async function saveDiscountCode({ code, type, amount, active, note, createdBy }) {
+export async function saveDiscountCode({ code, type, amount, active, note, createdBy, appliesToSkus }) {
   if (!isFirebaseConfigured()) throw new Error('Firebase is not configured.');
   const normalized = normalizeDiscountCode(code);
   if (!normalized || !isValidDiscountCodeFormat(normalized)) {
@@ -136,6 +151,7 @@ export async function saveDiscountCode({ code, type, amount, active, note, creat
     amount: value,
     active: active !== false,
     note: String(note || '').trim().slice(0, 200),
+    appliesToSkus: normalizeAppliesToSkus(appliesToSkus),
     updatedAt: serverTimestamp(),
   };
   if (!existing.exists()) {
