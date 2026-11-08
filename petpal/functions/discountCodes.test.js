@@ -79,6 +79,18 @@ test('SKU-scoped discount only applies to listed SKUs', () => {
   assert.equal(ok.discountMeta.discountCents, 1499);
 });
 
+test('maxUses exhaustion is rejected by loader shape helpers', () => {
+  // Mirror loadActiveDiscountCode gate without Firestore.
+  function isExhausted({ maxUses, usedCount }) {
+    const max = Math.max(0, Math.floor(Number(maxUses) || 0));
+    const used = Math.max(0, Math.floor(Number(usedCount) || 0));
+    return max > 0 && used >= max;
+  }
+  assert.equal(isExhausted({ maxUses: 10, usedCount: 9 }), false);
+  assert.equal(isExhausted({ maxUses: 10, usedCount: 10 }), true);
+  assert.equal(isExhausted({ maxUses: 0, usedCount: 99 }), false);
+});
+
 test('SKU-scoped discount matches MARKETPLACE_CART line items', () => {
   const discount = {
     code: 'TRACKER25',

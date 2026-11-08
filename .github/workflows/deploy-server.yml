@@ -181,6 +181,24 @@ jobs:
                 echo "[deploy] TRACKER25 seed skipped or failed (Admin credentials may be missing on server)"
               fi
             fi
+            NOV2026_SEED_MARKER="/var/lib/petpal/nov2026pets-discount-seeded-2026-11-08"
+            NOV2026_SEED_SCRIPT="$PETPAL_ROOT/petpal/scripts/seed-nov2026pets-discount.cjs"
+            if [ -f "$NOV2026_SEED_SCRIPT" ] && [ ! -f "$NOV2026_SEED_MARKER" ]; then
+              echo "[deploy] Seeding NOV2026PETS discount (post-deploy one-shot)"
+              mkdir -p /var/lib/petpal
+              export FIREBASE_PROJECT_ID=petpal-aecda
+              if [ -f /root/serviceAccount.json ]; then
+                export GOOGLE_APPLICATION_CREDENTIALS=/root/serviceAccount.json
+              elif [ -f "$PETPAL_ROOT/petpal/serviceAccount.json" ]; then
+                export GOOGLE_APPLICATION_CREDENTIALS="$PETPAL_ROOT/petpal/serviceAccount.json"
+              fi
+              if (cd "$PETPAL_ROOT/petpal" && node scripts/seed-nov2026pets-discount.cjs); then
+                touch "$NOV2026_SEED_MARKER"
+                echo "[deploy] NOV2026PETS discount seeded OK"
+              else
+                echo "[deploy] NOV2026PETS seed skipped or failed (Admin credentials may be missing on server)"
+              fi
+            fi
             CLEAR_IMEI="${CLEAR_DEVICE_POSITIONS_IMEI:-}"
             if [ -n "$CLEAR_IMEI" ]; then
               TRACKER_DB="${PETPAL_TRACKER_DB:-/var/lib/petpal/petpal.sqlite}"

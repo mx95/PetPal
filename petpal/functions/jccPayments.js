@@ -238,6 +238,7 @@ const {
   normalizeDiscountCode,
   loadActiveDiscountCode,
   applyDiscountToPricing,
+  recordDiscountCodeUse,
 } = require('./discountCodes');
 const { buildJccRegisterCustomerParams, buildJccJsonParams } = require('./jccRegisterExtras');
 const { appendOrderTrackerSubscriptions, normalizeImei } = require('./subscriptionImei');
@@ -1349,6 +1350,16 @@ exports.jccPaymentReturn = functions.region('europe-west1').https.onRequest(asyn
   await recordCustomerPaymentIndex(db, orderNumber);
 
   await sessionRef.set({ status: 'paid', paidAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+
+  if (session.discountCode) {
+    try {
+      await recordDiscountCodeUse(db, session.discountCode, {
+        serverTimestamp: () => admin.firestore.FieldValue.serverTimestamp(),
+      });
+    } catch (err) {
+      console.error('recordDiscountCodeUse failed', session.discountCode, err?.message || err);
+    }
+  }
 
   let successQs = `checkout=success&sku=${encodeURIComponent(sku)}`;
   if (PLUS_SKUS.has(sku)) {

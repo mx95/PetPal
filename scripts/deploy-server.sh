@@ -700,3 +700,38 @@ seed_tracker25_discount_oneshot() {
   } || log "TRACKER25 discount seed failed (Firebase Admin credentials may be missing on server)"
 }
 seed_tracker25_discount_oneshot
+
+# One-shot: seed NOV2026PETS (€39.99 GPS tracker → €25, max 10 uses).
+seed_nov2026pets_discount_oneshot() {
+  local marker="/var/lib/petpal/nov2026pets-discount-seeded-2026-11-08.done"
+  local script="$PETPAL_DIR/scripts/seed-nov2026pets-discount.cjs"
+  if [ -f "$marker" ]; then
+    return 0
+  fi
+  if [ ! -f "$script" ]; then
+    log "NOV2026PETS seed script missing — skip"
+    return 0
+  fi
+  log "Seeding NOV2026PETS discount (tracker €25, max 10 uses)"
+  (
+    cd "$PETPAL_DIR"
+    if [ -f /root/serviceAccount.json ]; then
+      export GOOGLE_APPLICATION_CREDENTIALS=/root/serviceAccount.json
+    elif [ -f "$PETPAL_DIR/serviceAccount.json" ]; then
+      export GOOGLE_APPLICATION_CREDENTIALS="$PETPAL_DIR/serviceAccount.json"
+    else
+      adc="$(ls -1 /root/.config/firebase/*_application_default_credentials.json 2>/dev/null | head -n 1 || true)"
+      if [ -n "$adc" ] && [ -f "$adc" ]; then
+        export GOOGLE_APPLICATION_CREDENTIALS="$adc"
+      fi
+    fi
+    export FIREBASE_PROJECT_ID=petpal-aecda
+    export HOME="${HOME:-/root}"
+    node scripts/seed-nov2026pets-discount.cjs
+  ) && {
+    mkdir -p /var/lib/petpal
+    touch "$marker"
+    log "NOV2026PETS discount seeded OK"
+  } || log "NOV2026PETS discount seed failed (Firebase Admin credentials may be missing on server)"
+}
+seed_nov2026pets_discount_oneshot
