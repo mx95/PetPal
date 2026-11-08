@@ -89,13 +89,44 @@ async function loadActiveDiscountCode(db, rawCode) {
     return null;
   }
   if (type === 'percentage' && (amount > 100 || amount < 1)) return null;
+  const maxUses = Math.max(0, Math.floor(Number(data.maxUses) || 0));
+  const usedCount = Math.max(0, Math.floor(Number(data.usedCount) || 0));
+  if (maxUses > 0 && usedCount >= maxUses) return null;
   return {
     code,
     type,
     amount: Math.floor(amount),
     active: true,
     appliesToSkus: normalizeAppliesToSkus(data.appliesToSkus),
+    maxUses: maxUses || null,
+    usedCount,
   };
+}
+
+/**
+ * Increment usedCount after a successful paid checkout that applied the code.
+ * No-op when code is missing; does not re-activate exhausted codes.
+ * @param {*} db
+ * @param {string} rawCode
+ * @param {{ serverTimestamp?: () => unknown }} [fieldValues] Firestore FieldValue helpers
+ */
+async function recordDiscountCodeUse(db, rawCode, fieldValues = {}) {
+  const code = normalizeDiscountCode(rawCode);
+  if (!code || !isValidDiscountCodeFormat(code)) return;
+  const ref = db.collection('discountCodes').doc(code);
+  await db.runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    if (!snap.exists) return;
+    const data = snap.data() || {};
+    const maxUses = Math.max(0, Math.floor(Number(data.maxUses) || 0));
+    const usedCount = Math.max(0, Math.floor(Number(data.usedCount) || 0));
+    if (maxUses > 0 && usedCount >= maxUses) return;
+    const payload = { usedCount: usedCount + 1 };
+    if (typeof fieldValues.serverTimestamp === 'function') {
+      payload.updatedAt = fieldValues.serverTimestamp();
+    }
+    tx.set(ref, payload, { merge: true });
+  });
 }
 
 /**
@@ -137,5 +168,6 @@ module.exports = {
   normalizeAppliesToSkus,
   discountAppliesToSku,
   loadActiveDiscountCode,
+  recordDiscountCodeUse,
   applyDiscountToPricing,
 };

@@ -60,6 +60,8 @@ function normalizeAppliesToSkus(raw) {
 }
 
 function mapDiscountDoc(id, data) {
+  const maxUses = Math.max(0, Math.floor(Number(data.maxUses) || 0));
+  const usedCount = Math.max(0, Math.floor(Number(data.usedCount) || 0));
   return {
     id,
     code: String(data.code || id || '').toUpperCase(),
@@ -68,6 +70,8 @@ function mapDiscountDoc(id, data) {
     amount: Math.max(0, Math.floor(Number(data.amount) || 0)),
     note: data.note ? String(data.note) : '',
     appliesToSkus: normalizeAppliesToSkus(data.appliesToSkus),
+    maxUses: maxUses || null,
+    usedCount,
     createdAt: data.createdAt || null,
     updatedAt: data.updatedAt || null,
     createdBy: data.createdBy || null,
@@ -113,6 +117,9 @@ export async function fetchActiveDiscountCode(rawCode) {
   }
   if (row.type === 'fixed' && row.amount < 1) {
     throw new Error('This discount code is invalid.');
+  }
+  if (row.maxUses && row.usedCount >= row.maxUses) {
+    throw new Error('This discount code has reached its usage limit.');
   }
   return row;
 }
