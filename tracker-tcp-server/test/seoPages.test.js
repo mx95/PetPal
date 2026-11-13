@@ -66,11 +66,24 @@ test("renderSpaHtml gives each public route its own canonical, title and JSON-LD
 });
 
 test("private and unknown routes are noindex", () => {
-  for (const route of ["/dashboard", "/shop/checkout", "/pets/abc", "/admin/users", "/does-not-exist", "/pet/xyz"]) {
+  for (const route of ["/dashboard", "/shop/checkout", "/pets/abc", "/admin/users", "/does-not-exist", "/pet"]) {
     const out = renderSpaHtml(BUILT_INDEX, route);
     assert.equal(out.index, false, route);
     assert.match(out.html, /<meta name="robots" content="noindex,follow"/, route);
   }
+});
+
+test("public pet and lost-pet detail IDs are indexable with self-canonical", () => {
+  const pet = renderSpaHtml(BUILT_INDEX, "/pet/abc123");
+  assert.equal(pet.index, true);
+  assert.match(pet.html, /<meta name="robots" content="index,follow"/);
+  assert.match(pet.html, /<link rel="canonical" href="https:\/\/petpal\.com\.cy\/pet\/abc123"/);
+  assert.match(pet.html, /<title>Pet Profile — PetPal Care Hub<\/title>/);
+
+  const alert = renderSpaHtml(BUILT_INDEX, "/lost-pet/alert-99");
+  assert.equal(alert.index, true);
+  assert.match(alert.html, /<meta name="robots" content="index,follow"/);
+  assert.match(alert.html, /<link rel="canonical" href="https:\/\/petpal\.com\.cy\/lost-pet\/alert-99"/);
 });
 
 test("rendered HTML keeps the app bootstrap intact", () => {

@@ -233,6 +233,37 @@ const NAV_LINKS = [
   ["/terms", "Terms"],
 ];
 
+/** Dynamic public detail pages — indexable with self-canonical; not listed in the static sitemap. */
+function petProfilePage() {
+  return {
+    title: `Pet Profile — ${SITE_NAME}`,
+    description:
+      "Public digital pet profile on PetPal Care Hub — pet details and owner contact options when the owner has enabled them. Also opens from an NFC tag tap.",
+    heading: "Public pet profile",
+    body: [
+      "This page is a public digital pet profile on PetPal Care Hub. Finders can view pet details and contact the owner when the owner has enabled those options.",
+      "The same profile opens when someone taps a PetPal NFC ID tag with a smartphone. NFC tags do not provide live GPS tracking.",
+    ],
+  };
+}
+
+function lostPetAlertPage() {
+  return {
+    title: `Lost pet alert — ${SITE_NAME}`,
+    description: `View a lost-pet alert on ${SITE_NAME}. Contact details and last-seen information are provided by the pet’s owner.`,
+    heading: "Lost pet alert",
+    body: [
+      "This page shows a lost-pet alert published on PetPal Care Hub. Contact details and last-seen information are provided by the pet’s owner. Recovery is never guaranteed.",
+    ],
+  };
+}
+
+function matchDynamicPublicPage(path) {
+  if (/^\/pet\/[^/]+$/.test(path)) return petProfilePage();
+  if (/^\/lost-pet\/[^/]+$/.test(path)) return lostPetAlertPage();
+  return null;
+}
+
 const PAGES = {
   "/": {
     title: DEFAULT_TITLE,
@@ -348,7 +379,7 @@ function isNoindexPath(path) {
 /** Returns { page, index, canonicalPath } for a request path. */
 function resolveSeoPage(rawPath) {
   const path = normalizePath(rawPath);
-  const page = PAGES[path] || null;
+  const page = PAGES[path] || matchDynamicPublicPage(path);
   if (page && !isNoindexPath(path)) {
     return { path, page, index: true, canonicalPath: path };
   }

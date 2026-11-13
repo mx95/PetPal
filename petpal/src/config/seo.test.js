@@ -26,7 +26,14 @@ describe('resolveSeo', () => {
     }
     expect(resolveSeo('/login').index).toBe(false);
     expect(resolveSeo('/shop/checkout').index).toBe(false);
-    expect(resolveSeo('/lost-pet/alert-123').index).toBe(false);
+    expect(resolveSeo('/pet').index).toBe(false);
+  });
+
+  it('indexes public pet and lost-pet detail IDs (discoverable, not NFC-only)', () => {
+    expect(resolveSeo('/pet/abc123').index).toBe(true);
+    expect(resolveSeo('/pet/abc123').canonicalPath).toBe('/pet/abc123');
+    expect(resolveSeo('/lost-pet/alert-123').index).toBe(true);
+    expect(resolveSeo('/lost-pet/alert-123').canonicalPath).toBe('/lost-pet/alert-123');
   });
 
   it('uses unique titles for key public pages', () => {

@@ -281,10 +281,10 @@ export const ROUTE_SEO = [
     jsonLd: buildLostPetJsonLd(),
   },
   {
-    match: (path) => path.startsWith('/lost-pet/'),
+    match: (path) => /^\/lost-pet\/[^/]+$/.test(path),
     title: `Lost pet alert — ${SITE_NAME}`,
     description: `View a lost-pet alert on ${SITE_NAME}. Contact details and last-seen information are provided by the pet’s owner.`,
-    index: false,
+    index: true,
   },
   {
     match: (path) => path === '/contact',
@@ -322,9 +322,15 @@ export const ROUTE_SEO = [
     description: `PetPal Care Hub cookie policy — necessary cookies and optional analytics.`,
   },
   {
-    match: (path) => path.startsWith('/pet'),
+    match: (path) => /^\/pet\/[^/]+$/.test(path),
     title: `Pet Profile — ${SITE_NAME}`,
-    description: `Public pet profile on PetPal Care Hub — opened from an NFC tag scan with owner contact options when the owner has enabled them.`,
+    description: `Public digital pet profile on PetPal Care Hub — pet details and owner contact options when the owner has enabled them. Also opens from an NFC tag tap.`,
+    index: true,
+  },
+  {
+    match: (path) => path === '/pet' || path.startsWith('/pet/'),
+    title: `Pet Profile — ${SITE_NAME}`,
+    description: `Public digital pet profile on PetPal Care Hub.`,
     index: false,
   },
   {
