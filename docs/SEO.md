@@ -18,9 +18,11 @@ Stack: Create React App (client-rendered) + Express static serve (`tracker-tcp-s
 
 ## Indexable vs private
 
-**Indexed (public hubs):** `/`, `/shop`, `/shop/nfc`, `/nearby`, `/lost-pet`, `/contact`, `/install`, `/docs`, `/discover`, legal pages, `/pet/:id`
+**Indexed (public hubs):** `/`, `/shop`, `/shop/nfc`, `/nearby`, `/lost-pet`, `/contact`, `/install`, `/docs`, `/discover`, legal pages
 
-**Not indexed:** `/admin/*`, `/dashboard`, `/tracking`, `/profile`, `/bookings`, `/pets`, `/premium`, `/shelters`, `/shop/checkout`, `/lost-pet/:id`, auth screens, etc.
+**Indexed (public detail IDs, self-canonical; not in the static sitemap):** `/pet/:id`, `/lost-pet/:id` — discoverable via search/links, not NFC-scan-only. `/pet` without an id stays noindex.
+
+**Not indexed (intentional):** `/admin/*`, `/dashboard`, `/tracking`, `/profile`, `/bookings`, `/pets`, `/premium`, `/shelters`, `/shop/checkout`, auth screens (`/login`, `/register`, `/forgot-password`), and other account/private surfaces listed in `robots.txt`.
 
 **Note:** Language is client-side (EN/EL/RU) without localized URL paths — do not invent `/el/...` duplicates.
 

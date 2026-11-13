@@ -48,5 +48,7 @@ Compared against `docs/SEO_ROUTE_INVENTORY_BEFORE.md`.
 |------|--------|-------|
 | `/nearby` | robots Disallow; SEO index:true (conflict) | robots Allow; index; in sitemap |
 | `/shop/nfc` | noindex via `/shop/*` | index; Product JSON-LD; in sitemap |
-| `/lost-pet` | noindex prefix | index hub; detail URLs remain noindex |
+| `/lost-pet` | noindex prefix | index hub; in sitemap |
+| `/lost-pet/:id` | noindex | index; self-canonical (not in static sitemap) |
+| `/pet/:id` | noindex (NFC-scan framing) | index; self-canonical (not in static sitemap) |
 | `/shelters` | not in robots | robots Disallow (align private/UGC) |
